@@ -582,12 +582,12 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateRecordAssign(WhileyFile.Expr.RecordAccess lval, Expr rval,Context context) {
 		// Translate src expression
-		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getSource(), null, context);
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(), null, context);
 		Expr source = p1.first();
 		WyalFile.Identifier field = new WyalFile.Identifier(lval.getField().toString());
 		// Construct record update for "pass thru"
 		Expr update = new Expr.RecordUpdate(source, field, rval);
-		return translateSingleAssignment((WhileyFile.LVal) lval.getSource(),update,p1.second());
+		return translateSingleAssignment((WhileyFile.LVal) lval.getOperand(),update,p1.second());
 	}
 
 	/**
@@ -603,15 +603,15 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateArrayAssign(WhileyFile.Expr.ArrayAccess lval, Expr rval, Context context) {
 		// Translate src and index expressions
-		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getSource(), null, context);
-		Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getSubscript(), null, p1.second());
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getFirstOperand(), null, context);
+		Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getSecondOperand(), null, p1.second());
 		Expr source = p1.first();
 		Expr index = p2.first();
 		// Emit verification conditions to check access in bounds
 		checkIndexOutOfBounds(lval, p2.second());
 		// Construct array update for "pass thru"
 		Expr.Operator update = new Expr.ArrayUpdate(source, index, rval);
-		return translateSingleAssignment((LVal) lval.getSource(), update, p2.second());
+		return translateSingleAssignment((LVal) lval.getFirstOperand(), update, p2.second());
 	}
 
 	/**
@@ -1211,9 +1211,10 @@ public class VerificationConditionGenerator {
 				// This is an artifact of short-circuiting whereby terms on the
 				// right-hand side only execute when the left-hand side is known
 				// to hold.
-				for (int i = 0; i != le.size(); ++i) {
-					checkExpressionPreconditions(le.getOperand(i), context);
-					Expr e = translateExpression(le.getOperand(i), null, context.getEnvironment());
+				Tuple<WhileyFile.Expr> operands = le.getArguments();
+				for (int i = 0; i != operands.size(); ++i) {
+					checkExpressionPreconditions(operands.getOperand(i), context);
+					Expr e = translateExpression(operands.getOperand(i), null, context.getEnvironment());
 					context = context.assume(e);
 				}
 			} else if (opcode != WhileyFile.EXPR_varcopy && opcode != WhileyFile.EXPR_varmove) {
@@ -1242,7 +1243,7 @@ public class VerificationConditionGenerator {
 				break;
 			case WhileyFile.EXPR_idiv:
 			case WhileyFile.EXPR_irem:
-				checkDivideByZero((WhileyFile.Expr.Operator) expr, context);
+				checkDivideByZero((WhileyFile.Expr.NaryOperator) expr, context);
 				break;
 			case WhileyFile.EXPR_aread:
 				checkIndexOutOfBounds((WhileyFile.Expr.ArrayAccess) expr, context);
@@ -1265,11 +1266,9 @@ public class VerificationConditionGenerator {
 		if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
 			WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
 			int numPreconditions = fm.getRequires().size();
-			//
 			// There is at least one precondition for the function/method being
 			// called. Therefore, we need to generate a verification condition
 			// which will check that the precondition holds.
-			//
 			Expr[] arguments = translateExpressions(expr.getArguments(), context.getEnvironment());
 			String prefix = fm.getName() + "_requires_";
 			// Finally, generate an appropriate verification condition to check
@@ -1287,8 +1286,10 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private void checkDivideByZero(WhileyFile.Expr.Operator expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
+	private void checkDivideByZero(WhileyFile.Expr.NaryOperator expr, Context context) {
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		Expr rhs = translateExpression(operands.getOperand(1), null, context.getEnvironment());
+		// FIXME: problem with > 2 operands
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.NotEqual(rhs, constant);
@@ -1297,8 +1298,8 @@ public class VerificationConditionGenerator {
 	}
 
 	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
-		Expr src = translateExpression(expr.getOperand(0), null, context.getEnvironment());
-		Expr idx = translateExpression(expr.getOperand(1), null, context.getEnvironment());
+		Expr src = translateExpression(expr.getFirstOperand(), null, context.getEnvironment());
+		Expr idx = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
 		Expr zero = new Expr.Constant(new Value.Int(BigInteger.ZERO));
 		Expr length = new Expr.ArrayLength(src);
 		//
@@ -1310,11 +1311,11 @@ public class VerificationConditionGenerator {
 				lenTest));
 	}
 
-	private void checkArrayGeneratorLength(WhileyFile.Expr.Operator expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
+	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
+		Expr len = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.GreaterThanOrEqual(rhs, constant);
+		Expr neqZero = new Expr.GreaterThanOrEqual(len, constant);
 		//
 		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero));
 	}
@@ -1468,7 +1469,7 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_igteq:
 			case WhileyFile.EXPR_land:
 			case WhileyFile.EXPR_lor:
-				return translateBinaryOperator((WhileyFile.Expr.InfixOperator) loc, environment);
+				return translateBinaryOperator((WhileyFile.Expr.NaryOperator) loc, environment);
 			case WhileyFile.EXPR_is:
 				return translateIs((WhileyFile.Expr.Is) loc, environment);
 			case WhileyFile.EXPR_aread:
@@ -1514,7 +1515,7 @@ public class VerificationConditionGenerator {
 
 	private Expr translateFieldLoad(WhileyFile.Expr.RecordAccess expr, LocalEnvironment environment) {
 		// Now, translate source expression
-		Expr src = translateExpression(expr.getSource(), null, environment);
+		Expr src = translateExpression(expr.getOperand(), null, environment);
 		// Generate field name identifier
 		WyalFile.Identifier field = new WyalFile.Identifier(expr.getField().toString());
 		// Done
@@ -1537,19 +1538,21 @@ public class VerificationConditionGenerator {
 		return translateAsUnknown(expr, environment);
 	}
 
-	private Expr translateNotOperator(WhileyFile.Expr.Operator expr, LocalEnvironment environment) {
-		Expr e = translateExpression(expr.getOperand(0), null, environment);
-		return invertCondition(e, expr.getOperand(0));
+	private Expr translateNotOperator(WhileyFile.Expr.LogicalNot expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(), null, environment);
+		return invertCondition(e, expr.getOperand());
 	}
 
-	private Expr translateArithmeticNegation(WhileyFile.Expr.Operator expr, LocalEnvironment environment) {
-		Expr e = translateExpression(expr.getOperand(0), null, environment);
+	private Expr translateArithmeticNegation(WhileyFile.Expr.Negation expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(), null, environment);
 		return new Expr.Negation(e);
 	}
 
-	private Expr translateBinaryOperator(WhileyFile.Expr.Operator expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
-		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
+	private Expr translateBinaryOperator(WhileyFile.Expr.NaryOperator expr, LocalEnvironment environment) {
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		Expr lhs = translateExpression(operands.getOperand(0), null, environment);
+		Expr rhs = translateExpression(operands.getOperand(1), null, environment);
+		// FIXME: problem with > 2 operands
 		switch(expr.getOpcode()) {
 		case WyalFile.EXPR_add:
 			return new Expr.Addition(lhs, rhs);
@@ -1584,20 +1587,20 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateIs(WhileyFile.Expr.Is expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getTestExpr(), null, environment);
+		Expr lhs = translateExpression(expr.getOperand(), null, environment);
 		WyalFile.Type typeTest = convert(expr.getTestType(), environment.getParent().enclosingDeclaration);
 		return new Expr.Is(lhs, typeTest);
 	}
 
 	private Expr translateArrayIndex(WhileyFile.Expr.ArrayAccess expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getSource(), null, environment);
-		Expr rhs = translateExpression(expr.getSubscript(), null, environment);
+		Expr lhs = translateExpression(expr.getFirstOperand(), null, environment);
+		Expr rhs = translateExpression(expr.getSecondOperand(), null, environment);
 		return new Expr.ArrayAccess(lhs, rhs);
 	}
 
 	private Expr translateArrayGenerator(WhileyFile.Expr.ArrayGenerator expr, LocalEnvironment environment) {
-		Expr element = translateExpression(expr.getValue(), null, environment);
-		Expr count = translateExpression(expr.getLength(), null, environment);
+		Expr element = translateExpression(expr.getFirstOperand(), null, environment);
+		Expr count = translateExpression(expr.getSecondOperand(), null, environment);
 
 		// FIXME: this needs to be put back somehow
 		// environment = environment.write(expr.getIndex());
@@ -1606,15 +1609,16 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateArrayInitialiser(WhileyFile.Expr.ArrayInitialiser expr, LocalEnvironment environment) {
-		Expr[] vals = new Expr[expr.size()];
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		Expr[] vals = new Expr[operands.size()];
 		for (int i = 0; i != vals.length; ++i) {
-			vals[i] = translateExpression(expr.getOperand(i), null, environment);
+			vals[i] = translateExpression(operands.getOperand(i), null, environment);
 		}
 		return new Expr.ArrayInitialiser(vals);
 	}
 
 	private Expr translateArrayLength(WhileyFile.Expr.ArrayLength expr, LocalEnvironment environment) {
-		Expr e = translateExpression(expr.getSource(), null, environment);
+		Expr e = translateExpression(expr.getOperand(), null, environment);
 		return new Expr.ArrayLength(e);
 	}
 
@@ -1629,7 +1633,7 @@ public class VerificationConditionGenerator {
 		// Apply quantifier ranges
 		Expr ranges = generateQuantifierRanges(expr, environment);
 		// Generate quantifier body
-		Expr body = translateExpression(expr.getBody(), null, environment);
+		Expr body = translateExpression(expr.getOperand(), null, environment);
 		// Generate quantifier expression
 		if(expr instanceof WhileyFile.Expr.UniversalQuantifier) {
 			body = new Expr.LogicalImplication(ranges, body);
@@ -1641,10 +1645,11 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateRecordInitialiser(WhileyFile.Expr.RecordInitialiser expr, LocalEnvironment environment)  {
+		Tuple<WhileyFile.Pair<WhileyFile.Identifier, WhileyFile.Expr>> operands = expr.getFields();
 		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[expr.size()];
 		//
 		for (int i = 0; i != expr.size(); ++i) {
-			WhileyFile.Pair<WhileyFile.Identifier, WhileyFile.Expr> p = expr.getOperand(i);
+			WhileyFile.Pair<WhileyFile.Identifier, WhileyFile.Expr> p = operands.getOperand(i);
 			Identifier field = new WyalFile.Identifier(p.getFirst().get());
 			Expr init = translateExpression(p.getSecond(), null, environment);
 			pairs[i] = new WyalFile.Pair<>(field, init);
@@ -1706,8 +1711,8 @@ public class VerificationConditionGenerator {
 			WhileyFile.Expr.ArrayRange range = (WhileyFile.Expr.ArrayRange) var.getInitialiser();
 			WyalFile.VariableDeclaration varDecl = environment.read(var);
 			Expr.VariableAccess varExpr = new Expr.VariableAccess(varDecl);
-			Expr startExpr = translateExpression(range.getStart(), null, environment);
-			Expr endExpr = translateExpression(range.getEnd(), null, environment);
+			Expr startExpr = translateExpression(range.getFirstOperand(), null, environment);
+			Expr endExpr = translateExpression(range.getSecondOperand(), null, environment);
 			Expr lhs = new Expr.LessThanOrEqual(startExpr, varExpr);
 			Expr rhs = new Expr.LessThan(varExpr, endExpr);
 			ranges = and(ranges, and(lhs, rhs));

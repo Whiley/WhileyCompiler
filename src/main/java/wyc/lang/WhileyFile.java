@@ -64,8 +64,8 @@ import wyfs.lang.Path.Entry;
  * </pre>
  *
  * <p>
- * Each of these syntactic items will additionally be associated with one or more
- * attributes (e.g. encoding line number information, etc).
+ * Each of these syntactic items will additionally be associated with one or
+ * more attributes (e.g. encoding line number information, etc).
  * </p>
  *
  * @author David J. Pearce
@@ -80,10 +80,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
 
 		/**
-		 * This method simply parses a whiley file into an abstract syntax tree.
-		 * It makes little effort to check whether or not the file is
-		 * syntactically correct. In particular, it does not determine the
-		 * correct type of all declarations, expressions, etc.
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
 		 *
 		 * @param file
 		 * @return
@@ -120,10 +120,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final Content.Type<WhileyFile> BinaryContentType = new Content.Type<WhileyFile>() {
 
 		/**
-		 * This method simply parses a whiley file into an abstract syntax tree.
-		 * It makes little effort to check whether or not the file is
-		 * syntactically correct. In particular, it does not determine the
-		 * correct type of all declarations, expressions, etc.
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
 		 *
 		 * @param file
 		 * @return
@@ -302,14 +302,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			if (match.getName().equals(name)) {
 				if (signature != null && signature.equals(match.getType())) {
 					return match;
-				} else if(signature == null) {
+				} else if (signature == null) {
 					return match;
 				}
 			}
 		}
 		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
 	}
-
 
 	// ============================================================
 	// Declarations
@@ -339,8 +338,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an import declaration in a Whiley source file, which has
-		 * the form:
+		 * Represents an import declaration in a Whiley source file, which has the form:
 		 *
 		 * <pre>
 		 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
@@ -421,7 +419,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				Module module = getAncestor(Decl.Module.class);
 				Name name = module.getName();
 				Identifier[] idents = name.getOperands();
-				idents = Arrays.copyOf(idents,idents.length+1);
+				idents = Arrays.copyOf(idents, idents.length + 1);
 				idents[name.size()] = getName();
 				return new Name(idents);
 			}
@@ -429,10 +427,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public abstract WhileyFile.Type getType();
 		}
 
-
 		/**
-		 * Represents a <i>function declaration</i> or <i>method declaration</i>
-		 * in a Whiley source file which have the form:
+		 * Represents a <i>function declaration</i> or <i>method declaration</i> in a
+		 * Whiley source file which have the form:
 		 *
 		 * <pre>
 		 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
@@ -443,33 +440,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Here, the first type pattern (i.e. before "=>") is referred to as the
-		 * "parameter", whilst the second is referred to as the "return". There
-		 * are three kinds of option clause:
+		 * "parameter", whilst the second is referred to as the "return". There are
+		 * three kinds of option clause:
 		 *
 		 * <ul>
-		 * <li><b>Throws clause</b>. This defines the exceptions which may be
-		 * thrown by this function. Multiple clauses may be given, and these are
-		 * taken together as a union. Furthermore, the convention is to specify
-		 * the throws clause before the others.</li>
-		 * <li><b>Requires clause</b>. This defines a constraint on the
-		 * permissible values of the parameters on entry to the function or
-		 * method, and is often referred to as the "precondition". This
-		 * expression may refer to any variables declared within the parameter
-		 * type pattern. Multiple clauses may be given, and these are taken
-		 * together as a conjunction. Furthermore, the convention is to specify
-		 * the requires clause(s) before any ensure(s) clauses.</li>
-		 * <li><b>Ensures clause</b>. This defines a constraint on the
-		 * permissible values of the the function or method's return value, and
-		 * is often referred to as the "postcondition". This expression may
-		 * refer to any variables declared within either the parameter or return
-		 * type pattern. Multiple clauses may be given, and these are taken
-		 * together as a conjunction. Furthermore, the convention is to specify
-		 * the requires clause(s) after the others.</li>
+		 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown by
+		 * this function. Multiple clauses may be given, and these are taken together as
+		 * a union. Furthermore, the convention is to specify the throws clause before
+		 * the others.</li>
+		 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+		 * values of the parameters on entry to the function or method, and is often
+		 * referred to as the "precondition". This expression may refer to any variables
+		 * declared within the parameter type pattern. Multiple clauses may be given,
+		 * and these are taken together as a conjunction. Furthermore, the convention is
+		 * to specify the requires clause(s) before any ensure(s) clauses.</li>
+		 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+		 * values of the the function or method's return value, and is often referred to
+		 * as the "postcondition". This expression may refer to any variables declared
+		 * within either the parameter or return type pattern. Multiple clauses may be
+		 * given, and these are taken together as a conjunction. Furthermore, the
+		 * convention is to specify the requires clause(s) after the others.</li>
 		 * </ul>
 		 *
 		 * <p>
-		 * The following function declaration provides a small example to
-		 * illustrate:
+		 * The following function declaration provides a small example to illustrate:
 		 * </p>
 		 *
 		 * <pre>
@@ -482,10 +476,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, we see the specification for the well-known <code>max()</code>
-		 * function which returns the largest of its parameters. This does not
-		 * throw any exceptions, and does not enforce any preconditions on its
-		 * parameters.
+		 * Here, we see the specification for the well-known <code>max()</code> function
+		 * which returns the largest of its parameters. This does not throw any
+		 * exceptions, and does not enforce any preconditions on its parameters.
 		 * </p>
 		 *
 		 * <p>
@@ -495,9 +488,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static abstract class Callable extends Named {
 
-			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, SyntacticItem... rest) {
-				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns}, rest));
+			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, SyntacticItem... rest) {
+				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns }, rest));
 			}
 
 			@SuppressWarnings("unchecked")
@@ -516,8 +509,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static abstract class FunctionOrMethod extends Callable {
 
-			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Decl.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
+			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name,
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> requires,
+					Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
 				super(opcode, modifiers, name, parameters, returns,
 						ArrayUtils.append(new SyntacticItem[] { requires, ensures, body }, rest));
 			}
@@ -538,8 +532,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a function declaration in a Whiley source file. For
-		 * example:
+		 * Represents a function declaration in a Whiley source file. For example:
 		 *
 		 * <pre>
 		 * function f(int x) -> (int y)
@@ -552,21 +545,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, a function <code>f</code> is defined which accepts only
-		 * positive integers and returns only negative integers. The special
-		 * variable <code>$</code> is used to refer to the return value.
-		 * Functions in Whiley may not have side-effects (i.e. they are
-		 * <code>pure functions</code>).
+		 * Here, a function <code>f</code> is defined which accepts only positive
+		 * integers and returns only negative integers. The special variable
+		 * <code>$</code> is used to refer to the return value. Functions in Whiley may
+		 * not have side-effects (i.e. they are <code>pure functions</code>).
 		 * </p>
 		 *
 		 * <p>
-		 * Function declarations may also have modifiers, such as
-		 * <code>public</code> and <code>private</code>.
+		 * Function declarations may also have modifiers, such as <code>public</code>
+		 * and <code>private</code>.
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more
-		 * information.
+		 * <b>NOTE</b> see {@link Callable} for more information.
 		 * </p>
 		 *
 		 * @see Callable
@@ -613,20 +604,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, a method <code>m</code> is defined which accepts only positive
-		 * integers and returns only negative integers. The special variable
-		 * <code>$</code> is used to refer to the return value. Unlike
-		 * functions, methods in Whiley may have side-effects.
+		 * Here, a method <code>m</code> is defined which accepts only positive integers
+		 * and returns only negative integers. The special variable <code>$</code> is
+		 * used to refer to the return value. Unlike functions, methods in Whiley may
+		 * have side-effects.
 		 * </p>
 		 *
 		 * <p>
-		 * Method declarations may also have modifiers, such as
-		 * <code>public</code> and <code>private</code>.
+		 * Method declarations may also have modifiers, such as <code>public</code> and
+		 * <code>private</code>.
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more
-		 * information.
+		 * <b>NOTE</b> see {@link Callable} for more information.
 		 * </p>
 		 *
 		 * @author David J. Pearce
@@ -649,12 +639,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Method getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2,
-						WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2,
-						WhileyFile.Type.class);
-				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(),
-						getLifetimes());
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(), getLifetimes());
 			}
 
 			@SuppressWarnings("unchecked")
@@ -702,10 +689,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3], (Tuple<Expr>) operands[4]);
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+						(Tuple<Expr>) operands[4]);
 			}
 		}
-
 
 		public static class Lambda extends Callable implements Expr {
 
@@ -728,14 +715,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Expr) getOperand(6);
 			}
 
-
 			@Override
 			public WhileyFile.Type.Callable getType() {
 				// FIXME: need to determine whether function or method!
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2,
-						WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2,
-						WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
 				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
 			}
 
@@ -749,35 +733,32 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a type declaration in a Whiley source file, which has the
-		 * form:
+		 * Represents a type declaration in a Whiley source file, which has the form:
 		 *
 		 * <pre>
 		 * "type" Identifier "is" TypePattern ["where" Expression]
 		 * </pre>
 		 *
-		 * Here, the type pattern specifies a type which may additionally be
-		 * adorned with variable names. The "where" clause is optional and is
-		 * often referred to as the type's "constraint". Variables defined
-		 * within the type pattern may be used within this constraint
-		 * expressions. A simple example to illustrate is:
+		 * Here, the type pattern specifies a type which may additionally be adorned
+		 * with variable names. The "where" clause is optional and is often referred to
+		 * as the type's "constraint". Variables defined within the type pattern may be
+		 * used within this constraint expressions. A simple example to illustrate is:
 		 *
 		 * <pre>
 		 * type nat is (int x) where x >= 0
 		 * </pre>
 		 *
-		 * Here, we are defining a <i>constrained type</i> called
-		 * <code>nat</code> which represents the set of natural numbers (i.e the
-		 * non-negative integers). Type declarations may also have modifiers,
-		 * such as <code>public</code> and <code>private</code>.
+		 * Here, we are defining a <i>constrained type</i> called <code>nat</code> which
+		 * represents the set of natural numbers (i.e the non-negative integers). Type
+		 * declarations may also have modifiers, such as <code>public</code> and
+		 * <code>private</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class Type extends Named {
 
-			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl,
-					Tuple<Expr> invariant) {
+			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl, Tuple<Expr> invariant) {
 				super(DECL_type, modifiers, name, vardecl, invariant);
 			}
 
@@ -815,9 +796,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * The optional <code>Expression</code> assignment is referred to as an
-		 * <i>initialiser</i>. If an initialiser is given, then this will be
-		 * evaluated and assigned to the variable when the declaration is executed.
-		 * Some example declarations:
+		 * <i>initialiser</i>. If an initialiser is given, then this will be evaluated
+		 * and assigned to the variable when the declaration is executed. Some example
+		 * declarations:
 		 *
 		 * <pre>
 		 * int x
@@ -825,8 +806,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * int z = x + y
 		 * </pre>
 		 *
-		 * Observe that, unlike C and Java, declarations that declare multiple
-		 * variables (separated by commas) are not permitted.
+		 * Observe that, unlike C and Java, declarations that declare multiple variables
+		 * (separated by commas) are not permitted.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -840,7 +821,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(DECL_varinit, modifiers, name, type, initialiser);
 			}
 
-			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type, Expr initialiser) {
+			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type,
+					Expr initialiser) {
 				super(opcode, modifiers, name, type, initialiser);
 			}
 
@@ -871,8 +853,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a constant declaration in a Whiley source file, which has
-		 * the form:
+		 * Represents a constant declaration in a Whiley source file, which has the
+		 * form:
 		 *
 		 * <pre>
 		 * ConstantDeclaration ::= "constant" Identifier "is" Expression
@@ -884,10 +866,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * constant PI is 3.141592654
 		 * </pre>
 		 *
-		 * Here, we are defining a constant called <code>PI</code> which
-		 * represents the decimal value "3.141592654". Constant declarations may
-		 * also have modifiers, such as <code>public</code> and
-		 * <code>private</code>.
+		 * Here, we are defining a constant called <code>PI</code> which represents the
+		 * decimal value "3.141592654". Constant declarations may also have modifiers,
+		 * such as <code>public</code> and <code>private</code>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1010,11 +991,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an assignment statement of the form <code>lhs = rhs</code>.
-		 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
-		 * must be an <code>LVal</code> --- that is, an expression permitted on the
-		 * left-side of an assignment. The following illustrates different possible
-		 * assignment statements:
+		 * Represents an assignment statement of the form <code>lhs = rhs</code>. Here,
+		 * the <code>rhs</code> is any expression, whilst the <code>lhs</code> must be
+		 * an <code>LVal</code> --- that is, an expression permitted on the left-side of
+		 * an assignment. The following illustrates different possible assignment
+		 * statements:
 		 *
 		 * <pre>
 		 * x = y       // variable assignment
@@ -1023,9 +1004,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * x[i].f = y  // compound assignment
 		 * </pre>
 		 *
-		 * The last assignment here illustrates that the left-hand side of an
-		 * assignment can be arbitrarily complex, involving nested assignments into
-		 * lists and records.
+		 * The last assignment here illustrates that the left-hand side of an assignment
+		 * can be arbitrarily complex, involving nested assignments into lists and
+		 * records.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1206,10 +1187,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
 		 * </pre>
 		 *
-		 * The first expression is referred to as the <i>condition</i>, while the
-		 * first block is referred to as the <i>true branch</i>. The optional second
-		 * block is referred to as the <i>false branch</i>. The following
-		 * illustrates:
+		 * The first expression is referred to as the <i>condition</i>, while the first
+		 * block is referred to as the <i>true branch</i>. The optional second block is
+		 * referred to as the <i>false branch</i>. The following illustrates:
 		 *
 		 * <pre>
 		 * function max(int x, int y) -> int:
@@ -1228,6 +1208,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public IfElse(Expr condition, Stmt.Block trueBranch) {
 				super(STMT_if, condition, trueBranch);
 			}
+
 			public IfElse(Expr condition, Stmt.Block trueBranch, Stmt.Block falseBranch) {
 				super(STMT_ifelse, condition, trueBranch, falseBranch);
 			}
@@ -1266,9 +1247,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ReturnStmt ::= "return" [Expression] NewLine
 		 * </pre>
 		 *
-		 * The optional expression is referred to as the <i>return value</i>. Note
-		 * that, the returned expression (if there is one) must begin on the same
-		 * line as the return statement itself.
+		 * The optional expression is referred to as the <i>return value</i>. Note that,
+		 * the returned expression (if there is one) must begin on the same line as the
+		 * return statement itself.
 		 *
 		 * The following illustrates:
 		 *
@@ -1301,7 +1282,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static class Switch extends AbstractSyntacticItem implements Stmt {
 			public Switch(Expr condition, Tuple<Case> cases) {
-				super(STMT_switch,condition,cases);
+				super(STMT_switch, condition, cases);
 			}
 
 			public Expr getCondition() {
@@ -1366,9 +1347,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * The optional <code>where</code> clause(s) are commonly referred to as the
-		 * "loop invariant". When multiple clauses are given, these are combined
-		 * using a conjunction. The combined invariant defines a condition which
-		 * must be true on every iteration of the loop.
+		 * "loop invariant". When multiple clauses are given, these are combined using a
+		 * conjunction. The combined invariant defines a condition which must be true on
+		 * every iteration of the loop.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1423,14 +1404,67 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents a cast expression of the form "<code>(T) e</code>" where
-		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the
-		 * <i>casted expression</i>.
+		 * Represents an abstract operator expression over exactly one <i>operand
+		 * expression</i>. For example, <code>!x</code> is a unary operator expression.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Cast extends AbstractSyntacticItem implements Expr {
+		public interface UnaryOperator extends Expr {
+			public Expr getOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over exactly two <i>operand
+		 * expressions</i>. For example, <code>x &lt;&lt; 1</code> is a binary operator
+		 * expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface BinaryOperator extends Expr {
+			public Expr getFirstOperand();
+
+			public Expr getSecondOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over exactly three <i>operand
+		 * expressions</i>. For example, <code>xs[i:=1]</code> is a ternary operator
+		 * expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface TernaryOperator extends Expr {
+			public Expr getFirstOperand();
+
+			public Expr getSecondOperand();
+
+			public Expr getThirdOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over one or more <i>operand
+		 * expressions</i>. For example. in <code>arr[i+1]</code> the expression
+		 * <code>i+1</code> would be an nary operator expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface NaryOperator extends Expr {
+			public Tuple<Expr> getArguments();
+		}
+
+		/**
+		 * Represents a cast expression of the form "<code>(T) e</code>" where
+		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the <i>casted
+		 * expression</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Cast extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Cast(Type type, Expr rhs) {
 				super(EXPR_cast, type, rhs);
 			}
@@ -1440,6 +1474,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			@Override
 			public Expr getOperand() {
 				return (Expr) super.getOperand(1);
 			}
@@ -1456,9 +1491,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the use of a constant within some expression. For example,
-		 * in <code>x + 1</code> the expression <code>1</code> is a constant
-		 * expression.
+		 * Represents the use of a constant within some expression. For example, in
+		 * <code>x + 1</code> the expression <code>1</code> is a constant expression.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1514,14 +1548,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>type test expression</i> of the form
-		 * "<code>e is T</code>" where <code>e</code> is the <i>test
-		 * expression</i> and <code>T</code> is the <i>test type</i>.
+		 * Represents a <i>type test expression</i> of the form "<code>e is T</code>"
+		 * where <code>e</code> is the <i>test expression</i> and <code>T</code> is the
+		 * <i>test type</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Is extends AbstractSyntacticItem implements Expr {
+		public static class Is extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Is(Expr lhs, Type rhs) {
 				super(EXPR_is, lhs, rhs);
 			}
@@ -1531,7 +1565,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return Type.Bool;
 			}
 
-			public Expr getTestExpr() {
+			@Override
+			public Expr getOperand() {
 				return (Expr) getOperand(0);
 			}
 
@@ -1546,23 +1581,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getTestExpr() + " is " + getTestType();
+				return getOperand() + " is " + getTestType();
 			}
 		}
 
 		/**
-		 * Represents an invocation of the form "<code>x.y.f(e1,..en)</code>".
-		 * Here, <code>x.y.f</code> constitute a <i>partially-</i> or
-		 * <i>fully-qualified name</i> and <code>e1</code> ... <code>en</code>
-		 * are the <i>argument expressions</i>.
+		 * Represents an invocation of the form "<code>x.y.f(e1,..en)</code>". Here,
+		 * <code>x.y.f</code> constitute a <i>partially-</i> or <i>fully-qualified
+		 * name</i> and <code>e1</code> ... <code>en</code> are the <i>argument
+		 * expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr {
+		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator {
 
-			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
-					Type.Callable signature) {
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable signature) {
 				super(EXPR_invoke, name, lifetimes, arguments, signature);
 			}
 
@@ -1587,6 +1621,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Tuple<Identifier>) getOperand(1);
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getArguments() {
 				return (Tuple<Expr>) getOperand(2);
@@ -1616,10 +1651,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an indirect invocation of the form
-		 * "<code>x.y(e1,..en)</code>". Here, <code>x.y</code> returns a
-		 * function value and <code>e1</code> ... <code>en</code> are the
-		 * <i>argument expressions</i>.
+		 * Represents an indirect invocation of the form "<code>x.y(e1,..en)</code>".
+		 * Here, <code>x.y</code> returns a function value and <code>e1</code> ...
+		 * <code>en</code> are the <i>argument expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1664,18 +1698,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-
 		/**
 		 * Represents an abstract quantified expression of the form
 		 * "<code>forall(T v1, ... T vn).e</code>" or
 		 * "<code>exists(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
-		 * <code>Tn vn</code> are the <i>quantified variable declarations</i>
-		 * and <code>e</code> is the body.
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr {
+		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Quantifier(int opcode, Decl.Variable[] parameters, Expr body) {
 				super(opcode, new Tuple<>(parameters), body);
 			}
@@ -1694,7 +1727,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Tuple<Decl.Variable>) getOperand(0);
 			}
 
-			public Expr getBody() {
+			@Override
+			public Expr getOperand() {
 				return (Expr) getOperand(1);
 			}
 
@@ -1705,8 +1739,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		/**
 		 * Represents an unbounded universally quantified expression of the form
 		 * "<code>forall(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
-		 * <code>Tn vn</code> are the <i>quantified variable declarations</i>
-		 * and <code>e</code> is the body.
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1731,16 +1765,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				String r = "forall";
 				r += getParameters();
 				r += ".";
-				r += getBody();
+				r += getOperand();
 				return r;
 			}
 		}
 
 		/**
-		 * Represents an unbounded existentially quantified expression of the
-		 * form "<code>some(T v1, ... T vn).e</code>" where <code>T1 v1</code>
-		 * ... <code>Tn vn</code> are the <i>quantified variable
-		 * declarations</i> and <code>e</code> is the body.
+		 * Represents an unbounded existentially quantified expression of the form
+		 * "<code>some(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1765,17 +1799,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				String r = "exists";
 				r += getParameters();
 				r += ".";
-				r += getBody();
+				r += getOperand();
 				return r;
 			}
 		}
 
 		/**
-		 * Represents a use of some variable within an expression. For example,
-		 * in <code>x + 1</code> the expression <code>x</code> is a variable
-		 * access expression. Every variable access is associated with a
-		 * <i>variable declaration</i> that unique identifies which variable is
-		 * being accessed.
+		 * Represents a use of some variable within an expression. For example, in
+		 * <code>x + 1</code> the expression <code>x</code> is a variable access
+		 * expression. Every variable access is associated with a <i>variable
+		 * declaration</i> that unique identifies which variable is being accessed.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1805,34 +1838,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public interface UnaryOperator extends Expr {
-			public Expr getOperand();
-		}
-
-		public interface BinaryOperator extends Expr {
-			public Expr getLeftOperand();
-			public Expr getRightOperand();
-		}
-
-		/**
-		 * Represents an abstract operator expression over one or more
-		 * <i>operand expressions</i>. For example. in <code>arr[i+1]</code> the
-		 * expression <code>i+1</code> is an operator expression.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public interface NaryOperator extends Expr {
-			public Tuple<Expr> getArguments();
-		}
-
 		// =========================================================================
 		// Logical Expressions
 		// =========================================================================
 		/**
 		 * Represents a <i>logical conjunction</i> of the form
-		 * "<code>e1 && .. && en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 && .. && en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1865,8 +1877,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a <i>logical disjunction</i> of the form
-		 * "<code>e1 || .. || en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 || .. || en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1899,13 +1911,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a <i>logical implication</i> of the form
-		 * "<code>e1 ==> ... ==> en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 ==> ... ==> en</code>" where <code>e1</code> ... <code>en</code>
+		 * are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalImplication extends AbstractSyntacticItem implements BinaryOperator {
+		public static class LogicalImplication extends AbstractSyntacticItem implements NaryOperator {
 			public LogicalImplication(Expr lhs, Expr rhs) {
 				super(EXPR_limplies, lhs, rhs);
 			}
@@ -1916,13 +1928,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Expr getLeftOperand() {
-				return (Expr) super.getOperand(0);
-			}
-
-			@Override
-			public Expr getRightOperand() {
-				return (Expr) super.getOperand(1);
+			public Tuple<Expr> getArguments() {
+				return (Tuple<Expr>) super.getOperand(0);
 			}
 
 			@Override
@@ -1932,14 +1939,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getLeftOperand() + " ==> " + getRightOperand();
+				return " ==> ";
 			}
 		}
 
 		/**
 		 * Represents a <i>logical biconditional</i> of the form
-		 * "<code>e1 <==> ... <==> en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 <==> ... <==> en</code>" where <code>e1</code> ... <code>en</code>
+		 * are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1971,8 +1978,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>logical negation</i> of the form "<code>!e</code>"
-		 * where <code>e</code> is the <i>operand expression</i>.
+		 * Represents a <i>logical negation</i> of the form "<code>!e</code>" where
+		 * <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2003,9 +2010,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents an equality expression of the form
-		 * "<code>e1 == ... == en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents an equality expression of the form "<code>e1 == ... == en</code>"
+		 * where <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2038,8 +2044,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an unequality expression of the form
-		 * "<code>e1 != ... != en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 != ... != en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2072,8 +2078,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 < ... < en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 < ... < en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2106,8 +2112,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 <= ... <= en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 <= ... <= en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2140,8 +2146,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 > ... > en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 > ... > en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2174,8 +2180,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 >= ... >= en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 >= ... >= en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2212,8 +2218,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>addition expression</i> of the form
-		 * "<code>e1 + ... + en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 + ... + en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2246,8 +2252,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>subtraction expression</i> of the form
-		 * "<code>e1 - ... - en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 - ... - en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2280,8 +2286,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>multiplication expression</i> of the form
-		 * "<code>e1 * ... * en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 * ... * en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2314,8 +2320,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>division expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2348,8 +2354,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>remainder expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2382,8 +2388,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an arithmetic <i>negation expression</i> of the form
-		 * "<code>-e</code>" where <code>e</code> is the <i>operand
-		 * expression</i>.
+		 * "<code>-e</code>" where <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2419,9 +2424,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents a <i>bitwise shift left</i> of the form
-		 * "<code>e << i</code>" where <code>e</code> is the expression being
-		 * shifted and <code>i</code> the amount it is shifted by.
+		 * Represents a <i>bitwise shift left</i> of the form "<code>e << i</code>"
+		 * where <code>e</code> is the expression being shifted and <code>i</code> the
+		 * amount it is shifted by.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2436,13 +2441,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the value operand to be shifted. That is <code>x</code> in
+			 * <code>x << i</code>.
+			 */
 			@Override
-			public Expr getLeftOperand() {
+			public Expr getFirstOperand() {
 				return (Expr) super.getOperand(1);
 			}
 
+			/**
+			 * Get the operand indicating the amount to shift. That is <code>i</code> in
+			 * <code>x << i</code>.
+			 */
 			@Override
-			public Expr getRightOperand() {
+			public Expr getSecondOperand() {
 				return (Expr) super.getOperand(2);
 			}
 
@@ -2458,9 +2471,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>bitwise shift right</i> of the form
-		 * "<code>e >> i</code>" where <code>e</code> is the expression being
-		 * shifted and <code>i</code> the amount it is shifted by.
+		 * Represents a <i>bitwise shift right</i> of the form "<code>e >> i</code>"
+		 * where <code>e</code> is the expression being shifted and <code>i</code> the
+		 * amount it is shifted by.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2475,13 +2488,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the value operand to be shifted. That is <code>x</code> in
+			 * <code>x >> i</code>.
+			 */
 			@Override
-			public Expr getLeftOperand() {
+			public Expr getFirstOperand() {
 				return (Expr) super.getOperand(1);
 			}
 
+			/**
+			 * Get the operand indicating the amount to shift. That is <code>i</code> in
+			 * <code>x >> i</code>.
+			 */
 			@Override
-			public Expr getRightOperand() {
+			public Expr getSecondOperand() {
 				return (Expr) super.getOperand(2);
 			}
 
@@ -2496,11 +2517,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-
 		/**
-		 * Represents a <i>bitwise and</i> of the form
-		 * "<code>e1 & .. & en</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise and</i> of the form "<code>e1 & .. & en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2532,9 +2551,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>bitwise or</i> of the form
-		 * "<code>e1 | .. | en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise or</i> of the form "<code>e1 | .. | en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2566,9 +2584,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>bitwise xor</i> of the form
-		 * "<code>e1 ^ .. ^ en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise xor</i> of the form "<code>e1 ^ .. ^ en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2600,8 +2617,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>bitwise complement</i> of the form "<code>~e</code>"
-		 * where <code>e</code> is the <i>operand expression</i>.
+		 * Represents a <i>bitwise complement</i> of the form "<code>~e</code>" where
+		 * <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2616,6 +2633,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the operand to be complimented. That is,
+			 * <code>e<code> in </code>!e</code>.
+			 */
 			@Override
 			public Expr getOperand() {
 				return (Expr) super.getOperand(1);
@@ -2640,6 +2661,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the operand to be dereferenced. That is,
+			 * <code>e<code> in </code>*e</code>.
+			 */
 			@Override
 			public Expr getOperand() {
 				return (Expr) super.getOperand(1);
@@ -2666,6 +2691,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the operand to be evaluated and stored in the heap. That is,
+			 * <code>e<code> in </code>new e</code>.
+			 */
 			@Override
 			public Expr getOperand() {
 				return (Expr) super.getOperand(1);
@@ -2734,9 +2763,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an <i>array access expression</i> of the form
-		 * "<code>arr[e]</code>" where <code>arr</code> is the <i>source
-		 * array</i> and <code>e</code> the <i>subscript expression</i>. This
-		 * returns the value held in the element determined by <code>e</code>.
+		 * "<code>arr[e]</code>" where <code>arr</code> is the <i>source array</i> and
+		 * <code>e</code> the <i>subscript expression</i>. This returns the value held
+		 * in the element determined by <code>e</code>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2751,22 +2780,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) getOperand(0);
 			}
 
-			public Expr getSource() {
+			/**
+			 * Get the source array operand for this access. That is <code>xs</code> in
+			 * <code>xs[i]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
 				return (Expr) getOperand(1);
 			}
 
-			public Expr getSubscript() {
+			/**
+			 * Get the index operand for this access. That is <code>i</code> in
+			 * <code>xs[i]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
 				return (Expr) getOperand(2);
-			}
-
-			@Override
-			public Expr getLeftOperand() {
-				return getSource();
-			}
-
-			@Override
-			public Expr getRightOperand() {
-				return getSubscript();
 			}
 
 			@Override
@@ -2776,24 +2805,23 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getSource() + "[" + getSubscript() + "]";
+				return getFirstOperand() + "[" + getSecondOperand() + "]";
 			}
 
 		}
 
 		/**
 		 * Represents an <i>array update expression</i> of the form
-		 * "<code>arr[e1:=e2]</code>" where <code>arr</code> is the <i>source
-		 * array</i>, <code>e1</code> the <i>subscript expression</i> and
-		 * <code>e2</code> is the value expression. This returns a new array
-		 * which is equivalent to <code>arr</code> but where the element
-		 * determined by <code>e1</code> has the value resulting from
-		 * <code>e2</code>.
+		 * "<code>arr[e1:=e2]</code>" where <code>arr</code> is the <i>source array</i>,
+		 * <code>e1</code> the <i>subscript expression</i> and <code>e2</code> is the
+		 * value expression. This returns a new array which is equivalent to
+		 * <code>arr</code> but where the element determined by <code>e1</code> has the
+		 * value resulting from <code>e2</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayUpdate extends AbstractSyntacticItem implements Expr {
+		public static class ArrayUpdate extends AbstractSyntacticItem implements Expr, TernaryOperator {
 			public ArrayUpdate(Type type, Expr src, Expr index, Expr value) {
 				super(EXPR_awrite, type, src, index, value);
 			}
@@ -2803,15 +2831,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
-			public Expr getSource() {
+			/**
+			 * Get the source array operand for this update. That is <code>xs</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
 				return (Expr) getOperand(1);
 			}
 
-			public Expr getSubscript() {
+			/**
+			 * Get the index operand for this update.  That is <code>i</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
 				return (Expr) getOperand(2);
 			}
 
-			public Expr getValue() {
+			/**
+			 * Get the value operand of this update. That is <code>v</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getThirdOperand() {
 				return (Expr) getOperand(3);
 			}
 
@@ -2822,15 +2865,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getSource() + "[" + getSubscript() + ":=" + getValue() + "]";
+				return getFirstOperand() + "[" + getSecondOperand() + ":=" + getThirdOperand() + "]";
 			}
 		}
 
 		/**
 		 * Represents an <i>array initialiser expression</i> of the form
-		 * "<code>[e1,...,en]</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>initialiser expressions</i>. Thus returns a new array made
-		 * up from those values resulting from the initialiser expressions.
+		 * "<code>[e1,...,en]</code>" where <code>e1</code> ... <code>en</code> are the
+		 * <i>initialiser expressions</i>. Thus returns a new array made up from those
+		 * values resulting from the initialiser expressions.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2863,11 +2906,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an <i>array generator expression</i> of the form
-		 * "<code>[e1;e2]</code>" where <code>e1</code> is the <i>element
-		 * expression</i> and <code>e2</code> is the <i>length expression</i>.
-		 * This returns a new array whose length is determined by
-		 * <code>e2</code> and where every element has contains the value
-		 * determined by <code>e1</code>.
+		 * "<code>[e1;e2]</code>" where <code>e1</code> is the <i>element expression</i>
+		 * and <code>e2</code> is the <i>length expression</i>. This returns a new array
+		 * whose length is determined by <code>e2</code> and where every element has
+		 * contains the value determined by <code>e1</code>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2882,23 +2924,24 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
-			public Expr getValue() {
+			/**
+			 * Get the value operand for this generator. That is <code>e</code> in
+			 * <code>[e; n]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
 				return (Expr) getOperand(1);
 			}
 
-			public Expr getLength() {
+			/**
+			 * Get the length operand for this generator. That is <code>n</code> in
+			 * <code>[e; n]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
 				return (Expr) getOperand(2);
 			}
 
-			@Override
-			public Expr getLeftOperand() {
-				return getValue();
-			}
-
-			@Override
-			public Expr getRightOperand() {
-				return getLength();
-			}
 			@Override
 			public ArrayGenerator clone(SyntacticItem[] operands) {
 				return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
@@ -2907,9 +2950,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an <i>array range expression</i> of the form
-		 * "<code>e1 .. e2</code>" where <code>e1</code> is the start of the
-		 * range and <code>e2</code> the end. Thus returns a new array made up
-		 * from those values between start and end (but not including the end).
+		 * "<code>e1 .. e2</code>" where <code>e1</code> is the start of the range and
+		 * <code>e2</code> the end. Thus returns a new array made up from those values
+		 * between start and end (but not including the end).
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2924,13 +2967,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
+			/**
+			 * Get the starting operand for this range. That is <code>s</code> in
+			 * <code>s..e</code>.  This determines the first element of the resulting range.
+			 */
 			@Override
-			public Expr getLeftOperand() {
+			public Expr getFirstOperand() {
 				return (Expr) super.getOperand(1);
 			}
 
+			/**
+			 * Get the ending operand for this range. That is <code>e</code> in
+			 * <code>s..e</code>. The range extends up to (but not including) this value.
+			 */
 			@Override
-			public Expr getRightOperand() {
+			public Expr getSecondOperand() {
 				return (Expr) super.getOperand(2);
 			}
 
@@ -2941,10 +2992,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an <i>array length expression</i> of the form
-		 * "<code>|arr|</code>" where <code>arr</code> is the <i>source
-		 * array</i>. This simply returns the length of array <code>arr</code>.
-		 * <code>e</code>.
+		 * Represents an <i>array length expression</i> of the form "<code>|arr|</code>"
+		 * where <code>arr</code> is the <i>source array</i>. This simply returns the
+		 * length of array <code>arr</code>. <code>e</code>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2980,14 +3030,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents a <i>record access expression</i> of the form
-		 * "<code>rec.f</code>" where <code>rec</code> is the <i>source
-		 * record</i> and <code>f</code> is the <i>field</i>.
+		 * Represents a <i>record access expression</i> of the form "<code>rec.f</code>"
+		 * where <code>rec</code> is the <i>source record</i> and <code>f</code> is the
+		 * <i>field</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordAccess extends AbstractSyntacticItem implements LVal {
+		public static class RecordAccess extends AbstractSyntacticItem implements LVal, UnaryOperator {
 			public RecordAccess(Type type, Expr lhs, Identifier rhs) {
 				super(EXPR_rread, type, lhs, rhs);
 			}
@@ -2997,10 +3047,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
-			public Expr getSource() {
+			/**
+			 * Get the source operand for this access. That is <code>e</code> in
+			 * <code>e.f/code>.
+			 */
+			@Override
+			public Expr getOperand() {
 				return (Expr) getOperand(1);
 			}
 
+			/**
+			 * Get the field name for this access. That is <code>f</code> in
+			 * <code>e.f/code>.
+			 */
 			public Identifier getField() {
 				return (Identifier) getOperand(2);
 			}
@@ -3012,16 +3071,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getSource() + "." + getField();
+				return getOperand() + "." + getField();
 			}
 		}
 
 		/**
 		 * Represents a <i>record initialiser</i> expression of the form
 		 * <code>{ f1: e1, ..., fn: en }</code> where <code>f1: e1</code> ...
-		 * <code>fn: en</code> are <i>field initialisers</code>. This returns a
-		 * new record where each field holds the value resulting from its
-		 * corresponding expression.
+		 * <code>fn: en</code> are <i>field initialisers</code>. This returns a new
+		 * record where each field holds the value resulting from its corresponding
+		 * expression.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3039,7 +3098,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Pair<Identifier, Expr>> getFields() {
-				return (Tuple<Pair<Identifier,Expr>>) super.getOperand(1);
+				return (Tuple<Pair<Identifier, Expr>>) super.getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3051,16 +3110,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a <i>record update expression</i> of the form
-		 * "<code>rec[f:=e]</code>" where <code>rec</code> is the <i>source
-		 * record</i>, <code>f</code> is the <i>field</i> and <code>e</code> is
-		 * the <i>value expression</i>. This returns a new record which is
-		 * equivalent to <code>rec</code> but where the element in field
-		 * <code>f</code> has the value resulting from <code>e</code>.
+		 * "<code>e[f:=v]</code>" where <code>e</code> is the <i>source operand</i>,
+		 * <code>f</code> is the <i>field</i> and <code>v</code> is the <i>value
+		 * operand</i>. This returns a new record which is equivalent to <code>e</code>
+		 * but where the element in field <code>f</code> has the value resulting from
+		 * <code>v</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordUpdate extends AbstractSyntacticItem implements Expr {
+		public static class RecordUpdate extends AbstractSyntacticItem implements Expr, BinaryOperator {
 			public RecordUpdate(Type type, Expr lhs, Identifier mhs, Expr rhs) {
 				super(EXPR_rwrite, type, lhs, mhs, rhs);
 			}
@@ -3070,26 +3129,41 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
-			public Expr getSource() {
+			/**
+			 * Get the source operand for this update. That is <code>e</code> in
+			 * <code>e[f:=v]/code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
 				return (Expr) getOperand(1);
 			}
 
+			/**
+			 * Get the field name for this update. That is <code>f</code> in
+			 * <code>e[f:=v]/code>.
+			 */
 			public Identifier getField() {
 				return (Identifier) getOperand(2);
 			}
 
-			public Expr getValue() {
+			/**
+			 * Get the value operand for this update. That is <code>v</code> in
+			 * <code>e[f:=v]/code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
 				return (Expr) getOperand(3);
 			}
 
 			@Override
 			public RecordUpdate clone(SyntacticItem[] operands) {
-				return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2], (Expr) operands[3]);
+				return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
+						(Expr) operands[3]);
 			}
 
 			@Override
 			public String toString() {
-				return getSource() + "{" + getField() + ":=" + getValue() + "}";
+				return getFirstOperand() + "{" + getField() + ":=" + getSecondOperand() + "}";
 			}
 		}
 	}
@@ -3115,10 +3189,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of all functions, methods and properties. These
-		 * are values which can be called using an indirect invoke expression.
-		 * Each function or method accepts zero or more parameters and will
-		 * produce zero or more returns.
+		 * Represents the set of all functions, methods and properties. These are values
+		 * which can be called using an indirect invoke expression. Each function or
+		 * method accepts zero or more parameters and will produce zero or more returns.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3131,9 +3204,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * The type <code>any</code> represents the type whose variables may
-		 * hold any possible value. <b>NOTE:</b> the any type is top in the type
-		 * lattice.
+		 * The type <code>any</code> represents the type whose variables may hold any
+		 * possible value. <b>NOTE:</b> the any type is top in the type lattice.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3155,12 +3227,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * A void type represents the type whose variables cannot exist! That
-		 * is, they cannot hold any possible value. Void is used to represent
-		 * the return type of a function which does not return anything.
-		 * However, it is also used to represent the element type of an empty
-		 * list of set. <b>NOTE:</b> the void type is a subtype of everything;
-		 * that is, it is bottom in the type lattice.
+		 * A void type represents the type whose variables cannot exist! That is, they
+		 * cannot hold any possible value. Void is used to represent the return type of
+		 * a function which does not return anything. However, it is also used to
+		 * represent the element type of an empty list of set. <b>NOTE:</b> the void
+		 * type is a subtype of everything; that is, it is bottom in the type lattice.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3182,14 +3253,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * The null type is a special type which should be used to show the
-		 * absence of something. It is distinct from void, since variables can
-		 * hold the special <code>null</code> value (where as there is no
-		 * special "void" value). With all of the problems surrounding
-		 * <code>null</code> and <code>NullPointerException</code>s in languages
-		 * like Java and C, it may seem that this type should be avoided.
-		 * However, it remains a very useful abstraction to have around and, in
-		 * Whiley, it is treated in a completely safe manner (unlike e.g. Java).
+		 * The null type is a special type which should be used to show the absence of
+		 * something. It is distinct from void, since variables can hold the special
+		 * <code>null</code> value (where as there is no special "void" value). With all
+		 * of the problems surrounding <code>null</code> and
+		 * <code>NullPointerException</code>s in languages like Java and C, it may seem
+		 * that this type should be avoided. However, it remains a very useful
+		 * abstraction to have around and, in Whiley, it is treated in a completely safe
+		 * manner (unlike e.g. Java).
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3233,11 +3304,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a sequence of 8 bits. Note that, unlike many languages,
-		 * there is no representation associated with a byte. For example, to
-		 * extract an integer value from a byte, it must be explicitly decoded
-		 * according to some representation (e.g. two's compliment) using an
-		 * auxillary function (e.g. <code>Byte.toInt()</code>).
+		 * Represents a sequence of 8 bits. Note that, unlike many languages, there is
+		 * no representation associated with a byte. For example, to extract an integer
+		 * value from a byte, it must be explicitly decoded according to some
+		 * representation (e.g. two's compliment) using an auxillary function (e.g.
+		 * <code>Byte.toInt()</code>).
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3259,10 +3330,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of (unbound) integer values. Since integer types
-		 * in Whiley are unbounded, there is no equivalent to Java's
-		 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for
-		 * <code>int</code> types.
+		 * Represents the set of (unbound) integer values. Since integer types in Whiley
+		 * are unbounded, there is no equivalent to Java's <code>MIN_VALUE</code> and
+		 * <code>MAX_VALUE</code> for <code>int</code> types.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3290,9 +3360,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ArrayType ::= Type '[' ']'
 		 * </pre>
 		 *
-		 * An array type describes array values whose elements are subtypes of
-		 * the element type. For example, <code>[1,2,3]</code> is an instance of
-		 * array type <code>int[]</code>; however, <code>[false]</code> is not.
+		 * An array type describes array values whose elements are subtypes of the
+		 * element type. For example, <code>[1,2,3]</code> is an instance of array type
+		 * <code>int[]</code>; however, <code>[false]</code> is not.
 		 *
 		 * @return
 		 */
@@ -3312,7 +3382,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return braceAsNecessary(getElement()) +"[]";
+				return braceAsNecessary(getElement()) + "[]";
 			}
 		}
 
@@ -3324,8 +3394,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Represents a reference to an object in Whiley. For example,
-		 * <code>&this:int</code> is the type of a reference to a location
-		 * allocated in the enclosing scope which holds an integer value.
+		 * <code>&this:int</code> is the type of a reference to a location allocated in
+		 * the enclosing scope which holds an integer value.
 		 *
 		 * @return
 		 */
@@ -3333,6 +3403,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Reference(Type element) {
 				super(TYPE_reference, element);
 			}
+
 			public Reference(Type element, Identifier lifetime) {
 				super(TYPE_reference, element, lifetime);
 			}
@@ -3351,7 +3422,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Reference clone(SyntacticItem[] operands) {
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Reference((Type) operands[0]);
 				} else {
 					return new Reference((Type) operands[0], (Identifier) operands[1]);
@@ -3376,10 +3447,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 		 * </pre>
 		 *
-		 * A record is made up of a number of fields, each of which has a unique
-		 * name. Each field has a corresponding type. One can think of a record
-		 * as a special kind of "fixed" map (i.e. where we know exactly which
-		 * entries we have).
+		 * A record is made up of a number of fields, each of which has a unique name.
+		 * Each field has a corresponding type. One can think of a record as a special
+		 * kind of "fixed" map (i.e. where we know exactly which entries we have).
 		 *
 		 * @return
 		 */
@@ -3452,10 +3522,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * NominalType ::= Identifier ('.' Identifier)*
 		 * </pre>
 		 *
-		 * A nominal type specifies the name of a type defined elsewhere. In
-		 * some cases, this type can be expanded (or "inlined"). However,
-		 * visibility modifiers can prevent this and, thus, give rise to true
-		 * nominal types.
+		 * A nominal type specifies the name of a type defined elsewhere. In some cases,
+		 * this type can be expanded (or "inlined"). However, visibility modifiers can
+		 * prevent this and, thus, give rise to true nominal types.
 		 *
 		 * @return
 		 */
@@ -3491,10 +3560,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ReferenceType ::= '!' Type
 		 * </pre>
 		 *
-		 * Represents the set of types which are not in a given type. For
-		 * example, <code>!int</code> is the set of all values which are not
-		 * integers. Thus, for example, the type <code>bool</code> is a subtype
-		 * of <code>!int</code> .
+		 * Represents the set of types which are not in a given type. For example,
+		 * <code>!int</code> is the set of all values which are not integers. Thus, for
+		 * example, the type <code>bool</code> is a subtype of <code>!int</code> .
 		 *
 		 * @return
 		 */
@@ -3542,15 +3610,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Union types are used to compose types together. For example, the type
-		 * <code>int|null</code> represents the type which is either an
-		 * <code>int</code> or <code>null</code>.
+		 * <code>int|null</code> represents the type which is either an <code>int</code>
+		 * or <code>null</code>.
 		 *
-		 * Represents the union of one or more types together. For example, the
-		 * union of <code>int</code> and <code>null</code> is
-		 * <code>int|null</code>. Any variable of this type may hold any integer
-		 * or the null value. Furthermore, the types <code>int</code> and
-		 * <code>null</code> are collectively referred to as the "bounds" of
-		 * this type.
+		 * Represents the union of one or more types together. For example, the union of
+		 * <code>int</code> and <code>null</code> is <code>int|null</code>. Any variable
+		 * of this type may hold any integer or the null value. Furthermore, the types
+		 * <code>int</code> and <code>null</code> are collectively referred to as the
+		 * "bounds" of this type.
 		 *
 		 * @return
 		 */
@@ -3584,15 +3651,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * IntersectionType ::= BaseType ('&' BaseType)*
 		 * </pre>
 		 *
-		 * Intersection types are used to unify types together. For example, the
-		 * type <code>{int x, int y}&MyType</code> represents the type which is
-		 * both an instanceof of <code>{int x, int y}</code> and an instance of
+		 * Intersection types are used to unify types together. For example, the type
+		 * <code>{int x, int y}&MyType</code> represents the type which is both an
+		 * instanceof of <code>{int x, int y}</code> and an instance of
 		 * <code>MyType</code>.
 		 *
-		 * Represents the intersection of one or more types together. For
-		 * example, the intersection of <code>T1</code> and <code>T2</code> is
-		 * <code>T1&T2</code>. Furthermore, any variable of this type must be
-		 * both an instanceof <code>T1</code> and an instanceof <code>T2</code>.
+		 * Represents the intersection of one or more types together. For example, the
+		 * intersection of <code>T1</code> and <code>T2</code> is <code>T1&T2</code>.
+		 * Furthermore, any variable of this type must be both an instanceof
+		 * <code>T1</code> and an instanceof <code>T2</code>.
 		 *
 		 * @return
 		 */
@@ -3621,10 +3688,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents the set of all function values. These are pure functions,
-		 * sometimes also called "mathematical" functions. A function cannot
-		 * have any side-effects and must always return the same values given
-		 * the same inputs. A function cannot have zero returns, since this
-		 * would make it a no-operation.
+		 * sometimes also called "mathematical" functions. A function cannot have any
+		 * side-effects and must always return the same values given the same inputs. A
+		 * function cannot have zero returns, since this would make it a no-operation.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3659,12 +3725,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of all method values. These are impure and may
-		 * have side-effects (e.g. performing I/O, updating non-local state,
-		 * etc). A method may have zero returns and, in such case, the effect of
-		 * a method comes through other side-effects. Methods may also have
-		 * captured lifetime arguments, and may themselves declare lifetime
-		 * arguments.
+		 * Represents the set of all method values. These are impure and may have
+		 * side-effects (e.g. performing I/O, updating non-local state, etc). A method
+		 * may have zero returns and, in such case, the effect of a method comes through
+		 * other side-effects. Methods may also have captured lifetime arguments, and
+		 * may themselves declare lifetime arguments.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3673,7 +3738,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Method(Tuple<Type> parameters, Tuple<Type> returns, Tuple<Identifier> captures,
 					Tuple<Identifier> lifetimes) {
-				super(TYPE_method, new SyntacticItem[] {parameters, returns, captures, lifetimes});
+				super(TYPE_method, new SyntacticItem[] { parameters, returns, captures, lifetimes });
 			}
 
 			@Override
@@ -3713,8 +3778,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents the set of all proeprty values. These are pure predicates,
-		 * sometimes also called "mathematical" functions. A property cannot
-		 * have any side-effects and always returns the boolean true.
+		 * sometimes also called "mathematical" functions. A property cannot have any
+		 * side-effects and always returns the boolean true.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3791,16 +3856,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	 * <code>public</code> or <code>private</code>.
 	 * </p>
 	 * <p>
-	 * The modifiers <code>native</code> and <code>export</code> are used to
-	 * enable inter-operation with other languages. By declaring a function or
-	 * method as <code>native</code> you are signaling that its implementation
-	 * is provided elsewhere (e.g. it's implemented in Java code directly). By
-	 * marking a function or method with <code>export</code>, you are declaring
-	 * that external code may call it. For example, you have some Java code that
-	 * needs to call it. The modifier is required because, by default, all the
-	 * names of all methods and functions are <i>mangled</i> to include type
-	 * information and enable overloading. Therefore, a method/function marked
-	 * with <code>export</code> will generate a function without name mangling.
+	 * The modifiers <code>native</code> and <code>export</code> are used to enable
+	 * inter-operation with other languages. By declaring a function or method as
+	 * <code>native</code> you are signaling that its implementation is provided
+	 * elsewhere (e.g. it's implemented in Java code directly). By marking a
+	 * function or method with <code>export</code>, you are declaring that external
+	 * code may call it. For example, you have some Java code that needs to call it.
+	 * The modifier is required because, by default, all the names of all methods
+	 * and functions are <i>mangled</i> to include type information and enable
+	 * overloading. Therefore, a method/function marked with <code>export</code>
+	 * will generate a function without name mangling.
 	 * </p>
 	 *
 	 * @author David J. Pearce
@@ -3879,7 +3944,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	private static String braceAsNecessary(Type type) {
 		String str = type.toString();
-		if(needsBraces(type)) {
+		if (needsBraces(type)) {
 			return "(" + str + ")";
 		} else {
 			return str;
@@ -3980,16 +4045,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Type) operands[2]);
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2]);
 			}
 		};
 		schema[DECL_varinit] = new Schema(Operands.FOUR, Data.ZERO, "DECL_variableinitialiser") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Type) operands[2], (Expr) operands[3]);
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2],
+						(Expr) operands[3]);
 			}
 		};
 		schema[MOD_native] = new Schema(Operands.ZERO, Data.ZERO, "MOD_native") {
@@ -4059,7 +4123,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				// FIXME: many operand modifier is not optimal. Observe that,
 				// for simplicity of subtyping, want to preserve reference types
 				// as having the same opcode.
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Type.Reference((Type) operands[0]);
 				} else {
 					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
@@ -4474,14 +4538,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		schema[EXPR_rwrite] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_recupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2], (Expr) operands[3]);
+				return new Expr.RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
+						(Expr) operands[3]);
 			}
 		};
 		schema[EXPR_rinit] = new Schema(Operands.TWO, Data.ZERO, "EXPR_recinit") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Pair<Identifier,Expr>>) operands[1]);
+				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Pair<Identifier, Expr>>) operands[1]);
 			}
 		};
 		// ARRAYS
@@ -4500,7 +4565,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		schema[EXPR_awrite] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_arrupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2], (Expr) operands[3]);
+				return new Expr.ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2],
+						(Expr) operands[3]);
 			}
 		};
 		schema[EXPR_agen] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrgen") {

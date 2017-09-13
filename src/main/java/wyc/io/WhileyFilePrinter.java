@@ -467,9 +467,9 @@ public final class WhileyFilePrinter {
 	}
 
 	private void writeArrayIndex(Expr.ArrayAccess expr, PrintWriter out) {
-		writeExpression(expr.getSource(), out);
+		writeExpression(expr.getFirstOperand(), out);
 		out.print("[");
-		writeExpression(expr.getSubscript(), out);
+		writeExpression(expr.getSecondOperand(), out);
 		out.print("]");
 	}
 
@@ -487,9 +487,9 @@ public final class WhileyFilePrinter {
 
 	private void writeArrayGenerator(Expr.ArrayGenerator expr, PrintWriter out) {
 		out.print("[");
-		writeExpression(expr.getValue(), out);
+		writeExpression(expr.getFirstOperand(), out);
 		out.print(" ; ");
-		writeExpression(expr.getLength(), out);
+		writeExpression(expr.getSecondOperand(), out);
 		out.print("]");
 	}
 	private void writeConvert(Expr.Cast expr, PrintWriter out) {
@@ -500,7 +500,7 @@ public final class WhileyFilePrinter {
 		out.print(expr.getValue());
 	}
 	private void writeFieldLoad(Expr.RecordAccess expr, PrintWriter out) {
-		writeBracketedExpression(expr.getSource(),out);
+		writeBracketedExpression(expr.getOperand(),out);
 		out.print("." + expr.getField());
 	}
 
@@ -585,11 +585,11 @@ public final class WhileyFilePrinter {
 	}
 
 	private void writeInfixLocations(Expr.BinaryOperator expr, PrintWriter out) {
-		writeBracketedExpression(expr.getLeftOperand(),out);
+		writeBracketedExpression(expr.getFirstOperand(),out);
 		out.print(" ");
 		out.print(opcode(expr.getOpcode()));
 		out.print(" ");
-		writeBracketedExpression(expr.getRightOperand(),out);
+		writeBracketedExpression(expr.getSecondOperand(),out);
 	}
 
 	private void writeInfixLocations(Expr.NaryOperator expr, PrintWriter out) {
@@ -619,7 +619,7 @@ public final class WhileyFilePrinter {
 			writeExpression(v.getInitialiser(), out);
 		}
 		out.print(" | ");
-		writeExpression(expr.getBody(), out);
+		writeExpression(expr.getOperand(), out);
 		out.print(" } ");
 	}
 

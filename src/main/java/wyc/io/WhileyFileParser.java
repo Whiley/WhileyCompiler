@@ -6,13 +6,9 @@
 
 package wyc.io;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wyal.io.WyalFileParser.EnclosingScope;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -32,10 +25,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.*;
 
 import wyc.lang.WhileyFile;
 import static wyc.lang.WhileyFile.*;
-
-import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -125,9 +115,6 @@ public class WhileyFileParser {
 	 * <pre>
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( '::' ('*' | Identifier) )*
 	 * </pre>
-	 *
-	 * @param parent
-	 *            WyalFile being constructed
 	 */
 	private Decl parseImportDeclaration() {
 		int start = index;

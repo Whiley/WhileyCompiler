@@ -191,12 +191,12 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferArrayGenerator(Expr.ArrayGenerator expr) throws ResolutionError {
-		Type element = inferExpression(expr.getValue());
+		Type element = inferExpression(expr.getSecondOperand());
 		return new Type.Array(element);
 	}
 
 	protected Type inferArrayIndex(Expr.ArrayAccess expr) throws ResolutionError {
-		Type src = inferExpression(expr.getSource());
+		Type src = inferExpression(expr.getFirstOperand());
 		if(src != null) {
 			Type.Array effectiveArray = types.extractReadableArray(src);
 			if(effectiveArray != null) {
@@ -207,11 +207,11 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferArrayUpdate(Expr.ArrayUpdate expr) throws ResolutionError {
-		return inferExpression(expr.getSource());
+		return inferExpression(expr.getFirstOperand());
 	}
 
 	protected Type inferRecordAccess(Expr.RecordAccess expr) throws ResolutionError {
-		Type src = inferExpression(expr.getSource());
+		Type src = inferExpression(expr.getOperand());
 		if (src != null) {
 			Type.Record effectiveRecord = types.extractReadableRecord(src);
 			if (effectiveRecord != null) {
@@ -231,7 +231,7 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferRecordUpdate(Expr.RecordUpdate expr) throws ResolutionError {
-		return inferExpression(expr.getSource());
+		return inferExpression(expr.getFirstOperand());
 	}
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {

@@ -788,7 +788,7 @@ public class Interpreter {
 	}
 
 	private RValue executeRecordAccess(Expr.RecordAccess expr, CallStack frame) {
-		RValue.Record rec = executeExpression(RECORD_T, expr.getSource(), frame);
+		RValue.Record rec = executeExpression(RECORD_T, expr.getOperand(), frame);
 		return rec.read(expr.getField());
 	}
 
@@ -822,7 +822,7 @@ public class Interpreter {
 		Tuple<Decl.Variable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
-			RValue.Bool r = executeExpression(BOOL_T, expr.getBody(), frame);
+			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame);
 			boolean q = (expr instanceof Expr.UniversalQuantifier);
 			// If this evaluates to true, then we will continue executing the
 			// quantifier.
@@ -866,7 +866,7 @@ public class Interpreter {
 	}
 
 	private RValue executeIs(Expr.Is expr, CallStack frame) throws ResolutionError {
-		RValue lhs = executeExpression(ANY_T, expr.getTestExpr(), frame);
+		RValue lhs = executeExpression(ANY_T, expr.getOperand(), frame);
 		return lhs.is(expr.getTestType(), this);
 	}
 
@@ -1038,13 +1038,17 @@ public class Interpreter {
 
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
 		// This is a short-circuiting operator
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getLeftOperand(), frame);
-		if(lhs == RValue.False) {
-			return RValue.True;
-		} else {
-			RValue.Bool rhs = executeExpression(BOOL_T, expr.getRightOperand(), frame);
-			return lhs.equal(rhs);
+		Tuple<Expr> operands = expr.getArguments();
+		RValue.Bool last = executeExpression(BOOL_T, operands.getOperand(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Bool next = executeExpression(BOOL_T, operands.getOperand(i), frame);
+			if (last == RValue.True && next == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
 		}
+		// All were the same.
+		return RValue.True;
 	}
 
 	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
@@ -1095,13 +1099,13 @@ public class Interpreter {
 	}
 
 	public RValue executeBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getLeftOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getRightOperand(), frame);
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		return lhs.shl(rhs);
 	}
 	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getLeftOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getRightOperand(), frame);
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		return lhs.shl(rhs);
 	}
 
@@ -1111,14 +1115,14 @@ public class Interpreter {
 	}
 
 	public RValue executeArrayAccess(Expr.ArrayAccess expr, CallStack frame) {
-		RValue.Array array = executeExpression(ARRAY_T, expr.getSource(), frame);
-		RValue.Int index = executeExpression(INT_T, expr.getSubscript(), frame);
+		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame);
+		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		return array.read(index);
 	}
 
 	public RValue executeArrayGenerator(Expr.ArrayGenerator expr, CallStack frame) {
-		RValue element = executeExpression(ANY_T, expr.getValue(), frame);
-		RValue.Int count = executeExpression(INT_T, expr.getLength(), frame);
+		RValue element = executeExpression(ANY_T, expr.getFirstOperand(), frame);
+		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		int n = count.intValue();
 		if (n < 0) {
 			throw new AssertionError("negative array length");
@@ -1140,8 +1144,8 @@ public class Interpreter {
 	}
 
 	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame) {
-		int start = executeExpression(INT_T, expr.getLeftOperand(), frame).intValue();
-		int end = executeExpression(INT_T, expr.getRightOperand(), frame).intValue();
+		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
+		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
 		RValue[] elements = new RValue[end - start];
 		for (int i = start; i < end; ++i) {
 			elements[i - start] = semantics.Int(BigInteger.valueOf(i));
@@ -1314,8 +1318,8 @@ public class Interpreter {
 		switch (expr.getOpcode()) {
 		case EXPR_aread: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
-			LValue src = constructLVal(e.getSource(), frame);
-			RValue.Int index = executeExpression(INT_T, e.getSubscript(), frame);
+			LValue src = constructLVal(e.getFirstOperand(), frame);
+			RValue.Int index = executeExpression(INT_T, e.getSecondOperand(), frame);
 			return new LValue.Array(src, index);
 		}
 		case EXPR_pread: {
@@ -1325,7 +1329,7 @@ public class Interpreter {
 		}
 		case EXPR_rread: {
 			Expr.RecordAccess e = (Expr.RecordAccess) expr;
-			LValue src = constructLVal(e.getSource(), frame);
+			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Record(src, e.getField());
 		}
 		case EXPR_varcopy: {

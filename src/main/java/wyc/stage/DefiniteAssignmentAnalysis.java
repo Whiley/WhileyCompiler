@@ -417,8 +417,8 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkBinaryOperator(Expr.BinaryOperator expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getLeftOperand(),environment);
-		checkExpression(expression.getRightOperand(),environment);
+		checkExpression(expression.getFirstOperand(),environment);
+		checkExpression(expression.getSecondOperand(),environment);
 	}
 
 	private void checkCast(Expr.Cast expression, DefintelyAssignedSet environment) {
@@ -438,7 +438,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkFieldAccess(Expr.RecordAccess expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getSource(),environment);
+		checkExpression(expression.getOperand(),environment);
 	}
 
 	private void checkFunctionOrMethod(Expr.LambdaAccess expression, DefintelyAssignedSet environment) {
@@ -461,7 +461,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkIs(Expr.Is expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getTestExpr(),environment);
+		checkExpression(expression.getOperand(),environment);
 	}
 
 	private void checkLambda(Decl.Lambda expression, DefintelyAssignedSet environment) {
@@ -496,7 +496,7 @@ public class DefiniteAssignmentAnalysis {
 			checkExpression(p.getInitialiser(),environment);
 			environment = environment.add(p.getName());
 		}
-		checkExpression(expression.getBody(),environment);
+		checkExpression(expression.getOperand(),environment);
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {

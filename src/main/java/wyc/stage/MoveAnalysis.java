@@ -364,11 +364,11 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkIs(boolean consumed, Expr.Is expr) {
-		checkExpression(false, expr.getTestExpr());
+		checkExpression(false, expr.getOperand());
 	}
 
 	public void checkQuantifier(boolean consumed, Expr.Quantifier expr) {
-		checkExpression(false, expr.getBody());
+		checkExpression(false, expr.getOperand());
 	}
 
 	public void checkNaryOperator(boolean consumed, Expr.NaryOperator expr) {
@@ -383,8 +383,8 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkBinaryOperator(boolean consumed, Expr.BinaryOperator expr) {
-		checkExpression(false, expr.getLeftOperand());
-		checkExpression(false, expr.getRightOperand());
+		checkExpression(false, expr.getFirstOperand());
+		checkExpression(false, expr.getSecondOperand());
 	}
 
 	public void checkRecordInitialiser(boolean consumed, Expr.RecordInitialiser expr) {
@@ -395,28 +395,28 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkRecordAccess(boolean consumed, Expr.RecordAccess expr) {
-		checkExpression(false, expr.getSource());
+		checkExpression(false, expr.getOperand());
 	}
 
 	public void checkRecordUpdate(boolean consumed, Expr.RecordUpdate expr) {
-		checkExpression(false, expr.getSource());
-		checkExpression(consumed, expr.getValue());
+		checkExpression(false, expr.getFirstOperand());
+		checkExpression(consumed, expr.getSecondOperand());
 	}
 
 	public void checkArrayGenerator(boolean consumed, Expr.ArrayGenerator expr) {
-		checkExpression(false, expr.getLength());
-		checkExpression(consumed, expr.getValue());
+		checkExpression(consumed, expr.getFirstOperand());
+		checkExpression(false, expr.getSecondOperand());
 	}
 
 	public void checkArrayAccess(boolean consumed, Expr.ArrayAccess expr) {
-		checkExpression(false, expr.getSource());
-		checkExpression(false, expr.getSubscript());
+		checkExpression(false, expr.getFirstOperand());
+		checkExpression(false, expr.getSecondOperand());
 	}
 
 	public void checkArrayUpdate(boolean consumed, Expr.ArrayUpdate expr) {
-		checkExpression(false, expr.getSource());
-		checkExpression(false, expr.getSubscript());
-		checkExpression(consumed, expr.getValue());
+		checkExpression(false, expr.getFirstOperand());
+		checkExpression(false, expr.getSecondOperand());
+		checkExpression(consumed, expr.getThirdOperand());
 	}
 
 	public void checkLambdaConstant(boolean consumed, Expr.LambdaAccess expr) {

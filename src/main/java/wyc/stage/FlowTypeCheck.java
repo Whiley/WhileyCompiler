@@ -1031,19 +1031,24 @@ public class FlowTypeCheck {
 
 	private Environment checkLogicalImplication(Expr.LogicalImplication expr, boolean sign, Environment environment) {
 		// To understand this, remember that A ==> B is equivalent to !A || B.
+		Tuple<Expr> operands = expr.getArguments();
+		if(operands.size() != 2) {
+			// FIXME: this is just a temporary hack for now.
+			throw new IllegalArgumentException("cannot currently support implication with > 2 arguments");
+		}
 		if (sign) {
 			// First case assumes the if body doesn't hold.
-			Environment left = checkCondition(expr.getLeftOperand(), false, environment);
+			Environment left = checkCondition(operands.getOperand(0), false, environment);
 			// Second case assumes the if body holds ...
-			environment = checkCondition(expr.getLeftOperand(), true, environment);
+			environment = checkCondition(operands.getOperand(0), true, environment);
 			// ... and then passes this into the then body
-			Environment right = checkCondition(expr.getRightOperand(), true, environment);
+			Environment right = checkCondition(operands.getOperand(1), true, environment);
 			//
 			return union(left, right);
 		} else {
 			// Effectively, this is a conjunction equivalent to A && !B
-			environment = checkCondition(expr.getLeftOperand(), true, environment);
-			environment = checkCondition(expr.getRightOperand(), false, environment);
+			environment = checkCondition(operands.getOperand(0), true, environment);
+			environment = checkCondition(operands.getOperand(1), false, environment);
 			return environment;
 		}
 	}
@@ -1057,12 +1062,12 @@ public class FlowTypeCheck {
 	}
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
-		Expr lhs = expr.getTestExpr();
+		Expr lhs = expr.getOperand();
 		Type rhs = expr.getTestType();
 		// Account for case when this test is inverted
 		rhs = sign ? rhs : negate(rhs);
 		//
-		Type lhsT = checkExpression(expr.getTestExpr(), environment);
+		Type lhsT = checkExpression(expr.getOperand(), environment);
 		// TODO: implement a proper intersection test here to ensure lhsT and
 		// rhs types make sense (i.e. have some intersection).
 		Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhs);
@@ -1105,7 +1110,7 @@ public class FlowTypeCheck {
 			Decl.Variable field = new Decl.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(),
 					type);
 			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getSource(), recT);
+			return extractTypeTest(ra.getOperand(), recT);
 		} else {
 			// no extraction is possible
 			return null;
@@ -1116,7 +1121,7 @@ public class FlowTypeCheck {
 		checkNonEmpty(stmt.getParameters());
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
-		checkCondition(stmt.getBody(), true, env);
+		checkCondition(stmt.getOperand(), true, env);
 		return env;
 	}
 
@@ -1219,8 +1224,8 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-		Expr source = lval.getSource();
-		Expr subscript = lval.getSubscript();
+		Expr source = lval.getFirstOperand();
+		Expr subscript = lval.getSecondOperand();
 		//
 		Type sourceT = checkExpression(source, environment);
 		// FIXME: bug here as need writeable array type?
@@ -1232,9 +1237,9 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
-		Type src = checkExpression(lval.getSource(), environment);
+		Type src = checkExpression(lval.getOperand(), environment);
 		// FIXME: bug here as need writeable recordy type?
-		Type.Record readableRecordT = checkIsRecordType(src, lval.getSource());
+		Type.Record readableRecordT = checkIsRecordType(src, lval.getOperand());
 		//
 		Type type = readableRecordT.getField(lval.getField());
 		if (type == null) {
@@ -1548,16 +1553,16 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getLeftOperand(), environment);
-		Type rhsT = checkExpression(expr.getRightOperand(), environment);
+		Type lhsT = checkExpression(expr.getFirstOperand(), environment);
+		Type rhsT = checkExpression(expr.getSecondOperand(), environment);
 		checkIsSubtype(Type.Byte, lhsT, expr.getOperand(0));
 		checkIsSubtype(Type.Int, rhsT, expr.getOperand(1));
 		return Type.Byte;
 	}
 
 	private Type checkRecordAccess(Expr.RecordAccess expr, Environment env) {
-		Type src = checkExpression(expr.getSource(), env);
-		Type.Record effectiveRecord = checkIsRecordType(src, expr.getSource());
+		Type src = checkExpression(expr.getOperand(), env);
+		Type.Record effectiveRecord = checkIsRecordType(src, expr.getOperand());
 		//
 		Type type = effectiveRecord.getField(expr.getField());
 		if (type == null) {
@@ -1568,9 +1573,9 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment env) {
-		Type src = checkExpression(expr.getSource(), env);
-		Type val = checkExpression(expr.getValue(), env);
-		Type.Record effectiveRecord = checkIsRecordType(src, expr.getSource());
+		Type src = checkExpression(expr.getFirstOperand(), env);
+		Type val = checkExpression(expr.getSecondOperand(), env);
+		Type.Record effectiveRecord = checkIsRecordType(src, expr.getFirstOperand());
 		//
 		Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 		String actualFieldName = expr.getField().get();
@@ -1579,7 +1584,7 @@ public class FlowTypeCheck {
 			String declaredFieldName = vd.getName().get();
 			if (declaredFieldName.equals(actualFieldName)) {
 				// Matched the field type
-				checkIsSubtype(vd.getType(), val, expr.getValue());
+				checkIsSubtype(vd.getType(), val, expr.getSecondOperand());
 				return src;
 			}
 		}
@@ -1618,8 +1623,8 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkArrayGenerator(Expr.ArrayGenerator expr, Environment env) {
-		Expr value = expr.getValue();
-		Expr length = expr.getLength();
+		Expr value = expr.getFirstOperand();
+		Expr length = expr.getSecondOperand();
 		//
 		Type valueT = checkExpression(value, env);
 		Type lengthT = checkExpression(length, env);
@@ -1629,8 +1634,8 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkArrayAccess(Expr.ArrayAccess expr, Environment env) {
-		Expr source = expr.getSource();
-		Expr subscript = expr.getSubscript();
+		Expr source = expr.getFirstOperand();
+		Expr subscript = expr.getSecondOperand();
 		//
 		Type sourceT = checkExpression(source, env);
 		Type subscriptT = checkExpression(subscript, env);
@@ -1642,9 +1647,9 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkArrayUpdate(Expr.ArrayUpdate expr, Environment env) {
-		Expr source = expr.getSource();
-		Expr subscript = expr.getSubscript();
-		Expr value = expr.getValue();
+		Expr source = expr.getFirstOperand();
+		Expr subscript = expr.getSecondOperand();
+		Expr value = expr.getThirdOperand();
 		//
 		Type sourceT = checkExpression(source, env);
 		Type subscriptT = checkExpression(subscript, env);
