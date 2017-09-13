@@ -1,6 +1,8 @@
 package wyc.util;
 
 import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Decl;
+
 import static wyc.lang.WhileyFile.*;
 
 /**
@@ -35,6 +37,11 @@ public class SingleParameterVisitor<T> {
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
+	}
+
+	public void visitLambda(Decl.Lambda decl, T data) {
+		visitVariables(decl.getParameters(), data);
+		visitExpression(decl.getBody(), data);
 	}
 
 	public void visitVariables(Tuple<Decl.Variable> vars, T data) {
@@ -275,8 +282,14 @@ public class SingleParameterVisitor<T> {
 		case EXPR_constant:
 			visitConstant((Expr.Constant) expr, data);
 			break;
+		case EXPR_indirectinvoke:
+			visitIndirectInvoke((Expr.IndirectInvoke) expr, data);
+			break;
 		case EXPR_lread:
 			visitLambdaAccess((Expr.LambdaAccess) expr, data);
+			break;
+		case DECL_lambda:
+			visitLambda((Decl.Lambda) expr, data);
 			break;
 		case EXPR_staticvar:
 			visitStaticVariableAccess((Expr.StaticVariableAccess) expr, data);
@@ -324,25 +337,17 @@ public class SingleParameterVisitor<T> {
 		case EXPR_imul:
 		case EXPR_idiv:
 		case EXPR_irem:
+		case EXPR_invoke:
 		case EXPR_band:
 		case EXPR_bor:
 		case EXPR_bxor:
 		case EXPR_ainit:
+		case EXPR_rinit:
 			visitNaryOperator((Expr.NaryOperator) expr, data);
 			break;
 		// Ternary Operators
 		case EXPR_awrite:
 			visitTernaryOperator((Expr.TernaryOperator) expr, data);
-			break;
-		// Others
-		case EXPR_invoke:
-			visitInvoke((Expr.Invoke) expr, data);
-			break;
-		case EXPR_indirectinvoke:
-			visitIndirectInvoke((Expr.IndirectInvoke) expr, data);
-			break;
-		case EXPR_rinit:
-			visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -469,6 +474,9 @@ public class SingleParameterVisitor<T> {
 		case EXPR_irem:
 			visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
 			break;
+		case EXPR_invoke:
+			visitInvoke((Expr.Invoke) expr, data);
+			break;
 		case EXPR_land:
 			visitLogicalAnd((Expr.LogicalAnd) expr, data);
 			break;
@@ -486,6 +494,9 @@ public class SingleParameterVisitor<T> {
 			break;
 		case EXPR_neq:
 			visitNotEqual((Expr.NotEqual) expr, data);
+			break;
+		case EXPR_rinit:
+			visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");

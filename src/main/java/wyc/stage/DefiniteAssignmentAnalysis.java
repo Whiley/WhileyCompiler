@@ -10,20 +10,15 @@ import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyc.util.ErrorMessages.errorMessage;
 
 import wyc.lang.WhileyFile;
-import wycc.util.Triple;
-
-import static wybs.lang.SyntaxError.*;
-
+import wyc.util.SingleParameterReturnVisitor;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 import wybs.lang.SyntaxError;
 
 /**
  * <p>
- * Responsible for checking that all variables are defined before they are used.
- * The algorithm for checking this involves a depth-first search through the
+ * Responsible for visiting that all variables are defined before they are used.
+ * The algorithm for visiting this involves a depth-first search through the
  * control-flow graph of the method. Throughout this, a list of the defined
  * variables is maintained. For example:
  * </p>
@@ -43,45 +38,10 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  *
  */
-public class DefiniteAssignmentAnalysis {
-	/**
-	 * The whiley source file being checked for definite assignment.
-	 */
-	private final WhileyFile file;
+public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<DefiniteAssignmentAnalysis.DefinitelyAssignedSet,DefiniteAssignmentAnalysis.ControlFlow> {
 
-	public DefiniteAssignmentAnalysis(WhileyFile file) {
-		this.file = file;
-	}
-
-	public void check() {
-		for (WhileyFile.Decl d : file.getDeclarations()) {
-			check(d);
-		}
-	}
-
-	/**
-	 * Perform definite assignment analysis on a single declaration.
-	 *
-	 * @param declaration
-	 */
-	private void check(WhileyFile.Decl declaration) {
-		if(declaration instanceof Decl.Import) {
-			// There isn't anything to do here. This is because imports cannot
-			// use variables anyway.
-		} else if(declaration instanceof Decl.StaticVariable) {
-			// There isn't anything to do here. This is because constants cannot
-			// use variables anyway.
-		} else if(declaration instanceof Decl.Type) {
-			// There isn't anything to do here either. This is because variables
-			// used in type invariants are already checked by the
-			// FlowTypeChecker to ensure they are declared.
-		} else if(declaration instanceof Decl.FunctionOrMethod) {
-			check((Decl.FunctionOrMethod) declaration);
-		} else if(declaration instanceof Decl.Property) {
-			check((Decl.Property) declaration);
-		} else {
-			throw new InternalFailure("unknown declaration encountered",file.getEntry(),declaration);
-		}
+	public void check(WhileyFile wf) {
+		visitWhileyFile(wf, null);
 	}
 
 	/**
@@ -90,26 +50,23 @@ public class DefiniteAssignmentAnalysis {
 	 * @param declaration
 	 * @return
 	 */
-	private void check(Decl.FunctionOrMethod declaration) {
-		// Initialise set of definitely assigned variables to include all
-		// parameters.
-		DefintelyAssignedSet environment = new DefintelyAssignedSet();
-		for(Decl.Variable p : declaration.getParameters()) {
-			environment = environment.add(p.getName());
-		}
-		// Check the preconditions
-		checkExpressions(declaration.getRequires(),environment);
-		// Check the postconditions
+	@Override
+	public ControlFlow visitFunctionOrMethod(Decl.FunctionOrMethod declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
+		// Preconditions can only refer to parameters
+		visitExpressions(declaration.getRequires(),environment);
+		// Postconditions can refer to parameterts and returns
 		{
-			DefintelyAssignedSet postEnvironment = environment;
-			for(Decl.Variable p : declaration.getReturns()) {
-				postEnvironment = postEnvironment.add(p.getName());
-			}
-			checkExpressions(declaration.getEnsures(),postEnvironment);
+			DefinitelyAssignedSet postEnvironment = environment.addAll(declaration.getReturns());
+			visitExpressions(declaration.getEnsures(),postEnvironment);
 		}
 		// Iterate through each statement in the body of the function or method,
 		// updating the set of definitely assigned variables as appropriate.
-		checkBlock(declaration.getBody(),environment);
+		visitStatement(declaration.getBody(),environment);
+		//
+		return null;
 	}
 
 	/**
@@ -118,16 +75,48 @@ public class DefiniteAssignmentAnalysis {
 	 * @param declaration
 	 * @return
 	 */
-	private void check(Decl.Property declaration) {
-		// Initialise set of definitely assigned variables to include all
-		// parameters.
-		DefintelyAssignedSet defs = new DefintelyAssignedSet();
-		for(Decl.Variable p : declaration.getParameters()) {
-			defs = defs.add(p.getName());
-		}
+	@Override
+	public ControlFlow visitProperty(Decl.Property declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
 		// Iterate through each statement in the body of the function or method,
 		// updating the set of definitely assigned variables as appropriate.
-		checkExpressions(declaration.getInvariant(),defs);
+		visitExpressions(declaration.getInvariant(),environment);
+		//
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitStaticVariable(Decl.StaticVariable declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		//
+		if(declaration.hasInitialiser()) {
+			visitExpression(declaration.getInitialiser(), environment);
+		}
+		//
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitVariable(Decl.Variable decl, DefinitelyAssignedSet environment) {
+		//
+		if(decl.hasInitialiser()) {
+			visitExpression(decl.getInitialiser(), environment);
+			environment = environment.add(decl);
+		}
+		//
+		return new ControlFlow(environment,null);
+	}
+
+	@Override
+	public ControlFlow visitType(Decl.Type declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		//
+		environment = environment.add(declaration.getVariableDeclaration());
+		visitExpressions(declaration.getInvariant(), environment);
+		//
+		return null;
 	}
 
 	/**
@@ -137,154 +126,100 @@ public class DefiniteAssignmentAnalysis {
 	 * these statements.
 	 *
 	 * @param block
-	 *            The list of statements to check.
+	 *            The list of statements to visit.
 	 * @param environment
 	 *            The set of variables which are definitely assigned.
 	 */
-	private ControlFlow checkBlock(Stmt.Block block, DefintelyAssignedSet environment) {
-		DefintelyAssignedSet nextEnvironment = environment;
-		DefintelyAssignedSet breakEnvironment = null;
+	@Override
+	public ControlFlow visitBlock(Stmt.Block block, DefinitelyAssignedSet environment) {
+		DefinitelyAssignedSet nextEnvironment = environment;
+		DefinitelyAssignedSet breakEnvironment = null;
 		for(int i=0;i!=block.size();++i) {
 			Stmt s = block.get(i);
-			ControlFlow nf = checkStatement(s, nextEnvironment);
+			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
 		}
 		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
 
-	/**
-	 * Check that all variables used in a given statement are definitely
-	 * assigned. Furthermore, update the set of definitely assigned variables to
-	 * include any which are definitely assigned after this statement.
-	 *
-	 * @param statement
-	 *            The statement to check.
-	 * @param environment
-	 *            The set of variables which are definitely assigned.
-	 * @return The updated set of variables which are now definitely assigned,
-	 *         or null if the method has terminated.
-	 */
-	private ControlFlow checkStatement(Stmt statement, DefintelyAssignedSet environment) {
-		try {
-			if(statement instanceof Stmt.Assert) {
-				return checkAssert((Stmt.Assert) statement, environment);
-			} else if(statement instanceof Stmt.Assign) {
-				return checkAssign((Stmt.Assign) statement, environment);
-			} else if(statement instanceof Stmt.Assume) {
-				return checkAssume((Stmt.Assume) statement, environment);
-			} else if(statement instanceof Stmt.Break) {
-				return checkBreak((Stmt.Break) statement, environment);
-			} else if(statement instanceof Stmt.Continue) {
-				return checkContinue((Stmt.Continue) statement, environment);
-			} else if(statement instanceof Stmt.Debug) {
-				return checkDebug((Stmt.Debug) statement, environment);
-			} else if(statement instanceof Stmt.DoWhile) {
-				return checkDoWhile((Stmt.DoWhile) statement, environment);
-			} else if(statement instanceof Stmt.Fail) {
-				return check((Stmt.Fail) statement, environment);
-			} else if(statement instanceof Expr.Invoke) {
-				return checkFunctionOrMethodCall((Expr.Invoke) statement, environment);
-			} else if(statement instanceof Stmt.IfElse) {
-				return checkIfElse((Stmt.IfElse) statement, environment);
-			} else if(statement instanceof Expr.IndirectInvoke) {
-				return checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) statement, environment);
-			} else if(statement instanceof Stmt.NamedBlock) {
-				return checkNamedBlock((Stmt.NamedBlock) statement, environment);
-			} else if(statement instanceof Stmt.Return) {
-				return checkReturn((Stmt.Return) statement, environment);
-			} else if(statement instanceof Stmt.Skip) {
-				return checkSkip((Stmt.Skip) statement, environment);
-			} else if(statement instanceof Stmt.Switch) {
-				return checkSwitch((Stmt.Switch) statement, environment);
-			} else if(statement instanceof Decl.Variable) {
-				return checkVariableDeclaration((Decl.Variable) statement, environment);
-			} else if(statement instanceof Stmt.While) {
-				return checkWhile((Stmt.While) statement, environment);
-			} else {
-				throw new InternalFailure("unknown statement encountered",file.getEntry(),statement);
-			}
-		} catch(SyntaxError e) {
-			throw e;
-		} catch(Throwable t) {
-			throw new InternalFailure(t.getMessage(),file.getEntry(),statement,t);
-		}
-	}
-
-	private ControlFlow checkAssert(Stmt.Assert stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getCondition(), environment);
+	@Override
+	public ControlFlow visitAssert(Stmt.Assert stmt, DefinitelyAssignedSet environment) {
+		visitExpression(stmt.getCondition(), environment);
 		return new ControlFlow(environment,null);
 	}
 
-	private ControlFlow checkAssign(Stmt.Assign stmt, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitAssign(Stmt.Assign stmt, DefinitelyAssignedSet environment) {
 		// left-hand side
 		for (Expr lval : stmt.getLeftHandSide()) {
 			if (lval instanceof Expr.VariableAccess) {
-				// Skip local variables since they are being assigned
+				// Skip local variables since they are being assigned and, otherwise, could
+				// raise an error.
 			} else {
-				checkExpression(lval, environment);
+				visitExpression(lval, environment);
 			}
 		}
 		// right-hand side
-		for (Expr rval : stmt.getRightHandSide()) {
-			checkExpression(rval, environment);
-		}
-		// Update the environment as necessary
+		visitExpressions(stmt.getRightHandSide(), environment);
+		// Update environment as necessary
 		for (Expr lval : stmt.getLeftHandSide()) {
 			if (lval instanceof Expr.VariableAccess) {
 				Expr.VariableAccess lv = (Expr.VariableAccess) lval;
-				environment = environment.add(lv.getVariableDeclaration().getName());
+				environment = environment.add(lv.getVariableDeclaration());
 			}
 		}
 		//
 		return new ControlFlow(environment, null);
 	}
 
-	private ControlFlow checkAssume(Stmt.Assume stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getCondition(), environment);
+	@Override
+	public ControlFlow visitAssume(Stmt.Assume stmt, DefinitelyAssignedSet environment) {
+		visitExpression(stmt.getCondition(), environment);
 		return new ControlFlow(environment,null);
 	}
 
-	private ControlFlow checkBreak(Stmt.Break stmt, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitBreak(Stmt.Break stmt, DefinitelyAssignedSet environment) {
 		return new ControlFlow(null,environment);
 	}
 
-	private ControlFlow checkContinue(Stmt.Continue stmt, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitContinue(Stmt.Continue stmt, DefinitelyAssignedSet environment) {
 		// Here we can just treat a continue in the same way as a return
 		// statement. It makes no real difference.
 		return new ControlFlow(null,null);
 	}
 
-	private ControlFlow checkDebug(Stmt.Debug stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getOperand(), environment);
+	@Override
+	public ControlFlow visitDebug(Stmt.Debug stmt, DefinitelyAssignedSet environment) {
+		visitExpression(stmt.getOperand(), environment);
 		return new ControlFlow(environment,null);
 	}
 
-	private ControlFlow checkDoWhile(Stmt.DoWhile stmt, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitDoWhile(Stmt.DoWhile stmt, DefinitelyAssignedSet environment) {
 		//
-		ControlFlow flow = checkBlock(stmt.getBody(), environment);
+		ControlFlow flow = visitBlock(stmt.getBody(), environment);
 		//
-		checkExpression(stmt.getCondition(), flow.nextEnvironment);
-		//
-		for(Expr e : stmt.getInvariant()) {
-			checkExpression(e,flow.nextEnvironment);
-		}
-		//
+		visitExpression(stmt.getCondition(), flow.nextEnvironment);
+		visitExpressions(stmt.getInvariant(), flow.nextEnvironment);
 		environment = join(flow.nextEnvironment,flow.breakEnvironment);
 		//
 		return new ControlFlow(environment,null);
 	}
 
-	private ControlFlow check(Stmt.Fail stmt, DefintelyAssignedSet environment) {
+	public ControlFlow visit(Stmt.Fail stmt, DefinitelyAssignedSet environment) {
 		return new ControlFlow(null,null);
 	}
 
-	private ControlFlow checkIfElse(Stmt.IfElse stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getCondition(), environment);
+	@Override
+	public ControlFlow visitIfElse(Stmt.IfElse stmt, DefinitelyAssignedSet environment) {
+		visitExpression(stmt.getCondition(), environment);
 		//
-		ControlFlow left = checkBlock(stmt.getTrueBranch(), environment);
+		ControlFlow left = visitBlock(stmt.getTrueBranch(), environment);
 		if(stmt.hasFalseBranch()) {
-			ControlFlow right = checkBlock(stmt.getFalseBranch(), environment);
+			ControlFlow right = visitBlock(stmt.getFalseBranch(), environment);
 			// Now, merge all generated control-flow paths together
 			return left.merge(right);
 		} else {
@@ -292,30 +227,32 @@ public class DefiniteAssignmentAnalysis {
 		}
 	}
 
-	private ControlFlow checkNamedBlock(Stmt.NamedBlock stmt, DefintelyAssignedSet environment) {
-		return checkBlock(stmt.getBlock(),environment);
+	@Override
+	public ControlFlow visitNamedBlock(Stmt.NamedBlock stmt, DefinitelyAssignedSet environment) {
+		return visitBlock(stmt.getBlock(),environment);
 	}
 
-	private ControlFlow checkReturn(Stmt.Return stmt, DefintelyAssignedSet environment) {
-		for(Expr e : stmt.getReturns()) {
-			checkExpression(e, environment);
-		}
+	@Override
+	public ControlFlow visitReturn(Stmt.Return stmt, DefinitelyAssignedSet environment) {
+		visitExpressions(stmt.getReturns(), environment);
 		return new ControlFlow(null,null);
 	}
 
-	private ControlFlow checkSkip(Stmt.Skip stmt, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitSkip(Stmt.Skip stmt, DefinitelyAssignedSet environment) {
 		return new ControlFlow(environment,null);
 	}
 
-	private ControlFlow checkSwitch(Stmt.Switch stmt, DefintelyAssignedSet environment) {
-		DefintelyAssignedSet caseEnvironment = null;
-		DefintelyAssignedSet breakEnvironment = null;
+	@Override
+	public ControlFlow visitSwitch(Stmt.Switch stmt, DefinitelyAssignedSet environment) {
+		DefinitelyAssignedSet caseEnvironment = null;
+		DefinitelyAssignedSet breakEnvironment = null;
 
-		checkExpression(stmt.getCondition(), environment);
+		visitExpression(stmt.getCondition(), environment);
 		//
 		boolean hasDefault = false;
 		for(Stmt.Case c : stmt.getCases()) {
-			ControlFlow cf = checkBlock(c.getBlock(), environment);
+			ControlFlow cf = visitBlock(c.getBlock(), environment);
 			caseEnvironment = join(caseEnvironment,cf.nextEnvironment);
 			breakEnvironment = join(breakEnvironment,cf.breakEnvironment);
 			if(c.getConditions().size() == 0) {
@@ -335,202 +272,90 @@ public class DefiniteAssignmentAnalysis {
 		return new ControlFlow(environment,breakEnvironment);
 	}
 
-	private ControlFlow checkVariableDeclaration(Decl.Variable stmt, DefintelyAssignedSet environment) {
-		if (stmt.hasInitialiser()) {
-			checkExpression(stmt.getInitialiser(), environment);
-			environment = environment.add(stmt.getName());
-		}
-		return new ControlFlow(environment,null);
-	}
-
-	private ControlFlow checkWhile(Stmt.While stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getCondition(), environment);
-		//
-		for(Expr e : stmt.getInvariant()) {
-			checkExpression(e,environment);
-		}
-		//
-		checkBlock(stmt.getBody(), environment);
+	@Override
+	public ControlFlow visitWhile(Stmt.While stmt, DefinitelyAssignedSet environment) {
+		visitExpression(stmt.getCondition(), environment);
+		visitExpressions(stmt.getInvariant(), environment);
+		visitBlock(stmt.getBody(), environment);
 		//
 		return new ControlFlow(environment,null);
 	}
 
-	private void checkExpressions(Tuple<Expr> expressions, DefintelyAssignedSet environment) {
-		for(Expr e : expressions) {
-			checkExpression(e,environment);
-		}
-	}
-
-	/**
-	 * Check that all variables used in a given expression are definitely
-	 * assigned.
-	 *
-	 * @param expr
-	 *            The expression to check.
-	 * @param environment
-	 *            The set of variables which are definitely assigned.
-	 */
-	private void checkExpression(Expr expression, DefintelyAssignedSet environment) {
-		try {
-			if(expression instanceof Expr.BinaryOperator) {
-				checkBinaryOperator((Expr.BinaryOperator) expression, environment);
-			} else if(expression instanceof Expr.Cast) {
-				checkCast((Expr.Cast) expression, environment);
-			} else if(expression instanceof Expr.Constant) {
-				checkConstant((Expr.Constant) expression, environment);
-			} else if(expression instanceof Expr.StaticVariableAccess) {
-				checkConstantAccess((Expr.StaticVariableAccess) expression, environment);
-			} else if(expression instanceof Expr.Dereference) {
-				checkDereference((Expr.Dereference) expression, environment);
-			} else if(expression instanceof Expr.RecordAccess) {
-				checkFieldAccess((Expr.RecordAccess) expression, environment);
-			} else if(expression instanceof Expr.LambdaAccess) {
-				checkFunctionOrMethod((Expr.LambdaAccess) expression, environment);
-			} else if(expression instanceof Expr.Invoke) {
-				checkFunctionOrMethodCall((Expr.Invoke) expression, environment);
-			} else if(expression instanceof Expr.IndirectInvoke) {
-				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, environment);
-			} else if(expression instanceof Expr.Is) {
-				checkIs((Expr.Is) expression, environment);
-			} else if(expression instanceof Decl.Lambda) {
-				checkLambda((Decl.Lambda) expression, environment);
-			} else if(expression instanceof Expr.VariableAccess) {
-				checkLocalVariable((Expr.VariableAccess) expression, environment);
-			} else if(expression instanceof Expr.NaryOperator) {
-				checkNaryOperator((Expr.NaryOperator) expression, environment);
-			} else if(expression instanceof Expr.New) {
-				checkNew((Expr.New) expression, environment);
-			} else if(expression instanceof Expr.Quantifier) {
-				checkQuantifier((Expr.Quantifier) expression, environment);
-			} else if(expression instanceof Expr.RecordInitialiser) {
-				checkRecord((Expr.RecordInitialiser) expression, environment);
-			} else if(expression instanceof Expr.UnaryOperator) {
-				checkUnaryOperator((Expr.UnaryOperator) expression, environment);
-			} else {
-				throw new InternalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",file.getEntry(),expression);
-			}
-		} catch(SyntaxError e) {
-			throw e;
-		} catch(Throwable t) {
-			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
-		}
-	}
-
-	private void checkBinaryOperator(Expr.BinaryOperator expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getFirstOperand(),environment);
-		checkExpression(expression.getSecondOperand(),environment);
-	}
-
-	private void checkCast(Expr.Cast expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private void checkConstant(Expr.Constant expression, DefintelyAssignedSet environment) {
-
-	}
-
-	private void checkConstantAccess(Expr.StaticVariableAccess expression, DefintelyAssignedSet environment) {
-
-	}
-
-	private void checkDereference(Expr.Dereference expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private void checkFieldAccess(Expr.RecordAccess expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private void checkFunctionOrMethod(Expr.LambdaAccess expression, DefintelyAssignedSet environment) {
-
-	}
-
-	private ControlFlow checkFunctionOrMethodCall(Expr.Invoke expression, DefintelyAssignedSet environment) {
-		for(Expr p : expression.getOperands()) {
-			checkExpression(p,environment);
-		}
-		return new ControlFlow(environment,null);
-	}
-
-	private ControlFlow checkIndirectFunctionOrMethodCall(Expr.IndirectInvoke expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getSource(),environment);
-		for(Expr p : expression.getArguments()) {
-			checkExpression(p,environment);
-		}
-		return new ControlFlow(environment,null);
-	}
-
-	private void checkIs(Expr.Is expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private void checkLambda(Decl.Lambda expression, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitLambda(Decl.Lambda expression, DefinitelyAssignedSet environment) {
 		// Add lambda parameters to the set of definitely assigned variables.
-		for(Decl.Variable p : expression.getParameters()) {
-			environment = environment.add(p.getName());
-		}
+		environment = environment.addAll(expression.getParameters());
 		// Check body of the lambda
-		checkExpression(expression.getBody(),environment);
+		visitExpression(expression.getBody(),environment);
+		//
+		return null;
 	}
 
-	private void checkLocalVariable(Expr.VariableAccess expression, DefintelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitUniversalQuantifier(Expr.UniversalQuantifier expression, DefinitelyAssignedSet environment) {
+		Tuple<Decl.Variable> parameters = expression.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			Decl.Variable var = parameters.get(i);
+			if(var.hasInitialiser()) {
+				visitExpression(var.getInitialiser(), environment);
+			}
+			environment = environment.add(var);
+		}
+		visitExpression(expression.getOperand(), environment);
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitExistentialQuantifier(Expr.ExistentialQuantifier expression, DefinitelyAssignedSet environment) {
+		Tuple<Decl.Variable> parameters = expression.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			Decl.Variable var = parameters.get(i);
+			if(var.hasInitialiser()) {
+				visitExpression(var.getInitialiser(), environment);
+			}
+			environment = environment.add(var);
+		}
+		visitExpression(expression.getOperand(), environment);
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd.getName())) {
+			WhileyFile file = ((WhileyFile) expression.getHeap());
 			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
+		return null;
 	}
 
-	private void checkNew(Expr.New expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
+	@Override
+	public ControlFlow visitType(Type type, DefinitelyAssignedSet environment) {
+		// No need to visit types, as these cannot cause definite assignment errors.
+		return null;
 	}
 
-	private void checkNaryOperator(Expr.NaryOperator expression, DefintelyAssignedSet environment) {
-		Tuple<Expr> operands = expression.getOperands();
-		for(int i=0;i!=operands.size();++i) {
-			checkExpression(operands.get(i),environment);
-		}
-	}
-
-	private void checkQuantifier(Expr.Quantifier expression, DefintelyAssignedSet environment) {
-		for(Decl.Variable p : expression.getParameters()) {
-			checkExpression(p.getInitialiser(),environment);
-			environment = environment.add(p.getName());
-		}
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {
-		Tuple<Expr> operands = expression.getOperands();
-		for(int i=0;i!=operands.size();++i) {
-			checkExpression(operands.get(i),environment);
-		}
-	}
-
-	private void checkUnaryOperator(Expr.UnaryOperator expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
-	}
-
-	private class ControlFlow {
+	public class ControlFlow {
 		/**
 		 * The set of definitely assigned variables on this path which fall
 		 * through to the next logical statement.
 		 */
-		public final DefintelyAssignedSet nextEnvironment;
+		public final DefinitelyAssignedSet nextEnvironment;
 
 		/**
 		 * The set of definitely assigned variables on this path which are on
 		 * the control-flow path caused by a break statement.
 		 */
-		public final DefintelyAssignedSet breakEnvironment;
+		public final DefinitelyAssignedSet breakEnvironment;
 
-		public ControlFlow(DefintelyAssignedSet nextEnvironment, DefintelyAssignedSet breakEnvironment) {
+		public ControlFlow(DefinitelyAssignedSet nextEnvironment, DefinitelyAssignedSet breakEnvironment) {
 			this.nextEnvironment = nextEnvironment;
 			this.breakEnvironment = breakEnvironment;
 		}
 
 		public ControlFlow merge(ControlFlow other) {
-			DefintelyAssignedSet n = join(nextEnvironment,other.nextEnvironment);
-			DefintelyAssignedSet b = join(breakEnvironment,other.breakEnvironment);
+			DefinitelyAssignedSet n = join(nextEnvironment,other.nextEnvironment);
+			DefinitelyAssignedSet b = join(breakEnvironment,other.breakEnvironment);
 			return new ControlFlow(n,b);
 		}
 	}
@@ -544,7 +369,7 @@ public class DefiniteAssignmentAnalysis {
 	 * @param right
 	 * @return
 	 */
-	private static DefintelyAssignedSet join(DefintelyAssignedSet left, DefintelyAssignedSet right) {
+	public static DefinitelyAssignedSet join(DefinitelyAssignedSet left, DefinitelyAssignedSet right) {
 		if(left == null && right == null) {
 			return null;
 		} else if(left == null) {
@@ -563,14 +388,14 @@ public class DefiniteAssignmentAnalysis {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class DefintelyAssignedSet {
+	public class DefinitelyAssignedSet {
 		private HashSet<Identifier> variables;
 
-		public DefintelyAssignedSet() {
+		public DefinitelyAssignedSet() {
 			this.variables = new HashSet<>();
 		}
 
-		public DefintelyAssignedSet(DefintelyAssignedSet defs) {
+		public DefinitelyAssignedSet(DefinitelyAssignedSet defs) {
 			this.variables = new HashSet<>(defs.variables);
 		}
 
@@ -585,22 +410,24 @@ public class DefiniteAssignmentAnalysis {
 		 * @param var
 		 * @return
 		 */
-		public DefintelyAssignedSet add(Identifier var) {
-			DefintelyAssignedSet r = new DefintelyAssignedSet(this);
-			r.variables.add(var);
+		public DefinitelyAssignedSet add(Decl.Variable var) {
+			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
+			r.variables.add(var.getName());
 			return r;
 		}
 
 		/**
-		 * Remove a variable from the set of definitely assigned variables, producing
+		 * Add a variable to the set of definitely assigned variables, producing
 		 * an updated set.
 		 *
 		 * @param var
 		 * @return
 		 */
-		public DefintelyAssignedSet remove(Identifier var) {
-			DefintelyAssignedSet r = new DefintelyAssignedSet(this);
-			r.variables.remove(var);
+		public DefinitelyAssignedSet addAll(Tuple<Decl.Variable> vars) {
+			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
+			for(int i=0;i!=vars.size();++i) {
+				r.variables.add(vars.get(i).getName());
+			}
 			return r;
 		}
 
@@ -611,8 +438,8 @@ public class DefiniteAssignmentAnalysis {
 		 * @param other
 		 * @return
 		 */
-		public DefintelyAssignedSet join(DefintelyAssignedSet other) {
-			DefintelyAssignedSet r = new DefintelyAssignedSet();
+		public DefinitelyAssignedSet join(DefinitelyAssignedSet other) {
+			DefinitelyAssignedSet r = new DefinitelyAssignedSet();
 			for (Identifier var : variables) {
 				if (other.contains(var)) {
 					r.variables.add(var);
