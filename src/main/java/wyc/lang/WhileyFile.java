@@ -16,11 +16,6 @@ import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Pair;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.io.WyilFileReader;
@@ -322,12 +317,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl> getDeclarations() {
-				return (Tuple<Decl>) getOperand(1);
+				return (Tuple<Decl>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -362,13 +357,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Identifier getOperand(int i) {
-				return (Identifier) super.getOperand(i);
+			public Identifier get(int i) {
+				return (Identifier) super.get(i);
 			}
 
 			@Override
-			public Identifier[] getOperands() {
-				return (Identifier[]) super.getOperands();
+			public Identifier[] getAll() {
+				return (Identifier[]) super.getAll();
 			}
 
 			@Override
@@ -383,7 +378,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += ".";
 					}
-					Identifier component = getOperand(i);
+					Identifier component = get(i);
 					if (component == null) {
 						r += "*";
 					} else {
@@ -408,17 +403,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Modifier> getModifiers() {
-				return (Tuple<Modifier>) super.getOperand(0);
+				return (Tuple<Modifier>) super.get(0);
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.getOperand(1);
+				return (Identifier) super.get(1);
 			}
 
 			public Name getQualifiedName() {
 				Module module = getAncestor(Decl.Module.class);
 				Name name = module.getName();
-				Identifier[] idents = name.getOperands();
+				Identifier[] idents = name.getAll();
 				idents = Arrays.copyOf(idents, idents.length + 1);
 				idents[name.size()] = getName();
 				return new Name(idents);
@@ -495,12 +490,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) getOperand(2);
+				return (Tuple<Decl.Variable>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getReturns() {
-				return (Tuple<Decl.Variable>) getOperand(3);
+				return (Tuple<Decl.Variable>) get(3);
 			}
 
 			@Override
@@ -518,16 +513,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRequires() {
-				return (Tuple<Expr>) getOperand(4);
+				return (Tuple<Expr>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getEnsures() {
-				return (Tuple<Expr>) getOperand(5);
+				return (Tuple<Expr>) get(5);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) getOperand(6);
+				return (Stmt.Block) get(6);
 			}
 		}
 
@@ -632,7 +627,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(7);
+				return (Tuple<Identifier>) get(7);
 			}
 
 			@Override
@@ -682,7 +677,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) getOperand(4);
+				return (Tuple<Expr>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -703,16 +698,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCaptures() {
-				return (Tuple<Identifier>) getOperand(4);
+				return (Tuple<Identifier>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(5);
+				return (Tuple<Identifier>) get(5);
 			}
 
 			public Expr getBody() {
-				return (Expr) getOperand(6);
+				return (Expr) get(6);
 			}
 
 			@Override
@@ -763,12 +758,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) getOperand(2);
+				return (Decl.Variable) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) getOperand(3);
+				return (Tuple<Expr>) get(3);
 			}
 
 			@Override
@@ -832,11 +827,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public WhileyFile.Type getType() {
-				return (WhileyFile.Type) getOperand(2);
+				return (WhileyFile.Type) get(2);
 			}
 
 			public Expr getInitialiser() {
-				return (Expr) getOperand(3);
+				return (Expr) get(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -912,8 +907,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Stmt getOperand(int i) {
-				return (Stmt) super.getOperand(i);
+			public Stmt get(int i) {
+				return (Stmt) super.get(i);
 			}
 
 			@Override
@@ -944,11 +939,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.getOperand(0);
+				return (Identifier) super.get(0);
 			}
 
 			public Block getBlock() {
-				return (Block) super.getOperand(1);
+				return (Block) super.get(1);
 			}
 
 			@Override
@@ -981,7 +976,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1018,12 +1013,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<LVal> getLeftHandSide() {
-				return (Tuple<LVal>) super.getOperand(0);
+				return (Tuple<LVal>) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRightHandSide() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1057,7 +1052,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1072,7 +1067,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getOperand() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1142,16 +1137,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			public Tuple<Expr.VariableAccess> getModified() {
@@ -1218,15 +1213,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			public Stmt.Block getTrueBranch() {
-				return (Stmt.Block) super.getOperand(1);
+				return (Stmt.Block) super.get(1);
 			}
 
 			public Stmt.Block getFalseBranch() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1271,7 +1266,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getReturns() {
-				return (Tuple<Expr>) super.getOperand(0);
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1286,12 +1281,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) getOperand(0);
+				return (Expr) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Case> getCases() {
-				return (Tuple<Case>) getOperand(1);
+				return (Tuple<Case>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1313,11 +1308,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getConditions() {
-				return (Tuple<Expr>) getOperand(0);
+				return (Tuple<Expr>) get(0);
 			}
 
 			public Stmt.Block getBlock() {
-				return (Stmt.Block) getOperand(1);
+				return (Stmt.Block) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1360,16 +1355,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			public Tuple<Expr.VariableAccess> getModified() {
@@ -1453,7 +1448,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public interface NaryOperator extends Expr {
-			public Tuple<Expr> getArguments();
+			public Tuple<Expr> getOperands();
 		}
 
 		/**
@@ -1471,12 +1466,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			@Override
@@ -1504,11 +1499,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Value getValue() {
-				return (Value) getOperand(1);
+				return (Value) get(1);
 			}
 
 			@Override
@@ -1529,11 +1524,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(1);
+				return (Name) get(1);
 			}
 
 			@Override
@@ -1567,11 +1562,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) getOperand(0);
+				return (Expr) get(0);
 			}
 
 			public Type getTestType() {
-				return (Type) getOperand(1);
+				return (Type) get(1);
 			}
 
 			@Override
@@ -1609,26 +1604,26 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				if (returns.size() != 1) {
 					throw new IllegalArgumentException();
 				}
-				return returns.getOperand(0);
+				return returns.get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(1);
+				return (Tuple<Identifier>) get(1);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) getOperand(2);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) get(2);
 			}
 
 			public Type.Callable getSignature() {
-				return (Type.Callable) getOperand(3);
+				return (Type.Callable) get(3);
 			}
 
 			public void setSignature(Type.Callable declaration) {
@@ -1645,7 +1640,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = getName().toString();
-				r += getArguments();
+				r += getOperands();
 				return r;
 			}
 		}
@@ -1666,21 +1661,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Expr getSource() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(2);
+				return (Tuple<Identifier>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) getOperand(3);
+				return (Tuple<Expr>) get(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1724,12 +1719,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) getOperand(0);
+				return (Tuple<Decl.Variable>) get(0);
 			}
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			@Override
@@ -1820,11 +1815,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) getOperand(1);
+				return (Decl.Variable) get(1);
 			}
 
 			@Override
@@ -1860,8 +1855,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1894,8 +1889,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1928,8 +1923,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1962,8 +1957,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1996,7 +1991,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) getOperand(0);
+				return (Expr) get(0);
 			}
 
 			@Override
@@ -2027,8 +2022,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2061,8 +2056,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2095,8 +2090,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2129,8 +2124,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2163,8 +2158,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2197,8 +2192,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(0);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -2231,12 +2226,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2265,12 +2260,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2299,12 +2294,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2333,12 +2328,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2367,12 +2362,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2400,12 +2395,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			@Override
@@ -2438,7 +2433,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2447,7 +2442,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			/**
@@ -2456,7 +2451,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.getOperand(2);
+				return (Expr) super.get(2);
 			}
 
 			@Override
@@ -2485,7 +2480,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2494,7 +2489,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			/**
@@ -2503,7 +2498,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.getOperand(2);
+				return (Expr) super.get(2);
 			}
 
 			@Override
@@ -2531,12 +2526,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2564,12 +2559,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2597,12 +2592,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2630,7 +2625,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2639,7 +2634,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			@Override
@@ -2658,7 +2653,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2667,7 +2662,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			@Override
@@ -2688,7 +2683,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2697,11 +2692,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) super.getOperand(2);
+				return (Identifier) super.get(2);
 			}
 
 			@Override
@@ -2730,20 +2725,20 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				if (returns.size() != 1) {
 					throw new IllegalArgumentException();
 				}
-				return returns.getOperand(0);
+				return returns.get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameterTypes() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			public Type.Callable getSignature() {
-				return (Type.Callable) getOperand(2);
+				return (Type.Callable) get(2);
 			}
 
 			public void setSignature(Type.Callable descriptor) {
@@ -2777,7 +2772,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			/**
@@ -2786,7 +2781,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			/**
@@ -2795,7 +2790,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) getOperand(2);
+				return (Expr) get(2);
 			}
 
 			@Override
@@ -2828,7 +2823,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2837,7 +2832,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			/**
@@ -2846,7 +2841,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) getOperand(2);
+				return (Expr) get(2);
 			}
 
 			/**
@@ -2855,7 +2850,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getThirdOperand() {
-				return (Expr) getOperand(3);
+				return (Expr) get(3);
 			}
 
 			@Override
@@ -2885,12 +2880,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(1);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
@@ -2921,7 +2916,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2930,7 +2925,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			/**
@@ -2939,7 +2934,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) getOperand(2);
+				return (Expr) get(2);
 			}
 
 			@Override
@@ -2964,7 +2959,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -2973,7 +2968,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			/**
@@ -2982,7 +2977,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.getOperand(2);
+				return (Expr) super.get(2);
 			}
 
 			@Override
@@ -3006,12 +3001,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.get(1);
 			}
 
 			@Override
@@ -3044,7 +3039,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -3053,7 +3048,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			/**
@@ -3061,7 +3056,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 * <code>e.f/code>.
 			 */
 			public Identifier getField() {
-				return (Identifier) getOperand(2);
+				return (Identifier) get(2);
 			}
 
 			@Override
@@ -3093,16 +3088,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			public Tuple<Identifier> getFields() {
-				return (Tuple<Identifier>) super.getOperand(1);
+				return (Tuple<Identifier>) super.get(1);
 			}
 
 			@Override
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) super.getOperand(2);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3130,7 +3125,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.getOperand(0);
+				return (Type) super.get(0);
 			}
 
 			/**
@@ -3139,7 +3134,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) getOperand(1);
+				return (Expr) get(1);
 			}
 
 			/**
@@ -3147,7 +3142,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 * <code>e[f:=v]/code>.
 			 */
 			public Identifier getField() {
-				return (Identifier) getOperand(2);
+				return (Identifier) get(2);
 			}
 
 			/**
@@ -3156,7 +3151,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) getOperand(3);
+				return (Expr) get(3);
 			}
 
 			@Override
@@ -3376,7 +3371,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			@Override
@@ -3417,11 +3412,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) getOperand(1);
+				return (Identifier) get(1);
 			}
 
 			@Override
@@ -3471,19 +3466,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public boolean isOpen() {
-				Value.Bool flag = (Value.Bool) getOperand(0);
+				Value.Bool flag = (Value.Bool) get(0);
 				return flag.get();
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getFields() {
-				return (Tuple<Decl.Variable>) getOperand(1);
+				return (Tuple<Decl.Variable>) get(1);
 			}
 
 			public Type getField(Identifier fieldName) {
 				Tuple<Decl.Variable> fields = getFields();
 				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.get(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(fieldName)) {
 						return vd.getType();
@@ -3505,7 +3500,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += ",";
 					}
-					Decl.Variable field = fields.getOperand(i);
+					Decl.Variable field = fields.get(i);
 					r += field.getType() + " " + field.getName();
 				}
 				if (isOpen()) {
@@ -3539,7 +3534,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			public void setName(Name name) {
@@ -3576,7 +3571,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			@Override
@@ -3596,13 +3591,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type getOperand(int i) {
-				return (Type) super.getOperand(i);
+			public Type get(int i) {
+				return (Type) super.get(i);
 			}
 
 			@Override
-			public Type[] getOperands() {
-				return (Type[]) super.getOperands();
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
 			}
 		}
 
@@ -3642,7 +3637,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += getOperand(i);
+					r += get(i);
 				}
 				return "(" + r + ")";
 			}
@@ -3684,7 +3679,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "&";
 					}
-					r += getOperand(i);
+					r += get(i);
 				}
 				return "(" + r + ")";
 			}
@@ -3713,13 +3708,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@Override
@@ -3748,23 +3743,23 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCapturedLifetimes() {
-				return (Tuple<Identifier>) getOperand(2);
+				return (Tuple<Identifier>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimeParameters() {
-				return (Tuple<Identifier>) getOperand(3);
+				return (Tuple<Identifier>) get(3);
 			}
 
 			@Override
@@ -3800,13 +3795,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")

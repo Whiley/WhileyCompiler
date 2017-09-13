@@ -268,7 +268,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkBlock(Stmt.Block block, Environment environment, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.getOperand(i);
+			Stmt stmt = block.get(i);
 			environment = checkStatement(stmt, environment, scope);
 		}
 		return environment;
@@ -439,7 +439,7 @@ public class FlowTypeCheck {
 		// For each value produced, check that the variable being assigned
 		// matches the value produced.
 		for (int i = 0; i != rvals.size(); ++i) {
-			Type lval = checkLVal(lvals.getOperand(i), environment);
+			Type lval = checkLVal(lvals.get(i), environment);
 			Pair<Expr, Type> rval = rvals.get(i);
 			// FIXME: need to handle writable versus readable types. The problem
 			// is that checkExpression will return the readable type, not the
@@ -627,7 +627,7 @@ public class FlowTypeCheck {
 		// function/method. Now, check they have appropriate types.
 		for (int i = 0; i != types.size(); ++i) {
 			Pair<Expr, Type> p = returns.get(i);
-			Type t = types.getOperand(i);
+			Type t = types.get(i);
 			checkIsSubtype(t, p.getSecond(), p.getFirst());
 		}
 		// Return bottom as following environment to signal that control-flow
@@ -972,19 +972,19 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Environment checkLogicalDisjunction(Expr.LogicalOr expr, boolean sign, Environment environment) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		if (sign) {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
+				refinements[i] = checkCondition(operands.get(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.getOperand(i), !sign, environment);
+				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
 			return union(refinements);
 		} else {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.getOperand(i), sign, environment);
+				environment = checkCondition(operands.get(i), sign, environment);
 			}
 			return environment;
 		}
@@ -1011,18 +1011,18 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Environment checkLogicalConjunction(Expr.LogicalAnd expr, boolean sign, Environment environment) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		if (sign) {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.getOperand(i), sign, environment);
+				environment = checkCondition(operands.get(i), sign, environment);
 			}
 			return environment;
 		} else {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
+				refinements[i] = checkCondition(operands.get(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.getOperand(i), !sign, environment);
+				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
 			return union(refinements);
@@ -1031,32 +1031,32 @@ public class FlowTypeCheck {
 
 	private Environment checkLogicalImplication(Expr.LogicalImplication expr, boolean sign, Environment environment) {
 		// To understand this, remember that A ==> B is equivalent to !A || B.
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		if(operands.size() != 2) {
 			// FIXME: this is just a temporary hack for now.
 			throw new IllegalArgumentException("cannot currently support implication with > 2 arguments");
 		}
 		if (sign) {
 			// First case assumes the if body doesn't hold.
-			Environment left = checkCondition(operands.getOperand(0), false, environment);
+			Environment left = checkCondition(operands.get(0), false, environment);
 			// Second case assumes the if body holds ...
-			environment = checkCondition(operands.getOperand(0), true, environment);
+			environment = checkCondition(operands.get(0), true, environment);
 			// ... and then passes this into the then body
-			Environment right = checkCondition(operands.getOperand(1), true, environment);
+			Environment right = checkCondition(operands.get(1), true, environment);
 			//
 			return union(left, right);
 		} else {
 			// Effectively, this is a conjunction equivalent to A && !B
-			environment = checkCondition(operands.getOperand(0), true, environment);
-			environment = checkCondition(operands.getOperand(1), false, environment);
+			environment = checkCondition(operands.get(0), true, environment);
+			environment = checkCondition(operands.get(1), false, environment);
 			return environment;
 		}
 	}
 
 	private Environment checkLogicalIff(Expr.LogicalIff expr, boolean sign, Environment environment) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			environment = checkCondition(operands.getOperand(i), sign, environment);
+			environment = checkCondition(operands.get(i), sign, environment);
 		}
 		return environment;
 	}
@@ -1278,7 +1278,7 @@ public class FlowTypeCheck {
 		for (Expr expression : expressions) {
 			Tuple<Type> types = checkMultiExpression(expression, environment);
 			for (int i = 0; i != types.size(); ++i) {
-				rs.add(new Pair<>(expression, types.getOperand(i)));
+				rs.add(new Pair<>(expression, types.get(i)));
 			}
 		}
 		return rs;
@@ -1322,7 +1322,7 @@ public class FlowTypeCheck {
 			} else if (types.size() > 1) {
 				syntaxError("too many return values", expression);
 			} else {
-				return types.getOperand(0);
+				return types.get(0);
 			}
 		}
 		case EXPR_indirectinvoke: {
@@ -1333,7 +1333,7 @@ public class FlowTypeCheck {
 			} else if (types.size() > 1) {
 				syntaxError("too many return values", expression);
 			} else {
-				return types.getOperand(0);
+				return types.get(0);
 			}
 		}
 		// Conditions
@@ -1468,10 +1468,10 @@ public class FlowTypeCheck {
 
 	private Tuple<Type> checkInvoke(Expr.Invoke expr, Environment env) {
 		// Determine the argument types
-		Tuple<Expr> arguments = expr.getArguments();
+		Tuple<Expr> arguments = expr.getOperands();
 		Type[] types = new Type[arguments.size()];
 		for (int i = 0; i != arguments.size(); ++i) {
-			types[i] = checkExpression(arguments.getOperand(i), env);
+			types[i] = checkExpression(arguments.get(i), env);
 		}
 		// Determine the declaration being invoked
 		Decl.Callable decl = resolveAsCallable(expr.getName(), types);
@@ -1490,9 +1490,9 @@ public class FlowTypeCheck {
 		Tuple<Type> parameters = sig.getParameters();
 		for (int i = 0; i != arguments.size(); ++i) {
 			// Determine argument type
-			Type arg = checkExpression(arguments.getOperand(i), env);
+			Type arg = checkExpression(arguments.get(i), env);
 			// Check argument is subtype of parameter
-			checkIsSubtype(parameters.getOperand(i), arg, arguments.getOperand(i));
+			checkIsSubtype(parameters.get(i), arg, arguments.get(i));
 		}
 		//
 		return sig.getReturns();
@@ -1511,21 +1511,21 @@ public class FlowTypeCheck {
 	private Type checkEqualityOperator(Expr.NaryOperator expr, Environment environment) {
 		// FIXME: we could be more selective here I think. For example, by
 		// checking that the given operands actually overall.
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			checkExpression(operands.getOperand(i), environment);
+			checkExpression(operands.get(i), environment);
 		}
 		return Type.Bool;
 	}
 
 	private Type checkArithmeticComparator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Int, expr.getArguments(), environment);
+		checkOperands(Type.Int, expr.getOperands(), environment);
 		return Type.Bool;
 	}
 
 	private Type checkArithmeticOperator(Expr.UnaryOperator expr, Environment environment) {
 		Type lhsT = checkExpression(expr.getOperand(), environment);
-		checkIsSubtype(Type.Int, lhsT, expr.getOperand(0));
+		checkIsSubtype(Type.Int, lhsT, expr.get(0));
 		return Type.Int;
 	}
 
@@ -1537,26 +1537,26 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Type checkArithmeticOperator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Int, expr.getArguments(), environment);
+		checkOperands(Type.Int, expr.getOperands(), environment);
 		return Type.Int;
 	}
 
 	private Type checkBitwiseOperator(Expr.UnaryOperator expr, Environment environment) {
 		Type lhsT = checkExpression(expr.getOperand(), environment);
-		checkIsSubtype(Type.Byte, lhsT, expr.getOperand(0));
+		checkIsSubtype(Type.Byte, lhsT, expr.get(0));
 		return Type.Byte;
 	}
 
 	private Type checkBitwiseOperator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Byte, expr.getArguments(), environment);
+		checkOperands(Type.Byte, expr.getOperands(), environment);
 		return Type.Byte;
 	}
 
 	private Type checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
 		Type lhsT = checkExpression(expr.getFirstOperand(), environment);
 		Type rhsT = checkExpression(expr.getSecondOperand(), environment);
-		checkIsSubtype(Type.Byte, lhsT, expr.getOperand(0));
-		checkIsSubtype(Type.Int, rhsT, expr.getOperand(1));
+		checkIsSubtype(Type.Byte, lhsT, expr.get(0));
+		checkIsSubtype(Type.Int, rhsT, expr.get(1));
 		return Type.Byte;
 	}
 
@@ -1580,7 +1580,7 @@ public class FlowTypeCheck {
 		Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 		String actualFieldName = expr.getField().get();
 		for (int i = 0; i != fields.size(); ++i) {
-			Decl.Variable vd = fields.getOperand(i);
+			Decl.Variable vd = fields.get(i);
 			String declaredFieldName = vd.getName().get();
 			if (declaredFieldName.equals(actualFieldName)) {
 				// Matched the field type
@@ -1594,11 +1594,11 @@ public class FlowTypeCheck {
 
 	private Type checkRecordInitialiser(Expr.RecordInitialiser expr, Environment env) {
 		Tuple<Identifier> fields=expr.getFields();
-		Tuple<Expr> operands=expr.getArguments();
+		Tuple<Expr> operands=expr.getOperands();
 		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.getOperand(i);
-			Type fieldType = checkExpression(operands.getOperand(i), env);
+			Identifier field = fields.get(i);
+			Type fieldType = checkExpression(operands.get(i), env);
 			decls[i] = new Decl.Variable(new Tuple<>(), field, fieldType);
 		}
 		//
@@ -1612,10 +1612,10 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment env) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		Type[] ts = new Type[operands.size()];
 		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.getOperand(i), env);
+			ts[i] = checkExpression(operands.get(i), env);
 		}
 		ts = ArrayUtils.removeDuplicates(ts);
 		Type element = ts.length == 1 ? ts[0] : new Type.Union(ts);
@@ -1741,7 +1741,7 @@ public class FlowTypeCheck {
 		boolean result = true;
 		//
 		for (int i = 0; i != item.size(); ++i) {
-			result &= isPure(item.getOperand(i));
+			result &= isPure(item.get(i));
 		}
 		return result;
 	}
@@ -1928,7 +1928,7 @@ public class FlowTypeCheck {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.length; ++i) {
-				Type param = parameters.getOperand(i).getType();
+				Type param = parameters.get(i).getType();
 				if (!typeSystem.isRawCoerciveSubtype(param, args[i])) {
 					return false;
 				}
@@ -1961,8 +1961,8 @@ public class FlowTypeCheck {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != parentParams.size(); ++i) {
-				Type parentParam = parentParams.getOperand(i).getType();
-				Type childParam = childParams.getOperand(i).getType();
+				Type parentParam = parentParams.get(i).getType();
+				Type childParam = childParams.get(i).getType();
 				if (!typeSystem.isRawCoerciveSubtype(parentParam, childParam)) {
 					return false;
 				}
@@ -2031,7 +2031,7 @@ public class FlowTypeCheck {
 
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
 		for (int i = 0; i != operands.size(); ++i) {
-			Expr operand = operands.getOperand(i);
+			Expr operand = operands.get(i);
 			checkIsSubtype(type, checkExpression(operand, environment), operand);
 		}
 	}
@@ -2057,7 +2057,7 @@ public class FlowTypeCheck {
 	 */
 	private void checkNonEmpty(Tuple<Decl.Variable> decls) {
 		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.getOperand(i));
+			checkNonEmpty(decls.get(i));
 		}
 	}
 

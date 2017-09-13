@@ -77,8 +77,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
-				Decl.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -101,8 +101,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
-				Decl.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -173,8 +173,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 		int count = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
-				Decl.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -200,8 +200,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
-				Decl.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -228,8 +228,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 			Decl.Variable[] result, int index) {
 		outer: for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
-				Decl.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -238,7 +238,7 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 					continue outer;
 				}
 			}
-			result[index++] = lhsFields.getOperand(i);
+			result[index++] = lhsFields.get(i);
 		}
 		return index;
 	}

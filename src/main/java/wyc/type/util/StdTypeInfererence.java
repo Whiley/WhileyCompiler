@@ -145,7 +145,7 @@ public class StdTypeInfererence implements TypeInferer {
 		if (returns.size() != 1) {
 			throw new IllegalArgumentException("need support for multiple returns");
 		} else {
-			return returns.getOperand(0);
+			return returns.get(0);
 		}
 	}
 
@@ -155,7 +155,7 @@ public class StdTypeInfererence implements TypeInferer {
 		if(ct != null) {
 			Tuple<Type> returns = ct.getReturns();
 			if(returns.size() == 1) {
-				return returns.getOperand(0);
+				return returns.get(0);
 			}
 		}
 		return null;
@@ -176,10 +176,10 @@ public class StdTypeInfererence implements TypeInferer {
 
 	protected Type inferArrayInitialiser(Expr.ArrayInitialiser expr) throws ResolutionError {
 		if (expr.size() > 0) {
-			Tuple<Expr> operands = expr.getArguments();
+			Tuple<Expr> operands = expr.getOperands();
 			Type[] ts = new Type[operands.size()];
 			for (int i = 0; i != ts.length; ++i) {
-				ts[i] = inferExpression(operands.getOperand(i));
+				ts[i] = inferExpression(operands.get(i));
 			}
 			// Perform a little simplification here by collapsing
 			// identical types together.
@@ -219,7 +219,7 @@ public class StdTypeInfererence implements TypeInferer {
 				Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 				Identifier actualFieldName = expr.getField();
 				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.get(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(actualFieldName)) {
 						return vd.getType();
@@ -237,11 +237,11 @@ public class StdTypeInfererence implements TypeInferer {
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {
 		Tuple<WhileyFile.Identifier> fields = expr.getFields();
-		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		Tuple<WhileyFile.Expr> operands = expr.getOperands();
 		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != decls.length; ++i) {
-			Identifier field = fields.getOperand(i);
-			Expr operand = operands.getOperand(i);
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
 			Type type = inferExpression(operand);
 			decls[i] = new Decl.Variable(new Tuple<>(), field, type);
 		}

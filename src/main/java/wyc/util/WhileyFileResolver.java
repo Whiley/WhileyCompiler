@@ -66,7 +66,7 @@ public final class WhileyFileResolver implements NameResolver {
 	public NameID resolve(Name name) throws ResolutionError {
 		//
 		if (name.size() == 1) {
-			Identifier ident = name.getOperand(0);
+			Identifier ident = name.get(0);
 			// This name is not fully qualified. Therefore, attempt to resolve
 			// it.
 			WhileyFile enclosing = (WhileyFile) name.getHeap();
@@ -311,7 +311,7 @@ public final class WhileyFileResolver implements NameResolver {
 	private List<Path.Entry<WhileyFile>> expandImport(WhileyFile.Decl.Import imp) throws IOException {
 		Trie filter = Trie.ROOT;
 		for (int i = 0; i != imp.size(); ++i) {
-			Identifier component = imp.getOperand(i);
+			Identifier component = imp.get(i);
 			if (component == null) {
 				filter = filter.append("*");
 			} else {

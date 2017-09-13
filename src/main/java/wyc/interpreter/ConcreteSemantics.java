@@ -96,7 +96,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			} else if (type instanceof Type.Union) {
 				Type.Union t = (Type.Union) type;
 				for (int i=0;i!=t.size();++i) {
-					Type element = t.getOperand(i);
+					Type element = t.get(i);
 					if (this.is(element, instance) == True) {
 						return True;
 					}
@@ -104,7 +104,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			} else if (type instanceof Type.Intersection) {
 				Type.Intersection t = (Type.Intersection) type;
 				for (int i=0;i!=t.size();++i) {
-					Type element = t.getOperand(i);
+					Type element = t.get(i);
 					if (this.is(element, instance) == False) {
 						return False;
 					}
@@ -165,7 +165,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				Interpreter.CallStack frame = instance.new CallStack();
 				frame.putLocal(var.getName(), this);
 				for (int i = 0; i != invariant.size(); ++i) {
-					RValue.Bool b = instance.executeExpression(Bool.class, invariant.getOperand(i), frame);
+					RValue.Bool b = instance.executeExpression(Bool.class, invariant.get(i), frame);
 					if (b == False) {
 						return b;
 					}
@@ -579,7 +579,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					Type.Record t = (Type.Record) type;
 					Tuple<Decl.Variable> tFields = t.getFields();
 					for (int i = 0; i != tFields.size(); ++i) {
-						Decl.Variable f = tFields.getOperand(i);
+						Decl.Variable f = tFields.get(i);
 						if (hasField(f.getName())) {
 							RValue val = read(f.getName());
 							// Matching field
@@ -605,7 +605,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					Tuple<Decl.Variable> fields = t.getFields();
 					RValue.Record rec = this;
 					for (int i = 0; i != fields.size(); ++i) {
-						Decl.Variable f = fields.getOperand(i);
+						Decl.Variable f = fields.get(i);
 						RValue v = this.read(f.getName()).convert(f.getType());
 						rec = rec.write(f.getName(), v);
 					}

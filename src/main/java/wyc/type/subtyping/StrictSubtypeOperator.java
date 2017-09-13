@@ -420,10 +420,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			int matches = 0;
 			//
 			for (int i = 0; i != lhsFields.size(); ++i) {
-				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable lhsField = lhsFields.get(i);
 				Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 				for (int j = 0; j != rhsFields.size(); ++j) {
-					Decl.Variable rhsField = rhsFields.getOperand(j);
+					Decl.Variable rhsField = rhsFields.get(j);
 					if (!lhsField.getName().equals(rhsField.getName())) {
 						continue;
 					} else {
@@ -621,8 +621,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		} else {
 			//
 			for (int i = 0; i != lhs.size(); ++i) {
-				Type lhsParameter = lhs.getOperand(i);
-				Type rhsParameter = rhs.getOperand(i);
+				Type lhsParameter = lhs.get(i);
+				Type rhsParameter = rhs.get(i);
 				Term<?> lhsTerm = new Term<>(lhsSign, lhsParameter, lhsMax);
 				Term<?> rhsTerm = new Term<>(rhsSign, rhsParameter, rhsMax);
 				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {

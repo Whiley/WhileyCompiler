@@ -39,7 +39,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitVariables(Tuple<Decl.Variable> vars, T data) {
 		for(int i=0;i!=vars.size();++i) {
-			Decl.Variable var = vars.getOperand(i);
+			Decl.Variable var = vars.get(i);
 			visitVariable(var, data);
 		}
 	}
@@ -188,7 +188,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitLVals(Tuple<LVal> lvals, T data) {
 		for(int i=0;i!=lvals.size();++i) {
-			visitExpression(lvals.getOperand(i), data);
+			visitExpression(lvals.get(i), data);
 		}
 	}
 
@@ -198,7 +198,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitBlock(Stmt.Block stmt, T data) {
 		for(int i=0;i!=stmt.size();++i) {
-			visitStatement(stmt.getOperand(i), data);
+			visitStatement(stmt.get(i), data);
 		}
 	}
 
@@ -248,7 +248,7 @@ public class SingleParameterVisitor<T> {
 		visitExpression(stmt.getCondition(), data);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for(int i=0;i!=cases.size();++i) {
-			visitCase((Stmt.Case) cases.getOperand(i), data);
+			visitCase((Stmt.Case) cases.get(i), data);
 		}
 	}
 
@@ -265,7 +265,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitExpressions(Tuple<Expr> exprs, T data) {
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.getOperand(i), data);
+			visitExpression(exprs.get(i), data);
 		}
 	}
 
@@ -507,7 +507,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitArrayInitialiser(Expr.ArrayInitialiser expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitArrayRange(Expr.ArrayRange expr, T data) {
@@ -526,15 +526,15 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitBitwiseAnd(Expr.BitwiseAnd expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitBitwiseOr(Expr.BitwiseOr expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitBitwiseXor(Expr.BitwiseXor expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, T data) {
@@ -560,23 +560,23 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitEqual(Expr.Equal expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerLessThan(Expr.IntegerLessThan expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerNegation(Expr.IntegerNegation expr, T data) {
@@ -584,23 +584,23 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitIntegerAddition(Expr.IntegerAddition expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerDivision(Expr.IntegerDivision expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIs(Expr.Is expr, T data) {
@@ -608,15 +608,15 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitLogicalImplication(Expr.LogicalImplication expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitLogicalIff(Expr.LogicalIff expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitLogicalNot(Expr.LogicalNot expr, T data) {
@@ -624,7 +624,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitLogicalOr(Expr.LogicalOr expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, T data) {
@@ -638,7 +638,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitInvoke(Expr.Invoke expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, T data) {
@@ -655,7 +655,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitNotEqual(Expr.NotEqual expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitRecordAccess(Expr.RecordAccess expr, T data) {
@@ -663,7 +663,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitRecordInitialiser(Expr.RecordInitialiser expr, T data) {
-		visitExpressions(expr.getArguments(), data);
+		visitExpressions(expr.getOperands(), data);
 	}
 
 	public void visitRecordUpdate(Expr.RecordUpdate expr, T data) {
@@ -681,7 +681,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitTypes(Tuple<Type> type, T data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.getOperand(i), data);
+			visitType(type.get(i), data);
 		}
 	}
 
@@ -782,7 +782,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitIntersection(Type.Intersection type, T data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.getOperand(i), data);
+			visitType(type.get(i), data);
 		}
 	}
 
@@ -818,7 +818,7 @@ public class SingleParameterVisitor<T> {
 
 	public void visitUnion(Type.Union type, T data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.getOperand(i), data);
+			visitType(type.get(i), data);
 		}
 	}
 

@@ -158,7 +158,7 @@ public class Interpreter {
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
 		Tuple<Decl.Variable> parameters = decl.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable parameter = parameters.getOperand(i);
+			Decl.Variable parameter = parameters.get(i);
 			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
@@ -179,7 +179,7 @@ public class Interpreter {
 			Tuple<Decl.Variable> returns = decl.getReturns();
 			RValue[] values = new RValue[returns.size()];
 			for (int i = 0; i != values.length; ++i) {
-				values[i] = frame.getLocal(returns.getOperand(i).getName());
+				values[i] = frame.getLocal(returns.get(i).getName());
 			}
 			return values;
 		}
@@ -199,7 +199,7 @@ public class Interpreter {
 	 */
 	private Status executeBlock(Stmt.Block block, CallStack frame, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.getOperand(i);
+			Stmt stmt = block.get(i);
 			Status r = executeStatement(stmt, frame, scope);
 			// Now, see whether we are continuing or not
 			if (r != Status.NEXT) {
@@ -275,7 +275,7 @@ public class Interpreter {
 		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
-			LValue lval = constructLVal(lhs.getOperand(i), frame);
+			LValue lval = constructLVal(lhs.get(i), frame);
 			lval.write(frame, rhs[i]);
 		}
 		return Status.NEXT;
@@ -495,7 +495,7 @@ public class Interpreter {
 		Tuple<Decl.Variable> returns = context.getReturns();
 		RValue[] values = executeExpressions(stmt.getReturns(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
-			frame.putLocal(returns.getOperand(i).getName(), values[i]);
+			frame.putLocal(returns.get(i).getName(), values[i]);
 		}
 		return Status.RETURN;
 	}
@@ -530,7 +530,7 @@ public class Interpreter {
 		//
 		Object value = executeExpression(ANY_T, stmt.getCondition(), frame);
 		for (int i = 0; i != cases.size(); ++i) {
-			Stmt.Case c = cases.getOperand(i);
+			Stmt.Case c = cases.get(i);
 			Stmt.Block body = c.getBlock();
 			if (c.isDefault()) {
 				return executeBlock(body, frame, scope);
@@ -794,11 +794,11 @@ public class Interpreter {
 
 	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame) {
 		Tuple<Identifier> fields = expr.getFields();
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		RValue.Field[] values = new RValue.Field[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.getOperand(i);
-			Expr operand = operands.getOperand(i);
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
 			RValue value = executeExpression(ANY_T, operand, frame);
 			values[i] = semantics.Field(field, value);
 		}
@@ -830,7 +830,7 @@ public class Interpreter {
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Decl.Variable var = vars.getOperand(index);
+			Decl.Variable var = vars.get(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
@@ -878,64 +878,64 @@ public class Interpreter {
 	}
 
 	public RValue executeArithmeticOperator(Expr.IntegerAddition expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.add(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.add(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeArithmeticAddition(Expr.IntegerAddition expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.add(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.add(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeArithmeticSubtraction(Expr.IntegerSubtraction expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.subtract(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.subtract(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeArithmeticMultiplication(Expr.IntegerMultiplication expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.multiply(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.multiply(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeArithmeticDivision(Expr.IntegerDivision expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.divide(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.divide(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeArithmeticRemainder(Expr.IntegerRemainder expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int val = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.remainder(executeExpression(INT_T, operands.getOperand(i), frame));
+			val = val.remainder(executeExpression(INT_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeEqual(Expr.Equal expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue last = executeExpression(ANY_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue last = executeExpression(ANY_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue next = executeExpression(ANY_T, operands.getOperand(i), frame);
+			RValue next = executeExpression(ANY_T, operands.get(i), frame);
 			if(last.equal(next) == RValue.False) {
 				return RValue.False;
 			}
@@ -944,10 +944,10 @@ public class Interpreter {
 	}
 
 	public RValue executeNotEqual(Expr.NotEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue last = executeExpression(ANY_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue last = executeExpression(ANY_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue next = executeExpression(ANY_T, operands.getOperand(i), frame);
+			RValue next = executeExpression(ANY_T, operands.get(i), frame);
 			if(last.equal(next) == RValue.True) {
 				return RValue.False;
 			}
@@ -956,10 +956,10 @@ public class Interpreter {
 	}
 
 	public RValue executeArithmeticLessThan(Expr.IntegerLessThan expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int last = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.getOperand(i), frame);
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
 			if(last.lessThan(next) == RValue.False) {
 				return RValue.False;
 			}
@@ -969,10 +969,10 @@ public class Interpreter {
 	}
 
 	public RValue executeArithmeticLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int last = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.getOperand(i), frame);
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
 			if(last.lessThanOrEqual(next) == RValue.False) {
 				return RValue.False;
 			}
@@ -982,10 +982,10 @@ public class Interpreter {
 	}
 
 	public RValue executeArithmeticGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int last = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.getOperand(i), frame);
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
 			if(next.lessThan(last) == RValue.False) {
 				return RValue.False;
 			}
@@ -995,10 +995,10 @@ public class Interpreter {
 	}
 
 	public RValue executeArithmeticGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Int last = executeExpression(INT_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.getOperand(i), frame);
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
 			if(next.lessThanOrEqual(last) == RValue.False) {
 				return RValue.False;
 			}
@@ -1015,9 +1015,9 @@ public class Interpreter {
 	public RValue executeLogicalAnd(Expr.LogicalAnd expr, CallStack frame) {
 		// This is a short-circuiting operator. Therefore, we fail as soon as one
 		// argument fails.
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.getOperand(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
 			if(b == RValue.False) {
 				return b;
 			}
@@ -1028,9 +1028,9 @@ public class Interpreter {
 	public RValue executeLogicalOr(Expr.LogicalOr expr, CallStack frame) {
 		// This is a short-circuiting operator. Therefore, we succeed as soon as one
 		// argument succeeds.
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.getOperand(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
 			if(b == RValue.True) {
 				return b;
 			}
@@ -1040,10 +1040,10 @@ public class Interpreter {
 
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
 		// This is a short-circuiting operator
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Bool last = executeExpression(BOOL_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Bool last = executeExpression(BOOL_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Bool next = executeExpression(BOOL_T, operands.getOperand(i), frame);
+			RValue.Bool next = executeExpression(BOOL_T, operands.get(i), frame);
 			if (last == RValue.True && next == RValue.False) {
 				return RValue.False;
 			}
@@ -1056,10 +1056,10 @@ public class Interpreter {
 	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
 		// This is a short-circuiting operator. Therefore, we fail as soon as one
 		// argument differs from the last.
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Bool b = executeExpression(BOOL_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Bool b = executeExpression(BOOL_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Bool t = executeExpression(BOOL_T, operands.getOperand(i), frame);
+			RValue.Bool t = executeExpression(BOOL_T, operands.get(i), frame);
 			if (t != b) {
 				return RValue.False;
 			}
@@ -1074,28 +1074,28 @@ public class Interpreter {
 	}
 
 	public RValue executeBitwiseAnd(Expr.BitwiseAnd expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.and(executeExpression(BYTE_T, operands.getOperand(i), frame));
+			val = val.and(executeExpression(BYTE_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeBitwiseOr(Expr.BitwiseOr expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.or(executeExpression(BYTE_T, operands.getOperand(i), frame));
+			val = val.or(executeExpression(BYTE_T, operands.get(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeBitwiseXor(Expr.BitwiseXor expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
-		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.xor(executeExpression(BYTE_T, operands.getOperand(i), frame));
+			val = val.xor(executeExpression(BYTE_T, operands.get(i), frame));
 		}
 		return val;
 	}
@@ -1137,10 +1137,10 @@ public class Interpreter {
 	}
 
 	public RValue executeArrayInitialiser(Expr.ArrayInitialiser expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		RValue[] elements = new RValue[operands.size()];
 		for (int i = 0; i != elements.length; ++i) {
-			elements[i] = executeExpression(ANY_T, operands.getOperand(i), frame);
+			elements[i] = executeExpression(ANY_T, operands.get(i), frame);
 		}
 		return semantics.Array(elements);
 	}
@@ -1199,7 +1199,7 @@ public class Interpreter {
 		RValue[][] results = new RValue[expressions.size()][];
 		int count = 0;
 		for(int i=0;i!=expressions.size();++i) {
-			results[i] = executeMultiReturnExpression(expressions.getOperand(i),frame);
+			results[i] = executeMultiReturnExpression(expressions.get(i),frame);
 			count += results[i].length;
 		}
 		RValue[] rs = new RValue[count];
@@ -1297,7 +1297,7 @@ public class Interpreter {
 		Decl.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
 				Decl.Callable.class);
 		// Evaluate argument expressions
-		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
+		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
 		return execute(decl.getQualifiedName().toNameID(), decl.getType(), frame, arguments);
 	}
@@ -1354,7 +1354,7 @@ public class Interpreter {
 	 */
 	public void checkInvariants(CallStack frame, Tuple<Expr> invariants) {
 		for (int i = 0; i != invariants.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, invariants.getOperand(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariants.get(i), frame);
 			if (b == RValue.False) {
 				// FIXME: need to do more here
 				throw new AssertionError();

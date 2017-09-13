@@ -158,7 +158,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 
 	private void checkBlock(Stmt.Block stmt) {
 		for(int i=0;i!=stmt.size();++i) {
-			check(stmt.getOperand(i));
+			check(stmt.get(i));
 		}
 	}
 
@@ -223,7 +223,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 
 	private void checkExpressions(boolean consumed, Tuple<Expr> expressions) {
 		for(int i=0;i!=expressions.size();++i) {
-			checkExpression(consumed, expressions.getOperand(i));
+			checkExpression(consumed, expressions.get(i));
 		}
 	}
 
@@ -355,7 +355,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkInvoke(boolean consumed, Expr.Invoke expr) {
-		checkExpressions(true, expr.getArguments());
+		checkExpressions(true, expr.getOperands());
 	}
 
 	public void checkIndirectInvoke(boolean consumed, Expr.IndirectInvoke expr) {
@@ -372,9 +372,9 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkNaryOperator(boolean consumed, Expr.NaryOperator expr) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			checkExpression(false, operands.getOperand(i));
+			checkExpression(false, operands.get(i));
 		}
 	}
 
@@ -388,9 +388,9 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkRecordInitialiser(boolean consumed, Expr.RecordInitialiser expr) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			checkExpression(false, operands.getOperand(i));
+			checkExpression(false, operands.get(i));
 		}
 	}
 

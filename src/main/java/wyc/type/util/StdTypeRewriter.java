@@ -30,7 +30,7 @@ public class StdTypeRewriter extends AbstractTypeRewriter {
 
 	@Override
 	protected Type rewriteUnion(Type.Union type) {
-		Type[] types = type.getOperands();
+		Type[] types = type.getAll();
 		Type[] nTypes = rewrite(types);
 		// Check whether matches any
 		if (ArrayUtils.firstIndexOf(types, T_ANY) >= 0) {
@@ -57,7 +57,7 @@ public class StdTypeRewriter extends AbstractTypeRewriter {
 
 	@Override
 	protected Type rewriteIntersection(Type.Intersection type) {
-		Type[] types = type.getOperands();
+		Type[] types = type.getAll();
 		Type[] nTypes = rewrite(types);
 		// Check whether matches any
 		if (ArrayUtils.firstIndexOf(types, T_VOID) >= 0) {
@@ -89,7 +89,7 @@ public class StdTypeRewriter extends AbstractTypeRewriter {
 			if(type instanceof Type.Union) {
 				// We found a nested disjunct!
 				Type.Union disjunct = (Type.Union) type;
-				Type[] nested = disjunct.getOperands();
+				Type[] nested = disjunct.getAll();
 				// Inline the nested disjunct's operands
 				nTypes = inlineNestedArray(nTypes,i,nested);
 				// Can safely skip all elements in nested since disjunct already
@@ -107,7 +107,7 @@ public class StdTypeRewriter extends AbstractTypeRewriter {
 			if (type instanceof Type.Intersection) {
 				// We found a nested conjunct!
 				Type.Intersection conjunct = (Type.Intersection) type;
-				Type[] nested = conjunct.getOperands();
+				Type[] nested = conjunct.getAll();
 				// Inline the nested conjunct's operands
 				nTypes = inlineNestedArray(nTypes, i, nested);
 				// Can safely skip all elements in nested since conjunct already
@@ -139,11 +139,11 @@ public class StdTypeRewriter extends AbstractTypeRewriter {
 			return ((Type.Negation) type).getElement();
 		} else if (type instanceof Type.Union) {
 			Type.Union disjunct = (Type.Union) type;
-			Type[] negated = negate(disjunct.getOperands());
+			Type[] negated = negate(disjunct.getAll());
 			return new Type.Intersection(negated);
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection conjunct = (Type.Intersection) type;
-			Type[] negated = negate(conjunct.getOperands());
+			Type[] negated = negate(conjunct.getAll());
 			return new Type.Union(negated);
 		} else {
 			return new Type.Negation(type);

@@ -145,7 +145,7 @@ public class DefiniteAssignmentAnalysis {
 		DefintelyAssignedSet nextEnvironment = environment;
 		DefintelyAssignedSet breakEnvironment = null;
 		for(int i=0;i!=block.size();++i) {
-			Stmt s = block.getOperand(i);
+			Stmt s = block.get(i);
 			ControlFlow nf = checkStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
@@ -446,7 +446,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private ControlFlow checkFunctionOrMethodCall(Expr.Invoke expression, DefintelyAssignedSet environment) {
-		for(Expr p : expression.getArguments()) {
+		for(Expr p : expression.getOperands()) {
 			checkExpression(p,environment);
 		}
 		return new ControlFlow(environment,null);
@@ -485,9 +485,9 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkNaryOperator(Expr.NaryOperator expression, DefintelyAssignedSet environment) {
-		Tuple<Expr> operands = expression.getArguments();
+		Tuple<Expr> operands = expression.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			checkExpression(operands.getOperand(i),environment);
+			checkExpression(operands.get(i),environment);
 		}
 	}
 
@@ -500,9 +500,9 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {
-		Tuple<Expr> operands = expression.getArguments();
+		Tuple<Expr> operands = expression.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			checkExpression(operands.getOperand(i),environment);
+			checkExpression(operands.get(i),environment);
 		}
 	}
 

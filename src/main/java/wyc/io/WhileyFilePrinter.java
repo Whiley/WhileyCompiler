@@ -130,7 +130,7 @@ public final class WhileyFilePrinter {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeVariableDeclaration(0, parameters.getOperand(i), out);
+			writeVariableDeclaration(0, parameters.get(i), out);
 		}
 		out.print(")");
 	}
@@ -148,7 +148,7 @@ public final class WhileyFilePrinter {
 
 	private void writeBlock(int indent, Stmt.Block block, PrintWriter out) {
 		for (int i = 0; i != block.size(); ++i) {
-			writeStatement(indent, block.getOperand(i), out);
+			writeStatement(indent, block.get(i), out);
 		}
 	}
 
@@ -232,7 +232,7 @@ public final class WhileyFilePrinter {
 		if(lhs.size() > 0) {
 			for(int i=0;i!=lhs.size();++i) {
 				if(i!=0) { out.print(", "); }
-				writeExpression(lhs.getOperand(i),out);
+				writeExpression(lhs.get(i),out);
 			}
 			out.print(" = ");
 		}
@@ -343,7 +343,7 @@ public final class WhileyFilePrinter {
 					if (j != 0) {
 						out.print(", ");
 					}
-					writeExpression(values.getOperand(j), out);
+					writeExpression(values.get(j), out);
 				}
 				out.println(":");
 			}
@@ -375,7 +375,7 @@ public final class WhileyFilePrinter {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(exprs.getOperand(i), out);
+			writeExpression(exprs.get(i), out);
 		}
 	}
 
@@ -474,13 +474,13 @@ public final class WhileyFilePrinter {
 	}
 
 	private void writeArrayInitialiser(Expr.ArrayInitialiser expr, PrintWriter out) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		out.print("[");
 		for(int i=0;i!=operands.size();++i) {
 			if(i != 0) {
 				out.print(", ");
 			}
-			writeExpression(operands.getOperand(i),out);
+			writeExpression(operands.get(i),out);
 		}
 		out.print("]");
 	}
@@ -512,19 +512,19 @@ public final class WhileyFilePrinter {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(args.getOperand(i), out);
+			writeExpression(args.get(i), out);
 		}
 		out.print(")");
 	}
 
 	private void writeInvoke(Expr.Invoke expr, PrintWriter out) {
 		out.print(expr.getName() + "(");
-		Tuple<Expr> args = expr.getArguments();
+		Tuple<Expr> args = expr.getOperands();
 		for (int i = 0; i != args.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(args.getOperand(i), out);
+			writeExpression(args.get(i), out);
 		}
 		out.print(")");
 	}
@@ -561,10 +561,10 @@ public final class WhileyFilePrinter {
 	private void writeRecordConstructor(Expr.RecordInitialiser expr, PrintWriter out) {
 		out.print("{");
 		Tuple<WhileyFile.Identifier> fields = expr.getFields();
-		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		Tuple<WhileyFile.Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.getOperand(i);
-			Expr operand = operands.getOperand(i);
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}
@@ -595,14 +595,14 @@ public final class WhileyFilePrinter {
 	}
 
 	private void writeInfixLocations(Expr.NaryOperator expr, PrintWriter out) {
-		Tuple<Expr> operands = expr.getArguments();
+		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
 			if (i != 0) {
 				out.print(" ");
 				out.print(opcode(expr.getOpcode()));
 				out.print(" ");
 			}
-			writeBracketedExpression(operands.getOperand(i), out);
+			writeBracketedExpression(operands.get(i), out);
 		}
 	}
 
@@ -612,7 +612,7 @@ public final class WhileyFilePrinter {
 		out.print(" { ");
 		Tuple<Decl.Variable> params = expr.getParameters();
 		for (int i = 0; i != params.size(); ++i) {
-			Decl.Variable v = params.getOperand(i);
+			Decl.Variable v = params.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}
