@@ -120,14 +120,38 @@ public class WhileyFileParser {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		match(Import);
-		Identifier[] filterPath = parseFilterPath(scope);
+		Identifier fromName = parseOptionalFrom(scope);
+		Tuple<Identifier >filterPath = parseFilterPath(scope);
 		int end = index;
 		matchEndLine();
-		Decl.Import imprt = new Decl.Import(filterPath);
+		Decl.Import imprt;
+		if(fromName != null) {
+			imprt = new Decl.Import(filterPath, fromName);
+		} else {
+			imprt = new Decl.Import(filterPath);
+		}
 		return annotateSourceLocation(imprt, start);
 	}
 
-	private Identifier[] parseFilterPath(EnclosingScope scope) {
+	private Identifier parseOptionalFrom(EnclosingScope scope) {
+		int start = index;
+		Identifier from = parseIdentifier();
+		// Lookahead to see whether optional "from" component was specified or not.
+		Token lookahead = tryAndMatch(true, Identifier);
+		if (lookahead != null) {
+			// Optional from identifier was given
+			if (!lookahead.text.equals("from")) {
+				syntaxError("expected \"from\" here", lookahead);
+			}
+			return from;
+		} else {
+			// Optional from identifier was not given. Therefore, backtrack.
+			index = start;
+			return null;
+		}
+	}
+
+	private Tuple<Identifier> parseFilterPath(EnclosingScope scope) {
 		// Parse package filter string
 		ArrayList<Identifier> components = new ArrayList<>();
 		components.add(parseIdentifier());
@@ -136,7 +160,7 @@ public class WhileyFileParser {
 			components.add(component);
 		}
 		//
-		return components.toArray(new Identifier[components.size()]);
+		return new Tuple<>(components);
 	}
 
 	private Identifier parseStarOrIdentifier(EnclosingScope scope) {
