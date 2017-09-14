@@ -1108,7 +1108,7 @@ public class Interpreter {
 	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
-		return lhs.shl(rhs);
+		return lhs.shr(rhs);
 	}
 
 	public RValue executeArrayLength(Expr.ArrayLength expr, CallStack frame) {

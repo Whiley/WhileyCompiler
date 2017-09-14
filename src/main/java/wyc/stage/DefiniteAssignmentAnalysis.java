@@ -211,7 +211,8 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 		return new ControlFlow(environment,null);
 	}
 
-	public ControlFlow visit(Stmt.Fail stmt, DefinitelyAssignedSet environment) {
+	@Override
+	public ControlFlow visitFail(Stmt.Fail stmt, DefinitelyAssignedSet environment) {
 		return new ControlFlow(null,null);
 	}
 
@@ -227,6 +228,18 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 		} else {
 			return new ControlFlow(environment,null);
 		}
+	}
+
+	@Override
+	public ControlFlow visitInvoke(Expr.Invoke stmt, DefinitelyAssignedSet environment) {
+		super.visitInvoke(stmt, environment);
+		return new ControlFlow(environment,null);
+	}
+
+	@Override
+	public ControlFlow visitIndirectInvoke(Expr.IndirectInvoke stmt, DefinitelyAssignedSet environment) {
+		super.visitIndirectInvoke(stmt, environment);
+		return new ControlFlow(environment,null);
 	}
 
 	@Override

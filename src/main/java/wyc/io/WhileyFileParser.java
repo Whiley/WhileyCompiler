@@ -1517,7 +1517,7 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case LogicalImplication: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = new Expr.LogicalImplication(lhs, rhs);
+				lhs = new Expr.LogicalImplication(new Tuple<>(lhs, rhs));
 				break;
 			}
 			case LogicalIff: {

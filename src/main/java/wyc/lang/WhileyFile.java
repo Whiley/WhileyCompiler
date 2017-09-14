@@ -1913,8 +1913,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public static class LogicalImplication extends AbstractSyntacticItem implements NaryOperator {
-			public LogicalImplication(Expr lhs, Expr rhs) {
-				super(EXPR_limplies, lhs, rhs);
+			public LogicalImplication(Tuple<Expr> operands) {
+				super(EXPR_limplies, operands);
 			}
 
 			@Override
@@ -1929,7 +1929,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new LogicalImplication((Expr) operands[0], (Expr) operands[1]);
+				return new LogicalImplication((Tuple<Expr>) operands[0]);
 			}
 
 			@Override
@@ -4363,10 +4363,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.LogicalOr((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_limplies] = new Schema(Operands.TWO, Data.ZERO, "EXPR_implies") {
+		schema[EXPR_limplies] = new Schema(Operands.ONE, Data.ZERO, "EXPR_implies") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalImplication((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.LogicalImplication((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_liff] = new Schema(Operands.ONE, Data.ZERO, "EXPR_iff") {
