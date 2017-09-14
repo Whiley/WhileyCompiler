@@ -190,14 +190,14 @@ public final class WhileyFileResolver implements NameResolver {
 			}
 			// Check whether name is fully qualified or not
 			NameID nid = name.toNameID();
-			if (project.exists(nid.module(), WhileyFile.BinaryContentType)) {
+			if (name.size() > 1 && project.exists(nid.module(), WhileyFile.BinaryContentType)) {
 				// Yes, this is a fully qualified name so load the module
 				WhileyFile module = project.get(nid.module(), WhileyFile.BinaryContentType).read();
 				// Look inside to see whether a matching item is found
 				if (localNameLookup(nid.name(), module)) {
 					return nid;
 				}
-			} else {
+			} else if(name.size() > 1){
 				// If we get here, then there is still an actual chance it could
 				// be referring to something declared in this compilation unit
 				// (i.e. a local lookup with a partially- or fully-qualified
@@ -259,7 +259,7 @@ public final class WhileyFileResolver implements NameResolver {
 				}
 				return new NameID(pkg, nid.name());
 			}
-		} else {
+		} else if(name.size() > 1) {
 			//
 			for (Path.Entry<WhileyFile> module : expandImport(imp)) {
 				// Determine whether this concrete module path matches the partial
