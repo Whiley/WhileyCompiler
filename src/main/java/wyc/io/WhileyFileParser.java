@@ -289,12 +289,21 @@ public class WhileyFileParser {
 		// Parse optional requires/ensures clauses
 		Tuple<Expr> requires = parseInvariant(scope,Requires);
 		Tuple<Expr> ensures = parseInvariant(scope,Ensures);
-		match(Colon);
-		int end = index;
-		matchEndLine();
-		// FIXME: native functions
-		scope.declareThisLifetime();
-		Stmt.Block body = parseBlock(scope, false);
+		// Parse function or method body (if not native)
+		Stmt.Block body;
+		if(modifiers.match(Modifier.Native.class) == null) {
+			// Not native function or method
+			match(Colon);
+			int end = index;
+			matchEndLine();
+			scope.declareThisLifetime();
+			body = parseBlock(scope, false);
+		} else {
+			int end = index;
+			matchEndLine();
+			// FIXME: having empty block seems wasteful
+			body = new Stmt.Block();
+		}
 		//
 		WhileyFile.Decl declaration;
 		if (isFunction) {
@@ -3229,12 +3238,24 @@ public class WhileyFileParser {
 	}
 
 	public boolean skipNominalType(EnclosingScope scope) {
+		boolean definite = false;
 		Token token = match(Identifier);
 		Identifier id = new Identifier(token.text);
-		if(scope.isVariable(id)) {
-			return false;
-		} else {
+		// Pass all path components
+		while(tryAndMatch(false, ColonColon) != null) {
+			if(tryAndMatch(false, Identifier) == null) {
+				// Something when properly wrong.
+				return false;
+			} else {
+				definite = true;
+			}
+		}
+		// If encountered a path (e.g. std::math) then we definitely have a type.
+		// Otherwise, is a type only if not already a local variable.
+		if(definite || !scope.isVariable(id)) {
 			return true;
+		} else {
+			return false;
 		}
 	}
 
