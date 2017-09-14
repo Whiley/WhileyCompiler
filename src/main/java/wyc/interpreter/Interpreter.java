@@ -1041,13 +1041,13 @@ public class Interpreter {
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
 		// This is a short-circuiting operator
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Bool last = executeExpression(BOOL_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
+		for (int i = 0; i != operands.size(); ++i) {
 			RValue.Bool next = executeExpression(BOOL_T, operands.get(i), frame);
-			if (last == RValue.True && next == RValue.False) {
-				return RValue.False;
+			if (next == RValue.False) {
+				// On the first item, false is OK and the result is always true. However, if get
+				// to a subsequent item, then it means all previous items were true.
+				return i == 0 ? RValue.True : RValue.False;
 			}
-			last = next;
 		}
 		// All were the same.
 		return RValue.True;
@@ -1108,7 +1108,7 @@ public class Interpreter {
 	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
-		return lhs.shl(rhs);
+		return lhs.shr(rhs);
 	}
 
 	public RValue executeArrayLength(Expr.ArrayLength expr, CallStack frame) {

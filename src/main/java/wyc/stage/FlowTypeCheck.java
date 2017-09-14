@@ -24,8 +24,6 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.*;
 import wyc.type.TypeSystem;
-import wyc.type.TypeInferer.Environment;
-import wyc.type.util.StdTypeEnvironment;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
@@ -170,7 +168,7 @@ public class FlowTypeCheck {
 	 * @throws IOException
 	 */
 	public void checkTypeDeclaration(Decl.Type decl) {
-		Environment environment = new StdTypeEnvironment();
+		Environment environment = new Environment();
 		// Check variable declaration is not empty
 		checkNonEmpty(decl.getVariableDeclaration());
 		// Check the type invariant
@@ -185,7 +183,7 @@ public class FlowTypeCheck {
 	 * @throws IOException
 	 */
 	public void checkStaticVariableDeclaration(Decl.Variable decl) {
-		Environment environment = new StdTypeEnvironment();
+		Environment environment = new Environment();
 		// Check the initialiser
 		checkExpression(decl.getInitialiser(), environment);
 	}
@@ -203,7 +201,7 @@ public class FlowTypeCheck {
 		checkNonEmpty(d.getParameters());
 		checkNonEmpty(d.getReturns());
 		// Construct initial environment
-		Environment environment = new StdTypeEnvironment();
+		Environment environment = new Environment();
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -246,7 +244,7 @@ public class FlowTypeCheck {
 		checkNonEmpty(d.getParameters());
 		checkNonEmpty(d.getReturns());
 		// Construct initial environment
-		Environment environment = new StdTypeEnvironment();
+		Environment environment = new Environment();
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -1138,7 +1136,7 @@ public class FlowTypeCheck {
 		if (left == right) {
 			return left;
 		} else {
-			Environment result = new StdTypeEnvironment();
+			Environment result = new Environment();
 
 			for (Decl.Variable var : left.getRefinedVariables()) {
 				Type declT = var.getType();
@@ -1201,18 +1199,25 @@ public class FlowTypeCheck {
 	 * @throws ResolutionError
 	 */
 	public Type checkLVal(LVal lval, Environment environment) {
+		Type type;
 		switch (lval.getOpcode()) {
 		case EXPR_varcopy:
-			return checkVariableLVal((Expr.VariableAccess) lval, environment);
+			type = checkVariableLVal((Expr.VariableAccess) lval, environment);
+			break;
 		case EXPR_aread:
-			return checkArrayLVal((Expr.ArrayAccess) lval, environment);
+			type = checkArrayLVal((Expr.ArrayAccess) lval, environment);
+			break;
 		case EXPR_rread:
-			return checkRecordLVal((Expr.RecordAccess) lval, environment);
+			type = checkRecordLVal((Expr.RecordAccess) lval, environment);
+			break;
 		case EXPR_pread:
-			return checkDereferenceLVal((Expr.Dereference) lval, environment);
+			type = checkDereferenceLVal((Expr.Dereference) lval, environment);
+			break;
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
 		}
+		lval.setType(lval.getHeap().allocate(type));
+		return type;
 	}
 
 	public Type checkVariableLVal(Expr.VariableAccess lval, Environment environment) {
@@ -1305,13 +1310,18 @@ public class FlowTypeCheck {
 	 * @throws ResolutionError
 	 */
 	public Type checkExpression(Expr expression, Environment environment) {
+		Type type;
+
 		switch (expression.getOpcode()) {
 		case EXPR_constant:
-			return checkConstant((Expr.Constant) expression, environment);
+			type = checkConstant((Expr.Constant) expression, environment);
+			break;
 		case EXPR_varcopy:
-			return checkVariable((Expr.VariableAccess) expression, environment);
+			type = checkVariable((Expr.VariableAccess) expression, environment);
+			break;
 		case EXPR_staticvar:
-			return checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
+			type = checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
+			break;
 		case EXPR_cast:
 			return checkCast((Expr.Cast) expression, environment);
 		case EXPR_invoke: {
@@ -1357,46 +1367,61 @@ public class FlowTypeCheck {
 			return checkComparisonOperator((Expr.NaryOperator) expression, environment);
 		// Arithmetic Operators
 		case EXPR_ineg:
-			return checkArithmeticOperator((Expr.UnaryOperator) expression, environment);
+			type = checkArithmeticOperator((Expr.UnaryOperator) expression, environment);
+			break;
 		case EXPR_iadd:
 		case EXPR_isub:
 		case EXPR_imul:
 		case EXPR_idiv:
 		case EXPR_irem:
-			return checkArithmeticOperator((Expr.NaryOperator) expression, environment);
+			type = checkArithmeticOperator((Expr.NaryOperator) expression, environment);
+			break;
 		// Bitwise expressions
 		case EXPR_bnot:
-			return checkBitwiseOperator((Expr.UnaryOperator) expression, environment);
+			type = checkBitwiseOperator((Expr.UnaryOperator) expression, environment);
+			break;
 		case EXPR_band:
 		case EXPR_bor:
 		case EXPR_bxor:
-			return checkBitwiseOperator((Expr.NaryOperator) expression, environment);
+			type = checkBitwiseOperator((Expr.NaryOperator) expression, environment);
+			break;
 		case EXPR_bshl:
 		case EXPR_bshr:
-			return checkBitwiseShift((Expr.BinaryOperator) expression, environment);
+			type = checkBitwiseShift((Expr.BinaryOperator) expression, environment);
+			break;
 		// Record Expressions
 		case EXPR_rinit:
-			return checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
+			type = checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
+			break;
 		case EXPR_rread:
-			return checkRecordAccess((Expr.RecordAccess) expression, environment);
+			type = checkRecordAccess((Expr.RecordAccess) expression, environment);
+			break;
 		case EXPR_rwrite:
-			return checkRecordUpdate((Expr.RecordUpdate) expression, environment);
+			type = checkRecordUpdate((Expr.RecordUpdate) expression, environment);
+			break;
 		// Array expressions
 		case EXPR_alen:
-			return checkArrayLength(environment, (Expr.ArrayLength) expression);
+			type = checkArrayLength(environment, (Expr.ArrayLength) expression);
+			break;
 		case EXPR_ainit:
-			return checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
+			type = checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
+			break;
 		case EXPR_agen:
-			return checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
+			type = checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
+			break;
 		case EXPR_aread:
-			return checkArrayAccess((Expr.ArrayAccess) expression, environment);
+			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
+			break;
 		case EXPR_awrite:
-			return checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
+			type = checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
+			break;
 		// Reference expressions
 		case EXPR_pread:
-			return checkDereference((Expr.Dereference) expression, environment);
+			type = checkDereference((Expr.Dereference) expression, environment);
+			break;
 		case EXPR_pinit:
-			return checkNew((Expr.New) expression, environment);
+			type = checkNew((Expr.New) expression, environment);
+			break;
 		case EXPR_lread:
 			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
 		case DECL_lambda:
@@ -1405,6 +1430,9 @@ public class FlowTypeCheck {
 			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
 					expression);
 		}
+		// Allocate and set type for expression
+		expression.setType(expression.getHeap().allocate(type));
+		return type;
 	}
 
 	/**
@@ -2103,7 +2131,7 @@ public class FlowTypeCheck {
 		throw new InternalFailure(msg, cu.getEntry(), e, ex);
 	}
 
-	private static final Environment BOTTOM = new StdTypeEnvironment();
+	private static final Environment BOTTOM = new Environment();
 
 	// ==========================================================================
 	// Enclosing Scope
@@ -2162,6 +2190,71 @@ public class FlowTypeCheck {
 
 		public Decl.FunctionOrMethod getDeclaration() {
 			return declaration;
+		}
+	}
+
+	/**
+	 * Provides a very simple typing environment which defaults to using the
+	 * declared type for a variable (this is the "null" case). However, the
+	 * environment can also be updated to override the declared type with a new type
+	 * as appropriate.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Environment {
+		private final Map<Decl.Variable,Type> refinements;
+
+		public Environment() {
+			this.refinements = new HashMap<>();
+		}
+
+		public Environment(Map<Decl.Variable,Type> refinements) {
+			this.refinements = new HashMap<>(refinements);
+		}
+
+		public Type getType(Decl.Variable var) {
+			Type refined = refinements.get(var);
+			if(refined != null) {
+				return refined;
+			} else {
+				return var.getType();
+			}
+		}
+
+		public Environment refineType(Decl.Variable var, Type refinement) {
+			Type type = intersect(getType(var),refinement);
+			Environment r = new Environment(this.refinements);
+			r.refinements.put(var,type);
+			return r;
+		}
+
+		public Set<Decl.Variable> getRefinedVariables() {
+			return refinements.keySet();
+		}
+
+		@Override
+		public String toString() {
+			String r = "{";
+			boolean firstTime = true;
+			for (Decl.Variable var : refinements.keySet()) {
+				if (!firstTime) {
+					r += ", ";
+				}
+				firstTime = false;
+				r += var.getName() + "->" + getType(var);
+			}
+			return r + "}";
+		}
+
+		private Type intersect(Type left, Type right) {
+			// FIXME: a more comprehensive simplification strategy would make sense
+			// here.
+			if(left == right || left.equals(right)) {
+				return left;
+			} else {
+				return new Type.Intersection(new Type[]{left,right});
+			}
 		}
 	}
 }

@@ -19,19 +19,47 @@ import static wyc.util.ErrorMessages.*;
 
 /**
  * <p>
- * Performs a number of simplistic visits that a module is syntactically
- * correct. This includes the following
+ * The concept of a pure or referentially-transparent function is relatively
+ * well understood. For example, Wikipedia lists two requirements:
  * </p>
+ *
+ * <ol>
+ * <li>The function always evaluates the same result value given the same
+ * argument value(s). The function result value cannot depend on any hidden
+ * information or state that may change while program execution proceeds or
+ * between different executions of the program, nor can it depend on any
+ * external input from I/O devices (usually—see below).</li>
+ * <li>Evaluation of the result does not cause any semantically observable side
+ * effect or output, such as mutation of mutable objects or output to I/O
+ * devices (usually—see below).</li>
+ * </ol>
+ *
+ * <p>
+ * The purpose of the functional check is to ensure that the rules regarding
+ * pure functions and related concepts are properly adhered to. There are two
+ * specific contexts of importance here:
+ * </p>
+ *
  * <ul>
- * <li><b>Functions cannot have side-effects</b>. This includes sending messages
- * to actors, calling headless methods and spawning processes.</li>
- * <li><b>Functions/Methods cannot throw exceptions unless they are
- * declared</b>. Thus, if a method or function throws an exception an
- * appropriate throws clause is required.
- * <li><b>Every catch handler must catch something</b>. It is a syntax error if
- * a catch handler exists which can never catch anything (i.e. it is dead-code).
- * </li>
+ * <li><b>Function Context</b>. This corresponds to all statements and
+ * expressions contained within a <code>function</code>. This is directly
+ * comparable to the above statements regarding pure functions.</li>
+ * <li><b>Functional Context</b>. This corresponds to an expression in a context
+ * which should be functionally pure. This includes all <code>requires</code>,
+ * <code>ensures</code>, <code>where</code> clause and the conditions for
+ * <code>assert</code> or <code>assume</code> statements. In addition,
+ * <i>constant expressions</i> are also considered functional contexts. There
+ * are used, for example, for Constant expressions are used, for example, for
+ * static variable initialisers.</li>
  * </ul>
+ *
+ * <p>
+ * The rules enforced by this check are: <i>(1) No expression or statement in a
+ * function context can dereference a variable, invoke a <code>method</code>,
+ * allocate objects via <code>new</code> or access a static variable</i>; <i>(2) No
+ * expression in a functional context can invoke a <code>method</code> or
+ * allocate objects via <code>new</code></i>.
+ * </p>
  *
  * @author David J. Pearce
  *
@@ -48,19 +76,18 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 	}
 
 	public enum Context {
-		PURE, IMPURE
+		PURE, FUNCTIONAL, IMPURE
 	}
-
 
 	@Override
 	public void visitType(Decl.Type decl, Context data) {
 		visitVariable(decl.getVariableDeclaration(), data);
-		visitExpressions(decl.getInvariant(), Context.PURE);
+		visitExpressions(decl.getInvariant(), Context.FUNCTIONAL);
 	}
 
 	@Override
 	public void visitProperty(Decl.Property decl, Context data) {
-		visitExpressions(decl.getInvariant(), Context.PURE);
+		visitExpressions(decl.getInvariant(), Context.FUNCTIONAL);
 	}
 
 	@Override
@@ -74,27 +101,34 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 
 	@Override
 	public void visitMethod(Decl.Method decl, Context data) {
-		visitVariables(decl.getParameters(), Context.IMPURE);
-		visitVariables(decl.getReturns(), Context.IMPURE);
-		visitExpressions(decl.getRequires(), Context.PURE);
-		visitExpressions(decl.getEnsures(), Context.PURE);
+		// No need to visit variables here as no restrictions imposed.
+		visitExpressions(decl.getRequires(), Context.FUNCTIONAL);
+		visitExpressions(decl.getEnsures(), Context.FUNCTIONAL);
 		visitStatement(decl.getBody(), Context.IMPURE);
 	}
 
 	@Override
+	public void visitStaticVariable(Decl.StaticVariable decl, Context data) {
+		if(decl.hasInitialiser()) {
+			// FIXME: should also prohibit invocation of pure functions in this context?
+			visitExpression(decl.getInitialiser(), Context.PURE);
+		}
+	}
+
+	@Override
 	public void visitAssert(Stmt.Assert stmt, Context context) {
-		visitExpression(stmt.getCondition(), Context.PURE);
+		visitExpression(stmt.getCondition(), toFunctional(context));
 	}
 
 	@Override
 	public void visitAssume(Stmt.Assume stmt, Context context) {
-		visitExpression(stmt.getCondition(), Context.PURE);
+		visitExpression(stmt.getCondition(), toFunctional(context));
 	}
 
 	@Override
 	public void visitDereference(Expr.Dereference expr, Context context) {
-		if (context != Context.IMPURE) {
-			invalidObjectAllocation(expr, context);
+		if (context == Context.PURE) {
+			invalidReferenceAccess(expr, context);
 		}
 		super.visitDereference(expr, context);
 	}
@@ -103,14 +137,14 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 	public void visitDoWhile(Stmt.DoWhile stmt, Context context) {
 		visitStatement(stmt.getBody(), context);
 		visitExpression(stmt.getCondition(), context);
-		visitExpressions(stmt.getInvariant(), Context.PURE);
+		visitExpressions(stmt.getInvariant(), toFunctional(context));
 	}
 
 	@Override
 	public void visitWhile(Stmt.While stmt, Context context) {
 		visitStatement(stmt.getBody(), context);
 		visitExpression(stmt.getCondition(), context);
-		visitExpressions(stmt.getInvariant(), Context.PURE);
+		visitExpressions(stmt.getInvariant(), toFunctional(context));
 	}
 
 	@Override
@@ -119,31 +153,55 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 		if (context != Context.IMPURE && expr.getSignature() instanceof Type.Method) {
 			invalidMethodCall(expr, context);
 		}
-		super.visitInvoke(expr,context);
+		super.visitInvoke(expr, context);
 	}
 
-	public void visitIndirectFunctionOrMethodCall(Expr.IndirectInvoke expr, Context context) {
+	@Override
+	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
 		if (context != Context.IMPURE && expr.getSource().getType() instanceof Type.Method) {
 			invalidMethodCall(expr, context);
 		}
-		super.visitIndirectInvoke(expr,context);
+		super.visitIndirectInvoke(expr, context);
 	}
 
 	@Override
-	public void visitNew(Expr.New expression, Context context) {
-		if(context != Context.IMPURE) {
-			invalidObjectAllocation(expression,context);
+	public void visitNew(Expr.New expr, Context context) {
+		if (context != Context.IMPURE) {
+			invalidObjectAllocation(expr, context);
 		}
-		super.visitNew(expression, context);
+		super.visitNew(expr, context);
 	}
 
+	@Override
+	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Context context) {
+		// FIXME: we should prohibit static variable accesses in certain contexts.
+		// However, at the moment, there is no way to indicate a final static variable
+		// access. As such, prohibiting them would prevent the use of constants within
+		// any functional context.
+	}
 
 	@Override
 	public void visitType(Type type, Context context) {
 		// NOTE: don't traverse types as this is unnecessary. Even in a pure context,
 		// seemingly impure types (e.g. references and methods) can still be used
 		// safely.
+	}
+
+	/**
+	 * Upgrade a given context to a functional or pure context. If the context
+	 * already was PURE, then it remains as PURE (this is the highest level).
+	 * Otherwise, it is FUNCTIONAL.
+	 *
+	 * @param context
+	 * @return
+	 */
+	public Context toFunctional(Context context) {
+		if (context == Context.PURE) {
+			return context;
+		} else {
+			return Context.FUNCTIONAL;
+		}
 	}
 
 	public void invalidObjectAllocation(SyntacticItem expression, Context context) {
@@ -159,7 +217,7 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 	}
 
 	public void invalidReferenceAccess(SyntacticItem expression, Context context) {
-		String msg= errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
+		String msg = errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
 		WhileyFile file = ((WhileyFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
