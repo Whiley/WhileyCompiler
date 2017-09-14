@@ -40,7 +40,7 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  *
  */
-public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<DefiniteAssignmentAnalysis.DefinitelyAssignedSet,DefiniteAssignmentAnalysis.ControlFlow> {
+public class DefiniteAssignmentCheck extends SingleParameterReturnVisitor<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
 
 	public void check(WhileyFile wf) {
 		visitWhileyFile(wf, null);

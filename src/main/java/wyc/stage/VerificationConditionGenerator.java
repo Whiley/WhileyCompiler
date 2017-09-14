@@ -530,7 +530,7 @@ public class VerificationConditionGenerator {
 			}
 
 			WhileyFile.LVal lhs = lval[i];
-			generateTypeInvariantCheck(typeSystem.inferType(lhs),rhs,context);
+			generateTypeInvariantCheck(lhs.getType(),rhs,context);
 			context = translateSingleAssignment(lval[i], rhs, context);
 		}
 		return context;

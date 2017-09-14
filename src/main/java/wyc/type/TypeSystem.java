@@ -22,8 +22,6 @@ import wyc.type.extractors.ReadableRecordExtractor;
 import wyc.type.extractors.ReadableReferenceExtractor;
 import wyc.type.subtyping.CoerciveSubtypeOperator;
 import wyc.type.subtyping.StrictSubtypeOperator;
-import wyc.type.util.StdTypeEnvironment;
-import wyc.type.util.StdTypeInfererence;
 import wyc.util.WhileyFileResolver;
 
 import static wyc.lang.WhileyFile.*;
@@ -59,12 +57,6 @@ import wybs.lang.NameResolver.ResolutionError;
  *
  */
 public class TypeSystem {
-	/**
-	 * The "null" environment provides a simple environment which simply falls
-	 * back to using the declared type for a given variable.
-	 */
-	public  final static TypeInferer.Environment NULL_ENVIRONMENT = new StdTypeEnvironment();
-	//
 	private final NameResolver resolver;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final SubtypeOperator coerciveSubtypeOperator;
@@ -73,7 +65,6 @@ public class TypeSystem {
 	private final TypeExtractor<Type.Reference,Object> readableReferenceExtractor;
 	private final TypeExtractor<Type.Callable,Object> readableLambdaExtractor;
 //	private final TypeInvariantExtractor typeInvariantExtractor;
-	private final TypeInferer typeInfererence;
 	private final TypeRewriter typeSimplifier;
 
 	public TypeSystem(Build.Project project) {
@@ -85,7 +76,6 @@ public class TypeSystem {
 		this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,this);
 		this.readableLambdaExtractor = new ReadableLambdaExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
-		this.typeInfererence = new StdTypeInfererence(this);
 		this.typeSimplifier = null; // new StdTypeRewriter();
 	}
 
@@ -285,19 +275,6 @@ public class TypeSystem {
 	// ========================================================================
 	// Inference
 	// ========================================================================
-
-	/**
-	 * Get the type inferred for a given expression in a given environment.
-	 *
-	 * @param environment
-	 * @param expression
-	 * @return
-	 * @throws ResolutionError
-	 *             Occurs when a particular named type cannot be resolved.
-	 */
-	public Type inferType(Expr expression) throws ResolutionError {
-		return typeInfererence.getInferredType(expression);
-	}
 
 	// ========================================================================
 	// Resolution

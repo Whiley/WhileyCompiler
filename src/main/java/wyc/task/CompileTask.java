@@ -20,7 +20,7 @@ import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.lang.*;
-import wyc.stage.DefiniteAssignmentAnalysis;
+import wyc.stage.DefiniteAssignmentCheck;
 import wyc.stage.FlowTypeCheck;
 import wyc.stage.FunctionalCheck;
 import wyc.stage.MoveAnalysis;
@@ -199,7 +199,7 @@ public final class CompileTask implements Build.Task {
 		tmpMemory = runtime.freeMemory();
 
 		for (WhileyFile wf : binaryFiles) {
-			new DefiniteAssignmentAnalysis().check(wf);
+			new DefiniteAssignmentCheck().check(wf);
 			new FunctionalCheck(this).check(wf);
 			// new MoveAnalysis(this).apply(wyil);
 			// new CoercionCheck(this);
