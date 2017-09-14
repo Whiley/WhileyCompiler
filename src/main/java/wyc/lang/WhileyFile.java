@@ -9,6 +9,7 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
+import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
@@ -127,7 +128,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		@Override
 		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream input) throws IOException {
 			WhileyFile wf = new WyilFileReader(e).read();
-			// new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
+			//new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
 			return wf;
 		}
 
@@ -151,6 +152,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int DECL_mask = 0b00010000;
 	public static final int DECL_module = DECL_mask + 0;
 	public static final int DECL_import = DECL_mask + 1;
+	public static final int DECL_importfrom = DECL_mask + 2;
 	public static final int DECL_staticvar = DECL_mask + 3;
 	public static final int DECL_type = DECL_mask + 4;
 	public static final int DECL_function = DECL_mask + 5;
@@ -352,33 +354,69 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public static class Import extends AbstractSyntacticItem implements Decl {
-			public Import(Identifier... components) {
-				super(DECL_import, components);
+			public Import(Tuple<Identifier> path) {
+				super(DECL_import, path);
 			}
 
-			@Override
-			public Identifier get(int i) {
-				return (Identifier) super.get(i);
+			public Import(Tuple<Identifier> path, Identifier from) {
+				super(DECL_importfrom, path, from);
 			}
 
-			@Override
-			public Identifier[] getAll() {
-				return (Identifier[]) super.getAll();
+			/**
+			 * Get the filter path associated with this import declaration. This is
+			 * <code>std::math</code> in <code>import max from std::math</code>.
+			 *
+			 * @return
+			 */
+			@SuppressWarnings("unchecked")
+			public Tuple<Identifier> getPath() {
+				return (Tuple<Identifier>) super.get(0);
 			}
 
+			/**
+			 * Check whether from name is associated with this import declaration. This
+			 * would <code>max</code> in <code>import max from std::math</code>, but is not
+			 * present in <code>import std::math</code>.
+			 *
+			 * @return
+			 */
+			public boolean hasFrom() {
+				return opcode == DECL_importfrom;
+			}
+
+			/**
+			 * Get the from name associated with this import declaration. This is
+			 * <code>max</code> in <code>import max from std::math</code>.
+			 *
+			 * @return
+			 */
+			public Identifier getFrom() {
+				return(Identifier) super.get(1);
+			}
+
+			@SuppressWarnings("unchecked")
 			@Override
 			public Import clone(SyntacticItem[] operands) {
-				return new Import(ArrayUtils.toArray(Identifier.class, operands));
+				if(operands.length == 1) {
+					return new Import((Tuple<Identifier>) operands[0]);
+				} else {
+					return new Import((Tuple<Identifier>) operands[0], (Identifier) operands[1]);
+				}
 			}
 
 			@Override
 			public String toString() {
 				String r = "import ";
-				for (int i = 0; i != size(); ++i) {
+				if(hasFrom()) {
+					r += getFrom();
+					r += " from ";
+				}
+				Tuple<Identifier> path = getPath();
+				for (int i = 0; i != path.size(); ++i) {
 					if (i != 0) {
 						r += ".";
 					}
-					Identifier component = get(i);
+					Identifier component = path.get(i);
 					if (component == null) {
 						r += "*";
 					} else {
@@ -4210,10 +4248,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Decl.Module((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 		};
-		schema[DECL_import] = new Schema(Operands.MANY, Data.ZERO, "DECL_import") {
+		schema[DECL_import] = new Schema(Operands.ONE, Data.ZERO, "DECL_import") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Import(ArrayUtils.toArray(Identifier.class, operands));
+				return new Decl.Import((Tuple<Identifier>) operands[0]);
+			}
+		};
+		schema[DECL_importfrom] = new Schema(Operands.TWO, Data.ZERO, "DECL_importfrom") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Decl.Import((Tuple<Identifier>) operands[0], (Identifier) operands[1]);
 			}
 		};
 		schema[DECL_staticvar] = new Schema(Operands.FOUR, Data.ZERO, "DECL_staticvar") {
