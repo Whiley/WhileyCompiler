@@ -892,7 +892,7 @@ public class VerificationConditionGenerator {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
 			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
-					rhs.getParent(WhileyFile.Attribute.Span.class)));
+					getSpan(rhs)));
 		}
 	}
 
@@ -2590,6 +2590,20 @@ public class VerificationConditionGenerator {
 			rs[i] = invertCondition(expr[i], elem);
 		}
 		return rs;
+	}
+
+	private WhileyFile.Attribute.Span getSpan(SyntacticItem item) {
+		WhileyFile.Attribute.Span span = null;
+		if (item.getHeap() != null) {
+			span = item.getParent(WhileyFile.Attribute.Span.class);
+		}
+		if (span == null) {
+			Attribute.Source source = item.attribute(Attribute.Source.class);
+			if (source != null) {
+				span = new WhileyFile.Attribute.Span(null, source.start, source.end);
+			}
+		}
+		return span;
 	}
 
 	private <T extends SyntacticItem> T allocate(T item, WhileyFile.Attribute.Span span) {
