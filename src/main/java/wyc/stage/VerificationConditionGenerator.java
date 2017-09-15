@@ -368,7 +368,7 @@ public class VerificationConditionGenerator {
 			LocalEnvironment environment) {
 		Tuple<WhileyFile.Decl.Variable> parameters = declaration.getParameters();
 		String prefix = declaration.getName() + "_requires_";
-		Expr[] preconditions = new Expr[declaration.getEnsures().size()];
+		Expr[] preconditions = new Expr[declaration.getRequires().size()];
 		Expr[] arguments = new Expr[parameters.size()];
 		// Translate parameters as arguments to invocation
 		for (int i = 0; i != arguments.length; ++i) {
@@ -2226,11 +2226,20 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePostconditionTypePattern(
 			WhileyFile.Decl.FunctionOrMethod declaration, LocalEnvironment environment) {
-		Tuple<Type> params = declaration.getType().getParameters();
-		Tuple<Type> returns = declaration.getType().getReturns();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
-		int[] returnLocations = ArrayUtils.range(parameterLocations.length, parameterLocations.length + returns.size());
-		return generateParameterDeclarations(declaration, environment, parameterLocations, returnLocations);
+		Tuple<Decl.Variable> params = declaration.getParameters();
+		Tuple<Decl.Variable> returns = declaration.getReturns();
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[params.size() + returns.size()];
+		// second, set initial environment
+		for (int i = 0; i != params.size(); ++i) {
+			WhileyFile.Decl.Variable var = params.get(i);
+			vars[i] = environment.read(var);
+		}
+		for (int i = 0; i != returns.size(); ++i) {
+			WhileyFile.Decl.Variable var = returns.get(i);
+			vars[i + params.size()] = environment.read(var);
+		}
+		//
+		return vars;
 	}
 
 	/**
