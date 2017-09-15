@@ -189,7 +189,7 @@ public class VerificationConditionGenerator {
 		// Done
 		WyalFile.Identifier name = declaration.getName();
 		WyalFile.Declaration td = new WyalFile.Declaration.Named.Type(name, var, invariant);
-		allocate(td,declaration.attributes());
+		allocate(td,declaration.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	private void translatePropertyDeclaration(WhileyFile.Decl.Property declaration) {
@@ -209,7 +209,7 @@ public class VerificationConditionGenerator {
 		WyalFile.Stmt.Block block = new WyalFile.Stmt.Block(stmts);
 		WyalFile.Identifier name = declaration.getName();
 		WyalFile.Declaration pd = new WyalFile.Declaration.Named.Macro(name, type, block);
-		allocate(pd,declaration.attributes());
+		allocate(pd,declaration.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	/**
@@ -293,7 +293,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md,invariants.get(i).attributes());
+			allocate(md,invariants.get(i).getParent(WhileyFile.Attribute.Span.class));
 		}
 	}
 
@@ -325,7 +325,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md, invariants.get(i).attributes());
+			allocate(md, invariants.get(i).getParent(WhileyFile.Attribute.Span.class));
 		}
 	}
 
@@ -469,7 +469,7 @@ public class VerificationConditionGenerator {
 		context = p.second();
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("assertion failed", context.assumptions,
-				condition);
+				condition, stmt.getCondition().getParent(WhileyFile.Attribute.Span.class));
 		context.emit(verificationCondition);
 		//
 		return context.assume(condition);
@@ -788,7 +788,7 @@ public class VerificationConditionGenerator {
 		Expr condition = new Expr.Constant(new Value.Bool(false));
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("possible panic", context.assumptions,
-				condition);
+				condition, stmt.getParent(WhileyFile.Attribute.Span.class));
 		context.emit(verificationCondition);
 		//
 		return null;
@@ -891,7 +891,8 @@ public class VerificationConditionGenerator {
 		if (typeMayHaveInvariant(lhs, context)) {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
-			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause));
+			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
+					rhs.getParent(WhileyFile.Attribute.Span.class)));
 		}
 	}
 
@@ -934,7 +935,8 @@ public class VerificationConditionGenerator {
 			for (int i = 0; i != postcondition.size(); ++i) {
 				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause));
+				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
+						stmt.getParent(WhileyFile.Attribute.Span.class)));
 			}
 		}
 	}
@@ -1097,7 +1099,8 @@ public class VerificationConditionGenerator {
 			WhileyFile.Expr clause = loopInvariant.get(i);
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
 			Expr macroCall = new Expr.Invoke(null, name, null, arguments);
-			context.emit(new VerificationCondition(msg, context.assumptions, macroCall));
+			context.emit(new VerificationCondition(msg, context.assumptions, macroCall,
+					clause.getParent(WhileyFile.Attribute.Span.class)));
 		}
 	}
 
@@ -1228,7 +1231,7 @@ public class VerificationConditionGenerator {
 						checkExpressionPreconditions((WhileyFile.Expr) operand, context);
 					} else if(operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
 						for (int j = 0; j != operand.size(); ++j) {
-							SyntacticItem suboperand = operand.get(i);
+							SyntacticItem suboperand = operand.get(j);
 							if(suboperand instanceof WhileyFile.Expr) {
 								checkExpressionPreconditions((WhileyFile.Expr) suboperand, context);
 							}
@@ -1277,7 +1280,8 @@ public class VerificationConditionGenerator {
 				// FIXME: name needs proper path information
 				WyalFile.Name name = convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause));
+				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
+						expr.getParent(WhileyFile.Attribute.Span.class)));
 			}
 			// Perform parameter checks
 			for (int i = 0; i != parameterTypes.size(); ++i) {
@@ -1294,7 +1298,8 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.NotEqual(rhs, constant);
 		//
-		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero));
+		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
@@ -1306,9 +1311,10 @@ public class VerificationConditionGenerator {
 		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
 		Expr lenTest = new Expr.LessThan(idx, length);
 		//
-		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest));
+		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
-				lenTest));
+				lenTest, expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
@@ -1317,7 +1323,8 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.GreaterThanOrEqual(len, constant);
 		//
-		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero));
+		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private Context assumeExpressionPostconditions(WhileyFile.Expr expr, Context context) {
@@ -1329,7 +1336,7 @@ public class VerificationConditionGenerator {
 					context = assumeExpressionPostconditions((WhileyFile.Expr) operand, context);
 				} else if(operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
 					for (int j = 0; j != operand.size(); ++j) {
-						SyntacticItem suboperand = operand.get(i);
+						SyntacticItem suboperand = operand.get(j);
 						if(suboperand instanceof WhileyFile.Expr) {
 							context = assumeExpressionPostconditions((WhileyFile.Expr) suboperand, context);
 						}
@@ -1500,7 +1507,7 @@ public class VerificationConditionGenerator {
 		} catch (Throwable e) {
 			throw new InternalFailure(e.getMessage(), ((WhileyFile) loc.getHeap()).getEntry(), loc, e);
 		}
-		return allocate(result,loc.attributes());
+		return allocate(result,loc.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	private Expr translateConstant(WhileyFile.Expr.Constant expr, LocalEnvironment environment) {
@@ -2043,7 +2050,7 @@ public class VerificationConditionGenerator {
 			WyalFile.Stmt.Block verificationCondition = buildVerificationCondition(declaration, environment, vc);
 			// Add generated verification condition as assertion
 			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition, vc.description);
-			allocate(assrt,vc.attributes());
+			allocate(assrt,vc.getSpan());
 		}
 	}
 
@@ -2286,11 +2293,11 @@ public class VerificationConditionGenerator {
 	 * @param id
 	 * @return
 	 */
-	private WyalFile.Name convert(NameID id, SyntacticElement context) {
+	private WyalFile.Name convert(NameID id, SyntacticItem context) {
 		return convert(id.module(), id.name(), context);
 	}
 
-	private WyalFile.Name convert(Path.ID module, String name, SyntacticElement context) {
+	private WyalFile.Name convert(Path.ID module, String name, SyntacticItem context) {
 		if(module.equals(wyalFile.getEntry().id())) {
 			// This is a local name. Therefore, it does not need to be fully
 			// qualified.
@@ -2304,7 +2311,7 @@ public class VerificationConditionGenerator {
 		WyalFile.Identifier id = new WyalFile.Identifier(name);
 		components[module.size()] = id;
 		WyalFile.Name n = new WyalFile.Name(components);
-		return allocate(n,context.attributes());
+		return allocate(n,context.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 
@@ -2389,7 +2396,7 @@ public class VerificationConditionGenerator {
 					((WhileyFile) type.getHeap()).getEntry(), context);
 		}
 		//
-		result = allocate(result,context.attributes());
+		result = allocate(result,context.getParent(WhileyFile.Attribute.Span.class));
 		//
 		return result;
 	}
@@ -2573,11 +2580,12 @@ public class VerificationConditionGenerator {
 		return rs;
 	}
 
-	private <T extends SyntacticItem> T allocate(T item, List<Attribute> attributes) {
+	private <T extends SyntacticItem> T allocate(T item, WhileyFile.Attribute.Span span) {
 		item = wyalFile.allocate(item);
-		// FIXME: this should be removed eventually #121
-		for(Attribute attr : attributes) {
-			item.attributes().add(attr);
+		if(span != null) {
+			int start = span.getStart().get().intValue();
+			int end = span.getEnd().get().intValue();
+			item.attributes().add(new Attribute.Source(start, end, 0));
 		}
 		return item;
 	}
@@ -2695,11 +2703,17 @@ public class VerificationConditionGenerator {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;
+		private final WhileyFile.Attribute.Span span;
 
-		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent) {
+		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent, WhileyFile.Attribute.Span span) {
 			this.description = description;
 			this.antecedent = antecedent;
 			this.consequent = consequent;
+			this.span = span;
+		}
+
+		public WhileyFile.Attribute.Span getSpan() {
+			return span;
 		}
 	}
 
@@ -2806,8 +2820,7 @@ public class VerificationConditionGenerator {
 			// The following is necessary to ensure that the alias structure of
 			// VariableDeclarations is properly preserved.
 			//
-			return allocate(new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(versionedVar)),
-					Collections.EMPTY_LIST);
+			return allocate(new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(versionedVar)), null);
 		}
 
 		/**
