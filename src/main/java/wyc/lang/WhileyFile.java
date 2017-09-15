@@ -888,6 +888,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 							(WhileyFile.Type) operands[2], (Expr) operands[3]);
 				}
 			}
+
+			@Override
+			public String toString() {
+				String r = getType().toString();
+				r += " " + getName().toString();
+				if(hasInitialiser()) {
+					r += " = " + getInitialiser().toString();
+				}
+				return r;
+			}
 		}
 
 		/**
@@ -943,6 +953,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	 *
 	 */
 	public interface Stmt extends SyntacticItem {
+
+		public interface Loop extends Stmt {
+			Expr getCondition();
+
+			Tuple<Expr> getInvariant();
+
+			Tuple<Decl.Variable> getModified();
+
+			Stmt getBody();
+		}
 
 		public static class Block extends AbstractSyntacticItem implements Stmt {
 			public Block(Stmt... stmts) {
@@ -1174,33 +1194,42 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class DoWhile extends AbstractSyntacticItem implements Stmt {
-			public DoWhile(Expr condition, Tuple<Expr> invariant, Stmt.Block body) {
-				super(STMT_dowhile, condition, invariant, body);
+		public static class DoWhile extends AbstractSyntacticItem implements Loop {
+			public DoWhile(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body ) {
+				super(STMT_dowhile, condition, invariant, modified, body);
 			}
 
+			@Override
 			public Expr getCondition() {
 				return (Expr) super.get(0);
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
 				return (Tuple<Expr>) super.get(1);
 			}
 
-			public Stmt.Block getBody() {
-				return (Stmt.Block) super.get(2);
+			@Override
+			@SuppressWarnings("unchecked")
+			public Tuple<Decl.Variable> getModified() {
+				return (Tuple<Decl.Variable>) super.get(2);
 			}
 
-			public Tuple<Expr.VariableAccess> getModified() {
-				// FIXME: this should hold some information
-				return new Tuple<>();
+			public void setModified(Tuple<Decl.Variable> modified) {
+				operands[2] = modified;
+			}
+
+			@Override
+			public Stmt.Block getBody() {
+				return (Stmt.Block) super.get(3);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1], (Stmt.Block) operands[2]);
+				return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
+						(Stmt.Block) operands[3]);
 			}
 		}
 
@@ -1392,33 +1421,42 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class While extends AbstractSyntacticItem implements Stmt {
-			public While(Expr condition, Tuple<Expr> invariant, Stmt.Block body) {
-				super(STMT_while, condition, invariant, body);
+		public static class While extends AbstractSyntacticItem implements Loop {
+			public While(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body) {
+				super(STMT_while, condition, invariant, modified, body);
 			}
 
+			@Override
 			public Expr getCondition() {
 				return (Expr) super.get(0);
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
 				return (Tuple<Expr>) super.get(1);
 			}
 
-			public Stmt.Block getBody() {
-				return (Stmt.Block) super.get(2);
+			@Override
+			@SuppressWarnings("unchecked")
+			public Tuple<Decl.Variable> getModified() {
+				return (Tuple<Decl.Variable>) super.get(2);
 			}
 
-			public Tuple<Expr.VariableAccess> getModified() {
-				// FIXME: this should hold some information
-				return new Tuple<>();
+			public void setModified(Tuple<Decl.Variable> modified) {
+				operands[2] = modified;
+			}
+
+			@Override
+			public Stmt.Block getBody() {
+				return (Stmt.Block) super.get(3);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new While((Expr) operands[0], (Tuple<Expr>) operands[1], (Stmt.Block) operands[2]);
+				return new While((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
+						(Stmt.Block) operands[3]);
 			}
 		}
 	}
@@ -4530,11 +4568,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Stmt.Continue();
 			}
 		};
-		schema[STMT_dowhile] = new Schema(Operands.THREE, Data.ZERO, "STMT_dowhile") {
+		schema[STMT_dowhile] = new Schema(Operands.FOUR, Data.ZERO, "STMT_dowhile") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1], (Stmt.Block) operands[2]);
+				return new Stmt.DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1],
+						(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
 			}
 		};
 		schema[STMT_fail] = new Schema(Operands.ZERO, Data.ZERO, "STMT_fail") {
@@ -4569,11 +4608,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Stmt.Switch((Expr) operands[0], (Tuple<Stmt.Case>) operands[1]);
 			}
 		};
-		schema[STMT_while] = new Schema(Operands.THREE, Data.ZERO, "STMT_while") {
+		schema[STMT_while] = new Schema(Operands.FOUR, Data.ZERO, "STMT_while") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.While((Expr) operands[0], (Tuple<Expr>) operands[1], (Stmt.Block) operands[2]);
+				return new Stmt.While((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
+						(Stmt.Block) operands[3]);
 			}
 		};
 		// EXPRESSIONS: 01100000 (96) -- 10011111 (159)

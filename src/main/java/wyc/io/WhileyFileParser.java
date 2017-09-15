@@ -989,7 +989,7 @@ public class WhileyFileParser {
 		// Parse the loop invariants
 		Tuple<Expr> invariant = parseInvariant(scope,Where);
 		matchEndLine();
-		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, blk), start);
+		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, new Tuple<>(), blk), start);
 	}
 
 	/**
@@ -1103,7 +1103,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Stmt.Block blk = parseBlock(scope, true);
-		return annotateSourceLocation(new Stmt.While(condition, invariants, blk), start);
+		return annotateSourceLocation(new Stmt.While(condition, invariants, new Tuple<>(), blk), start);
 	}
 
 	/**

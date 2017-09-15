@@ -731,9 +731,8 @@ public class VerificationConditionGenerator {
 	private Context translateDoWhile(WhileyFile.Stmt.DoWhile stmt, Context context) {
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) context
 				.getEnvironment().getParent().enclosingDeclaration;
-		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant after first iteration
 		LoopScope firstScope = new LoopScope();
 		Context beforeFirstBodyContext = context.newLoopScope(firstScope);
@@ -743,14 +742,14 @@ public class VerificationConditionGenerator {
 		afterFirstBodyContext = joinDescendants(beforeFirstBodyContext, afterFirstBodyContext,
 				firstScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant not established by first iteration", loopInvariant, afterFirstBodyContext);
+		checkLoopInvariant("loop invariant not established by first iteration", stmt, afterFirstBodyContext);
 		// Rule 2. Check loop invariant preserved on subsequence iterations. On
 		// entry to the loop body we must havoc all modified variables. This is
 		// necessary as such variables should retain their values from before
 		// the loop.
 		LoopScope arbitraryScope = new LoopScope();
-		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getModified()); // MODIFIED
-		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
+		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getModified());
+		beforeArbitraryBodyContext = assumeLoopInvariant(stmt, beforeArbitraryBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeArbitraryBodyContext);
 		Expr trueCondition = p.first();
 		beforeArbitraryBodyContext = p.second().assume(trueCondition);
@@ -760,10 +759,10 @@ public class VerificationConditionGenerator {
 		afterArbitraryBodyContext = joinDescendants(beforeArbitraryBodyContext, afterArbitraryBodyContext,
 				arbitraryScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant not restored", loopInvariant, afterArbitraryBodyContext);
+		checkLoopInvariant("loop invariant not restored", stmt, afterArbitraryBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getModified());
-		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
+		exitContext = assumeLoopInvariant(stmt, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -1008,17 +1007,16 @@ public class VerificationConditionGenerator {
 	private Context translateWhile(WhileyFile.Stmt.While stmt, Context context) {
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) context
 				.getEnvironment().getParent().enclosingDeclaration;
-		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant on entry
-		checkLoopInvariant("loop invariant does not hold on entry", loopInvariant, context);
+		checkLoopInvariant("loop invariant does not hold on entry", stmt, context);
 		// Rule 2. Check loop invariant preserved. On entry to the loop body we
 		// must havoc all modified variables. This is necessary as such
 		// variables should retain their values from before the loop.
 		LoopScope scope = new LoopScope();
-		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified()); // MODIFIES
-		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
+		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified());
+		beforeBodyContext = assumeLoopInvariant(stmt, beforeBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeBodyContext);
 		Expr trueCondition = p.first();
 		beforeBodyContext = p.second().assume(trueCondition);
@@ -1026,10 +1024,10 @@ public class VerificationConditionGenerator {
 		// Join continue contexts together since they must also preserve the
 		// loop invariant
 		afterBodyContext = joinDescendants(beforeBodyContext, afterBodyContext, scope.continueContexts);
-		checkLoopInvariant("loop invariant not restored", loopInvariant, afterBodyContext);
+		checkLoopInvariant("loop invariant not restored", stmt, afterBodyContext);
 		// Rule 3. Assume loop invariant holds.
-		Context exitContext = context.havoc(stmt.getModified()); // MODIFIES
-		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
+		Context exitContext = context.havoc(stmt.getModified());
+		exitContext = assumeLoopInvariant(stmt, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -1049,10 +1047,11 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translateLoopInvariantMacros(Tuple<WhileyFile.Expr> loopInvariant,
-			WhileyFile.Decl.FunctionOrMethod declaration, WyalFile wyalFile) {
+	private void translateLoopInvariantMacros(Stmt.Loop stmt, WhileyFile.Decl.FunctionOrMethod declaration,
+			WyalFile wyalFile) {
 		//
 		String prefix = declaration.getName() + "_loopinvariant_";
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
 			WhileyFile.Expr clause = loopInvariant.get(i);
@@ -1061,8 +1060,7 @@ public class VerificationConditionGenerator {
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(declaration, loopInvariant,
-					localEnvironment);
+			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(stmt, localEnvironment);
 			WyalFile.Stmt.Block e = translateAsBlock(clause, localEnvironment.clone());
 			Named.Macro macro = new Named.Macro(name, vars, e);
 			wyalFile.allocate(macro);
@@ -1077,8 +1075,9 @@ public class VerificationConditionGenerator {
 	 *            The clauses making up the loop invariant
 	 * @param context
 	 */
-	private void checkLoopInvariant(String msg, Tuple<WhileyFile.Expr> loopInvariant, Context context) {
+	private void checkLoopInvariant(String msg, Stmt.Loop stmt, Context context) {
 		//
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
@@ -1087,12 +1086,12 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		//WhileyFile.Expr.VariableAccess[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
-		WhileyFile.Expr.VariableAccess[] localVariables = new WhileyFile.Expr.VariableAccess[0];
-		Expr[] arguments = new Expr[localVariables.length];
+		// FIXME: this is clearly broken as we need to extract the accesses as well.
+		Tuple<WhileyFile.Decl.Variable> localVariables = stmt.getModified();
+		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
-			WhileyFile.Expr.VariableAccess var = localVariables[i];
-			arguments[i] = new Expr.VariableAccess(environment.read(var.getVariableDeclaration()));
+			WhileyFile.Decl.Variable var = localVariables.get(i);
+			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
@@ -1104,8 +1103,9 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private Context assumeLoopInvariant(Tuple<WhileyFile.Expr> loopInvariant, Context context) {
+	private Context assumeLoopInvariant(Stmt.Loop stmt, Context context) {
 		//
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
@@ -1114,12 +1114,12 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		//WhileyFile.Expr.VariableAccess[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
-		WhileyFile.Expr.VariableAccess[] localVariables = new WhileyFile.Expr.VariableAccess[0];
-		Expr[] arguments = new Expr[localVariables.length];
+		// FIXME: this is clearly broken as we need to extract the accesses as well.
+		Tuple<WhileyFile.Decl.Variable> localVariables = stmt.getModified();
+		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
-			WhileyFile.Expr.VariableAccess var = localVariables[i];
-			arguments[i] = new Expr.VariableAccess(environment.read(var.getVariableDeclaration()));
+			WhileyFile.Decl.Variable var = localVariables.get(i);
+			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
@@ -2256,9 +2256,14 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WhileyFile.Decl.Callable declaration,
 			LocalEnvironment environment) {
-		Tuple<Type> params = declaration.getType().getParameters();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
-		return generateParameterDeclarations(declaration, environment, parameterLocations);
+		Tuple<WhileyFile.Decl.Variable> params = declaration.getParameters();
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[params.size()];
+		// second, set initial environment
+		for (int i = 0; i != params.size(); ++i) {
+			WhileyFile.Decl.Variable var = params.get(i);
+			vars[i] = environment.read(var);
+		}
+		return vars;
 	}
 
 	/**
@@ -2297,33 +2302,18 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(WhileyFile.Decl declaration,
-			Tuple<WhileyFile.Expr> loopInvariant, LocalEnvironment environment) {
-		// FIXME: broken
-		return new WyalFile.VariableDeclaration[0];
-	}
-
-	/**
-	 * Convert a list of types from a given declaration into a corresponding
-	 * list of type patterns. This is primarily useful for generating
-	 * declarations from functions or method.
-	 *
-	 * @param types
-	 * @param declaration
-	 * @return
-	 */
-	private WyalFile.VariableDeclaration[] generateParameterDeclarations(WhileyFile.Decl.Callable declaration,
-			LocalEnvironment environment, int[]... groups) {
-		//
-		Tuple<WhileyFile.Decl.Variable> params = declaration.getParameters();
-		WyalFile.VariableDeclaration[] patterns = new WyalFile.VariableDeclaration[params.size()];
+	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Stmt.Loop loop,
+			LocalEnvironment environment) {
+		// FIXME: this clearly won't work because we also need any variable which is
+		// accessed, not just modified.
+		Tuple<Decl.Variable> modified = loop.getModified();
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[modified.size()];
 		// second, set initial environment
-		for (int i = 0; i != params.size(); ++i) {
-			WhileyFile.Decl.Variable var = params.get(i);
-			patterns[i] = environment.read(var);
+		for (int i = 0; i != modified.size(); ++i) {
+			WhileyFile.Decl.Variable var = modified.get(i);
+			vars[i] = environment.read(var);
 		}
-		//
-		return patterns;
+		return vars;
 	}
 
 	/**
@@ -2948,11 +2938,17 @@ public class VerificationConditionGenerator {
 		 *
 		 * @param index
 		 */
-		public LocalEnvironment write(WhileyFile.Decl.Variable... vars) {
+		public LocalEnvironment write(Tuple<WhileyFile.Decl.Variable> vars) {
 			LocalEnvironment nenv = new LocalEnvironment(global, locals);
-			for (int i = 0; i != vars.length; ++i) {
-				nenv.locals.put(vars[i].getIndex(), global.allocateVersion(vars[i]));
+			for (int i = 0; i != vars.size(); ++i) {
+				nenv.locals.put(vars.get(i).getIndex(), global.allocateVersion(vars.get(i)));
 			}
+			return nenv;
+		}
+
+		public LocalEnvironment write(WhileyFile.Decl.Variable var) {
+			LocalEnvironment nenv = new LocalEnvironment(global, locals);
+			nenv.locals.put(var.getIndex(), global.allocateVersion(var));
 			return nenv;
 		}
 
@@ -3151,16 +3147,7 @@ public class VerificationConditionGenerator {
 		 *            The variable accesses being havoced
 		 * @return
 		 */
-		public Context havoc(Tuple<WhileyFile.Expr.VariableAccess> exprs) {
-			// Update version number of the assigned variables
-			WhileyFile.Decl.Variable[] vars = new WhileyFile.Decl.Variable[exprs.size()];
-			for (int i = 0; i != exprs.size(); ++i) {
-				// At this point, we're assuming only variable accesses can be
-				// havoced. However, potentially, it might make sense to open
-				// this up a little...
-				WhileyFile.Expr.VariableAccess va = exprs.get(i);
-				vars[i] = va.getVariableDeclaration();
-			}
+		public Context havoc(Tuple<WhileyFile.Decl.Variable> vars) {
 			LocalEnvironment nEnvironment = environment.write(vars);
 			// done
 			return new Context(wyalFile, assumptions, nEnvironment, initialEnvironment, enclosingLoop,
