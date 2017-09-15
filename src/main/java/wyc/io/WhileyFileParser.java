@@ -1391,9 +1391,10 @@ public class WhileyFileParser {
 				lhs = new Expr.RecordAccess(Type.Any, lhs, name);
 				break;
 			}
+			lhs = annotateSourceLocation(lhs,start);
 		}
 
-		return annotateSourceLocation(lhs, start);
+		return lhs;
 	}
 
 	/**
@@ -2105,7 +2106,7 @@ public class WhileyFileParser {
 				break;
 			}
 			// Attached source information
-			annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs,start);
 		}
 
 		return lhs;
