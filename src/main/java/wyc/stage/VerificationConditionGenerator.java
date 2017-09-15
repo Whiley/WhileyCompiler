@@ -1511,8 +1511,20 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateConstant(WhileyFile.Expr.Constant expr, LocalEnvironment environment) {
-		// FIXME: this will need to be cloned.
-		return new WyalFile.Expr.Constant(expr.getValue());
+		WhileyFile.Value value = expr.getValue();
+		if(value instanceof WhileyFile.Value.UTF8) {
+			// FIXME: yes, this is a bit of a hack. The basic problem is that WyAL doesn't
+			// really handle UTF8 constants properly, even though it does know about them.
+			byte[] bytes = ((WhileyFile.Value.UTF8) value).get();
+			Expr[] es = new Expr[bytes.length];
+			for(int i=0;i!=bytes.length;++i) {
+				WyalFile.Value.Int bv = new WyalFile.Value.Int(bytes[i]);
+				es[i] = new WyalFile.Expr.Constant(bv);
+			}
+			return new WyalFile.Expr.ArrayInitialiser(es);
+		} else {
+			return new WyalFile.Expr.Constant(expr.getValue());
+		}
 	}
 
 	private Expr translateConvert(WhileyFile.Expr.Cast expr, LocalEnvironment environment) {
