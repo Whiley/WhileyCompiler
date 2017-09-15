@@ -231,7 +231,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int EXPR_ilt = EXPR_mask + 18;
 	public static final int EXPR_ile = EXPR_mask + 19;
 	public static final int EXPR_igt = EXPR_mask + 20;
-	public static final int EXPR_igteq = EXPR_mask + 21;
+	public static final int EXPR_ige = EXPR_mask + 21;
 	public static final int EXPR_is = EXPR_mask + 22;
 	// ARITHMETIC
 	public static final int EXPR_ineg = EXPR_mask + 24;
@@ -2324,7 +2324,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class IntegerGreaterThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
 			public IntegerGreaterThanOrEqual(Tuple<Expr> operands) {
-				super(EXPR_igteq, operands);
+				super(EXPR_ige, operands);
 			}
 
 			@Override
@@ -4693,7 +4693,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.IntegerGreaterThan((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_igteq] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gteq") {
+		schema[EXPR_ige] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.IntegerGreaterThanOrEqual((Tuple<Expr>) operands[0]);

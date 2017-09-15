@@ -1363,7 +1363,7 @@ public class FlowTypeCheck {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 			return checkComparisonOperator((Expr.NaryOperator) expression, environment);
 		// Arithmetic Operators
 		case EXPR_ineg:

@@ -331,7 +331,7 @@ public class SingleParameterVisitor<T> {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 		case EXPR_iadd:
 		case EXPR_isub:
 		case EXPR_imul:
@@ -456,7 +456,7 @@ public class SingleParameterVisitor<T> {
 		case EXPR_igt:
 			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
 			break;
-		case EXPR_igteq:
+		case EXPR_ige:
 			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
 			break;
 		case EXPR_iadd:

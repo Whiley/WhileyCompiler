@@ -438,7 +438,7 @@ public final class WhileyFilePrinter {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 		case EXPR_land:
 		case EXPR_lor:
 		case EXPR_bor:
@@ -659,7 +659,7 @@ public final class WhileyFilePrinter {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 		case EXPR_land:
 		case EXPR_lor:
 		case EXPR_bor:
@@ -706,7 +706,7 @@ public final class WhileyFilePrinter {
 			return "<=";
 		case EXPR_igt:
 			return ">";
-		case EXPR_igteq:
+		case EXPR_ige:
 			return ">=";
 		case EXPR_land:
 			return "&&";

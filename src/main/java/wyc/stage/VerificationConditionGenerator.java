@@ -1473,7 +1473,7 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_ilt:
 			case WhileyFile.EXPR_ile:
 			case WhileyFile.EXPR_igt:
-			case WhileyFile.EXPR_igteq:
+			case WhileyFile.EXPR_ige:
 			case WhileyFile.EXPR_land:
 			case WhileyFile.EXPR_lor:
 				return translateBinaryOperator((WhileyFile.Expr.NaryOperator) loc, environment);
@@ -1561,31 +1561,31 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(operands.get(1), null, environment);
 		// FIXME: problem with > 2 operands
 		switch(expr.getOpcode()) {
-		case WyalFile.EXPR_add:
+		case WhileyFile.EXPR_iadd:
 			return new Expr.Addition(lhs, rhs);
-		case WyalFile.EXPR_sub:
+		case WhileyFile.EXPR_isub:
 			return new Expr.Subtraction(lhs, rhs);
-		case WyalFile.EXPR_mul:
+		case WhileyFile.EXPR_imul:
 			return new Expr.Multiplication(lhs, rhs);
-		case WyalFile.EXPR_div:
+		case WhileyFile.EXPR_idiv:
 			return new Expr.Division(lhs, rhs);
-		case WyalFile.EXPR_rem:
+		case WhileyFile.EXPR_irem:
 			return new Expr.Remainder(lhs, rhs);
-		case WyalFile.EXPR_eq:
+		case WhileyFile.EXPR_eq:
 			return new Expr.Equal(lhs, rhs);
-		case WyalFile.EXPR_neq:
+		case WhileyFile.EXPR_neq:
 			return new Expr.NotEqual(lhs, rhs);
-		case WyalFile.EXPR_lt:
+		case WhileyFile.EXPR_ilt:
 			return new Expr.LessThan(lhs, rhs);
-		case WyalFile.EXPR_lteq:
+		case WhileyFile.EXPR_ile:
 			return new Expr.LessThanOrEqual(lhs, rhs);
-		case WyalFile.EXPR_gt:
+		case WhileyFile.EXPR_igt:
 			return new Expr.GreaterThan(lhs, rhs);
-		case WyalFile.EXPR_gteq:
+		case WhileyFile.EXPR_ige:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case WyalFile.EXPR_and:
+		case WhileyFile.EXPR_land:
 			return new Expr.LogicalAnd(lhs, rhs);
-		case WyalFile.EXPR_or:
+		case WhileyFile.EXPR_lor:
 			return new Expr.LogicalOr(lhs, rhs);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
