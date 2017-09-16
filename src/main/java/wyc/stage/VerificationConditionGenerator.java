@@ -31,6 +31,7 @@ import wyfs.util.Trie;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.type.TypeSystem;
+import wyc.util.SingleParameterVisitor;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -1086,8 +1087,7 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		// FIXME: this is clearly broken as we need to extract the accesses as well.
-		Tuple<WhileyFile.Decl.Variable> localVariables = stmt.getModified();
+		Tuple<WhileyFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
 		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
 			WhileyFile.Decl.Variable var = localVariables.get(i);
@@ -1114,8 +1114,7 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		// FIXME: this is clearly broken as we need to extract the accesses as well.
-		Tuple<WhileyFile.Decl.Variable> localVariables = stmt.getModified();
+		Tuple<WhileyFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
 		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
 			WhileyFile.Decl.Variable var = localVariables.get(i);
@@ -1448,6 +1447,9 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_invoke:
 				result = translateInvoke((WhileyFile.Expr.Invoke) expr, selector, environment);
 				break;
+			case WhileyFile.DECL_lambda:
+				result = translateLambda((WhileyFile.Decl.Lambda) expr, environment);
+				break;
 			case WhileyFile.EXPR_lread:
 				result = translateLambda((WhileyFile.Expr.LambdaAccess) expr, environment);
 				break;
@@ -1559,6 +1561,11 @@ public class VerificationConditionGenerator {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		// FIXME: name needs proper path information
 		return new Expr.Invoke(null, expr.getName(), selector, operands);
+	}
+
+	private Expr translateLambda(WhileyFile.Decl.Lambda expr, LocalEnvironment environment) {
+		// FIXME: need to implement this
+		return translateAsUnknown(expr, environment);
 	}
 
 	private Expr translateLambda(WhileyFile.Expr.LambdaAccess expr, LocalEnvironment environment) {
@@ -1944,19 +1951,17 @@ public class VerificationConditionGenerator {
 	private AssumptionSet updateVariableVersions(AssumptionSet assumptions, LocalEnvironment original,
 			LocalEnvironment updated) {
 
-		// FIXME: needs to be put back
-
-//		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : updated.locals.entrySet()) {
-//			Integer varIndex = e.getKey();
-//			WyalFile.VariableDeclaration newVarVersionedName = e.getValue();
-//			WyalFile.VariableDeclaration oldVarVersionedName = original.read(varIndex);
-//			if (!oldVarVersionedName.equals(newVarVersionedName)) {
-//				// indicates a version change of the given variable.
-//				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
-//				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
-//				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
-//			}
-//		}
+		for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : updated.locals.entrySet()) {
+			WhileyFile.Decl.Variable var = e.getKey();
+			WyalFile.VariableDeclaration newVarVersionedName = e.getValue();
+			WyalFile.VariableDeclaration oldVarVersionedName = original.read(var);
+			if (!oldVarVersionedName.equals(newVarVersionedName)) {
+				// indicates a version change of the given variable.
+				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
+				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
+				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
+			}
+		}
 		return assumptions;
 	}
 
@@ -1974,17 +1979,17 @@ public class VerificationConditionGenerator {
 		//
 		Context head = contexts[0];
 		GlobalEnvironment global = head.getEnvironment().getParent();
-		HashSet<Integer> modified = new HashSet<>();
-		HashSet<Integer> deleted = new HashSet<>();
-		Map<Integer, WyalFile.VariableDeclaration> headLocals = head.environment.locals;
+		HashSet<WhileyFile.Decl.Variable> modified = new HashSet<>();
+		HashSet<WhileyFile.Decl.Variable> deleted = new HashSet<>();
+		Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> headLocals = head.environment.locals;
 
 		// Compute the modified and deleted sets
 		for (int i = 1; i < contexts.length; ++i) {
 			Context ithContext = contexts[i];
-			Map<Integer, WyalFile.VariableDeclaration> ithLocals = ithContext.environment.locals;
+			Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> ithLocals = ithContext.environment.locals;
 			// First check env against head
-			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : ithLocals.entrySet()) {
-				Integer key = e.getKey();
+			for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : ithLocals.entrySet()) {
+				WhileyFile.Decl.Variable key = e.getKey();
 				WyalFile.VariableDeclaration s1 = e.getValue();
 				WyalFile.VariableDeclaration s2 = headLocals.get(key);
 				if (s1 == null) {
@@ -1994,8 +1999,8 @@ public class VerificationConditionGenerator {
 				}
 			}
 			// Second, check head against env
-			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
-				Integer key = e.getKey();
+			for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+				WhileyFile.Decl.Variable key = e.getKey();
 				WyalFile.VariableDeclaration s1 = e.getValue();
 				WyalFile.VariableDeclaration s2 = ithLocals.get(key);
 				if (s1 == null) {
@@ -2006,23 +2011,21 @@ public class VerificationConditionGenerator {
 			}
 		}
 		// Finally, construct the combined local map
-		HashMap<Integer, WyalFile.VariableDeclaration> combinedLocals = new HashMap<>();
+		IdentityHashMap<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> combinedLocals = new IdentityHashMap<>();
 
-		// FIXME: this needs to be put back somehow.
-
-//		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
-//			Integer key = e.getKey();
-//			WyalFile.VariableDeclaration value = e.getValue();
-//			if (deleted.contains(key)) {
-//				// Ignore this entry. This must be checked before we look at
-//				// modified (since variable can be marked both).
-//				continue;
-//			} else if (modified.contains(key)) {
-//				// Update version number
-//				value = global.allocateVersion(key);
-//			}
-//			combinedLocals.put(key, value);
-//		}
+		for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+			WhileyFile.Decl.Variable key = e.getKey();
+			WyalFile.VariableDeclaration value = e.getValue();
+			if (deleted.contains(key)) {
+				// Ignore this entry. This must be checked before we look at
+				// modified (since variable can be marked both).
+				continue;
+			} else if (modified.contains(key)) {
+				// Update version number
+				value = global.allocateVersion(key);
+			}
+			combinedLocals.put(key, value);
+		}
 		// Now, use the modified and deleted sets to build the new environment
 		return new LocalEnvironment(global, combinedLocals);
 	}
@@ -2304,9 +2307,9 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Stmt.Loop loop,
 			LocalEnvironment environment) {
-		// FIXME: this clearly won't work because we also need any variable which is
-		// accessed, not just modified.
-		Tuple<Decl.Variable> modified = loop.getModified();
+		// Extract all used variables within the loop invariant. This is necessary to
+		// determine what parameters are required for the loop invariant macros.
+		Tuple<Decl.Variable> modified = determineUsedVariables(loop.getInvariant());
 		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[modified.size()];
 		// second, set initial environment
 		for (int i = 0; i != modified.size(); ++i) {
@@ -2314,6 +2317,52 @@ public class VerificationConditionGenerator {
 			vars[i] = environment.read(var);
 		}
 		return vars;
+	}
+
+	/**
+	 * Create a simple visitor for extracting all variable access expressions from a
+	 * given expression (or statement).
+	 */
+	private static final SingleParameterVisitor<HashSet<Decl.Variable>> usedVariableExtractor = new SingleParameterVisitor<HashSet<Decl.Variable>>() {
+		@Override
+		public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
+			used.add(expr.getVariableDeclaration());
+		}
+		@Override
+		public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(),used);
+		}
+		@Override
+		public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(),used);
+		}
+		@Override
+		public void visitType(WhileyFile.Type type, HashSet<Decl.Variable> used) {
+			// No need to visit types
+		}
+
+		private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+			for (int i = 0; i != parameters.size(); ++i) {
+				used.remove(parameters.get(i));
+			}
+		}
+	};
+
+	/**
+	 * Determine the set of used variables in a given set of expressions. A used
+	 * variable is one referred to by a VariableAccess expression.
+	 *
+	 * @param expression
+	 * @return
+	 */
+	public Tuple<Decl.Variable> determineUsedVariables(Tuple<WhileyFile.Expr> exprs) {
+		HashSet<Decl.Variable> used = new HashSet<>();
+		usedVariableExtractor.visitExpressions(exprs, used);
+		return new Tuple<>(used);
 	}
 
 	/**
@@ -2862,7 +2911,6 @@ public class VerificationConditionGenerator {
 			//
 			// The following is necessary to ensure that the alias structure of
 			// VariableDeclarations is properly preserved.
-			//
 			return allocate(new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(versionedVar)), null);
 		}
 
@@ -2896,16 +2944,16 @@ public class VerificationConditionGenerator {
 		 * Maps all local variables in scope to their current versioned variable
 		 * names
 		 */
-		private final Map<Integer, WyalFile.VariableDeclaration> locals;
+		private final Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> locals;
 
 		public LocalEnvironment(GlobalEnvironment global) {
 			this.global = global;
-			this.locals = new HashMap<>();
+			this.locals = new IdentityHashMap<>();
 		}
 
-		public LocalEnvironment(GlobalEnvironment global, Map<Integer, WyalFile.VariableDeclaration> locals) {
+		public LocalEnvironment(GlobalEnvironment global, Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> locals) {
 			this.global = global;
-			this.locals = new HashMap<>(locals);
+			this.locals = new IdentityHashMap<>(locals);
 		}
 
 		/**
@@ -2924,10 +2972,10 @@ public class VerificationConditionGenerator {
 		 * @return
 		 */
 		public WyalFile.VariableDeclaration read(WhileyFile.Decl.Variable var) {
-			WyalFile.VariableDeclaration vv = locals.get(var.getIndex());
+			WyalFile.VariableDeclaration vv = locals.get(var);
 			if (vv == null) {
 				vv = global.allocateVersion(var);
-				locals.put(var.getIndex(), vv);
+				locals.put(var, vv);
 			}
 			return vv;
 		}
@@ -2941,14 +2989,14 @@ public class VerificationConditionGenerator {
 		public LocalEnvironment write(Tuple<WhileyFile.Decl.Variable> vars) {
 			LocalEnvironment nenv = new LocalEnvironment(global, locals);
 			for (int i = 0; i != vars.size(); ++i) {
-				nenv.locals.put(vars.get(i).getIndex(), global.allocateVersion(vars.get(i)));
+				nenv.locals.put(vars.get(i), global.allocateVersion(vars.get(i)));
 			}
 			return nenv;
 		}
 
 		public LocalEnvironment write(WhileyFile.Decl.Variable var) {
 			LocalEnvironment nenv = new LocalEnvironment(global, locals);
-			nenv.locals.put(var.getIndex(), global.allocateVersion(var));
+			nenv.locals.put(var, global.allocateVersion(var));
 			return nenv;
 		}
 
