@@ -490,10 +490,17 @@ public class VerificationConditionGenerator {
 
 		for (int i = 0, j = 0; i != rhs.size(); ++i) {
 			WhileyFile.Expr rval = rhs.get(i);
-			WhileyFile.LVal[] lval = new WhileyFile.LVal[] {lhs.get(i)};
-			//Location<?>[] lval = java.util.Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
+			Tuple<WhileyFile.Type> types = rval.getTypes();
+			WhileyFile.LVal[] lval;
+			if(types == null) {
+				lval = new WhileyFile.LVal[] {lhs.get(j++)};
+			} else {
+				lval = new WhileyFile.LVal[types.size()];
+				for(int k=0;k!=types.size();++k) {
+					lval[k] = lhs.get(j++);
+				}
+			}
 			context = translateAssign(lval, rval, context);
-			//j = j + rval.numberOfTypes();
 		}
 		// Done
 		return context;
@@ -1408,14 +1415,15 @@ public class VerificationConditionGenerator {
 	private Expr[] translateExpressions(Tuple<WhileyFile.Expr> loc, LocalEnvironment environment) {
 		ArrayList<Expr> results = new ArrayList<>();
 		for (int i = 0; i != loc.size(); ++i) {
-//			Type[] types = loc.getOperand(i).getTypes();
-//			if (types.length == 1) {
+			WhileyFile.Expr operand = loc.get(i);
+			Tuple<Type> types = operand.getTypes();
+			if (types == null) {
 				results.add(translateExpression(loc.get(i), null, environment));
-//			} else {
-//				for (int j = 0; j != types.length; ++j) {
-//					results.add(translateExpression(loc[i], j, environment));
-//				}
-//			}
+			} else {
+				for (int j = 0; j != types.size(); ++j) {
+					results.add(translateExpression(operand, j, environment));
+				}
+			}
 		}
 		return results.toArray(new Expr[results.size()]);
 	}

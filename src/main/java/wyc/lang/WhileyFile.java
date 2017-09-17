@@ -761,6 +761,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				throw new UnsupportedOperationException();
 			}
 
+			@Override
+			public Tuple<WhileyFile.Type> getTypes() {
+				return null;
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
@@ -1476,6 +1481,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public Type getType();
 
 		/**
+		 * Get the set of types which this expression returns. This makes sense only in
+		 * the case of an expression which can return multiple types (e.g. an
+		 * invocation). In all situations where it doesn't make sense, then
+		 * <code>null</code> is returned.
+		 *
+		 * @return
+		 */
+		public Tuple<Type> getTypes();
+
+		/**
 		 * Set the inferred return type for this expression. Observe that some
 		 * expressions do not support this operation.
 		 *
@@ -1540,17 +1555,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Tuple<Expr> getOperands();
 		}
 
-		/**
-		 * Represents a cast expression of the form "<code>(T) e</code>" where
-		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the <i>casted
-		 * expression</i>.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static class Cast extends AbstractSyntacticItem implements Expr, UnaryOperator {
-			public Cast(Type type, Expr rhs) {
-				super(EXPR_cast, type, rhs);
+		public abstract static class AbstractExpr extends AbstractSyntacticItem implements Expr {
+			public AbstractExpr(int opcode, Type type, SyntacticItem...items) {
+				super(opcode,ArrayUtils.append(type,items));
 			}
 
 			@Override
@@ -1561,6 +1568,25 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public void setType(Type type) {
 				operands[0] = type;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+		}
+
+		/**
+		 * Represents a cast expression of the form "<code>(T) e</code>" where
+		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the <i>casted
+		 * expression</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Cast extends AbstractExpr implements Expr, UnaryOperator {
+			public Cast(Type type, Expr rhs) {
+				super(EXPR_cast, type, rhs);
 			}
 
 			@Override
@@ -1586,19 +1612,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Constant extends AbstractSyntacticItem implements Expr {
+		public static class Constant extends AbstractExpr implements Expr {
 			public Constant(Type type, Value value) {
 				super(EXPR_constant, type, value);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			public Value getValue() {
@@ -1616,19 +1632,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public static class StaticVariableAccess extends AbstractSyntacticItem implements Expr {
+		public static class StaticVariableAccess extends AbstractExpr implements Expr {
 			public StaticVariableAccess(Type type, Name name) {
 				super(EXPR_staticvar, type, name);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			public Name getName() {
@@ -1667,6 +1673,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -1719,6 +1730,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				Tuple<Type> types = getSignature().getReturns();
+				if(types.size() > 1) {
+					return types;
+				} else {
+					// FIXME: this is a bit messed up, and exists only to help the particular
+					// implementation of WyTP (which should be fixed eventually).
+					return null;
+				}
 			}
 
 			public Name getName() {
@@ -1783,6 +1806,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				operands[0] = type;
 			}
 
+			@Override
+			public Tuple<Type> getTypes() {
+				// FIXME: this feels wrong.
+				return null;
+			}
+
 			public Expr getSource() {
 				return (Expr) get(1);
 			}
@@ -1834,6 +1863,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -1932,19 +1966,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class VariableAccess extends AbstractSyntacticItem implements LVal {
+		public static class VariableAccess extends AbstractExpr implements LVal {
 			public VariableAccess(Type type, Decl.Variable decl) {
 				super(EXPR_varcopy, type, decl);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			public Decl.Variable getVariableDeclaration() {
@@ -1981,6 +2005,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -2023,6 +2052,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2059,6 +2093,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -2101,6 +2140,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2139,6 +2183,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2173,6 +2222,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -2215,6 +2269,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2251,6 +2310,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -2293,6 +2357,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2329,6 +2398,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type getType() {
 				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			@Override
@@ -2371,6 +2445,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Tuple<Type> getTypes() {
+				return null;
+			}
+
+			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
@@ -2403,19 +2482,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerAddition extends AbstractSyntacticItem implements NaryOperator {
+		public static class IntegerAddition extends AbstractExpr implements NaryOperator {
 			public IntegerAddition(Type type, Tuple<Expr> operands) {
 				super(EXPR_iadd, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2442,19 +2511,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerSubtraction extends AbstractSyntacticItem implements NaryOperator {
+		public static class IntegerSubtraction extends AbstractExpr implements NaryOperator {
 			public IntegerSubtraction(Type type, Tuple<Expr> operands) {
 				super(EXPR_isub, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2481,19 +2540,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerMultiplication extends AbstractSyntacticItem implements NaryOperator {
+		public static class IntegerMultiplication extends AbstractExpr implements NaryOperator {
 			public IntegerMultiplication(Type type, Tuple<Expr> operands) {
 				super(EXPR_imul, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2520,19 +2569,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerDivision extends AbstractSyntacticItem implements NaryOperator {
+		public static class IntegerDivision extends AbstractExpr implements NaryOperator {
 			public IntegerDivision(Type type, Tuple<Expr> operands) {
 				super(EXPR_idiv, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2559,19 +2598,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerRemainder extends AbstractSyntacticItem implements NaryOperator {
+		public static class IntegerRemainder extends AbstractExpr implements NaryOperator {
 			public IntegerRemainder(Type type, Tuple<Expr> operands) {
 				super(EXPR_irem, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2597,19 +2626,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerNegation extends AbstractSyntacticItem implements UnaryOperator {
+		public static class IntegerNegation extends AbstractExpr implements UnaryOperator {
 			public IntegerNegation(Type type, Expr operand) {
 				super(EXPR_ineg, type, operand);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2640,19 +2659,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseShiftLeft extends AbstractSyntacticItem implements BinaryOperator {
+		public static class BitwiseShiftLeft extends AbstractExpr implements BinaryOperator {
 			public BitwiseShiftLeft(Type type, Expr lhs, Expr rhs) {
 				super(EXPR_bshl, type, lhs, rhs);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -2692,19 +2701,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseShiftRight extends AbstractSyntacticItem implements BinaryOperator {
+		public static class BitwiseShiftRight extends AbstractExpr implements BinaryOperator {
 			public BitwiseShiftRight(Type type, Expr lhs, Expr rhs) {
 				super(EXPR_bshr, type, lhs, rhs);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -2743,19 +2742,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseAnd extends AbstractSyntacticItem implements NaryOperator {
+		public static class BitwiseAnd extends AbstractExpr implements NaryOperator {
 			public BitwiseAnd(Type type, Tuple<Expr> operands) {
 				super(EXPR_band, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2781,19 +2770,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseOr extends AbstractSyntacticItem implements NaryOperator {
+		public static class BitwiseOr extends AbstractExpr implements NaryOperator {
 			public BitwiseOr(Type type, Tuple<Expr> operands) {
 				super(EXPR_bor, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2819,19 +2798,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseXor extends AbstractSyntacticItem implements NaryOperator {
+		public static class BitwiseXor extends AbstractExpr implements NaryOperator {
 			public BitwiseXor(Type type, Tuple<Expr> operands) {
 				super(EXPR_bxor, type, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -2857,19 +2826,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseComplement extends AbstractSyntacticItem implements UnaryOperator {
+		public static class BitwiseComplement extends AbstractExpr implements UnaryOperator {
 			public BitwiseComplement(Type type, Expr operand) {
 				super(EXPR_bnot, type, operand);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -2890,19 +2849,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 		// Reference Expressions
 		// =========================================================================
-		public static class Dereference extends AbstractSyntacticItem implements LVal, UnaryOperator {
+		public static class Dereference extends AbstractExpr implements LVal, UnaryOperator {
 			public Dereference(Type type, Expr operand) {
 				super(EXPR_pread, type, operand);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -2925,19 +2874,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public static class New extends AbstractSyntacticItem implements LVal, UnaryOperator {
+		public static class New extends AbstractExpr implements LVal, UnaryOperator {
 			public New(Type type, Expr operand, Identifier lifetime) {
 				super(EXPR_pinit, type, operand, lifetime);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -2972,20 +2911,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				Tuple<Type> returns = getSignature().getReturns();
-				// NOTE: if this method is called then it is assumed to be in a position which
-				// requires exactly one return type. Anything else is an error which should have
-				// been caught earlier in the pipeline.
-				if (returns.size() != 1) {
-					throw new IllegalArgumentException();
-				}
-				return returns.get(0);
+				return getSignature();
 			}
-
 
 			@Override
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Tuple<Type> getTypes() {
+				return null;
 			}
 
 			public Name getName() {
@@ -3025,19 +2961,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayAccess extends AbstractSyntacticItem implements LVal, BinaryOperator {
+		public static class ArrayAccess extends AbstractExpr implements LVal, BinaryOperator {
 			public ArrayAccess(Type type, Expr src, Expr index) {
 				super(EXPR_aread, type, src, index);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3081,19 +3007,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayUpdate extends AbstractSyntacticItem implements Expr, TernaryOperator {
+		public static class ArrayUpdate extends AbstractExpr implements Expr, TernaryOperator {
 			public ArrayUpdate(Type type, Expr src, Expr index, Expr value) {
 				super(EXPR_awrite, type, src, index, value);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3143,19 +3059,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayInitialiser extends AbstractSyntacticItem implements NaryOperator {
+		public static class ArrayInitialiser extends AbstractExpr implements NaryOperator {
 			public ArrayInitialiser(Type type, Tuple<Expr> elements) {
 				super(EXPR_ainit, type, elements);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -3184,19 +3090,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayGenerator extends AbstractSyntacticItem implements BinaryOperator {
+		public static class ArrayGenerator extends AbstractExpr implements BinaryOperator {
 			public ArrayGenerator(Type type, Expr value, Expr length) {
 				super(EXPR_agen, type, value, length);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3232,19 +3128,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayRange extends AbstractSyntacticItem implements BinaryOperator {
+		public static class ArrayRange extends AbstractExpr implements BinaryOperator {
 			public ArrayRange(Type type, Expr start, Expr end) {
 				super(EXPR_arange, type, start, end);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3279,19 +3165,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayLength extends AbstractSyntacticItem implements Expr.UnaryOperator {
+		public static class ArrayLength extends AbstractExpr implements Expr.UnaryOperator {
 			public ArrayLength(Type type, Expr src) {
 				super(EXPR_alen, type, src);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			@Override
@@ -3322,19 +3198,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordAccess extends AbstractSyntacticItem implements LVal, UnaryOperator {
+		public static class RecordAccess extends AbstractExpr implements LVal, UnaryOperator {
 			public RecordAccess(Type type, Expr lhs, Identifier rhs) {
 				super(EXPR_rread, type, lhs, rhs);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3375,20 +3241,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr, NaryOperator {
+		public static class RecordInitialiser extends AbstractExpr implements Expr, NaryOperator {
 
 			public RecordInitialiser(Type type, Tuple<Identifier> fields, Tuple<Expr> operands) {
 				super(EXPR_rinit, type, fields, operands);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			public Tuple<Identifier> getFields() {
@@ -3418,19 +3274,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordUpdate extends AbstractSyntacticItem implements Expr, BinaryOperator {
+		public static class RecordUpdate extends AbstractExpr implements Expr, BinaryOperator {
 			public RecordUpdate(Type type, Expr lhs, Identifier mhs, Expr rhs) {
 				super(EXPR_rwrite, type, lhs, mhs, rhs);
-			}
-
-			@Override
-			public Type getType() {
-				return (Type) super.get(0);
-			}
-
-			@Override
-			public void setType(Type type) {
-				operands[0] = type;
 			}
 
 			/**
@@ -3737,9 +3583,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public String toString() {
 				if (hasLifetime()) {
 					Identifier lifetime = getLifetime();
-					return "&" + lifetime + ":(" + getElement() + ")";
+					return "&" + lifetime + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&(" + getElement() + ")";
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 		}
@@ -3886,7 +3732,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "!(" + getElement() + ")";
+				return "!" + braceAsNecessary(getElement());
 			}
 		}
 
@@ -4069,7 +3915,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "method" + getParameters().toString() + "->" + getReturns();
+				Tuple<Identifier> captured = getCapturedLifetimes();
+				Tuple<Identifier> lifetimes = getLifetimeParameters();
+				String r = "method";
+				if(captured.size() != 0) {
+					r += "[" + captured.toBareString() + "]";
+				}
+				if(lifetimes.size() != 0) {
+					r += "<" + lifetimes.toBareString() + ">";
+				}
+				return r + getParameters().toString() + "->" + getReturns();
 			}
 
 			@SuppressWarnings("unchecked")
