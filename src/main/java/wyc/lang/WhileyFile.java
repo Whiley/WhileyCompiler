@@ -1632,7 +1632,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public static class StaticVariableAccess extends AbstractExpr implements Expr {
+		public static class StaticVariableAccess extends AbstractExpr implements LVal,Expr {
 			public StaticVariableAccess(Type type, Name name) {
 				super(EXPR_staticvar, type, name);
 			}

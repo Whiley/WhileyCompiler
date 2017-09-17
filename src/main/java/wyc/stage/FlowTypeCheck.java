@@ -1306,6 +1306,9 @@ public class FlowTypeCheck {
 		case EXPR_varcopy:
 			type = checkVariableLVal((Expr.VariableAccess) lval, environment);
 			break;
+		case EXPR_staticvar:
+			type = checkStaticVariableLVal((Expr.StaticVariableAccess) lval, environment);
+			break;
 		case EXPR_aread:
 			type = checkArrayLVal((Expr.ArrayAccess) lval, environment);
 			break;
@@ -1328,6 +1331,17 @@ public class FlowTypeCheck {
 		// is critical as, otherwise, the current refinement would
 		// unnecessarily restrict what we could assign to this variable.
 		return lval.getVariableDeclaration().getType();
+	}
+
+	public Type checkStaticVariableLVal(Expr.StaticVariableAccess lval, Environment environment) {
+		try {
+			// Resolve variable declaration being accessed
+			Decl.StaticVariable decl = typeSystem.resolveExactly(lval.getName(), Decl.StaticVariable.class);
+			//
+			return decl.getType();
+		} catch (ResolutionError e) {
+			return syntaxError(errorMessage(RESOLUTION_ERROR, lval.getName().toString()), lval, e);
+		}
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
@@ -1618,6 +1632,11 @@ public class FlowTypeCheck {
 		// Determine the argument types
 		Tuple<Expr> arguments = expr.getArguments();
 		Tuple<Type> parameters = sig.getParameters();
+		// Sanity check number of arguments provided
+		if (parameters.size() != arguments.size()) {
+			syntaxError("insufficient arguments for function or method invocation", expr);
+		}
+		// Sanity check types of arguments provided
 		for (int i = 0; i != arguments.size(); ++i) {
 			// Determine argument type
 			Type arg = checkExpression(arguments.get(i), env);

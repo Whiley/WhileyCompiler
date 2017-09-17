@@ -1419,7 +1419,12 @@ public class WhileyFileParser {
 		switch (lookahead.kind) {
 		case Identifier:
 			Identifier name = parseIdentifier();
-			LVal var = new Expr.VariableAccess(Type.Any, scope.getVariableDeclaration(name));
+			LVal var;
+			if(scope.isVariable(name)) {
+				var = new Expr.VariableAccess(Type.Any, scope.getVariableDeclaration(name));
+			} else {
+				var = new Expr.StaticVariableAccess(Type.Any, new Name(name));
+			}
 			return annotateSourceLocation(var, start);
 		case LeftBrace: {
 			match(LeftBrace);

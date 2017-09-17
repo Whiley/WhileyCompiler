@@ -1473,9 +1473,11 @@ public class VerificationConditionGenerator {
 				result = translateStaticVariableAccess((WhileyFile.Expr.StaticVariableAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_lnot:
-				return translateNotOperator((WhileyFile.Expr.LogicalNot) expr, environment);
+				result = translateNotOperator((WhileyFile.Expr.LogicalNot) expr, environment);
+				break;
 			case WhileyFile.EXPR_ineg:
-				return translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) expr, environment);
+				result = translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) expr, environment);
+				break;
 			case WhileyFile.EXPR_iadd:
 			case WhileyFile.EXPR_isub:
 			case WhileyFile.EXPR_imul:
