@@ -1491,21 +1491,29 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_lor:
 			case WhileyFile.EXPR_limplies:
 			case WhileyFile.EXPR_liff:
-				return translateBinaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
+				result = translateBinaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
+				break;
 			case WhileyFile.EXPR_is:
-				return translateIs((WhileyFile.Expr.Is) expr, environment);
+				result = translateIs((WhileyFile.Expr.Is) expr, environment);
+				break;
 			case WhileyFile.EXPR_aread:
-				return translateArrayIndex((WhileyFile.Expr.ArrayAccess) expr, environment);
+				result = translateArrayIndex((WhileyFile.Expr.ArrayAccess) expr, environment);
+				break;
 			case WhileyFile.EXPR_ainit:
-				return translateArrayInitialiser((WhileyFile.Expr.ArrayInitialiser) expr, environment);
+				result = translateArrayInitialiser((WhileyFile.Expr.ArrayInitialiser) expr, environment);
+				break;
 			case WhileyFile.EXPR_agen:
-				return translateArrayGenerator((WhileyFile.Expr.ArrayGenerator) expr, environment);
+				result = translateArrayGenerator((WhileyFile.Expr.ArrayGenerator) expr, environment);
+				break;
 			case WhileyFile.EXPR_rinit:
-				return translateRecordInitialiser((WhileyFile.Expr.RecordInitialiser) expr, environment);
+				result = translateRecordInitialiser((WhileyFile.Expr.RecordInitialiser) expr, environment);
+				break;
 			case WhileyFile.EXPR_alen:
-				return translateArrayLength((WhileyFile.Expr.ArrayLength) expr, environment);
+				result = translateArrayLength((WhileyFile.Expr.ArrayLength) expr, environment);
+				break;
 			case WhileyFile.EXPR_pread:
-				return translateDereference((WhileyFile.Expr.Dereference) expr, environment);
+				result = translateDereference((WhileyFile.Expr.Dereference) expr, environment);
+				break;
 			case WhileyFile.EXPR_bshr:
 			case WhileyFile.EXPR_bshl:
 			case WhileyFile.EXPR_band:
@@ -1513,7 +1521,8 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_bxor:
 			case WhileyFile.EXPR_bnot:
 			case WhileyFile.EXPR_pinit:
-				return translateAsUnknown(expr, environment);
+				result = translateAsUnknown(expr, environment);
+				break;
 			default:
 				throw new RuntimeException("Deadcode reached (" + expr.getClass().getName() +")");
 			}

@@ -2497,8 +2497,7 @@ public class WhileyFileParser {
 			exprs.add(parseExpression(scope, true));
 		} while (eventuallyMatch(RightSquare) == null);
 		// Convert to array
-		Expr[] exprsArray = exprs.toArray(new Expr[exprs.size()]);
-		return annotateSourceLocation(new Expr.ArrayInitialiser(Type.Any, new Tuple<>(exprsArray)), start);
+		return annotateSourceLocation(new Expr.ArrayInitialiser(Type.Any, new Tuple<>(exprs)), start);
 	}
 
 	/**
