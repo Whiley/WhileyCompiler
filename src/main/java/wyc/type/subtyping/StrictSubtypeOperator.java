@@ -337,7 +337,6 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @throws ResolutionError
 	 */
 	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions) throws ResolutionError {
-
 		// At this point, we have several cases left to consider.
 		boolean aSign = a.sign;
 		boolean bSign = b.sign;
@@ -592,8 +591,9 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		// Calculate whether lhs == rhs
 		boolean elemEqual = elemLhsSubsetRhs && elemRhsSubsetLhs;
 		//
-		if (lhs.sign && rhs.sign) {
+		if (lhs.sign == rhs.sign) {
 			// (&T1 & &T2) == 0 iff T1 != T2
+			// (!(&T1) & !(&T2)) == 0 iff T1 != T2
 			return !elemEqual;
 		} else if (!lhs.sign || !rhs.sign) {
 			// (!(&T1) & &T2) == 0 iff T1 == T2

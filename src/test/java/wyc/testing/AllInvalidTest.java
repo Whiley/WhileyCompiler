@@ -73,6 +73,9 @@ public class AllInvalidTest {
 		IGNORED.put("Tuple_Invalid_3", "#713");
 		IGNORED.put("Tuple_Invalid_4", "#713");
 		IGNORED.put("Tuple_Invalid_5", "#713");
+		//
+		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
+		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");
 
 		// ===============================================================
 		// Whiley Theorem Prover faults

@@ -151,7 +151,7 @@ public class CoerciveSubtypeOperator extends StrictSubtypeOperator {
 			if(matches == lhsFields.size() && matches == rhsFields.size()) {
 				// If we get here, then: for pos-pos case, all fields have
 				// intersection; for pos-neg case, no fields have intersection.
-				return !sign;
+				return (lhs.type.isOpen() == rhs.type.isOpen()) && !sign;
 			} else if (matches != lhsFields.size() && matches !=rhsFields.size()) {
 				// If we get here, then both records have fields not contained in the other. For
 				// pos-pos case we have {int x, int y} & {int x, int z} gives {int x, int y, int
