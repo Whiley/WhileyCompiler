@@ -1218,6 +1218,7 @@ public class WhileyFileParser {
 				cases.add(parseCaseStatement(caseScope));
 			}
 			checkForDuplicateDefault(cases);
+			checkForDuplicateConditions(cases);
 			return new Tuple<>(cases);
 		}
 	}
@@ -1230,7 +1231,8 @@ public class WhileyFileParser {
 	 */
 	private void checkForDuplicateDefault(List<Stmt.Case> cases) {
 		boolean hasDefault = false;
-		for (Stmt.Case c : cases) {
+		for(int i=0;i!=cases.size();++i) {
+			Stmt.Case c = cases.get(i);
 			if (c.getConditions().size() > 0 && hasDefault) {
 				syntaxError("unreachable code", c);
 			} else if (c.getConditions().size() == 0 && hasDefault) {
@@ -1241,6 +1243,29 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * Check whether we have duplicate case conditions or not. Observe that this is
+	 * relatively simplistic and does not perform any complex simplifications.
+	 * Therefore, some duplicates are missed because they require simplification.
+	 * For example, the condition <code>1+1</code> and <code>2</code> are not
+	 * considered duplicates here.  See #648 for more.
+	 */
+	private void checkForDuplicateConditions(List<Stmt.Case> cases) {
+		HashSet<Expr> seen = new HashSet<>();
+		for(int i=0;i!=cases.size();++i) {
+			Stmt.Case c = cases.get(i);
+			Tuple<Expr> conditions = c.getConditions();
+			// Check whether any of these conditions already seen.
+			for(int j=0;j!=conditions.size();++j) {
+				Expr condition = conditions.get(j);
+				if(seen.contains(condition)) {
+					syntaxError("duplicate case label", condition);
+				} else {
+					seen.add(condition);
+				}
+			}
+		}
+	}
 	/**
 	 * Parse a case Statement, which has the form:
 	 *
