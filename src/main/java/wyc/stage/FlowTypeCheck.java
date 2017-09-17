@@ -2200,7 +2200,7 @@ public class FlowTypeCheck {
 		try {
 			Type type = d.getType();
 			if (typeSystem.isRawCoerciveSubtype(Type.Void, type)) {
-				syntaxError("empty type", type);
+				syntaxError("empty type encountered", type);
 			}
 		} catch (NameResolver.ResolutionError e) {
 			syntaxError(e.getMessage(), e.getName(), e);

@@ -1,3 +1,4 @@
 tests/invalid/Function_Invalid_3.whiley:5: unable to resolve name (no match for f(int))
+	found: Function_Invalid_3:f : method(int,int)->(int)
     return f(1)
-           ^^^^
+           ^

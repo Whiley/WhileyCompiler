@@ -1,3 +1,3 @@
-tests/invalid/While_Invalid_2.whiley:5: unknown variable
+tests/invalid/While_Invalid_2.whiley:5: unable to resolve name (j)
     while i < |args| where j > 0:
                            ^
