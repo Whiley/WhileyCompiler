@@ -14,6 +14,8 @@
 package wyc.type;
 
 import static wyc.lang.WhileyFile.*;
+
+import wybs.lang.NameID;
 import wybs.lang.NameResolver.ResolutionError;
 
 /**
@@ -79,4 +81,51 @@ public interface SubtypeOperator {
 	 *             to a corresponding type declaration.
 	 */
 	public Result isSubtype(Type lhs, Type rhs) throws ResolutionError;
+
+	/**
+	 * <p>
+	 * Check whether a type is equivalent to <code>void</code> or not. The
+	 * complexities of Whiley's type system mean that this is not always obvious.
+	 * For example, the type <code>int&(!int)</code> is equivalent to
+	 * <code>void</code>. Likewise, is the type <code>!any</code>. Another
+	 * interesting case is the following:
+	 * </p>
+	 *
+	 * <pre>
+	 * type T is { T t }
+	 * </pre>
+	 *
+	 * <p>
+	 * This is only considered equivalent to <code>void</code> under an
+	 * <i>inductive</i> interpretation of types (which is assumed in Whiley). The
+	 * distinction is that, under a <i>coinductive</i> interpretation, instances of
+	 * <code>T</code> do exist which, by construction, are infinite chains. Since
+	 * such chains cannot be constructed in Whiley, we can disregard them.
+	 * </p>
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public boolean isVoid(Type type) throws ResolutionError;
+
+	/**
+	 * <p>
+	 * Contractive types are types which cannot accept value because they have
+	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive,
+	 * where as <code>X<{null|X field}></code> is not.
+	 * </p>
+	 *
+	 * <p>
+	 * This method returns true if the type is contractive, or contains a
+	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
+	 * considered contracted.
+	 * </p>
+	 *
+	 * @param type --- type to test for contractivity.
+	 * @return
+	 * @throws ResolveError
+	 */
+	public boolean isContractive(NameID nid, Type type) throws ResolutionError;
 }

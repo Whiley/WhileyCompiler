@@ -19,6 +19,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wycc.util.Pair;
+import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.lang.WhileyFile;
@@ -90,6 +91,74 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 
 	public StrictSubtypeOperator(TypeSystem typeSystem) {
 		this.typeSystem = typeSystem;
+	}
+
+	@Override
+	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
+		HashSet<NameID> visited = new HashSet<>();
+		return isContractive(nid, type,visited);
+	}
+
+	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) throws ResolutionError {
+		switch(type.getOpcode()) {
+		case TYPE_void:
+		case TYPE_any:
+		case TYPE_null:
+		case TYPE_bool:
+		case TYPE_int:
+		case TYPE_reference:
+		case TYPE_array:
+		case TYPE_record:
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property:
+		case TYPE_inv:
+		case TYPE_byte:
+		case TYPE_unresolved:
+			return true;
+		case TYPE_union:
+		case TYPE_intersection: {
+			Type.Combinator c = (Type.Combinator) type;
+			for(int i=0;i!=c.size();++i) {
+				if(!isContractive(name,c.get(i),visited)) {
+					return false;
+				}
+			}
+			return true;
+		}
+		case TYPE_negation: {
+			Type.Negation n = (Type.Negation) type;
+			return isContractive(name,n.getElement(),visited);
+		}
+		default:
+		case TYPE_nominal: {
+			Type.Nominal n = (Type.Nominal) type;
+			Decl.Type decl = typeSystem.resolveExactly(n.getName(), Decl.Type.class);
+			NameID nid = decl.getQualifiedName().toNameID();
+			if(nid.equals(name)) {
+				// We have identified a non-contract type.
+				return false;
+			} else if(visited.contains(nid)) {
+				// NOTE: this identifies a type (other than the one we are looking for) which is
+				// not contractive. It may seem odd then, that we pretend it is in fact
+				// contractive. The reason for this is simply that we cannot tell here with the
+				// type we are interested in is contractive or not. Thus, to improve the error
+				// messages reported we ignore this non-contractiveness here (since we know
+				// it'll be caught down the track anyway).
+				return true;
+			} else {
+				visited.add(nid);
+				return isContractive(name,decl.getType(),visited);
+			}
+		}
+		}
+	}
+
+	@Override
+	public boolean isVoid(Type type) throws ResolutionError {
+		HashSetAssumptions assumptions = new HashSetAssumptions();
+		Term<?> term = new Term<>(true, type, true);
+		return isVoidTerm(term,term,assumptions);
 	}
 
 	@Override
@@ -268,6 +337,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @throws ResolutionError
 	 */
 	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions) throws ResolutionError {
+
 		// At this point, we have several cases left to consider.
 		boolean aSign = a.sign;
 		boolean bSign = b.sign;
