@@ -291,15 +291,16 @@ public class WhileyFileParser {
 		Tuple<Expr> ensures = parseInvariant(scope,Ensures);
 		// Parse function or method body (if not native)
 		Stmt.Block body;
+		int end;
 		if(modifiers.match(Modifier.Native.class) == null) {
 			// Not native function or method
 			match(Colon);
-			int end = index;
+			end = index;
 			matchEndLine();
 			scope.declareThisLifetime();
 			body = parseBlock(scope, false);
 		} else {
-			int end = index;
+			end = index;
 			matchEndLine();
 			// FIXME: having empty block seems wasteful
 			body = new Stmt.Block();
@@ -312,7 +313,7 @@ public class WhileyFileParser {
 			declaration = new Decl.Method(modifiers, name, parameters, returns, requires, ensures, body,
 					lifetimes);
 		}
-		return annotateSourceLocation(declaration,start);
+		return annotateSourceLocation(declaration,start,end-1);
 	}
 
 	/**

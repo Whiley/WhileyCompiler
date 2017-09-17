@@ -227,17 +227,13 @@ public class FlowTypeCheck {
 	 * @param last
 	 */
 	private void checkReturnValue(Decl.FunctionOrMethod d, Environment last) {
-		// FIXME: fix this!!
-		// if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM &&
-		// d.resolvedType().returns().length != 0
-		// && !(d instanceof WhileyFile.Property)) {
-		// // In this case, code reaches the end of the function or method and,
-		// // furthermore, that this requires a return value. To get here means
-		// // that there was no explicit return statement given on at least one
-		// // execution path.
-		// throw new SyntaxError("missing return statement", file.getEntry(),
-		// d);
-		// }
+		if (d.match(Modifier.Native.class) == null && last != BOTTOM && d.getReturns().size() != 0) {
+			// In this case, code reaches the end of the function or method and,
+			// furthermore, that this requires a return value. To get here means
+			// that there was no explicit return statement given on at least one
+			// execution path.
+			syntaxError("missing return statement", d);
+		}
 	}
 
 	public void checkPropertyDeclaration(Decl.Property d) {
