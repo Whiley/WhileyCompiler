@@ -3772,7 +3772,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @return
 		 */
 		public static class Union extends Combinator {
-			public Union(Type[] types) {
+			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
 
@@ -3814,7 +3814,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @return
 		 */
 		public static class Intersection extends Combinator {
-			public Intersection(Type[] types) {
+			public Intersection(Type... types) {
 				super(TYPE_intersection, types);
 			}
 

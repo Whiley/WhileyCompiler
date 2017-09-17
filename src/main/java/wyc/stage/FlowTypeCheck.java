@@ -1658,13 +1658,25 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkEqualityOperator(Expr.NaryOperator expr, Environment environment) {
-		// FIXME: we could be more selective here I think. For example, by
-		// checking that the given operands actually overall.
-		Tuple<Expr> operands = expr.getOperands();
-		for (int i = 0; i != operands.size(); ++i) {
-			checkExpression(operands.get(i), environment);
+		try {
+			Tuple<Expr> operands = expr.getOperands();
+			Type last = null;
+			for (int i = 0; i != operands.size(); ++i) {
+				Type next = checkExpression(operands.get(i), environment);
+				if (i > 0) {
+					// Sanity check that the types of operands are actually comparable.
+					Type glb = new Type.Intersection(last, next);
+					if (typeSystem.isVoid(glb)) {
+						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, last, next), expr);
+						return null;
+					}
+				}
+				last = next;
+			}
+			return Type.Bool;
+		} catch (ResolutionError e) {
+			return syntaxError(e.getMessage(), expr);
 		}
-		return Type.Bool;
 	}
 
 	private Type checkArithmeticComparator(Expr.NaryOperator expr, Environment environment) {
