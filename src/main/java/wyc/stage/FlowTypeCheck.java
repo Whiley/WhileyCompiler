@@ -169,6 +169,8 @@ public class FlowTypeCheck {
 	 */
 	public void checkTypeDeclaration(Decl.Type decl) {
 		Environment environment = new Environment();
+		// Check type is contractive
+		checkContractive(decl);
 		// Check variable declaration is not empty
 		checkNonEmpty(decl.getVariableDeclaration());
 		// Check the type invariant
@@ -2177,6 +2179,16 @@ public class FlowTypeCheck {
 		}
 	}
 
+	private void checkContractive(Decl.Type d) {
+		try {
+			if (!typeSystem.isContractive(d.getQualifiedName().toNameID(), d.getType())) {
+				syntaxError("empty type encountered", d.getName());
+			}
+		} catch (NameResolver.ResolutionError e) {
+			syntaxError(e.getMessage(), e.getName(), e);
+		}
+	}
+
 	/**
 	 * Check a given set of variable declarations are not "empty". That is,
 	 * their declared type is not equivalent to void.
@@ -2199,7 +2211,7 @@ public class FlowTypeCheck {
 	private void checkNonEmpty(Decl.Variable d) {
 		try {
 			Type type = d.getType();
-			if (typeSystem.isRawCoerciveSubtype(Type.Void, type)) {
+			if (typeSystem.isVoid(type)) {
 				syntaxError("empty type encountered", type);
 			}
 		} catch (NameResolver.ResolutionError e) {

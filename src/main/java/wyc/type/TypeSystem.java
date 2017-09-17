@@ -26,6 +26,7 @@ import wyc.util.WhileyFileResolver;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.Build;
+import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 
@@ -100,11 +101,40 @@ public class TypeSystem {
 	 *
 	 * @param type --- type to test for contractivity.
 	 * @return
+	 * @throws ResolutionError
 	 * @throws ResolveError
 	 */
-	public boolean isContractive(Type type) {
-		// FIXME: implement contractivity checking
-		return false;
+	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
+		return strictSubtypeOperator.isContractive(nid, type);
+	}
+
+	/**
+	 * <p>
+	 * Check whether a type is equivalent to <code>void</code> or not. The
+	 * complexities of Whiley's type system mean that this is not always obvious.
+	 * For example, the type <code>int&(!int)</code> is equivalent to
+	 * <code>void</code>. Likewise, is the type <code>!any</code>. Another
+	 * interesting case is the following:
+	 * </p>
+	 *
+	 * <pre>
+	 * type T is { T t }
+	 * </pre>
+	 *
+	 * <p>
+	 * This is only considered equivalent to <code>void</code> under an
+	 * <i>inductive</i> interpretation of types (which is assumed in Whiley). The
+	 * distinction is that, under a <i>coinductive</i> interpretation, instances of
+	 * <code>T</code> do exist which, by construction, are infinite chains. Since
+	 * such chains cannot be constructed in Whiley, we can disregard them.
+	 * </p>
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public boolean isVoid(Type type) throws ResolutionError {
+		return strictSubtypeOperator.isVoid(type);
 	}
 
 	/**
