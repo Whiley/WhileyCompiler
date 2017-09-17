@@ -15,10 +15,12 @@ import java.util.List;
 
 import wybs.lang.NameResolver;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
+import wybs.util.AbstractCompilationUnit.Attribute;
 import wyc.command.Compile;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -336,7 +338,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		} catch(InternalFailure e) {
 			throw e;
 		} catch (SyntaxError e) {
-			SyntacticElement element = e.getElement();
+			SyntacticItem element = e.getElement();
 			e.outputSourceError(syserr, brief);
 			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
 				findCounterexamples((WyalFile.Declaration.Assert)element,project);

@@ -667,7 +667,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_igt:
 				val = executeArithmeticGreaterThan((Expr.IntegerGreaterThan) expr, frame);
 				break;
-			case WhileyFile.EXPR_igteq:
+			case WhileyFile.EXPR_ige:
 				val = executeArithmeticGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_bnot:

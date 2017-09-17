@@ -11,7 +11,7 @@ function evaluate(Expr e) -> Value:
         if e is Expr[]:
             Value[] r = [0;|e|]
             int i = 0
-            while i < |e|:
+            while i < |e| where i >= 0 && |r| == |e|:
                 r[i] = evaluate(e[i])
                 i = i + 1
             return r

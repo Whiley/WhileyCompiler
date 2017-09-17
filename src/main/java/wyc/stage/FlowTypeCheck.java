@@ -516,6 +516,9 @@ public class FlowTypeCheck {
 		environment = checkBlock(stmt.getBody(), environment, scope);
 		// Type check invariants
 		checkConditions(stmt.getInvariant(), true, environment);
+		// Determine and update modified variables
+		Tuple<Decl.Variable> modified = determineModifiedVariables(stmt.getBody());
+		stmt.setModified(stmt.getHeap().allocate(modified));
 		// Type condition assuming its false to represent the terminated loop.
 		// This is important if the condition contains a type test, as we'll
 		// know that doesn't hold here.
@@ -778,9 +781,106 @@ public class FlowTypeCheck {
 		Environment falseEnvironment = checkCondition(stmt.getCondition(), false, environment);
 		// Type loop body using true environment
 		checkBlock(stmt.getBody(), trueEnvironment, scope);
+		// Determine and update modified variables
+		Tuple<Decl.Variable> modified = determineModifiedVariables(stmt.getBody());
+		stmt.setModified(stmt.getHeap().allocate(modified));
 		// Return false environment to represent flow after loop.
 		return falseEnvironment;
 	}
+
+	/**
+	 * Determine the set of modifier variables for a given statement block. A
+	 * modified variable is one which is assigned.
+	 *
+	 * @param block
+	 * @param scope
+	 * @param modified
+	 */
+	private Tuple<Decl.Variable> determineModifiedVariables(Stmt.Block block) {
+		HashSet<Decl.Variable> modified = new HashSet<>();
+		determineModifiedVariables(block,modified);
+		return new Tuple<>(modified);
+	}
+
+	private void determineModifiedVariables(Stmt.Block block,Set<Decl.Variable> modified) {
+		for (int i = 0; i != block.size(); ++i) {
+			Stmt stmt = block.get(i);
+			switch(stmt.getOpcode()) {
+			case STMT_assign: {
+				Stmt.Assign s = (Stmt.Assign) stmt;
+				for (LVal lval : s.getLeftHandSide()) {
+					Expr.VariableAccess lv = extractAssignedVariable(lval);
+					if (lv == null) {
+						// FIXME: this is not an ideal solution long term. In
+						// particular, we really need this method to detect not
+						// just modified variables, but also modified locations
+						// in general (e.g. assignments through references, etc)
+						continue;
+					} else {
+						modified.add(lv.getVariableDeclaration());
+					}
+				}
+				break;
+			}
+			case STMT_dowhile: {
+				Stmt.DoWhile s = (Stmt.DoWhile) stmt;
+				determineModifiedVariables(s.getBody(), modified);
+				break;
+			}
+			case STMT_if:
+			case STMT_ifelse: {
+				Stmt.IfElse s = (Stmt.IfElse) stmt;
+				determineModifiedVariables(s.getTrueBranch(), modified);
+				if (s.hasFalseBranch()) {
+					determineModifiedVariables(s.getFalseBranch(), modified);
+				}
+				break;
+			}
+			case STMT_namedblock: {
+				Stmt.NamedBlock s = (Stmt.NamedBlock) stmt;
+				determineModifiedVariables(s.getBlock(), modified);
+				break;
+			}
+			case STMT_switch: {
+				Stmt.Switch s = (Stmt.Switch) stmt;
+				for (Stmt.Case c : s.getCases()) {
+					determineModifiedVariables(c.getBlock(), modified);
+				}
+				break;
+			}
+			case STMT_while: {
+				Stmt.While s = (Stmt.While) stmt;
+				determineModifiedVariables(s.getBody(), modified);
+				break;
+			}
+			}
+		}
+	}
+
+	/**
+	 * Determine the modified variable for a given LVal. Almost all lvals modify
+	 * exactly one variable, though dereferences don't.
+	 *
+	 * @param lval
+	 * @param scope
+	 * @return
+	 */
+	private Expr.VariableAccess extractAssignedVariable(LVal lval) {
+		if (lval instanceof Expr.VariableAccess) {
+			return (Expr.VariableAccess) lval;
+		} else if (lval instanceof Expr.RecordAccess) {
+			Expr.RecordAccess e = (Expr.RecordAccess) lval;
+			return extractAssignedVariable((LVal) e.getOperand());
+		} else if (lval instanceof Expr.ArrayAccess) {
+			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
+			return extractAssignedVariable((LVal) e.getFirstOperand());
+		} else if (lval instanceof Expr.Dereference) {
+			return null;
+		} else {
+			internalFailure(errorMessage(INVALID_LVAL_EXPRESSION), lval);
+			return null; // dead code
+		}
+}
 
 	// =========================================================================
 	// LVals
@@ -1363,7 +1463,7 @@ public class FlowTypeCheck {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 			return checkComparisonOperator((Expr.NaryOperator) expression, environment);
 		// Arithmetic Operators
 		case EXPR_ineg:
@@ -2100,7 +2200,7 @@ public class FlowTypeCheck {
 		try {
 			Type type = d.getType();
 			if (typeSystem.isRawCoerciveSubtype(Type.Void, type)) {
-				syntaxError("empty type", type);
+				syntaxError("empty type encountered", type);
 			}
 		} catch (NameResolver.ResolutionError e) {
 			syntaxError(e.getMessage(), e.getName(), e);

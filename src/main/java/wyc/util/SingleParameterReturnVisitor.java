@@ -318,7 +318,7 @@ public class SingleParameterReturnVisitor<P,R> {
 		case EXPR_ilt:
 		case EXPR_ile:
 		case EXPR_igt:
-		case EXPR_igteq:
+		case EXPR_ige:
 		case EXPR_iadd:
 		case EXPR_isub:
 		case EXPR_imul:
@@ -417,7 +417,7 @@ public class SingleParameterReturnVisitor<P,R> {
 			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
 		case EXPR_igt:
 			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
-		case EXPR_igteq:
+		case EXPR_ige:
 			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
 		case EXPR_iadd:
 			return visitIntegerAddition((Expr.IntegerAddition) expr, data);

@@ -810,7 +810,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Return(returns), start);
+		return annotateSourceLocation(new Stmt.Return(returns), start, end-1);
 	}
 
 	/**
@@ -897,7 +897,7 @@ public class WhileyFileParser {
 			syntaxError("break outside switch or loop", t);
 		}
 		// Done.
-		return annotateSourceLocation(new Stmt.Break(),start);
+		return annotateSourceLocation(new Stmt.Break(),start,end-1);
 	}
 
 	/**
@@ -926,7 +926,7 @@ public class WhileyFileParser {
 			syntaxError("continue outside loop", t);
 		}
 		// Done.
-		return annotateSourceLocation(new Stmt.Continue(),start);
+		return annotateSourceLocation(new Stmt.Continue(),start,end-1);
 	}
 
 	/**
@@ -955,7 +955,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Debug(e), start);
+		return annotateSourceLocation(new Stmt.Debug(e), start, end-1);
 	}
 
 	/**
@@ -989,7 +989,7 @@ public class WhileyFileParser {
 		// Parse the loop invariants
 		Tuple<Expr> invariant = parseInvariant(scope,Where);
 		matchEndLine();
-		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, blk), start);
+		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, new Tuple<>(), blk), start, end-1);
 	}
 
 	/**
@@ -1014,7 +1014,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Fail(),start);
+		return annotateSourceLocation(new Stmt.Fail(),start,end-1);
 	}
 
 	/**
@@ -1072,7 +1072,7 @@ public class WhileyFileParser {
 			stmt = new Stmt.IfElse(c, tblk, fblk);
 		}
 		// Done!
-		return annotateSourceLocation(stmt, start);
+		return annotateSourceLocation(stmt, start, end-1);
 	}
 
 	/**
@@ -1103,7 +1103,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Stmt.Block blk = parseBlock(scope, true);
-		return annotateSourceLocation(new Stmt.While(condition, invariants, blk), start);
+		return annotateSourceLocation(new Stmt.While(condition, invariants, new Tuple<>(), blk), start, end-1);
 	}
 
 	/**
@@ -1128,7 +1128,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Skip(),start);
+		return annotateSourceLocation(new Stmt.Skip(),start,end-1);
 	}
 
 	/**
@@ -1161,7 +1161,7 @@ public class WhileyFileParser {
 		// Match case block
 		Tuple<Stmt.Case> cases = parseCaseBlock(scope);
 		// Done
-		return annotateSourceLocation(new Stmt.Switch(condition, cases), start);
+		return annotateSourceLocation(new Stmt.Switch(condition, cases), start,end-1);
 	}
 
 	/**
@@ -1272,7 +1272,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Stmt.Block stmts = parseBlock(scope, scope.isInLoop());
-		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start);
+		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start,end-1);
 	}
 
 	/**
@@ -1314,7 +1314,7 @@ public class WhileyFileParser {
 		Tuple<Expr> rvals = parseExpressions(scope, false);
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Stmt.Assign(lvals, rvals), start);
+		return annotateSourceLocation(new Stmt.Assign(lvals, rvals), start,end-1);
 	}
 
 	/**
@@ -1391,9 +1391,10 @@ public class WhileyFileParser {
 				lhs = new Expr.RecordAccess(Type.Any, lhs, name);
 				break;
 			}
+			lhs = annotateSourceLocation(lhs,start);
 		}
 
-		return annotateSourceLocation(lhs, start);
+		return lhs;
 	}
 
 	/**
@@ -2105,7 +2106,7 @@ public class WhileyFileParser {
 				break;
 			}
 			// Attached source information
-			annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs,start);
 		}
 
 		return lhs;

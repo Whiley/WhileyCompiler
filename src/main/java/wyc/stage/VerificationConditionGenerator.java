@@ -31,6 +31,7 @@ import wyfs.util.Trie;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.type.TypeSystem;
+import wyc.util.SingleParameterVisitor;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -189,7 +190,7 @@ public class VerificationConditionGenerator {
 		// Done
 		WyalFile.Identifier name = declaration.getName();
 		WyalFile.Declaration td = new WyalFile.Declaration.Named.Type(name, var, invariant);
-		allocate(td,declaration.attributes());
+		allocate(td,declaration.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	private void translatePropertyDeclaration(WhileyFile.Decl.Property declaration) {
@@ -209,7 +210,7 @@ public class VerificationConditionGenerator {
 		WyalFile.Stmt.Block block = new WyalFile.Stmt.Block(stmts);
 		WyalFile.Identifier name = declaration.getName();
 		WyalFile.Declaration pd = new WyalFile.Declaration.Named.Macro(name, type, block);
-		allocate(pd,declaration.attributes());
+		allocate(pd,declaration.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	/**
@@ -293,7 +294,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md,invariants.get(i).attributes());
+			allocate(md,invariants.get(i).getParent(WhileyFile.Attribute.Span.class));
 		}
 	}
 
@@ -325,7 +326,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md, invariants.get(i).attributes());
+			allocate(md, invariants.get(i).getParent(WhileyFile.Attribute.Span.class));
 		}
 	}
 
@@ -368,7 +369,7 @@ public class VerificationConditionGenerator {
 			LocalEnvironment environment) {
 		Tuple<WhileyFile.Decl.Variable> parameters = declaration.getParameters();
 		String prefix = declaration.getName() + "_requires_";
-		Expr[] preconditions = new Expr[declaration.getEnsures().size()];
+		Expr[] preconditions = new Expr[declaration.getRequires().size()];
 		Expr[] arguments = new Expr[parameters.size()];
 		// Translate parameters as arguments to invocation
 		for (int i = 0; i != arguments.length; ++i) {
@@ -469,7 +470,7 @@ public class VerificationConditionGenerator {
 		context = p.second();
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("assertion failed", context.assumptions,
-				condition);
+				condition, stmt.getCondition().getParent(WhileyFile.Attribute.Span.class));
 		context.emit(verificationCondition);
 		//
 		return context.assume(condition);
@@ -489,10 +490,17 @@ public class VerificationConditionGenerator {
 
 		for (int i = 0, j = 0; i != rhs.size(); ++i) {
 			WhileyFile.Expr rval = rhs.get(i);
-			WhileyFile.LVal[] lval = new WhileyFile.LVal[] {lhs.get(i)};
-			//Location<?>[] lval = java.util.Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
+			Tuple<WhileyFile.Type> types = rval.getTypes();
+			WhileyFile.LVal[] lval;
+			if(types == null) {
+				lval = new WhileyFile.LVal[] {lhs.get(j++)};
+			} else {
+				lval = new WhileyFile.LVal[types.size()];
+				for(int k=0;k!=types.size();++k) {
+					lval[k] = lhs.get(j++);
+				}
+			}
 			context = translateAssign(lval, rval, context);
-			//j = j + rval.numberOfTypes();
 		}
 		// Done
 		return context;
@@ -731,9 +739,8 @@ public class VerificationConditionGenerator {
 	private Context translateDoWhile(WhileyFile.Stmt.DoWhile stmt, Context context) {
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) context
 				.getEnvironment().getParent().enclosingDeclaration;
-		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant after first iteration
 		LoopScope firstScope = new LoopScope();
 		Context beforeFirstBodyContext = context.newLoopScope(firstScope);
@@ -743,14 +750,14 @@ public class VerificationConditionGenerator {
 		afterFirstBodyContext = joinDescendants(beforeFirstBodyContext, afterFirstBodyContext,
 				firstScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant not established by first iteration", loopInvariant, afterFirstBodyContext);
+		checkLoopInvariant("loop invariant not established by first iteration", stmt, afterFirstBodyContext);
 		// Rule 2. Check loop invariant preserved on subsequence iterations. On
 		// entry to the loop body we must havoc all modified variables. This is
 		// necessary as such variables should retain their values from before
 		// the loop.
 		LoopScope arbitraryScope = new LoopScope();
-		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getModified()); // MODIFIED
-		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
+		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getModified());
+		beforeArbitraryBodyContext = assumeLoopInvariant(stmt, beforeArbitraryBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeArbitraryBodyContext);
 		Expr trueCondition = p.first();
 		beforeArbitraryBodyContext = p.second().assume(trueCondition);
@@ -760,10 +767,10 @@ public class VerificationConditionGenerator {
 		afterArbitraryBodyContext = joinDescendants(beforeArbitraryBodyContext, afterArbitraryBodyContext,
 				arbitraryScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant not restored", loopInvariant, afterArbitraryBodyContext);
+		checkLoopInvariant("loop invariant not restored", stmt, afterArbitraryBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getModified());
-		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
+		exitContext = assumeLoopInvariant(stmt, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -788,7 +795,7 @@ public class VerificationConditionGenerator {
 		Expr condition = new Expr.Constant(new Value.Bool(false));
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("possible panic", context.assumptions,
-				condition);
+				condition, stmt.getParent(WhileyFile.Attribute.Span.class));
 		context.emit(verificationCondition);
 		//
 		return null;
@@ -891,7 +898,8 @@ public class VerificationConditionGenerator {
 		if (typeMayHaveInvariant(lhs, context)) {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
-			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause));
+			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
+					getSpan(rhs)));
 		}
 	}
 
@@ -934,7 +942,8 @@ public class VerificationConditionGenerator {
 			for (int i = 0; i != postcondition.size(); ++i) {
 				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause));
+				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
+						stmt.getParent(WhileyFile.Attribute.Span.class)));
 			}
 		}
 	}
@@ -1006,17 +1015,16 @@ public class VerificationConditionGenerator {
 	private Context translateWhile(WhileyFile.Stmt.While stmt, Context context) {
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) context
 				.getEnvironment().getParent().enclosingDeclaration;
-		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant on entry
-		checkLoopInvariant("loop invariant does not hold on entry", loopInvariant, context);
+		checkLoopInvariant("loop invariant does not hold on entry", stmt, context);
 		// Rule 2. Check loop invariant preserved. On entry to the loop body we
 		// must havoc all modified variables. This is necessary as such
 		// variables should retain their values from before the loop.
 		LoopScope scope = new LoopScope();
-		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified()); // MODIFIES
-		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
+		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified());
+		beforeBodyContext = assumeLoopInvariant(stmt, beforeBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeBodyContext);
 		Expr trueCondition = p.first();
 		beforeBodyContext = p.second().assume(trueCondition);
@@ -1024,10 +1032,10 @@ public class VerificationConditionGenerator {
 		// Join continue contexts together since they must also preserve the
 		// loop invariant
 		afterBodyContext = joinDescendants(beforeBodyContext, afterBodyContext, scope.continueContexts);
-		checkLoopInvariant("loop invariant not restored", loopInvariant, afterBodyContext);
+		checkLoopInvariant("loop invariant not restored", stmt, afterBodyContext);
 		// Rule 3. Assume loop invariant holds.
-		Context exitContext = context.havoc(stmt.getModified()); // MODIFIES
-		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
+		Context exitContext = context.havoc(stmt.getModified());
+		exitContext = assumeLoopInvariant(stmt, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -1047,10 +1055,11 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translateLoopInvariantMacros(Tuple<WhileyFile.Expr> loopInvariant,
-			WhileyFile.Decl.FunctionOrMethod declaration, WyalFile wyalFile) {
+	private void translateLoopInvariantMacros(Stmt.Loop stmt, WhileyFile.Decl.FunctionOrMethod declaration,
+			WyalFile wyalFile) {
 		//
 		String prefix = declaration.getName() + "_loopinvariant_";
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
 			WhileyFile.Expr clause = loopInvariant.get(i);
@@ -1059,8 +1068,7 @@ public class VerificationConditionGenerator {
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(declaration, loopInvariant,
-					localEnvironment);
+			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(stmt, localEnvironment);
 			WyalFile.Stmt.Block e = translateAsBlock(clause, localEnvironment.clone());
 			Named.Macro macro = new Named.Macro(name, vars, e);
 			wyalFile.allocate(macro);
@@ -1075,8 +1083,9 @@ public class VerificationConditionGenerator {
 	 *            The clauses making up the loop invariant
 	 * @param context
 	 */
-	private void checkLoopInvariant(String msg, Tuple<WhileyFile.Expr> loopInvariant, Context context) {
+	private void checkLoopInvariant(String msg, Stmt.Loop stmt, Context context) {
 		//
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
@@ -1085,24 +1094,25 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		//WhileyFile.Expr.VariableAccess[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
-		WhileyFile.Expr.VariableAccess[] localVariables = new WhileyFile.Expr.VariableAccess[0];
-		Expr[] arguments = new Expr[localVariables.length];
+		Tuple<WhileyFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
+		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
-			WhileyFile.Expr.VariableAccess var = localVariables[i];
-			arguments[i] = new Expr.VariableAccess(environment.read(var.getVariableDeclaration()));
+			WhileyFile.Decl.Variable var = localVariables.get(i);
+			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
 			WhileyFile.Expr clause = loopInvariant.get(i);
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
 			Expr macroCall = new Expr.Invoke(null, name, null, arguments);
-			context.emit(new VerificationCondition(msg, context.assumptions, macroCall));
+			context.emit(new VerificationCondition(msg, context.assumptions, macroCall,
+					clause.getParent(WhileyFile.Attribute.Span.class)));
 		}
 	}
 
-	private Context assumeLoopInvariant(Tuple<WhileyFile.Expr> loopInvariant, Context context) {
+	private Context assumeLoopInvariant(Stmt.Loop stmt, Context context) {
 		//
+		Tuple<WhileyFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WhileyFile.Decl.FunctionOrMethod declaration = (WhileyFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
@@ -1111,12 +1121,11 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.getName() + "_loopinvariant_";
 		// Construct argument to invocation
-		//WhileyFile.Expr.VariableAccess[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
-		WhileyFile.Expr.VariableAccess[] localVariables = new WhileyFile.Expr.VariableAccess[0];
-		Expr[] arguments = new Expr[localVariables.length];
+		Tuple<WhileyFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
+		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
-			WhileyFile.Expr.VariableAccess var = localVariables[i];
-			arguments[i] = new Expr.VariableAccess(environment.read(var.getVariableDeclaration()));
+			WhileyFile.Decl.Variable var = localVariables.get(i);
+			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
 		for (int i = 0; i != loopInvariant.size(); ++i) {
@@ -1228,7 +1237,7 @@ public class VerificationConditionGenerator {
 						checkExpressionPreconditions((WhileyFile.Expr) operand, context);
 					} else if(operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
 						for (int j = 0; j != operand.size(); ++j) {
-							SyntacticItem suboperand = operand.get(i);
+							SyntacticItem suboperand = operand.get(j);
 							if(suboperand instanceof WhileyFile.Expr) {
 								checkExpressionPreconditions((WhileyFile.Expr) suboperand, context);
 							}
@@ -1277,7 +1286,8 @@ public class VerificationConditionGenerator {
 				// FIXME: name needs proper path information
 				WyalFile.Name name = convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause));
+				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
+						expr.getParent(WhileyFile.Attribute.Span.class)));
 			}
 			// Perform parameter checks
 			for (int i = 0; i != parameterTypes.size(); ++i) {
@@ -1294,7 +1304,8 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.NotEqual(rhs, constant);
 		//
-		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero));
+		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
@@ -1306,9 +1317,10 @@ public class VerificationConditionGenerator {
 		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
 		Expr lenTest = new Expr.LessThan(idx, length);
 		//
-		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest));
+		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
-				lenTest));
+				lenTest, expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
@@ -1317,7 +1329,8 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.GreaterThanOrEqual(len, constant);
 		//
-		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero));
+		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero,
+				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private Context assumeExpressionPostconditions(WhileyFile.Expr expr, Context context) {
@@ -1329,7 +1342,7 @@ public class VerificationConditionGenerator {
 					context = assumeExpressionPostconditions((WhileyFile.Expr) operand, context);
 				} else if(operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
 					for (int j = 0; j != operand.size(); ++j) {
-						SyntacticItem suboperand = operand.get(i);
+						SyntacticItem suboperand = operand.get(j);
 						if(suboperand instanceof WhileyFile.Expr) {
 							context = assumeExpressionPostconditions((WhileyFile.Expr) suboperand, context);
 						}
@@ -1402,14 +1415,15 @@ public class VerificationConditionGenerator {
 	private Expr[] translateExpressions(Tuple<WhileyFile.Expr> loc, LocalEnvironment environment) {
 		ArrayList<Expr> results = new ArrayList<>();
 		for (int i = 0; i != loc.size(); ++i) {
-//			Type[] types = loc.getOperand(i).getTypes();
-//			if (types.length == 1) {
+			WhileyFile.Expr operand = loc.get(i);
+			Tuple<Type> types = operand.getTypes();
+			if (types == null) {
 				results.add(translateExpression(loc.get(i), null, environment));
-//			} else {
-//				for (int j = 0; j != types.length; ++j) {
-//					results.add(translateExpression(loc[i], j, environment));
-//				}
-//			}
+			} else {
+				for (int j = 0; j != types.size(); ++j) {
+					results.add(translateExpression(operand, j, environment));
+				}
+			}
 		}
 		return results.toArray(new Expr[results.size()]);
 	}
@@ -1422,40 +1436,46 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private Expr translateExpression(WhileyFile.Expr loc, Integer selector, LocalEnvironment environment) {
+	private Expr translateExpression(WhileyFile.Expr expr, Integer selector, LocalEnvironment environment) {
 		Expr result;
 		try {
-			switch (loc.getOpcode()) {
+			switch (expr.getOpcode()) {
 			case WhileyFile.EXPR_constant:
-				result = translateConstant((WhileyFile.Expr.Constant) loc, environment);
+				result = translateConstant((WhileyFile.Expr.Constant) expr, environment);
 				break;
 			case WhileyFile.EXPR_cast:
-				result = translateConvert((WhileyFile.Expr.Cast) loc, environment);
+				result = translateConvert((WhileyFile.Expr.Cast) expr, environment);
 				break;
 			case WhileyFile.EXPR_rread:
-				result = translateFieldLoad((WhileyFile.Expr.RecordAccess) loc, environment);
+				result = translateFieldLoad((WhileyFile.Expr.RecordAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
-				result = translateIndirectInvoke((WhileyFile.Expr.IndirectInvoke) loc, environment);
+				result = translateIndirectInvoke((WhileyFile.Expr.IndirectInvoke) expr, environment);
 				break;
 			case WhileyFile.EXPR_invoke:
-				result = translateInvoke((WhileyFile.Expr.Invoke) loc, selector, environment);
+				result = translateInvoke((WhileyFile.Expr.Invoke) expr, selector, environment);
+				break;
+			case WhileyFile.DECL_lambda:
+				result = translateLambda((WhileyFile.Decl.Lambda) expr, environment);
 				break;
 			case WhileyFile.EXPR_lread:
-				result = translateLambda((WhileyFile.Expr.LambdaAccess) loc, environment);
+				result = translateLambda((WhileyFile.Expr.LambdaAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_lsome:
 			case WhileyFile.EXPR_lall:
-				result = translateQuantifier((WhileyFile.Expr.Quantifier) loc, environment);
+				result = translateQuantifier((WhileyFile.Expr.Quantifier) expr, environment);
 				break;
 			case WhileyFile.EXPR_varmove:
 			case WhileyFile.EXPR_varcopy:
-				result = translateVariableAccess((WhileyFile.Expr.VariableAccess) loc, environment);
+				result = translateVariableAccess((WhileyFile.Expr.VariableAccess) expr, environment);
+				break;
+			case WhileyFile.EXPR_staticvar:
+				result = translateStaticVariableAccess((WhileyFile.Expr.StaticVariableAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_lnot:
-				return translateNotOperator((WhileyFile.Expr.LogicalNot) loc, environment);
+				return translateNotOperator((WhileyFile.Expr.LogicalNot) expr, environment);
 			case WhileyFile.EXPR_ineg:
-				return translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) loc, environment);
+				return translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) expr, environment);
 			case WhileyFile.EXPR_iadd:
 			case WhileyFile.EXPR_isub:
 			case WhileyFile.EXPR_imul:
@@ -1466,24 +1486,26 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_ilt:
 			case WhileyFile.EXPR_ile:
 			case WhileyFile.EXPR_igt:
-			case WhileyFile.EXPR_igteq:
+			case WhileyFile.EXPR_ige:
 			case WhileyFile.EXPR_land:
 			case WhileyFile.EXPR_lor:
-				return translateBinaryOperator((WhileyFile.Expr.NaryOperator) loc, environment);
+			case WhileyFile.EXPR_limplies:
+			case WhileyFile.EXPR_liff:
+				return translateBinaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
 			case WhileyFile.EXPR_is:
-				return translateIs((WhileyFile.Expr.Is) loc, environment);
+				return translateIs((WhileyFile.Expr.Is) expr, environment);
 			case WhileyFile.EXPR_aread:
-				return translateArrayIndex((WhileyFile.Expr.ArrayAccess) loc, environment);
+				return translateArrayIndex((WhileyFile.Expr.ArrayAccess) expr, environment);
 			case WhileyFile.EXPR_ainit:
-				return translateArrayInitialiser((WhileyFile.Expr.ArrayInitialiser) loc, environment);
+				return translateArrayInitialiser((WhileyFile.Expr.ArrayInitialiser) expr, environment);
 			case WhileyFile.EXPR_agen:
-				return translateArrayGenerator((WhileyFile.Expr.ArrayGenerator) loc, environment);
+				return translateArrayGenerator((WhileyFile.Expr.ArrayGenerator) expr, environment);
 			case WhileyFile.EXPR_rinit:
-				return translateRecordInitialiser((WhileyFile.Expr.RecordInitialiser) loc, environment);
+				return translateRecordInitialiser((WhileyFile.Expr.RecordInitialiser) expr, environment);
 			case WhileyFile.EXPR_alen:
-				return translateArrayLength((WhileyFile.Expr.ArrayLength) loc, environment);
+				return translateArrayLength((WhileyFile.Expr.ArrayLength) expr, environment);
 			case WhileyFile.EXPR_pread:
-				return translateDereference((WhileyFile.Expr.Dereference) loc, environment);
+				return translateDereference((WhileyFile.Expr.Dereference) expr, environment);
 			case WhileyFile.EXPR_bshr:
 			case WhileyFile.EXPR_bshl:
 			case WhileyFile.EXPR_band:
@@ -1491,21 +1513,37 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_bxor:
 			case WhileyFile.EXPR_bnot:
 			case WhileyFile.EXPR_pinit:
-				return translateAsUnknown(loc, environment);
+				return translateAsUnknown(expr, environment);
 			default:
-				throw new RuntimeException("Got here");
+				throw new RuntimeException("Deadcode reached (" + expr.getClass().getName() +")");
 			}
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WhileyFile) loc.getHeap()).getEntry(), loc, e);
+			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
 		}
-		return allocate(result,loc.attributes());
+		return allocate(result,expr.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 	private Expr translateConstant(WhileyFile.Expr.Constant expr, LocalEnvironment environment) {
-		// FIXME: this will need to be cloned.
-		return new WyalFile.Expr.Constant(expr.getValue());
+		WhileyFile.Value value = expr.getValue();
+		if(value instanceof WhileyFile.Value.UTF8) {
+			// FIXME: yes, this is a bit of a hack. The basic problem is that WyAL doesn't
+			// really handle UTF8 constants properly, even though it does know about them.
+			byte[] bytes = ((WhileyFile.Value.UTF8) value).get();
+			Expr[] es = new Expr[bytes.length];
+			for(int i=0;i!=bytes.length;++i) {
+				WyalFile.Value.Int bv = new WyalFile.Value.Int(bytes[i]);
+				es[i] = new WyalFile.Expr.Constant(bv);
+			}
+			return new WyalFile.Expr.ArrayInitialiser(es);
+		} else if(value instanceof WhileyFile.Value.Byte) {
+			byte b = ((WhileyFile.Value.Byte) value).get();
+			WyalFile.Value.Int bv = new WyalFile.Value.Int(b);
+			return new WyalFile.Expr.Constant(bv);
+		} else {
+			return new WyalFile.Expr.Constant(expr.getValue());
+		}
 	}
 
 	private Expr translateConvert(WhileyFile.Expr.Cast expr, LocalEnvironment environment) {
@@ -1533,6 +1571,11 @@ public class VerificationConditionGenerator {
 		return new Expr.Invoke(null, expr.getName(), selector, operands);
 	}
 
+	private Expr translateLambda(WhileyFile.Decl.Lambda expr, LocalEnvironment environment) {
+		// FIXME: need to implement this
+		return translateAsUnknown(expr, environment);
+	}
+
 	private Expr translateLambda(WhileyFile.Expr.LambdaAccess expr, LocalEnvironment environment) {
 		// FIXME: need to implement this
 		return translateAsUnknown(expr, environment);
@@ -1554,32 +1597,36 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(operands.get(1), null, environment);
 		// FIXME: problem with > 2 operands
 		switch(expr.getOpcode()) {
-		case WyalFile.EXPR_add:
+		case WhileyFile.EXPR_iadd:
 			return new Expr.Addition(lhs, rhs);
-		case WyalFile.EXPR_sub:
+		case WhileyFile.EXPR_isub:
 			return new Expr.Subtraction(lhs, rhs);
-		case WyalFile.EXPR_mul:
+		case WhileyFile.EXPR_imul:
 			return new Expr.Multiplication(lhs, rhs);
-		case WyalFile.EXPR_div:
+		case WhileyFile.EXPR_idiv:
 			return new Expr.Division(lhs, rhs);
-		case WyalFile.EXPR_rem:
+		case WhileyFile.EXPR_irem:
 			return new Expr.Remainder(lhs, rhs);
-		case WyalFile.EXPR_eq:
+		case WhileyFile.EXPR_eq:
 			return new Expr.Equal(lhs, rhs);
-		case WyalFile.EXPR_neq:
+		case WhileyFile.EXPR_neq:
 			return new Expr.NotEqual(lhs, rhs);
-		case WyalFile.EXPR_lt:
+		case WhileyFile.EXPR_ilt:
 			return new Expr.LessThan(lhs, rhs);
-		case WyalFile.EXPR_lteq:
+		case WhileyFile.EXPR_ile:
 			return new Expr.LessThanOrEqual(lhs, rhs);
-		case WyalFile.EXPR_gt:
+		case WhileyFile.EXPR_igt:
 			return new Expr.GreaterThan(lhs, rhs);
-		case WyalFile.EXPR_gteq:
+		case WhileyFile.EXPR_ige:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case WyalFile.EXPR_and:
+		case WhileyFile.EXPR_land:
 			return new Expr.LogicalAnd(lhs, rhs);
-		case WyalFile.EXPR_or:
+		case WhileyFile.EXPR_lor:
 			return new Expr.LogicalOr(lhs, rhs);
+		case WhileyFile.EXPR_limplies:
+			return new Expr.LogicalImplication(lhs, rhs);
+		case WhileyFile.EXPR_liff:
+			return new Expr.LogicalIff(lhs, rhs);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
 		}
@@ -1647,9 +1694,9 @@ public class VerificationConditionGenerator {
 	private Expr translateRecordInitialiser(WhileyFile.Expr.RecordInitialiser expr, LocalEnvironment environment)  {
 		Tuple<WhileyFile.Identifier> fields = expr.getFields();
 		Tuple<WhileyFile.Expr> operands = expr.getOperands();
-		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[expr.size()];
+		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[fields.size()];
 		//
-		for (int i = 0; i != expr.size(); ++i) {
+		for (int i = 0; i != fields.size(); ++i) {
 			Identifier field = new WyalFile.Identifier(fields.get(i).get());
 			Expr init = translateExpression(operands.get(i), null, environment);
 			pairs[i] = new WyalFile.Pair<>(field, init);
@@ -1670,11 +1717,14 @@ public class VerificationConditionGenerator {
 		// What we're doing here is creating a completely fresh variable to
 		// represent the return value. This is basically saying the return value
 		// could be anything, and we don't care what.
-
-		 // environment = environment.write(expr.getIndex());
+		String name = Integer.toString(expr.getIndex());
+		WyalFile.Type type = convert(expr.getType(), expr);
+		WyalFile.VariableDeclaration vf = allocate(
+				new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(name)), null);
+		 //environment = environment.write(expr.getIndex());
 		 //WyalFile.VariableDeclaration r = environment.read(expr.getIndex());
-		 //return new Expr.VariableAccess(r);
-		 throw new IllegalArgumentException("Implement me");
+		 return new Expr.VariableAccess(vf);
+		 //throw new IllegalArgumentException("Implement me");
 	}
 
 	/**
@@ -1724,6 +1774,17 @@ public class VerificationConditionGenerator {
 		WhileyFile.Decl.Variable decl = expr.getVariableDeclaration();
 		WyalFile.VariableDeclaration var = environment.read(decl);
 		return new Expr.VariableAccess(var);
+	}
+
+	private Expr translateStaticVariableAccess(WhileyFile.Expr.StaticVariableAccess expr, LocalEnvironment environment) {
+		try {
+			// FIXME: yes, this is a hack to temporarily handle the transition from
+			// constants to static variables.
+			WhileyFile.Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), WhileyFile.Decl.StaticVariable.class);
+			return translateExpression(decl.getInitialiser(), null, environment);
+		} catch (ResolutionError e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	// =========================================================================
@@ -1898,19 +1959,17 @@ public class VerificationConditionGenerator {
 	private AssumptionSet updateVariableVersions(AssumptionSet assumptions, LocalEnvironment original,
 			LocalEnvironment updated) {
 
-		// FIXME: needs to be put back
-
-//		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : updated.locals.entrySet()) {
-//			Integer varIndex = e.getKey();
-//			WyalFile.VariableDeclaration newVarVersionedName = e.getValue();
-//			WyalFile.VariableDeclaration oldVarVersionedName = original.read(varIndex);
-//			if (!oldVarVersionedName.equals(newVarVersionedName)) {
-//				// indicates a version change of the given variable.
-//				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
-//				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
-//				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
-//			}
-//		}
+		for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : updated.locals.entrySet()) {
+			WhileyFile.Decl.Variable var = e.getKey();
+			WyalFile.VariableDeclaration newVarVersionedName = e.getValue();
+			WyalFile.VariableDeclaration oldVarVersionedName = original.read(var);
+			if (!oldVarVersionedName.equals(newVarVersionedName)) {
+				// indicates a version change of the given variable.
+				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
+				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
+				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
+			}
+		}
 		return assumptions;
 	}
 
@@ -1928,17 +1987,17 @@ public class VerificationConditionGenerator {
 		//
 		Context head = contexts[0];
 		GlobalEnvironment global = head.getEnvironment().getParent();
-		HashSet<Integer> modified = new HashSet<>();
-		HashSet<Integer> deleted = new HashSet<>();
-		Map<Integer, WyalFile.VariableDeclaration> headLocals = head.environment.locals;
+		HashSet<WhileyFile.Decl.Variable> modified = new HashSet<>();
+		HashSet<WhileyFile.Decl.Variable> deleted = new HashSet<>();
+		Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> headLocals = head.environment.locals;
 
 		// Compute the modified and deleted sets
 		for (int i = 1; i < contexts.length; ++i) {
 			Context ithContext = contexts[i];
-			Map<Integer, WyalFile.VariableDeclaration> ithLocals = ithContext.environment.locals;
+			Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> ithLocals = ithContext.environment.locals;
 			// First check env against head
-			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : ithLocals.entrySet()) {
-				Integer key = e.getKey();
+			for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : ithLocals.entrySet()) {
+				WhileyFile.Decl.Variable key = e.getKey();
 				WyalFile.VariableDeclaration s1 = e.getValue();
 				WyalFile.VariableDeclaration s2 = headLocals.get(key);
 				if (s1 == null) {
@@ -1948,8 +2007,8 @@ public class VerificationConditionGenerator {
 				}
 			}
 			// Second, check head against env
-			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
-				Integer key = e.getKey();
+			for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+				WhileyFile.Decl.Variable key = e.getKey();
 				WyalFile.VariableDeclaration s1 = e.getValue();
 				WyalFile.VariableDeclaration s2 = ithLocals.get(key);
 				if (s1 == null) {
@@ -1960,23 +2019,21 @@ public class VerificationConditionGenerator {
 			}
 		}
 		// Finally, construct the combined local map
-		HashMap<Integer, WyalFile.VariableDeclaration> combinedLocals = new HashMap<>();
+		IdentityHashMap<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> combinedLocals = new IdentityHashMap<>();
 
-		// FIXME: this needs to be put back somehow.
-
-//		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
-//			Integer key = e.getKey();
-//			WyalFile.VariableDeclaration value = e.getValue();
-//			if (deleted.contains(key)) {
-//				// Ignore this entry. This must be checked before we look at
-//				// modified (since variable can be marked both).
-//				continue;
-//			} else if (modified.contains(key)) {
-//				// Update version number
-//				value = global.allocateVersion(key);
-//			}
-//			combinedLocals.put(key, value);
-//		}
+		for (Map.Entry<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+			WhileyFile.Decl.Variable key = e.getKey();
+			WyalFile.VariableDeclaration value = e.getValue();
+			if (deleted.contains(key)) {
+				// Ignore this entry. This must be checked before we look at
+				// modified (since variable can be marked both).
+				continue;
+			} else if (modified.contains(key)) {
+				// Update version number
+				value = global.allocateVersion(key);
+			}
+			combinedLocals.put(key, value);
+		}
 		// Now, use the modified and deleted sets to build the new environment
 		return new LocalEnvironment(global, combinedLocals);
 	}
@@ -2043,7 +2100,7 @@ public class VerificationConditionGenerator {
 			WyalFile.Stmt.Block verificationCondition = buildVerificationCondition(declaration, environment, vc);
 			// Add generated verification condition as assertion
 			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition, vc.description);
-			allocate(assrt,vc.attributes());
+			allocate(assrt,vc.getSpan());
 		}
 	}
 
@@ -2210,9 +2267,14 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WhileyFile.Decl.Callable declaration,
 			LocalEnvironment environment) {
-		Tuple<Type> params = declaration.getType().getParameters();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
-		return generateParameterDeclarations(declaration, environment, parameterLocations);
+		Tuple<WhileyFile.Decl.Variable> params = declaration.getParameters();
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[params.size()];
+		// second, set initial environment
+		for (int i = 0; i != params.size(); ++i) {
+			WhileyFile.Decl.Variable var = params.get(i);
+			vars[i] = environment.read(var);
+		}
+		return vars;
 	}
 
 	/**
@@ -2226,11 +2288,20 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePostconditionTypePattern(
 			WhileyFile.Decl.FunctionOrMethod declaration, LocalEnvironment environment) {
-		Tuple<Type> params = declaration.getType().getParameters();
-		Tuple<Type> returns = declaration.getType().getReturns();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
-		int[] returnLocations = ArrayUtils.range(parameterLocations.length, parameterLocations.length + returns.size());
-		return generateParameterDeclarations(declaration, environment, parameterLocations, returnLocations);
+		Tuple<Decl.Variable> params = declaration.getParameters();
+		Tuple<Decl.Variable> returns = declaration.getReturns();
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[params.size() + returns.size()];
+		// second, set initial environment
+		for (int i = 0; i != params.size(); ++i) {
+			WhileyFile.Decl.Variable var = params.get(i);
+			vars[i] = environment.read(var);
+		}
+		for (int i = 0; i != returns.size(); ++i) {
+			WhileyFile.Decl.Variable var = returns.get(i);
+			vars[i + params.size()] = environment.read(var);
+		}
+		//
+		return vars;
 	}
 
 	/**
@@ -2242,33 +2313,64 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(WhileyFile.Decl declaration,
-			Tuple<WhileyFile.Expr> loopInvariant, LocalEnvironment environment) {
-		// FIXME: broken
-		return new WyalFile.VariableDeclaration[0];
+	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Stmt.Loop loop,
+			LocalEnvironment environment) {
+		// Extract all used variables within the loop invariant. This is necessary to
+		// determine what parameters are required for the loop invariant macros.
+		Tuple<Decl.Variable> modified = determineUsedVariables(loop.getInvariant());
+		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[modified.size()];
+		// second, set initial environment
+		for (int i = 0; i != modified.size(); ++i) {
+			WhileyFile.Decl.Variable var = modified.get(i);
+			vars[i] = environment.read(var);
+		}
+		return vars;
 	}
 
 	/**
-	 * Convert a list of types from a given declaration into a corresponding
-	 * list of type patterns. This is primarily useful for generating
-	 * declarations from functions or method.
+	 * Create a simple visitor for extracting all variable access expressions from a
+	 * given expression (or statement).
+	 */
+	private static final SingleParameterVisitor<HashSet<Decl.Variable>> usedVariableExtractor = new SingleParameterVisitor<HashSet<Decl.Variable>>() {
+		@Override
+		public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
+			used.add(expr.getVariableDeclaration());
+		}
+		@Override
+		public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(),used);
+		}
+		@Override
+		public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(),used);
+		}
+		@Override
+		public void visitType(WhileyFile.Type type, HashSet<Decl.Variable> used) {
+			// No need to visit types
+		}
+
+		private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+			for (int i = 0; i != parameters.size(); ++i) {
+				used.remove(parameters.get(i));
+			}
+		}
+	};
+
+	/**
+	 * Determine the set of used variables in a given set of expressions. A used
+	 * variable is one referred to by a VariableAccess expression.
 	 *
-	 * @param types
-	 * @param declaration
+	 * @param expression
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateParameterDeclarations(WhileyFile.Decl.Callable declaration,
-			LocalEnvironment environment, int[]... groups) {
-		//
-		Tuple<WhileyFile.Decl.Variable> params = declaration.getParameters();
-		WyalFile.VariableDeclaration[] patterns = new WyalFile.VariableDeclaration[params.size()];
-		// second, set initial environment
-		for (int i = 0; i != params.size(); ++i) {
-			WhileyFile.Decl.Variable var = params.get(i);
-			patterns[i] = environment.read(var);
-		}
-		//
-		return patterns;
+	public Tuple<Decl.Variable> determineUsedVariables(Tuple<WhileyFile.Expr> exprs) {
+		HashSet<Decl.Variable> used = new HashSet<>();
+		usedVariableExtractor.visitExpressions(exprs, used);
+		return new Tuple<>(used);
 	}
 
 	/**
@@ -2277,11 +2379,11 @@ public class VerificationConditionGenerator {
 	 * @param id
 	 * @return
 	 */
-	private WyalFile.Name convert(NameID id, SyntacticElement context) {
+	private WyalFile.Name convert(NameID id, SyntacticItem context) {
 		return convert(id.module(), id.name(), context);
 	}
 
-	private WyalFile.Name convert(Path.ID module, String name, SyntacticElement context) {
+	private WyalFile.Name convert(Path.ID module, String name, SyntacticItem context) {
 		if(module.equals(wyalFile.getEntry().id())) {
 			// This is a local name. Therefore, it does not need to be fully
 			// qualified.
@@ -2295,7 +2397,7 @@ public class VerificationConditionGenerator {
 		WyalFile.Identifier id = new WyalFile.Identifier(name);
 		components[module.size()] = id;
 		WyalFile.Name n = new WyalFile.Name(components);
-		return allocate(n,context.attributes());
+		return allocate(n,context.getParent(WhileyFile.Attribute.Span.class));
 	}
 
 
@@ -2312,7 +2414,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private WyalFile.Type convert(WhileyFile.Type type, WhileyFile.Decl context) {
+	private WyalFile.Type convert(WhileyFile.Type type, SyntacticItem context) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
@@ -2347,8 +2449,8 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
 			WyalFile.Type elem = convert(lt.getElement(), context);
-			// FIXME: shouldn't construct fresh identifier here.
-			result = new WyalFile.Type.Reference(elem, new WyalFile.Identifier(lt.getLifetime().get()));
+			String lifetime = lt.hasLifetime() ? lt.getLifetime().get() : "*";
+			result = new WyalFile.Type.Reference(elem, new WyalFile.Identifier(lifetime));
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			WyalFile.Type[] elements = new WyalFile.Type[tu.size()];
@@ -2380,7 +2482,7 @@ public class VerificationConditionGenerator {
 					((WhileyFile) type.getHeap()).getEntry(), context);
 		}
 		//
-		result = allocate(result,context.attributes());
+		result = allocate(result,context.getParent(WhileyFile.Attribute.Span.class));
 		//
 		return result;
 	}
@@ -2564,11 +2666,26 @@ public class VerificationConditionGenerator {
 		return rs;
 	}
 
-	private <T extends SyntacticItem> T allocate(T item, List<Attribute> attributes) {
+	private WhileyFile.Attribute.Span getSpan(SyntacticItem item) {
+		WhileyFile.Attribute.Span span = null;
+		if (item.getHeap() != null) {
+			span = item.getParent(WhileyFile.Attribute.Span.class);
+		}
+		if (span == null) {
+			Attribute.Source source = item.attribute(Attribute.Source.class);
+			if (source != null) {
+				span = new WhileyFile.Attribute.Span(null, source.start, source.end);
+			}
+		}
+		return span;
+	}
+
+	private <T extends SyntacticItem> T allocate(T item, WhileyFile.Attribute.Span span) {
 		item = wyalFile.allocate(item);
-		// FIXME: this should be removed eventually #121
-		for(Attribute attr : attributes) {
-			item.attributes().add(attr);
+		if(span != null) {
+			int start = span.getStart().get().intValue();
+			int end = span.getEnd().get().intValue();
+			item.attributes().add(new Attribute.Source(start, end, 0));
 		}
 		return item;
 	}
@@ -2686,11 +2803,17 @@ public class VerificationConditionGenerator {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;
+		private final WhileyFile.Attribute.Span span;
 
-		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent) {
+		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent, WhileyFile.Attribute.Span span) {
 			this.description = description;
 			this.antecedent = antecedent;
 			this.consequent = consequent;
+			this.span = span;
+		}
+
+		public WhileyFile.Attribute.Span getSpan() {
+			return span;
 		}
 	}
 
@@ -2796,9 +2919,7 @@ public class VerificationConditionGenerator {
 			//
 			// The following is necessary to ensure that the alias structure of
 			// VariableDeclarations is properly preserved.
-			//
-			return allocate(new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(versionedVar)),
-					Collections.EMPTY_LIST);
+			return allocate(new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(versionedVar)), null);
 		}
 
 		/**
@@ -2831,16 +2952,16 @@ public class VerificationConditionGenerator {
 		 * Maps all local variables in scope to their current versioned variable
 		 * names
 		 */
-		private final Map<Integer, WyalFile.VariableDeclaration> locals;
+		private final Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> locals;
 
 		public LocalEnvironment(GlobalEnvironment global) {
 			this.global = global;
-			this.locals = new HashMap<>();
+			this.locals = new IdentityHashMap<>();
 		}
 
-		public LocalEnvironment(GlobalEnvironment global, Map<Integer, WyalFile.VariableDeclaration> locals) {
+		public LocalEnvironment(GlobalEnvironment global, Map<WhileyFile.Decl.Variable, WyalFile.VariableDeclaration> locals) {
 			this.global = global;
-			this.locals = new HashMap<>(locals);
+			this.locals = new IdentityHashMap<>(locals);
 		}
 
 		/**
@@ -2859,10 +2980,10 @@ public class VerificationConditionGenerator {
 		 * @return
 		 */
 		public WyalFile.VariableDeclaration read(WhileyFile.Decl.Variable var) {
-			WyalFile.VariableDeclaration vv = locals.get(var.getIndex());
+			WyalFile.VariableDeclaration vv = locals.get(var);
 			if (vv == null) {
 				vv = global.allocateVersion(var);
-				locals.put(var.getIndex(), vv);
+				locals.put(var, vv);
 			}
 			return vv;
 		}
@@ -2873,11 +2994,17 @@ public class VerificationConditionGenerator {
 		 *
 		 * @param index
 		 */
-		public LocalEnvironment write(WhileyFile.Decl.Variable... vars) {
+		public LocalEnvironment write(Tuple<WhileyFile.Decl.Variable> vars) {
 			LocalEnvironment nenv = new LocalEnvironment(global, locals);
-			for (int i = 0; i != vars.length; ++i) {
-				nenv.locals.put(vars[i].getIndex(), global.allocateVersion(vars[i]));
+			for (int i = 0; i != vars.size(); ++i) {
+				nenv.locals.put(vars.get(i), global.allocateVersion(vars.get(i)));
 			}
+			return nenv;
+		}
+
+		public LocalEnvironment write(WhileyFile.Decl.Variable var) {
+			LocalEnvironment nenv = new LocalEnvironment(global, locals);
+			nenv.locals.put(var, global.allocateVersion(var));
 			return nenv;
 		}
 
@@ -3076,16 +3203,7 @@ public class VerificationConditionGenerator {
 		 *            The variable accesses being havoced
 		 * @return
 		 */
-		public Context havoc(Tuple<WhileyFile.Expr.VariableAccess> exprs) {
-			// Update version number of the assigned variables
-			WhileyFile.Decl.Variable[] vars = new WhileyFile.Decl.Variable[exprs.size()];
-			for (int i = 0; i != exprs.size(); ++i) {
-				// At this point, we're assuming only variable accesses can be
-				// havoced. However, potentially, it might make sense to open
-				// this up a little...
-				WhileyFile.Expr.VariableAccess va = exprs.get(i);
-				vars[i] = va.getVariableDeclaration();
-			}
+		public Context havoc(Tuple<WhileyFile.Decl.Variable> vars) {
 			LocalEnvironment nEnvironment = environment.write(vars);
 			// done
 			return new Context(wyalFile, assumptions, nEnvironment, initialEnvironment, enclosingLoop,

@@ -492,7 +492,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, null);
+		throw new SyntaxError(msg, entry, new WhileyFile.Attribute.Span(null,index,index));
 
 	}
 

@@ -1,3 +1,3 @@
-tests/invalid/Record_Invalid_4.whiley:5: expected type Record_Invalid_4:Dimension, found Record_Invalid_4:Point
+tests/invalid/Record_Invalid_4.whiley:5: expected type Dimension, found {int x,int y}
     return Point{x:x, y:y}
                 ^^^^^^^^^^

@@ -12,6 +12,7 @@ import java.util.*;
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wyc.lang.WhileyFile;
+import wyc.stage.VerificationConditionGenerator;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
@@ -58,6 +59,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 	@SuppressWarnings("unchecked")
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
+
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
@@ -72,9 +74,9 @@ public class Wyil2WyalBuilder implements Build.Task {
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
 			graph.registerDerivation(source, target);
 			generatedFiles.add(target);
-			//WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),this).translate(source.read());
-			//// Write the file into its destination
-			//target.write(contents);
+			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),this).translate(source.read());
+			// Write the file into its destination
+			target.write(contents);
 
 			// Then, flush contents to disk in case we generate an assertion
 			// error later. In principle, this should be unnecessary when
