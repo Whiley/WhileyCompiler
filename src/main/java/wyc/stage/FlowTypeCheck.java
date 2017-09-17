@@ -1158,22 +1158,37 @@ public class FlowTypeCheck {
 	}
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
-		Expr lhs = expr.getOperand();
-		Type rhs = expr.getTestType();
-		// Account for case when this test is inverted
-		rhs = sign ? rhs : negate(rhs);
-		//
-		Type lhsT = checkExpression(expr.getOperand(), environment);
-		// TODO: implement a proper intersection test here to ensure lhsT and
-		// rhs types make sense (i.e. have some intersection).
-		Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhs);
-		if (extraction != null) {
-			Decl.Variable var = extraction.getFirst();
-			// Update the typing environment accordingly.
-			environment = environment.refineType(var, extraction.getSecond());
+		try {
+			Expr lhs = expr.getOperand();
+			Type rhsT = expr.getTestType();
+			//
+			Type lhsT = checkExpression(expr.getOperand(), environment);
+			// Sanity check operands for this type test
+			Type glbForFalseBranch = new Type.Intersection(lhsT, negate(rhsT));
+			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
+			if (typeSystem.isVoid(glbForFalseBranch)) {
+				// DEFINITE TRUE CASE
+				System.out.println("IS VOID: " + lhsT + " & " + negate(rhsT));
+				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
+			} else if (typeSystem.isVoid(glbForTrueBranch)) {
+				// DEFINITE FALSE CASE
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
+			}
+			// Account for case when this test is inverted
+			rhsT = sign ? rhsT : negate(rhsT);
+			// TODO: implement a proper intersection test here to ensure lhsT and
+			// rhs types make sense (i.e. have some intersection).
+			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhsT);
+			if (extraction != null) {
+				Decl.Variable var = extraction.getFirst();
+				// Update the typing environment accordingly.
+				environment = environment.refineType(var, extraction.getSecond());
+			}
+			//
+			return environment;
+		} catch (ResolutionError e) {
+			return syntaxError(e.getMessage(), expr);
 		}
-		//
-		return environment;
 	}
 
 	/**
