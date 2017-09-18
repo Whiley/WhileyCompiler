@@ -1168,7 +1168,6 @@ public class FlowTypeCheck {
 			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
 			if (typeSystem.isVoid(glbForFalseBranch)) {
 				// DEFINITE TRUE CASE
-				System.out.println("IS VOID: " + lhsT + " & " + negate(rhsT));
 				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
 			} else if (typeSystem.isVoid(glbForTrueBranch)) {
 				// DEFINITE FALSE CASE

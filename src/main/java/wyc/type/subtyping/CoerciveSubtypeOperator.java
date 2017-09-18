@@ -13,19 +13,19 @@
 // limitations under the License.
 package wyc.type.subtyping;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
+import java.util.Comparator;
 
-import wycc.util.Pair;
-import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.type.SubtypeOperator;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.lang.WhileyFile.Decl;
+import wyc.lang.WhileyFile.Type;
 import wyc.type.TypeSystem;
+import wyc.type.subtyping.StrictSubtypeOperator.Assumptions;
+import wyc.type.subtyping.StrictSubtypeOperator.Atom;
+import wyc.type.subtyping.StrictSubtypeOperator.Term;
 
 import static wyc.lang.WhileyFile.*;
-import static wyc.lang.WhileyFile.Name;
 
 /**
  * <p>
@@ -75,102 +75,50 @@ public class CoerciveSubtypeOperator extends StrictSubtypeOperator {
 		super(typeSystem);
 	}
 
-	/**
-	 * <p>
-	 * Determine whether the intersection of two record types is void or not.
-	 * For example, <code>{int f}</code> intersecting with <code>{int g}</code>
-	 * gives void. In contrast, intersecting <code>{int|null f}</code> with
-	 * <code>{int f}</code> does not give void. Likewise, <code>{int f}</code>
-	 * intersecting with <code>!{int f}</code> gives void, whilst intersecting
-	 * <code>{int f}</code> with <code>!{int g}</code> does not give void.
-	 * </p>
-	 *
-	 * @param lhsSign
-	 *            The sign of the first type being intersected. If true, we have
-	 *            a positive atom. Otherwise, we have a negative atom.
-	 * @param lhs.
-	 *            The first type being intersected, referred to as the
-	 *            "left-hand side".
-	 * @param rhsSign
-	 *            The sign of the second type being intersected. If true, we
-	 *            have a positive atom. Otherwise, we have a negative atom.
-	 * @param rhs
-	 *            The second type being intersected, referred to as the
-	 *            "right-hand side".
-	 * @param assumptions
-	 *            The set of assumed subtype relationships
-	 * @return
-	 * @throws ResolutionError
-	 */
 	@Override
-	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
+	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
 			throws ResolutionError {
 		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
-		if (lhs.sign || rhs.sign) {
-			// The sign indicates whether were in the pos-pos case, or in the
-			// pos-neg case.
-			boolean sign = (lhs.sign == rhs.sign);
-			// Attempt to match all fields In the positive-positive case this
-			// reduces to void if the fields in either of these differ (e.g.
-			// {int f} and {int g}), or if there is no intersection between the
-			// same field in either (e.g. {int f} and {bool f}).
-			int matches = 0;
-			//
-			for (int i = 0; i != lhsFields.size(); ++i) {
-				Decl.Variable lhsField = lhsFields.get(i);
-				Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
-				for (int j = 0; j != rhsFields.size(); ++j) {
-					Decl.Variable rhsField = rhsFields.get(j);
-					if (!lhsField.getName().equals(rhsField.getName())) {
-						continue;
+		boolean sign = (lhs.sign == rhs.sign);
+		int matches = 0;
+		//
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			Decl.Variable lhsField = lhsFields.get(i);
+			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				Decl.Variable rhsField = rhsFields.get(j);
+				if (!lhsField.getName().equals(rhsField.getName())) {
+					continue;
+				} else {
+					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
+						// For pos-pos case, there is no intersection
+						// between these fields and, hence, no intersection
+						// overall; for pos-neg case, there is some
+						// intersection between these fields which means
+						// that some intersections exists overall. For
+						// example, consider the case {int f, int|null g} &
+						// !{int f, int g}. There is no intersection for
+						// field f (i.e. since int & !int = void), whilst
+						// there is an intersection for field g (i.e. since
+						// int|null & !int = null). Hence, we can conclude
+						// that there is an intersection between them with
+						// {int f, null g}.
+						return -1;
 					} else {
-						Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
-						if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
-							// For pos-pos case, there is no intersection
-							// between these fields and, hence, no intersection
-							// overall; for pos-neg case, there is some
-							// intersection between these fields which means
-							// that some intersections exists overall. For
-							// example, consider the case {int f, int|null g} &
-							// !{int f, int g}. There is no intersection for
-							// field f (i.e. since int & !int = void), whilst
-							// there is an intersection for field g (i.e. since
-							// int|null & !int = null). Hence, we can conclude
-							// that there is an intersection between them with
-							// {int f, null g}.
-							return sign;
-						} else {
-							matches = matches + 1;
-						}
+						matches = matches + 1;
 					}
 				}
 			}
-			//
-			if(matches == lhsFields.size() && matches == rhsFields.size()) {
-				// If we get here, then: for pos-pos case, all fields have
-				// intersection; for pos-neg case, no fields have intersection.
-				return (lhs.type.isOpen() == rhs.type.isOpen()) && !sign;
-			} else if (matches != lhsFields.size() && matches !=rhsFields.size()) {
-				// If we get here, then both records have fields not contained in the other. For
-				// pos-pos case we have {int x, int y} & {int x, int z} gives {int x, int y, int
-				// z}. For pos-neg case we have {int x, int y, ...} & !{int x, int z, ...}.
-				// gives {int x, int y, ...}
-				return false;
-			} else if(matches < lhsFields.size()) {
-				// If we get here then rhs fields contained in lhs fields. For pos-pos case we
-				// have {int x, int y} & {int x}. For pos-neg case we have {int x, int y} &
-				// !{int x} OR !{int x, int y} & {int x}.
-				return !rhs.sign;
-			} else {
-				// Symmetric case to above where lhs fields contained in rhs fields.
-				return !lhs.sign;
-			}
-		} else {
-			// In this case, we are intersecting two negative record types. For
-			// example, !({int f}) and !({int g}). This never reduces to void.
-			return false;
 		}
+		return matches;
+	}
+
+	@Override
+	protected boolean analyseRecordMatches(int matches, boolean lhsSign, boolean lhsOpen,
+			Tuple<Decl.Variable> lhsFields, boolean rhsSign, boolean rhsOpen, Tuple<Decl.Variable> rhsFields) {
+		return super.analyseRecordMatches(matches, lhsSign, true, lhsFields, rhsSign, true, rhsFields);
 	}
 }

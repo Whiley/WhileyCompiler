@@ -87,7 +87,7 @@ import static wyc.lang.WhileyFile.Name;
  *
  */
 public class StrictSubtypeOperator implements SubtypeOperator {
-	private final TypeSystem typeSystem;
+	protected final TypeSystem typeSystem;
 
 	public StrictSubtypeOperator(TypeSystem typeSystem) {
 		this.typeSystem = typeSystem;
@@ -479,74 +479,134 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
 		if (lhs.sign || rhs.sign) {
-			// The sign indicates whether were in the pos-pos case, or in the
-			// pos-neg case.
-			boolean sign = (lhs.sign == rhs.sign);
 			// Attempt to match all fields In the positive-positive case this
 			// reduces to void if the fields in either of these differ (e.g.
 			// {int f} and {int g}), or if there is no intersection between the
 			// same field in either (e.g. {int f} and {bool f}).
-			int matches = 0;
+			int matches = matchRecordFields(lhs,rhs,assumptions);
 			//
-			for (int i = 0; i != lhsFields.size(); ++i) {
-				Decl.Variable lhsField = lhsFields.get(i);
-				Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
-				for (int j = 0; j != rhsFields.size(); ++j) {
-					Decl.Variable rhsField = rhsFields.get(j);
-					if (!lhsField.getName().equals(rhsField.getName())) {
-						continue;
-					} else {
-						Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
-						if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
-							// For pos-pos case, there is no intersection
-							// between these fields and, hence, no intersection
-							// overall; for pos-neg case, there is some
-							// intersection between these fields which means
-							// that some intersections exists overall. For
-							// example, consider the case {int f, int|null g} &
-							// !{int f, int g}. There is no intersection for
-							// field f (i.e. since int & !int = void), whilst
-							// there is an intersection for field g (i.e. since
-							// int|null & !int = null). Hence, we can conclude
-							// that there is an intersection between them with
-							// {int f, null g}.
-							return sign;
-						} else {
-							matches = matches + 1;
-						}
-					}
-				}
-			}
-			//
-			if (matches < lhsFields.size() && !rhs.type.isOpen()) {
-				// We have matched fewer fields than contained in the lhs.
-				// However, if the rhs is an open record, then it can match the
-				// remainder. Otherwise, there is no match here. In the pos-pos
-				// case, this means there is no intersection. In the pos-neg
-				// case, this means there is an intersection.
-				return sign;
-			} else if (matches < rhsFields.size() && !lhs.type.isOpen()) {
-				// We have matched fewer fields than contained in the rhs.
-				// However, if the lhs is an open record, then it can match the
-				// remainder. Otherwise, there is no match here. In the pos-pos
-				// case, this means there is no intersection. In the pos-neg
-				// case, this means there is an intersection.
-				return sign;
-			} else if (!lhs.sign && !lhs.type.isOpen() && rhs.type.isOpen()) {
-				// Matches e.g. !{int x} & {int x, ...}.
-				return false;
-			} else if (!rhs.sign && !rhs.type.isOpen() && lhs.type.isOpen()) {
-				// Matches e.g. {int x, ...} & !{int x}.
-				return false;
+			if (matches == -1) {
+				return lhs.sign == rhs.sign;
 			} else {
-				// If we get here, then: for pos-pos case, all fields have
-				// intersection; for pos-neg case, no fields have intersection.
-				return !sign;
+				return analyseRecordMatches(matches, lhs.sign, lhs.type.isOpen(), lhsFields, rhs.sign,
+						rhs.type.isOpen(), rhsFields);
 			}
 		} else {
 			// In this case, we are intersecting two negative record types. For
 			// example, !({int f}) and !({int g}). This never reduces to void.
 			return false;
+		}
+	}
+
+	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
+			throws ResolutionError {
+		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
+		//
+		boolean sign = (lhs.sign == rhs.sign);
+		int matches = 0;
+		//
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			Decl.Variable lhsField = lhsFields.get(i);
+			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				Decl.Variable rhsField = rhsFields.get(j);
+				if (!lhsField.getName().equals(rhsField.getName())) {
+					continue;
+				} else {
+					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
+						// For pos-pos case, there is no intersection
+						// between these fields and, hence, no intersection
+						// overall; for pos-neg case, there is some
+						// intersection between these fields which means
+						// that some intersections exists overall. For
+						// example, consider the case {int f, int|null g} &
+						// !{int f, int g}. There is no intersection for
+						// field f (i.e. since int & !int = void), whilst
+						// there is an intersection for field g (i.e. since
+						// int|null & !int = null). Hence, we can conclude
+						// that there is an intersection between them with
+						// {int f, null g}.
+						return -1;
+					} else {
+						matches = matches + 1;
+					}
+				}
+			}
+		}
+		return matches;
+	}
+
+	protected boolean analyseRecordMatches(int matches, boolean lhsSign, boolean lhsOpen,
+			Tuple<Decl.Variable> lhsFields, boolean rhsSign, boolean rhsOpen, Tuple<Decl.Variable> rhsFields) {
+		// NOTE: Don't touch this method unless you know what you are doing. And, trust
+		// me, you don't know what you are doing.
+		//
+		// Perform comparison
+		State lhsState = compare(matches,lhsOpen,lhsFields,rhsOpen,rhsFields);
+		// Exhaustive case analysis
+		switch(lhsState) {
+		case UNCOMPARABLE:
+			//  {int x}       &  {int y} == 0
+			//  {int x, ...}  &  {int y} == 0
+			//  {int x, ...}  &  {int y, ...} != 0
+			//  {int x}       & !{int y} != 0
+			// !{int x}       & !{int y} != 0
+			return lhsSign && rhsSign && !(lhsOpen && rhsOpen);
+		case SMALLER:
+			//  {int x}  &  {int x, ...} != 0
+			// !{int x}  &  {int x, ...} != 0
+			// !{int x}  & !{int x, ...} != 0
+			//  {int x}  & !{int x, ...} == 0
+			return lhsSign && !rhsSign && rhsOpen;
+		case GREATER:
+			//  {int x, ...}  &  {int x} != 0
+			//  {int x, ...}  & !{int x} != 0
+			// !{int x, ...}  & !{int x} != 0
+			// !{int x, ...}  &  {int x} == 0
+			return !lhsSign && rhsSign && lhsOpen;
+		case EQUAL:
+			//  {int x}      &  {int x} != 0
+		    //  {int x, ...} &  {int x, ...} != 0
+		    //  {int x}      & !{int x} == 0
+		    //  {int x, ...} & !{int x, ...} == 0
+			return lhsSign != rhsSign;
+		default:
+			throw new RuntimeException(); // dead code
+		}
+	}
+
+	protected enum State {
+		EQUAL,
+		UNCOMPARABLE,
+		SMALLER,
+		GREATER
+	}
+
+	protected State compare(int matches, boolean lhsOpen, Tuple<Decl.Variable> lhsFields, boolean rhsOpen,
+			Tuple<Decl.Variable> rhsFields) {
+		int lhsSize = lhsFields.size();
+		int rhsSize = rhsFields.size();
+		//
+		if(matches < lhsSize && matches < rhsSize) {
+			return State.UNCOMPARABLE;
+		} else if(matches < lhsSize) {
+			// {int x, int y} != {int x}
+			// {int x, int y} << {int x, ...}
+			return rhsOpen ? State.SMALLER : State.UNCOMPARABLE;
+		} else if(matches < rhsSize) {
+			//      {int x} != {int x, int y}
+			// {int x, ...} >> {int x, int y}
+			return lhsOpen ? State.GREATER : State.UNCOMPARABLE;
+		} else if (lhsOpen != rhsOpen) {
+			// {int x}       << {int x, ... }
+			// {int x, ...}  >> {int x }
+			return lhsOpen ? State.GREATER : State.SMALLER;
+		} else {
+			// {int x,int y} == {int x,int y}
+			// {int x, ... } == {int x, ... }
+			return State.EQUAL;
 		}
 	}
 
