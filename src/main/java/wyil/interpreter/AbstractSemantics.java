@@ -1,4 +1,4 @@
-package wyc.interpreter;
+package wyil.interpreter;
 
 import java.math.BigInteger;
 

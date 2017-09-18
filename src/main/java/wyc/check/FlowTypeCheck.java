@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.stage;
+package wyc.check;
 
 import static wybs.lang.SyntaxError.InternalFailure;
 import static wybs.util.AbstractCompilationUnit.ITEM_bool;

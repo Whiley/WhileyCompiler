@@ -12,10 +12,10 @@ import java.util.*;
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wyc.lang.WhileyFile;
-import wyc.stage.VerificationConditionGenerator;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
+import wyil.stage.VerificationConditionGenerator;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be

@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.interpreter;
+package wyil.interpreter;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -18,9 +18,9 @@ import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wyfs.lang.Path;
 
-import static wyc.interpreter.ConcreteSemantics.LValue;
-import static wyc.interpreter.ConcreteSemantics.RValue;
 import static wyc.lang.WhileyFile.*;
+import static wyil.interpreter.ConcreteSemantics.LValue;
+import static wyil.interpreter.ConcreteSemantics.RValue;
 
 import wyc.type.TypeSystem;
 import wyc.lang.WhileyFile;

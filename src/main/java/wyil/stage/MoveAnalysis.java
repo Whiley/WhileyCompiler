@@ -1,4 +1,4 @@
-package wyc.stage;
+package wyil.stage;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
