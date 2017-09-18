@@ -1359,7 +1359,7 @@ public class FlowTypeCheck {
 		Expr subscript = lval.getSecondOperand();
 		//
 		Type sourceT = checkExpression(source, environment);
-		// FIXME: bug here as need writeable array type?
+		// FIXME: bug here as need writeable array type #784
 		Type.Array readableArrayT = checkIsArrayType(sourceT, source);
 		Type subscriptT = checkExpression(subscript, environment);
 		checkIsSubtype(new Type.Int(), subscriptT, subscript);
@@ -1369,7 +1369,7 @@ public class FlowTypeCheck {
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
 		Type src = checkExpression(lval.getOperand(), environment);
-		// FIXME: bug here as need writeable recordy type?
+		// FIXME: bug here as need writeable record type #784
 		Type.Record readableRecordT = checkIsRecordType(src, lval.getOperand());
 		//
 		Type type = readableRecordT.getField(lval.getField());
@@ -1382,7 +1382,7 @@ public class FlowTypeCheck {
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
 		Type operandT = checkExpression(lval.getOperand(), environment);
-		//
+		// FIXME: bug here as need writeable reference type #784
 		Type.Reference refT = checkIsReferenceType(operandT, lval.getOperand());
 		//
 		return refT.getElement();

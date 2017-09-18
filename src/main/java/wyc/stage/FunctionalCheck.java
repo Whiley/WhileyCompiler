@@ -6,6 +6,7 @@
 
 package wyc.stage;
 
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
@@ -158,11 +159,19 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 
 	@Override
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
-		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && expr.getSource().getType() instanceof Type.Method) {
-			invalidMethodCall(expr, context);
+		try {
+			// Check whether invoking an impure method in a pure context
+			if (context != Context.IMPURE) {
+				Type.Callable type = types.extractReadableLambda(expr.getSource().getType());
+				if (type instanceof Type.Method) {
+					invalidMethodCall(expr, context);
+				}
+			}
+			super.visitIndirectInvoke(expr, context);
+		} catch (ResolutionError e) {
+			// This really should be dead code
+			throw new RuntimeException(e);
 		}
-		super.visitIndirectInvoke(expr, context);
 	}
 
 	@Override

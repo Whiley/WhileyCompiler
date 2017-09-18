@@ -1,0 +1,3 @@
+tests/invalid/MethodRef_Invalid_3.whiley:7: method invocation not permitted
+    return m(1)
+           ^^^^

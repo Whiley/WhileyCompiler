@@ -54,41 +54,30 @@ public class AllInvalidTest {
 		IGNORED.put("Function_Invalid_2", "unclassified");
 		IGNORED.put("Function_Invalid_9", "unclassified");
 		IGNORED.put("Native_Invalid_1", "unclassified");
-		IGNORED.put("OpenRecord_Invalid_2", "type testing definite taken");
-		//
-		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
 		//
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
 		//
 		IGNORED.put("Parsing_Invalid_15", "609");
 		//
-		IGNORED.put("Parsing_Invalid_31", "610");
-		//
-		IGNORED.put("MethodRef_Invalid_1", "#334");
-		IGNORED.put("MethodRef_Invalid_3", "#334");
-		//
-		IGNORED.put("TypeEquals_Invalid_1", "#681");
-		//
-		IGNORED.put("Tuple_Invalid_3", "#713");
-		IGNORED.put("Tuple_Invalid_4", "#713");
-		IGNORED.put("Tuple_Invalid_5", "#713");
-		//
+		IGNORED.put("Lifetime_Invalid_1", "#764");
+		IGNORED.put("Lifetime_Invalid_2", "#764");
+		IGNORED.put("Lifetime_Invalid_4", "#764");
+		IGNORED.put("Lifetime_Invalid_8", "#764");
+		IGNORED.put("Lifetime_Lambda_Invalid_1", "#764");
+		IGNORED.put("Lifetime_Lambda_Invalid_2", "#764");
+		IGNORED.put("Lifetime_Lambda_Invalid_3", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");
-
+		//
+		IGNORED.put("UnionType_Invalid_4", "#784");
+		IGNORED.put("UnionType_Invalid_5", "#784");
+		IGNORED.put("UnionType_Invalid_11", "#784");
+		IGNORED.put("UnionType_Invalid_12", "#784");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("Fail_Invalid_1", "unclassified");
-		IGNORED.put("Fail_Invalid_3", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
-		IGNORED.put("TypeEquals_Invalid_5", "unclassified");
-		IGNORED.put("UnionType_Invalid_9", "unclassified");
-		//
 		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
 	}
 
@@ -128,12 +117,12 @@ public class AllInvalidTest {
 		if (r == Compile.Result.SUCCESS) {
 			// This indicates the problem is some form of assertion error.
 			// Therefore, execute the code whilst expecting an assertion failure
-			try {
-				TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+			//try {
+				//TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
 				fail("Test compiled when it shouldn't have!");
-			} catch(AssertionError e) {
-				// OK
-			}
+//			} catch(AssertionError e) {
+//				// OK
+//			}
 		} else if (r == Compile.Result.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
 			fail("Test caused internal failure!\n" + output);
