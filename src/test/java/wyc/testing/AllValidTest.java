@@ -56,23 +56,21 @@ public class AllValidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		//
-		IGNORED.put("TypeEquals_Valid_23", "#566");
-		IGNORED.put("TypeEquals_Valid_41", "#566");
-		//
+		// Problem Type Checking Union Type
 		IGNORED.put("RecordSubtype_Valid_1", "#696");
 		IGNORED.put("RecordSubtype_Valid_2", "#696");
-		//
+		// Function Overloading for Nominal Types
 		IGNORED.put("Function_Valid_11", "#702");
 		IGNORED.put("Function_Valid_15", "#702");
-		//
-		IGNORED.put("RecursiveType_Valid_2", "#763");
-		IGNORED.put("TypeEquals_Valid_25", "#763");
-		IGNORED.put("TypeEquals_Valid_30", "#763");
-		//
+		// Subtyping over Lifetime Parameters
 		IGNORED.put("Lifetime_Lambda_Valid_7", "#764");
 		IGNORED.put("Lifetime_Valid_7", "#764");
 		IGNORED.put("Lifetime_Valid_8", "#764");
+		// Type Tests with Invariants
+		IGNORED.put("TypeEquals_Valid_23", "#787");
+		IGNORED.put("TypeEquals_Valid_25", "#787");
+		IGNORED.put("TypeEquals_Valid_30", "#787");
+		IGNORED.put("TypeEquals_Valid_41", "#787");
 	}
 
 	/**
