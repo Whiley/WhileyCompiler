@@ -81,6 +81,8 @@ public class AllInvalidTest {
 		IGNORED.put("UnionType_Invalid_5", "#784");
 		IGNORED.put("UnionType_Invalid_11", "#784");
 		IGNORED.put("UnionType_Invalid_12", "#784");
+		//
+		IGNORED.put("StaticVar_Invalid_4", "???");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

@@ -191,10 +191,12 @@ public class FlowTypeCheck {
 	 *            Constant declaration to check.
 	 * @throws IOException
 	 */
-	public void checkStaticVariableDeclaration(Decl.Variable decl) {
+	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
 		Environment environment = new Environment();
-		// Check the initialiser
-		checkExpression(decl.getInitialiser(), environment);
+		if(decl.hasInitialiser()) {
+			Type type = checkExpression(decl.getInitialiser(), environment);
+			checkIsSubtype(decl.getType(),type, decl.getInitialiser());
+		}
 	}
 
 	/**
