@@ -163,7 +163,21 @@ public class VerificationConditionGenerator {
 	 *            The WyAL file being constructed
 	 */
 	private void translateConstantDeclaration(WhileyFile.Decl.StaticVariable decl) {
-		// FIXME: WyAL file format should support constants
+		if(decl.hasInitialiser()) {
+			// The environments are needed to prevent clashes between variable
+			// versions across verification conditions, and also to type variables
+			// used in verification conditions.
+			GlobalEnvironment globalEnvironment = new GlobalEnvironment(decl);
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+			List<VerificationCondition> vcs = new ArrayList<>();
+			Context context = new Context(wyalFile, AssumptionSet.ROOT, localEnvironment, localEnvironment, null, vcs);
+			//
+			Pair<Expr, Context> rp = translateExpressionWithChecks(decl.getInitialiser(), null, context);
+			generateTypeInvariantCheck(decl.getType(),rp.first(),context);
+			// Translate each generated verification condition into an assertion in
+			// the underlying WyalFile.
+			createAssertions(decl, vcs, globalEnvironment);
+		}
 	}
 
 	/**
@@ -2109,7 +2123,7 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 *            The WyAL file being generated
 	 */
-	private void createAssertions(WhileyFile.Decl.FunctionOrMethod declaration, List<VerificationCondition> vcs,
+	private void createAssertions(WhileyFile.Decl declaration, List<VerificationCondition> vcs,
 			GlobalEnvironment environment) {
 		// FIXME: should be logged somehow?
 		for (int i = 0; i != vcs.size(); ++i) {
@@ -2132,7 +2146,7 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @return
 	 */
-	public WyalFile.Stmt.Block buildVerificationCondition(WhileyFile.Decl.FunctionOrMethod declaration,
+	public WyalFile.Stmt.Block buildVerificationCondition(WhileyFile.Decl declaration,
 			GlobalEnvironment environment, VerificationCondition vc) {
 		WyalFile.Stmt antecedent = flatten(vc.antecedent);
 		Expr consequent = vc.consequent;
