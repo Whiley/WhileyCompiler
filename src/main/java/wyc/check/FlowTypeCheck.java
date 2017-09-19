@@ -1254,8 +1254,10 @@ public class FlowTypeCheck {
 	}
 
 	public Environment union(Environment left, Environment right) {
-		if (left == right) {
+		if (left == right || right == BOTTOM) {
 			return left;
+		} else if(left == BOTTOM) {
+			return right;
 		} else {
 			Environment result = new Environment();
 
