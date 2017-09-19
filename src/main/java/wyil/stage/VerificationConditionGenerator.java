@@ -38,7 +38,7 @@ import wyfs.util.Trie;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.type.TypeSystem;
-import wyc.util.SingleParameterVisitor;
+import wyc.util.WhileyFileParameterVisitor;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -2363,7 +2363,7 @@ public class VerificationConditionGenerator {
 	 * Create a simple visitor for extracting all variable access expressions from a
 	 * given expression (or statement).
 	 */
-	private static final SingleParameterVisitor<HashSet<Decl.Variable>> usedVariableExtractor = new SingleParameterVisitor<HashSet<Decl.Variable>>() {
+	private static final WhileyFileParameterVisitor<HashSet<Decl.Variable>> usedVariableExtractor = new WhileyFileParameterVisitor<HashSet<Decl.Variable>>() {
 		@Override
 		public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
 			used.add(expr.getVariableDeclaration());

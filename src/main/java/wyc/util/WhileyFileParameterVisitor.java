@@ -26,7 +26,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class SingleParameterVisitor<T> {
+public class WhileyFileParameterVisitor<T> {
 
 	public void visitWhileyFile(WhileyFile wf, T data) {
 		for (Decl decl : wf.getDeclarations()) {
