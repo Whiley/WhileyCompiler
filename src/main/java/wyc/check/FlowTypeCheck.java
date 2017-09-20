@@ -189,12 +189,18 @@ public class FlowTypeCheck {
 		// Check any postconditions (i.e. ensures clauses) provided.
 		checkConditions(d.getEnsures(), true, environment);
 		// FIXME: Add the "this" lifetime
-		// Create scope representing this declaration
-		EnclosingScope scope = new FunctionOrMethodScope(d);
-		// Check type information throughout all statements in body.
-		Environment last = checkBlock(d.getBody(), environment, scope);
-		// Check return value
-		checkReturnValue(d, last);
+		if (d.getModifiers().match(Modifier.Native.class) == null) {
+			// Create scope representing this declaration
+			EnclosingScope scope = new FunctionOrMethodScope(d);
+			// Check type information throughout all statements in body.
+			Environment last = checkBlock(d.getBody(), environment, scope);
+			// Check return value
+			checkReturnValue(d, last);
+		} else {
+			// NOTE: we obviously don't need to check the body of a native function or
+			// method. Attempting to do so causes problems because checkReturnValue will
+			// fail.
+		}
 	}
 
 	/**
