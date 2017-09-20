@@ -26,7 +26,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class WhileyFileConsumer<T> {
+public abstract class AbstractConsumer<T> {
 
 	public void visitWhileyFile(WhileyFile wf, T data) {
 		for (Decl decl : wf.getDeclarations()) {
@@ -326,17 +326,6 @@ public class WhileyFileConsumer<T> {
 			visitUnaryOperator((Expr.UnaryOperator) expr, data);
 			break;
 		// Binary Operators
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
-		case EXPR_arrayaccess:
-		case EXPR_arrayrange:
-		case EXPR_recordupdate:
-		case EXPR_arraygenerator:
-			visitBinaryOperator((Expr.BinaryOperator) expr, data);
-			break;
-		// Nary Operators
-		case EXPR_logicaland:
-		case EXPR_logicalor:
 		case EXPR_logiaclimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
@@ -350,6 +339,17 @@ public class WhileyFileConsumer<T> {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_arrayaccess:
+		case EXPR_arrayrange:
+		case EXPR_recordupdate:
+		case EXPR_arraygenerator:
+			visitBinaryOperator((Expr.BinaryOperator) expr, data);
+			break;
+		// Nary Operators
+		case EXPR_logicaland:
+		case EXPR_logicalor:
 		case EXPR_invoke:
 		case EXPR_bitwiseand:
 		case EXPR_bitwiseor:
@@ -411,6 +411,45 @@ public class WhileyFileConsumer<T> {
 	public void visitBinaryOperator(Expr.BinaryOperator expr, T data) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
+		case EXPR_equal:
+			visitEqual((Expr.Equal) expr, data);
+			break;
+		case EXPR_notequal:
+			visitNotEqual((Expr.NotEqual) expr, data);
+			break;
+		case EXPR_logiaclimplication:
+			visitLogicalImplication((Expr.LogicalImplication) expr, data);
+			break;
+		case EXPR_logicaliff:
+			visitLogicalIff((Expr.LogicalIff) expr, data);
+			break;
+		case EXPR_integerlessthan:
+			visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
+			break;
+		case EXPR_integerlessequal:
+			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
+			break;
+		case EXPR_integergreaterthan:
+			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
+			break;
+		case EXPR_integergreaterequal:
+			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
+			break;
+		case EXPR_integeraddition:
+			visitIntegerAddition((Expr.IntegerAddition) expr, data);
+			break;
+		case EXPR_integersubtraction:
+			visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
+			break;
+		case EXPR_integermultiplication:
+			visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
+			break;
+		case EXPR_integerdivision:
+			visitIntegerDivision((Expr.IntegerDivision) expr, data);
+			break;
+		case EXPR_integerremainder:
+			visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
+			break;
 		case EXPR_bitwiseshl:
 			visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, data);
 			break;
@@ -460,33 +499,6 @@ public class WhileyFileConsumer<T> {
 		case EXPR_bitwisexor:
 			visitBitwiseXor((Expr.BitwiseXor) expr, data);
 			break;
-		case EXPR_integerlessthan:
-			visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
-			break;
-		case EXPR_integerlessequal:
-			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
-			break;
-		case EXPR_integergreaterthan:
-			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
-			break;
-		case EXPR_integergreaterequal:
-			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
-			break;
-		case EXPR_integeraddition:
-			visitIntegerAddition((Expr.IntegerAddition) expr, data);
-			break;
-		case EXPR_integersubtraction:
-			visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
-			break;
-		case EXPR_integermultiplication:
-			visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
-			break;
-		case EXPR_integerdivision:
-			visitIntegerDivision((Expr.IntegerDivision) expr, data);
-			break;
-		case EXPR_integerremainder:
-			visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
-			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) expr, data);
 			break;
@@ -495,18 +507,6 @@ public class WhileyFileConsumer<T> {
 			break;
 		case EXPR_logicalor:
 			visitLogicalOr((Expr.LogicalOr) expr, data);
-			break;
-		case EXPR_logiaclimplication:
-			visitLogicalImplication((Expr.LogicalImplication) expr, data);
-			break;
-		case EXPR_logicaliff:
-			visitLogicalIff((Expr.LogicalIff) expr, data);
-			break;
-		case EXPR_equal:
-			visitEqual((Expr.Equal) expr, data);
-			break;
-		case EXPR_notequal:
-			visitNotEqual((Expr.NotEqual) expr, data);
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
@@ -584,23 +584,28 @@ public class WhileyFileConsumer<T> {
 	}
 
 	public void visitEqual(Expr.Equal expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerLessThan(Expr.IntegerLessThan expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerNegation(Expr.IntegerNegation expr, T data) {
@@ -608,23 +613,28 @@ public class WhileyFileConsumer<T> {
 	}
 
 	public void visitIntegerAddition(Expr.IntegerAddition expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerDivision(Expr.IntegerDivision expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitIs(Expr.Is expr, T data) {
@@ -636,11 +646,13 @@ public class WhileyFileConsumer<T> {
 	}
 
 	public void visitLogicalImplication(Expr.LogicalImplication expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitLogicalIff(Expr.LogicalIff expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitLogicalNot(Expr.LogicalNot expr, T data) {
@@ -679,7 +691,8 @@ public class WhileyFileConsumer<T> {
 	}
 
 	public void visitNotEqual(Expr.NotEqual expr, T data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 	}
 
 	public void visitRecordAccess(Expr.RecordAccess expr, T data) {

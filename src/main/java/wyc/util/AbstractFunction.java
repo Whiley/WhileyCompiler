@@ -24,7 +24,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class WhileyFileFunction<P,R> {
+public abstract class AbstractFunction<P,R> {
 
 	public R visitWhileyFile(WhileyFile wf, P data) {
 		for (Decl decl : wf.getDeclarations()) {
@@ -314,16 +314,6 @@ public class WhileyFileFunction<P,R> {
 		case EXPR_arraylength:
 			return visitUnaryOperator((Expr.UnaryOperator) expr, data);
 		// Binary Operators
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
-		case EXPR_arrayaccess:
-		case EXPR_arrayrange:
-		case EXPR_recordupdate:
-		case EXPR_arraygenerator:
-			return visitBinaryOperator((Expr.BinaryOperator) expr, data);
-		// Nary Operators
-		case EXPR_logicaland:
-		case EXPR_logicalor:
 		case EXPR_logiaclimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
@@ -337,6 +327,16 @@ public class WhileyFileFunction<P,R> {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_arrayaccess:
+		case EXPR_arrayrange:
+		case EXPR_recordupdate:
+		case EXPR_arraygenerator:
+			return visitBinaryOperator((Expr.BinaryOperator) expr, data);
+		// Nary Operators
+		case EXPR_logicaland:
+		case EXPR_logicalor:
 		case EXPR_invoke:
 		case EXPR_bitwiseand:
 		case EXPR_bitwiseor:
@@ -385,6 +385,32 @@ public class WhileyFileFunction<P,R> {
 	public R visitBinaryOperator(Expr.BinaryOperator expr, P data) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
+		case EXPR_equal:
+			return visitEqual((Expr.Equal) expr, data);
+		case EXPR_notequal:
+			return visitNotEqual((Expr.NotEqual) expr, data);
+		case EXPR_logiaclimplication:
+			return visitLogicalImplication((Expr.LogicalImplication) expr, data);
+		case EXPR_logicaliff:
+			return visitLogicalIff((Expr.LogicalIff) expr, data);
+		case EXPR_integerlessthan:
+			return visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
+		case EXPR_integerlessequal:
+			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
+		case EXPR_integergreaterthan:
+			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
+		case EXPR_integergreaterequal:
+			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
+		case EXPR_integeraddition:
+			return visitIntegerAddition((Expr.IntegerAddition) expr, data);
+		case EXPR_integersubtraction:
+			return visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
+		case EXPR_integermultiplication:
+			return visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
+		case EXPR_integerdivision:
+			return visitIntegerDivision((Expr.IntegerDivision) expr, data);
+		case EXPR_integerremainder:
+			return visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
 		case EXPR_bitwiseshl:
 			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, data);
 		case EXPR_bitwiseshr:
@@ -424,38 +450,12 @@ public class WhileyFileFunction<P,R> {
 			return visitBitwiseOr((Expr.BitwiseOr) expr, data);
 		case EXPR_bitwisexor:
 			return visitBitwiseXor((Expr.BitwiseXor) expr, data);
-		case EXPR_integerlessthan:
-			return visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
-		case EXPR_integerlessequal:
-			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
-		case EXPR_integergreaterthan:
-			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
-		case EXPR_integergreaterequal:
-			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
-		case EXPR_integeraddition:
-			return visitIntegerAddition((Expr.IntegerAddition) expr, data);
-		case EXPR_integersubtraction:
-			return visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
-		case EXPR_integermultiplication:
-			return visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
-		case EXPR_integerdivision:
-			return visitIntegerDivision((Expr.IntegerDivision) expr, data);
-		case EXPR_integerremainder:
-			return visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
 		case EXPR_invoke:
 			return visitInvoke((Expr.Invoke) expr, data);
 		case EXPR_logicaland:
 			return visitLogicalAnd((Expr.LogicalAnd) expr, data);
 		case EXPR_logicalor:
 			return visitLogicalOr((Expr.LogicalOr) expr, data);
-		case EXPR_logiaclimplication:
-			return visitLogicalImplication((Expr.LogicalImplication) expr, data);
-		case EXPR_logicaliff:
-			return visitLogicalIff((Expr.LogicalIff) expr, data);
-		case EXPR_equal:
-			return visitEqual((Expr.Equal) expr, data);
-		case EXPR_notequal:
-			return visitNotEqual((Expr.NotEqual) expr, data);
 		case EXPR_recordinitialiser:
 			return visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
 		default:
@@ -546,27 +546,32 @@ public class WhileyFileFunction<P,R> {
 	}
 
 	public R visitEqual(Expr.Equal expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerLessThan(Expr.IntegerLessThan expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
@@ -576,27 +581,32 @@ public class WhileyFileFunction<P,R> {
 	}
 
 	public R visitIntegerAddition(Expr.IntegerAddition expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerSubtraction(Expr.IntegerSubtraction expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerMultiplication(Expr.IntegerMultiplication expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerDivision(Expr.IntegerDivision expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitIntegerRemainder(Expr.IntegerRemainder expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
@@ -611,12 +621,14 @@ public class WhileyFileFunction<P,R> {
 	}
 
 	public R visitLogicalImplication(Expr.LogicalImplication expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
 	public R visitLogicalIff(Expr.LogicalIff expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 
@@ -664,7 +676,8 @@ public class WhileyFileFunction<P,R> {
 	}
 
 	public R visitNotEqual(Expr.NotEqual expr, P data) {
-		visitExpressions(expr.getOperands(), data);
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
 		return null;
 	}
 

@@ -38,7 +38,7 @@ import wyfs.util.Trie;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.type.TypeSystem;
-import wyc.util.WhileyFileConsumer;
+import wyc.util.AbstractConsumer;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -1273,7 +1273,7 @@ public class VerificationConditionGenerator {
 				break;
 			case WhileyFile.EXPR_integerdivision:
 			case WhileyFile.EXPR_integerremainder:
-				checkDivideByZero((WhileyFile.Expr.NaryOperator) expr, context);
+				checkDivideByZero((WhileyFile.Expr.BinaryOperator) expr, context);
 				break;
 			case WhileyFile.EXPR_arrayaccess:
 				checkIndexOutOfBounds((WhileyFile.Expr.ArrayAccess) expr, context);
@@ -1317,10 +1317,8 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private void checkDivideByZero(WhileyFile.Expr.NaryOperator expr, Context context) {
-		Tuple<WhileyFile.Expr> operands = expr.getOperands();
-		Expr rhs = translateExpression(operands.get(1), null, context.getEnvironment());
-		// FIXME: problem with > 2 operands
+	private void checkDivideByZero(WhileyFile.Expr.BinaryOperator expr, Context context) {
+		Expr rhs = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
 		Expr neqZero = new Expr.NotEqual(rhs, constant);
@@ -1510,11 +1508,13 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_integerlessequal:
 			case WhileyFile.EXPR_integergreaterthan:
 			case WhileyFile.EXPR_integergreaterequal:
-			case WhileyFile.EXPR_logicaland:
-			case WhileyFile.EXPR_logicalor:
 			case WhileyFile.EXPR_logiaclimplication:
 			case WhileyFile.EXPR_logicaliff:
-				result = translateBinaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
+				result = translateBinaryOperator((WhileyFile.Expr.BinaryOperator) expr, environment);
+				break;
+			case WhileyFile.EXPR_logicaland:
+			case WhileyFile.EXPR_logicalor:
+				result = translateNaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
 				break;
 			case WhileyFile.EXPR_is:
 				result = translateIs((WhileyFile.Expr.Is) expr, environment);
@@ -1623,10 +1623,9 @@ public class VerificationConditionGenerator {
 		return new Expr.Negation(e);
 	}
 
-	private Expr translateBinaryOperator(WhileyFile.Expr.NaryOperator expr, LocalEnvironment environment) {
-		Tuple<WhileyFile.Expr> operands = expr.getOperands();
-		Expr lhs = translateExpression(operands.get(0), null, environment);
-		Expr rhs = translateExpression(operands.get(1), null, environment);
+	private Expr translateBinaryOperator(WhileyFile.Expr.BinaryOperator expr, LocalEnvironment environment) {
+		Expr lhs = translateExpression(expr.getFirstOperand(), null, environment);
+		Expr rhs = translateExpression(expr.getSecondOperand(), null, environment);
 		// FIXME: problem with > 2 operands
 		switch(expr.getOpcode()) {
 		case WhileyFile.EXPR_integeraddition:
@@ -1651,14 +1650,24 @@ public class VerificationConditionGenerator {
 			return new Expr.GreaterThan(lhs, rhs);
 		case WhileyFile.EXPR_integergreaterequal:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case WhileyFile.EXPR_logicaland:
-			return new Expr.LogicalAnd(lhs, rhs);
-		case WhileyFile.EXPR_logicalor:
-			return new Expr.LogicalOr(lhs, rhs);
 		case WhileyFile.EXPR_logiaclimplication:
 			return new Expr.LogicalImplication(lhs, rhs);
 		case WhileyFile.EXPR_logicaliff:
 			return new Expr.LogicalIff(lhs, rhs);
+		default:
+			throw new RuntimeException("Internal failure --- dead code reached");
+		}
+
+	}
+
+
+	private Expr translateNaryOperator(WhileyFile.Expr.NaryOperator expr, LocalEnvironment environment) {
+		Expr[] operands = translateExpressions(expr.getOperands(),environment);
+		switch(expr.getOpcode()) {
+		case WhileyFile.EXPR_logicaland:
+			return new Expr.LogicalAnd(operands);
+		case WhileyFile.EXPR_logicalor:
+			return new Expr.LogicalOr(operands);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
 		}
@@ -2363,7 +2372,7 @@ public class VerificationConditionGenerator {
 	 * Create a simple visitor for extracting all variable access expressions from a
 	 * given expression (or statement).
 	 */
-	private static final WhileyFileConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new WhileyFileConsumer<HashSet<Decl.Variable>>() {
+	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
 		@Override
 		public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
 			used.add(expr.getVariableDeclaration());

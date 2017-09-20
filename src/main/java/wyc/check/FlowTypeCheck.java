@@ -1136,33 +1136,26 @@ public class FlowTypeCheck {
 
 	private Environment checkLogicalImplication(Expr.LogicalImplication expr, boolean sign, Environment environment) {
 		// To understand this, remember that A ==> B is equivalent to !A || B.
-		Tuple<Expr> operands = expr.getOperands();
-		if(operands.size() != 2) {
-			// FIXME: this is just a temporary hack for now.
-			throw new IllegalArgumentException("cannot currently support implication with > 2 arguments");
-		}
 		if (sign) {
 			// First case assumes the if body doesn't hold.
-			Environment left = checkCondition(operands.get(0), false, environment);
+			Environment left = checkCondition(expr.getFirstOperand(), false, environment);
 			// Second case assumes the if body holds ...
-			environment = checkCondition(operands.get(0), true, environment);
+			environment = checkCondition(expr.getFirstOperand(), true, environment);
 			// ... and then passes this into the then body
-			Environment right = checkCondition(operands.get(1), true, environment);
+			Environment right = checkCondition(expr.getSecondOperand(), true, environment);
 			//
 			return union(left, right);
 		} else {
 			// Effectively, this is a conjunction equivalent to A && !B
-			environment = checkCondition(operands.get(0), true, environment);
-			environment = checkCondition(operands.get(1), false, environment);
+			environment = checkCondition(expr.getFirstOperand(), true, environment);
+			environment = checkCondition(expr.getSecondOperand(), false, environment);
 			return environment;
 		}
 	}
 
 	private Environment checkLogicalIff(Expr.LogicalIff expr, boolean sign, Environment environment) {
-		Tuple<Expr> operands = expr.getOperands();
-		for (int i = 0; i != operands.size(); ++i) {
-			environment = checkCondition(operands.get(i), sign, environment);
-		}
+		environment = checkCondition(expr.getFirstOperand(), sign, environment);
+		environment = checkCondition(expr.getSecondOperand(), sign, environment);
 		return environment;
 	}
 
@@ -1501,17 +1494,17 @@ public class FlowTypeCheck {
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
-			return checkComparisonOperator((Expr.NaryOperator) expression, environment);
+			return checkComparisonOperator((Expr.BinaryOperator) expression, environment);
 		// Arithmetic Operators
 		case EXPR_integernegation:
-			type = checkArithmeticOperator((Expr.UnaryOperator) expression, environment);
+			type = checkIntegerOperator((Expr.UnaryOperator) expression, environment);
 			break;
 		case EXPR_integeraddition:
 		case EXPR_integersubtraction:
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
-			type = checkArithmeticOperator((Expr.NaryOperator) expression, environment);
+			type = checkIntegerOperator((Expr.BinaryOperator) expression, environment);
 			break;
 		// Bitwise expressions
 		case EXPR_bitwisenot:
@@ -1668,31 +1661,25 @@ public class FlowTypeCheck {
 		return sig.getReturns();
 	}
 
-	private Type checkComparisonOperator(Expr.NaryOperator expr, Environment environment) {
+	private Type checkComparisonOperator(Expr.BinaryOperator expr, Environment environment) {
 		switch (expr.getOpcode()) {
 		case EXPR_equal:
 		case EXPR_notequal:
 			return checkEqualityOperator(expr, environment);
 		default:
-			return checkArithmeticComparator(expr, environment);
+			return checkIntegerComparator(expr, environment);
 		}
 	}
 
-	private Type checkEqualityOperator(Expr.NaryOperator expr, Environment environment) {
+	private Type checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
 		try {
-			Tuple<Expr> operands = expr.getOperands();
-			Type last = null;
-			for (int i = 0; i != operands.size(); ++i) {
-				Type next = checkExpression(operands.get(i), environment);
-				if (i > 0) {
-					// Sanity check that the types of operands are actually comparable.
-					Type glb = new Type.Intersection(last, next);
-					if (typeSystem.isVoid(glb)) {
-						syntaxError(errorMessage(INCOMPARABLE_OPERANDS, last, next), expr);
-						return null;
-					}
-				}
-				last = next;
+			Type lhs = checkExpression(expr.getFirstOperand(), environment);
+			Type rhs = checkExpression(expr.getSecondOperand(), environment);
+			// Sanity check that the types of operands are actually comparable.
+			Type glb = new Type.Intersection(lhs, rhs);
+			if (typeSystem.isVoid(glb)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
+				return null;
 			}
 			return Type.Bool;
 		} catch (ResolutionError e) {
@@ -1700,14 +1687,14 @@ public class FlowTypeCheck {
 		}
 	}
 
-	private Type checkArithmeticComparator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Int, expr.getOperands(), environment);
+	private Type checkIntegerComparator(Expr.BinaryOperator expr, Environment environment) {
+		checkOperand(Type.Int, expr.getFirstOperand(), environment);
+		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Bool;
 	}
 
-	private Type checkArithmeticOperator(Expr.UnaryOperator expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getOperand(), environment);
-		checkIsSubtype(Type.Int, lhsT, expr.get(0));
+	private Type checkIntegerOperator(Expr.UnaryOperator expr, Environment environment) {
+		checkOperand(Type.Int, expr.getOperand(), environment);
 		return Type.Int;
 	}
 
@@ -1718,14 +1705,14 @@ public class FlowTypeCheck {
 	 * @param expr
 	 * @return
 	 */
-	private Type checkArithmeticOperator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Int, expr.getOperands(), environment);
+	private Type checkIntegerOperator(Expr.BinaryOperator expr, Environment environment) {
+		checkOperand(Type.Int, expr.getFirstOperand(), environment);
+		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Int;
 	}
 
 	private Type checkBitwiseOperator(Expr.UnaryOperator expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getOperand(), environment);
-		checkIsSubtype(Type.Byte, lhsT, expr.get(0));
+		checkOperand(Type.Byte, expr.getOperand(), environment);
 		return Type.Byte;
 	}
 
@@ -1735,10 +1722,8 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getFirstOperand(), environment);
-		Type rhsT = checkExpression(expr.getSecondOperand(), environment);
-		checkIsSubtype(Type.Byte, lhsT, expr.get(0));
-		checkIsSubtype(Type.Int, rhsT, expr.get(1));
+		checkOperand(Type.Byte, expr.getFirstOperand(), environment);
+		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Byte;
 	}
 
@@ -1809,9 +1794,8 @@ public class FlowTypeCheck {
 		Expr length = expr.getSecondOperand();
 		//
 		Type valueT = checkExpression(value, env);
-		Type lengthT = checkExpression(length, env);
+		checkOperand(Type.Int, length, env);
 		//
-		checkIsSubtype(new Type.Int(), lengthT, length);
 		return new Type.Array(valueT);
 	}
 
@@ -2211,10 +2195,14 @@ public class FlowTypeCheck {
 		}
 	}
 
+	private void checkOperand(Type type, Expr operand, Environment environment) {
+		checkIsSubtype(type, checkExpression(operand, environment), operand);
+	}
+
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
 		for (int i = 0; i != operands.size(); ++i) {
 			Expr operand = operands.get(i);
-			checkIsSubtype(type, checkExpression(operand, environment), operand);
+			checkOperand(type, operand, environment);
 		}
 	}
 	// ==========================================================================

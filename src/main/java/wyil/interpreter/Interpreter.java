@@ -648,34 +648,34 @@ public class Interpreter {
 				val = executeNotEqual((Expr.NotEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_integernegation:
-				val = executeArithmeticNegation((Expr.IntegerNegation) expr, frame);
+				val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
 				break;
 			case WhileyFile.EXPR_integeraddition:
-				val = executeArithmeticAddition((Expr.IntegerAddition) expr, frame);
+				val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
 				break;
 			case WhileyFile.EXPR_integersubtraction:
-				val = executeArithmeticSubtraction((Expr.IntegerSubtraction) expr, frame);
+				val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
 				break;
 			case WhileyFile.EXPR_integermultiplication:
-				val = executeArithmeticMultiplication((Expr.IntegerMultiplication) expr, frame);
+				val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
 				break;
 			case WhileyFile.EXPR_integerdivision:
-				val = executeArithmeticDivision((Expr.IntegerDivision) expr, frame);
+				val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
 				break;
 			case WhileyFile.EXPR_integerremainder:
-				val = executeArithmeticRemainder((Expr.IntegerRemainder) expr, frame);
+				val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
 				break;
 			case WhileyFile.EXPR_integerlessthan:
-				val = executeArithmeticLessThan((Expr.IntegerLessThan) expr, frame);
+				val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
 				break;
 			case WhileyFile.EXPR_integerlessequal:
-				val = executeArithmeticLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
+				val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_integergreaterthan:
-				val = executeArithmeticGreaterThan((Expr.IntegerGreaterThan) expr, frame);
+				val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
 				break;
 			case WhileyFile.EXPR_integergreaterequal:
-				val = executeArithmeticGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
+				val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_bitwisenot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
@@ -879,139 +879,75 @@ public class Interpreter {
 		return lhs.is(expr.getTestType(), this);
 	}
 
-	public RValue executeArithmeticNegation(Expr.IntegerNegation expr, CallStack frame) {
+	public RValue executeIntegerNegation(Expr.IntegerNegation expr, CallStack frame) {
 		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(), frame);
 		return lhs.negate();
 	}
 
-	public RValue executeArithmeticOperator(Expr.IntegerAddition expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.add(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
+	public RValue executeIntegerAddition(Expr.IntegerAddition expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.add(rhs);
 	}
 
-	public RValue executeArithmeticAddition(Expr.IntegerAddition expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.add(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
+	public RValue executeIntegerSubtraction(Expr.IntegerSubtraction expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.subtract(rhs);
 	}
 
-	public RValue executeArithmeticSubtraction(Expr.IntegerSubtraction expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.subtract(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
+	public RValue executeIntegerMultiplication(Expr.IntegerMultiplication expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.multiply(rhs);
 	}
 
-	public RValue executeArithmeticMultiplication(Expr.IntegerMultiplication expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.multiply(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
+	public RValue executeIntegerDivision(Expr.IntegerDivision expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.divide(rhs);
 	}
 
-	public RValue executeArithmeticDivision(Expr.IntegerDivision expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.divide(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
-	}
-
-	public RValue executeArithmeticRemainder(Expr.IntegerRemainder expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			val = val.remainder(executeExpression(INT_T, operands.get(i), frame));
-		}
-		return val;
+	public RValue executeIntegerRemainder(Expr.IntegerRemainder expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.remainder(rhs);
 	}
 
 	public RValue executeEqual(Expr.Equal expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue last = executeExpression(ANY_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue next = executeExpression(ANY_T, operands.get(i), frame);
-			if(last.equal(next) == RValue.False) {
-				return RValue.False;
-			}
-		}
-		return RValue.True;
+		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame);
+		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame);
+		return lhs.equal(rhs);
 	}
 
 	public RValue executeNotEqual(Expr.NotEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue last = executeExpression(ANY_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue next = executeExpression(ANY_T, operands.get(i), frame);
-			if(last.equal(next) == RValue.True) {
-				return RValue.False;
-			}
-		}
-		return RValue.True;
+		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame);
+		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame);
+		return lhs.notEqual(rhs);
 	}
 
-	public RValue executeArithmeticLessThan(Expr.IntegerLessThan expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
-			if(last.lessThan(next) == RValue.False) {
-				return RValue.False;
-			}
-			last = next;
-		}
-		return RValue.True;
+	public RValue executeIntegerLessThan(Expr.IntegerLessThan expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.lessThan(rhs);
 	}
 
-	public RValue executeArithmeticLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
-			if(last.lessThanOrEqual(next) == RValue.False) {
-				return RValue.False;
-			}
-			last = next;
-		}
-		return RValue.True;
+	public RValue executeIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.lessThanOrEqual(rhs);
 	}
 
-	public RValue executeArithmeticGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
-			if(next.lessThan(last) == RValue.False) {
-				return RValue.False;
-			}
-			last = next;
-		}
-		return RValue.True;
+	public RValue executeIntegerGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return rhs.lessThan(lhs);
 	}
 
-	public RValue executeArithmeticGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame) {
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
-			if(next.lessThanOrEqual(last) == RValue.False) {
-				return RValue.False;
-			}
-			last = next;
-		}
-		return RValue.True;
+	public RValue executeIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return rhs.lessThanOrEqual(lhs);
 	}
 
 	public RValue executeLogicalNot(Expr.LogicalNot expr, CallStack frame) {
@@ -1046,33 +982,19 @@ public class Interpreter {
 	}
 
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
-		// This is a short-circuiting operator
-		Tuple<Expr> operands = expr.getOperands();
-		for (int i = 0; i != operands.size(); ++i) {
-			RValue.Bool next = executeExpression(BOOL_T, operands.get(i), frame);
-			if (next == RValue.False) {
-				// On the first item, false is OK and the result is always true. However, if get
-				// to a subsequent item, then it means all previous items were true.
-				return i == 0 ? RValue.True : RValue.False;
-			}
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame);
+		if(lhs == RValue.False) {
+			return RValue.True;
+		} else {
+			RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame);
+			return lhs.equal(rhs);
 		}
-		// All were the same.
-		return RValue.True;
 	}
 
 	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
-		// This is a short-circuiting operator. Therefore, we fail as soon as one
-		// argument differs from the last.
-		Tuple<Expr> operands = expr.getOperands();
-		RValue.Bool b = executeExpression(BOOL_T, operands.get(0), frame);
-		for (int i = 1; i != operands.size(); ++i) {
-			RValue.Bool t = executeExpression(BOOL_T, operands.get(i), frame);
-			if (t != b) {
-				return RValue.False;
-			}
-		}
-		// All were the same.
-		return RValue.True;
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame);
+		RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame);
+		return lhs.equal(rhs);
 	}
 
 	public RValue executeBitwiseNot(Expr.BitwiseComplement expr, CallStack frame) {

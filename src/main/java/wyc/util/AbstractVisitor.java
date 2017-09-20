@@ -26,7 +26,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class WhileyFileVisitor {
+public abstract class AbstractVisitor {
 
 	public void visitWhileyFile(WhileyFile wf) {
 		for (Decl decl : wf.getDeclarations()) {
@@ -582,23 +582,28 @@ public class WhileyFileVisitor {
 	}
 
 	public void visitEqual(Expr.Equal expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerLessThan(Expr.IntegerLessThan expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerNegation(Expr.IntegerNegation expr) {
@@ -606,23 +611,28 @@ public class WhileyFileVisitor {
 	}
 
 	public void visitIntegerAddition(Expr.IntegerAddition expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerDivision(Expr.IntegerDivision expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitIs(Expr.Is expr) {
@@ -634,11 +644,13 @@ public class WhileyFileVisitor {
 	}
 
 	public void visitLogicalImplication(Expr.LogicalImplication expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitLogicalIff(Expr.LogicalIff expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitLogicalNot(Expr.LogicalNot expr) {
@@ -677,7 +689,8 @@ public class WhileyFileVisitor {
 	}
 
 	public void visitNotEqual(Expr.NotEqual expr) {
-		visitExpressions(expr.getOperands());
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
 	}
 
 	public void visitRecordAccess(Expr.RecordAccess expr) {

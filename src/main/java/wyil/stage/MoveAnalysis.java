@@ -15,7 +15,7 @@ package wyil.stage;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.WhileyFileConsumer;
+import wyc.util.AbstractConsumer;
 import wyc.lang.WhileyFile;
 import static wyc.lang.WhileyFile.*;
 
@@ -61,7 +61,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class MoveAnalysis extends WhileyFileConsumer<Boolean> implements Build.Stage<WhileyFile> {
+public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WhileyFile> {
 	public MoveAnalysis(Build.Task builder) {
 
 	}
