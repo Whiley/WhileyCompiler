@@ -27,8 +27,8 @@ import wybs.lang.SyntaxError;
 
 /**
  * <p>
- * Responsible for visiting that all variables are defined before they are used.
- * The algorithm for visiting this involves a depth-first search through the
+ * Responsible for checking that all variables are defined before they are used.
+ * The algorithm for checking this involves a depth-first search through the
  * control-flow graph of the method. Throughout this, a list of the defined
  * variables is maintained. For example:
  * </p>

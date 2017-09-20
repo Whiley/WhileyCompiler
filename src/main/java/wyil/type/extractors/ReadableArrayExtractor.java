@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.extractors;
+package wyil.type.extractors;
 
 import static wyc.lang.WhileyFile.Type;
 import wybs.lang.NameResolver;
-import wyc.type.TypeSystem;
-import wyc.type.util.AbstractTypeExtractor;
+import wyil.type.TypeSystem;
+import wyil.type.util.AbstractTypeExtractor;
 
 /**
  * <p>
@@ -26,9 +26,9 @@ import wyc.type.util.AbstractTypeExtractor;
  * example, the type <code>(int[])|(bool[])</code> has a readable array type of
  * <code>(int|bool)[]</code>. This is the readable type as, if we were to read
  * an element from either bound, the return type would be in
- * <code>int|bool</code>. However, we cannot use type for writing as this could
- * be unsafe. For example, if we actually had an array of type
- * <code>int[]</code>, then writing a boolean value is not permitted.
+ * <code>int|bool</code>. However, we cannot use the readable array type for
+ * writing as this could be unsafe. For example, if we actually had an array of
+ * type <code>int[]</code>, then writing a boolean value is not permitted.
  * </p>
  * <p>
  * Not all types have readable array type and, furthermore, care must be

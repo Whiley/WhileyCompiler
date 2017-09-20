@@ -21,8 +21,8 @@ import static org.junit.Assert.*;
 import wybs.lang.NameResolver;
 import static wyc.lang.WhileyFile.Type;
 
-import wyc.type.TypeSystem;
 import wyc.util.TestUtils;
+import wyil.type.TypeSystem;
 
 public class ArraySubtypeTest {
 	@Test public void test_1() { checkIsSubtype("any","any"); }

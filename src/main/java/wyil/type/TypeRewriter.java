@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type;
+package wyil.type;
 
 import wyc.lang.WhileyFile.Type;
 
@@ -19,7 +19,7 @@ import wyc.lang.WhileyFile.Type;
  * <p>
  * Responsible for rewriting a given type in some way whilst maintaining
  * semantic equivalence. Often (though not exclusively) this is used for
- * simplifying types. For example, <code>int|int</code> could be simplfiied to
+ * simplifying types. For example, <code>int|int</code> could be simplified to
  * <code>int</code>. Type simplification is necessary, for example, to prevent
  * infinite loops in some operations (e.g. type extraction). Type simplification
  * is also useful in making generated types easier to read.
@@ -41,7 +41,7 @@ import wyc.lang.WhileyFile.Type;
  * </ul>
  * <p>
  * This interface does not specify what rewrites will be applied. It only
- * provides a concept of type simplification in abstract sense. Specific
+ * provides a concept of rewriting in an abstract sense. Specific
  * implementations of this interface will choose what rules to apply based on
  * their own use case (e.g. for internal algorithms, for human readability,
  * etc).

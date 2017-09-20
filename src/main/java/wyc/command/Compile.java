@@ -45,6 +45,13 @@ import wyfs.lang.Path;
 import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 
+/**
+ * Responsible for implementing the command "<code>wy compile ...</code>" which
+ * invokes the compiler to build only those files specified on the command line.
+ *
+ * @author David J. Pearce
+ *
+ */
 public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
 	 * Result kind for this command

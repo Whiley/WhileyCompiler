@@ -19,27 +19,28 @@ import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
-import wyc.type.TypeSystem;
 import wyc.util.AbstractConsumer;
+import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
 
 /**
  * <p>
- * The concept of a pure or referentially-transparent function is relatively
- * well understood. For example, Wikipedia lists two requirements:
+ * Responsible for checking purity of statements and expressions in specific
+ * context. The concept of a pure or referentially-transparent function is
+ * relatively well understood. For example, Wikipedia lists two requirements:
  * </p>
  *
  * <ol>
- * <li>The function always evaluates the same result value given the same
+ * <li><em>The function always evaluates the same result value given the same
  * argument value(s). The function result value cannot depend on any hidden
  * information or state that may change while program execution proceeds or
  * between different executions of the program, nor can it depend on any
- * external input from I/O devices (usually—see below).</li>
- * <li>Evaluation of the result does not cause any semantically observable side
+ * external input from I/O devices (usually—see below).</em></li>
+ * <li><em>Evaluation of the result does not cause any semantically observable side
  * effect or output, such as mutation of mutable objects or output to I/O
- * devices (usually—see below).</li>
+ * devices.</em></li>
  * </ol>
  *
  * <p>
@@ -64,8 +65,8 @@ import static wyc.util.ErrorMessages.*;
  * <p>
  * The rules enforced by this check are: <i>(1) No expression or statement in a
  * function context can dereference a variable, invoke a <code>method</code>,
- * allocate objects via <code>new</code> or access a static variable</i>; <i>(2) No
- * expression in a functional context can invoke a <code>method</code> or
+ * allocate objects via <code>new</code> or access a static variable</i>; <i>(2)
+ * No expression in a functional context can invoke a <code>method</code> or
  * allocate objects via <code>new</code></i>.
  * </p>
  *

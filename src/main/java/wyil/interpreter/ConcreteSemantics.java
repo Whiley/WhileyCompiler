@@ -20,8 +20,8 @@ import java.util.Comparator;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.type.TypeSystem;
 import wyil.interpreter.Interpreter.CallStack;
+import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 

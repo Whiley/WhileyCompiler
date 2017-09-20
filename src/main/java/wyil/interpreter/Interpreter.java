@@ -24,12 +24,12 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wyfs.lang.Path;
+import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.interpreter.ConcreteSemantics.LValue;
 import static wyil.interpreter.ConcreteSemantics.RValue;
 
-import wyc.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 

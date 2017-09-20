@@ -30,11 +30,11 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.*;
-import wyc.type.TypeSystem;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 
@@ -42,18 +42,22 @@ import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
 
 /**
- * checks type information in a <i>flow-sensitive</i> fashion from declared
+ * <p>
+ * Propagates type information in a <i>flow-sensitive</i> fashion from declared
  * parameter and return types through variable declarations and assigned
- * expressions, to determine types for all intermediate expressions and
+ * expressions, whilst inferring types for all intermediate expressions and
  * variables. During this propagation, type checking is performed to ensure
  * types are used soundly. For example:
+ * </p>
  *
  * <pre>
  * function sum(int[] data) -> int:
- *     int r = 0      // declared int type for r
- *     for v in data: // infers int type for v, based on type of data
- *         r = r + v  // infers int type for r + v, based on type of operands
- *     return r       // infers int type for return expression
+ *     int r = 0                // declared int type for r
+ *     int i = 0                // declared int type for i
+ *     while i < |data|:        // checks int operands and bool condition
+ *         r = r + data[i]      // checks int operands and int subscript
+ *         i = i + 1            // checks int operands
+ *     return r                 // checks int operand
  * </pre>
  *
  * <p>
@@ -64,51 +68,18 @@ import static wyc.util.ErrorMessages.*;
  * </p>
  *
  * <pre>
- * function id(int x) -> int:
- *    return x
- *
- * function f(int y) -> int:
- *    int|null x = y
- *    f(x)
+ * function extract(int|null x) -> int:
+ *    if x is int:
+ *        return y
+ *    else:
+ *        return 0
  * </pre>
  *
  * <p>
  * The above example is considered type safe because the known type of
- * <code>x</code> at the function call is <code>int</code>, which differs from
+ * <code>x</code> at the first return is <code>int</code>, which differs from
  * its declared type (i.e. <code>int|null</code>).
  * </p>
- *
- * <p>
- * Loops present an interesting challenge for type propagation. Consider this
- * example:
- * </p>
- *
- * <pre>
- * function loopy(int max) -> real:
- *     var i = 0
- *     while i < max:
- *         i = i + 0.5
- *     return i
- * </pre>
- *
- * <p>
- * On the first pass through the loop, variable <code>i</code> is inferred to
- * have type <code>int</code> (based on the type of the constant <code>0</code>
- * ). However, the add expression is inferred to have type <code>real</code>
- * (based on the type of the rhs) and, hence, the resulting type inferred for
- * <code>i</code> is <code>real</code>. At this point, the loop must be
- * reconsidered taking into account this updated type for <code>i</code>.
- * </p>
- *
- * <p>
- * The operation of the flow type checker splits into two stages:
- * </p>
- * <ul>
- * <li><b>Global Propagation.</b> During this stage, all named types are checked
- * and expanded.</li>
- * <li><b>Local Propagation.</b> During this stage, types are checkd through
- * statements and expressions (as above).</li>
- * </ul>
  *
  * <h3>References</h3>
  * <ul>

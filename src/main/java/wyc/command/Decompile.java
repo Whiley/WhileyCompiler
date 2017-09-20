@@ -29,6 +29,13 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.io.WyilFileReader;
 
+/**
+ * Responsible for implementing the command "<code>wy decompile ...</code>" which
+ * invokes the decompiler to build only those files specified on the command line.
+ *
+ * @author David J. Pearce
+ *
+ */
 public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 	/**
 	 * Result kind for this command

@@ -30,6 +30,16 @@ import wyil.interpreter.ConcreteSemantics.RValue;
 
 import static wyc.lang.WhileyFile.*;
 
+/**
+ * Responsible for implementing the command "<code>wy run ...</code>" which
+ * loads the appropriate <code>wyil</code> file and executes a given method
+ * using the <code>Interpreter</code>.
+ *
+ * @see @link wyil.interpreter.Interpreter
+ *
+ * @author David J. Pearce
+ *
+ */
 public class Run extends AbstractProjectCommand<Run.Result> {
 	/**
 	 * Result kind for this command

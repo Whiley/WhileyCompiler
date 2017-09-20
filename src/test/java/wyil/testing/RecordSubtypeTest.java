@@ -17,8 +17,8 @@ package wyil.testing;
 import org.junit.*;
 
 import wybs.lang.NameResolver;
-import wyc.type.TypeSystem;
 import wyc.util.TestUtils;
+import wyil.type.TypeSystem;
 
 import static org.junit.Assert.*;
 import static wyc.lang.WhileyFile.Type;

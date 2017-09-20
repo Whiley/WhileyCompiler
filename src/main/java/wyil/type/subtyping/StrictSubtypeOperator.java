@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.subtyping;
+package wyil.type.subtyping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,12 +19,12 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wycc.util.Pair;
+import wyil.type.SubtypeOperator;
+import wyil.type.TypeSystem;
 import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.lang.WhileyFile;
-import wyc.type.SubtypeOperator;
-import wyc.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.lang.WhileyFile.Name;

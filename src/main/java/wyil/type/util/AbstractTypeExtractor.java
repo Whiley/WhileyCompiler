@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.util;
+package wyil.type.util;
 
 import java.util.Arrays;
 
@@ -19,9 +19,9 @@ import static wyc.lang.WhileyFile.Type;
 import static wyc.lang.WhileyFile.Decl;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.type.TypeExtractor;
-import wyc.type.TypeSystem;
 import wycc.util.ArrayUtils;
+import wyil.type.TypeExtractor;
+import wyil.type.TypeSystem;
 
 /**
  * <p>

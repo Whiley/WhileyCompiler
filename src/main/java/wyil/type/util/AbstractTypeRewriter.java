@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.util;
+package wyil.type.util;
 
 import java.util.Arrays;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.type.TypeRewriter;
+
 import static wyc.lang.WhileyFile.*;
-import wyc.type.TypeRewriter;
 
 public class AbstractTypeRewriter implements TypeRewriter {
 

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.subtyping;
+package wyil.type.subtyping;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -20,10 +20,10 @@ import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Type;
-import wyc.type.TypeSystem;
-import wyc.type.subtyping.StrictSubtypeOperator.Assumptions;
-import wyc.type.subtyping.StrictSubtypeOperator.Atom;
-import wyc.type.subtyping.StrictSubtypeOperator.Term;
+import wyil.type.TypeSystem;
+import wyil.type.subtyping.StrictSubtypeOperator.Assumptions;
+import wyil.type.subtyping.StrictSubtypeOperator.Atom;
+import wyil.type.subtyping.StrictSubtypeOperator.Term;
 
 import static wyc.lang.WhileyFile.*;
 

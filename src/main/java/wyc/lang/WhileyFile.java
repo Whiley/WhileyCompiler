@@ -16,7 +16,6 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
-import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
@@ -135,7 +134,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		@Override
 		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream input) throws IOException {
 			WhileyFile wf = new WyilFileReader(e).read();
-			//new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
+			// new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
 			return wf;
 		}
 
@@ -317,8 +316,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// ============================================================
 	// Declarations
 	// ============================================================
+	/**
+	 * <p>
+	 * Represents a declaration within a Whiley source file. This includes <i>import
+	 * declarations</i>, <i>function or method declarations</i>, <i>type
+	 * declarations</i>, <i>variable declarations</i> and more.
+	 * </p>
+	 * <p>
+	 * In general, a declaration is often a top-level entity within a module.
+	 * However, this is not always the case. For example, variable declarations are
+	 * used to represent local variables, function or method parameters, etc.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public static interface Decl extends CompilationUnit.Declaration {
 
+		/**
+		 * Represents the top-level entity in a Whiley source file. All other
+		 * declartions are contained within this.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Module extends AbstractSyntacticItem implements Decl {
 
 			public Module(Name name, Tuple<Decl> declarations) {
@@ -342,20 +363,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an import declaration in a Whiley source file, which has the form:
+		 * <p>
+		 * Represents an import declaration in a Whiley source file. For example, the
+		 * following illustrates a simple import statement:
+		 * </p>
 		 *
 		 * <pre>
-		 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
+		 * import println from std::io
 		 * </pre>
 		 *
-		 * The following illustrates a simple import statement:
-		 *
-		 * <pre>
-		 * import println from std.io
-		 * </pre>
-		 *
-		 * Here, the module is <code>std.io</code> and the symbol imported is
+		 * <p>
+		 * Here, the module is <code>std::io</code> and the symbol imported is
 		 * <code>println</code>.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -398,13 +418,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 * @return
 			 */
 			public Identifier getFrom() {
-				return(Identifier) super.get(1);
+				return (Identifier) super.get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Import clone(SyntacticItem[] operands) {
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Import((Tuple<Identifier>) operands[0]);
 				} else {
 					return new Import((Tuple<Identifier>) operands[0], (Identifier) operands[1]);
@@ -414,7 +434,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = "import ";
-				if(hasFrom()) {
+				if (hasFrom()) {
 					r += getFrom();
 					r += " from ";
 				}
@@ -468,63 +488,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>function declaration</i> or <i>method declaration</i> in a
-		 * Whiley source file which have the form:
-		 *
-		 * <pre>
-		 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-		 *
-		 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-		 *
-		 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
-		 * </pre>
-		 *
-		 * Here, the first type pattern (i.e. before "=>") is referred to as the
-		 * "parameter", whilst the second is referred to as the "return". There are
-		 * three kinds of option clause:
-		 *
-		 * <ul>
-		 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown by
-		 * this function. Multiple clauses may be given, and these are taken together as
-		 * a union. Furthermore, the convention is to specify the throws clause before
-		 * the others.</li>
-		 * <li><b>Requires clause</b>. This defines a constraint on the permissible
-		 * values of the parameters on entry to the function or method, and is often
-		 * referred to as the "precondition". This expression may refer to any variables
-		 * declared within the parameter type pattern. Multiple clauses may be given,
-		 * and these are taken together as a conjunction. Furthermore, the convention is
-		 * to specify the requires clause(s) before any ensure(s) clauses.</li>
-		 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
-		 * values of the the function or method's return value, and is often referred to
-		 * as the "postcondition". This expression may refer to any variables declared
-		 * within either the parameter or return type pattern. Multiple clauses may be
-		 * given, and these are taken together as a conjunction. Furthermore, the
-		 * convention is to specify the requires clause(s) after the others.</li>
-		 * </ul>
-		 *
-		 * <p>
-		 * The following function declaration provides a small example to illustrate:
-		 * </p>
-		 *
-		 * <pre>
-		 * function max(int x, int y) -> (int z)
-		 * // return must be greater than either parameter
-		 * ensures x <= z && y <= z
-		 * // return must equal one of the parmaeters
-		 * ensures x == z || y == z:
-		 *     ...
-		 * </pre>
-		 *
-		 * <p>
-		 * Here, we see the specification for the well-known <code>max()</code> function
-		 * which returns the largest of its parameters. This does not throw any
-		 * exceptions, and does not enforce any preconditions on its parameters.
-		 * </p>
-		 *
-		 * <p>
-		 * Function and method declarations may also have modifiers, such as
-		 * <code>public</code> and <code>private</code>.
-		 * </p>
+		 * Represents a <i>function</i>, <i>method</i> or <i>property</i> declaration in
+		 * a Whiley source file.
 		 */
 		public static abstract class Callable extends Named {
 
@@ -547,6 +512,45 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public abstract WhileyFile.Type.Callable getType();
 		}
 
+		/**
+		 * <p>
+		 * Represents a <i>function</i>, <i>method</i> or <i>property</i> declaration in
+		 * a Whiley source file. The following function declaration provides a small
+		 * example to illustrate:
+		 * </p>
+		 *
+		 * <pre>
+		 * function max(int[] xs) -> (int z)
+		 * // array xs cannot be empty
+		 * requires |xs| > 0
+		 * // return must be greater than all elements in xs
+		 * ensures all { i in 0..|xs| | xs[i] <= z }
+		 * // return must equal one of the elements in xs
+		 * ensures some { i in 0..|xs| | xs[i] == z }
+		 *     ...
+		 * </pre>
+		 *
+		 * <p>
+		 * Here, we see the specification for the well-known <code>max()</code> function
+		 * which returns the largest value of an array. This employs both
+		 * <i>requires</i> and <i>ensures</i> clauses:
+		 * <ul>
+		 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+		 * values of the parameters on entry to the function or method, and is often
+		 * referred to as the "precondition". This expression may refer to any variables
+		 * declared within the parameter type pattern. Multiple clauses may be given,
+		 * and these are taken together as a conjunction. Furthermore, the convention is
+		 * to specify the requires clause(s) before any ensure(s) clauses.</li>
+		 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+		 * values of the the function or method's return value, and is often referred to
+		 * as the "postcondition". This expression may refer to any variables declared
+		 * within either the parameter or return type pattern. Multiple clauses may be
+		 * given, and these are taken together as a conjunction. Furthermore, the
+		 * convention is to specify the requires clause(s) after the others.</li>
+		 * </ul>
+		 * </p>
+		 * @see Callable
+		 */
 		public static abstract class FunctionOrMethod extends Callable {
 
 			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name,
@@ -572,7 +576,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
+		 * <p>
 		 * Represents a function declaration in a Whiley source file. For example:
+		 * </p>
 		 *
 		 * <pre>
 		 * function f(int x) -> (int y)
@@ -586,9 +592,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * <p>
 		 * Here, a function <code>f</code> is defined which accepts only positive
-		 * integers and returns only negative integers. The special variable
-		 * <code>$</code> is used to refer to the return value. Functions in Whiley may
-		 * not have side-effects (i.e. they are <code>pure functions</code>).
+		 * integers and returns only negative integers. The variable <code>y</code> is
+		 * used to refer to the return value. Functions in Whiley may not have
+		 * side-effects (i.e. they are <code>pure functions</code>).
 		 * </p>
 		 *
 		 * <p>
@@ -596,11 +602,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * and <code>private</code>.
 		 * </p>
 		 *
-		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more information.
-		 * </p>
-		 *
-		 * @see Callable
+		 * @see FunctionOrMethod
 		 *
 		 * @author David J. Pearce
 		 *
@@ -631,7 +633,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
+		 * <p>
 		 * Represents a method declaration in a Whiley source file. For example:
+		 * </p>
 		 *
 		 * <pre>
 		 * method m(int x) -> (int y)
@@ -645,9 +649,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * <p>
 		 * Here, a method <code>m</code> is defined which accepts only positive integers
-		 * and returns only negative integers. The special variable <code>$</code> is
-		 * used to refer to the return value. Unlike functions, methods in Whiley may
-		 * have side-effects.
+		 * and returns only negative integers. The variable <code>y</code> is used to
+		 * refer to the return value. Unlike functions, methods in Whiley may have
+		 * side-effects.
 		 * </p>
 		 *
 		 * <p>
@@ -655,9 +659,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * <code>private</code>.
 		 * </p>
 		 *
-		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more information.
-		 * </p>
+		 * @see FunctionOrMethod
 		 *
 		 * @author David J. Pearce
 		 *
@@ -699,6 +701,31 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * <p>
+		 * Represents a property declaration in a Whiley source file. For example:
+		 * </p>
+		 *
+		 * <pre>
+		 * property contains(int[] xs, int x)
+		 * where some { i in 0..|xs| | xs[i] == x}
+		 * </pre>
+		 *
+		 * <p>
+		 * Here, a property <code>contains</code> is defined which captures the concept
+		 * of an element being contained in an array.
+		 * </p>
+		 *
+		 * <p>
+		 * Property declarations may also have modifiers, such as <code>public</code> and
+		 * <code>private</code>.
+		 * </p>
+		 *
+		 * @See FunctionOrMethod
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
@@ -734,6 +761,27 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * <p>
+		 * Represents a lambda declaration within a Whiley source file. Sometimes also
+		 * known as closures, these are anonymous function or method declarations
+		 * declared within an expression. The following illustrates:
+		 * </p>
+		 *
+		 * <pre>
+		 * type func is function(int)->int
+		*
+		* function g() -> func:
+		*    return &(int x -> x + 1)
+		 * </pre>
+		 * <p>
+		 * This defines a lambda which accepts one parameter <code>x</code> and returns
+		 * its increment.
+		 * </p>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Lambda extends Callable implements Expr {
 
 			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
@@ -783,25 +831,26 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a type declaration in a Whiley source file, which has the form:
-		 *
-		 * <pre>
-		 * "type" Identifier "is" TypePattern ["where" Expression]
-		 * </pre>
-		 *
-		 * Here, the type pattern specifies a type which may additionally be adorned
-		 * with variable names. The "where" clause is optional and is often referred to
-		 * as the type's "constraint". Variables defined within the type pattern may be
-		 * used within this constraint expressions. A simple example to illustrate is:
+		 * <p>
+		 * Represents a type declaration in a Whiley source file. A simple example to
+		 * illustrate is:
+		 * </p>
 		 *
 		 * <pre>
 		 * type nat is (int x) where x >= 0
 		 * </pre>
 		 *
-		 * Here, we are defining a <i>constrained type</i> called <code>nat</code> which
-		 * represents the set of natural numbers (i.e the non-negative integers). Type
-		 * declarations may also have modifiers, such as <code>public</code> and
+		 * <p>
+		 * This defines a <i>constrained type</i> called <code>nat</code> which
+		 * represents the set of natural numbers (i.e the non-negative integers). The
+		 * "where" clause is optional and is often referred to as the type's
+		 * "constraint".
+		 * </p>
+		 *
+		 * <p>
+		 * Type declarations may also have modifiers, such as <code>public</code> and
 		 * <code>private</code>.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -839,25 +888,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// ============================================================
 
 		/**
-		 * Represents a variable declaration which has the form:
-		 *
-		 * <pre>
-		 * Type Identifier ['=' Expression] NewLine
-		 * </pre>
-		 *
-		 * The optional <code>Expression</code> assignment is referred to as an
-		 * <i>initialiser</i>. If an initialiser is given, then this will be evaluated
-		 * and assigned to the variable when the declaration is executed. Some example
-		 * declarations:
+		 * <p>
+		 * Represents a variable declaration which has an optional expression assignment
+		 * referred to as an <i>initialiser</i>. If an initialiser is given, then this
+		 * will be evaluated and assigned to the variable when the declaration is
+		 * executed. Some example declarations:
+		 * </p>
 		 *
 		 * <pre>
 		 * int x
 		 * int y = 1
 		 * int z = x + y
 		 * </pre>
-		 *
-		 * Observe that, unlike C and Java, declarations that declare multiple variables
-		 * (separated by commas) are not permitted.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -905,7 +947,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public String toString() {
 				String r = getType().toString();
 				r += " " + getName().toString();
-				if(hasInitialiser()) {
+				if (hasInitialiser()) {
 					r += " = " + getInitialiser().toString();
 				}
 				return r;
@@ -958,7 +1000,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	/**
 	 * Provides classes for representing statements in Whiley's source language.
 	 * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
-	 * etc. Each class is an instance of <code>SyntacticElement</code> and, hence,
+	 * etc. Each class is an instance of <code>SyntacticItem</code> and, hence,
 	 * can be adorned with certain information (such as source location, etc).
 	 *
 	 * @author David J. Pearce
@@ -976,6 +1018,35 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			Stmt getBody();
 		}
 
+		/**
+		 * <p>
+		 * A statement block represents a sequence of zero or more consecutive
+		 * statements at the same indentation level. The following illustrates:
+		 * </p>
+		 *
+		 * <pre>
+		 * function abs(int x) -> (int r):
+		 * // ---------------------------+
+		 *    if x > 0:               // |
+		 *       // ----------------+    |
+		 *       return x        // |    |
+		 *       // ----------------+    |
+		 *    else:                   // |
+		 *       // ----------------+    |
+		 *       return -x       // |    |
+		 *       // ----------------+    |
+		 * // ---------------------------+
+		 * </pre>
+		 * <p>
+		 * This example contains three statement blocks. The outermost block defines the
+		 * body of the function and contains exactly one statement (i.e. the
+		 * <code>if</code> statement). Two inner blocks are used to represent the true
+		 * and false branches of the conditional.
+		 * </p>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Block extends AbstractSyntacticItem implements Stmt {
 			public Block(Stmt... stmts) {
 				super(STMT_block, stmts);
@@ -1028,8 +1099,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a assert statement of the form <code>assert e</code>, where
+		 * <p>
+		 * Represents a assert statement of the form "<code>assert e</code>", where
 		 * <code>e</code> is a boolean expression. The following illustrates:
+		 * </p>
 		 *
 		 * <pre>
 		 * function abs(int x) -> int:
@@ -1039,8 +1112,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *     return x
 		 * </pre>
 		 *
+		 * <p>
 		 * Assertions are either statically checked by the verifier, or turned into
 		 * runtime checks.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1061,11 +1136,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an assignment statement of the form <code>lhs = rhs</code>. Here,
-		 * the <code>rhs</code> is any expression, whilst the <code>lhs</code> must be
-		 * an <code>LVal</code> --- that is, an expression permitted on the left-side of
-		 * an assignment. The following illustrates different possible assignment
-		 * statements:
+		 * <p>
+		 * Represents an assignment statement of the form "<code>lhs = rhs</code>".
+		 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
+		 * must be an <code>LVal</code> --- that is, an expression permitted on the
+		 * left-side of an assignment. The following illustrates different possible
+		 * assignment statements:
+		 * </p>
 		 *
 		 * <pre>
 		 * x = y       // variable assignment
@@ -1074,9 +1151,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * x[i].f = y  // compound assignment
 		 * </pre>
 		 *
+		 * <p>
 		 * The last assignment here illustrates that the left-hand side of an assignment
 		 * can be arbitrarily complex, involving nested assignments into lists and
 		 * records.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1104,8 +1183,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an assume statement of the form <code>assume e</code>, where
+		 * <p>
+		 * Represents an assume statement of the form "<code>assume e</code>", where
 		 * <code>e</code> is a boolean expression. The following illustrates:
+		 * </p>
 		 *
 		 * <pre>
 		 * function abs(int x) -> int:
@@ -1115,8 +1196,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *     return x
 		 * </pre>
 		 *
+		 * <p>
 		 * Assumptions are assumed by the verifier and, since this may be unsound,
 		 * always turned into runtime checks.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1136,6 +1219,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * Represents a debug statement of the form "<code>debug e</code>" where
+		 * <code>e</code> is a string expression. Debug statements are effectively print
+		 * statements in debug mode, and no-operations otherwise.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Debug extends AbstractSyntacticItem implements Stmt {
 			public Debug(Expr condition) {
 				super(STMT_debug, condition);
@@ -1151,6 +1242,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * Represents a classical skip statement of the form "<code>skip</code>". A skip
+		 * statement is simply a no-operation.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Skip extends AbstractSyntacticItem implements Stmt {
 			public Skip() {
 				super(STMT_skip);
@@ -1162,6 +1260,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * Represents a classical break statement of the form "<code>break</code>" which
+		 * can be used to force the termination of a loop or switch statement.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Break extends AbstractSyntacticItem implements Stmt {
 			public Break() {
 				super(STMT_break);
@@ -1173,6 +1278,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * Represents a classical continue statement of the form "<code>continue</code>"
+		 * which can be used to proceed to the next iteration of a loop or the next case
+		 * of a switch statement.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Continue extends AbstractSyntacticItem implements Stmt {
 			public Continue() {
 				super(STMT_continue);
@@ -1185,8 +1298,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
+		 * <p>
 		 * Represents a do-while statement whose body is made up from a block of
 		 * statements separated by indentation. As an example:
+		 * </p>
 		 *
 		 * <pre>
 		 * function sum([int] xs) -> int
@@ -1200,14 +1315,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *   return r
 		 * </pre>
 		 *
-		 * Here, the <code>where</code> is optional, and commonly referred to as the
-		 * <i>loop invariant</i>.
+		 * <p>
+		 * The <code>where</code> clause is optional, and commonly referred to as the
+		 * <i>loop invariant</i>. When multiple clauses are given, these are combined
+		 * using a conjunction. The combined invariant defines a condition which must be
+		 * true on every iteration of the loop.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class DoWhile extends AbstractSyntacticItem implements Loop {
-			public DoWhile(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body ) {
+			public DoWhile(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body) {
 				super(STMT_dowhile, condition, invariant, modified, body);
 			}
 
@@ -1246,7 +1365,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a fail statement.
+		 * Represents a fail statement for the form "<code>fail</code>". This causes an
+		 * abrupt termination of the program and should represent dead-code if present.
 		 */
 		public static class Fail extends AbstractSyntacticItem implements Stmt {
 			public Fail() {
@@ -1260,15 +1380,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a classical if-else statement, which is has the form:
-		 *
-		 * <pre>
-		 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
-		 * </pre>
-		 *
-		 * The first expression is referred to as the <i>condition</i>, while the first
-		 * block is referred to as the <i>true branch</i>. The optional second block is
-		 * referred to as the <i>false branch</i>. The following illustrates:
+		 * <p>
+		 * Represents a classical if-else statement consisting of a <i>condition</i>, a
+		 * <i>true branch</i> and an optional <i>false branch</i>. The following
+		 * illustrates:
+		 * </p>
 		 *
 		 * <pre>
 		 * function max(int x, int y) -> int:
@@ -1320,25 +1436,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a return statement, which has the form:
-		 *
-		 * <pre>
-		 * ReturnStmt ::= "return" [Expression] NewLine
-		 * </pre>
-		 *
-		 * The optional expression is referred to as the <i>return value</i>. Note that,
-		 * the returned expression (if there is one) must begin on the same line as the
-		 * return statement itself.
-		 *
-		 * The following illustrates:
+		 * <p>
+		 * Represents a return statement which has one or more optional return
+		 * expressions referred to simply as the "returns". Note that, the returned
+		 * expression (if there is one) must begin on the same line as the return
+		 * statement itself. The following illustrates:
+		 * </p>
 		 *
 		 * <pre>
 		 * function f(int x) -> int:
 		 * 	  return x + 1
 		 * </pre>
 		 *
+		 * <p>
 		 * Here, we see a simple <code>return</code> statement which returns an
 		 * <code>int</code> value.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1359,6 +1472,24 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * <p>
+		 * Represents a classical switch statement made of up a condition and one or
+		 * more case blocks. Each case consists of zero or more constant expressions.
+		 * The following illustrates:
+		 * </p>
+		 * <pre>
+		 * switch x:
+		 *   case 1:
+		 *     y = -1
+		 *   case 2:
+		 *     y = -2
+		 *   default:
+		 *     y = 0
+		 * </pre>
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Switch extends AbstractSyntacticItem implements Stmt {
 			public Switch(Expr condition, Tuple<Case> cases) {
 				super(STMT_switch, condition, cases);
@@ -1407,13 +1538,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a while statement, which has the form:
-		 *
-		 * <pre>
-		 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
-		 * </pre>
-		 *
-		 * As an example:
+		 * <p>
+		 * Represents a while statement made up a condition and a block of statements
+		 * referred to as the <i>body</i>. The following illustrates:
+		 * </p>
 		 *
 		 * <pre>
 		 * function sum([int] xs) -> int:
@@ -1425,10 +1553,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *   return r
 		 * </pre>
 		 *
+		 * <p>
 		 * The optional <code>where</code> clause(s) are commonly referred to as the
 		 * "loop invariant". When multiple clauses are given, these are combined using a
 		 * conjunction. The combined invariant defines a condition which must be true on
 		 * every iteration of the loop.
+		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1473,10 +1603,39 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Represents an arbitrary expression permissible on the left-hand side of an
+	 * assignment statement. For example, consider the following method:
+	 * </p>
+	 *
+	 * <pre>
+	 * method f(int[] xs, int x, int y):
+	 *   x = y + 1
+	 *   xs[i] = x
+	 * </pre>
+	 * <p>
+	 * This contains two assignment statements with the lval's <code>x</code> and
+	 * <code>xs[i]</code> respectively. The set of lvals is a subset of the set of
+	 * all expressions, since not every expression can be assigned. For example, an
+	 * assignment "<code>f() = x</code>" does not make sense.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public interface LVal extends Expr {
 
 	}
 
+	/**
+	 * Represents an arbitrary expression within a Whiley source file. Every
+	 * expression has a known type and zero or more expression operands alongside
+	 * other syntactic information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public interface Expr extends Stmt {
 
 		/**
@@ -1563,8 +1722,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		public abstract static class AbstractExpr extends AbstractSyntacticItem implements Expr {
-			public AbstractExpr(int opcode, Type type, SyntacticItem...items) {
-				super(opcode,ArrayUtils.append(type,items));
+			public AbstractExpr(int opcode, Type type, SyntacticItem... items) {
+				super(opcode, ArrayUtils.append(type, items));
 			}
 
 			@Override
@@ -1639,7 +1798,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public static class StaticVariableAccess extends AbstractExpr implements LVal,Expr {
+		/**
+		 * Represents the use of a static variable within an expression. A static
+		 * variable is effectively a global variable which may or may not be defined
+		 * within the enclosing module.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class StaticVariableAccess extends AbstractExpr implements LVal, Expr {
 			public StaticVariableAccess(Type type, Name name) {
 				super(EXPR_staticvariable, type, name);
 			}
@@ -1742,7 +1909,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Tuple<Type> getTypes() {
 				Tuple<Type> types = getSignature().getReturns();
-				if(types.size() > 1) {
+				if (types.size() > 1) {
 					return types;
 				} else {
 					// FIXME: this is a bit messed up, and exists only to help the particular
@@ -1965,7 +2132,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a use of some variable within an expression. For example, in
+		 * Represents the use of some variable within an expression. For example, in
 		 * <code>x + 1</code> the expression <code>x</code> is a variable access
 		 * expression. Every variable access is associated with a <i>variable
 		 * declaration</i> that unique identifies which variable is being accessed.
@@ -2085,9 +2252,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>logical implication</i> of the form
-		 * "<code>e1 ==> ... ==> en</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>operand expressions</i>.
+		 * Represents a <i>logical implication</i> of the form "<code>e1 ==> e2</code>"
+		 * where <code>e1</code> and <code>e2</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2135,8 +2301,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a <i>logical biconditional</i> of the form
-		 * "<code>e1 <==> ... <==> en</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>operand expressions</i>.
+		 * "<code>e1 <==> e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2160,7 +2326,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public void setType(Type type) {
 				throw new UnsupportedOperationException();
 			}
-
 
 			@Override
 			public Expr getFirstOperand() {
@@ -2226,8 +2391,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents an equality expression of the form "<code>e1 == ... == en</code>"
-		 * where <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
+		 * Represents an equality expression of the form "<code>e1 == e2</code>" where
+		 * <code>e1</code> and <code>e2</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2274,9 +2439,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an unequality expression of the form
-		 * "<code>e1 != ... != en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an unequality expression of the form "<code>e1 != e2</code>" where
+		 * <code>e1</code> and <code>e2</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2310,6 +2474,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Expr getSecondOperand() {
 				return (Expr) super.get(1);
 			}
+
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
 				return new NotEqual((Expr) operands[0], (Expr) operands[1]);
@@ -2323,8 +2488,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 < ... < en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * "<code>e1 < e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2372,8 +2537,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 <= ... <= en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * "<code>e1 <= e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2421,8 +2586,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 > ... > en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * "<code>e1 > e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2470,8 +2635,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 >= ... >= en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * "<code>e1 >= e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2522,9 +2687,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents an arithmetic <i>addition expression</i> of the form
-		 * "<code>e1 + ... + en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an integer <i>addition expression</i> of the form
+		 * "<code>e1 + e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2556,9 +2721,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an arithmetic <i>subtraction expression</i> of the form
-		 * "<code>e1 - ... - en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an integer <i>subtraction expression</i> of the form
+		 * "<code>e1 - e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2590,9 +2755,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an arithmetic <i>multiplication expression</i> of the form
-		 * "<code>e1 * ... * en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an integer <i>multiplication expression</i> of the form
+		 * "<code>e1 * e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2624,9 +2789,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an arithmetic <i>division expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an integer <i>division expression</i> of the form
+		 * "<code>e1 / e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2645,6 +2810,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Expr getSecondOperand() {
 				return (Expr) super.get(2);
 			}
+
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
 				return new IntegerDivision((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
@@ -2657,9 +2823,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an arithmetic <i>remainder expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
-		 * the <i>operand expressions</i>.
+		 * Represents an integer <i>remainder expression</i> of the form
+		 * "<code>e1 % e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2678,6 +2844,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Expr getSecondOperand() {
 				return (Expr) super.get(2);
 			}
+
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
 				return new IntegerRemainder((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
@@ -2690,7 +2857,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an arithmetic <i>negation expression</i> of the form
+		 * Represents an integer <i>negation expression</i> of the form
 		 * "<code>-e</code>" where <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
@@ -2919,6 +3086,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 		// Reference Expressions
 		// =========================================================================
+
+		/**
+		 * Represents an object dereference expression of the form "<code>*e</code>" where
+		 * <code>e</code> is the <i>operand expression</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Dereference extends AbstractExpr implements LVal, UnaryOperator {
 			public Dereference(Type type, Expr operand) {
 				super(EXPR_dereference, type, operand);
@@ -2944,6 +3119,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
+		/**
+		 * Represents an <i>object allocation</i> expression of the form
+		 * <code>new e</code> or <code>l:new e</code> where <code>e</code> is the
+		 * operand expression and <code>l</code> the optional lifetime argument.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class New extends AbstractExpr implements LVal, UnaryOperator {
 			public New(Type type, Expr operand, Identifier lifetime) {
 				super(EXPR_new, type, operand, lifetime);
@@ -3092,7 +3275,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			/**
-			 * Get the index operand for this update.  That is <code>i</code> in
+			 * Get the index operand for this update. That is <code>i</code> in
 			 * <code>xs[i:=v]</code>.
 			 */
 			@Override
@@ -3205,7 +3388,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			/**
 			 * Get the starting operand for this range. That is <code>s</code> in
-			 * <code>s..e</code>.  This determines the first element of the resulting range.
+			 * <code>s..e</code>. This determines the first element of the resulting range.
 			 */
 			@Override
 			public Expr getFirstOperand() {
@@ -3303,8 +3486,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents a <i>record initialiser</i> expression of the form
-		 * <code>{ f1: e1, ..., fn: en }</code> where <code>f1: e1</code> ...
-		 * <code>fn: en</code> are <i>field initialisers</code>. This returns a new
+		 * "<code>{ f1:e1, ..., fn:en }</code>" where <code>f1:e1</code> ...
+		 * <code>fn:en</code> are <i>field initialisers</i>. This returns a new
 		 * record where each field holds the value resulting from its corresponding
 		 * expression.
 		 *
@@ -3329,7 +3512,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public RecordInitialiser clone(SyntacticItem[] operands) {
-				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
+				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
+						(Tuple<Expr>) operands[2]);
 			}
 		}
 
@@ -3988,10 +4172,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				Tuple<Identifier> captured = getCapturedLifetimes();
 				Tuple<Identifier> lifetimes = getLifetimeParameters();
 				String r = "method";
-				if(captured.size() != 0) {
+				if (captured.size() != 0) {
 					r += "[" + captured.toBareString() + "]";
 				}
-				if(lifetimes.size() != 0) {
+				if (lifetimes.size() != 0) {
 					r += "<" + lifetimes.toBareString() + ">";
 				}
 				return r + getParameters().toString() + "->" + getReturns();
@@ -4080,9 +4264,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	/**
 	 * <p>
-	 * Represents a protection modifier on a module item. For example, all
+	 * Represents an arbitrary modifier on a declaration. For example, all
 	 * declarations (e.g. functions, types, etc) can be marked as
-	 * <code>public</code> or <code>private</code>.
+	 * <code>public</code> or <code>private</code>. The following illustrates:
+	 * </p>
+	 *
+	 * <pre>
+	 * public function square(int x, int y) -> int:
+	 *    return x * y
+	 * </pre>
+	 * <p>
+	 * The <code>public</code> modifier used above indicates that the function
+	 * <code>square</code> can be accessed from outside its enclosing module.
 	 * </p>
 	 * <p>
 	 * The modifiers <code>native</code> and <code>export</code> are used to enable
@@ -4783,7 +4976,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
+				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
+						(Tuple<Expr>) operands[2]);
 			}
 		};
 		// ARRAYS

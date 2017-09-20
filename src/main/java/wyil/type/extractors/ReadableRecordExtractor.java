@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type.extractors;
+package wyil.type.extractors;
 
 import java.util.ArrayList;
 
@@ -19,8 +19,8 @@ import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.type.TypeSystem;
-import wyc.type.util.AbstractTypeExtractor;
+import wyil.type.TypeSystem;
+import wyil.type.util.AbstractTypeExtractor;
 
 /**
  * <p>
@@ -30,9 +30,9 @@ import wyc.type.util.AbstractTypeExtractor;
  * For example, the type <code>{int f}|{bool f}</code> has a readable record
  * type of <code>{int|bool f}</code>. This is the readable type as, if we were
  * to read field <code>f</code> from either bound, the return type would be in
- * <code>int|bool</code>. However, we cannot use type for writing as this could
- * be unsafe. For example, if we actually had a record of type
- * <code>{int f}</code>, then writing a boolean value is not permitted.
+ * <code>int|bool</code>. However, we cannot use the readable record type for
+ * writing as this could be unsafe. For example, if we actually had a record of
+ * type <code>{int f}</code>, then writing a boolean value is not permitted.
  * </p>
  * <p>
  * Not all types have readable record type and, furthermore, care must be

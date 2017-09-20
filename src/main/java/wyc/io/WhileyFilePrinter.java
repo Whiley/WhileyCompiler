@@ -22,7 +22,7 @@ import wyc.lang.WhileyFile;
 import static wyc.lang.WhileyFile.*;
 
 /**
- * Writes the bytecodes of a WhileyFile in a textual from to a given file.
+ * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.
  *
  * @author David J. Pearce
  *

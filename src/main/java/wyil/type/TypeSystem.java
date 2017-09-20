@@ -11,18 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.type;
+package wyil.type;
 
 import java.util.List;
 
 import wybs.util.AbstractCompilationUnit.Name;
-import wyc.type.extractors.ReadableArrayExtractor;
-import wyc.type.extractors.ReadableLambdaExtractor;
-import wyc.type.extractors.ReadableRecordExtractor;
-import wyc.type.extractors.ReadableReferenceExtractor;
-import wyc.type.subtyping.CoerciveSubtypeOperator;
-import wyc.type.subtyping.StrictSubtypeOperator;
 import wyc.util.WhileyFileResolver;
+import wyil.type.extractors.ReadableArrayExtractor;
+import wyil.type.extractors.ReadableLambdaExtractor;
+import wyil.type.extractors.ReadableRecordExtractor;
+import wyil.type.extractors.ReadableReferenceExtractor;
+import wyil.type.subtyping.CoerciveSubtypeOperator;
+import wyil.type.subtyping.StrictSubtypeOperator;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.Build;

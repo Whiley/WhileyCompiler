@@ -35,9 +35,9 @@ import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
+import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
-import wyc.type.TypeSystem;
 import wyc.util.AbstractConsumer;
 
 import static wyc.lang.WhileyFile.*;
