@@ -263,8 +263,8 @@ public class Interpreter {
 				return executeSkip((Stmt.Skip) stmt, frame, scope);
 			case WhileyFile.STMT_switch:
 				return executeSwitch((Stmt.Switch) stmt, frame, scope);
-			case WhileyFile.DECL_varinit:
-			case WhileyFile.DECL_var:
+			case WhileyFile.DECL_variableinitialiser:
+			case WhileyFile.DECL_variable:
 				return executeVariableDeclaration((Decl.Variable) stmt, frame);
 			}
 		}
@@ -601,10 +601,10 @@ public class Interpreter {
 			case WhileyFile.EXPR_cast:
 				val = executeConvert((Expr.Cast) expr, frame);
 				break;
-			case WhileyFile.EXPR_rinit:
+			case WhileyFile.EXPR_recordinitialiser:
 				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 				break;
-			case WhileyFile.EXPR_rread:
+			case WhileyFile.EXPR_recordaccess:
 				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
@@ -613,110 +613,110 @@ public class Interpreter {
 			case WhileyFile.EXPR_invoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
-			case WhileyFile.EXPR_varcopy:
+			case WhileyFile.EXPR_variablecopy:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_staticvar:
+			case WhileyFile.EXPR_staticvariable:
 				val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
 				break;
 			case WhileyFile.EXPR_is:
 				val = executeIs((Expr.Is) expr, frame);
 				break;
-			case WhileyFile.EXPR_lnot:
+			case WhileyFile.EXPR_logicalnot:
 				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
 				break;
-			case WhileyFile.EXPR_land:
+			case WhileyFile.EXPR_logicaland:
 				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
 				break;
-			case WhileyFile.EXPR_lor:
+			case WhileyFile.EXPR_logicalor:
 				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 				break;
-			case WhileyFile.EXPR_limplies:
+			case WhileyFile.EXPR_logiaclimplication:
 				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 				break;
-			case WhileyFile.EXPR_liff:
+			case WhileyFile.EXPR_logicaliff:
 				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
 				break;
-			case WhileyFile.EXPR_lsome:
-			case WhileyFile.EXPR_lall:
+			case WhileyFile.EXPR_logicalexistential:
+			case WhileyFile.EXPR_logicaluniversal:
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
-			case WhileyFile.EXPR_eq:
+			case WhileyFile.EXPR_equal:
 				val = executeEqual((Expr.Equal) expr, frame);
 				break;
-			case WhileyFile.EXPR_neq:
+			case WhileyFile.EXPR_notequal:
 				val = executeNotEqual((Expr.NotEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_ineg:
+			case WhileyFile.EXPR_integernegation:
 				val = executeArithmeticNegation((Expr.IntegerNegation) expr, frame);
 				break;
-			case WhileyFile.EXPR_iadd:
+			case WhileyFile.EXPR_integeraddition:
 				val = executeArithmeticAddition((Expr.IntegerAddition) expr, frame);
 				break;
-			case WhileyFile.EXPR_isub:
+			case WhileyFile.EXPR_integersubtraction:
 				val = executeArithmeticSubtraction((Expr.IntegerSubtraction) expr, frame);
 				break;
-			case WhileyFile.EXPR_imul:
+			case WhileyFile.EXPR_integermultiplication:
 				val = executeArithmeticMultiplication((Expr.IntegerMultiplication) expr, frame);
 				break;
-			case WhileyFile.EXPR_idiv:
+			case WhileyFile.EXPR_integerdivision:
 				val = executeArithmeticDivision((Expr.IntegerDivision) expr, frame);
 				break;
-			case WhileyFile.EXPR_irem:
+			case WhileyFile.EXPR_integerremainder:
 				val = executeArithmeticRemainder((Expr.IntegerRemainder) expr, frame);
 				break;
-			case WhileyFile.EXPR_ilt:
+			case WhileyFile.EXPR_integerlessthan:
 				val = executeArithmeticLessThan((Expr.IntegerLessThan) expr, frame);
 				break;
-			case WhileyFile.EXPR_ile:
+			case WhileyFile.EXPR_integerlessequal:
 				val = executeArithmeticLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_igt:
+			case WhileyFile.EXPR_integergreaterthan:
 				val = executeArithmeticGreaterThan((Expr.IntegerGreaterThan) expr, frame);
 				break;
-			case WhileyFile.EXPR_ige:
+			case WhileyFile.EXPR_integergreaterequal:
 				val = executeArithmeticGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_bnot:
+			case WhileyFile.EXPR_bitwisenot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 				break;
-			case WhileyFile.EXPR_bor:
+			case WhileyFile.EXPR_bitwiseor:
 				val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
 				break;
-			case WhileyFile.EXPR_bxor:
+			case WhileyFile.EXPR_bitwisexor:
 				val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
 				break;
-			case WhileyFile.EXPR_band:
+			case WhileyFile.EXPR_bitwiseand:
 				val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
 				break;
-			case WhileyFile.EXPR_bshl:
+			case WhileyFile.EXPR_bitwiseshl:
 				val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
 				break;
-			case WhileyFile.EXPR_bshr:
+			case WhileyFile.EXPR_bitwiseshr:
 				val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
 				break;
-			case WhileyFile.EXPR_aread:
+			case WhileyFile.EXPR_arrayaccess:
 				val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_agen:
+			case WhileyFile.EXPR_arraygenerator:
 				val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
 				break;
-			case WhileyFile.EXPR_alen:
+			case WhileyFile.EXPR_arraylength:
 				val = executeArrayLength((Expr.ArrayLength) expr, frame);
 				break;
-			case WhileyFile.EXPR_ainit:
+			case WhileyFile.EXPR_arrayinitialiser:
 				val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
 				break;
-			case WhileyFile.EXPR_arange:
+			case WhileyFile.EXPR_arrayrange:
 				val = executeArrayRange((Expr.ArrayRange) expr, frame);
 				break;
-			case WhileyFile.EXPR_pinit:
+			case WhileyFile.EXPR_new:
 				val = executeNew((Expr.New) expr, frame);
 				break;
-			case WhileyFile.EXPR_pread:
+			case WhileyFile.EXPR_dereference:
 				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
-			case WhileyFile.EXPR_lread:
+			case WhileyFile.EXPR_lambdaaccess:
 				val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 				break;
 			case WhileyFile.DECL_lambda:
@@ -1237,10 +1237,10 @@ public class Interpreter {
 				return executeInvoke((Expr.Invoke) expr, frame);
 			case WhileyFile.EXPR_constant:
 			case WhileyFile.EXPR_cast:
-			case WhileyFile.EXPR_rread:
+			case WhileyFile.EXPR_recordaccess:
 			case WhileyFile.DECL_lambda:
-			case WhileyFile.EXPR_lsome:
-			case WhileyFile.EXPR_lall:
+			case WhileyFile.EXPR_logicalexistential:
+			case WhileyFile.EXPR_logicaluniversal:
 			default:
 				RValue val = executeExpression(ANY_T, expr, frame);
 				return new RValue[] { val };
@@ -1325,23 +1325,23 @@ public class Interpreter {
 	 */
 	private LValue constructLVal(Expr expr, CallStack frame) {
 		switch (expr.getOpcode()) {
-		case EXPR_aread: {
+		case EXPR_arrayaccess: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
 			LValue src = constructLVal(e.getFirstOperand(), frame);
 			RValue.Int index = executeExpression(INT_T, e.getSecondOperand(), frame);
 			return new LValue.Array(src, index);
 		}
-		case EXPR_pread: {
+		case EXPR_dereference: {
 			Expr.Dereference e = (Expr.Dereference) expr;
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Dereference(src);
 		}
-		case EXPR_rread: {
+		case EXPR_recordaccess: {
 			Expr.RecordAccess e = (Expr.RecordAccess) expr;
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Record(src, e.getField());
 		}
-		case EXPR_varcopy: {
+		case EXPR_variablecopy: {
 			Expr.VariableAccess e = (Expr.VariableAccess) expr;
 			Decl.Variable decl = e.getVariableDeclaration();
 			return new LValue.Variable(decl.getName());

@@ -24,7 +24,7 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class WhileyFileParameterReturnVisitor<P,R> {
+public class WhileyFileFunction<P,R> {
 
 	public R visitWhileyFile(WhileyFile wf, P data) {
 		for (Decl decl : wf.getDeclarations()) {
@@ -134,8 +134,8 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 
 	public R visitStatement(Stmt stmt, P data) {
 		switch (stmt.getOpcode()) {
-		case DECL_var:
-		case DECL_varinit:
+		case DECL_variable:
+		case DECL_variableinitialiser:
 			return visitVariable((Decl.Variable) stmt, data);
 		case STMT_assert:
 			return visitAssert((Stmt.Assert) stmt, data);
@@ -291,61 +291,61 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 			return visitConstant((Expr.Constant) expr, data);
 		case EXPR_indirectinvoke:
 			return visitIndirectInvoke((Expr.IndirectInvoke) expr, data);
-		case EXPR_lread:
+		case EXPR_lambdaaccess:
 			return visitLambdaAccess((Expr.LambdaAccess) expr, data);
 		case DECL_lambda:
 			return visitLambda((Decl.Lambda) expr, data);
-		case EXPR_staticvar:
+		case EXPR_staticvariable:
 			return visitStaticVariableAccess((Expr.StaticVariableAccess) expr, data);
-		case EXPR_varcopy:
-		case EXPR_varmove:
+		case EXPR_variablecopy:
+		case EXPR_variablemove:
 			return visitVariableAccess((Expr.VariableAccess) expr, data);
 		// Unary Operators
 		case EXPR_cast:
-		case EXPR_ineg:
+		case EXPR_integernegation:
 		case EXPR_is:
-		case EXPR_lnot:
-		case EXPR_lsome:
-		case EXPR_lall:
-		case EXPR_bnot:
-		case EXPR_pread:
-		case EXPR_pinit:
-		case EXPR_rread:
-		case EXPR_alen:
+		case EXPR_logicalnot:
+		case EXPR_logicalexistential:
+		case EXPR_logicaluniversal:
+		case EXPR_bitwisenot:
+		case EXPR_dereference:
+		case EXPR_new:
+		case EXPR_recordaccess:
+		case EXPR_arraylength:
 			return visitUnaryOperator((Expr.UnaryOperator) expr, data);
 		// Binary Operators
-		case EXPR_bshl:
-		case EXPR_bshr:
-		case EXPR_aread:
-		case EXPR_arange:
-		case EXPR_rwrite:
-		case EXPR_agen:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_arrayaccess:
+		case EXPR_arrayrange:
+		case EXPR_recordupdate:
+		case EXPR_arraygenerator:
 			return visitBinaryOperator((Expr.BinaryOperator) expr, data);
 		// Nary Operators
-		case EXPR_land:
-		case EXPR_lor:
-		case EXPR_limplies:
-		case EXPR_liff:
-		case EXPR_eq:
-		case EXPR_neq:
-		case EXPR_ilt:
-		case EXPR_ile:
-		case EXPR_igt:
-		case EXPR_ige:
-		case EXPR_iadd:
-		case EXPR_isub:
-		case EXPR_imul:
-		case EXPR_idiv:
-		case EXPR_irem:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_logiaclimplication:
+		case EXPR_logicaliff:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
 		case EXPR_invoke:
-		case EXPR_band:
-		case EXPR_bor:
-		case EXPR_bxor:
-		case EXPR_ainit:
-		case EXPR_rinit:
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_arrayinitialiser:
+		case EXPR_recordinitialiser:
 			return visitNaryOperator((Expr.NaryOperator) expr, data);
 		// Ternary Operators
-		case EXPR_awrite:
+		case EXPR_arrayupdate:
 			return visitTernaryOperator((Expr.TernaryOperator) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -357,25 +357,25 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 		// Unary Operators
 		case EXPR_cast:
 			return visitCast((Expr.Cast) expr, data);
-		case EXPR_ineg:
+		case EXPR_integernegation:
 			return visitIntegerNegation((Expr.IntegerNegation) expr, data);
 		case EXPR_is:
 			return visitIs((Expr.Is) expr, data);
-		case EXPR_lnot:
+		case EXPR_logicalnot:
 			return visitLogicalNot((Expr.LogicalNot) expr, data);
-		case EXPR_lsome:
+		case EXPR_logicalexistential:
 			return visitExistentialQuantifier((Expr.ExistentialQuantifier) expr, data);
-		case EXPR_lall:
+		case EXPR_logicaluniversal:
 			return visitUniversalQuantifier((Expr.UniversalQuantifier) expr, data);
-		case EXPR_bnot:
+		case EXPR_bitwisenot:
 			return visitBitwiseComplement((Expr.BitwiseComplement) expr, data);
-		case EXPR_pread:
+		case EXPR_dereference:
 			return visitDereference((Expr.Dereference) expr, data);
-		case EXPR_pinit:
+		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
-		case EXPR_rread:
+		case EXPR_recordaccess:
 			return visitRecordAccess((Expr.RecordAccess) expr, data);
-		case EXPR_alen:
+		case EXPR_arraylength:
 			return visitArrayLength((Expr.ArrayLength) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -385,17 +385,17 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 	public R visitBinaryOperator(Expr.BinaryOperator expr, P data) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
-		case EXPR_bshl:
+		case EXPR_bitwiseshl:
 			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, data);
-		case EXPR_bshr:
+		case EXPR_bitwiseshr:
 			return visitBitwiseShiftRight((Expr.BitwiseShiftRight) expr, data);
-		case EXPR_agen:
+		case EXPR_arraygenerator:
 			return visitArrayGenerator((Expr.ArrayGenerator) expr, data);
-		case EXPR_aread:
+		case EXPR_arrayaccess:
 			return visitArrayAccess((Expr.ArrayAccess) expr, data);
-		case EXPR_arange:
+		case EXPR_arrayrange:
 			return visitArrayRange((Expr.ArrayRange) expr, data);
-		case EXPR_rwrite:
+		case EXPR_recordupdate:
 			return visitRecordUpdate((Expr.RecordUpdate) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -405,7 +405,7 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 	public R visitTernaryOperator(Expr.TernaryOperator expr, P data) {
 		switch (expr.getOpcode()) {
 		// Ternary Operators
-		case EXPR_awrite:
+		case EXPR_arrayupdate:
 			return visitArrayUpdate((Expr.ArrayUpdate) expr, data);
 
 		default:
@@ -416,47 +416,47 @@ public class WhileyFileParameterReturnVisitor<P,R> {
 	public R visitNaryOperator(Expr.NaryOperator expr, P data) {
 		switch (expr.getOpcode()) {
 		// Nary Operators
-		case EXPR_ainit:
+		case EXPR_arrayinitialiser:
 			return visitArrayInitialiser((Expr.ArrayInitialiser) expr, data);
-		case EXPR_band:
+		case EXPR_bitwiseand:
 			return visitBitwiseAnd((Expr.BitwiseAnd) expr, data);
-		case EXPR_bor:
+		case EXPR_bitwiseor:
 			return visitBitwiseOr((Expr.BitwiseOr) expr, data);
-		case EXPR_bxor:
+		case EXPR_bitwisexor:
 			return visitBitwiseXor((Expr.BitwiseXor) expr, data);
-		case EXPR_ilt:
+		case EXPR_integerlessthan:
 			return visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
-		case EXPR_ile:
+		case EXPR_integerlessequal:
 			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
-		case EXPR_igt:
+		case EXPR_integergreaterthan:
 			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
-		case EXPR_ige:
+		case EXPR_integergreaterequal:
 			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
-		case EXPR_iadd:
+		case EXPR_integeraddition:
 			return visitIntegerAddition((Expr.IntegerAddition) expr, data);
-		case EXPR_isub:
+		case EXPR_integersubtraction:
 			return visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
-		case EXPR_imul:
+		case EXPR_integermultiplication:
 			return visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
-		case EXPR_idiv:
+		case EXPR_integerdivision:
 			return visitIntegerDivision((Expr.IntegerDivision) expr, data);
-		case EXPR_irem:
+		case EXPR_integerremainder:
 			return visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
 		case EXPR_invoke:
 			return visitInvoke((Expr.Invoke) expr, data);
-		case EXPR_land:
+		case EXPR_logicaland:
 			return visitLogicalAnd((Expr.LogicalAnd) expr, data);
-		case EXPR_lor:
+		case EXPR_logicalor:
 			return visitLogicalOr((Expr.LogicalOr) expr, data);
-		case EXPR_limplies:
+		case EXPR_logiaclimplication:
 			return visitLogicalImplication((Expr.LogicalImplication) expr, data);
-		case EXPR_liff:
+		case EXPR_logicaliff:
 			return visitLogicalIff((Expr.LogicalIff) expr, data);
-		case EXPR_eq:
+		case EXPR_equal:
 			return visitEqual((Expr.Equal) expr, data);
-		case EXPR_neq:
+		case EXPR_notequal:
 			return visitNotEqual((Expr.NotEqual) expr, data);
-		case EXPR_rinit:
+		case EXPR_recordinitialiser:
 			return visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");

@@ -112,7 +112,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		case TYPE_function:
 		case TYPE_method:
 		case TYPE_property:
-		case TYPE_inv:
+		case TYPE_invariant:
 		case TYPE_byte:
 		case TYPE_unresolved:
 			return true;

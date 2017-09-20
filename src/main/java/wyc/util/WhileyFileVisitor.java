@@ -134,8 +134,8 @@ public class WhileyFileVisitor {
 
 	public void visitStatement(Stmt stmt) {
 		switch (stmt.getOpcode()) {
-		case DECL_var:
-		case DECL_varinit:
+		case DECL_variable:
+		case DECL_variableinitialiser:
 			visitVariable((Decl.Variable) stmt);
 			break;
 		case STMT_assert:
@@ -296,68 +296,68 @@ public class WhileyFileVisitor {
 		case EXPR_indirectinvoke:
 			visitIndirectInvoke((Expr.IndirectInvoke) expr);
 			break;
-		case EXPR_lread:
+		case EXPR_lambdaaccess:
 			visitLambdaAccess((Expr.LambdaAccess) expr);
 			break;
 		case DECL_lambda:
 			visitLambda((Decl.Lambda) expr);
 			break;
-		case EXPR_staticvar:
+		case EXPR_staticvariable:
 			visitStaticVariableAccess((Expr.StaticVariableAccess) expr);
 			break;
-		case EXPR_varcopy:
-		case EXPR_varmove:
+		case EXPR_variablecopy:
+		case EXPR_variablemove:
 			visitVariableAccess((Expr.VariableAccess) expr);
 			break;
 		// Unary Operators
 		case EXPR_cast:
-		case EXPR_ineg:
+		case EXPR_integernegation:
 		case EXPR_is:
-		case EXPR_lnot:
-		case EXPR_lsome:
-		case EXPR_lall:
-		case EXPR_bnot:
-		case EXPR_pread:
-		case EXPR_pinit:
-		case EXPR_rread:
-		case EXPR_alen:
+		case EXPR_logicalnot:
+		case EXPR_logicalexistential:
+		case EXPR_logicaluniversal:
+		case EXPR_bitwisenot:
+		case EXPR_dereference:
+		case EXPR_new:
+		case EXPR_recordaccess:
+		case EXPR_arraylength:
 			visitUnaryOperator((Expr.UnaryOperator) expr);
 			break;
 		// Binary Operators
-		case EXPR_bshl:
-		case EXPR_bshr:
-		case EXPR_aread:
-		case EXPR_arange:
-		case EXPR_rwrite:
-		case EXPR_agen:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_arrayaccess:
+		case EXPR_arrayrange:
+		case EXPR_recordupdate:
+		case EXPR_arraygenerator:
 			visitBinaryOperator((Expr.BinaryOperator) expr);
 			break;
 		// Nary Operators
-		case EXPR_land:
-		case EXPR_lor:
-		case EXPR_limplies:
-		case EXPR_liff:
-		case EXPR_eq:
-		case EXPR_neq:
-		case EXPR_ilt:
-		case EXPR_ile:
-		case EXPR_igt:
-		case EXPR_ige:
-		case EXPR_iadd:
-		case EXPR_isub:
-		case EXPR_imul:
-		case EXPR_idiv:
-		case EXPR_irem:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_logiaclimplication:
+		case EXPR_logicaliff:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
 		case EXPR_invoke:
-		case EXPR_band:
-		case EXPR_bor:
-		case EXPR_bxor:
-		case EXPR_ainit:
-		case EXPR_rinit:
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_arrayinitialiser:
+		case EXPR_recordinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr);
 			break;
 		// Ternary Operators
-		case EXPR_awrite:
+		case EXPR_arrayupdate:
 			visitTernaryOperator((Expr.TernaryOperator) expr);
 			break;
 		default:
@@ -371,34 +371,34 @@ public class WhileyFileVisitor {
 		case EXPR_cast:
 			visitCast((Expr.Cast) expr);
 			break;
-		case EXPR_ineg:
+		case EXPR_integernegation:
 			visitIntegerNegation((Expr.IntegerNegation) expr);
 			break;
 		case EXPR_is:
 			visitIs((Expr.Is) expr);
 			break;
-		case EXPR_lnot:
+		case EXPR_logicalnot:
 			visitLogicalNot((Expr.LogicalNot) expr);
 			break;
-		case EXPR_lsome:
+		case EXPR_logicalexistential:
 			visitExistentialQuantifier((Expr.ExistentialQuantifier) expr);
 			break;
-		case EXPR_lall:
+		case EXPR_logicaluniversal:
 			visitUniversalQuantifier((Expr.UniversalQuantifier) expr);
 			break;
-		case EXPR_bnot:
+		case EXPR_bitwisenot:
 			visitBitwiseComplement((Expr.BitwiseComplement) expr);
 			break;
-		case EXPR_pread:
+		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr);
 			break;
-		case EXPR_pinit:
+		case EXPR_new:
 			visitNew((Expr.New) expr);
 			break;
-		case EXPR_rread:
+		case EXPR_recordaccess:
 			visitRecordAccess((Expr.RecordAccess) expr);
 			break;
-		case EXPR_alen:
+		case EXPR_arraylength:
 			visitArrayLength((Expr.ArrayLength) expr);
 			break;
 		default:
@@ -409,22 +409,22 @@ public class WhileyFileVisitor {
 	public void visitBinaryOperator(Expr.BinaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
-		case EXPR_bshl:
+		case EXPR_bitwiseshl:
 			visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr);
 			break;
-		case EXPR_bshr:
+		case EXPR_bitwiseshr:
 			visitBitwiseShiftRight((Expr.BitwiseShiftRight) expr);
 			break;
-		case EXPR_agen:
+		case EXPR_arraygenerator:
 			visitArrayGenerator((Expr.ArrayGenerator) expr);
 			break;
-		case EXPR_aread:
+		case EXPR_arrayaccess:
 			visitArrayAccess((Expr.ArrayAccess) expr);
 			break;
-		case EXPR_arange:
+		case EXPR_arrayrange:
 			visitArrayRange((Expr.ArrayRange) expr);
 			break;
-		case EXPR_rwrite:
+		case EXPR_recordupdate:
 			visitRecordUpdate((Expr.RecordUpdate) expr);
 			break;
 		default:
@@ -435,7 +435,7 @@ public class WhileyFileVisitor {
 	public void visitTernaryOperator(Expr.TernaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Ternary Operators
-		case EXPR_awrite:
+		case EXPR_arrayupdate:
 			visitArrayUpdate((Expr.ArrayUpdate) expr);
 			break;
 		default:
@@ -446,67 +446,67 @@ public class WhileyFileVisitor {
 	public void visitNaryOperator(Expr.NaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Nary Operators
-		case EXPR_ainit:
+		case EXPR_arrayinitialiser:
 			visitArrayInitialiser((Expr.ArrayInitialiser) expr);
 			break;
-		case EXPR_band:
+		case EXPR_bitwiseand:
 			visitBitwiseAnd((Expr.BitwiseAnd) expr);
 			break;
-		case EXPR_bor:
+		case EXPR_bitwiseor:
 			visitBitwiseOr((Expr.BitwiseOr) expr);
 			break;
-		case EXPR_bxor:
+		case EXPR_bitwisexor:
 			visitBitwiseXor((Expr.BitwiseXor) expr);
 			break;
-		case EXPR_ilt:
+		case EXPR_integerlessthan:
 			visitIntegerLessThan((Expr.IntegerLessThan) expr);
 			break;
-		case EXPR_ile:
+		case EXPR_integerlessequal:
 			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr);
 			break;
-		case EXPR_igt:
+		case EXPR_integergreaterthan:
 			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr);
 			break;
-		case EXPR_ige:
+		case EXPR_integergreaterequal:
 			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr);
 			break;
-		case EXPR_iadd:
+		case EXPR_integeraddition:
 			visitIntegerAddition((Expr.IntegerAddition) expr);
 			break;
-		case EXPR_isub:
+		case EXPR_integersubtraction:
 			visitIntegerSubtraction((Expr.IntegerSubtraction) expr);
 			break;
-		case EXPR_imul:
+		case EXPR_integermultiplication:
 			visitIntegerMultiplication((Expr.IntegerMultiplication) expr);
 			break;
-		case EXPR_idiv:
+		case EXPR_integerdivision:
 			visitIntegerDivision((Expr.IntegerDivision) expr);
 			break;
-		case EXPR_irem:
+		case EXPR_integerremainder:
 			visitIntegerRemainder((Expr.IntegerRemainder) expr);
 			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) expr);
 			break;
-		case EXPR_land:
+		case EXPR_logicaland:
 			visitLogicalAnd((Expr.LogicalAnd) expr);
 			break;
-		case EXPR_lor:
+		case EXPR_logicalor:
 			visitLogicalOr((Expr.LogicalOr) expr);
 			break;
-		case EXPR_limplies:
+		case EXPR_logiaclimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr);
 			break;
-		case EXPR_liff:
+		case EXPR_logicaliff:
 			visitLogicalIff((Expr.LogicalIff) expr);
 			break;
-		case EXPR_eq:
+		case EXPR_equal:
 			visitEqual((Expr.Equal) expr);
 			break;
-		case EXPR_neq:
+		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr);
 			break;
-		case EXPR_rinit:
+		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr);
 			break;
 		default:

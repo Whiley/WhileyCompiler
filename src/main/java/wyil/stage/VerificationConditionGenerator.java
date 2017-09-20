@@ -38,7 +38,7 @@ import wyfs.util.Trie;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.type.TypeSystem;
-import wyc.util.WhileyFileParameterVisitor;
+import wyc.util.WhileyFileConsumer;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -464,8 +464,8 @@ public class VerificationConditionGenerator {
 				return translateSwitch((WhileyFile.Stmt.Switch) stmt, context);
 			case WhileyFile.STMT_while:
 				return translateWhile((WhileyFile.Stmt.While) stmt, context);
-			case WhileyFile.DECL_var:
-			case WhileyFile.DECL_varinit:
+			case WhileyFile.DECL_variable:
+			case WhileyFile.DECL_variableinitialiser:
 				return translateVariableDeclaration((WhileyFile.Decl.Variable) stmt, context);
 			default:
 				throw new InternalFailure("unknown statement encountered (" + stmt + ")",
@@ -583,14 +583,14 @@ public class VerificationConditionGenerator {
 		// operation in WyTP ... ?
 
 		switch (lval.getOpcode()) {
-		case WhileyFile.EXPR_aread:
+		case WhileyFile.EXPR_arrayaccess:
 			return translateArrayAssign((WhileyFile.Expr.ArrayAccess) lval, rval, context);
-		case WhileyFile.EXPR_pread:
+		case WhileyFile.EXPR_dereference:
 			return translateDereference((WhileyFile.Expr.Dereference) lval, rval, context);
-		case WhileyFile.EXPR_rread:
+		case WhileyFile.EXPR_recordaccess:
 			return translateRecordAssign((WhileyFile.Expr.RecordAccess) lval, rval, context);
-		case WhileyFile.EXPR_varmove:
-		case WhileyFile.EXPR_varcopy:
+		case WhileyFile.EXPR_variablemove:
+		case WhileyFile.EXPR_variablecopy:
 			return translateVariableAssign((WhileyFile.Expr.VariableAccess) lval, rval, context);
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
@@ -688,16 +688,16 @@ public class VerificationConditionGenerator {
 	private WhileyFile.Expr.VariableAccess extractAssignedVariable(WhileyFile.LVal lval) {
 		//
 		switch (lval.getOpcode()) {
-		case WhileyFile.EXPR_aread:
+		case WhileyFile.EXPR_arrayaccess:
 			Expr.ArrayAccess ae = (Expr.ArrayAccess) lval;
 			return extractAssignedVariable((LVal) ae.getSource());
-		case WhileyFile.EXPR_pread:
+		case WhileyFile.EXPR_dereference:
 			return null;
-		case WhileyFile.EXPR_rread:
+		case WhileyFile.EXPR_recordaccess:
 			Expr.RecordAccess ar = (Expr.RecordAccess) lval;
 			return extractAssignedVariable((LVal) ar.getSource());
-		case WhileyFile.EXPR_varmove:
-		case WhileyFile.EXPR_varcopy:
+		case WhileyFile.EXPR_variablemove:
+		case WhileyFile.EXPR_variablecopy:
 			return (WhileyFile.Expr.VariableAccess) lval;
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")",
@@ -1247,7 +1247,7 @@ public class VerificationConditionGenerator {
 					Expr e = translateExpression(operands.get(i), null, context.getEnvironment());
 					context = context.assume(e);
 				}
-			} else if (opcode != WhileyFile.EXPR_varcopy && opcode != WhileyFile.EXPR_varmove) {
+			} else if (opcode != WhileyFile.EXPR_variablecopy && opcode != WhileyFile.EXPR_variablemove) {
 				// In the case of a general expression, we just recurse any
 				// subexpressions without propagating information forward. We
 				// must ignore variable accesses here, because they refer back
@@ -1271,14 +1271,14 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_invoke:
 				checkInvokePreconditions((WhileyFile.Expr.Invoke) expr, context);
 				break;
-			case WhileyFile.EXPR_idiv:
-			case WhileyFile.EXPR_irem:
+			case WhileyFile.EXPR_integerdivision:
+			case WhileyFile.EXPR_integerremainder:
 				checkDivideByZero((WhileyFile.Expr.NaryOperator) expr, context);
 				break;
-			case WhileyFile.EXPR_aread:
+			case WhileyFile.EXPR_arrayaccess:
 				checkIndexOutOfBounds((WhileyFile.Expr.ArrayAccess) expr, context);
 				break;
-			case WhileyFile.EXPR_agen:
+			case WhileyFile.EXPR_arraygenerator:
 				checkArrayGeneratorLength((WhileyFile.Expr.ArrayGenerator) expr, context);
 				break;
 			}
@@ -1467,7 +1467,7 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_cast:
 				result = translateConvert((WhileyFile.Expr.Cast) expr, environment);
 				break;
-			case WhileyFile.EXPR_rread:
+			case WhileyFile.EXPR_recordaccess:
 				result = translateFieldLoad((WhileyFile.Expr.RecordAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
@@ -1479,71 +1479,71 @@ public class VerificationConditionGenerator {
 			case WhileyFile.DECL_lambda:
 				result = translateLambda((WhileyFile.Decl.Lambda) expr, environment);
 				break;
-			case WhileyFile.EXPR_lread:
+			case WhileyFile.EXPR_lambdaaccess:
 				result = translateLambda((WhileyFile.Expr.LambdaAccess) expr, environment);
 				break;
-			case WhileyFile.EXPR_lsome:
-			case WhileyFile.EXPR_lall:
+			case WhileyFile.EXPR_logicalexistential:
+			case WhileyFile.EXPR_logicaluniversal:
 				result = translateQuantifier((WhileyFile.Expr.Quantifier) expr, environment);
 				break;
-			case WhileyFile.EXPR_varmove:
-			case WhileyFile.EXPR_varcopy:
+			case WhileyFile.EXPR_variablemove:
+			case WhileyFile.EXPR_variablecopy:
 				result = translateVariableAccess((WhileyFile.Expr.VariableAccess) expr, environment);
 				break;
-			case WhileyFile.EXPR_staticvar:
+			case WhileyFile.EXPR_staticvariable:
 				result = translateStaticVariableAccess((WhileyFile.Expr.StaticVariableAccess) expr, environment);
 				break;
-			case WhileyFile.EXPR_lnot:
+			case WhileyFile.EXPR_logicalnot:
 				result = translateNotOperator((WhileyFile.Expr.LogicalNot) expr, environment);
 				break;
-			case WhileyFile.EXPR_ineg:
+			case WhileyFile.EXPR_integernegation:
 				result = translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) expr, environment);
 				break;
-			case WhileyFile.EXPR_iadd:
-			case WhileyFile.EXPR_isub:
-			case WhileyFile.EXPR_imul:
-			case WhileyFile.EXPR_idiv:
-			case WhileyFile.EXPR_irem:
-			case WhileyFile.EXPR_eq:
-			case WhileyFile.EXPR_neq:
-			case WhileyFile.EXPR_ilt:
-			case WhileyFile.EXPR_ile:
-			case WhileyFile.EXPR_igt:
-			case WhileyFile.EXPR_ige:
-			case WhileyFile.EXPR_land:
-			case WhileyFile.EXPR_lor:
-			case WhileyFile.EXPR_limplies:
-			case WhileyFile.EXPR_liff:
+			case WhileyFile.EXPR_integeraddition:
+			case WhileyFile.EXPR_integersubtraction:
+			case WhileyFile.EXPR_integermultiplication:
+			case WhileyFile.EXPR_integerdivision:
+			case WhileyFile.EXPR_integerremainder:
+			case WhileyFile.EXPR_equal:
+			case WhileyFile.EXPR_notequal:
+			case WhileyFile.EXPR_integerlessthan:
+			case WhileyFile.EXPR_integerlessequal:
+			case WhileyFile.EXPR_integergreaterthan:
+			case WhileyFile.EXPR_integergreaterequal:
+			case WhileyFile.EXPR_logicaland:
+			case WhileyFile.EXPR_logicalor:
+			case WhileyFile.EXPR_logiaclimplication:
+			case WhileyFile.EXPR_logicaliff:
 				result = translateBinaryOperator((WhileyFile.Expr.NaryOperator) expr, environment);
 				break;
 			case WhileyFile.EXPR_is:
 				result = translateIs((WhileyFile.Expr.Is) expr, environment);
 				break;
-			case WhileyFile.EXPR_aread:
+			case WhileyFile.EXPR_arrayaccess:
 				result = translateArrayIndex((WhileyFile.Expr.ArrayAccess) expr, environment);
 				break;
-			case WhileyFile.EXPR_ainit:
+			case WhileyFile.EXPR_arrayinitialiser:
 				result = translateArrayInitialiser((WhileyFile.Expr.ArrayInitialiser) expr, environment);
 				break;
-			case WhileyFile.EXPR_agen:
+			case WhileyFile.EXPR_arraygenerator:
 				result = translateArrayGenerator((WhileyFile.Expr.ArrayGenerator) expr, environment);
 				break;
-			case WhileyFile.EXPR_rinit:
+			case WhileyFile.EXPR_recordinitialiser:
 				result = translateRecordInitialiser((WhileyFile.Expr.RecordInitialiser) expr, environment);
 				break;
-			case WhileyFile.EXPR_alen:
+			case WhileyFile.EXPR_arraylength:
 				result = translateArrayLength((WhileyFile.Expr.ArrayLength) expr, environment);
 				break;
-			case WhileyFile.EXPR_pread:
+			case WhileyFile.EXPR_dereference:
 				result = translateDereference((WhileyFile.Expr.Dereference) expr, environment);
 				break;
-			case WhileyFile.EXPR_bshr:
-			case WhileyFile.EXPR_bshl:
-			case WhileyFile.EXPR_band:
-			case WhileyFile.EXPR_bor:
-			case WhileyFile.EXPR_bxor:
-			case WhileyFile.EXPR_bnot:
-			case WhileyFile.EXPR_pinit:
+			case WhileyFile.EXPR_bitwiseshr:
+			case WhileyFile.EXPR_bitwiseshl:
+			case WhileyFile.EXPR_bitwiseand:
+			case WhileyFile.EXPR_bitwiseor:
+			case WhileyFile.EXPR_bitwisexor:
+			case WhileyFile.EXPR_bitwisenot:
+			case WhileyFile.EXPR_new:
 				result = translateAsUnknown(expr, environment);
 				break;
 			default:
@@ -1629,35 +1629,35 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(operands.get(1), null, environment);
 		// FIXME: problem with > 2 operands
 		switch(expr.getOpcode()) {
-		case WhileyFile.EXPR_iadd:
+		case WhileyFile.EXPR_integeraddition:
 			return new Expr.Addition(lhs, rhs);
-		case WhileyFile.EXPR_isub:
+		case WhileyFile.EXPR_integersubtraction:
 			return new Expr.Subtraction(lhs, rhs);
-		case WhileyFile.EXPR_imul:
+		case WhileyFile.EXPR_integermultiplication:
 			return new Expr.Multiplication(lhs, rhs);
-		case WhileyFile.EXPR_idiv:
+		case WhileyFile.EXPR_integerdivision:
 			return new Expr.Division(lhs, rhs);
-		case WhileyFile.EXPR_irem:
+		case WhileyFile.EXPR_integerremainder:
 			return new Expr.Remainder(lhs, rhs);
-		case WhileyFile.EXPR_eq:
+		case WhileyFile.EXPR_equal:
 			return new Expr.Equal(lhs, rhs);
-		case WhileyFile.EXPR_neq:
+		case WhileyFile.EXPR_notequal:
 			return new Expr.NotEqual(lhs, rhs);
-		case WhileyFile.EXPR_ilt:
+		case WhileyFile.EXPR_integerlessthan:
 			return new Expr.LessThan(lhs, rhs);
-		case WhileyFile.EXPR_ile:
+		case WhileyFile.EXPR_integerlessequal:
 			return new Expr.LessThanOrEqual(lhs, rhs);
-		case WhileyFile.EXPR_igt:
+		case WhileyFile.EXPR_integergreaterthan:
 			return new Expr.GreaterThan(lhs, rhs);
-		case WhileyFile.EXPR_ige:
+		case WhileyFile.EXPR_integergreaterequal:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case WhileyFile.EXPR_land:
+		case WhileyFile.EXPR_logicaland:
 			return new Expr.LogicalAnd(lhs, rhs);
-		case WhileyFile.EXPR_lor:
+		case WhileyFile.EXPR_logicalor:
 			return new Expr.LogicalOr(lhs, rhs);
-		case WhileyFile.EXPR_limplies:
+		case WhileyFile.EXPR_logiaclimplication:
 			return new Expr.LogicalImplication(lhs, rhs);
-		case WhileyFile.EXPR_liff:
+		case WhileyFile.EXPR_logicaliff:
 			return new Expr.LogicalIff(lhs, rhs);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
@@ -2363,7 +2363,7 @@ public class VerificationConditionGenerator {
 	 * Create a simple visitor for extracting all variable access expressions from a
 	 * given expression (or statement).
 	 */
-	private static final WhileyFileParameterVisitor<HashSet<Decl.Variable>> usedVariableExtractor = new WhileyFileParameterVisitor<HashSet<Decl.Variable>>() {
+	private static final WhileyFileConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new WhileyFileConsumer<HashSet<Decl.Variable>>() {
 		@Override
 		public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
 			used.add(expr.getVariableDeclaration());

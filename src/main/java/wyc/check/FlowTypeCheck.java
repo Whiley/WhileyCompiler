@@ -1007,20 +1007,20 @@ public class FlowTypeCheck {
 	 */
 	public Environment checkCondition(Expr condition, boolean sign, Environment environment) {
 		switch (condition.getOpcode()) {
-		case EXPR_lnot:
+		case EXPR_logicalnot:
 			return checkLogicalNegation((Expr.LogicalNot) condition, sign, environment);
-		case EXPR_lor:
+		case EXPR_logicalor:
 			return checkLogicalDisjunction((Expr.LogicalOr) condition, sign, environment);
-		case EXPR_land:
+		case EXPR_logicaland:
 			return checkLogicalConjunction((Expr.LogicalAnd) condition, sign, environment);
-		case EXPR_liff:
+		case EXPR_logicaliff:
 			return checkLogicalIff((Expr.LogicalIff) condition, sign, environment);
-		case EXPR_limplies:
+		case EXPR_logiaclimplication:
 			return checkLogicalImplication((Expr.LogicalImplication) condition, sign, environment);
 		case EXPR_is:
 			return checkIs((Expr.Is) condition, sign, environment);
-		case EXPR_lall:
-		case EXPR_lsome:
+		case EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
 			Type t = checkExpression(condition, environment);
@@ -1324,19 +1324,19 @@ public class FlowTypeCheck {
 	public Type checkLVal(LVal lval, Environment environment) {
 		Type type;
 		switch (lval.getOpcode()) {
-		case EXPR_varcopy:
+		case EXPR_variablecopy:
 			type = checkVariableLVal((Expr.VariableAccess) lval, environment);
 			break;
-		case EXPR_staticvar:
+		case EXPR_staticvariable:
 			type = checkStaticVariableLVal((Expr.StaticVariableAccess) lval, environment);
 			break;
-		case EXPR_aread:
+		case EXPR_arrayaccess:
 			type = checkArrayLVal((Expr.ArrayAccess) lval, environment);
 			break;
-		case EXPR_rread:
+		case EXPR_recordaccess:
 			type = checkRecordLVal((Expr.RecordAccess) lval, environment);
 			break;
-		case EXPR_pread:
+		case EXPR_dereference:
 			type = checkDereferenceLVal((Expr.Dereference) lval, environment);
 			break;
 		default:
@@ -1453,10 +1453,10 @@ public class FlowTypeCheck {
 		case EXPR_constant:
 			type = checkConstant((Expr.Constant) expression, environment);
 			break;
-		case EXPR_varcopy:
+		case EXPR_variablecopy:
 			type = checkVariable((Expr.VariableAccess) expression, environment);
 			break;
-		case EXPR_staticvar:
+		case EXPR_staticvariable:
 			type = checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
 			break;
 		case EXPR_cast:
@@ -1484,82 +1484,82 @@ public class FlowTypeCheck {
 			}
 		}
 		// Conditions
-		case EXPR_lnot:
-		case EXPR_lor:
-		case EXPR_land:
-		case EXPR_liff:
-		case EXPR_limplies:
+		case EXPR_logicalnot:
+		case EXPR_logicalor:
+		case EXPR_logicaland:
+		case EXPR_logicaliff:
+		case EXPR_logiaclimplication:
 		case EXPR_is:
-		case EXPR_lall:
-		case EXPR_lsome:
+		case EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
 			checkCondition(expression, true, environment);
 			return Type.Bool;
 		// Comparators
-		case EXPR_eq:
-		case EXPR_neq:
-		case EXPR_ilt:
-		case EXPR_ile:
-		case EXPR_igt:
-		case EXPR_ige:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
 			return checkComparisonOperator((Expr.NaryOperator) expression, environment);
 		// Arithmetic Operators
-		case EXPR_ineg:
+		case EXPR_integernegation:
 			type = checkArithmeticOperator((Expr.UnaryOperator) expression, environment);
 			break;
-		case EXPR_iadd:
-		case EXPR_isub:
-		case EXPR_imul:
-		case EXPR_idiv:
-		case EXPR_irem:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
 			type = checkArithmeticOperator((Expr.NaryOperator) expression, environment);
 			break;
 		// Bitwise expressions
-		case EXPR_bnot:
+		case EXPR_bitwisenot:
 			type = checkBitwiseOperator((Expr.UnaryOperator) expression, environment);
 			break;
-		case EXPR_band:
-		case EXPR_bor:
-		case EXPR_bxor:
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
 			type = checkBitwiseOperator((Expr.NaryOperator) expression, environment);
 			break;
-		case EXPR_bshl:
-		case EXPR_bshr:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
 			type = checkBitwiseShift((Expr.BinaryOperator) expression, environment);
 			break;
 		// Record Expressions
-		case EXPR_rinit:
+		case EXPR_recordinitialiser:
 			type = checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
 			break;
-		case EXPR_rread:
+		case EXPR_recordaccess:
 			type = checkRecordAccess((Expr.RecordAccess) expression, environment);
 			break;
-		case EXPR_rwrite:
+		case EXPR_recordupdate:
 			type = checkRecordUpdate((Expr.RecordUpdate) expression, environment);
 			break;
 		// Array expressions
-		case EXPR_alen:
+		case EXPR_arraylength:
 			type = checkArrayLength(environment, (Expr.ArrayLength) expression);
 			break;
-		case EXPR_ainit:
+		case EXPR_arrayinitialiser:
 			type = checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
 			break;
-		case EXPR_agen:
+		case EXPR_arraygenerator:
 			type = checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
 			break;
-		case EXPR_aread:
+		case EXPR_arrayaccess:
 			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
 			break;
-		case EXPR_awrite:
+		case EXPR_arrayupdate:
 			type = checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
 			break;
 		// Reference expressions
-		case EXPR_pread:
+		case EXPR_dereference:
 			type = checkDereference((Expr.Dereference) expression, environment);
 			break;
-		case EXPR_pinit:
+		case EXPR_new:
 			type = checkNew((Expr.New) expression, environment);
 			break;
-		case EXPR_lread:
+		case EXPR_lambdaaccess:
 			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
 		case DECL_lambda:
 			return checkLambdaDeclaration((Decl.Lambda) expression, environment);
@@ -1670,8 +1670,8 @@ public class FlowTypeCheck {
 
 	private Type checkComparisonOperator(Expr.NaryOperator expr, Environment environment) {
 		switch (expr.getOpcode()) {
-		case EXPR_eq:
-		case EXPR_neq:
+		case EXPR_equal:
+		case EXPR_notequal:
 			return checkEqualityOperator(expr, environment);
 		default:
 			return checkArithmeticComparator(expr, environment);

@@ -18,7 +18,7 @@ import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyc.util.ErrorMessages.errorMessage;
 
 import wyc.lang.WhileyFile;
-import wyc.util.WhileyFileParameterReturnVisitor;
+import wyc.util.WhileyFileFunction;
 
 import java.util.BitSet;
 import java.util.HashSet;
@@ -48,7 +48,7 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  *
  */
-public class DefiniteAssignmentCheck extends WhileyFileParameterReturnVisitor<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
+public class DefiniteAssignmentCheck extends WhileyFileFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
 
 	public void check(WhileyFile wf) {
 		visitWhileyFile(wf, null);

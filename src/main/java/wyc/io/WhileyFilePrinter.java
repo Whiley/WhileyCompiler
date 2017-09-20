@@ -212,8 +212,8 @@ public final class WhileyFilePrinter {
 		case EXPR_invoke:
 			writeInvoke((Expr.Invoke) c, out);
 			break;
-		case DECL_var:
-		case DECL_varinit:
+		case DECL_variable:
+		case DECL_variableinitialiser:
 			writeVariableDeclaration(indent, (Decl.Variable) c, out);
 			break;
 		default:
@@ -389,16 +389,16 @@ public final class WhileyFilePrinter {
 	@SuppressWarnings("unchecked")
 	private void writeExpression(Expr expr, PrintWriter out) {
 		switch (expr.getOpcode()) {
-		case EXPR_alen:
+		case EXPR_arraylength:
 			writeArrayLength((Expr.ArrayLength) expr,out);
 			break;
-		case EXPR_aread:
+		case EXPR_arrayaccess:
 			writeArrayIndex((Expr.ArrayAccess) expr,out);
 			break;
-		case EXPR_ainit:
+		case EXPR_arrayinitialiser:
 			writeArrayInitialiser((Expr.ArrayInitialiser) expr,out);
 			break;
-		case EXPR_agen:
+		case EXPR_arraygenerator:
 			writeArrayGenerator((Expr.ArrayGenerator) expr,out);
 			break;
 		case EXPR_cast:
@@ -407,7 +407,7 @@ public final class WhileyFilePrinter {
 		case EXPR_constant:
 			writeConst((Expr.Constant) expr, out);
 			break;
-		case EXPR_rread:
+		case EXPR_recordaccess:
 			writeFieldLoad((Expr.RecordAccess) expr, out);
 			break;
 		case EXPR_indirectinvoke:
@@ -419,46 +419,46 @@ public final class WhileyFilePrinter {
 		case DECL_lambda:
 			writeLambda((Decl.Lambda) expr, out);
 			break;
-		case EXPR_rinit:
+		case EXPR_recordinitialiser:
 			writeRecordConstructor((Expr.RecordInitialiser) expr, out);
 			break;
-		case EXPR_pinit:
+		case EXPR_new:
 			writeNewObject((Expr.New) expr,out);
 			break;
-		case EXPR_pread:
-		case EXPR_lnot:
-		case EXPR_ineg:
-		case EXPR_bnot:
+		case EXPR_dereference:
+		case EXPR_logicalnot:
+		case EXPR_integernegation:
+		case EXPR_bitwisenot:
 			writePrefixLocations((Expr.UnaryOperator) expr,out);
 			break;
-		case EXPR_lall:
-		case EXPR_lsome:
+		case EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
 			writeQuantifier((Expr.Quantifier) expr, out);
 			break;
-		case EXPR_iadd:
-		case EXPR_isub:
-		case EXPR_imul:
-		case EXPR_idiv:
-		case EXPR_irem:
-		case EXPR_eq:
-		case EXPR_neq:
-		case EXPR_ilt:
-		case EXPR_ile:
-		case EXPR_igt:
-		case EXPR_ige:
-		case EXPR_land:
-		case EXPR_lor:
-		case EXPR_bor:
-		case EXPR_bxor:
-		case EXPR_band:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_bitwiseand:
 		case EXPR_is:
 			writeInfixLocations((Expr.NaryOperator) expr, out);
 			break;
-		case EXPR_bshl:
-		case EXPR_bshr:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
 			writeInfixLocations((Expr.BinaryOperator) expr, out);
 			break;
-		case EXPR_varcopy:
+		case EXPR_variablecopy:
 			writeVariableAccess((Expr.VariableAccess) expr, out);
 			break;
 		default:
@@ -638,9 +638,9 @@ public final class WhileyFilePrinter {
 
 	private String quantifierKind(Expr.Quantifier c) {
 		switch(c.getOpcode()) {
-		case EXPR_lsome:
+		case EXPR_logicalexistential:
 			return "exists";
-		case EXPR_lall:
+		case EXPR_logicaluniversal:
 			return "all";
 		}
 		throw new IllegalArgumentException();
@@ -656,27 +656,27 @@ public final class WhileyFilePrinter {
 	private boolean needsBrackets(Expr e) {
 		switch(e.getOpcode()) {
 		case EXPR_cast:
-		case EXPR_iadd:
-		case EXPR_isub:
-		case EXPR_imul:
-		case EXPR_idiv:
-		case EXPR_irem:
-		case EXPR_eq:
-		case EXPR_neq:
-		case EXPR_ilt:
-		case EXPR_ile:
-		case EXPR_igt:
-		case EXPR_ige:
-		case EXPR_land:
-		case EXPR_lor:
-		case EXPR_bor:
-		case EXPR_bxor:
-		case EXPR_band:
-		case EXPR_bshl:
-		case EXPR_bshr:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
 		case EXPR_is:
-		case EXPR_pinit:
-		case EXPR_pread:
+		case EXPR_new:
+		case EXPR_dereference:
 			return true;
 		}
 		return false;
@@ -684,52 +684,52 @@ public final class WhileyFilePrinter {
 
 	private static String opcode(int k) {
 		switch(k) {
-		case EXPR_ineg:
+		case EXPR_integernegation:
 			return "-";
-		case EXPR_lnot:
+		case EXPR_logicalnot:
 			return "!";
-		case EXPR_bnot:
+		case EXPR_bitwisenot:
 			return "~";
-		case EXPR_pread:
+		case EXPR_dereference:
 			return "*";
 		// Binary
-		case EXPR_iadd:
+		case EXPR_integeraddition:
 			return "+";
-		case EXPR_isub:
+		case EXPR_integersubtraction:
 			return "-";
-		case EXPR_imul:
+		case EXPR_integermultiplication:
 			return "*";
-		case EXPR_idiv:
+		case EXPR_integerdivision:
 			return "/";
-		case EXPR_irem:
+		case EXPR_integerremainder:
 			return "%";
-		case EXPR_eq:
+		case EXPR_equal:
 			return "==";
-		case EXPR_neq:
+		case EXPR_notequal:
 			return "!=";
-		case EXPR_ilt:
+		case EXPR_integerlessthan:
 			return "<";
-		case EXPR_ile:
+		case EXPR_integerlessequal:
 			return "<=";
-		case EXPR_igt:
+		case EXPR_integergreaterthan:
 			return ">";
-		case EXPR_ige:
+		case EXPR_integergreaterequal:
 			return ">=";
-		case EXPR_land:
+		case EXPR_logicaland:
 			return "&&";
-		case EXPR_lor:
+		case EXPR_logicalor:
 			return "||";
-		case EXPR_bor:
+		case EXPR_bitwiseor:
 			return "|";
-		case EXPR_bxor:
+		case EXPR_bitwisexor:
 			return "^";
-		case EXPR_band:
+		case EXPR_bitwiseand:
 			return "&";
-		case EXPR_bshl:
+		case EXPR_bitwiseshl:
 			return "<<";
-		case EXPR_bshr:
+		case EXPR_bitwiseshr:
 			return ">>";
-		case EXPR_pinit:
+		case EXPR_new:
 			return "new";
 		default:
 			throw new IllegalArgumentException("unknown operator kind : " + k);

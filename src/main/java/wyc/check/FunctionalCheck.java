@@ -20,7 +20,7 @@ import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
 import wyc.type.TypeSystem;
-import wyc.util.WhileyFileParameterVisitor;
+import wyc.util.WhileyFileConsumer;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
@@ -72,7 +72,7 @@ import static wyc.util.ErrorMessages.*;
  * @author David J. Pearce
  *
  */
-public class FunctionalCheck extends WhileyFileParameterVisitor<FunctionalCheck.Context> {
+public class FunctionalCheck extends WhileyFileConsumer<FunctionalCheck.Context> {
 	public TypeSystem types;
 
 	public FunctionalCheck(CompileTask builder) {
