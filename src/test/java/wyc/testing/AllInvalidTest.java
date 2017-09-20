@@ -77,11 +77,6 @@ public class AllInvalidTest {
 		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");
 		//
-		IGNORED.put("UnionType_Invalid_4", "#784");
-		IGNORED.put("UnionType_Invalid_5", "#784");
-		IGNORED.put("UnionType_Invalid_11", "#784");
-		IGNORED.put("UnionType_Invalid_12", "#784");
-		//
 		IGNORED.put("StaticVar_Invalid_4", "???");
 		// ===============================================================
 		// Whiley Theorem Prover faults

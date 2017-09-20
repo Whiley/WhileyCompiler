@@ -15,8 +15,7 @@ package wyil.type.extractors;
 
 import static wyc.lang.WhileyFile.Type;
 import wybs.lang.NameResolver;
-import wyil.type.TypeSystem;
-import wyil.type.util.AbstractTypeExtractor;;
+import wyil.type.TypeSystem;;
 
 /**
  * <p>

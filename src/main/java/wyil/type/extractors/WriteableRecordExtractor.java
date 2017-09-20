@@ -23,32 +23,32 @@ import wyil.type.TypeSystem;
 
 /**
  * <p>
- * Responsible for extracting a "readable record" from a given type. A readable
- * record is a conservative approximation of the records described in a given
- * type. Furthermore, it is safe to use when reading field values from that type.
- * For example, the type <code>{int f}|{bool f}</code> has a readable record
- * type of <code>{int|bool f}</code>. This is the readable type as, if we were
- * to read field <code>f</code> from either bound, the return type would be in
- * <code>int|bool</code>. However, we cannot use the readable record type for
- * writing as this could be unsafe. For example, if we actually had a record of
- * type <code>{int f}</code>, then writing a boolean value is not permitted.
+ * Responsible for extracting a "writeable record" from a given type. A
+ * writeable record is a conservative approximation of the records described in
+ * a given type. Furthermore, it is safe to use when writing field values to
+ * that type. For example, the type <code>{int f}|{any f}</code> has a writeable
+ * record type of <code>{int f}</code>. This is the writeable type as, if we
+ * were to write field <code>f</code> with an <code>int</code> this is safe for
+ * either bound. However, we cannot use the writeable record types for reading
+ * as this could be unsafe. For example, if we actually had a record of type
+ * <code>{bool f}</code>, then reading a int value is not permitted.
  * </p>
  * <p>
- * Not all types have readable record type and, furthermore, care must be
+ * Not all types have writeable record type and, furthermore, care must be
  * exercised for those that do. For example, <code>{int f}|int</code> does not
- * have a readable record type. Likewise, the readable record type for
- * <code>{int f, int g}|{bool f}</code> is <code>{int|bool f, ...}</code>.
- * Finally, negations play an important role in determining the readable record
- * type. For example, <code>{int|null f} & !{int f}</code> generates the
- * readable record type <code>{null f}</code>.
+ * have a writeable record type. Likewise, the writeable record type for
+ * <code>{T1 f, T2 g}|{T3 f}</code> is <code>{T1&T3 f, ...}</code>. Finally,
+ * negations play an important role in determining the writeable record type.
+ * For example, <code>{int|null f} & !{int f}</code> generates the writeable
+ * record type <code>{null f}</code>.
  * </p>
  *
  * @author David J. Pearce
  *
  */
-public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> {
+public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record> {
 
-	public ReadableRecordExtractor(NameResolver resolver, TypeSystem typeSystem) {
+	public WriteableRecordExtractor(NameResolver resolver, TypeSystem typeSystem) {
 		super(resolver, typeSystem);
 	}
 
@@ -71,26 +71,7 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 
 	@Override
 	protected Type.Record union(Type.Record lhs, Type.Record rhs) {
-		ArrayList<Decl.Variable> fields = new ArrayList<>();
-		Tuple<Decl.Variable> lhsFields = lhs.getFields();
-		Tuple<Decl.Variable> rhsFields = rhs.getFields();
-		for (int i = 0; i != lhsFields.size(); ++i) {
-			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.get(i);
-				Decl.Variable rhsField = rhsFields.get(j);
-				Identifier lhsFieldName = lhsField.getName();
-				Identifier rhsFieldName = rhsField.getName();
-				if (lhsFieldName.equals(rhsFieldName)) {
-					Type type = unionHelper(lhsField.getType(), rhsField.getType());
-					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
-				}
-			}
-		}
-		//
-		boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
-		isOpenRecord |= (lhsFields.size() > fields.size() || rhsFields.size() > fields.size());
-		//
-		return new Type.Record(isOpenRecord, new Tuple<>(fields));
+		return intersect(lhs,rhs);
 	}
 
 	@Override

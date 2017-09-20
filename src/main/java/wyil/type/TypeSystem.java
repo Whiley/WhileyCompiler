@@ -21,6 +21,9 @@ import wyil.type.extractors.ReadableArrayExtractor;
 import wyil.type.extractors.ReadableLambdaExtractor;
 import wyil.type.extractors.ReadableRecordExtractor;
 import wyil.type.extractors.ReadableReferenceExtractor;
+import wyil.type.extractors.WriteableArrayExtractor;
+import wyil.type.extractors.WriteableRecordExtractor;
+import wyil.type.extractors.WriteableReferenceExtractor;
 import wyil.type.subtyping.CoerciveSubtypeOperator;
 import wyil.type.subtyping.StrictSubtypeOperator;
 
@@ -62,8 +65,11 @@ public class TypeSystem {
 	private final SubtypeOperator strictSubtypeOperator;
 	private final SubtypeOperator coerciveSubtypeOperator;
 	private final TypeExtractor<Type.Record,Object> readableRecordExtractor;
+	private final TypeExtractor<Type.Record,Object> writeableRecordExtractor;
 	private final TypeExtractor<Type.Array,Object> readableArrayExtractor;
+	private final TypeExtractor<Type.Array,Object> writeableArrayExtractor;
 	private final TypeExtractor<Type.Reference,Object> readableReferenceExtractor;
+	private final TypeExtractor<Type.Reference,Object> writeableReferenceExtractor;
 	private final TypeExtractor<Type.Callable,Object> readableLambdaExtractor;
 //	private final TypeInvariantExtractor typeInvariantExtractor;
 	private final TypeRewriter typeSimplifier;
@@ -73,8 +79,11 @@ public class TypeSystem {
 		this.strictSubtypeOperator = new StrictSubtypeOperator(this);
 		this.coerciveSubtypeOperator = new CoerciveSubtypeOperator(this);
 		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
+		this.writeableRecordExtractor = new WriteableRecordExtractor(resolver,this);
 		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);
+		this.writeableArrayExtractor = new WriteableArrayExtractor(resolver,this);
 		this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,this);
+		this.writeableReferenceExtractor = new WriteableReferenceExtractor(resolver,this);
 		this.readableLambdaExtractor = new ReadableLambdaExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
 		this.typeSimplifier = null; // new StdTypeRewriter();
@@ -216,14 +225,13 @@ public class TypeSystem {
 	}
 
 	/**
-	 * For a given type, extract its effective record type. For example, the
-	 * type <code>({int x, int y}|{int x, int z})</code> has effective record
-	 * type <code>{int x, ...}</code>. The following illustrates some more
-	 * cases:
+	 * For a given type, extract its readable record type. For example, the type
+	 * <code>({int x, int y}|{int x, int z})</code> has readable record type
+	 * <code>{int x, ...}</code>. The following illustrates some more cases:
 	 *
 	 * <pre>
 	 * {int x, int y} | null    ==> null
-	 * {int x, int y} | {int x} ==> null
+	 * {int x, int y} | {int x} ==> {int x, ...}
 	 * {int x, int y} | {int x, bool y} ==> {int x, int|bool y}
 	 * {int x, int y} & null    ==> null
 	 * {int x, int y} & {int x} ==> null
@@ -236,6 +244,28 @@ public class TypeSystem {
 	 */
 	public Type.Record extractReadableRecord(Type type) throws ResolutionError {
 		return readableRecordExtractor.extract(type,null);
+	}
+
+	/**
+	 * For a given type, extract its writeable record type. For example, the type
+	 * <code>({int x, int y}|{int x, int z})</code> has writeable record type
+	 * <code>{int x, ...}</code>. The following illustrates some more cases:
+	 *
+	 * <pre>
+	 * {int x, int y} | null    ==> null
+	 * {int x, int y} | {int x} ==> {int x, ...}
+	 * {int x, int y} | {int x, bool y} ==> {int x, int|bool y}
+	 * {int x, int y} & null    ==> null
+	 * {int x, int y} & {int x} ==> null
+	 * {int x, int y} & {int x, int|bool y} ==> {int x, int y}
+	 * </pre>
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type.Record extractWriteableRecord(Type type) throws ResolutionError {
+		return writeableRecordExtractor.extract(type,null);
 	}
 
 	/**
@@ -252,6 +282,20 @@ public class TypeSystem {
 	}
 
 	/**
+	 * Extract the writeable array type from a given type. For example, the type
+	 * <code>(any[])|(bool[])</code> has a readable array type of
+	 * <code>bool[]</code>.
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type.Array extractWriteableArray(Type type) throws ResolutionError {
+		return writeableArrayExtractor.extract(type,null);
+	}
+
+
+	/**
 	 * Extract the readable reference type from a given type. This is relatively
 	 * straightforward. For example, <code>&int</code> is extracted as
 	 * <code>&int</code>. However, <code>(&int)|(&bool)</code> is not extracted
@@ -263,6 +307,20 @@ public class TypeSystem {
 	 */
 	public Type.Reference extractReadableReference(Type type) throws ResolutionError {
 		return readableReferenceExtractor.extract(type,null);
+	}
+
+	/**
+	 * Extract the writeable reference type from a given type. This is relatively
+	 * straightforward. For example, <code>&int</code> is extracted as
+	 * <code>&int</code>. However, <code>(&int)|(&bool)</code> is not extracted
+	 * as as <code>&(int|bool)</code>.
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type.Reference extractWriteableReference(Type type) throws ResolutionError {
+		return writeableReferenceExtractor.extract(type,null);
 	}
 
 	/**

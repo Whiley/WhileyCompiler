@@ -1447,6 +1447,7 @@ public class WhileyFileParser {
 	 */
 	private LVal parseLValTerm(int start, EnclosingScope scope) {
 		checkNotEof();
+		start = index;
 		// First, attempt to disambiguate the easy forms:
 		Token lookahead = tokens.get(index);
 		switch (lookahead.kind) {

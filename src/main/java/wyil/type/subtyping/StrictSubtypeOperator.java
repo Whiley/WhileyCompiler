@@ -639,6 +639,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 */
 	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions)
 			throws ResolutionError {
+		System.out.println("IS VOID: " + lhs + ", " + rhs);
 		// FIXME: need to look at lifetime parameters
 		Term<?> lhsTrueTerm = new Term<>(true, lhs.type.getElement(), lhs.maximise);
 		Term<?> rhsTrueTerm = new Term<>(true, rhs.type.getElement(), rhs.maximise);
