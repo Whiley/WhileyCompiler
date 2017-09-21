@@ -68,7 +68,7 @@ public class ErrorMessages {
 		}
 	}
 
-	public static final MsgWithNoParams CYCLIC_CONSTANT_DECLARATION = new MsgWithNoParams("cyclic constant expression");
+	public static final MsgWithNoParams CYCLIC_STATIC_INITIALISER = new MsgWithNoParams("cyclic static initialiser");
 	public static final MsgWithNoParams INVALID_CONSTANT_EXPRESSION = new MsgWithNoParams("invalid constant expression");
 	public static final MsgWithNoParams INVALID_BOOLEAN_EXPRESSION = new MsgWithNoParams("invalid boolean expression");
 	public static final MsgWithNoParams INVALID_NUMERIC_EXPRESSION = new MsgWithNoParams("invalid numeric expression");

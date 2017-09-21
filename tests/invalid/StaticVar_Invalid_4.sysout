@@ -1,1 +1,3 @@
-WARNING: version numbering unavailable
+tests/invalid/StaticVar_Invalid_4.whiley:1: cyclic static initialiser
+int x = 1+x
+        ^^^
