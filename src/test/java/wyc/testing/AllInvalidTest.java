@@ -56,7 +56,6 @@ public class AllInvalidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Constant_Invalid_1", "unclassified");
 		IGNORED.put("Export_Invalid_1", "unclassified");
 		IGNORED.put("Function_Invalid_2", "unclassified");
 		IGNORED.put("Function_Invalid_9", "unclassified");
@@ -76,8 +75,8 @@ public class AllInvalidTest {
 		IGNORED.put("Lifetime_Lambda_Invalid_3", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");
-		//
-		IGNORED.put("StaticVar_Invalid_4", "???");
+		// Access Static Variable from Type Invariant
+		IGNORED.put("Type_Invalid_11", "793");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

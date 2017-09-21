@@ -31,6 +31,7 @@ import wybs.util.*;
 import wyc.check.DefiniteAssignmentCheck;
 import wyc.check.FlowTypeCheck;
 import wyc.check.FunctionalCheck;
+import wyc.check.StaticVariableCheck;
 import wyc.lang.*;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
@@ -208,6 +209,7 @@ public final class CompileTask implements Build.Task {
 		for (WhileyFile wf : binaryFiles) {
 			new DefiniteAssignmentCheck().check(wf);
 			new FunctionalCheck(this).check(wf);
+			new StaticVariableCheck(this).check(wf);
 			// new MoveAnalysis(this).apply(wyil);
 			// new CoercionCheck(this);
 		}
