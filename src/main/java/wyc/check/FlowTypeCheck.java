@@ -153,7 +153,7 @@ public class FlowTypeCheck {
 		// Check type is contractive
 		checkContractive(decl);
 		// Check variable declaration is not empty
-		checkNonEmpty(decl.getVariableDeclaration());
+		checkNonEmpty(decl.getVariableDeclaration(),environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -181,12 +181,12 @@ public class FlowTypeCheck {
 	 * @throws IOException
 	 */
 	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod d) {
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkNonEmpty(d.getParameters());
-		checkNonEmpty(d.getReturns());
 		// Construct initial environment
 		Environment environment = new Environment();
+		// Check parameters and returns are not empty (i.e. are not equivalent
+		// to void, as this is non-sensical).
+		checkNonEmpty(d.getParameters(), environment);
+		checkNonEmpty(d.getReturns(), environment);
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -226,12 +226,12 @@ public class FlowTypeCheck {
 	}
 
 	public void checkPropertyDeclaration(Decl.Property d) {
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkNonEmpty(d.getParameters());
-		checkNonEmpty(d.getReturns());
 		// Construct initial environment
 		Environment environment = new Environment();
+		// Check parameters and returns are not empty (i.e. are not equivalent
+		// to void, as this is non-sensical).
+		checkNonEmpty(d.getParameters(), environment);
+		checkNonEmpty(d.getReturns(), environment);
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -1145,10 +1145,10 @@ public class FlowTypeCheck {
 			// Sanity check operands for this type test
 			Type glbForFalseBranch = new Type.Intersection(lhsT, negate(rhsT));
 			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
-			if (typeSystem.isVoid(glbForFalseBranch)) {
+			if (typeSystem.isVoid(glbForFalseBranch,environment)) {
 				// DEFINITE TRUE CASE
 				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
-			} else if (typeSystem.isVoid(glbForTrueBranch)) {
+			} else if (typeSystem.isVoid(glbForTrueBranch,environment)) {
 				// DEFINITE FALSE CASE
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
@@ -1207,7 +1207,7 @@ public class FlowTypeCheck {
 	}
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment env) {
-		checkNonEmpty(stmt.getParameters());
+		checkNonEmpty(stmt.getParameters(), env);
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
 		checkCondition(stmt.getOperand(), true, env);
@@ -1340,7 +1340,7 @@ public class FlowTypeCheck {
 		Expr subscript = lval.getSecondOperand();
 		//
 		Type sourceT = checkExpression(source, environment);
-		Type.Array writeableArrayT = checkIsArrayType(sourceT, AccessMode.WRITING, source);
+		Type.Array writeableArrayT = checkIsArrayType(sourceT, AccessMode.WRITING, environment, source);
 		Type subscriptT = checkExpression(subscript, environment);
 		checkIsSubtype(new Type.Int(), subscriptT, environment, subscript);
 		//
@@ -1349,7 +1349,7 @@ public class FlowTypeCheck {
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
 		Type src = checkExpression(lval.getOperand(), environment);
-		Type.Record writeableRecordT = checkIsRecordType(src, AccessMode.WRITING, lval.getOperand());
+		Type.Record writeableRecordT = checkIsRecordType(src, AccessMode.WRITING, environment, lval.getOperand());
 		//
 		Type type = writeableRecordT.getField(lval.getField());
 		if (type == null) {
@@ -1361,7 +1361,8 @@ public class FlowTypeCheck {
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
 		Type operandT = checkExpression(lval.getOperand(), environment);
-		Type.Reference writeableReferenceT = checkIsReferenceType(operandT, AccessMode.WRITING, lval.getOperand());
+		Type.Reference writeableReferenceT = checkIsReferenceType(operandT, AccessMode.WRITING, environment,
+				lval.getOperand());
 		//
 		return writeableReferenceT.getElement();
 	}
@@ -1616,7 +1617,7 @@ public class FlowTypeCheck {
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
 		// Determine signature type from source
 		Type type = checkExpression(expr.getSource(), environment);
-		Type.Callable sig = checkIsCallableType(type, expr.getSource());
+		Type.Callable sig = checkIsCallableType(type, environment, expr.getSource());
 		// Determine the argument types
 		Tuple<Expr> arguments = expr.getArguments();
 		Tuple<Type> parameters = sig.getParameters();
@@ -1651,7 +1652,7 @@ public class FlowTypeCheck {
 			Type rhs = checkExpression(expr.getSecondOperand(), environment);
 			// Sanity check that the types of operands are actually comparable.
 			Type glb = new Type.Intersection(lhs, rhs);
-			if (typeSystem.isVoid(glb)) {
+			if (typeSystem.isVoid(glb,environment)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
 				return null;
 			}
@@ -1703,7 +1704,7 @@ public class FlowTypeCheck {
 
 	private Type checkRecordAccess(Expr.RecordAccess expr, Environment env) {
 		Type src = checkExpression(expr.getOperand(), env);
-		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, expr.getOperand());
+		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, env, expr.getOperand());
 		//
 		Type type = readableRecordT.getField(expr.getField());
 		if (type == null) {
@@ -1716,7 +1717,7 @@ public class FlowTypeCheck {
 	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment env) {
 		Type src = checkExpression(expr.getFirstOperand(), env);
 		Type val = checkExpression(expr.getSecondOperand(), env);
-		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, expr.getFirstOperand());
+		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, env, expr.getFirstOperand());
 		//
 		Tuple<Decl.Variable> fields = readableRecordT.getFields();
 		String actualFieldName = expr.getField().get();
@@ -1748,7 +1749,7 @@ public class FlowTypeCheck {
 
 	private Type checkArrayLength(Environment env, Expr.ArrayLength expr) {
 		Type src = checkExpression(expr.getOperand(), env);
-		checkIsArrayType(src, AccessMode.READING, expr.getOperand());
+		checkIsArrayType(src, AccessMode.READING, env, expr.getOperand());
 		return new Type.Int();
 	}
 
@@ -1780,7 +1781,7 @@ public class FlowTypeCheck {
 		Type sourceT = checkExpression(source, env);
 		Type subscriptT = checkExpression(subscript, env);
 		//
-		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
+		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, env, source);
 		checkIsSubtype(new Type.Int(), subscriptT, env, subscript);
 		//
 		return sourceArrayT.getElement();
@@ -1795,7 +1796,7 @@ public class FlowTypeCheck {
 		Type subscriptT = checkExpression(subscript, env);
 		Type valueT = checkExpression(value, env);
 		//
-		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
+		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, env, source);
 		checkIsSubtype(new Type.Int(), subscriptT, env, subscript);
 		checkIsSubtype(sourceArrayT.getElement(), valueT, env, value);
 		return sourceArrayT;
@@ -1803,7 +1804,7 @@ public class FlowTypeCheck {
 
 	private Type checkDereference(Expr.Dereference expr, Environment env) {
 		Type operandT = checkExpression(expr.getOperand(), env);
-		Type.Reference readableReferenceT = checkIsReferenceType(operandT, AccessMode.READING, expr.getOperand());
+		Type.Reference readableReferenceT = checkIsReferenceType(operandT, AccessMode.READING, env, expr.getOperand());
 		//
 		return readableReferenceT.getElement();
 	}
@@ -1811,7 +1812,12 @@ public class FlowTypeCheck {
 	private Type checkNew(Expr.New expr, Environment env) {
 		Type operandT = checkExpression(expr.getOperand(), env);
 		//
-		return new Type.Reference(operandT);
+		if(expr.hasLifetime()) {
+			return new Type.Reference(operandT, expr.getLifetime());
+		} else {
+			return new Type.Reference(operandT);
+		}
+
 	}
 
 	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment env) {
@@ -1837,7 +1843,7 @@ public class FlowTypeCheck {
 
 	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment env) {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
-		checkNonEmpty(parameters);
+		checkNonEmpty(parameters, env);
 		Tuple<Type> parameterTypes = parameters.project(2, Type.class);
 		Type result = checkExpression(expr.getBody(), env);
 		// Determine whether or not this is a pure or impure lambda.
@@ -1901,13 +1907,13 @@ public class FlowTypeCheck {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Type.Array checkIsArrayType(Type type, AccessMode mode, SyntacticItem element) {
+	private Type.Array checkIsArrayType(Type type, AccessMode mode, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
 			Type.Array arrT;
 			if(mode == AccessMode.READING) {
-				arrT = typeSystem.extractReadableArray(type);
+				arrT = typeSystem.extractReadableArray(type,lifetimes);
 			} else {
-				arrT = typeSystem.extractWriteableArray(type);
+				arrT = typeSystem.extractWriteableArray(type,lifetimes);
 			}
 			if (arrT == null) {
 				syntaxError("expected array type", element);
@@ -1924,13 +1930,13 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return
 	 */
-	private Type.Record checkIsRecordType(Type type, AccessMode mode, SyntacticItem element) {
+	private Type.Record checkIsRecordType(Type type, AccessMode mode, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
 			Type.Record recT;
 			if(mode == AccessMode.READING) {
-				recT = typeSystem.extractReadableRecord(type);
+				recT = typeSystem.extractReadableRecord(type,lifetimes);
 			} else {
-				recT = typeSystem.extractWriteableRecord(type);
+				recT = typeSystem.extractWriteableRecord(type,lifetimes);
 			}
 			if (recT == null) {
 				syntaxError("expected record type", element);
@@ -1948,13 +1954,13 @@ public class FlowTypeCheck {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Type.Reference checkIsReferenceType(Type type, AccessMode mode, SyntacticItem element) {
+	private Type.Reference checkIsReferenceType(Type type, AccessMode mode, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
 			Type.Reference refT;
 			if(mode == AccessMode.READING) {
-				refT = typeSystem.extractReadableReference(type);
+				refT = typeSystem.extractReadableReference(type,lifetimes);
 			} else {
-				refT = typeSystem.extractWriteableReference(type);
+				refT = typeSystem.extractWriteableReference(type,lifetimes);
 			}
 			if (refT == null) {
 				syntaxError("expected reference type", element);
@@ -2180,9 +2186,9 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return
 	 */
-	private Type.Callable checkIsCallableType(Type type, SyntacticItem element) {
+	private Type.Callable checkIsCallableType(Type type, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
-			Type.Callable refT = typeSystem.extractReadableLambda(type);
+			Type.Callable refT = typeSystem.extractReadableLambda(type,lifetimes);
 			if (refT == null) {
 				syntaxError("expected lambda type", element);
 			}
@@ -2232,9 +2238,9 @@ public class FlowTypeCheck {
 	 *
 	 * @param decls
 	 */
-	private void checkNonEmpty(Tuple<Decl.Variable> decls) {
+	private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
 		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.get(i));
+			checkNonEmpty(decls.get(i),lifetimes);
 		}
 	}
 
@@ -2245,10 +2251,10 @@ public class FlowTypeCheck {
 	 *
 	 * @param d
 	 */
-	private void checkNonEmpty(Decl.Variable d) {
+	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
 		try {
 			Type type = d.getType();
-			if (typeSystem.isVoid(type)) {
+			if (typeSystem.isVoid(type,lifetimes)) {
 				syntaxError("empty type encountered", type);
 			}
 		} catch (NameResolver.ResolutionError e) {
@@ -2407,11 +2413,9 @@ public class FlowTypeCheck {
 		}
 
 		@Override
-		public boolean isWithin(Identifier outer, Identifier inner) {
-			String o = outer.get();
-			String i = inner.get();
+		public boolean isWithin(String inner, String outer) {
 			// FIXME: this is currently the only way its possible.
-			return o.equals("*");
+			return outer.equals("*") || inner.equals(outer);
 		}
 	}
 }

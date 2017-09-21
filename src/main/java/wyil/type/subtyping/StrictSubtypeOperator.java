@@ -199,6 +199,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		case TYPE_null:
 		case TYPE_bool:
 		case TYPE_int:
+		case TYPE_staticreference:
 		case TYPE_reference:
 		case TYPE_array:
 		case TYPE_record:
@@ -248,11 +249,11 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	@Override
-	public boolean isVoid(Type type) throws ResolutionError {
+	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError {
 		HashSetAssumptions assumptions = new HashSetAssumptions();
 		Term<?> term = new Term<>(true, type, true);
 		// FIXME: lifetime relation cannot be null here
-		return isVoidTerm(term,term,assumptions,null);
+		return isVoidTerm(term,term,assumptions,lifetimes);
 	}
 
 	@Override
@@ -437,8 +438,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		int aOpcode = a.type.getOpcode();
 		int bOpcode = b.type.getOpcode();
 		// Normalise the opcodes for convenience
-		aOpcode = (aOpcode == TYPE_method) ? TYPE_function : aOpcode;
-		bOpcode = (bOpcode == TYPE_method) ? TYPE_function : bOpcode;
+		aOpcode = normaliseOpcode(aOpcode);
+		bOpcode = normaliseOpcode(bOpcode);
 		//
 		if (aOpcode == bOpcode) {
 			// In this case, we are intersecting two atoms of the same kind, of
@@ -494,6 +495,16 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			// case that one of them is equivalent to void (i.e. is !any).
 			return (aOpcode == TYPE_any || bOpcode == TYPE_any) ? true : false;
 		}
+	}
+
+	private static int normaliseOpcode(int opcode) {
+		switch(opcode) {
+		case TYPE_method:
+			return TYPE_function;
+		case TYPE_staticreference:
+			return TYPE_reference;
+		}
+		return opcode;
 	}
 
 	/**
@@ -733,6 +744,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 */
 	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
+		String lhsLifetime = extractLifetime(lhs.type);
+		String rhsLifetime = extractLifetime(rhs.type);
 		// FIXME: need to look at lifetime parameters
 		Term<?> lhsTrueTerm = new Term<>(true, lhs.type.getElement(), lhs.maximise);
 		Term<?> rhsTrueTerm = new Term<>(true, rhs.type.getElement(), rhs.maximise);
@@ -742,18 +755,33 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions, lifetimes);
 		// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
 		boolean elemRhsSubsetLhs = isVoidTerm(rhsFalseTerm, lhsTrueTerm, assumptions, lifetimes);
+		// Check whether lhs within rhs
+		boolean lhsWithinRhs = lifetimes.isWithin(lhsLifetime,rhsLifetime);
+		// Check whether lhs within rhs
+		boolean rhsWithinLhs = lifetimes.isWithin(rhsLifetime,lhsLifetime);
 		// Calculate whether lhs == rhs
 		boolean elemEqual = elemLhsSubsetRhs && elemRhsSubsetLhs;
 		//
 		if (lhs.sign && rhs.sign) {
-			// (&T1 & &T2) == 0 iff T1 != T2
-			// (!(&T1) & !(&T2)) == 0 iff T1 != T2
-			return !elemEqual;
-		} else if (lhs.sign || rhs.sign) {
-			// (!(&T1) & &T2) == 0 iff T1 == T2
-			return elemEqual;
+			// (&T1 & &T2) == 0 iff T1 != T2 || !(lhs in rhs || rhs in lhs)
+			return !elemEqual || !lhsWithinRhs && !rhsWithinLhs;
+		} else if (lhs.sign) {
+			// (!(&T1) & &T2) == 0 iff T1 == T2 && T2 in T1
+			return elemEqual && rhsWithinLhs;
+		} else if (rhs.sign) {
+			// (T1 & !(&T2)) == 0 iff T1 == T2 && T1 in T2
+			return elemEqual && lhsWithinRhs;
 		} else {
+			// (!(&T1) & !(&T2)) != 0
 			return false;
+		}
+	}
+
+	private String extractLifetime(Type.Reference ref) {
+		if(ref.hasLifetime()) {
+			return ref.getLifetime().get();
+		} else {
+			return "*";
 		}
 	}
 

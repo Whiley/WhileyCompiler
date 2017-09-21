@@ -182,17 +182,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_int = TYPE_mask + 4;
 	public static final int TYPE_nominal = TYPE_mask + 6;
 	public static final int TYPE_reference = TYPE_mask + 7;
-	public static final int TYPE_array = TYPE_mask + 8;
-	public static final int TYPE_record = TYPE_mask + 9;
-	public static final int TYPE_function = TYPE_mask + 10;
-	public static final int TYPE_method = TYPE_mask + 11;
-	public static final int TYPE_property = TYPE_mask + 12;
-	public static final int TYPE_invariant = TYPE_mask + 13;
-	public static final int TYPE_union = TYPE_mask + 14;
-	public static final int TYPE_intersection = TYPE_mask + 15;
-	public static final int TYPE_negation = TYPE_mask + 16;
-	public static final int TYPE_byte = TYPE_mask + 17;
-	public static final int TYPE_unresolved = TYPE_mask + 18;
+	public static final int TYPE_staticreference = TYPE_mask + 8;
+	public static final int TYPE_array = TYPE_mask + 9;
+	public static final int TYPE_record = TYPE_mask + 10;
+	public static final int TYPE_function = TYPE_mask + 11;
+	public static final int TYPE_method = TYPE_mask + 12;
+	public static final int TYPE_property = TYPE_mask + 13;
+	public static final int TYPE_invariant = TYPE_mask + 14;
+	public static final int TYPE_union = TYPE_mask + 15;
+	public static final int TYPE_intersection = TYPE_mask + 16;
+	public static final int TYPE_negation = TYPE_mask + 17;
+	public static final int TYPE_byte = TYPE_mask + 18;
+	public static final int TYPE_unresolved = TYPE_mask + 19;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -256,6 +257,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// REFERENCES
 	public static final int EXPR_dereference = EXPR_mask + 40;
 	public static final int EXPR_new = EXPR_mask + 41;
+	public static final int EXPR_staticnew = EXPR_mask + 42;
 	public static final int EXPR_lambdaaccess = EXPR_mask + 43;
 	// RECORDS
 	public static final int EXPR_recordaccess = EXPR_mask + 48;
@@ -3132,6 +3134,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(EXPR_new, type, operand, lifetime);
 			}
 
+			public New(Type type, Expr operand) {
+				super(EXPR_staticnew, type, operand);
+			}
+
 			/**
 			 * Get the operand to be evaluated and stored in the heap. That is,
 			 * <code>e<code> in </code>new e</code>.
@@ -3139,6 +3145,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Expr getOperand() {
 				return (Expr) super.get(1);
+			}
+
+			public boolean hasLifetime() {
+				return opcode == EXPR_new;
 			}
 
 			public Identifier getLifetime() {
@@ -3152,7 +3162,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "new " + getOperand();
+				String r = "new ";
+				if(hasLifetime()) {
+					r = getLifetime() + ":" + r;
+				}
+				return r + getOperand();
 			}
 		}
 
@@ -3805,7 +3819,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Reference extends AbstractSyntacticItem implements Atom {
 			public Reference(Type element) {
-				super(TYPE_reference, element);
+				super(TYPE_staticreference, element);
 			}
 
 			public Reference(Type element, Identifier lifetime) {
@@ -3813,7 +3827,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public boolean hasLifetime() {
-				return operands.length > 1;
+				return opcode == TYPE_reference;
 			}
 
 			public Type getElement() {
@@ -4545,17 +4559,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Nominal((Name) operands[0]);
 			}
 		};
+		schema[TYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Reference((Type) operands[0]);
+			}
+		};
 		schema[TYPE_reference] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				// FIXME: many operand modifier is not optimal. Observe that,
-				// for simplicity of subtyping, want to preserve reference types
-				// as having the same opcode.
-				if (operands.length == 1) {
-					return new Type.Reference((Type) operands[0]);
-				} else {
-					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
-				}
+				return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
 			}
 		};
 		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
@@ -4948,6 +4961,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+			}
+		};
+		schema[EXPR_staticnew] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticnew") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.New((Type) operands[0], (Expr) operands[1]);
 			}
 		};
 		schema[EXPR_lambdaaccess] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambdaaccess") {

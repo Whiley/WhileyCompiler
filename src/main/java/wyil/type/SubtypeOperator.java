@@ -17,6 +17,7 @@ import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.NameID;
 import wybs.lang.NameResolver.ResolutionError;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -108,10 +109,17 @@ public interface SubtypeOperator {
 	 * </p>
 	 *
 	 * @param type
+	 *            The type being tested to see whether or not it is equivalent to
+	 *            void.
+	 * @param lifetimes
+	 *            The within relation between lifetimes that should be used when
+	 *            determine whether the <code>rhs</code> is a subtype of the
+	 *            <code>lhs</code>.
+	 *
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(Type type) throws ResolutionError;
+	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError;
 
 	/**
 	 * <p>
@@ -169,6 +177,6 @@ public interface SubtypeOperator {
 		 * @param inner
 		 * @return
 		 */
-		public boolean isWithin(Identifier outer, Identifier inner);
+		public boolean isWithin(String inner, String outer);
 	}
 }

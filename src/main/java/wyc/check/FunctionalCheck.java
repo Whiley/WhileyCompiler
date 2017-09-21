@@ -170,7 +170,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		try {
 			// Check whether invoking an impure method in a pure context
 			if (context != Context.IMPURE) {
-				Type.Callable type = types.extractReadableLambda(expr.getSource().getType());
+				// FIXME: should probably not use a null LifetimeRelation here.
+				Type.Callable type = types.extractReadableLambda(expr.getSource().getType(),null);
 				if (type instanceof Type.Method) {
 					invalidMethodCall(expr, context);
 				}

@@ -328,6 +328,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_arraylength:
@@ -402,6 +403,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr, data);
 			break;
+		case EXPR_staticnew:
 		case EXPR_new:
 			visitNew((Expr.New) expr, data);
 			break;
@@ -762,6 +764,7 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_record:
 			visitRecord((Type.Record) type, data);
 			break;
+		case TYPE_staticreference:
 		case TYPE_reference:
 			visitReference((Type.Reference) type, data);
 			break;
