@@ -183,6 +183,8 @@ public class FlowTypeCheck {
 	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod d) {
 		// Construct initial environment
 		Environment environment = new Environment();
+		// Update environment so this within declared lifetimes
+		environment = declareThisWithin(d,environment);
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
 		checkNonEmpty(d.getParameters(), environment);
@@ -204,6 +206,23 @@ public class FlowTypeCheck {
 			// method. Attempting to do so causes problems because checkReturnValue will
 			// fail.
 		}
+	}
+
+	/**
+	 * Update the environment to reflect the fact that the special "this" lifetime
+	 * is contained within all declared lifetime parameters. Observe that this only
+	 * makes sense if the enclosing declaration is for a method.
+	 *
+	 * @param decl
+	 * @param environment
+	 * @return
+	 */
+	public Environment declareThisWithin(Decl.FunctionOrMethod decl, Environment environment) {
+		if(decl instanceof Decl.Method) {
+			Decl.Method method = (Decl.Method) decl;
+			environment = environment.declareWithin("this", method.getLifetimes());
+		}
+		return environment;
 	}
 
 	/**
@@ -735,7 +754,12 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Environment checkNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
-		// FIXME: need to declare the named block as an enclosing scope
+		// Updated the environment with new within relations
+		LifetimeDeclaration enclosing = scope.getEnclosingScope(LifetimeDeclaration.class);
+		String[] lifetimes = enclosing.getDeclaredLifetimes();
+		environment = environment.declareWithin(stmt.getName().get(),lifetimes);
+		// Create an appropriate scope for this block
+		scope = new NamedBlockScope(scope,stmt);
 		return checkBlock(stmt.getBlock(), environment, scope);
 	}
 
@@ -2303,7 +2327,7 @@ public class FlowTypeCheck {
 	 *
 	 */
 	private abstract static class EnclosingScope {
-		private final EnclosingScope parent;
+		protected final EnclosingScope parent;
 
 		public EnclosingScope(EnclosingScope parent) {
 			this.parent = parent;
@@ -2317,7 +2341,7 @@ public class FlowTypeCheck {
 		 *
 		 * @param kind
 		 */
-		public <T extends EnclosingScope> T getEnclosingScope(Class<T> kind) {
+		public <T> T getEnclosingScope(Class<T> kind) {
 			if (kind.isInstance(this)) {
 				return (T) this;
 			} else if (parent != null) {
@@ -2329,13 +2353,23 @@ public class FlowTypeCheck {
 		}
 	}
 
+	private interface LifetimeDeclaration {
+		/**
+		 * Get the list of all lifetimes declared by this or an enclosing scope. That is
+		 * the complete set of lifetimes available at this point.
+		 *
+		 * @return
+		 */
+		public String[] getDeclaredLifetimes();
+	}
+
 	/**
 	 * Represents the enclosing scope for a function or method declaration.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope {
+	private static class FunctionOrMethodScope extends EnclosingScope implements LifetimeDeclaration {
 		private final Decl.FunctionOrMethod declaration;
 
 		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
@@ -2345,6 +2379,40 @@ public class FlowTypeCheck {
 
 		public Decl.FunctionOrMethod getDeclaration() {
 			return declaration;
+		}
+
+		@Override
+		public String[] getDeclaredLifetimes() {
+			if (declaration instanceof Decl.Method) {
+				Decl.Method meth = (Decl.Method) declaration;
+				Tuple<Identifier> lifetimes = meth.getLifetimes();
+				String[] arr = new String[lifetimes.size() + 1];
+				for (int i = 0; i != lifetimes.size(); ++i) {
+					arr[i] = lifetimes.get(i).get();
+				}
+				arr[arr.length - 1] = "this";
+				return arr;
+			} else {
+				return new String[] { "this" };
+			}
+		}
+	}
+
+	private static class NamedBlockScope extends EnclosingScope implements LifetimeDeclaration {
+		private final Stmt.NamedBlock stmt;
+
+		public NamedBlockScope(EnclosingScope parent, Stmt.NamedBlock stmt) {
+			super(parent);
+			this.stmt = stmt;
+		}
+
+		@Override
+		public String[] getDeclaredLifetimes() {
+			LifetimeDeclaration enclosing = parent.getEnclosingScope(LifetimeDeclaration.class);
+			String[] declared = enclosing.getDeclaredLifetimes();
+			declared = Arrays.copyOf(declared, declared.length + 1);
+			declared[declared.length - 1] = stmt.getName().get();
+			return declared;
 		}
 	}
 
@@ -2359,13 +2427,16 @@ public class FlowTypeCheck {
 	 */
 	public static class Environment implements LifetimeRelation {
 		private final Map<Decl.Variable,Type> refinements;
+		private final Map<String,String[]> withins;
 
 		public Environment() {
 			this.refinements = new HashMap<>();
+			this.withins = new HashMap<>();
 		}
 
-		public Environment(Map<Decl.Variable,Type> refinements) {
+		public Environment(Map<Decl.Variable,Type> refinements, Map<String,String[]> withins) {
 			this.refinements = new HashMap<>(refinements);
+			this.withins = new HashMap<>(withins);
 		}
 
 		public Type getType(Decl.Variable var) {
@@ -2379,7 +2450,7 @@ public class FlowTypeCheck {
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
 			Type type = intersect(getType(var),refinement);
-			Environment r = new Environment(this.refinements);
+			Environment r = new Environment(this.refinements,this.withins);
 			r.refinements.put(var,type);
 			return r;
 		}
@@ -2414,8 +2485,28 @@ public class FlowTypeCheck {
 
 		@Override
 		public boolean isWithin(String inner, String outer) {
-			// FIXME: this is currently the only way its possible.
-			return outer.equals("*") || inner.equals(outer);
+			//
+			if (outer.equals("*") || inner.equals(outer)) {
+				// Cover easy cases first
+				return true;
+			} else {
+				String[] outers = withins.get(inner);
+				return outers != null && (ArrayUtils.firstIndexOf(outers, outer) >= 0);
+			}
+		}
+
+		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
+			String[] outs = new String[outers.size()];
+			for(int i=0;i!=outs.length;++i) {
+				outs[i] = outers.get(i).get();
+			}
+			return declareWithin(inner,outs);
+		}
+
+		public Environment declareWithin(String inner, String...outers) {
+			Environment nenv = new Environment(refinements,withins);
+			nenv.withins.put(inner, outers);
+			return nenv;
 		}
 	}
 }
