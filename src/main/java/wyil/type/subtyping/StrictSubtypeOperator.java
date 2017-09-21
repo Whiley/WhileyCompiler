@@ -651,15 +651,15 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		// Calculate whether lhs == rhs
 		boolean elemEqual = elemLhsSubsetRhs && elemRhsSubsetLhs;
 		//
-		if (lhs.sign == rhs.sign) {
+		if (lhs.sign && rhs.sign) {
 			// (&T1 & &T2) == 0 iff T1 != T2
 			// (!(&T1) & !(&T2)) == 0 iff T1 != T2
 			return !elemEqual;
-		} else if (!lhs.sign || !rhs.sign) {
+		} else if (lhs.sign || rhs.sign) {
 			// (!(&T1) & &T2) == 0 iff T1 == T2
 			return elemEqual;
 		} else {
-			return true;
+			return false;
 		}
 	}
 

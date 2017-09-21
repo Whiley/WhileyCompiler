@@ -423,9 +423,6 @@ public class FlowTypeCheck {
 		for (int i = 0; i != rvals.size(); ++i) {
 			Type lval = checkLVal(lvals.get(i), environment);
 			Pair<Expr, Type> rval = rvals.get(i);
-			// FIXME: need to handle writable versus readable types. The problem
-			// is that checkExpression will return the readable type, not the
-			// writeable type.
 			checkIsSubtype(lval, rval.getSecond(), rval.getFirst());
 		}
 		return environment;
@@ -1340,20 +1337,18 @@ public class FlowTypeCheck {
 		Expr subscript = lval.getSecondOperand();
 		//
 		Type sourceT = checkExpression(source, environment);
-		// FIXME: bug here as need writeable array type #784
-		Type.Array readableArrayT = checkIsArrayType(sourceT, source);
+		Type.Array writeableArrayT = checkIsArrayType(sourceT, AccessMode.WRITING, source);
 		Type subscriptT = checkExpression(subscript, environment);
 		checkIsSubtype(new Type.Int(), subscriptT, subscript);
 		//
-		return readableArrayT.getElement();
+		return writeableArrayT.getElement();
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
 		Type src = checkExpression(lval.getOperand(), environment);
-		// FIXME: bug here as need writeable record type #784
-		Type.Record readableRecordT = checkIsRecordType(src, lval.getOperand());
+		Type.Record writeableRecordT = checkIsRecordType(src, AccessMode.WRITING, lval.getOperand());
 		//
-		Type type = readableRecordT.getField(lval.getField());
+		Type type = writeableRecordT.getField(lval.getField());
 		if (type == null) {
 			return syntaxError("invalid field access", lval.getField());
 		} else {
@@ -1363,10 +1358,9 @@ public class FlowTypeCheck {
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
 		Type operandT = checkExpression(lval.getOperand(), environment);
-		// FIXME: bug here as need writeable reference type #784
-		Type.Reference refT = checkIsReferenceType(operandT, lval.getOperand());
+		Type.Reference writeableReferenceT = checkIsReferenceType(operandT, AccessMode.WRITING, lval.getOperand());
 		//
-		return refT.getElement();
+		return writeableReferenceT.getElement();
 	}
 
 	// =========================================================================
@@ -1706,9 +1700,9 @@ public class FlowTypeCheck {
 
 	private Type checkRecordAccess(Expr.RecordAccess expr, Environment env) {
 		Type src = checkExpression(expr.getOperand(), env);
-		Type.Record effectiveRecord = checkIsRecordType(src, expr.getOperand());
+		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, expr.getOperand());
 		//
-		Type type = effectiveRecord.getField(expr.getField());
+		Type type = readableRecordT.getField(expr.getField());
 		if (type == null) {
 			return syntaxError("invalid field access", expr.getField());
 		} else {
@@ -1719,9 +1713,9 @@ public class FlowTypeCheck {
 	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment env) {
 		Type src = checkExpression(expr.getFirstOperand(), env);
 		Type val = checkExpression(expr.getSecondOperand(), env);
-		Type.Record effectiveRecord = checkIsRecordType(src, expr.getFirstOperand());
+		Type.Record readableRecordT = checkIsRecordType(src, AccessMode.READING, expr.getFirstOperand());
 		//
-		Tuple<Decl.Variable> fields = effectiveRecord.getFields();
+		Tuple<Decl.Variable> fields = readableRecordT.getFields();
 		String actualFieldName = expr.getField().get();
 		for (int i = 0; i != fields.size(); ++i) {
 			Decl.Variable vd = fields.get(i);
@@ -1751,7 +1745,7 @@ public class FlowTypeCheck {
 
 	private Type checkArrayLength(Environment env, Expr.ArrayLength expr) {
 		Type src = checkExpression(expr.getOperand(), env);
-		checkIsArrayType(src, expr.getOperand());
+		checkIsArrayType(src, AccessMode.READING, expr.getOperand());
 		return new Type.Int();
 	}
 
@@ -1783,7 +1777,7 @@ public class FlowTypeCheck {
 		Type sourceT = checkExpression(source, env);
 		Type subscriptT = checkExpression(subscript, env);
 		//
-		Type.Array sourceArrayT = checkIsArrayType(sourceT, source);
+		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
 		checkIsSubtype(new Type.Int(), subscriptT, subscript);
 		//
 		return sourceArrayT.getElement();
@@ -1798,7 +1792,7 @@ public class FlowTypeCheck {
 		Type subscriptT = checkExpression(subscript, env);
 		Type valueT = checkExpression(value, env);
 		//
-		Type.Array sourceArrayT = checkIsArrayType(sourceT, source);
+		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
 		checkIsSubtype(new Type.Int(), subscriptT, subscript);
 		checkIsSubtype(sourceArrayT.getElement(), valueT, value);
 		return sourceArrayT;
@@ -1806,10 +1800,9 @@ public class FlowTypeCheck {
 
 	private Type checkDereference(Expr.Dereference expr, Environment env) {
 		Type operandT = checkExpression(expr.getOperand(), env);
+		Type.Reference readableReferenceT = checkIsReferenceType(operandT, AccessMode.READING, expr.getOperand());
 		//
-		Type.Reference refT = checkIsReferenceType(operandT, expr.getOperand());
-		//
-		return refT.getElement();
+		return readableReferenceT.getElement();
 	}
 
 	private Type checkNew(Expr.New expr, Environment env) {
@@ -1890,15 +1883,29 @@ public class FlowTypeCheck {
 	}
 
 	/**
+	 * The access mode is used to determine whether we are extracting a type in a
+	 * read or write position.
+	 *
+	 * @author David J. Peare
+	 *
+	 */
+	private enum AccessMode { READING, WRITING }
+
+	/**
 	 * Check whether a given type is an array type of some sort.
 	 *
 	 * @param type
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Type.Array checkIsArrayType(Type type, SyntacticItem element) {
+	private Type.Array checkIsArrayType(Type type, AccessMode mode, SyntacticItem element) {
 		try {
-			Type.Array arrT = typeSystem.extractReadableArray(type);
+			Type.Array arrT;
+			if(mode == AccessMode.READING) {
+				arrT = typeSystem.extractReadableArray(type);
+			} else {
+				arrT = typeSystem.extractWriteableArray(type);
+			}
 			if (arrT == null) {
 				syntaxError("expected array type", element);
 			}
@@ -1908,6 +1915,52 @@ public class FlowTypeCheck {
 		}
 	}
 
+	/**
+	 * Check whether a given type is a record type of some sort.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private Type.Record checkIsRecordType(Type type, AccessMode mode, SyntacticItem element) {
+		try {
+			Type.Record recT;
+			if(mode == AccessMode.READING) {
+				recT = typeSystem.extractReadableRecord(type);
+			} else {
+				recT = typeSystem.extractWriteableRecord(type);
+			}
+			if (recT == null) {
+				syntaxError("expected record type", element);
+			}
+			return recT;
+		} catch (NameResolver.ResolutionError e) {
+			return syntaxError(e.getMessage(), e.getName(), e);
+		}
+	}
+
+	/**
+	 * Check whether a given type is a reference type of some sort.
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	private Type.Reference checkIsReferenceType(Type type, AccessMode mode, SyntacticItem element) {
+		try {
+			Type.Reference refT;
+			if(mode == AccessMode.READING) {
+				refT = typeSystem.extractReadableReference(type);
+			} else {
+				refT = typeSystem.extractWriteableReference(type);
+			}
+			if (refT == null) {
+				syntaxError("expected reference type", element);
+			}
+			return refT;
+		} catch (NameResolver.ResolutionError e) {
+			return syntaxError(e.getMessage(), e.getName(), e);
+		}
+	}
 	/**
 	 * Attempt to determine the declared function or macro to which a given
 	 * invocation refers, without any additional type information. For this to
@@ -2117,42 +2170,6 @@ public class FlowTypeCheck {
 		}
 	}
 
-	/**
-	 * Check whether a given type is a record type of some sort.
-	 *
-	 * @param type
-	 * @return
-	 */
-	private Type.Record checkIsRecordType(Type type, SyntacticItem element) {
-		try {
-			Type.Record recT = typeSystem.extractReadableRecord(type);
-			if (recT == null) {
-				syntaxError("expected record type", element);
-			}
-			return recT;
-		} catch (NameResolver.ResolutionError e) {
-			return syntaxError(e.getMessage(), e.getName(), e);
-		}
-	}
-
-	/**
-	 * Check whether a given type is a reference type of some sort.
-	 *
-	 * @param type
-	 * @return
-	 * @throws ResolutionError
-	 */
-	private Type.Reference checkIsReferenceType(Type type, SyntacticItem element) {
-		try {
-			Type.Reference refT = typeSystem.extractReadableReference(type);
-			if (refT == null) {
-				syntaxError("expected reference type", element);
-			}
-			return refT;
-		} catch (NameResolver.ResolutionError e) {
-			return syntaxError(e.getMessage(), e.getName(), e);
-		}
-	}
 
 	/**
 	 * Check whether a given type is a callable type of some sort.

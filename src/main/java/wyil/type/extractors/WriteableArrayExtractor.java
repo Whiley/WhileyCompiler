@@ -19,37 +19,37 @@ import wyil.type.TypeSystem;
 
 /**
  * <p>
- * Responsible for extracting a "readable array" from a given type. A readable
+ * Responsible for extracting a "writeable array" from a given type. A writable
  * array is a conservative approximation of the arrays described in a given
- * type. Furthermore, it is safe to use when reading elements from that type. For
- * example, the type <code>(int[])|(bool[])</code> has a readable array type of
- * <code>(int|bool)[]</code>. This is the readable type as, if we were to read
- * an element from either bound, the return type would be in
- * <code>int|bool</code>. However, we cannot use the readable array type for
- * writing as this could be unsafe. For example, if we actually had an array of
- * type <code>int[]</code>, then writing a boolean value is not permitted.
+ * type. Furthermore, it is safe to use when write elements from that type. For
+ * example, the type <code>(any[])|(bool[])</code> has a writeable array type of
+ * <code>bool[]</code>. This is the writeable type as, if we were to write an
+ * element of type <code>bool</code> this is accepted by either bound. However,
+ * we cannot use the writeable array type for reading as this could be unsafe.
+ * For example, if we actually had an array of type say <code>int[]</code>, then
+ * reading a boolean value is not permitted.
  * </p>
  * <p>
- * Not all types have readable array type and, furthermore, care must be
+ * Not all types have a writeable array type and, furthermore, care must be
  * exercised for those that do. For example, <code>(int[])|int</code> does not
- * have a readable array type. Finally, negations play an important role in
- * determining the readable array type. For example,
- * <code>(int|null)[] & !(int[])</code> generates the readable array type
+ * have a writeable array type. Finally, negations play an important role in
+ * determining the writeable array type. For example,
+ * <code>(int|null)[] & !(int[])</code> generates the writeable array type
  * <code>null[]</code>.
  * </p>
  *
  * @author David J. Pearce
  *
  */
-public class ReadableArrayExtractor extends AbstractTypeExtractor<Type.Array> {
+public class WriteableArrayExtractor extends AbstractTypeExtractor<Type.Array> {
 
-	public ReadableArrayExtractor(NameResolver resolver, TypeSystem typeSystem) {
+	public WriteableArrayExtractor(NameResolver resolver, TypeSystem typeSystem) {
 		super(resolver, typeSystem);
 	}
 
 	@Override
 	protected Type.Array construct(Type.Atom type) {
-		if (type instanceof Type.Array) {
+		if(type instanceof Type.Array) {
 			return (Type.Array) type;
 		} else {
 			return null;
@@ -58,8 +58,9 @@ public class ReadableArrayExtractor extends AbstractTypeExtractor<Type.Array> {
 
 	@Override
 	protected Type.Array union(Type.Array lhs, Type.Array rhs) {
-		//
-		return new Type.Array(unionHelper(lhs.getElement(), rhs.getElement()));
+		// int[] | bool[] => 0
+		// any[] | bool[] => bool[]
+		return new Type.Array(intersectionHelper(lhs.getElement(),rhs.getElement()));
 	}
 
 	@Override
@@ -69,6 +70,8 @@ public class ReadableArrayExtractor extends AbstractTypeExtractor<Type.Array> {
 
 	@Override
 	protected Type.Array intersect(Type.Array lhs, Type.Array rhs) {
-		return new Type.Array(intersectionHelper(lhs.getElement(), rhs.getElement()));
+		// {any x, int y}[] & {int x, any y}[] => {int x, int y}[]
+		//
+		return new Type.Array(intersectionHelper(lhs.getElement(),rhs.getElement()));
 	}
 }

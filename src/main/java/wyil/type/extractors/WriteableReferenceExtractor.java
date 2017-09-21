@@ -19,29 +19,28 @@ import wyil.type.TypeSystem;
 
 /**
  * <p>
- * Responsible for extracting a "readable reference" from a given type. A
- * readable reference is a conservative approximation of the references
- * described in a given type. Furthermore, it is safe to use when reading
- * elements from that type. For example, the type <code>(&int)|(&bool)</code>
- * has a readable reference type of <code>&(int|bool)</code>. This is the
- * readable type as, if we were to read an element from either bound, the return
- * type would be in <code>int|bool</code>. However, we cannot use the readable
- * reference type for writing as this could be unsafe. For example, if we
- * actually had an reference of type <code>&int</code>, then writing a boolean
- * value is not permitted.
+ * Responsible for extracting a "writeable reference" from a given type. A
+ * writeable reference is a conservative approximation of the references
+ * described in a given type. Furthermore, it is safe to use when writing
+ * elements from that type. For example, the type <code>(&int)|(&any)</code> has
+ * a writeable reference type of <code>&int</code>. This is the writeable type
+ * as, if we were to write an <code>int</code> to either bound this would be
+ * safe. However, we cannot use the readable reference type for reading as this
+ * could be unsafe. For example, if we actually had an reference of type
+ * <code>&bool</code>, then reading a integer value is not permitted.
  * </p>
  * <p>
- * Not all types have a readable reference type and, furthermore, care must be
+ * Not all types have a writeable reference type and, furthermore, care must be
  * exercised for those that do. For example, <code>(&int)|int</code> does not
- * have a readable reference type.
+ * have a writeable reference type.
  * </p>
  *
  * @author David J. Pearce
  *
  */
-public class ReadableReferenceExtractor extends AbstractTypeExtractor<Type.Reference> {
+public class WriteableReferenceExtractor extends AbstractTypeExtractor<Type.Reference> {
 
-	public ReadableReferenceExtractor(NameResolver resolver, TypeSystem typeSystem) {
+	public WriteableReferenceExtractor(NameResolver resolver, TypeSystem typeSystem) {
 		super(resolver, typeSystem);
 	}
 

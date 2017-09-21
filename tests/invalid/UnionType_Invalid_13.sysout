@@ -1,0 +1,3 @@
+tests/invalid/UnionType_Invalid_13.whiley:5: expected type (int&bool), found int
+    xs[0] = 1
+            ^
