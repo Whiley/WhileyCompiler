@@ -234,7 +234,7 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 			terms[j] = new Type.Negation(negatives[i]);
 		}
 		//
-		return typeSystem.isRawSubtype(Type.Void, new Type.Intersection(terms));
+		return typeSystem.isVoid(new Type.Intersection(terms));
 	}
 
 	protected T construct(Conjunct type) {

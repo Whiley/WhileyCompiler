@@ -42,45 +42,49 @@ public interface SubtypeOperator {
 	/**
 	 * <p>
 	 * Determine whether the <code>rhs</code> type is a <i>subtype</i> of the
-	 * <code>lhs</code> (denoted <code>lhs :> rhs</code>). In the presence of
-	 * type invariants, this operation is undecidable. Therefore, a
-	 * <i>three-valued</i> logic is employed. Either it was concluded that the
-	 * subtype relation <i>definitely holds</i>, or that it <i>definitely does
-	 * not hold</i> that it is <i>unknown</i> whether it holds or not.
+	 * <code>lhs</code> (denoted <code>lhs :> rhs</code>). In the presence of type
+	 * invariants, this operation is undecidable. Therefore, a <i>three-valued</i>
+	 * logic is employed. Either it was concluded that the subtype relation
+	 * <i>definitely holds</i>, or that it <i>definitely does not hold</i> that it
+	 * is <i>unknown</i> whether it holds or not.
 	 * </p>
 	 *
 	 * <p>
 	 * For example, <code>int|null :> int</code> definitely holds. Likewise,
-	 * <code>int :> int|null</code> definitely does not hold. However, whether
-	 * or not <code>nat :> pos</code> holds depends on the type invariants given
-	 * for <code>nat</code> and <code>pos</code> which this operator cannot
-	 * reason about. Observe that, in some cases, we do get effective reasoning
-	 * about types with invariants. For example, <code>null|nat :> nat</code>
-	 * will be determined to definitely hold, despite the fact that
-	 * <code>nat</code> has a type invariant.
+	 * <code>int :> int|null</code> definitely does not hold. However, whether or
+	 * not <code>nat :> pos</code> holds depends on the type invariants given for
+	 * <code>nat</code> and <code>pos</code> which this operator cannot reason
+	 * about. Observe that, in some cases, we do get effective reasoning about types
+	 * with invariants. For example, <code>null|nat :> nat</code> will be determined
+	 * to definitely hold, despite the fact that <code>nat</code> has a type
+	 * invariant.
 	 * </p>
 	 *
 	 * <p>
-	 * Depending on the exact language of types involved, this can be a
-	 * surprisingly complex operation. For example, in the presence of
-	 * <i>union</i>, <i>intersection</i> and <i>negation</i> types, the subtype
-	 * algorithm is surprisingly intricate.
+	 * Depending on the exact language of types involved, this can be a surprisingly
+	 * complex operation. For example, in the presence of <i>union</i>,
+	 * <i>intersection</i> and <i>negation</i> types, the subtype algorithm is
+	 * surprisingly intricate.
 	 * </p>
 	 *
 	 * @param lhs
 	 *            The candidate "supertype". That is, lhs's raw type may be a
 	 *            supertype of <code>rhs</code>'s raw type.
 	 * @param rhs
-	 *            The candidate "subtype". That is, rhs's raw type may be a
-	 *            subtype of <code>lhs</code>'s raw type.
+	 *            The candidate "subtype". That is, rhs's raw type may be a subtype
+	 *            of <code>lhs</code>'s raw type.
+	 * @param lifetimes
+	 *            The within relation between lifetimes that should be used when
+	 *            determine whether the <code>rhs</code> is a subtype of the
+	 *            <code>lhs</code>.
 	 * @return
 	 * @throws ResolutionError
-	 *             Occurs when a nominal type is encountered whose name cannot
-	 *             be resolved properly. For example, it resolves to more than
-	 *             one possible matching declaration, or it cannot be resolved
-	 *             to a corresponding type declaration.
+	 *             Occurs when a nominal type is encountered whose name cannot be
+	 *             resolved properly. For example, it resolves to more than one
+	 *             possible matching declaration, or it cannot be resolved to a
+	 *             corresponding type declaration.
 	 */
-	public Result isSubtype(Type lhs, Type rhs) throws ResolutionError;
+	public Result isSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError;
 
 	/**
 	 * <p>
@@ -128,4 +132,43 @@ public interface SubtypeOperator {
 	 * @throws ResolveError
 	 */
 	public boolean isContractive(NameID nid, Type type) throws ResolutionError;
+
+	/**
+	 * <p>
+	 * A lifetime relation determines, for any two lifetimes <code>l</code> and
+	 * <code>m</code>, whether <code>l</code> is contained within <code>m</code> or
+	 * not. This information is critical for subtype checking of reference types.
+	 * Consider this minimal example:
+	 * </p>
+	 *
+	 * <pre>
+	 * method create() -> (&*:int r):
+	 *    return this:new 42
+	 * </pre>
+	 * <p>
+	 * This example should not compile. The reason is that the lifetime
+	 * <code>this</code> is contained <i>within</i> the static lifetime
+	 * <code>*</code>. Thus, the cell allocated within <code>create()</code> will be
+	 * deallocated when the method ends and, hence, the method will return a
+	 * <i>dangling reference</i>.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface LifetimeRelation {
+
+		/**
+		 * Determine whether one lifetime is contained entirely within another. This is
+		 * the critical test for ensuring sound subtyping between references.
+		 * Specifically, an assignment <code>&l:T p = q</code> is only considered safe
+		 * if it can be shown that the lifetime of the cell referred to by
+		 * <code>p</code> is <i>within</i> that of <code>q</code>.
+		 *
+		 * @param outer
+		 * @param inner
+		 * @return
+		 */
+		public boolean isWithin(Identifier outer, Identifier inner);
+	}
 }

@@ -17,6 +17,7 @@ import java.util.List;
 
 import wybs.util.AbstractCompilationUnit.Name;
 import wyc.util.WhileyFileResolver;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 import wyil.type.extractors.ReadableArrayExtractor;
 import wyil.type.extractors.ReadableLambdaExtractor;
 import wyil.type.extractors.ReadableRecordExtractor;
@@ -181,8 +182,8 @@ public class TypeSystem {
 	 *             one possible matching declaration, or it cannot be resolved
 	 *             to a corresponding type declaration.
 	 */
-	public boolean isRawCoerciveSubtype(Type lhs, Type rhs) throws ResolutionError {
-		return coerciveSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
+	public boolean isRawCoerciveSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError {
+		return coerciveSubtypeOperator.isSubtype(lhs,rhs,lifetimes) != SubtypeOperator.Result.False;
 	}
 
 	/**
@@ -220,8 +221,8 @@ public class TypeSystem {
 	 *             one possible matching declaration, or it cannot be resolved
 	 *             to a corresponding type declaration.
 	 */
-	public boolean isRawSubtype(Type lhs, Type rhs) throws ResolutionError {
-		return strictSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
+	public boolean isRawSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError {
+		return strictSubtypeOperator.isSubtype(lhs,rhs,lifetimes) != SubtypeOperator.Result.False;
 	}
 
 	/**

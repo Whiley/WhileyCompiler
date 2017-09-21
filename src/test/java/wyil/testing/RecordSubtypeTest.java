@@ -5213,7 +5213,7 @@ public class RecordSubtypeTest {
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(new TypeSystem(null).isRawSubtype(ft,tt));
+			assertTrue(new TypeSystem(null).isRawSubtype(ft,tt, null));
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
@@ -5223,7 +5223,7 @@ public class RecordSubtypeTest {
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(new TypeSystem(null).isRawSubtype(ft, tt));
+			assertFalse(new TypeSystem(null).isRawSubtype(ft, tt, null));
 		} catch (NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}

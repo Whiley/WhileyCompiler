@@ -34,6 +34,7 @@ import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -166,9 +167,9 @@ public class FlowTypeCheck {
 	 */
 	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
 		Environment environment = new Environment();
-		if(decl.hasInitialiser()) {
+		if (decl.hasInitialiser()) {
 			Type type = checkExpression(decl.getInitialiser(), environment);
-			checkIsSubtype(decl.getType(),type, decl.getInitialiser());
+			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 		}
 	}
 
@@ -393,7 +394,7 @@ public class FlowTypeCheck {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
 			Type type = checkExpression(decl.getInitialiser(), environment);
-			checkIsSubtype(decl.getType(), type, decl.getInitialiser());
+			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 		}
 		// Done.
 		return environment;
@@ -425,7 +426,7 @@ public class FlowTypeCheck {
 		for (int i = 0; i != rvals.size(); ++i) {
 			Type lval = checkLVal(lvals.get(i), environment);
 			Pair<Expr, Type> rval = rvals.get(i);
-			checkIsSubtype(lval, rval.getSecond(), rval.getFirst());
+			checkIsSubtype(lval, rval.getSecond(), environment, rval.getFirst());
 		}
 		return environment;
 	}
@@ -477,7 +478,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
 		Type type = checkExpression(stmt.getOperand(), environment);
-		checkIsSubtype(new Type.Array(Type.Int), type, stmt.getOperand());
+		checkIsSubtype(new Type.Array(Type.Int), type, environment, stmt.getOperand());
 		return environment;
 	}
 
@@ -612,7 +613,7 @@ public class FlowTypeCheck {
 		for (int i = 0; i != types.size(); ++i) {
 			Pair<Expr, Type> p = returns.get(i);
 			Type t = types.get(i);
-			checkIsSubtype(t, p.getSecond(), p.getFirst());
+			checkIsSubtype(t, p.getSecond(), environment, p.getFirst());
 		}
 		// Return bottom as following environment to signal that control-flow
 		// cannot continue here. Thus, any following statements will encounter
@@ -1000,7 +1001,7 @@ public class FlowTypeCheck {
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
 			Type t = checkExpression(condition, environment);
-			checkIsSubtype(Type.Bool, t, condition);
+			checkIsSubtype(Type.Bool, t, environment, condition);
 			return environment;
 		}
 	}
@@ -1341,7 +1342,7 @@ public class FlowTypeCheck {
 		Type sourceT = checkExpression(source, environment);
 		Type.Array writeableArrayT = checkIsArrayType(sourceT, AccessMode.WRITING, source);
 		Type subscriptT = checkExpression(subscript, environment);
-		checkIsSubtype(new Type.Int(), subscriptT, subscript);
+		checkIsSubtype(new Type.Int(), subscriptT, environment, subscript);
 		//
 		return writeableArrayT.getElement();
 	}
@@ -1593,7 +1594,7 @@ public class FlowTypeCheck {
 
 	private Type checkCast(Expr.Cast expr, Environment env) {
 		Type rhsT = checkExpression(expr.getOperand(), env);
-		checkIsSubtype(expr.getType(), rhsT, expr);
+		checkIsSubtype(expr.getType(), rhsT, env, expr);
 		return expr.getType();
 	}
 
@@ -1605,16 +1606,16 @@ public class FlowTypeCheck {
 			types[i] = checkExpression(arguments.get(i), env);
 		}
 		// Determine the declaration being invoked
-		Decl.Callable decl = resolveAsCallable(expr.getName(), types);
+		Decl.Callable decl = resolveAsCallable(expr.getName(), env, types);
 		// Assign descriptor to this expression
 		expr.setSignature(expr.getHeap().allocate(decl.getType()));
 		// Finally, return the declared returns/
 		return decl.getType().getReturns();
 	}
 
-	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment env) {
+	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
 		// Determine signature type from source
-		Type type = checkExpression(expr.getSource(), env);
+		Type type = checkExpression(expr.getSource(), environment);
 		Type.Callable sig = checkIsCallableType(type, expr.getSource());
 		// Determine the argument types
 		Tuple<Expr> arguments = expr.getArguments();
@@ -1626,9 +1627,9 @@ public class FlowTypeCheck {
 		// Sanity check types of arguments provided
 		for (int i = 0; i != arguments.size(); ++i) {
 			// Determine argument type
-			Type arg = checkExpression(arguments.get(i), env);
+			Type arg = checkExpression(arguments.get(i), environment);
 			// Check argument is subtype of parameter
-			checkIsSubtype(parameters.get(i), arg, arguments.get(i));
+			checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 		}
 		//
 		return sig.getReturns();
@@ -1724,7 +1725,7 @@ public class FlowTypeCheck {
 			String declaredFieldName = vd.getName().get();
 			if (declaredFieldName.equals(actualFieldName)) {
 				// Matched the field type
-				checkIsSubtype(vd.getType(), val, expr.getSecondOperand());
+				checkIsSubtype(vd.getType(), val, env, expr.getSecondOperand());
 				return src;
 			}
 		}
@@ -1780,7 +1781,7 @@ public class FlowTypeCheck {
 		Type subscriptT = checkExpression(subscript, env);
 		//
 		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
-		checkIsSubtype(new Type.Int(), subscriptT, subscript);
+		checkIsSubtype(new Type.Int(), subscriptT, env, subscript);
 		//
 		return sourceArrayT.getElement();
 	}
@@ -1795,8 +1796,8 @@ public class FlowTypeCheck {
 		Type valueT = checkExpression(value, env);
 		//
 		Type.Array sourceArrayT = checkIsArrayType(sourceT, AccessMode.READING, source);
-		checkIsSubtype(new Type.Int(), subscriptT, subscript);
-		checkIsSubtype(sourceArrayT.getElement(), valueT, value);
+		checkIsSubtype(new Type.Int(), subscriptT, env, subscript);
+		checkIsSubtype(sourceArrayT.getElement(), valueT, env, value);
 		return sourceArrayT;
 	}
 
@@ -1822,7 +1823,7 @@ public class FlowTypeCheck {
 		if (types.size() > 0) {
 			// Parameter types have been given, so use them to help resolve
 			// declaration.
-			decl = resolveAsCallable(expr.getName(), types.toArray(Type.class));
+			decl = resolveAsCallable(expr.getName(), env, types.toArray(Type.class));
 		} else {
 			// No parameters we're given, therefore attempt to resolve
 			// uniquely.
@@ -1999,14 +2000,14 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Decl.Callable resolveAsCallable(Name name, Type... args) {
+	private Decl.Callable resolveAsCallable(Name name, LifetimeRelation lifetimes,  Type... args) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
 			List<Decl.Callable> candidates = typeSystem.resolveAll(name, Decl.Callable.class);
 			// Based on given argument types, select the most precise signature
 			// from the candidates.
-			Decl.Callable selected = selectCallableCandidate(name, candidates,args);
+			Decl.Callable selected = selectCallableCandidate(name, candidates, lifetimes, args);
 			return selected;
 		} catch (ResolutionError e) {
 			return syntaxError(e.getMessage(), name);
@@ -2024,21 +2025,21 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Decl.Callable selectCallableCandidate(Name name, List<Decl.Callable> candidates,
-			Type... args) {
+			LifetimeRelation lifetimes, Type... args) {
 		Decl.Callable best = null;
 		//
 		for (int i = 0; i != candidates.size(); ++i) {
 			Decl.Callable candidate = candidates.get(i);
 			// Check whether the given candidate is a real candidate or not. A
-			if (isApplicable(candidate, args)) {
+			if (isApplicable(candidate, lifetimes, args)) {
 				// Yes, this candidate is applicable.
 				if(best == null) {
 					// No other candidates are applicable so far. Hence, this
 					// one is automatically promoted to the best seen so far.
 					best = candidate;
 				} else {
-					boolean bsubc = isSubtype(best, candidate);
-					boolean csubb = isSubtype(candidate, best);
+					boolean bsubc = isSubtype(best, candidate, lifetimes);
+					boolean csubb = isSubtype(candidate, best, lifetimes);
 					//
 					// FIXME: this is certainly broken.
 					//
@@ -2114,7 +2115,7 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private boolean isApplicable(Decl.Callable candidate, Type... args) {
+	private boolean isApplicable(Decl.Callable candidate, LifetimeRelation lifetimes, Type... args) {
 		Tuple<Decl.Variable> parameters = candidate.getParameters();
 		if (parameters.size() != args.length) {
 			// Differing number of parameters / arguments. Since we don't
@@ -2127,7 +2128,7 @@ public class FlowTypeCheck {
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.length; ++i) {
 				Type param = parameters.get(i).getType();
-				if (!typeSystem.isRawCoerciveSubtype(param, args[i])) {
+				if (!typeSystem.isRawCoerciveSubtype(param, args[i], lifetimes)) {
 					return false;
 				}
 			}
@@ -2146,7 +2147,7 @@ public class FlowTypeCheck {
 	 * @param rhs
 	 * @return
 	 */
-	private boolean isSubtype(Decl.Callable lhs, Decl.Callable rhs) {
+	private boolean isSubtype(Decl.Callable lhs, Decl.Callable rhs, LifetimeRelation lifetimes) {
 		Tuple<Decl.Variable> parentParams = lhs.getParameters();
 		Tuple<Decl.Variable> childParams = rhs.getParameters();
 		if (parentParams.size() != childParams.size()) {
@@ -2161,7 +2162,7 @@ public class FlowTypeCheck {
 			for (int i = 0; i != parentParams.size(); ++i) {
 				Type parentParam = parentParams.get(i).getType();
 				Type childParam = childParams.get(i).getType();
-				if (!typeSystem.isRawCoerciveSubtype(parentParam, childParam)) {
+				if (!typeSystem.isRawCoerciveSubtype(parentParam, childParam, lifetimes)) {
 					return false;
 				}
 			}
@@ -2192,7 +2193,7 @@ public class FlowTypeCheck {
 	}
 
 	private void checkOperand(Type type, Expr operand, Environment environment) {
-		checkIsSubtype(type, checkExpression(operand, environment), operand);
+		checkIsSubtype(type, checkExpression(operand, environment), environment, operand);
 	}
 
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
@@ -2205,9 +2206,9 @@ public class FlowTypeCheck {
 	// Helpers
 	// ==========================================================================
 
-	private void checkIsSubtype(Type lhs, Type rhs, SyntacticItem element) {
+	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
-			if (!typeSystem.isRawCoerciveSubtype(lhs, rhs)) {
+			if (!typeSystem.isRawCoerciveSubtype(lhs, rhs, lifetimes)) {
 				syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
 			}
 		} catch (NameResolver.ResolutionError e) {
@@ -2350,7 +2351,7 @@ public class FlowTypeCheck {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Environment {
+	public static class Environment implements LifetimeRelation {
 		private final Map<Decl.Variable,Type> refinements;
 
 		public Environment() {
@@ -2403,6 +2404,14 @@ public class FlowTypeCheck {
 			} else {
 				return new Type.Intersection(new Type[]{left,right});
 			}
+		}
+
+		@Override
+		public boolean isWithin(Identifier outer, Identifier inner) {
+			String o = outer.get();
+			String i = inner.get();
+			// FIXME: this is currently the only way its possible.
+			return o.equals("*");
 		}
 	}
 }

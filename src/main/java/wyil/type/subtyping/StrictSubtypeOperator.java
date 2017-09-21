@@ -21,6 +21,7 @@ import java.util.HashSet;
 import wycc.util.Pair;
 import wyil.type.SubtypeOperator;
 import wyil.type.TypeSystem;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
@@ -250,17 +251,18 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	public boolean isVoid(Type type) throws ResolutionError {
 		HashSetAssumptions assumptions = new HashSetAssumptions();
 		Term<?> term = new Term<>(true, type, true);
-		return isVoidTerm(term,term,assumptions);
+		// FIXME: lifetime relation cannot be null here
+		return isVoidTerm(term,term,assumptions,null);
 	}
 
 	@Override
-	public Result isSubtype(Type parent, Type child) throws ResolutionError {
+	public Result isSubtype(Type parent, Type child, LifetimeRelation lifetimes) throws ResolutionError {
 		// FIXME: we can do better in some situations here. For example, if we
 		// have the same nominal types they can cancel each other.
 		HashSetAssumptions assumptions = new HashSetAssumptions();
 		Term<?> lhsMaxTerm = new Term<>(false, parent, true);
 		Term<?> rhsMaxTerm = new Term<>(true, child, true);
-		boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions);
+		boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions, lifetimes);
 		//
 		// FIXME: I don't think this logic is correct yet for some reason.
 		if (!max) {
@@ -268,7 +270,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		} else {
 			Term<?> lhsMinTerm = new Term<>(false, parent, false);
 			Term<?> rhsMinTerm = new Term<>(true, child, false);
-			boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions);
+			boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions, lifetimes);
 			if (min) {
 				return Result.True;
 			} else {
@@ -277,7 +279,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions) throws ResolutionError {
+	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions, LifetimeRelation lifetimes) throws ResolutionError {
 		//
 		if (assumptions.isAssumedVoid(lhs, rhs)) {
 			// This represents the "coinductive" case. That is, we have
@@ -291,7 +293,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			Worklist worklist = new Worklist();
 			worklist.push(lhs);
 			worklist.push(rhs);
-			boolean r = isVoid(truths, worklist, assumptions);
+			boolean r = isVoid(truths, worklist, assumptions, lifetimes);
 			assumptions.clearAssumedVoid(lhs, rhs);
 			return r;
 		}
@@ -316,7 +318,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions)
+	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		// FIXME: there is a bug in the following case which needs to be
 		// addressed:
@@ -346,7 +348,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				Atom<?> ith = truths.get(i);
 				for (int j = i + 1; j != truths.size(); ++j) {
 					Atom<?> jth = truths.get(j);
-					if (isVoidAtom(ith, jth, assumptions)) {
+					if (isVoidAtom(ith, jth, assumptions, lifetimes)) {
 						return true;
 					}
 				}
@@ -373,7 +375,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 					for (int i = 0; i != operands.length; ++i) {
 						Worklist tmp = (Worklist) worklist.clone();
 						tmp.push(item.sign, operands[i], item.maximise);
-						if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions)) {
+						if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions, lifetimes)) {
 							// If a single clause of the disjunct is definitely
 							// not void, then the whole thing is not void.
 							return false;
@@ -402,7 +404,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			default:
 				truths.add(new Atom(item.sign, (Type.Atom) item.type, item.maximise));
 			}
-			return isVoid(truths, worklist, assumptions);
+			return isVoid(truths, worklist, assumptions, lifetimes);
 		}
 	}
 
@@ -428,7 +430,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions) throws ResolutionError {
+	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions, LifetimeRelation lifetimes) throws ResolutionError {
 		// At this point, we have several cases left to consider.
 		boolean aSign = a.sign;
 		boolean bSign = b.sign;
@@ -457,15 +459,15 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				// int & !int => void
 				return (aSign != bSign) ? true : false;
 			case TYPE_array:
-				return isVoidArray((Atom<Type.Array>) a, (Atom<Type.Array>) b, assumptions);
+				return isVoidArray((Atom<Type.Array>) a, (Atom<Type.Array>) b, assumptions, lifetimes);
 			case TYPE_record:
-				return isVoidRecord((Atom<Type.Record>) a, (Atom<Type.Record>) b, assumptions);
+				return isVoidRecord((Atom<Type.Record>) a, (Atom<Type.Record>) b, assumptions, lifetimes);
 			case TYPE_reference:
-				return isVoidReference((Atom<Type.Reference>) a, (Atom<Type.Reference>) b, assumptions);
+				return isVoidReference((Atom<Type.Reference>) a, (Atom<Type.Reference>) b, assumptions, lifetimes);
 			case TYPE_function:
 			case TYPE_method:
 			case TYPE_property:
-				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions);
+				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions, lifetimes);
 			default:
 				throw new RuntimeException("invalid type encountered: " + aOpcode);
 			}
@@ -521,7 +523,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions)
+	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		if (lhs.sign || rhs.sign) {
 			Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
@@ -530,7 +532,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			// least one is positive. This is void only if there is no
 			// intersection of the underlying element types. For example, int[]
 			// and bool[] is void, whilst (int|null)[] and int[] is not.
-			return isVoidTerm(lhsTerm, rhsTerm, assumptions);
+			return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
 		} else {
 			// In this case, we are intersecting two negative array types. For
 			// example, !(int[]) and !(bool[]). This never reduces to void.
@@ -565,8 +567,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
-			throws ResolutionError {
+	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
@@ -575,7 +577,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			// reduces to void if the fields in either of these differ (e.g.
 			// {int f} and {int g}), or if there is no intersection between the
 			// same field in either (e.g. {int f} and {bool f}).
-			int matches = matchRecordFields(lhs,rhs,assumptions);
+			int matches = matchRecordFields(lhs,rhs,assumptions,lifetimes);
 			//
 			if (matches == -1) {
 				return lhs.sign == rhs.sign;
@@ -590,7 +592,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
+	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
@@ -607,7 +609,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 					continue;
 				} else {
 					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
-					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
+					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection
 						// overall; for pos-neg case, there is some
@@ -729,7 +731,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions)
+	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		// FIXME: need to look at lifetime parameters
 		Term<?> lhsTrueTerm = new Term<>(true, lhs.type.getElement(), lhs.maximise);
@@ -737,9 +739,9 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		Term<?> lhsFalseTerm = new Term<>(false, lhs.type.getElement(), lhs.maximise);
 		Term<?> rhsFalseTerm = new Term<>(false, rhs.type.getElement(), rhs.maximise);
 		// Check whether lhs :> rhs (as (!lhs & rhs) == 0)
-		boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions);
+		boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions, lifetimes);
 		// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
-		boolean elemRhsSubsetLhs = isVoidTerm(rhsFalseTerm, lhsTrueTerm, assumptions);
+		boolean elemRhsSubsetLhs = isVoidTerm(rhsFalseTerm, lhsTrueTerm, assumptions, lifetimes);
 		// Calculate whether lhs == rhs
 		boolean elemEqual = elemLhsSubsetRhs && elemRhsSubsetLhs;
 		//
@@ -784,8 +786,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 *            The set of assumed subtype relationships private boolean
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs, Assumptions assumptions)
-			throws ResolutionError {
+	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		boolean lhsMeth = (lhs.type instanceof Type.Method);
 		boolean rhsMeth = (rhs.type instanceof Type.Method);
 		//
@@ -816,12 +818,12 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			// contravariance, any is *smaller* than int. However, fun(int|null)->(int) &
 			// !fun(int)->(int) is void.
 			boolean paramsContravariantVoid = isVoidParameters(!lhs.sign, lhs.maximise, lhsParameters, !rhs.sign,
-					rhs.maximise, rhsParameters, assumptions);
+					rhs.maximise, rhsParameters, assumptions, lifetimes);
 			// Returns are covariant, which is the usual way of thinking about things. For
 			// example, fun(int)->(int) & !fun(int)->any is void, whilst
 			// fun(int)->(int|null) & !fun(int)->(int) is not.
 			boolean returnsCovariantVoid = isVoidParameters(lhs.sign, lhs.maximise, lhsReturns, rhs.sign, rhs.maximise,
-					rhsReturns, assumptions);
+					rhsReturns, assumptions, lifetimes);
 			// If both parameters and returns are void, then the whole thing is void.
 			return paramsContravariantVoid && returnsCovariantVoid;
 		} else {
@@ -833,7 +835,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	protected boolean isVoidParameters(boolean lhsSign, boolean lhsMax, Tuple<Type> lhs, boolean rhsSign,
-			boolean rhsMax, Tuple<Type> rhs, Assumptions assumptions) throws ResolutionError {
+			boolean rhsMax, Tuple<Type> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
+			throws ResolutionError {
 		boolean sign = lhsSign == rhsSign;
 		//
 		if (lhs.size() != rhs.size()) {
@@ -847,7 +850,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				Type rhsParameter = rhs.get(i);
 				Term<?> lhsTerm = new Term<>(lhsSign, lhsParameter, lhsMax);
 				Term<?> rhsTerm = new Term<>(rhsSign, rhsParameter, rhsMax);
-				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
+				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 					// For pos-pos / neg-neg case, there is no intersection
 					// between this parameterand, hence, no intersection
 					// overall; for pos-neg case, there is some
