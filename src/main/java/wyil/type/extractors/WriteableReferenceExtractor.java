@@ -56,7 +56,7 @@ public class WriteableReferenceExtractor extends AbstractTypeExtractor<Type.Refe
 	@Override
 	protected Type.Reference union(Type.Reference lhs, Type.Reference rhs) {
 		//
-		return new Type.Reference(unionHelper(lhs.getElement(),rhs.getElement()));
+		return new Type.Reference(intersectionHelper(lhs.getElement(),rhs.getElement()));
 	}
 
 	@Override

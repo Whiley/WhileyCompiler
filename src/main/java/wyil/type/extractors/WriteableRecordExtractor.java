@@ -19,6 +19,10 @@ import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.lang.WhileyFile.Decl;
+import wyc.lang.WhileyFile.Type;
 import wyil.type.TypeSystem;
 
 /**
@@ -71,7 +75,26 @@ public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record>
 
 	@Override
 	protected Type.Record union(Type.Record lhs, Type.Record rhs) {
-		return intersect(lhs,rhs);
+		ArrayList<Decl.Variable> fields = new ArrayList<>();
+		Tuple<Decl.Variable> lhsFields = lhs.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.getFields();
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				Decl.Variable lhsField = lhsFields.get(i);
+				Decl.Variable rhsField = rhsFields.get(j);
+				Identifier lhsFieldName = lhsField.getName();
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					Type type = intersectionHelper(lhsField.getType(), rhsField.getType());
+					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
+				}
+			}
+		}
+		//
+		boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
+		isOpenRecord |= (lhsFields.size() > fields.size() || rhsFields.size() > fields.size());
+		//
+		return new Type.Record(isOpenRecord, new Tuple<>(fields));
 	}
 
 	@Override
