@@ -126,7 +126,9 @@ public class FlowTypeCheck {
 	// =========================================================================
 
 	public void check(Decl decl) {
-		if (decl instanceof Decl.StaticVariable) {
+		if(decl instanceof Decl.Import) {
+			// Can ignore
+		} else if (decl instanceof Decl.StaticVariable) {
 			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
 		} else if (decl instanceof Decl.Type) {
 			checkTypeDeclaration((Decl.Type) decl);

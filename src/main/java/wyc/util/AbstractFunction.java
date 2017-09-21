@@ -14,6 +14,8 @@
 package wyc.util;
 
 import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Decl;
+
 import static wyc.lang.WhileyFile.*;
 
 /**
@@ -36,6 +38,8 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitDeclaration(Declaration decl, P data) {
 		switch (decl.getOpcode()) {
+		case DECL_import:
+			return visitImport((Decl.Import) decl, data);
 		case DECL_staticvar:
 			return visitStaticVariable((Decl.StaticVariable) decl, data);
 		case DECL_type:
@@ -48,6 +52,11 @@ public abstract class AbstractFunction<P,R> {
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
 	}
+
+	public R visitImport(Decl.Import decl, P data) {
+		return null;
+	}
+
 
 	public R visitLambda(Decl.Lambda decl, P data) {
 		visitVariables(decl.getParameters(), data);

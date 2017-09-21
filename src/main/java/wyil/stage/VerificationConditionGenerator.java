@@ -137,20 +137,27 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	public WyalFile translate(WhileyFile wyilFile) {
-		for(WhileyFile.Decl b : wyilFile.getDeclarations()) {
-			if (b instanceof WhileyFile.Decl.StaticVariable) {
-				translateConstantDeclaration((WhileyFile.Decl.StaticVariable) b);
-			} else if (b instanceof WhileyFile.Decl.Type) {
-				translateTypeDeclaration((WhileyFile.Decl.Type) b);
-			} else if (b instanceof WhileyFile.Decl.Property) {
-				translatePropertyDeclaration((WhileyFile.Decl.Property) b);
-			} else if (b instanceof WhileyFile.Decl.FunctionOrMethod) {
-				WhileyFile.Decl.FunctionOrMethod method = (WhileyFile.Decl.FunctionOrMethod) b;
+		for(WhileyFile.Decl decl : wyilFile.getDeclarations()) {
+			if(decl instanceof WhileyFile.Decl.Import) {
+				translateImportDeclaration((WhileyFile.Decl.Import) decl);
+			} else if (decl instanceof WhileyFile.Decl.StaticVariable) {
+				translateConstantDeclaration((WhileyFile.Decl.StaticVariable) decl);
+			} else if (decl instanceof WhileyFile.Decl.Type) {
+				translateTypeDeclaration((WhileyFile.Decl.Type) decl);
+			} else if (decl instanceof WhileyFile.Decl.Property) {
+				translatePropertyDeclaration((WhileyFile.Decl.Property) decl);
+			} else if (decl instanceof WhileyFile.Decl.FunctionOrMethod) {
+				WhileyFile.Decl.FunctionOrMethod method = (WhileyFile.Decl.FunctionOrMethod) decl;
 				translateFunctionOrMethodDeclaration(method);
 			}
 		}
 
 		return wyalFile;
+	}
+
+	private void translateImportDeclaration(WhileyFile.Decl.Import decl) {
+		WyalFile.Declaration.Import imprt = new WyalFile.Declaration.Import(decl.getPath().toArray(Identifier.class));
+		allocate(imprt, getSpan(decl));
 	}
 
 	/**
@@ -1758,7 +1765,7 @@ public class VerificationConditionGenerator {
 		// What we're doing here is creating a completely fresh variable to
 		// represent the return value. This is basically saying the return value
 		// could be anything, and we don't care what.
-		String name = Integer.toString(expr.getIndex());
+		String name = "r" + Integer.toString(expr.getIndex());
 		WyalFile.Type type = convert(expr.getType(), expr);
 		WyalFile.VariableDeclaration vf = allocate(
 				new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(name)), null);

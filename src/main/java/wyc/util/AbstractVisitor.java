@@ -37,6 +37,9 @@ public abstract class AbstractVisitor {
 
 	public void visitDeclaration(Declaration decl) {
 		switch (decl.getOpcode()) {
+		case DECL_import:
+			visitImport((Decl.Import) decl);
+			break;
 		case DECL_staticvar:
 			visitStaticVariable((Decl.StaticVariable) decl);
 			break;
@@ -51,6 +54,10 @@ public abstract class AbstractVisitor {
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
+	}
+
+	public void visitImport(Decl.Import decl) {
+
 	}
 
 	public void visitLambda(Decl.Lambda decl) {

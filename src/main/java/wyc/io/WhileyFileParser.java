@@ -86,8 +86,8 @@ public class WhileyFileParser {
 					// Fall back
 					declaration = parseStaticVariableDeclaration(modifiers);
 				}
-				declarations.add(declaration);
 			}
+			declarations.add(declaration);
 			skipWhiteSpace();
 		}
 

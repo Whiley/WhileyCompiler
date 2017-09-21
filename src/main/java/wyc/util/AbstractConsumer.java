@@ -37,6 +37,9 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitDeclaration(Declaration decl, T data) {
 		switch (decl.getOpcode()) {
+		case DECL_import:
+			visitImport((Decl.Import) decl, data);
+			break;
 		case DECL_staticvar:
 			visitStaticVariable((Decl.StaticVariable) decl, data);
 			break;
@@ -51,6 +54,10 @@ public abstract class AbstractConsumer<T> {
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
+	}
+
+	public void visitImport(Decl.Import decl, T data) {
+
 	}
 
 	public void visitLambda(Decl.Lambda decl, T data) {

@@ -411,18 +411,21 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
 		//
-		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
-		if(verbose) {
-			wyalBuildTask.setLogger(logger);
+		if(verify) {
+			// Only configure verification if we're actually going to do it!
+			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
+			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+			wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
+			if(verbose) {
+				wyalBuildTask.setLogger(logger);
+			}
+			if(proof) {
+				prover.setPrintProof(true);
+			}
+			wyalBuildTask.setVerify(verify);
+			//
+			project.add(new StdBuildRule(wyalBuildTask, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 		}
-		if(proof) {
-			prover.setPrintProof(true);
-		}
-		wyalBuildTask.setVerify(verify);
-		//
-		project.add(new StdBuildRule(wyalBuildTask, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
 	public void findCounterexamples(WyalFile.Declaration.Assert assertion, StdProject project) {
