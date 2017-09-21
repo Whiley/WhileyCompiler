@@ -22,9 +22,10 @@ import static wyc.lang.WhileyFile.*;
 /**
  * <p>
  * Responsible for determining when a value of a dynamically sized data type can
- * be "moved" or must be "copied". Moving is preferable preferable (when
- * permitted) because the original reference can be used without copying the
- * underlying data. The following provides a useful example:
+ * be "moved" or must be "copied". Moving is preferable (when permitted) because
+ * then the original reference can be used without copying the underlying data
+ * (hence, is significantly more efficient). The following provides a useful
+ * example:
  * </p>
  *
  * <pre>
@@ -34,9 +35,9 @@ import static wyc.lang.WhileyFile.*;
  * </pre>
  *
  * <p>
- * Here, in the invocation <code>f(xs)</code> the array <code>xs</code> cannot
- * be moved since it is live afterwards. Instead, we must clone <code>xs</code>
- * at this point. However, the subsequent use of <code>xs</code> in the
+ * In the invocation <code>f(xs)</code> the array <code>xs</code> cannot be
+ * moved since it is live afterwards. Instead, we must clone <code>xs</code> at
+ * this point. However, the subsequent use of <code>xs</code> in the
  * <code>return</code> statement does not require a clone and can be moved
  * (since <code>xs</code> is no longer live).
  * </p>
@@ -53,7 +54,7 @@ import static wyc.lang.WhileyFile.*;
  *     return sum
  * </pre>
  *
- * Clearly, there is not need to clone <code>xs</code> when it is used in the
+ * Clearly, there is no need to clone <code>xs</code> when it is used in the
  * initialiser for <code>sum</code>. This is because the use is temporary and
  * does not modify <code>xs</code>. We say that <code>xs</code> is not
  * <em>consumed</em>.

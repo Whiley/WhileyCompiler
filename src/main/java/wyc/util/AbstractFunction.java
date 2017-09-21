@@ -18,8 +18,9 @@ import static wyc.lang.WhileyFile.*;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
- * a given WhileyFile. The intention is that this is extended as necessary to
- * provide custom functionality.
+ * a given WhileyFile which consumes one data parameter and returns one value.
+ * The intention is that this is extended as necessary to provide custom
+ * functionality.
  *
  * @author David J. Pearce
  *

@@ -20,6 +20,15 @@ import wyil.type.TypeRewriter;
 
 import static wyc.lang.WhileyFile.*;
 
+/**
+ * <p>
+ * A generic foundation for "convential" type rewriters. That is, those which
+ * rewrite types in a relatively convential fashion.
+ * </p>
+ *
+ * @author David J. Pearce
+ *
+ */
 public class AbstractTypeRewriter implements TypeRewriter {
 
 	@Override

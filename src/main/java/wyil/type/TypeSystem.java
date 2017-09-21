@@ -24,7 +24,7 @@ import wyil.type.extractors.ReadableReferenceExtractor;
 import wyil.type.extractors.WriteableArrayExtractor;
 import wyil.type.extractors.WriteableRecordExtractor;
 import wyil.type.extractors.WriteableReferenceExtractor;
-import wyil.type.subtyping.CoerciveSubtypeOperator;
+import wyil.type.subtyping.RelaxedSubtypeOperator;
 import wyil.type.subtyping.StrictSubtypeOperator;
 
 import static wyc.lang.WhileyFile.*;
@@ -77,7 +77,7 @@ public class TypeSystem {
 	public TypeSystem(Build.Project project) {
 		this.resolver = new WhileyFileResolver(project);
 		this.strictSubtypeOperator = new StrictSubtypeOperator(this);
-		this.coerciveSubtypeOperator = new CoerciveSubtypeOperator(this);
+		this.coerciveSubtypeOperator = new RelaxedSubtypeOperator(this);
 		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
 		this.writeableRecordExtractor = new WriteableRecordExtractor(resolver,this);
 		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);

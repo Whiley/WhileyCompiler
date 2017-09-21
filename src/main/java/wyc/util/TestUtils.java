@@ -37,6 +37,13 @@ import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
+/**
+ * Miscellaneous utilities related to the test harness. These are located here
+ * in order that other plugins may use them.
+ *
+ * @author David J. Pearce
+ *
+ */
 public class TestUtils {
 
 	/**

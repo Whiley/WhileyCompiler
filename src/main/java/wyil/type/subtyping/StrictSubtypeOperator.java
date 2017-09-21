@@ -37,52 +37,144 @@ import static wyc.lang.WhileyFile.Name;
  * however). Following this analogy, <code>T1</code> is a subtype of
  * <code>T2</code> (denoted <code>T1 <: T2</code>) if the set of values
  * represented by <code>T1</code> is a subset of those represented by
- * <code>T2</code>.
+ * <code>T2</code>. Subtyping in Whiley is surprisingly complex due to the
+ * presence of the three type combinators, namely: <i>union</i>,
+ * <i>intersection</i> and <i>negations</i>. This requires one to distinguish
+ * between <i>syntactic types</i> and <i>semantic types</i>: the former
+ * corresponds to a finite representation, such as found in a Whiley source file
+ * or represented internally within the compiler, whereas the latter corresponds
+ * to a mathematical ideal with which we can coinductively formulate the subtype
+ * operator. We now highlight some of the main points:
  * </p>
  * <p>
- * The algorithm actually operates by computing the <i>intersection</i> relation
- * for two types (i.e. whether or not an intersection exists between their set
- * of values). Subtyping is closely related to intersection and, in fact, we
- * have that <code>T1 :> T2</code> iff <code>!(!T1 & T2)</code> (where
- * <code>&</code> is the intersection relation). The choice to compute
- * intersections, rather than subtypes, was for simplicity. Namely, it was
- * considered conceptually easier to think about intersections rather than
- * subtypes.
+ * <b>Algebraic Reasoning.</b> Subtyping must respect the standard algebraic
+ * rules for reasoning about unions, intersections and negations. For example,
+ * "<code>T|T</code>" is equivalent to "<code>T</code>". Likewise,
+ * "<code>T1&(T2|T3)</code>" is equivalent to "<code>(T1&T2)|(T1&T3)</code>"
+ * whilst "<code>!(T1|T2)</code>" is equivalent to "<code>(!T1)&(!T2)</code>".
+ * Some additional rules exist which are perhaps less obvious. For example,
+ * "<code>{T1|T2 f}</code>" is (in some sense) equivalent to
+ * "<code>{T1 f}|{T2 f}</code>".
  * </p>
  * <p>
- * <b>NOTE:</b> for this algorithm to return correct results in all cases, both
- * types must have been normalised first.
+ * <b>Coinductive Reasoning.</b> Types in Whiley are defined <i>inductively</i>
+ * as recursive types. The following illustrates the syntax:
+ * </p>
+ *
+ * <pre>
+ * type blist is null | { bool data, blist next }
+ * </pre>
+ *
+ * <p>
+ * The set of values accepted by the type <code>blist</code> is given by
+ * "<code>null</code>", "<code>{data:true, list:null}</code>",
+ * "<code>{data:true, list:{data:true, list:null}}</code>", etc. Whilst types
+ * are defined inductively, the subtyping operator is defined
+ * <i>coninductively</i>. For example, consider this type:
+ * </p>
+ *
+ * <pre>
+ * type alist is { any data, alist next }
+ * </pre>
+ *
+ * <p>
+ * Intuitively, it follows that <code>blist</code> is a subtype of
+ * <code>alist</code>. However, mechanically, this is not at all obvious. To
+ * understand this, consider the derivation of <code>blist <: alist</code> given
+ * below:
+ * </p>
+ *
+ * <pre>
+ * blist <: alist
+ * = (null|{bool data, blist next}) <: (null|{any data, alist next})
+ *
+ * case (i)
+ *   = null <: (null|{any data, alist next})
+ *   = null <: null
+ *
+ * case (ii)
+ *   = {bool data, blist next} <: (null|{any data, alist next})
+ *   = {bool data, blist next} <: {any data, alist next}
+ *   = bool <: any && blist <: alist
+ *   = blist <: alist
+ * </pre>
+ * <p>
+ * The problem here is that testing whether <code>blist <: alist</code> holds
+ * reduces to the question of whether <code>blist <: alist</code> holds! This is
+ * resolved by coinductively assuming that it holds <i>unless it can be shown
+ * otherwise.</i>
+ * </p>
+ * <p>
+ * <b>Contractivity.</b> Non-contractive types are those which are non-sensical,
+ * and we cannot reason safely about such types. For example:
+ * </p>
+ *
+ * <pre>
+ *  type Invisible is Invisible | Invisible
+ * </pre>
+ * <p>
+ * This type does not sensibly describe an actual type as it never actually
+ * describes the structure of a value. Hence, the compiler should detect this
+ * and report an error.
+ * </p>
+ *
+ * <p>
+ * <b>Emptiness.</b> Some types are said to be <i>empty</i> as they contain no
+ * instances. The most prominent example is the <code>void</code> type.
+ * Likewise, <code>!any</code> is equivalent to <code>void</code>. Indeed, there
+ * are an infinite number of empty types in Whiley. The following illustrates
+ * one of the more esoteric examples:
+ * </p>
+ *
+ * <pre>
+ *  type InfList is { int data, InfList next }
+ *
+ *  function get(InfList l) -> (int d, InfList r):
+ *     return l.data, l.next
+ * </pre>
+ * <p>
+ * In languages with lazy evaluation or implicit references, such a type would
+ * be perfectly reasonable. However, in Whiley, all values are trees of finite
+ * depth and, hence, it is impossible construct a value of type
+ * <code>InfList</code>. Again, the compiler should detect this and report an
+ * error in such case.
+ * </p>
+ * <p>
+ * <b>Implementation Overview.</b> The algorithm actually operates by computing
+ * the <i>intersection</i> relation for two types (i.e. whether or not an
+ * intersection exists between their set of values). Subtyping is closely
+ * related to intersection and, in fact, we have that <code>T1 :> T2</code> iff
+ * <code>!(!T1 & T2)</code> (where <code>&</code> is the intersection relation).
+ * The choice to compute intersections, rather than subtypes, was for
+ * simplicity. Namely, it was considered conceptually easier to think about
+ * intersections rather than subtypes.
  * </p>
  * <h3>References</h3>
  * <ul>
  * <li>
  * <p>
- * David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
- * Whiley. Technical Report, Victoria University of Wellington, 2010.
+ * <b>Sound and Complete Flow Typing with Unions, Intersections and
+ * Negations</b>. David J. Pearce. In Proceedings of the Conference on
+ * Verification, Model Checking, and Abstract Interpretation (VMCAI), volume
+ * 7737 of Lecture Notes in Computer Science, pages 335--354, 2013.
  * </p>
  * </li>
  * <li>
  * <p>
- * A. Frisch, G. Castagna, and V. Benzaken. Semantic subtyping. In Proceedings
- * of the <i>Symposium on Logic in Computer Science</i>, pages 137--146. IEEE
- * Computer Society Press, 2002.
+ * <b>A Mechanical Soundness Proof for Subtyping over Recursive Types</b>.
+ * Timothy Jones and David J. Pearce. In Proceedings of the Workshop on Formal
+ * Techniques for Java-like Languages (FTFJP), 2016.
  * </p>
  * </li>
  * <li>
  * <p>
- * Dexter Kozen, Jens Palsberg, and Michael I. Schwartzbach. Efficient recursive
- * subtyping. In <i>Proceedings of the ACM Conference on Principles of
- * Programming Languages</i>, pages 419--428, 1993.
- * </p>
- * </li>
- * <li>
- * <p>
- * Roberto M. Amadio and Luca Cardelli. Subtyping recursive types. <i>ACM
- * Transactions on Programming Languages and Systems</i>, 15:575--631, 1993.
+ * <b>Rewriting for Sound and Complete Union, Intersection and Negation
+ * Types</b>. David J. Pearce. In Proceedings of the Conference on Generative
+ * Programming: Concepts & Experience (GPCE), 2017.
  * </p>
  * </li>
  * </ul>
- *
+ * @see SubtypeOperator
  * @author David J. Pearce
  *
  */

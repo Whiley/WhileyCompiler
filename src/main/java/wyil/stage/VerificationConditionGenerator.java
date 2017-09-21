@@ -95,10 +95,10 @@ import static wyc.lang.WhileyFile.*;
  * </p>
  *
  * <ul>
- * <li><b>1,2,3:</b> <code>x >= 0 ==> x >= 0</code>. This verification
- * corresponds to the case where the if condition is known to be true.</li>
- * <li><b>1,2,4:</b> <code>x < 0 ==> -x >= 0</code>. This verification
- * corresponds to the case where the if condition is known to be false.</li>
+ * <li><b>(path: 1,2,3)</b> <code>(x >= 0) ==> (x >= 0)</code>. This verification
+ * condition corresponds to the case where the if condition is known to be true.</li>
+ * <li><b>(path: 1,2,4)</b> <code> (x < 0) ==> (-x >= 0)</code>. This verification
+ * condition corresponds to the case where the if condition is known to be false.</li>
  * </ul>
  *
  * <p>

@@ -13,65 +13,43 @@
 // limitations under the License.
 package wyil.type.subtyping;
 
-import java.util.Arrays;
-import java.util.Comparator;
 
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Type;
 import wyil.type.TypeSystem;
-import wyil.type.subtyping.StrictSubtypeOperator.Assumptions;
-import wyil.type.subtyping.StrictSubtypeOperator.Atom;
-import wyil.type.subtyping.StrictSubtypeOperator.Term;
-
-import static wyc.lang.WhileyFile.*;
 
 /**
  * <p>
- * The subtype operator implements the algorithm for determining whether or not
- * one type is a <i>subtype</i> of another. For the most part, one can take
- * subtype to mean <i>subset</i> (this analogy breaks down with function types,
- * however). Following this analogy, <code>T1</code> is a subtype of
- * <code>T2</code> (denoted <code>T1 <: T2</code>) if the set of values
- * represented by <code>T1</code> is a subset of those represented by
- * <code>T2</code>.
+ * Provides a relaxation of the <code>StrictSubtypeOperator</code> which
+ * corresponds with the notion of subtyping used at the Whiley source level.
+ * Under this intepration, for example, "<code>{int x, int y}</code>" is
+ * equivalent to "<code>{int y, int x}</code>". Likewise,
+ * "<code>{int x, int y}</code>" is considered a subtype of
+ * "<code>{int x}</code>". Finally, "<code>int:8</code>" is considered
+ * equivalent to "<code>int:16</code>".
  * </p>
  * <p>
- * The algorithm actually operates by computing the <i>intersection</i> relation
- * for two types (i.e. whether or not an intersection exists between their set
- * of values). Subtyping is closely related to intersection and, in fact, we
- * have that <code>T1 :> T2</code> iff <code>!(!T1 & T2)</code> (where
- * <code>&</code> is the intersection relation). The choice to compute
- * intersections, rather than subtypes, was for simplicity. Namely, it was
- * considered conceptually easier to think about intersections rather than
- * subtypes.
+ * The purpose of this operator (compared with the strict operator) is to enable
+ * intuitive subtyping relationships whilst preventing non-sensical ones. In
+ * practice, however, some of these intuitive relationships are rejected by the
+ * strict operator. What this means is that, under the hood, some kind of
+ * representation conversion will be required for one type to flow into the
+ * other. The exact details of this, however, depend on the backend in question.
+ * In some backends (e.g. JavaScript) relatively few transformations are
+ * required. In others (e.g. C), much more emphasis is placed on exact data
+ * layout and, hence, many more conversions between layouts are required.
  * </p>
- * <p>
- * <b>NOTE:</b> for this algorithm to return correct results in all cases, both
- * types must have been normalised first.
- * </p>
- * <h3>References</h3>
- * <ul>
- * <li><p>David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
- * Whiley. Technical Report, Victoria University of Wellington, 2010.</p></li>
- * <li><p>A. Frisch, G. Castagna, and V. Benzaken. Semantic subtyping. In
- * Proceedings of the <i>Symposium on Logic in Computer Science</i>, pages
- * 137--146. IEEE Computer Society Press, 2002.</p></li>
- * <li><p>Dexter Kozen, Jens Palsberg, and Michael I. Schwartzbach. Efficient
- * recursive subtyping. In <i>Proceedings of the ACM Conference on Principles of
- * Programming Languages</i>, pages 419--428, 1993.</p></li>
- * <li><p>Roberto M. Amadio and Luca Cardelli. Subtyping recursive types. <i>ACM
- * Transactions on Programming Languages and Systems</i>,
- * 15:575--631, 1993.</p></li>
- * </ul>
+ *
+ * @see StrictSubtypeOperator
  *
  * @author David J. Pearce
  *
  */
-public class CoerciveSubtypeOperator extends StrictSubtypeOperator {
+public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
 
-	public CoerciveSubtypeOperator(TypeSystem typeSystem) {
+	public RelaxedSubtypeOperator(TypeSystem typeSystem) {
 		super(typeSystem);
 	}
 

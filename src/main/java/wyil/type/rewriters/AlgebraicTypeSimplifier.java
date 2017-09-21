@@ -18,12 +18,80 @@ import wycc.util.ArrayUtils;
 
 /**
  * A simple collection of rewrite rules that attempts to simplify types in
- * relatively obvious ways.
+ * relatively obvious ways. Specifically, the following rules are applied:
+ *
+ * <ul>
+ * <li>
+ * <p>
+ * <b>Flattening</b>. Nested unions and intersections types of the same kind are
+ * flattened into one. For exmple, <code>T1|(T2|T3)</code> is flattened into
+ * <code>T1|T2|T3.</code>
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Duplicate Elimination</b>. Duplicates are removed from unions and
+ * intersections. For example, <code>T1|T1|T2</code> becomes <code>T1|T2</code>.
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>Void Reduction</b>. An intersection containing <code>void</code> (e.g.
+ * <code>int&!any</code>) is reduced to <code>void</code>. In contrast, a union
+ * containing <code>void</code> (e.g. <code>int|!any</code>) has that element
+ * removed (e.g. to give <code>int</code>).
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>Any Reduction</b>. A union containing <code>any</code> (e.g.
+ * <code>int|any</code>) is reduced to <code>any</code>. In contrast, an
+ * intersection containing <code>any</code> (e.g. <code>int|any</code>) has that
+ * element removed (e.g. to give <code>int</code>).
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>Unit Reduction</b>. A union or intersection containing a single element is
+ * reduced to that element.
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>Negation Reduction</b>. The negation <code>!any</code> is reduced to
+ * <code>void</code>. Likewise, <code>!void</code> is reduced to
+ * <code>any</code>.
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>Negation Elimination</b>. A negation of a negation (e.g. <code>!!T</code>)
+ * is reduced to the element value (e.g. <code>T</code>).
+ * </p>
+ * </li>
+ *
+ * <li>
+ * <p>
+ * <b>DeMorgan's Laws</b>. A negation of a union or intersection of types (e.g.
+ * <code>!(T1|T2)</code>) is reduced to an intersection or union of negated
+ * types (e.g. <code>(!T1)&(!T2)</code>).
+ * </p>
+ * </li>
+ *
+ * </ul>
+ *
+ * Whilst these rules are not comprehensive, they provide a good degree of
+ * simplification which can greatly enhance the readability of a given type.
  *
  * @author David J. Pearce
  *
  */
-public class StdTypeRewriter extends AbstractTypeRewriter {
+public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
 	private static Type T_ANY = new Type.Any();
 	private static Type T_VOID = new Type.Void();
 
