@@ -1,5 +1,5 @@
 tests/invalid/Function_Invalid_10.whiley:13: unable to resolve name (is ambiguous)
-	found: Function_Invalid_10:f : function(anat)->(int)
-	found: Function_Invalid_10:f : function(bnat)->(int)
+	found function Function_Invalid_10::f(anat)->(int)
+	found function Function_Invalid_10::f(bnat)->(int)
     f(1)
     ^

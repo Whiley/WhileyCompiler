@@ -37,6 +37,7 @@ public abstract class AbstractVisitor {
 
 	public void visitDeclaration(Declaration decl) {
 		switch (decl.getOpcode()) {
+		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
 			break;

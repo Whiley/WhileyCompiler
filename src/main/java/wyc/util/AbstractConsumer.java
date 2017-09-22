@@ -37,6 +37,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitDeclaration(Declaration decl, T data) {
 		switch (decl.getOpcode()) {
+		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl, data);
 			break;
