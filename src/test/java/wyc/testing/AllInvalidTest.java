@@ -66,13 +66,6 @@ public class AllInvalidTest {
 		//
 		IGNORED.put("Parsing_Invalid_15", "609");
 		//
-		IGNORED.put("Lifetime_Invalid_5", "#764");
-		IGNORED.put("Lifetime_Invalid_6", "#764");
-		IGNORED.put("Lifetime_Invalid_7", "#764");
-		IGNORED.put("Lifetime_Invalid_8", "#764");
-
-		IGNORED.put("Lifetime_Lambda_Invalid_1", "#764");
-		IGNORED.put("Lifetime_Lambda_Invalid_2", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_3", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");

@@ -1,7 +1,7 @@
 method <a> swap(&a:int p, &a:int q):
     int tmp = *p
     *p = *q
-    *q = *p
+    *q = tmp
 
 method test():
     &this:int x = new 1

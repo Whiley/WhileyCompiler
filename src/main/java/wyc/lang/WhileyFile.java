@@ -1929,6 +1929,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Tuple<Identifier>) get(1);
 			}
 
+			public void setLifetimes(Tuple<Identifier> lifetimes) {
+				operands[1] = lifetimes;
+			}
+
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getOperands() {
@@ -1953,6 +1957,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = getName().toString();
+				Tuple<Identifier> lifetimes = getLifetimes();
+				if(lifetimes.size() > 0) {
+					r += "<" + lifetimes.toBareString() + ">";
+				}
 				r += getOperands();
 				return r;
 			}

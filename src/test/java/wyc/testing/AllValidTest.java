@@ -64,11 +64,9 @@ public class AllValidTest {
 		IGNORED.put("Function_Valid_15", "#702");
 		// Subtyping over Lifetime Parameters
 		IGNORED.put("Lifetime_Lambda_Valid_2", "#764");
-		IGNORED.put("Lifetime_Lambda_Valid_4", "#764");
 		IGNORED.put("Lifetime_Lambda_Valid_5", "#764");
 		IGNORED.put("Lifetime_Lambda_Valid_6", "#764");
 		IGNORED.put("Lifetime_Lambda_Valid_7", "#764");
-		IGNORED.put("Lifetime_Valid_7", "#764");
 		IGNORED.put("Lifetime_Valid_8", "#764");
 		// Type Tests with Invariants
 		IGNORED.put("TypeEquals_Valid_23", "#787");

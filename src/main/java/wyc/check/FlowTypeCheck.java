@@ -1623,11 +1623,11 @@ public class FlowTypeCheck {
 			types[i] = checkExpression(arguments.get(i), env);
 		}
 		// Determine the declaration being invoked
-		Type.Callable signature = resolveAsCallable(expr.getName(), env, types);
+		Binding binding = resolveAsCallable(expr.getName(), types, expr.getLifetimes(), env);
 		// Assign descriptor to this expression
-		expr.setSignature(expr.getHeap().allocate(signature));
+		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
 		// Finally, return the declared returns/
-		return signature.getReturns();
+		return binding.getConcreteType().getReturns();
 	}
 
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
@@ -1833,11 +1833,10 @@ public class FlowTypeCheck {
 		} else {
 			return new Type.Reference(operandT);
 		}
-
 	}
 
 	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment env) {
-		Type.Callable type;
+		Binding binding;
 		Tuple<Type> types = expr.getParameterTypes();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
@@ -1845,16 +1844,16 @@ public class FlowTypeCheck {
 		if (types.size() > 0) {
 			// Parameter types have been given, so use them to help resolve
 			// declaration.
-			type = resolveAsCallable(expr.getName(), env, types.toArray(Type.class));
+			binding = resolveAsCallable(expr.getName(), types.toArray(Type.class), new Tuple<Identifier>(), env);
 		} else {
 			// No parameters we're given, therefore attempt to resolve
 			// uniquely.
-			type = resolveAsCallable(expr.getName(), expr);
+			binding = resolveAsCallable(expr.getName(), expr);
 		}
 		// Set descriptor for this expression
-		expr.setSignature(expr.getHeap().allocate(type));
+		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
 		//
-		return type;
+		return binding.getConcreteType();
 	}
 
 	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment env) {
@@ -1883,7 +1882,7 @@ public class FlowTypeCheck {
 	 */
 	private boolean isPure(SyntacticItem item) {
 		// Examine expression to determine whether this expression is impure.
-		if (item instanceof Expr.StaticVariableAccess || item instanceof Expr.Dereference) {
+		if (item instanceof Expr.StaticVariableAccess || item instanceof Expr.Dereference || item instanceof Expr.New) {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
@@ -1999,7 +1998,7 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Type.Callable resolveAsCallable(Name name, SyntacticItem context) {
+	private Binding resolveAsCallable(Name name, SyntacticItem context) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
@@ -2009,7 +2008,8 @@ public class FlowTypeCheck {
 			} else if (candidates.size() > 1) {
 				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), context);
 			} else {
-				return candidates.get(0).getType();
+				Decl.FunctionOrMethod candidate = candidates.get(0);
+				return new Binding(candidate,candidate.getType());
 			}
 		} catch (ResolutionError e) {
 			return syntaxError(e.getMessage(), context);
@@ -2022,24 +2022,30 @@ public class FlowTypeCheck {
 	 * the argument types as well.
 	 *
 	 * @param name
-	 * @param args
+	 * @param arguments
+	 *            Inferred Argument Types
+	 * @param lifetimeArguments
+	 *            Explicit lifetime arguments (if provided)
+	 * @param lifetimes
+	 *            Within relationship beteween declared lifetimes
+	 *
 	 * @return
 	 */
-	private Type.Callable resolveAsCallable(Name name, LifetimeRelation lifetimes, Type... args) {
+	private Binding resolveAsCallable(Name name, Type[] arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
 			List<Decl.Callable> candidates = typeSystem.resolveAll(name, Decl.Callable.class);
 			// Bind candidate types to given argument types which, in particular, will
 			// produce bindings for lifetime variables
-			List<Binding> bindings = bindCallableCandidates(candidates, lifetimes, args);
+			List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
 			// Sanity check bindings generated
 			if (bindings.isEmpty()) {
-				return syntaxError("unable to resolve name (no match for " + name + parameterString(args) + ")"
+				return syntaxError("unable to resolve name (no match for " + name + parameterString(arguments) + ")"
 						+ foundCandidatesString(candidates), name);
 			}
 			// Select the most precise signature from the candidate bindings
-			Type.Callable selected = selectCallableCandidate(name, bindings, lifetimes, args);
+			Binding selected = selectCallableCandidate(name, bindings, lifetimes, arguments);
 			// Sanity check result
 			if (selected == null) {
 				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundBindingsString(bindings)), name);
@@ -2118,12 +2124,16 @@ public class FlowTypeCheck {
 	 * </p>
 	 *
 	 * @param candidates
+	 * @param arguments
+	 *            Inferred Argument Types
+	 * @param lifetimeArguments
+	 *            Explicit lifetime arguments (if provided)
 	 * @param lifetimes
-	 * @param args
+	 *            Within relationship beteween declared lifetimes
 	 * @return
 	 */
-	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, LifetimeRelation lifetimes,
-			Type... args) {
+	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, Type[] arguments,
+			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
 			Decl.Callable candidate = candidates.get(i);
@@ -2131,8 +2141,8 @@ public class FlowTypeCheck {
 			// Generate all potential bindings based on arguments
 			if(candidate instanceof Decl.Method) {
 				// Complex case where lifetimes must be considered
-				generateApplicableBindings((Decl.Method) candidate, bindings, lifetimes, args);
-			} else if(isApplicable(type,lifetimes,args)){
+				generateApplicableBindings((Decl.Method) candidate, bindings, arguments, lifetimeArguments, lifetimes);
+			} else if(isApplicable(type,lifetimes,arguments)){
 				// Easier case where lifetimes are not considered and, hence, we can avoid the
 				// complex binding procedure.
 				bindings.add(new Binding(candidate,type));
@@ -2143,33 +2153,56 @@ public class FlowTypeCheck {
 	}
 
 	private void generateApplicableBindings(Decl.Method candidate, List<Binding> bindings,
-			LifetimeRelation lifetimes, Type... args) {
+			Type[] arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		Type.Method type = candidate.getType();
 		Tuple<Identifier> lifetimeParameters = type.getLifetimeParameters();
 		Tuple<Type> parameters = type.getParameters();
 		//
-		if (parameters.size() != args.length) {
+		if (parameters.size() != arguments.length
+				|| (lifetimeArguments.size() > 0 && lifetimeArguments.size() != lifetimeParameters.size())) {
 			// Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
 			// more to consider.
 			return;
-		} else if(lifetimeParameters.size() == 0) {
-			// In this case, we can avoid all the machinery for enumerating bindings.
-			if(isApplicable(type,lifetimes,args)){
-				bindings.add(new Binding(candidate,type));
+		} else if(lifetimeParameters.size() == 0 || lifetimeArguments.size() > 0) {
+			// In this case, either the method accepts no lifetime parameters, or explicit
+			// lifetime parameters were given. Eitherway, we can avoid all the machinery for
+			// guessing appropriate bindings.
+			Type.Method concreteType = substitute(type, lifetimeArguments);
+			if(isApplicable(concreteType,lifetimes,arguments)){
+				bindings.add(new Binding(candidate,concreteType));
 			}
 		} else {
 			// Extract all lifetimes used in the type arguments
-			Identifier[] lifetimeOccurences = extractLifetimes(args);
+			Identifier[] lifetimeOccurences = extractLifetimes(arguments);
 			// Generate all lifetime permutations for substitution
 			for (Map<Identifier, Identifier> binding : generatePermutations(lifetimeParameters, lifetimeOccurences)) {
 				Type.Method substitution = substitute(type,binding);
-				if (isApplicable(substitution, lifetimes, args)) {
+				if (isApplicable(substitution, lifetimes, arguments)) {
 					bindings.add(new Binding(candidate,substitution,binding));
 				}
 			}
 			// Done
 		}
+	}
+
+	/**
+	 * Apply an explicit binding to a given method via substituteion.
+	 * @param method
+	 * @param lifetimeArguments
+	 * @return
+	 */
+	private Type.Method substitute(Type.Method type, Tuple<Identifier> lifetimeArguments) {
+		Tuple<Identifier> lifetimeParameters = type.getLifetimeParameters();
+		HashMap<Identifier, Identifier> binding = new HashMap<>();
+		//
+		for (int i = 0; i != lifetimeArguments.size(); ++i) {
+			Identifier parameter = lifetimeParameters.get(i);
+			Identifier argument = lifetimeArguments.get(i);
+			binding.put(parameter, argument);
+		}
+		//
+		return substitute(type, binding);
 	}
 
 	/**
@@ -2352,12 +2385,16 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Type.Callable selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes,
+	private Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes,
 			Type... args) {
-		Type.Callable best = null;
+		Binding best = null;
+		Type.Callable bestType = null;
+		Decl.Callable bestDecl = null;
+		boolean bestValidWinner = false;
 		//
 		for (int i = 0; i != candidates.size(); ++i) {
-			Type.Callable candidate = candidates.get(i).getConcreteType();
+			Binding candidate = candidates.get(i);
+			Type.Callable candidateType = candidate.getConcreteType();
 			// Check whether the given candidate is a real candidate or not. A
 			// if (isApplicable(candidate, lifetimes, args)) {
 			// Yes, this candidate is applicable.
@@ -2365,28 +2402,40 @@ public class FlowTypeCheck {
 				// No other candidates are applicable so far. Hence, this
 				// one is automatically promoted to the best seen so far.
 				best = candidate;
+				bestType = candidate.getConcreteType();
+				bestDecl = candidate.getCandidiateDeclaration();
+				bestValidWinner = true;
 			} else {
-				boolean bsubc = isSubtype(best, candidate, lifetimes);
-				boolean csubb = isSubtype(candidate, best, lifetimes);
+				boolean csubb = isSubtype(bestType, candidateType, lifetimes);
+				boolean bsubc = isSubtype(candidateType, bestType, lifetimes);
 				//
 				if (csubb && !bsubc) {
-					// This candidate is a subtype of the best seen so far.
-					// Hence, it is now the best seen so far.
+					// This candidate is a subtype of the best seen so far. Hence, it is now the
+					// best seen so far.
 					best = candidate;
+					bestType = candidate.getConcreteType();
+					bestDecl = candidate.getCandidiateDeclaration();
+					bestValidWinner = true;
 				} else if (bsubc && !csubb) {
-					// This best so far is a subtype of this candidate.
-					// Therefore, we can simply discard this candidate from
-					// consideration.
-				} else {
-					// This is the awkward case. Neither the best so far, nor
-					// the candidate, are subtypes of each other. In this case,
-					// we report an error.
+					// This best so far is a subtype of this candidate. Therefore, we can simply
+					// discard this candidate from consideration since it's definitely not the best.
+				} else if(!csubb && !bsubc){
+					// This is the awkward case. Neither the best so far, nor the candidate, are
+					// subtypes of each other. In this case, we report an error. NOTE: must perform
+					// an explicit equality check above due to the present of type invariants.
+					// Specifically, without this check, the system will treat two declarations with
+					// identical raw types (though non-identical actual types) as the same.
 					return null;
+				} else {
+					// This is a tricky case. We have two types after instantiation which are
+					// considered identical under the raw subtype test. As such, they may not be
+					// actually identical (e.g. if one has a type invariant). Furthermore, we cannot
+					// stop at this stage as, in principle, we could still find an outright winner.
+					bestValidWinner = false;
 				}
 			}
-			// }
 		}
-		return best;
+		return bestValidWinner ? best : null;
 	}
 
 	private String parameterString(Type... paramTypes) {
