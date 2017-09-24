@@ -1,0 +1,3 @@
+tests/invalid/Type_Invalid_2.whiley:1: expected type bool, found int
+type nat is (int x) where g(x)
+                          ^^^^

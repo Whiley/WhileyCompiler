@@ -1,0 +1,3 @@
+tests/invalid/RecursiveType_Invalid_7.whiley:14: type invariant not satisfied
+    expr e1 = {op: ADD, left: {op: 0, left: 2, right: 2}, right: 2}
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

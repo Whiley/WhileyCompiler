@@ -1,18 +1,28 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
-
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 // This file was automatically generated.
 package wyil.testing;
+
 import org.junit.*;
-
-import wybs.util.ResolveError;
-
 import static org.junit.Assert.*;
-import wyil.lang.Type;
-import wyil.util.TypeSystem;
+
+import wybs.lang.NameResolver;
+import static wyc.lang.WhileyFile.Type;
+
+import wyc.util.TestUtils;
+import wyil.type.TypeSystem;
 
 public class ArraySubtypeTest {
 	@Test public void test_1() { checkIsSubtype("any","any"); }
@@ -801,20 +811,21 @@ public class ArraySubtypeTest {
 	@Test public void test_2500() { checkIsSubtype("int[]|int","int[]|int"); }
 
 	private void checkIsSubtype(String from, String to) {
-		Type ft = Type.fromString(from);
-		Type tt = Type.fromString(to);
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(new TypeSystem(null).isSubtype(ft,tt));
-		} catch(ResolveError e) {
+			assertTrue(new TypeSystem(null).isRawCoerciveSubtype(ft,tt,null));
+		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}
+
 	private void checkNotSubtype(String from, String to) {
-		Type ft = Type.fromString(from);
-		Type tt = Type.fromString(to);
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(new TypeSystem(null).isSubtype(ft, tt));
-		} catch (ResolveError e) {
+			assertFalse(new TypeSystem(null).isRawCoerciveSubtype(ft, tt,null));
+		} catch (NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -1,9 +1,16 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
-
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyc;
 
 import wycc.lang.Command;
@@ -11,9 +18,10 @@ import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyil.lang.WyilFile;
 import wyal.lang.WyalFile;
-import wyc.commands.*;
+import wyc.command.Compile;
+import wyc.command.Decompile;
+import wyc.command.Run;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Module.Activator {
@@ -32,7 +40,7 @@ public class Activator implements Module.Activator {
 			if (suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
 			} else if (suffix.equals("wyil")) {
-				e.associate(WyilFile.ContentType, null);
+				e.associate(WhileyFile.BinaryContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
 			}

@@ -1,6 +1,4 @@
-
-
-constant table is [&f1, &f2]
+func[] table = [&f1, &f2]
 
 function f1(int x) -> int:
     return x

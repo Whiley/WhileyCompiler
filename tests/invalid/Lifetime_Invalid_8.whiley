@@ -1,6 +1,7 @@
 // test lifetime inference with lifetime overloading and different types
 
 method <a, b> m((&a:int)|(&b:bool) x, (&a:int)|(&b:int) y):
+    skip
 
 public export method test():
     // <this, *> --> ((&this:int)|(&*:bool), &this:int)

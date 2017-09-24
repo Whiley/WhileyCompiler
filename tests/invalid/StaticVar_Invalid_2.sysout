@@ -1,0 +1,3 @@
+tests/invalid/StaticVar_Invalid_2.whiley:1: expected type int[], found int
+int[] x = 1
+          ^

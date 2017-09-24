@@ -1,14 +1,21 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyc.util;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,22 +24,41 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
-import wybs.lang.Build;
-import wybs.lang.NameID;
-import wybs.util.StdProject;
-import wyc.Activator;
-import wyc.commands.Compile;
-import wyc.commands.Run;
+import wyc.command.Compile;
+import wyc.command.Run;
+import wyc.io.WhileyFileLexer;
+import wyc.io.WhileyFileParser;
+import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Type;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
-import wyil.lang.Type;
-import wyil.util.interpreter.Interpreter;
 
+/**
+ * Miscellaneous utilities related to the test harness. These are located here
+ * in order that other plugins may use them.
+ *
+ * @author David J. Pearce
+ *
+ */
 public class TestUtils {
+
+	/**
+	 * Parse a Whiley type from a string.
+	 *
+	 * @param from
+	 * @return
+	 */
+	public static Type fromString(String from) {
+		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
+		WhileyFile wf = new WhileyFile(null);
+		WhileyFileParser parser = new WhileyFileParser(wf, tokens);
+		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
+		return parser.parseType(scope);
+	}
 
 	/**
 	 * Scan a directory to get the names of all the whiley source files
@@ -97,6 +123,7 @@ public class TestUtils {
 		cmd.setWhileydir(whileydir);
 		cmd.setWyaldir(whileydir); //
 		cmd.setVerify(verify);
+//		cmd.setVerbose(true);
 		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();

@@ -6,7 +6,7 @@ type scf9arr is ({scf9nat f, int g}[] ls) where some { i in 0..|ls| | ls[i].f ==
 function f(scf9arr xs) -> int:
     return |xs|
 
-method main() :
+public export method test() :
     {int f, int g}[] x = [{f: 1, g: 2}, {f: 4, g: 8}]
     x[0].f = 2
     f(x)

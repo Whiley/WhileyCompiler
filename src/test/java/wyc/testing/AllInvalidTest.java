@@ -1,9 +1,16 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
-
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyc.testing;
 
 import static org.junit.Assert.fail;
@@ -20,9 +27,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.commands.Compile;
+import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
+import wyfs.util.Trie;
 
 /**
  * Run through all invalid test cases with verification enabled. Since every
@@ -48,43 +56,26 @@ public class AllInvalidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Constant_Invalid_1", "unclassified");
 		IGNORED.put("Export_Invalid_1", "unclassified");
 		IGNORED.put("Function_Invalid_2", "unclassified");
 		IGNORED.put("Function_Invalid_9", "unclassified");
 		IGNORED.put("Native_Invalid_1", "unclassified");
-		IGNORED.put("OpenRecord_Invalid_2", "type testing definite taken");
-		//
-		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
 		//
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
 		//
 		IGNORED.put("Parsing_Invalid_15", "609");
-		//
-		IGNORED.put("Parsing_Invalid_31", "610");
-		//
-		IGNORED.put("MethodRef_Invalid_1", "#334");
-		IGNORED.put("MethodRef_Invalid_3", "#334");
-		//
-		IGNORED.put("TypeEquals_Invalid_1", "#681");
-		//
-		IGNORED.put("Tuple_Invalid_3", "#713");
-		IGNORED.put("Tuple_Invalid_4", "#713");
-		IGNORED.put("Tuple_Invalid_5", "#713");
-
+		// Normalisation for Method Subtyping
+		IGNORED.put("Lifetime_Lambda_Invalid_3", "#794");
+		// Support Captured Lifetime Parameters
+		IGNORED.put("Lifetime_Lambda_Invalid_5", "#795");
+		IGNORED.put("Lifetime_Lambda_Invalid_6", "#765");
+		// Access Static Variable from Type Invariant
+		IGNORED.put("Type_Invalid_11", "793");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("Fail_Invalid_1", "unclassified");
-		IGNORED.put("Fail_Invalid_3", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
-		IGNORED.put("TypeEquals_Invalid_5", "unclassified");
-		IGNORED.put("UnionType_Invalid_9", "unclassified");
-		//
 		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
 	}
 
@@ -122,8 +113,14 @@ public class AllInvalidTest {
 		String output = p.second();
 
 		if (r == Compile.Result.SUCCESS) {
-			// Clearly, the test should not compile.
-			fail("Test compiled when it shouldn't have!");
+			// This indicates the problem is some form of assertion error.
+			// Therefore, execute the code whilst expecting an assertion failure
+			//try {
+				//TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+				fail("Test compiled when it shouldn't have!");
+//			} catch(AssertionError e) {
+//				// OK
+//			}
 		} else if (r == Compile.Result.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
 			fail("Test caused internal failure!\n" + output);

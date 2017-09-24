@@ -1,0 +1,3 @@
+tests/invalid/Method_Invalid_9.whiley:14: expected type fun_t, found method(int)->(int)
+    fun_t y = &m
+              ^^

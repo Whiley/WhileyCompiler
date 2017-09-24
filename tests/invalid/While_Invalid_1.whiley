@@ -1,4 +1,4 @@
-method main() -> int:
+public export method test() -> int:
     int j = 0
     int i
     //

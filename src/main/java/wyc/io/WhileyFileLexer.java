@@ -1,9 +1,16 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
-
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyc.io;
 
 import java.io.BufferedReader;
@@ -46,6 +53,11 @@ public class WhileyFileLexer {
 			text.append(buf, 0, len);
 		}
         input = text;
+	}
+
+	public WhileyFileLexer(String input) {
+		this.entry = null;
+		this.input = new StringBuilder(input);
 	}
 
 	/**
@@ -249,7 +261,12 @@ public class WhileyFileLexer {
 		case ';':
 			return new Token(Token.Kind.SemiColon, ";", pos++);
 		case ':':
-			return new Token(Token.Kind.Colon, ":", pos++);
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == ':') {
+				pos += 2;
+				return new Token(Token.Kind.ColonColon, "::", pos - 2);
+			} else {
+				return new Token(Token.Kind.Colon, ":", pos++);
+			}
 		case '|':
 			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
 				pos += 2;
@@ -482,9 +499,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {};
-		unknown.attributes().add(new Attribute.Source(index, index, -1));
-		throw new SyntaxError(msg, entry, unknown);
+		throw new SyntaxError(msg, entry, new WhileyFile.Attribute.Span(null,index,index));
 
 	}
 
@@ -625,6 +640,7 @@ public class WhileyFileLexer {
 			Comma(","),
 			SemiColon(";"),
 			Colon(":"),
+			ColonColon("::"),
 			Ampersand("&"),
 			VerticalBar("|"),
 			LeftBrace("("),

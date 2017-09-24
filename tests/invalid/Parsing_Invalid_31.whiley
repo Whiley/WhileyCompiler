@@ -1,5 +1,5 @@
 method m() :
     int b = 1
 
-method main() :
+public export method test() :
     int a = m()

@@ -1,838 +1,745 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
-// All rights reserved.
+// Copyright 2011 The Whiley Project Developers
 //
-// This software may be modified and distributed under the terms
-// of the BSD license.  See the LICENSE file for details.
-
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyc.io;
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
-import wyal.lang.WyalFile;
-import wyc.lang.Expr;
-import wyc.lang.Stmt;
+import wybs.lang.Build;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile;
-import wycc.util.Pair;
-import wyil.lang.*;
+import static wyc.lang.WhileyFile.*;
 
 /**
- * Responsible for "pretty printing" a Whiley File. This is useful for
- * formatting Whiley Files. Also, it can be used to programatically generate
- * Whiley Files.
+ * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.
  *
  * @author David J. Pearce
  *
  */
-public class WhileyFilePrinter {
-	private PrintStream out;
+public final class WhileyFilePrinter {
+	private PrintWriter out;
+	private boolean verbose = false;
 
+	public WhileyFilePrinter(Build.Task builder) {
 
-	public WhileyFilePrinter(OutputStream stream) {
-		try {
-			this.out = new PrintStream(stream, true, "UTF-8");
-		} catch(Exception e) {
-			this.out = new PrintStream(stream);
-		}
 	}
 
-	public void print(WhileyFile wf) {
-		for(WhileyFile.Declaration d : wf.declarations) {
-			print(d);
+	public WhileyFilePrinter(PrintWriter writer) {
+		this.out = writer;
+	}
+
+	public WhileyFilePrinter(OutputStream stream) {
+		this.out = new PrintWriter(new OutputStreamWriter(stream));
+	}
+
+	// ======================================================================
+	// Configuration Methods
+	// ======================================================================
+
+	public void setVerbose(boolean flag) {
+		this.verbose = flag;
+	}
+
+	// ======================================================================
+	// Apply Method
+	// ======================================================================
+
+	public void apply(WhileyFile module) throws IOException {
+		out.println();
+		for(Decl d : module.getDeclarations()) {
+			write(d,out);
 		}
 		out.flush();
 	}
 
-	public void print(WhileyFile.Declaration decl) {
-		if(decl instanceof WhileyFile.Import) {
-			print((WhileyFile.Import)decl);
-		} else if(decl instanceof WhileyFile.Constant) {
-			print((WhileyFile.Constant)decl);
-		} else if(decl instanceof WhileyFile.Type) {
-			print((WhileyFile.Type)decl);
-		} else if(decl instanceof WhileyFile.FunctionOrMethodOrProperty) {
-			print((WhileyFile.FunctionOrMethodOrProperty)decl);
+	private void write(Decl d, PrintWriter out) {
+		if(d instanceof Decl.StaticVariable) {
+			write((Decl.StaticVariable) d, out);
+		} else if(d instanceof Decl.Type) {
+			write((Decl.Type) d, out);
+		} else if(d instanceof Decl.Property){
+			write((Decl.Property) d, out);
 		} else {
-			throw new RuntimeException("Unknown construct encountered: "
-					+ decl.getClass().getName());
+			write((Decl.FunctionOrMethod) d, out);
 		}
 	}
 
-	public void print(WhileyFile.FunctionOrMethodOrProperty fm) {
-		out.println();
-		print(fm.modifiers());
+	private void write(Decl.StaticVariable decl, PrintWriter out) {
+		writeModifiers(decl.getModifiers(), out);
+		out.print(decl.getType());
+		out.print(" ");
+		out.println(decl.getName() + " = " + decl.getInitialiser());
+	}
 
-		if(fm instanceof WhileyFile.Method) {
-			out.print("method ");
-		} else {
-			out.print("function ");
+	private void write(Decl.Type decl, PrintWriter out) {
+		writeModifiers(decl.getModifiers(), out);
+		out.print("type " + decl.getName() + " is (");
+		writeVariableDeclaration(0, decl.getVariableDeclaration(), out);
+		out.println(")");
+		for (Expr invariant : decl.getInvariant()) {
+			out.print("where ");
+			writeExpression(invariant, out);
+			out.println();
 		}
+		out.println();
+	}
+	private void write(Decl.Property decl, PrintWriter out) {
+		out.print("property ");
+		out.print(decl.getName());
+		writeParameters(decl.getParameters(),out);
+	}
 
-		out.print(fm.name());
-		printParameters(fm.parameters);
-		out.print(" -> ");
-		printParameters(fm.returns);
-
-		for(Expr r : fm.requires) {
+	private void write(Decl.FunctionOrMethod decl, PrintWriter out) {
+		//
+		writeModifiers(decl.getModifiers(), out);
+		if (decl instanceof Decl.Function) {
+			out.print("function ");
+		} else {
+			out.print("method ");
+		}
+		out.print(decl.getName());
+		writeParameters(decl.getParameters(),out);
+		if (decl.getReturns().size() != 0) {
+			out.print(" -> ");
+			writeParameters(decl.getReturns(),out);
+		}
+		//
+		for (Expr precondition : decl.getRequires()) {
 			out.println();
 			out.print("requires ");
-			print(r);
+			writeExpression(precondition, out);
 		}
-		for(Expr r : fm.ensures) {
+		for (Expr postcondition : decl.getEnsures()) {
 			out.println();
 			out.print("ensures ");
-			print(r);
+			writeExpression(postcondition, out);
 		}
-
-		out.println(":");
-
-		print(fm.statements,1);
+		if (decl.getBody() != null) {
+			out.println(": ");
+			writeBlock(0, decl.getBody(), out);
+		}
 	}
 
-	public void print(WhileyFile.Import decl) {
-		out.print("import ");
-		if(decl.name != null) {
-			out.print(decl.name);
-			out.print(" from ");
-		}
-		for(int i=0;i!=decl.filter.size();++i) {
-			if(i != 0) {
-				out.print(".");
+	private void writeParameters(Tuple<Decl.Variable> parameters, PrintWriter out) {
+		out.print("(");
+		for (int i = 0; i != parameters.size(); ++i) {
+			if (i != 0) {
+				out.print(", ");
 			}
-			String item = decl.filter.get(i);
-			if(!item.equals("**")) {
-				out.print(decl.filter.get(i));
+			writeVariableDeclaration(0, parameters.get(i), out);
+		}
+		out.print(")");
+	}
+
+	private void writeVariableDeclaration(int indent, Decl.Variable decl, PrintWriter out) {
+		out.print(decl.getType());
+		out.print(" ");
+		out.print(decl.getName());
+		if (decl.hasInitialiser()) {
+			out.print(" = ");
+			writeExpression(decl.getInitialiser(), out);
+		}
+		out.println();
+	}
+
+	private void writeBlock(int indent, Stmt.Block block, PrintWriter out) {
+		for (int i = 0; i != block.size(); ++i) {
+			writeStatement(indent, block.get(i), out);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void writeStatement(int indent, Stmt c, PrintWriter out) {
+		tabIndent(indent+1,out);
+		switch(c.getOpcode()) {
+		case STMT_assert:
+			writeAssert(indent, (Stmt.Assert) c, out);
+			break;
+		case STMT_assume:
+			writeAssume(indent, (Stmt.Assume) c, out);
+			break;
+		case STMT_assign:
+			writeAssign(indent, (Stmt.Assign) c, out);
+			break;
+		case STMT_break:
+			writeBreak(indent, (Stmt.Break) c, out);
+			break;
+		case STMT_continue:
+			writeContinue(indent, (Stmt.Continue) c, out);
+			break;
+		case STMT_debug:
+			writeDebug(indent, (Stmt.Debug) c, out);
+			break;
+		case STMT_dowhile:
+			writeDoWhile(indent, (Stmt.DoWhile) c, out);
+			break;
+		case STMT_fail:
+			writeFail(indent, (Stmt.Fail) c, out);
+			break;
+		case STMT_if:
+		case STMT_ifelse:
+			writeIf(indent, (Stmt.IfElse) c, out);
+			break;
+		case STMT_namedblock:
+			writeNamedBlock(indent, (Stmt.NamedBlock) c, out);
+			break;
+		case STMT_while:
+			writeWhile(indent, (Stmt.While) c, out);
+			break;
+		case STMT_return:
+			writeReturn(indent, (Stmt.Return) c, out);
+			break;
+		case STMT_skip:
+			writeSkip(indent, (Stmt.Skip) c, out);
+			break;
+		case STMT_switch:
+			writeSwitch(indent, (Stmt.Switch) c, out);
+			break;
+		case EXPR_indirectinvoke:
+			writeIndirectInvoke((Expr.IndirectInvoke) c, out);
+			break;
+		case EXPR_invoke:
+			writeInvoke((Expr.Invoke) c, out);
+			break;
+		case DECL_variable:
+		case DECL_variableinitialiser:
+			writeVariableDeclaration(indent, (Decl.Variable) c, out);
+			break;
+		default:
+			throw new IllegalArgumentException("unknown bytecode encountered");
+		}
+	}
+
+	private void writeAssert(int indent, Stmt.Assert stmt, PrintWriter out) {
+		out.print("assert ");
+		writeExpression(stmt.getCondition(),out);
+		out.println();
+	}
+
+	private void writeAssume(int indent, Stmt.Assume stmt, PrintWriter out) {
+		out.print("assume ");
+		writeExpression(stmt.getCondition(),out);
+		out.println();
+	}
+
+	private void writeAssign(int indent, Stmt.Assign stmt, PrintWriter out) {
+		Tuple<LVal> lhs = stmt.getLeftHandSide();
+		Tuple<Expr> rhs = stmt.getRightHandSide();
+		if(lhs.size() > 0) {
+			for(int i=0;i!=lhs.size();++i) {
+				if(i!=0) { out.print(", "); }
+				writeExpression(lhs.get(i),out);
 			}
+			out.print(" = ");
 		}
+		writeExpressions(rhs,out);
 		out.println();
 	}
 
-	public void print(WhileyFile.Constant decl) {
-		out.println();
-		out.print("constant ");
-		out.print(decl.name());
-		out.print(" is ");
-		print(decl.constant);
-		out.println();
+	private void writeBreak(int indent, Stmt.Break stmt, PrintWriter out) {
+		out.println("break");
 	}
 
-	public void print(WhileyFile.Type decl) {
-		out.println();
-		out.print("type ");
-		out.print(decl.name());
-		out.print(" is ");
-		printParameter(decl.parameter,true);
-
-		for(Expr invariant : decl.invariant) {
-			out.print(" where ");
-			print(invariant);
-		}
-
-		out.println();
+	private void writeContinue(int indent, Stmt.Continue stmt, PrintWriter out) {
+		out.println("continue");
 	}
 
-	public void print(List<Stmt> statements, int indent) {
-		for(Stmt s : statements) {
-			print(s,indent);
-		}
+	private void writeDebug(int indent, Stmt.Debug stmt, PrintWriter out) {
+		out.println("debug");
 	}
 
-	public void print(Stmt stmt, int indent) {
-		indent(indent);
-
-		if(stmt instanceof Stmt.Assert) {
-			print((Stmt.Assert) stmt);
-		} else if(stmt instanceof Stmt.Assign) {
-			print((Stmt.Assign) stmt);
-		} else if(stmt instanceof Stmt.Assume) {
-			print((Stmt.Assume) stmt);
-		} else if(stmt instanceof Stmt.Break) {
-			print((Stmt.Break) stmt);
-		} else if(stmt instanceof Stmt.Continue) {
-			print((Stmt.Continue) stmt);
-		} else if(stmt instanceof Stmt.Debug) {
-			print((Stmt.Debug) stmt);
-		} else if(stmt instanceof Stmt.DoWhile) {
-			print((Stmt.DoWhile) stmt, indent);
-		} else if(stmt instanceof Stmt.IfElse) {
-			print((Stmt.IfElse) stmt, indent);
-		} else if(stmt instanceof Stmt.Return) {
-			print((Stmt.Return) stmt);
-		} else if(stmt instanceof Stmt.Skip) {
-			print((Stmt.Skip) stmt);
-		} else if(stmt instanceof Stmt.Switch) {
-			print((Stmt.Switch) stmt, indent);
-		} else if(stmt instanceof Stmt.NamedBlock) {
-			print((Stmt.NamedBlock) stmt, indent);
-		} else if(stmt instanceof Stmt.While) {
-			print((Stmt.While) stmt, indent);
-		} else if(stmt instanceof Stmt.VariableDeclaration) {
-			print((Stmt.VariableDeclaration) stmt, indent);
-		} else if(stmt instanceof Expr.AbstractInvoke) {
-			print((Expr.AbstractInvoke) stmt);
+	private void writeDoWhile(int indent, Stmt.DoWhile stmt, PrintWriter out) {
+		Tuple<Expr> loopInvariant = stmt.getInvariant();
+		// Location<?>[] modifiedOperands = b.getOperandGroup(1);
+		out.println("do:");
+		//
+		writeBlock(indent+1,stmt.getBody(),out);
+		tabIndent(indent+1,out);
+		out.print("while ");
+		writeExpression(stmt.getCondition(),out);
+		out.print(" modifies ");
+		//writeExpressions(modifiedOperands,out);
+		for(Expr invariant : loopInvariant) {
 			out.println();
-		} else {
-			// should be dead-code
-			throw new RuntimeException("Unknown statement kind encountered: "
-					+ stmt.getClass().getName());
+			tabIndent(indent+1,out);
+			out.print("where ");
+			writeExpression(invariant,out);
+		}
+		// FIXME: add invariants
+		out.println();
+	}
+
+	private void writeFail(int indent, Stmt.Fail stmt, PrintWriter out) {
+		out.println("fail");
+	}
+
+	private void writeIf(int indent, Stmt.IfElse stmt, PrintWriter out) {
+		out.print("if ");
+		writeExpression(stmt.getCondition(),out);
+		out.println(":");
+		writeBlock(indent+1,stmt.getTrueBranch(),out);
+		if(stmt.hasFalseBranch()) {
+			tabIndent(indent+1,out);
+			out.println("else:");
+			writeBlock(indent+1,stmt.getFalseBranch(),out);
 		}
 	}
 
-	public void print(Stmt.Assert s) {
-		out.print("assert ");
-		print(s.expr);
+	private void writeNamedBlock(int indent, Stmt.NamedBlock stmt, PrintWriter out) {
+		out.print(stmt.getName());
+		out.println(":");
+		writeBlock(indent+1,stmt.getBlock(),out);
+	}
+
+	private void writeWhile(int indent, Stmt.While stmt, PrintWriter out) {
+		out.print("while ");
+		writeExpression(stmt.getCondition(), out);
+		Tuple<Expr> loopInvariant = stmt.getInvariant();
+		// Location<?>[] modifiedOperands = b.getOperandGroup(1);
+		// out.print(" modifies ");
+		// writeExpressions(modifiedOperands,out);
+		//
+		for (Expr invariant : loopInvariant) {
+			out.println();
+			tabIndent(indent + 1, out);
+			out.print("where ");
+			writeExpression(invariant, out);
+		}
+		out.println(":");
+		writeBlock(indent + 1, stmt.getBody(), out);
+	}
+
+	private void writeReturn(int indent, Stmt.Return stmt, PrintWriter out) {
+		Tuple<Expr> returns = stmt.getReturns();
+		out.print("return");
+		if(returns.size() > 0) {
+			out.print(" ");
+			writeExpressions(returns,out);
+		}
 		out.println();
 	}
 
-	public void print(Stmt.Assume s) {
-		out.print("assert ");
-		print(s.expr);
-		out.println();
-	}
-
-	public void print(Stmt.Debug s) {
-		out.print("debug ");
-		print(s.expr);
-		out.println();
-	}
-
-	public void print(Stmt.Break s) {
-		out.println("break");
-	}
-
-	public void print(Stmt.Continue s) {
-		out.println("break");
-	}
-
-	public void print(Stmt.Skip s) {
+	private void writeSkip(int indent, Stmt.Skip stmt, PrintWriter out) {
 		out.println("skip");
 	}
 
-	public void print(Stmt.Return s) {
-		out.print("return");
-		for(int i=0;i!=s.returns.size();++i) {
-			if(i != 0) {
-				out.print(",");
-			}
-			out.print(" ");
-			print(s.returns.get(i));
-		}
-		out.println();
-	}
-
-	public void print(Stmt.Assign s) {
-		for(int i=0;i!=s.lvals.size();++i) {
-			if(i!=0) {
-				out.print(", ");
-			}
-			print(s.lvals.get(i));
-		}
-		out.print(" = ");
-		for(int i=0;i!=s.rvals.size();++i) {
-			if(i!=0) {
-				out.print(", ");
-			}
-			print(s.rvals.get(i));
-		}
-		out.println();
-	}
-
-	public void print(Stmt.IfElse s, int indent) {
-		out.print("if ");
-		print(s.condition);
-		out.println(":");
-		print(s.trueBranch,indent+1);
-		if(!s.falseBranch.isEmpty()) {
-			indent(indent);
-			out.println("else:");
-			print(s.falseBranch, indent+1);
-		}
-	}
-
-	public void print(Stmt.DoWhile s, int indent) {
-		out.println("do:");
-		print(s.body,indent+1);
-		indent(indent);
-		// TODO: loop invariant
-		out.print("while ");
-		print(s.condition);
-		out.println();
-	}
-
-	public void print(Stmt.NamedBlock s, int indent) {
-		out.println(s.name + ":");
-		print(s.body,indent+1);
-	}
-
-	public void print(Stmt.While s, int indent) {
-		out.print("while ");
-		print(s.condition);
-
-		boolean firstTime = true;
-		for(Expr i : s.invariants) {
-			if(!firstTime) {
-				out.print(",");
-			} else {
-				firstTime = false;
-			}
-			out.print(" where ");
-			print(i);
-		}
-
-		// TODO: loop invariant
-		out.println(":");
-		print(s.body,indent+1);
-	}
-
-	public void print(Stmt.Switch s, int indent) {
+	private void writeSwitch(int indent, Stmt.Switch stmt, PrintWriter out) {
 		out.print("switch ");
-		print(s.expr);
+		writeExpression(stmt.getCondition(), out);
 		out.println(":");
-		for(Stmt.Case cas : s.cases) {
-			indent(indent+1);
-			boolean firstTime = true;
-			if(cas.expr.isEmpty()) {
-				out.print("default");
+		for (Stmt.Case cAse : stmt.getCases()) {
+			// FIXME: ugly
+			Tuple<Expr> values = cAse.getConditions();
+			tabIndent(indent + 2, out);
+			if (values.size() == 0) {
+				out.println("default:");
 			} else {
 				out.print("case ");
-				for(Expr e : cas.expr) {
-					if(!firstTime) {
+				for (int j = 0; j != values.size(); ++j) {
+					if (j != 0) {
 						out.print(", ");
 					}
-					firstTime=false;
-					print(e);
+					writeExpression(values.get(j), out);
 				}
+				out.println(":");
 			}
-
-			out.println(":");
-			print(cas.stmts,indent+2);
+			writeBlock(indent + 2, cAse.getBlock(), out);
 		}
 	}
 
-	public void print(Stmt.VariableDeclaration s, int indent) {
-		printParameter(s.parameter,false);
-		if(s.expr != null) {
-			out.print(" = ");
-			print(s.expr);
-		}
-		out.println();
-	}
-
-	public void printWithBrackets(Expr expression, Class<? extends Expr>... matches) {
-		boolean withBrackets = false;
-		// First, decide whether brackets are needed or not
-		for(Class<? extends Expr> match : matches) {
-			if(match.isInstance(expression)) {
-				withBrackets = true;
-				break;
-			}
-		}
-		// Second, print with brackets if needed
-		if(withBrackets) {
+	/**
+	 * Write a bracketed operand if necessary. Any operand whose human-readable
+	 * representation can contain whitespace must have brackets around it.
+	 *
+	 * @param operand
+	 * @param enclosing
+	 * @param out
+	 */
+	private void writeBracketedExpression(Expr expr, PrintWriter out) {
+		boolean needsBrackets = needsBrackets(expr);
+		if (needsBrackets) {
 			out.print("(");
-			print(expression);
+		}
+		writeExpression(expr, out);
+		if (needsBrackets) {
 			out.print(")");
-		} else {
-			print(expression);
 		}
 	}
 
-	public void print(Expr expression) {
-		if (expression instanceof Expr.Constant) {
-			print ((Expr.Constant) expression);
-		} else if (expression instanceof Expr.AbstractVariable) {
-			print ((Expr.AbstractVariable) expression);
-		} else if (expression instanceof Expr.ConstantAccess) {
-			print ((Expr.ConstantAccess) expression);
-		} else if (expression instanceof Expr.ArrayInitialiser) {
-			print ((Expr.ArrayInitialiser) expression);
-		} else if (expression instanceof Expr.BinOp) {
-			print ((Expr.BinOp) expression);
-		} else if (expression instanceof Expr.Dereference) {
-			print ((Expr.Dereference) expression);
-		} else if (expression instanceof Expr.Cast) {
-			print ((Expr.Cast) expression);
-		} else if (expression instanceof Expr.IndexOf) {
-			print ((Expr.IndexOf) expression);
-		} else if (expression instanceof Expr.UnOp) {
-			print ((Expr.UnOp) expression);
-		} else if (expression instanceof Expr.AbstractInvoke) {
-			print ((Expr.AbstractInvoke) expression);
-		} else if (expression instanceof Expr.IndirectFunctionCall) {
-			print ((Expr.IndirectFunctionCall) expression);
-		} else if (expression instanceof Expr.IndirectMethodCall) {
-			print ((Expr.IndirectMethodCall) expression);
-		} else if (expression instanceof Expr.Quantifier) {
-			print ((Expr.Quantifier) expression);
-		} else if (expression instanceof Expr.FieldAccess) {
-			print ((Expr.FieldAccess) expression);
-		} else if (expression instanceof Expr.Record) {
-			print ((Expr.Record) expression);
-		} else if (expression instanceof Expr.AbstractFunctionOrMethod) {
-			print ((Expr.AbstractFunctionOrMethod) expression);
-		} else if (expression instanceof Expr.Lambda) {
-			print ((Expr.Lambda) expression);
-		} else if (expression instanceof Expr.New) {
-			print ((Expr.New) expression);
-		} else if (expression instanceof Expr.TypeVal) {
-			print ((Expr.TypeVal) expression);
-		} else {
-			// should be dead-code
-			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
-		}
-	}
-
-	public void print(Expr.Constant c) {
-		out.print(c.value);
-	}
-
-	public void print(Expr.AbstractVariable v) {
-		out.print(v);
-	}
-
-	public void print(Expr.ConstantAccess v) {
-		if(v.qualification != null) {
-			out.print(v.qualification + "." + v.name);
-		} else {
-			out.print(v.name);
-		}
-	}
-
-	public void print(Expr.ArrayInitialiser e) {
-		out.print("[");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
+	private void writeExpressions(Tuple<Expr> exprs, PrintWriter out) {
+		for (int i = 0; i != exprs.size(); ++i) {
+			if (i != 0) {
 				out.print(", ");
 			}
-			firstTime=false;
-			print(i);
+			writeExpression(exprs.get(i), out);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void writeExpression(Expr expr, PrintWriter out) {
+		switch (expr.getOpcode()) {
+		case EXPR_arraylength:
+			writeArrayLength((Expr.ArrayLength) expr,out);
+			break;
+		case EXPR_arrayaccess:
+			writeArrayIndex((Expr.ArrayAccess) expr,out);
+			break;
+		case EXPR_arrayinitialiser:
+			writeArrayInitialiser((Expr.ArrayInitialiser) expr,out);
+			break;
+		case EXPR_arraygenerator:
+			writeArrayGenerator((Expr.ArrayGenerator) expr,out);
+			break;
+		case EXPR_cast:
+			writeConvert((Expr.Cast) expr, out);
+			break;
+		case EXPR_constant:
+			writeConst((Expr.Constant) expr, out);
+			break;
+		case EXPR_recordaccess:
+			writeFieldLoad((Expr.RecordAccess) expr, out);
+			break;
+		case EXPR_indirectinvoke:
+			writeIndirectInvoke((Expr.IndirectInvoke) expr, out);
+			break;
+		case EXPR_invoke:
+			writeInvoke((Expr.Invoke) expr, out);
+			break;
+		case DECL_lambda:
+			writeLambda((Decl.Lambda) expr, out);
+			break;
+		case EXPR_recordinitialiser:
+			writeRecordConstructor((Expr.RecordInitialiser) expr, out);
+			break;
+		case EXPR_new:
+			writeNewObject((Expr.New) expr,out);
+			break;
+		case EXPR_dereference:
+		case EXPR_logicalnot:
+		case EXPR_integernegation:
+		case EXPR_bitwisenot:
+			writePrefixLocations((Expr.UnaryOperator) expr,out);
+			break;
+		case EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
+			writeQuantifier((Expr.Quantifier) expr, out);
+			break;
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_bitwiseand:
+		case EXPR_is:
+			writeInfixLocations((Expr.NaryOperator) expr, out);
+			break;
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+			writeInfixLocations((Expr.BinaryOperator) expr, out);
+			break;
+		case EXPR_variablecopy:
+			writeVariableAccess((Expr.VariableAccess) expr, out);
+			break;
+		default:
+			throw new IllegalArgumentException("unknown bytecode encountered: " + expr);
+		}
+	}
+
+
+	private void writeArrayLength(Expr.ArrayLength expr, PrintWriter out) {
+		out.print("|");
+		writeExpression(expr.getOperand(), out);
+		out.print("|");
+	}
+
+	private void writeArrayIndex(Expr.ArrayAccess expr, PrintWriter out) {
+		writeExpression(expr.getFirstOperand(), out);
+		out.print("[");
+		writeExpression(expr.getSecondOperand(), out);
+		out.print("]");
+	}
+
+	private void writeArrayInitialiser(Expr.ArrayInitialiser expr, PrintWriter out) {
+		Tuple<Expr> operands = expr.getOperands();
+		out.print("[");
+		for(int i=0;i!=operands.size();++i) {
+			if(i != 0) {
+				out.print(", ");
+			}
+			writeExpression(operands.get(i),out);
 		}
 		out.print("]");
 	}
 
-	public void print(Expr.BinOp e) {
-		printWithBrackets(e.lhs, Expr.BinOp.class, Expr.Cast.class);
-		out.print(" ");
-		out.print(e.op);
-		out.print(" ");
-		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Cast.class);
-	}
-
-	public void print(Expr.Dereference e) {
-		out.print("*");
-		print(e.src);
-	}
-
-	public void print(Expr.Cast e) {
-		out.print("(");
-		print(e.unresolvedType);
-		out.print(") ");
-		printWithBrackets(e.expr,Expr.BinOp.class,Expr.Cast.class);
-	}
-
-	public void print(Expr.IndexOf e) {
-		print(e.src);
+	private void writeArrayGenerator(Expr.ArrayGenerator expr, PrintWriter out) {
 		out.print("[");
-		print(e.index);
+		writeExpression(expr.getFirstOperand(), out);
+		out.print(" ; ");
+		writeExpression(expr.getSecondOperand(), out);
 		out.print("]");
 	}
-
-	public void print(Expr.UnOp e) {
-		switch(e.op) {
-		case NEG:
-			out.print("-");
-			break;
-		case NOT:
-			out.print("!");
-			break;
-		case INVERT:
-			out.print("~");
-			break;
-		case ARRAYLENGTH:
-			out.print("|");
-			print(e.mhs);
-			out.print("|");
-			return;
-		}
-		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Cast.class);
+	private void writeConvert(Expr.Cast expr, PrintWriter out) {
+		out.print("(" + expr.getType() + ") ");
+		writeExpression(expr.getOperand(),out);
+	}
+	private void writeConst(Expr.Constant expr, PrintWriter out) {
+		out.print(expr.getValue());
+	}
+	private void writeFieldLoad(Expr.RecordAccess expr, PrintWriter out) {
+		writeBracketedExpression(expr.getOperand(),out);
+		out.print("." + expr.getField());
 	}
 
-	public void print(Expr.AbstractInvoke e) {
-		if(e.qualification != null) {
-			out.print(e.qualification.toString());
-			out.print(".");
-		}
-		out.print(e.name);
-		if (!e.lifetimeArguments.isEmpty()) {
-			out.print("<");
-			boolean firstTime = true;
-			for (String lifetime : e.lifetimeArguments) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(lifetime);
-			}
-			out.print(">");
-		}
+	private void writeIndirectInvoke(Expr.IndirectInvoke expr, PrintWriter out) {
+		Tuple<Expr> args = expr.getArguments();
+		writeExpression(expr.getSource(), out);
 		out.print("(");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
+		for (int i = 0; i != args.size(); ++i) {
+			if (i != 0) {
 				out.print(", ");
 			}
-			firstTime=false;
-			print(i);
+			writeExpression(args.get(i), out);
 		}
 		out.print(")");
 	}
 
-	public void print(Expr.IndirectFunctionCall e) {
-		print(e.src);
-		if (!e.lifetimeArguments.isEmpty()) {
-			out.print("<");
-			boolean firstTime = true;
-			for (String lifetime : e.lifetimeArguments) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(lifetime);
-			}
-			out.print(">");
-		}
-		out.print("(");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
+	private void writeInvoke(Expr.Invoke expr, PrintWriter out) {
+		out.print(expr.getName() + "(");
+		Tuple<Expr> args = expr.getOperands();
+		for (int i = 0; i != args.size(); ++i) {
+			if (i != 0) {
 				out.print(", ");
 			}
-			firstTime=false;
-			print(i);
+			writeExpression(args.get(i), out);
 		}
 		out.print(")");
 	}
 
-	public void print(Expr.IndirectMethodCall e) {
-		print(e.src);
-		if (!e.lifetimeArguments.isEmpty()) {
-			out.print("<");
-			boolean firstTime = true;
-			for (String lifetime : e.lifetimeArguments) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(lifetime);
-			}
-			out.print(">");
-		}
-		out.print("(");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(i);
-		}
-		out.print(")");
+	@SuppressWarnings("unchecked")
+	private void writeLambda(Decl.Lambda expr, PrintWriter out) {
+//		out.print("&[");
+//		Location<?>[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
+//		for (int i = 0; i != environment.length; ++i) {
+//			Expr.VariableDeclaration> var = (Location<VariableDeclaration>) environment[i];
+//			if (i != 0) {
+//				out.print(", ");
+//			}
+//			out.print(var.getType());
+//			out.print(" ");
+//			out.print(var.getBytecode().getName());
+//		}
+//		out.print("](");
+//		Location<?>[] parameters = expr.getOperandGroup(SyntaxTree.PARAMETERS);
+//		for (int i = 0; i != parameters.length; ++i) {
+//			Location<VariableDeclaration> var = (Location<VariableDeclaration>) parameters[i];
+//			if (i != 0) {
+//				out.print(", ");
+//			}
+//			out.print(var.getType());
+//			out.print(" ");
+//			out.print(var.getBytecode().getName());
+//		}
+//		out.print(" -> ");
+//		writeExpression(expr.getOperand(0), out);
+//		out.print(")");
 	}
 
-	public void print(Expr.Quantifier e) {
-		switch(e.cop) {
-		case SOME:
-			out.print("some ");
-			break;
-		case ALL:
-			out.print("all ");
-			break;
-		}
-
-		out.print("{ ");
-
-		boolean firstTime=true;
-		for(Pair<String,Expr> src : e.sources) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			out.print(src.first());
-			out.print(" in ");
-			print(src.second());
-		}
-		out.print(" | ");
-		print(e.condition);
-
-		out.print(" }");
-	}
-
-	public void print(Expr.FieldAccess e) {
-		if(e.src instanceof Expr.Dereference) {
-			printWithBrackets(((Expr.Dereference)e.src).src,Expr.New.class);
-			out.print("->");
-			out.print(e.name);
-		} else {
-			printWithBrackets(e.src,Expr.New.class);
-			out.print(".");
-			out.print(e.name);
-		}
-	}
-
-	public void print(Expr.Record e) {
+	private void writeRecordConstructor(Expr.RecordInitialiser expr, PrintWriter out) {
 		out.print("{");
-		boolean firstTime = true;
-		for(Map.Entry<String,Expr> i : e.fields.entrySet()) {
-			if(!firstTime) {
+		Tuple<WhileyFile.Identifier> fields = expr.getFields();
+		Tuple<WhileyFile.Expr> operands = expr.getOperands();
+		for (int i = 0; i != operands.size(); ++i) {
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
+			if (i != 0) {
 				out.print(", ");
 			}
-			firstTime=false;
-			out.print(i.getKey());
+			out.print(field);
 			out.print(": ");
-			print(i.getValue());
+			writeExpression(operand, out);
 		}
 		out.print("}");
 	}
 
-	public void print(Expr.AbstractFunctionOrMethod e) {
-		out.print("&");
-		out.print(e.name);
-		if(e.paramTypes != null && e.paramTypes.size() > 0) {
-			out.print("(");
-			boolean firstTime = true;
-			for(WyalFile.Type t : e.paramTypes) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				print(t);
-			}
-			out.print(")");
-		}
-	}
-
-	public void print(Expr.Lambda e) {
-		out.print("&");
-		if (!e.contextLifetimes.isEmpty()) {
-			out.print("[");
-			boolean firstTime = true;
-			for (String lifetime : e.contextLifetimes) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(lifetime);
-			}
-			out.print("]");
-		}
-		if (!e.lifetimeParameters.isEmpty()) {
-			out.print("<");
-			boolean firstTime = true;
-			for (String lifetime : e.lifetimeParameters) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(lifetime);
-			}
-			out.print(">");
-		}
-		out.print("(");
-		boolean firstTime = true;
-		for(WhileyFile.Parameter p : e.parameters) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(p.type);
-			out.print(" ");
-			out.print(p.name);
-		}
-		out.print(" -> ");
-		print(e.body);
-		out.print(")");
-	}
-
-	public void print(Expr.New e) {
+	private void writeNewObject(Expr.New expr, PrintWriter out) {
 		out.print("new ");
-		print(e.expr);
+		writeExpression(expr.getOperand(), out);
 	}
 
-	public void print(Expr.TypeVal e) {
-		print(e.unresolvedType);
+	private void writePrefixLocations(Expr.UnaryOperator expr, PrintWriter out) {
+		// Prefix operators
+		out.print(opcode(expr.getOpcode()));
+		writeBracketedExpression(expr.getOperand(),out);
 	}
 
-	private void printParameters(List<WhileyFile.Parameter> parameters) {
-		out.print("(");
-		boolean firstTime = true;
-		for(int i = 0; i < parameters.size();++i) {
-			WhileyFile.Parameter p = parameters.get(i);
-			if(!firstTime) {
+	private void writeInfixLocations(Expr.BinaryOperator expr, PrintWriter out) {
+		writeBracketedExpression(expr.getFirstOperand(),out);
+		out.print(" ");
+		out.print(opcode(expr.getOpcode()));
+		out.print(" ");
+		writeBracketedExpression(expr.getSecondOperand(),out);
+	}
+
+	private void writeInfixLocations(Expr.NaryOperator expr, PrintWriter out) {
+		Tuple<Expr> operands = expr.getOperands();
+		for (int i = 0; i != operands.size(); ++i) {
+			if (i != 0) {
+				out.print(" ");
+				out.print(opcode(expr.getOpcode()));
+				out.print(" ");
+			}
+			writeBracketedExpression(operands.get(i), out);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void writeQuantifier(Expr.Quantifier expr, PrintWriter out) {
+		out.print(quantifierKind(expr));
+		out.print(" { ");
+		Tuple<Decl.Variable> params = expr.getParameters();
+		for (int i = 0; i != params.size(); ++i) {
+			Decl.Variable v = params.get(i);
+			if (i != 0) {
 				out.print(", ");
 			}
-			firstTime=false;
-			printParameter(p,false);
+			out.print(v.getName());
+			out.print(" in ");
+			writeExpression(v.getInitialiser(), out);
 		}
-		out.print(")");
+		out.print(" | ");
+		writeExpression(expr.getOperand(), out);
+		out.print(" } ");
 	}
 
-	private void printParameter(WhileyFile.Parameter parameter, boolean braces) {
-		braces &= parameter.name == null;
-		if(braces) {
-			out.print("(");
-		}
-		print(parameter.type);
-		out.print(" ");
-		out.print(parameter.name);
-		if(braces) {
-			out.print(")");
-		}
+	private void writeVariableAccess(Expr.VariableAccess loc, PrintWriter out) {
+		out.print(loc.getVariableDeclaration().getName());
 	}
 
-	public void print(List<Modifier> modifiers) {
+	private String quantifierKind(Expr.Quantifier c) {
+		switch(c.getOpcode()) {
+		case EXPR_logicalexistential:
+			return "exists";
+		case EXPR_logicaluniversal:
+			return "all";
+		}
+		throw new IllegalArgumentException();
+	}
+
+	private static void writeModifiers(Tuple<Modifier> modifiers, PrintWriter out) {
 		for(Modifier m : modifiers) {
-			out.print(m);
+			out.print(m.toString());
 			out.print(" ");
 		}
 	}
 
+	private boolean needsBrackets(Expr e) {
+		switch(e.getOpcode()) {
+		case EXPR_cast:
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
+		case EXPR_equal:
+		case EXPR_notequal:
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+		case EXPR_logicaland:
+		case EXPR_logicalor:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_is:
+		case EXPR_new:
+		case EXPR_dereference:
+			return true;
+		}
+		return false;
+	}
 
-	public void print(WyalFile.Type t) {
-		if(t instanceof WyalFile.Type.Any) {
-			out.print("any");
-		} else if(t instanceof WyalFile.Type.Bool) {
-			out.print("bool");
-		} else if(t instanceof WyalFile.Type.Byte) {
-			out.print("byte");
-		} else if(t instanceof WyalFile.Type.Int) {
-			out.print("int");
-		} else if(t instanceof WyalFile.Type.Null) {
-			out.print("null");
-		} else if(t instanceof WyalFile.Type.Void) {
-			out.print("void");
-		} else if (t instanceof WyalFile.Type.Nominal) {
-			WyalFile.Type.Nominal nt = (WyalFile.Type.Nominal) t;
-			boolean firstTime = true;
-			for (WyalFile.Identifier name : nt.getName().getComponents()) {
-				if (!firstTime) {
-					out.print(".");
-				}
-				firstTime = false;
-				out.print(name);
-			}
-		} else if(t instanceof WyalFile.Type.Array) {
-			out.print("[");
-			print(((WyalFile.Type.Array)t).getElement());
-			out.print("]");
-		} else if(t instanceof WyalFile.Type.FunctionOrMethodOrProperty) {
-			WyalFile.Type.FunctionOrMethodOrProperty tt = (WyalFile.Type.FunctionOrMethodOrProperty) t;
-
-			if(t instanceof WyalFile.Type.Function) {
-				out.print("function ");
-			} else if(t instanceof WyalFile.Type.Method) {
-				out.print("method ");
-			} else {
-				out.print("property ");
-			}
-//			if (!tt.contextLifetimes.isEmpty()) {
-//				out.print("[");
-//				boolean firstTime = true;
-//				for (String lifetime : tt.contextLifetimes) {
-//					if (!firstTime) {
-//						out.print(", ");
-//					}
-//					firstTime = false;
-//					out.print(lifetime);
-//				}
-//				out.print("]");
-//			}
-//			if (!tt.lifetimeParameters.isEmpty()) {
-//				out.print("<");
-//				boolean firstTime = true;
-//				for (String lifetime : tt.lifetimeParameters) {
-//					if (!firstTime) {
-//						out.print(", ");
-//					}
-//					firstTime = false;
-//					out.print(lifetime);
-//				}
-//				out.print(">");
-//			}
-			printParameterTypes(tt.getParameters());
-			out.print("->");
-			printParameterTypes(tt.getReturns());
-		} else if(t instanceof WyalFile.Type.Record) {
-			WyalFile.Type.Record tt = (WyalFile.Type.Record) t;
-			out.print("{");
-			boolean firstTime = true;
-			for(WyalFile.FieldDeclaration fd : tt.getFields()) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				print(fd.getType());
-				out.print(" ");
-				out.print(fd.getVariableName());
-			}
-			if(tt.isOpen()) {
-				out.print(", ...");
-			}
-			out.print("}");
-		} else if(t instanceof WyalFile.Type.Reference) {
-			out.print("ref ");
-			print(((WyalFile.Type.Reference) t).getElement());
-		} else if(t instanceof WyalFile.Type.Negation) {
-			out.print("!");
-			print(((WyalFile.Type.Negation) t).getElement());
-		} else if(t instanceof WyalFile.Type.Union) {
-			WyalFile.Type.Union ut = (WyalFile.Type.Union) t;
-			boolean firstTime = true;
-			for(WyalFile.Type et : ut.getOperands()) {
-				if(!firstTime) {
-					out.print(" | ");
-				}
-				firstTime=false;
-				print(et);
-			}
-		} else if(t instanceof WyalFile.Type.Intersection) {
-			WyalFile.Type.Intersection ut = (WyalFile.Type.Intersection) t;
-			boolean firstTime = true;
-			for(WyalFile.Type et : ut.getOperands()) {
-				if(!firstTime) {
-					out.print(" & ");
-				}
-				firstTime=false;
-				print(et);
-			}
-		} else {
-			// should be dead-code
-			throw new RuntimeException("Unknown type kind encountered: " + t.getClass().getName());
+	private static String opcode(int k) {
+		switch(k) {
+		case EXPR_integernegation:
+			return "-";
+		case EXPR_logicalnot:
+			return "!";
+		case EXPR_bitwisenot:
+			return "~";
+		case EXPR_dereference:
+			return "*";
+		// Binary
+		case EXPR_integeraddition:
+			return "+";
+		case EXPR_integersubtraction:
+			return "-";
+		case EXPR_integermultiplication:
+			return "*";
+		case EXPR_integerdivision:
+			return "/";
+		case EXPR_integerremainder:
+			return "%";
+		case EXPR_equal:
+			return "==";
+		case EXPR_notequal:
+			return "!=";
+		case EXPR_integerlessthan:
+			return "<";
+		case EXPR_integerlessequal:
+			return "<=";
+		case EXPR_integergreaterthan:
+			return ">";
+		case EXPR_integergreaterequal:
+			return ">=";
+		case EXPR_logicaland:
+			return "&&";
+		case EXPR_logicalor:
+			return "||";
+		case EXPR_bitwiseor:
+			return "|";
+		case EXPR_bitwisexor:
+			return "^";
+		case EXPR_bitwiseand:
+			return "&";
+		case EXPR_bitwiseshl:
+			return "<<";
+		case EXPR_bitwiseshr:
+			return ">>";
+		case EXPR_new:
+			return "new";
+		default:
+			throw new IllegalArgumentException("unknown operator kind : " + k);
 		}
 	}
 
-	private void printParameterTypes(WyalFile.Tuple<WyalFile.Type> parameters) {
-		out.print("(");
-		boolean firstTime = true;
-		for(int i = 0; i < parameters.size();++i) {
-			WyalFile.Type p = parameters.getOperand(i);
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(p);
-		}
-		out.print(")");
-	}
-
-
-	public void indent(int level) {
-		for(int i=0;i!=level;++i) {
-			out.print("    ");
+	private static void tabIndent(int indent, PrintWriter out) {
+		indent = indent * 4;
+		for(int i=0;i<indent;++i) {
+			out.print(" ");
 		}
 	}
 }

@@ -10,5 +10,5 @@ function min(nat a, int b) -> int:
     else:
         return x
 
-method main() :
+public export method test() :
     int x = min(0,-1)
