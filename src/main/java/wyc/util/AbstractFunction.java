@@ -38,6 +38,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitDeclaration(Declaration decl, P data) {
 		switch (decl.getOpcode()) {
+		case DECL_importfrom:
 		case DECL_import:
 			return visitImport((Decl.Import) decl, data);
 		case DECL_staticvar:
@@ -319,6 +320,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_arraylength:
@@ -381,6 +383,7 @@ public abstract class AbstractFunction<P,R> {
 			return visitBitwiseComplement((Expr.BitwiseComplement) expr, data);
 		case EXPR_dereference:
 			return visitDereference((Expr.Dereference) expr, data);
+		case EXPR_staticnew:
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
 		case EXPR_recordaccess:

@@ -62,15 +62,19 @@ public class AllValidTest {
 		// Function Overloading for Nominal Types
 		IGNORED.put("Function_Valid_11", "#702");
 		IGNORED.put("Function_Valid_15", "#702");
-		// Subtyping over Lifetime Parameters
-		IGNORED.put("Lifetime_Lambda_Valid_7", "#764");
-		IGNORED.put("Lifetime_Valid_7", "#764");
-		IGNORED.put("Lifetime_Valid_8", "#764");
+		//  Normalisation for Method Subtyping
+		IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
+		IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
+		IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
+		// Support Captured Lifetime Parameters
+		IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
 		// Type Tests with Invariants
 		IGNORED.put("TypeEquals_Valid_23", "#787");
 		IGNORED.put("TypeEquals_Valid_25", "#787");
 		IGNORED.put("TypeEquals_Valid_30", "#787");
 		IGNORED.put("TypeEquals_Valid_41", "#787");
+		// Unclassified
+		IGNORED.put("Lifetime_Valid_8", "???");
 	}
 
 	/**

@@ -1,4 +1,4 @@
 tests/invalid/Intersection_Invalid_2.whiley:13: unable to resolve name (no match for f(LinkedList))
-	found: Intersection_Invalid_2:f : function(InterList)->(int)
+	found function Intersection_Invalid_2::f(InterList)->(int)
     return f(list)
            ^

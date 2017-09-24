@@ -1,0 +1,5 @@
+tests/invalid/Lifetime_Invalid_9.whiley:14: unable to resolve name (is ambiguous)
+	found method Lifetime_Invalid_9::swap<a=this,b=this>(&a:int,&b:int)->()
+	found method Lifetime_Invalid_9::swap<a=this>(&a:int,&a:int)->()
+    swap(x,y)
+    ^^^^

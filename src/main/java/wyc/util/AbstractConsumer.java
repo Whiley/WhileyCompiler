@@ -37,6 +37,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitDeclaration(Declaration decl, T data) {
 		switch (decl.getOpcode()) {
+		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl, data);
 			break;
@@ -328,6 +329,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_arraylength:
@@ -402,6 +404,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr, data);
 			break;
+		case EXPR_staticnew:
 		case EXPR_new:
 			visitNew((Expr.New) expr, data);
 			break;
@@ -762,6 +765,7 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_record:
 			visitRecord((Type.Record) type, data);
 			break;
+		case TYPE_staticreference:
 		case TYPE_reference:
 			visitReference((Type.Reference) type, data);
 			break;

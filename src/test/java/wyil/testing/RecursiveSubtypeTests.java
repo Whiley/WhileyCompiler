@@ -3752,7 +3752,7 @@ public class RecursiveSubtypeTests {
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(new TypeSystem(null).isRawCoerciveSubtype(ft,tt));
+			assertTrue(new TypeSystem(null).isRawCoerciveSubtype(ft,tt, null));
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
@@ -3762,7 +3762,7 @@ public class RecursiveSubtypeTests {
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(new TypeSystem(null).isRawCoerciveSubtype(ft, tt));
+			assertFalse(new TypeSystem(null).isRawCoerciveSubtype(ft, tt, null));
 		} catch (NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}

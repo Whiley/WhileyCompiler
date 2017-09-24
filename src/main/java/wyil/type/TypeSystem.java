@@ -17,6 +17,7 @@ import java.util.List;
 
 import wybs.util.AbstractCompilationUnit.Name;
 import wyc.util.WhileyFileResolver;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 import wyil.type.extractors.ReadableArrayExtractor;
 import wyil.type.extractors.ReadableLambdaExtractor;
 import wyil.type.extractors.ReadableRecordExtractor;
@@ -142,8 +143,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(Type type) throws ResolutionError {
-		return strictSubtypeOperator.isVoid(type);
+	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return strictSubtypeOperator.isVoid(type, lifetimes);
 	}
 
 	/**
@@ -181,8 +182,8 @@ public class TypeSystem {
 	 *             one possible matching declaration, or it cannot be resolved
 	 *             to a corresponding type declaration.
 	 */
-	public boolean isRawCoerciveSubtype(Type lhs, Type rhs) throws ResolutionError {
-		return coerciveSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
+	public boolean isRawCoerciveSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError {
+		return coerciveSubtypeOperator.isSubtype(lhs,rhs,lifetimes) != SubtypeOperator.Result.False;
 	}
 
 	/**
@@ -220,8 +221,8 @@ public class TypeSystem {
 	 *             one possible matching declaration, or it cannot be resolved
 	 *             to a corresponding type declaration.
 	 */
-	public boolean isRawSubtype(Type lhs, Type rhs) throws ResolutionError {
-		return strictSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
+	public boolean isRawSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError {
+		return strictSubtypeOperator.isSubtype(lhs,rhs,lifetimes) != SubtypeOperator.Result.False;
 	}
 
 	/**
@@ -242,8 +243,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Record extractReadableRecord(Type type) throws ResolutionError {
-		return readableRecordExtractor.extract(type,null);
+	public Type.Record extractReadableRecord(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return readableRecordExtractor.extract(type,lifetimes,null);
 	}
 
 	/**
@@ -264,8 +265,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Record extractWriteableRecord(Type type) throws ResolutionError {
-		return writeableRecordExtractor.extract(type,null);
+	public Type.Record extractWriteableRecord(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return writeableRecordExtractor.extract(type,lifetimes,null);
 	}
 
 	/**
@@ -277,8 +278,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Array extractReadableArray(Type type) throws ResolutionError {
-		return readableArrayExtractor.extract(type,null);
+	public Type.Array extractReadableArray(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return readableArrayExtractor.extract(type,lifetimes,null);
 	}
 
 	/**
@@ -290,8 +291,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Array extractWriteableArray(Type type) throws ResolutionError {
-		return writeableArrayExtractor.extract(type,null);
+	public Type.Array extractWriteableArray(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return writeableArrayExtractor.extract(type,lifetimes,null);
 	}
 
 
@@ -305,8 +306,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Reference extractReadableReference(Type type) throws ResolutionError {
-		return readableReferenceExtractor.extract(type,null);
+	public Type.Reference extractReadableReference(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return readableReferenceExtractor.extract(type,lifetimes,null);
 	}
 
 	/**
@@ -319,8 +320,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Reference extractWriteableReference(Type type) throws ResolutionError {
-		return writeableReferenceExtractor.extract(type,null);
+	public Type.Reference extractWriteableReference(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return writeableReferenceExtractor.extract(type,lifetimes,null);
 	}
 
 	/**
@@ -334,8 +335,8 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type.Callable extractReadableLambda(Type type) throws ResolutionError {
-		return readableLambdaExtractor.extract(type,null);
+	public Type.Callable extractReadableLambda(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return readableLambdaExtractor.extract(type,lifetimes,null);
 	}
 
 	/**

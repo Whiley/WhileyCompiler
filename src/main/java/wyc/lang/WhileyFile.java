@@ -182,17 +182,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_int = TYPE_mask + 4;
 	public static final int TYPE_nominal = TYPE_mask + 6;
 	public static final int TYPE_reference = TYPE_mask + 7;
-	public static final int TYPE_array = TYPE_mask + 8;
-	public static final int TYPE_record = TYPE_mask + 9;
-	public static final int TYPE_function = TYPE_mask + 10;
-	public static final int TYPE_method = TYPE_mask + 11;
-	public static final int TYPE_property = TYPE_mask + 12;
-	public static final int TYPE_invariant = TYPE_mask + 13;
-	public static final int TYPE_union = TYPE_mask + 14;
-	public static final int TYPE_intersection = TYPE_mask + 15;
-	public static final int TYPE_negation = TYPE_mask + 16;
-	public static final int TYPE_byte = TYPE_mask + 17;
-	public static final int TYPE_unresolved = TYPE_mask + 18;
+	public static final int TYPE_staticreference = TYPE_mask + 8;
+	public static final int TYPE_array = TYPE_mask + 9;
+	public static final int TYPE_record = TYPE_mask + 10;
+	public static final int TYPE_function = TYPE_mask + 11;
+	public static final int TYPE_method = TYPE_mask + 12;
+	public static final int TYPE_property = TYPE_mask + 13;
+	public static final int TYPE_invariant = TYPE_mask + 14;
+	public static final int TYPE_union = TYPE_mask + 15;
+	public static final int TYPE_intersection = TYPE_mask + 16;
+	public static final int TYPE_negation = TYPE_mask + 17;
+	public static final int TYPE_byte = TYPE_mask + 18;
+	public static final int TYPE_unresolved = TYPE_mask + 19;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -256,6 +257,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// REFERENCES
 	public static final int EXPR_dereference = EXPR_mask + 40;
 	public static final int EXPR_new = EXPR_mask + 41;
+	public static final int EXPR_staticnew = EXPR_mask + 42;
 	public static final int EXPR_lambdaaccess = EXPR_mask + 43;
 	// RECORDS
 	public static final int EXPR_recordaccess = EXPR_mask + 48;
@@ -1927,6 +1929,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Tuple<Identifier>) get(1);
 			}
 
+			public void setLifetimes(Tuple<Identifier> lifetimes) {
+				operands[1] = lifetimes;
+			}
+
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getOperands() {
@@ -1951,6 +1957,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = getName().toString();
+				Tuple<Identifier> lifetimes = getLifetimes();
+				if(lifetimes.size() > 0) {
+					r += "<" + lifetimes.toBareString() + ">";
+				}
 				r += getOperands();
 				return r;
 			}
@@ -3132,6 +3142,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(EXPR_new, type, operand, lifetime);
 			}
 
+			public New(Type type, Expr operand) {
+				super(EXPR_staticnew, type, operand);
+			}
+
 			/**
 			 * Get the operand to be evaluated and stored in the heap. That is,
 			 * <code>e<code> in </code>new e</code>.
@@ -3139,6 +3153,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Expr getOperand() {
 				return (Expr) super.get(1);
+			}
+
+			public boolean hasLifetime() {
+				return opcode == EXPR_new;
 			}
 
 			public Identifier getLifetime() {
@@ -3152,7 +3170,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "new " + getOperand();
+				String r = "new ";
+				if(hasLifetime()) {
+					r = getLifetime() + ":" + r;
+				}
+				return r + getOperand();
 			}
 		}
 
@@ -3585,6 +3607,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static final Int Int = new Int();
 		public static final Null Null = new Null();
 
+		/**
+		 * Substitute for lifetime parameters
+		 *
+		 * @param binding
+		 * @return
+		 */
+		public Type substitute(Map<Identifier,Identifier> binding);
+
 		public interface Atom extends Type {
 		}
 
@@ -3605,6 +3635,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Tuple<Type> getParameters();
 
 			public Tuple<Type> getReturns();
+
+			@Override
+			public Type.Callable substitute(Map<Identifier,Identifier> binding);
 		}
 
 		/**
@@ -3617,6 +3650,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Any extends AbstractSyntacticItem implements Primitive {
 			public Any() {
 				super(TYPE_any);
+			}
+
+			@Override
+			public Type substitute(Map<Identifier,Identifier> binding) {
+				return this;
 			}
 
 			@Override
@@ -3643,6 +3681,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Void extends AbstractSyntacticItem implements Primitive {
 			public Void() {
 				super(TYPE_void);
+			}
+
+			@Override
+			public Type substitute(Map<Identifier, Identifier> binding) {
+				return this;
 			}
 
 			@Override
@@ -3675,6 +3718,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type substitute(Map<Identifier,Identifier> binding) {
+				return this;
+			}
+
+			@Override
 			public Null clone(SyntacticItem[] operands) {
 				return new Null();
 			}
@@ -3694,6 +3742,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Bool extends AbstractSyntacticItem implements Primitive {
 			public Bool() {
 				super(TYPE_bool);
+			}
+
+			@Override
+			public Type substitute(Map<Identifier,Identifier> binding) {
+				return this;
 			}
 
 			@Override
@@ -3723,6 +3776,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type substitute(Map<Identifier,Identifier> binding) {
+				return this;
+			}
+
+			@Override
 			public Byte clone(SyntacticItem[] operands) {
 				return new Byte();
 			}
@@ -3744,6 +3802,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Int extends AbstractSyntacticItem implements Primitive {
 			public Int() {
 				super(TYPE_int);
+			}
+
+			@Override
+			public Type substitute(Map<Identifier,Identifier> binding) {
+				return this;
 			}
 
 			@Override
@@ -3780,6 +3843,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Array substitute(Map<Identifier,Identifier> binding) {
+				Type before = getElement();
+				Type after = before.substitute(binding);
+				if(before == after) {
+					return this;
+				} else {
+					return new Type.Array(after);
+				}
+			}
+
+			@Override
 			public Array clone(SyntacticItem[] operands) {
 				return new Array((Type) operands[0]);
 			}
@@ -3805,7 +3879,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Reference extends AbstractSyntacticItem implements Atom {
 			public Reference(Type element) {
-				super(TYPE_reference, element);
+				super(TYPE_staticreference, element);
 			}
 
 			public Reference(Type element, Identifier lifetime) {
@@ -3813,7 +3887,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public boolean hasLifetime() {
-				return operands.length > 1;
+				return opcode == TYPE_reference;
 			}
 
 			public Type getElement() {
@@ -3822,6 +3896,23 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Identifier getLifetime() {
 				return (Identifier) get(1);
+			}
+
+			@Override
+			public Type.Reference substitute(Map<Identifier,Identifier> binding) {
+				Type elementBefore = getElement();
+				Type elementAfter = elementBefore.substitute(binding);
+				if(elementBefore != elementAfter || (hasLifetime() && binding.containsKey(getLifetime()))) {
+					if(hasLifetime()) {
+						Identifier lifetime = binding.get(getLifetime());
+						lifetime = (lifetime == null) ? getLifetime() : lifetime;
+						return new Type.Reference(elementAfter,lifetime);
+					} else {
+						return new Type.Reference(elementAfter);
+					}
+				} else {
+					return this;
+				}
 			}
 
 			@Override
@@ -3893,6 +3984,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Record substitute(Map<Identifier,Identifier> binding) {
+				Tuple<Decl.Variable> before = getFields();
+				Tuple<Decl.Variable> after = substitute(before,binding);
+				if(before == after) {
+					return this;
+				} else {
+					return new Type.Record(isOpen(),after);
+				}
+			}
+			@Override
 			public Record clone(SyntacticItem[] operands) {
 				return new Record(operands);
 			}
@@ -3916,6 +4017,38 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					}
 				}
 				return r + "}";
+			}
+
+			/**
+			 * Substitute through fields whilst minimising memory allocations
+			 *
+			 * @param fields
+			 * @param binding
+			 * @return
+			 */
+			private static Tuple<Decl.Variable> substitute(Tuple<Decl.Variable> fields,
+					Map<Identifier, Identifier> binding) {
+				for (int i = 0; i != fields.size(); ++i) {
+					Decl.Variable field = fields.get(i);
+					Type before = field.getType();
+					Type after = before.substitute(binding);
+					if (before != after) {
+						// Now committed to a change
+						Decl.Variable[] nFields = fields.toArray(Decl.Variable.class);
+						nFields[i] = new Decl.Variable(field.getModifiers(), field.getName(), after);
+						for (int j = i + 1; j < fields.size(); ++j) {
+							field = fields.get(j);
+							before = field.getType();
+							after = before.substitute(binding);
+							if (before != after) {
+								nFields[j] = new Decl.Variable(field.getModifiers(), field.getName(), after);
+							}
+						}
+						return new Tuple<>(nFields);
+					}
+				}
+				//
+				return fields;
 			}
 		}
 
@@ -3944,6 +4077,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public void setName(Name name) {
 				operands[1] = name;
+			}
+
+			@Override
+			public Type.Nominal substitute(Map<Identifier,Identifier> binding) {
+				return this;
 			}
 
 			@Override
@@ -3977,6 +4115,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Type getElement() {
 				return (Type) get(0);
+			}
+
+			@Override
+			public Type.Negation substitute(Map<Identifier,Identifier> binding) {
+				Type before = getElement();
+				Type after = before.substitute(binding);
+				if(before == after) {
+					return this;
+				} else {
+					return new Type.Negation(after);
+				}
 			}
 
 			@Override
@@ -4031,6 +4180,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Union substitute(Map<Identifier,Identifier> binding) {
+				Type[] before = getAll();
+				Type[] after = WhileyFile.substitute(before,binding);
+				if(before == after) {
+					return this;
+				} else {
+					return new Type.Union(after);
+				}
+			}
+
+			@Override
 			public Union clone(SyntacticItem[] operands) {
 				return new Union(ArrayUtils.toArray(Type.class, operands));
 			}
@@ -4073,6 +4233,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Intersection substitute(Map<Identifier,Identifier> binding) {
+				Type[] before = getAll();
+				Type[] after = WhileyFile.substitute(before,binding);
+				if(before == after) {
+					return this;
+				} else {
+					return new Type.Intersection(after);
+				}
+			}
+
+			@Override
 			public Intersection clone(SyntacticItem[] operands) {
 				return new Intersection(ArrayUtils.toArray(Type.class, operands));
 			}
@@ -4104,12 +4275,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(TYPE_function, parameters, returns);
 			}
 
-			@SuppressWarnings("unchecked")
-			@Override
-			public Function clone(SyntacticItem[] operands) {
-				return new Function((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
-			}
-
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
@@ -4120,6 +4285,25 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
 				return (Tuple<Type>) get(1);
+			}
+
+			@Override
+			public Type.Function substitute(Map<Identifier, Identifier> binding) {
+				Tuple<Type> parametersBefore = getParameters();
+				Tuple<Type> parametersAfter = WhileyFile.substitute(parametersBefore, binding);
+				Tuple<Type> returnsBefore = getReturns();
+				Tuple<Type> returnsAfter = WhileyFile.substitute(returnsBefore, binding);
+				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
+					return this;
+				} else {
+					return new Type.Function(parametersAfter, returnsAfter);
+				}
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Function clone(SyntacticItem[] operands) {
+				return new Function((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
 			}
 
 			@Override
@@ -4165,6 +4349,33 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimeParameters() {
 				return (Tuple<Identifier>) get(3);
+			}
+
+			@Override
+			public Type.Method substitute(Map<Identifier, Identifier> binding) {
+				// Sanity check the binding being used here. Specifically, any binding which is
+				// declared in this method cannot be subsitituted.
+				Tuple<Identifier> lifetimes = getLifetimeParameters();
+				for(int i=0;i!=lifetimes.size();++i) {
+					Identifier lifetime = lifetimes.get(i);
+					if(binding.containsKey(lifetime)) {
+						binding = new HashMap<>(binding);
+						for(int j=i;j!=lifetimes.size();++j) {
+							binding.remove(lifetimes.get(i));
+						}
+						break;
+					}
+				}
+				// Proceed with the potentially updated binding
+				Tuple<Type> parametersBefore = getParameters();
+				Tuple<Type> parametersAfter = WhileyFile.substitute(parametersBefore, binding);
+				Tuple<Type> returnsBefore = getReturns();
+				Tuple<Type> returnsAfter = WhileyFile.substitute(returnsBefore, binding);
+				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
+					return this;
+				} else {
+					return new Type.Method(parametersAfter, returnsAfter, getCapturedLifetimes(), getLifetimeParameters());
+				}
 			}
 
 			@Override
@@ -4218,6 +4429,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Tuple<Type>) get(1);
 			}
 
+			@Override
+			public Type.Property substitute(Map<Identifier, Identifier> binding) {
+				Tuple<Type> parametersBefore = getParameters();
+				Tuple<Type> parametersAfter = WhileyFile.substitute(parametersBefore, binding);
+				Tuple<Type> returnsBefore = getReturns();
+				Tuple<Type> returnsAfter = WhileyFile.substitute(returnsBefore, binding);
+				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
+					return this;
+				} else {
+					return new Type.Property(parametersAfter, returnsAfter);
+				}
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Property clone(SyntacticItem[] operands) {
@@ -4247,6 +4471,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Unresolved substitute(Map<Identifier,Identifier> binding) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Unresolved();
 			}
@@ -4256,6 +4485,40 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return "(???)->(???)";
 			}
 		}
+	}
+
+	private static Type[] substitute(Type[] types, Map<Identifier,Identifier> binding) {
+		Type[] nTypes = types;
+		for(int i=0;i!=nTypes.length;++i) {
+			Type before = types[i];
+			Type after = before.substitute(binding);
+			if(before != after) {
+				if(nTypes == types) {
+					nTypes = Arrays.copyOf(types,types.length);
+				}
+				nTypes[i] = after;
+			}
+		}
+		//
+		return nTypes;
+	}
+
+	public static Tuple<Type> substitute(Tuple<Type> types, Map<Identifier,Identifier> binding) {
+		for(int i=0;i!=types.size();++i) {
+			Type before = types.get(i);
+			Type after = before.substitute(binding);
+			if(before != after) {
+				// Now committed to a change
+				Type[] nTypes = types.toArray(Type.class);
+				nTypes[i] = after;
+				for(int j=i+1;j<types.size();++j) {
+					nTypes[j] = types.get(j).substitute(binding);
+				}
+				return new Tuple<>(nTypes);
+			}
+		}
+		//
+		return types;
 	}
 
 	// ============================================================
@@ -4545,17 +4808,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Nominal((Name) operands[0]);
 			}
 		};
+		schema[TYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Reference((Type) operands[0]);
+			}
+		};
 		schema[TYPE_reference] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				// FIXME: many operand modifier is not optimal. Observe that,
-				// for simplicity of subtyping, want to preserve reference types
-				// as having the same opcode.
-				if (operands.length == 1) {
-					return new Type.Reference((Type) operands[0]);
-				} else {
-					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
-				}
+				return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
 			}
 		};
 		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
@@ -4948,6 +5210,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+			}
+		};
+		schema[EXPR_staticnew] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticnew") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.New((Type) operands[0], (Expr) operands[1]);
 			}
 		};
 		schema[EXPR_lambdaaccess] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambdaaccess") {

@@ -15,6 +15,7 @@ package wyil.type;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.NameResolver.ResolutionError;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -68,9 +69,13 @@ public interface TypeExtractor<T,S> {
 	 *
 	 * @param type
 	 *            The type for which information is to be extracted
+	 * @param lifetimes
+	 *            The within relation between lifetimes that should be used when
+	 *            determine whether the <code>rhs</code> is a subtype of the
+	 *            <code>lhs</code>.
 	 * @param supplementary
 	 *            Supplementary information which may be used by the extractor.
 	 * @return
 	 */
-	public T extract(Type type, S supplementary) throws ResolutionError;
+	public T extract(Type type, LifetimeRelation lifetimes, S supplementary) throws ResolutionError;
 }

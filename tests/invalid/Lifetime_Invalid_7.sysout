@@ -1,6 +1,6 @@
 tests/invalid/Lifetime_Invalid_7.whiley:16: unable to resolve name (is ambiguous)
-	found: Lifetime_Invalid_7:m : method<a,b>((&a:int|&b:bool),&a:int,bool)->(&b:int)
-	found: Lifetime_Invalid_7:m : method<a>(&*:int,&a:int,(int|bool))->(&a:int)
-	found: Lifetime_Invalid_7:m : method<a>(&a:bool,&a:int,bool)->(&a:int)
+	found method Lifetime_Invalid_7::m<a=this,b=*>((&a:int|&b:bool),&a:int,bool)->(&b:int)
+	found method Lifetime_Invalid_7::m<a=this,b=this>((&a:int|&b:bool),&a:int,bool)->(&b:int)
+	found method Lifetime_Invalid_7::m<a=this>(&*:int,&a:int,(int|bool))->(&a:int)
     m(new 1, this:new 2, true)
     ^

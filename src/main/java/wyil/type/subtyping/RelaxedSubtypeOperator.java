@@ -54,8 +54,8 @@ public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
 	}
 
 	@Override
-	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
-			throws ResolutionError {
+	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
@@ -71,7 +71,7 @@ public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
 					continue;
 				} else {
 					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
-					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions)) {
+					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection
 						// overall; for pos-neg case, there is some

@@ -20,6 +20,7 @@ import static wyc.lang.WhileyFile.Decl;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wycc.util.ArrayUtils;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 import wyil.type.TypeExtractor;
 import wyil.type.TypeSystem;
 
@@ -81,9 +82,9 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	}
 
 	@Override
-	public T extract(Type type, Object supplementary) throws ResolutionError {
+	public T extract(Type type, LifetimeRelation lifetimes, Object supplementary) throws ResolutionError {
 		Disjunct dnf = toDisjunctiveNormalForm(type);
-		return construct(dnf);
+		return construct(dnf, lifetimes);
 	}
 
 	/**
@@ -189,12 +190,12 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected T construct(Disjunct type) throws ResolutionError {
+	protected T construct(Disjunct type, LifetimeRelation lifetimes) throws ResolutionError {
 		T result = null;
 		Conjunct[] conjuncts = type.conjuncts;
 		for(int i=0;i!=conjuncts.length;++i) {
 			Conjunct conjunct = conjuncts[i];
-			if(!isVoid(conjunct)) {
+			if(!isVoid(conjunct, lifetimes)) {
 				T tmp = construct(conjunct);
 				if(tmp == null) {
 					// This indicates one of the conjuncts did not generate a proper
@@ -221,7 +222,7 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoid(Conjunct type) throws ResolutionError {
+	protected boolean isVoid(Conjunct type, LifetimeRelation lifetimes) throws ResolutionError {
 		// FIXME: I believe we could potentially be more efficient here. In
 		// particular, when Type.Union and Type.Intersection are interfaces, we
 		// can make Disjunct and Conjunct implement them, thus avoiding this
@@ -234,7 +235,7 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 			terms[j] = new Type.Negation(negatives[i]);
 		}
 		//
-		return typeSystem.isRawSubtype(Type.Void, new Type.Intersection(terms));
+		return typeSystem.isVoid(new Type.Intersection(terms), lifetimes);
 	}
 
 	protected T construct(Conjunct type) {

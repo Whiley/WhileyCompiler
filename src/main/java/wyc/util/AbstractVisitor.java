@@ -37,6 +37,7 @@ public abstract class AbstractVisitor {
 
 	public void visitDeclaration(Declaration decl) {
 		switch (decl.getOpcode()) {
+		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
 			break;
@@ -326,6 +327,7 @@ public abstract class AbstractVisitor {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_arraylength:
@@ -400,6 +402,7 @@ public abstract class AbstractVisitor {
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr);
 			break;
+		case EXPR_staticnew:
 		case EXPR_new:
 			visitNew((Expr.New) expr);
 			break;
@@ -760,6 +763,7 @@ public abstract class AbstractVisitor {
 		case TYPE_record:
 			visitRecord((Type.Record) type);
 			break;
+		case TYPE_staticreference:
 		case TYPE_reference:
 			visitReference((Type.Reference) type);
 			break;

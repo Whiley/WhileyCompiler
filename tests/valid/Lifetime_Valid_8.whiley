@@ -17,7 +17,7 @@ public export method test():
     // variant2: no
     // variant3: no
     // variant4: no
-    &*:int p1 = m(this:new 1, this:new 2, true)
+    &*:int p1 = m(this:new 1, *:new 2, true)
     assume (*p1) == 1
 
     // variant1: <this, *> ((&this:int)|(&*:bool), &this:int, bool z)
