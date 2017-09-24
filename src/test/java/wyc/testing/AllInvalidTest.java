@@ -65,10 +65,11 @@ public class AllInvalidTest {
 		IGNORED.put("Parsing_Invalid_2", "608");
 		//
 		IGNORED.put("Parsing_Invalid_15", "609");
-		//
-		IGNORED.put("Lifetime_Lambda_Invalid_3", "#764");
-		IGNORED.put("Lifetime_Lambda_Invalid_5", "#764");
-		IGNORED.put("Lifetime_Lambda_Invalid_6", "#764");
+		// Normalisation for Method Subtyping
+		IGNORED.put("Lifetime_Lambda_Invalid_3", "#794");
+		// Support Captured Lifetime Parameters
+		IGNORED.put("Lifetime_Lambda_Invalid_5", "#795");
+		IGNORED.put("Lifetime_Lambda_Invalid_6", "#765");
 		// Access Static Variable from Type Invariant
 		IGNORED.put("Type_Invalid_11", "793");
 		// ===============================================================

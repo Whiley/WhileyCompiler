@@ -2389,7 +2389,6 @@ public class FlowTypeCheck {
 			Type... args) {
 		Binding best = null;
 		Type.Callable bestType = null;
-		Decl.Callable bestDecl = null;
 		boolean bestValidWinner = false;
 		//
 		for (int i = 0; i != candidates.size(); ++i) {
@@ -2403,7 +2402,6 @@ public class FlowTypeCheck {
 				// one is automatically promoted to the best seen so far.
 				best = candidate;
 				bestType = candidate.getConcreteType();
-				bestDecl = candidate.getCandidiateDeclaration();
 				bestValidWinner = true;
 			} else {
 				boolean csubb = isSubtype(bestType, candidateType, lifetimes);
@@ -2414,7 +2412,6 @@ public class FlowTypeCheck {
 					// best seen so far.
 					best = candidate;
 					bestType = candidate.getConcreteType();
-					bestDecl = candidate.getCandidiateDeclaration();
 					bestValidWinner = true;
 				} else if (bsubc && !csubb) {
 					// This best so far is a subtype of this candidate. Therefore, we can simply
