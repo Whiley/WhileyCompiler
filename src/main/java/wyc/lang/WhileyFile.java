@@ -2159,6 +2159,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Decl.Variable) get(1);
 			}
 
+			/**
+			 * Mark this variable access as a move or borrow
+			 */
+			public void setMove() {
+				this.opcode = EXPR_variablemove;
+			}
+
 			@Override
 			public VariableAccess clone(SyntacticItem[] operands) {
 				return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
@@ -4997,13 +5004,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// EXPRESSIONS: 01100000 (96) -- 10011111 (159)
-		schema[EXPR_variablecopy] = new Schema(Operands.TWO, Data.ZERO, "EXPR_varcopy") {
+		schema[EXPR_variablecopy] = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablecopy") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 			}
 		};
-		schema[EXPR_staticvariable] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvar") {
+		schema[EXPR_variablemove] = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablemove") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				Expr.VariableAccess v = new Expr.VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
+				v.setMove();
+				return v;
+			}
+		};
+		schema[EXPR_staticvariable] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvariable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1]);

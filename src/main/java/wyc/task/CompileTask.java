@@ -210,7 +210,7 @@ public final class CompileTask implements Build.Task {
 			new DefiniteAssignmentCheck().check(wf);
 			new FunctionalCheck(this).check(wf);
 			new StaticVariableCheck(this).check(wf);
-			// new MoveAnalysis(this).apply(wyil);
+			new MoveAnalysis(this).apply(wf);
 			// new CoercionCheck(this);
 		}
 
