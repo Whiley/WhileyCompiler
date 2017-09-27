@@ -73,7 +73,7 @@ public class WhileyFileLexer {
 		while (pos < input.length()) {
 			char c = input.charAt(pos);
 
-			if (Character.isDigit(c)) {
+			if (isDigit(c)) {
 				tokens.add(scanNumericConstant());
 			} else if (c == '"') {
 				tokens.add(scanStringConstant());
@@ -81,7 +81,7 @@ public class WhileyFileLexer {
 				tokens.add(scanCharacterConstant());
 			} else if (isOperatorStart(c)) {
 				tokens.add(scanOperator());
-			} else if (Character.isLetter(c) || c == '_') {
+			} else if (isLetter(c) || c == '_') {
 				tokens.add(scanIdentifier());
 			} else if (Character.isWhitespace(c)) {
 				scanWhiteSpace(tokens);
@@ -102,7 +102,7 @@ public class WhileyFileLexer {
 	 */
 	public Token scanNumericConstant() {
 		int start = pos;
-		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
+		while (pos < input.length() && isDigit(input.charAt(pos))) {
 			pos = pos + 1;
 		}
 		if (pos < input.length() && input.charAt(pos) == '.') {
@@ -113,7 +113,7 @@ public class WhileyFileLexer {
 				return new Token(Token.Kind.IntValue, input.substring(start,
 						pos), start);
 			}
-			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
+			while (pos < input.length() && isDigit(input.charAt(pos))) {
 				pos = pos + 1;
 			}
 			return new Token(Token.Kind.RealValue, input.substring(start, pos),
@@ -406,7 +406,7 @@ public class WhileyFileLexer {
 	public Token scanIdentifier() {
 		int start = pos;
 		while (pos < input.length()
-				&& (input.charAt(pos) == '_' || Character.isLetterOrDigit(input
+				&& (input.charAt(pos) == '_' || isLetterOrDigit(input
 						.charAt(pos)))) {
 			pos++;
 		}
@@ -488,6 +488,40 @@ public class WhileyFileLexer {
 			pos++;
 		}
 	}
+
+	/**
+	 * This is used in place of Character.isDigit(), since the latter also supports
+	 * unicode digits.
+	 *
+	 * @param c
+	 * @return
+	 */
+	private boolean isDigit(char c) {
+		return '0' <= c && c <= '9';
+	}
+
+	/**
+	 * This is used in place of Character.isLetter(), since the latter also supports
+	 * unicode letters.
+	 *
+	 * @param c
+	 * @return
+	 */
+	private boolean isLetter(char c) {
+		return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ;
+	}
+
+	/**
+	 * This is used in place of Character.isLetterOrDigit(), since the latter also
+	 * supports unicode digits and letters.
+	 *
+	 * @param c
+	 * @return
+	 */
+	private boolean isLetterOrDigit(char c) {
+		return isLetter(c) || isDigit(c);
+	}
+
 
 	/**
 	 * Raise a syntax error with a given message at given index.
