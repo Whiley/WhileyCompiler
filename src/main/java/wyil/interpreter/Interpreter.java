@@ -613,6 +613,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_invoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
+			case WhileyFile.EXPR_variablemove:
 			case WhileyFile.EXPR_variablecopy:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
@@ -1263,6 +1264,7 @@ public class Interpreter {
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Record(src, e.getField());
 		}
+		case EXPR_variablemove:
 		case EXPR_variablecopy: {
 			Expr.VariableAccess e = (Expr.VariableAccess) expr;
 			Decl.Variable decl = e.getVariableDeclaration();
