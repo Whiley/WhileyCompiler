@@ -36,7 +36,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitDeclaration(Declaration decl, P data) {
+	public R visitDeclaration(Decl decl, P data) {
 		switch (decl.getOpcode()) {
 		case DECL_importfrom:
 		case DECL_import:
