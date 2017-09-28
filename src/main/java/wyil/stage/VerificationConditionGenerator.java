@@ -591,10 +591,12 @@ public class VerificationConditionGenerator {
 
 		switch (lval.getOpcode()) {
 		case WhileyFile.EXPR_arrayaccess:
+		case WhileyFile.EXPR_arrayborrow:
 			return translateArrayAssign((WhileyFile.Expr.ArrayAccess) lval, rval, context);
 		case WhileyFile.EXPR_dereference:
 			return translateDereference((WhileyFile.Expr.Dereference) lval, rval, context);
 		case WhileyFile.EXPR_recordaccess:
+		case WhileyFile.EXPR_recordborrow:
 			return translateRecordAssign((WhileyFile.Expr.RecordAccess) lval, rval, context);
 		case WhileyFile.EXPR_variablemove:
 		case WhileyFile.EXPR_variablecopy:
@@ -696,11 +698,13 @@ public class VerificationConditionGenerator {
 		//
 		switch (lval.getOpcode()) {
 		case WhileyFile.EXPR_arrayaccess:
+		case WhileyFile.EXPR_arrayborrow:
 			Expr.ArrayAccess ae = (Expr.ArrayAccess) lval;
 			return extractAssignedVariable((LVal) ae.getSource());
 		case WhileyFile.EXPR_dereference:
 			return null;
 		case WhileyFile.EXPR_recordaccess:
+		case WhileyFile.EXPR_recordborrow:
 			Expr.RecordAccess ar = (Expr.RecordAccess) lval;
 			return extractAssignedVariable((LVal) ar.getSource());
 		case WhileyFile.EXPR_variablemove:
@@ -1283,6 +1287,7 @@ public class VerificationConditionGenerator {
 				checkDivideByZero((WhileyFile.Expr.BinaryOperator) expr, context);
 				break;
 			case WhileyFile.EXPR_arrayaccess:
+			case WhileyFile.EXPR_arrayborrow:
 				checkIndexOutOfBounds((WhileyFile.Expr.ArrayAccess) expr, context);
 				break;
 			case WhileyFile.EXPR_arraygenerator:
@@ -1473,6 +1478,7 @@ public class VerificationConditionGenerator {
 				result = translateConvert((WhileyFile.Expr.Cast) expr, environment);
 				break;
 			case WhileyFile.EXPR_recordaccess:
+			case WhileyFile.EXPR_recordborrow:
 				result = translateFieldLoad((WhileyFile.Expr.RecordAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
@@ -1527,6 +1533,7 @@ public class VerificationConditionGenerator {
 				result = translateIs((WhileyFile.Expr.Is) expr, environment);
 				break;
 			case WhileyFile.EXPR_arrayaccess:
+			case WhileyFile.EXPR_arrayborrow:
 				result = translateArrayIndex((WhileyFile.Expr.ArrayAccess) expr, environment);
 				break;
 			case WhileyFile.EXPR_arrayinitialiser:

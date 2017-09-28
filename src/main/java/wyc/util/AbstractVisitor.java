@@ -330,6 +330,7 @@ public abstract class AbstractVisitor {
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 		case EXPR_arraylength:
 			visitUnaryOperator((Expr.UnaryOperator) expr);
 			break;
@@ -337,6 +338,7 @@ public abstract class AbstractVisitor {
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 		case EXPR_arrayrange:
 		case EXPR_recordupdate:
 		case EXPR_arraygenerator:
@@ -407,6 +409,7 @@ public abstract class AbstractVisitor {
 			visitNew((Expr.New) expr);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			visitRecordAccess((Expr.RecordAccess) expr);
 			break;
 		case EXPR_arraylength:
@@ -430,6 +433,7 @@ public abstract class AbstractVisitor {
 			visitArrayGenerator((Expr.ArrayGenerator) expr);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			visitArrayAccess((Expr.ArrayAccess) expr);
 			break;
 		case EXPR_arrayrange:

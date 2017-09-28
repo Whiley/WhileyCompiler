@@ -332,6 +332,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 		case EXPR_arraylength:
 			visitUnaryOperator((Expr.UnaryOperator) expr, data);
 			break;
@@ -352,6 +353,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 		case EXPR_arrayrange:
 		case EXPR_recordupdate:
 		case EXPR_arraygenerator:
@@ -409,6 +411,7 @@ public abstract class AbstractConsumer<T> {
 			visitNew((Expr.New) expr, data);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			visitRecordAccess((Expr.RecordAccess) expr, data);
 			break;
 		case EXPR_arraylength:
@@ -471,6 +474,7 @@ public abstract class AbstractConsumer<T> {
 			visitArrayGenerator((Expr.ArrayGenerator) expr, data);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			visitArrayAccess((Expr.ArrayAccess) expr, data);
 			break;
 		case EXPR_arrayrange:
