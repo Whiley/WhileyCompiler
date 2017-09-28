@@ -1319,9 +1319,11 @@ public class FlowTypeCheck {
 			type = checkStaticVariableLVal((Expr.StaticVariableAccess) lval, environment);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			type = checkArrayLVal((Expr.ArrayAccess) lval, environment);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			type = checkRecordLVal((Expr.RecordAccess) lval, environment);
 			break;
 		case EXPR_dereference:
@@ -1518,6 +1520,7 @@ public class FlowTypeCheck {
 			type = checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			type = checkRecordAccess((Expr.RecordAccess) expression, environment);
 			break;
 		case EXPR_recordupdate:
@@ -1534,6 +1537,7 @@ public class FlowTypeCheck {
 			type = checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
 			break;
 		case EXPR_arrayupdate:

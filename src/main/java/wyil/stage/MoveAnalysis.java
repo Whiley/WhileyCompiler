@@ -227,6 +227,9 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 	public void visitArrayAccess(Expr.ArrayAccess expr, Boolean consumed) {
 		visitExpression(expr.getFirstOperand(),false);
 		visitExpression(expr.getSecondOperand(),false);
+		if(!consumed) {
+			expr.setMove();
+		}
 	}
 
 	@Override
@@ -410,6 +413,9 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 	@Override
 	public void visitRecordAccess(Expr.RecordAccess expr, Boolean consumed) {
 		visitExpression(expr.getOperand(),false);
+		if(!consumed) {
+			expr.setMove();
+		}
 	}
 
 	@Override
