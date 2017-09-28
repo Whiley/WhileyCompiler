@@ -261,15 +261,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int EXPR_lambdaaccess = EXPR_mask + 43;
 	// RECORDS
 	public static final int EXPR_recordaccess = EXPR_mask + 48;
-	public static final int EXPR_recordupdate = EXPR_mask + 49;
-	public static final int EXPR_recordinitialiser = EXPR_mask + 50;
+	public static final int EXPR_recordborrow = EXPR_mask + 49;
+	public static final int EXPR_recordupdate = EXPR_mask + 50;
+	public static final int EXPR_recordinitialiser = EXPR_mask + 51;
 	// ARRAYS
 	public static final int EXPR_arrayaccess = EXPR_mask + 56;
+	public static final int EXPR_arrayborrow = EXPR_mask + 57;
 	public static final int EXPR_arrayupdate = EXPR_mask + 58;
-	public static final int EXPR_arraylength = EXPR_mask + 57;
-	public static final int EXPR_arraygenerator = EXPR_mask + 59;
-	public static final int EXPR_arrayinitialiser = EXPR_mask + 60;
-	public static final int EXPR_arrayrange = EXPR_mask + 61;
+	public static final int EXPR_arraylength = EXPR_mask + 59;
+	public static final int EXPR_arraygenerator = EXPR_mask + 60;
+	public static final int EXPR_arrayinitialiser = EXPR_mask + 61;
+	public static final int EXPR_arrayrange = EXPR_mask + 62;
 
 	// =========================================================================
 	// Constructors
@@ -3266,6 +3268,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Expr) get(2);
 			}
 
+			public void setMove() {
+				this.opcode = EXPR_arrayborrow;
+			}
+
+			public boolean isMove() {
+				return opcode == EXPR_arrayborrow;
+			}
 			@Override
 			public ArrayAccess clone(SyntacticItem[] operands) {
 				return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
@@ -3500,6 +3509,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 */
 			public Identifier getField() {
 				return (Identifier) get(2);
+			}
+
+			public void setMove() {
+				this.opcode = EXPR_recordborrow;
+			}
+
+			public boolean isMove() {
+				return opcode == EXPR_recordborrow;
 			}
 
 			@Override
@@ -5248,6 +5265,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 		};
+		schema[EXPR_recordborrow] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordborrow") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				Expr.RecordAccess r = new Expr.RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				r.setMove();
+				return r;
+			}
+		};
 		schema[EXPR_recordupdate] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_recordupdate") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -5268,6 +5293,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+			}
+		};
+		schema[EXPR_arrayborrow] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayborrow") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				Expr.ArrayAccess r = new Expr.ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				r.setMove();
+				return r;
 			}
 		};
 		schema[EXPR_arraylength] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arraylength") {
