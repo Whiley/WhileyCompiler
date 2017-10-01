@@ -20,6 +20,7 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
@@ -39,6 +40,7 @@ import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.util.AbstractConsumer;
+import wyc.util.AbstractVisitor;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -1241,91 +1243,85 @@ public class VerificationConditionGenerator {
 
 	@SuppressWarnings("unchecked")
 	private void checkExpressionPreconditions(WhileyFile.Expr expr, Context context) {
-		//WhileyFile.Declaration decl = expr.getEnclosingTree().getEnclosingDeclaration();
-		try {
-			// First, recurse all subexpressions
-			int opcode = expr.getOpcode();
-			if (expr instanceof WhileyFile.Expr.LogicalAnd) {
-				WhileyFile.Expr.LogicalAnd le = (WhileyFile.Expr.LogicalAnd) expr;
+		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
+			@Override
+			public void visitLogicalAnd(WhileyFile.Expr.LogicalAnd expr, Context context) {
 				// In the case of a logical and condition we need to propagate
 				// the left-hand side as an assumption into the right-hand side.
 				// This is an artifact of short-circuiting whereby terms on the
 				// right-hand side only execute when the left-hand side is known
 				// to hold.
-				Tuple<WhileyFile.Expr> operands = le.getOperands();
+				Tuple<WhileyFile.Expr> operands = expr.getOperands();
 				for (int i = 0; i != operands.size(); ++i) {
-					checkExpressionPreconditions(operands.get(i), context);
+					super.visitExpression(operands.get(i), context);
 					Expr e = translateExpression(operands.get(i), null, context.getEnvironment());
 					context = context.assume(e);
 				}
-			} else if (opcode != WhileyFile.EXPR_variablecopy && opcode != WhileyFile.EXPR_variablemove) {
-				// In the case of a general expression, we just recurse any
-				// subexpressions without propagating information forward. We
-				// must ignore variable accesses here, because they refer back
-				// to the relevant variable declaration.
-				for (int i = 0; i != expr.size(); ++i) {
-					SyntacticItem operand = expr.get(i);
-					if(operand instanceof WhileyFile.Expr) {
-						checkExpressionPreconditions((WhileyFile.Expr) operand, context);
-					} else if(operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
-						for (int j = 0; j != operand.size(); ++j) {
-							SyntacticItem suboperand = operand.get(j);
-							if(suboperand instanceof WhileyFile.Expr) {
-								checkExpressionPreconditions((WhileyFile.Expr) suboperand, context);
-							}
-						}
-					}
-				}
 			}
-			// Second, perform actual precondition checks
-			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_invoke:
-				checkInvokePreconditions((WhileyFile.Expr.Invoke) expr, context);
-				break;
-			case WhileyFile.EXPR_integerdivision:
-			case WhileyFile.EXPR_integerremainder:
-				checkDivideByZero((WhileyFile.Expr.BinaryOperator) expr, context);
-				break;
-			case WhileyFile.EXPR_arrayaccess:
-			case WhileyFile.EXPR_arrayborrow:
-				checkIndexOutOfBounds((WhileyFile.Expr.ArrayAccess) expr, context);
-				break;
-			case WhileyFile.EXPR_arraygenerator:
-				checkArrayGeneratorLength((WhileyFile.Expr.ArrayGenerator) expr, context);
-				break;
+			@Override
+			public void visitInvoke(WhileyFile.Expr.Invoke expr, Context context) {
+				super.visitInvoke(expr,context);
+				checkInvokePreconditions(expr, context);
 			}
-		} catch (InternalFailure e) {
-			throw e;
-		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
-		}
+			@Override
+			public void visitIntegerDivision(WhileyFile.Expr.IntegerDivision expr, Context context) {
+				super.visitIntegerDivision(expr,context);
+				checkDivideByZero(expr, context);
+			}
+			@Override
+			public void visitIntegerRemainder(WhileyFile.Expr.IntegerRemainder expr, Context context) {
+				super.visitIntegerRemainder(expr,context);
+				checkDivideByZero(expr, context);
+			}
+			@Override
+			public void visitArrayAccess(WhileyFile.Expr.ArrayAccess expr, Context context) {
+				super.visitArrayAccess(expr,context);
+				checkIndexOutOfBounds(expr, context);
+			}
+			@Override
+			public void visitArrayGenerator(WhileyFile.Expr.ArrayGenerator expr, Context context) {
+				super.visitArrayGenerator(expr,context);
+				checkArrayGeneratorLength(expr, context);
+			}
+
+			@Override
+			public void visitType(WhileyFile.Type type, Context context) {
+				// NOTE: don't need to visit types.
+			}
+		};
+		visitor.visitExpression(expr, context);
 	}
 
-	private void checkInvokePreconditions(WhileyFile.Expr.Invoke expr, Context context) throws Exception {
-		WhileyFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
-		//
-		WhileyFile.Decl.Callable fmp = lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(), expr);
-		if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
-			WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
-			int numPreconditions = fm.getRequires().size();
-			// There is at least one precondition for the function/method being
-			// called. Therefore, we need to generate a verification condition
-			// which will check that the precondition holds.
-			Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
-			String prefix = fm.getName() + "_requires_";
-			// Finally, generate an appropriate verification condition to check
-			// each precondition clause
-			for (int i = 0; i != numPreconditions; ++i) {
-				// FIXME: name needs proper path information
-				WyalFile.Name name = convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
-				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
-						expr.getParent(WhileyFile.Attribute.Span.class)));
+	private void checkInvokePreconditions(WhileyFile.Expr.Invoke expr, Context context) {
+		try {
+			WhileyFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
+			//
+			WhileyFile.Decl.Callable fmp = lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(), expr);
+			if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
+				WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
+				int numPreconditions = fm.getRequires().size();
+				// There is at least one precondition for the function/method being
+				// called. Therefore, we need to generate a verification condition
+				// which will check that the precondition holds.
+				Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
+				String prefix = fm.getName() + "_requires_";
+				// Finally, generate an appropriate verification condition to check
+				// each precondition clause
+				for (int i = 0; i != numPreconditions; ++i) {
+					// FIXME: name needs proper path information
+					WyalFile.Name name = convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
+					Expr clause = new Expr.Invoke(null, name, null, arguments);
+					context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
+							expr.getParent(WhileyFile.Attribute.Span.class)));
+				}
+				// Perform parameter checks
+				for (int i = 0; i != parameterTypes.size(); ++i) {
+					generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
+				}
 			}
-			// Perform parameter checks
-			for (int i = 0; i != parameterTypes.size(); ++i) {
-				generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
-			}
+		} catch (NameResolver.ResolutionError e) {
+			// FIXME: this should eventually be unnecessary
+			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
 		}
 	}
 
@@ -2664,7 +2660,7 @@ public class VerificationConditionGenerator {
 	 * @throws Exception
 	 */
 	public WhileyFile.Decl.Callable lookupFunctionOrMethodOrProperty(WhileyFile.Name name, Type.Callable fun,
-			WhileyFile.Stmt stmt) throws Exception {
+			WhileyFile.Stmt stmt) throws NameResolver.ResolutionError {
 		//
 		return typeSystem.resolveExactly(name, fun, WhileyFile.Decl.Callable.class);
 	}
