@@ -85,9 +85,6 @@ public class AllValidVerificationTest {
 		// WyTP Variable Ordering Effect
 		IGNORED.put("While_Valid_29", "#782");
 		IGNORED.put("While_Valid_42", "#782");
-		// Mistaken Precondition Check on Assertion
-//		IGNORED.put("ConstrainedList_Valid_22", "#800");
-
 
 		// ===============================================================
 		// Whiley Theorem Prover faults

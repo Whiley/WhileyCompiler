@@ -18,13 +18,11 @@ import java.util.List;
 import wybs.util.AbstractCompilationUnit.Name;
 import wyc.util.WhileyFileResolver;
 import wyil.type.SubtypeOperator.LifetimeRelation;
-import wyil.type.extractors.ReadableArrayExtractor;
-import wyil.type.extractors.ReadableLambdaExtractor;
-import wyil.type.extractors.ReadableRecordExtractor;
-import wyil.type.extractors.ReadableReferenceExtractor;
+import wyil.type.extractors.ReadableTypeExtractor;
 import wyil.type.extractors.WriteableArrayExtractor;
 import wyil.type.extractors.WriteableRecordExtractor;
 import wyil.type.extractors.WriteableReferenceExtractor;
+import wyil.type.rewriters.AlgebraicTypeSimplifier;
 import wyil.type.subtyping.RelaxedSubtypeOperator;
 import wyil.type.subtyping.StrictSubtypeOperator;
 
@@ -65,13 +63,10 @@ public class TypeSystem {
 	private final NameResolver resolver;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final SubtypeOperator coerciveSubtypeOperator;
-	private final TypeExtractor<Type.Record,Object> readableRecordExtractor;
+	private final TypeExtractor<Type,Object> readableTypeExtractor;
 	private final TypeExtractor<Type.Record,Object> writeableRecordExtractor;
-	private final TypeExtractor<Type.Array,Object> readableArrayExtractor;
 	private final TypeExtractor<Type.Array,Object> writeableArrayExtractor;
-	private final TypeExtractor<Type.Reference,Object> readableReferenceExtractor;
 	private final TypeExtractor<Type.Reference,Object> writeableReferenceExtractor;
-	private final TypeExtractor<Type.Callable,Object> readableLambdaExtractor;
 //	private final TypeInvariantExtractor typeInvariantExtractor;
 	private final TypeRewriter typeSimplifier;
 
@@ -79,15 +74,12 @@ public class TypeSystem {
 		this.resolver = new WhileyFileResolver(project);
 		this.strictSubtypeOperator = new StrictSubtypeOperator(this);
 		this.coerciveSubtypeOperator = new RelaxedSubtypeOperator(this);
-		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
+		this.readableTypeExtractor = new ReadableTypeExtractor(resolver,this);
 		this.writeableRecordExtractor = new WriteableRecordExtractor(resolver,this);
-		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);
 		this.writeableArrayExtractor = new WriteableArrayExtractor(resolver,this);
-		this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,this);
 		this.writeableReferenceExtractor = new WriteableReferenceExtractor(resolver,this);
-		this.readableLambdaExtractor = new ReadableLambdaExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
-		this.typeSimplifier = null; // new StdTypeRewriter();
+		this.typeSimplifier = new AlgebraicTypeSimplifier();
 	}
 
 	public NameResolver getResolver() {
@@ -244,7 +236,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Record extractReadableRecord(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return readableRecordExtractor.extract(type,lifetimes,null);
+		type = readableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Record) {
+			return (Type.Record) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -279,7 +276,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Array extractReadableArray(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return readableArrayExtractor.extract(type,lifetimes,null);
+		type = readableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Array) {
+			return (Type.Array) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -307,7 +309,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Reference extractReadableReference(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return readableReferenceExtractor.extract(type,lifetimes,null);
+		type = readableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Reference) {
+			return (Type.Reference) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -336,7 +343,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Callable extractReadableLambda(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return readableLambdaExtractor.extract(type,lifetimes,null);
+		type = readableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Callable) {
+			return (Type.Callable) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -393,7 +405,7 @@ public class TypeSystem {
 	// Simplification
 	// ========================================================================
 
-//	public Type simplify(Type type) {
-//		return typeSimplifier.rewrite(type);
-//	}
+	public Type simplify(Type type) {
+		return typeSimplifier.rewrite(type);
+	}
 }
