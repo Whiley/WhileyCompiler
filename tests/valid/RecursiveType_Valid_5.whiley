@@ -4,14 +4,14 @@ method create(int n) -> Link:
     Link start = null
     int i = 0
     while i < n:
-        start = {items: [0;0], next: start}
+        start = {items: [], next: start}
         i = i + 1
     return start
 
 public export method test():
     Link l1 = null
-    Link l2 = {items: [0;0], next: l1}
-    Link l3 = {items: [0;0], next: l2}
+    Link l2 = {items: [], next: l1}
+    Link l3 = {items: [], next: l2}
     //
     Link result = create(0)
     assume result == l1

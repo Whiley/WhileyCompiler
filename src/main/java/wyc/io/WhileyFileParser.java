@@ -2478,16 +2478,22 @@ public class WhileyFileParser {
 	private Expr parseArrayInitialiserOrGeneratorExpression(EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
-		Expr expr = parseExpression(scope, true);
-		// Finally, disambiguate
-		if (tryAndMatch(true, SemiColon) != null) {
-			// this is an array generator
-			index = start;
-			return parseArrayGeneratorExpression(scope, terminated);
-		} else {
-			// this is an array initialiser
+		if (tryAndMatch(true, RightSquare) != null) {
+			// this is an empty array initialiser
 			index = start;
 			return parseArrayInitialiserExpression(scope, terminated);
+		} else {
+			Expr expr = parseExpression(scope, true);
+			// Finally, disambiguate
+			if (tryAndMatch(true, SemiColon) != null) {
+				// this is an array generator
+				index = start;
+				return parseArrayGeneratorExpression(scope, terminated);
+			} else {
+				// this is an array initialiser
+				index = start;
+				return parseArrayInitialiserExpression(scope, terminated);
+			}
 		}
 	}
 
@@ -2520,9 +2526,8 @@ public class WhileyFileParser {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<>();
-
 		boolean firstTime = true;
-		do {
+		while (eventuallyMatch(RightSquare) == null) {
 			if (!firstTime) {
 				match(Comma);
 			}
@@ -2534,7 +2539,7 @@ public class WhileyFileParser {
 			// Also, expression is guaranteed to be terminated, either by ']' or
 			// ','.
 			exprs.add(parseExpression(scope, true));
-		} while (eventuallyMatch(RightSquare) == null);
+		}
 		// Convert to array
 		return annotateSourceLocation(new Expr.ArrayInitialiser(Type.Any, new Tuple<>(exprs)), start);
 	}

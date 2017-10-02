@@ -175,6 +175,7 @@ import static wyc.lang.WhileyFile.Name;
  * </p>
  * </li>
  * </ul>
+ *
  * @see SubtypeOperator
  * @author David J. Pearce
  *
@@ -189,11 +190,11 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	@Override
 	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
 		HashSet<NameID> visited = new HashSet<>();
-		return isContractive(nid, type,visited);
+		return isContractive(nid, type, visited);
 	}
 
 	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) throws ResolutionError {
-		switch(type.getOpcode()) {
+		switch (type.getOpcode()) {
 		case TYPE_void:
 		case TYPE_any:
 		case TYPE_null:
@@ -213,8 +214,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		case TYPE_union:
 		case TYPE_intersection: {
 			Type.Combinator c = (Type.Combinator) type;
-			for(int i=0;i!=c.size();++i) {
-				if(!isContractive(name,c.get(i),visited)) {
+			for (int i = 0; i != c.size(); ++i) {
+				if (!isContractive(name, c.get(i), visited)) {
 					return false;
 				}
 			}
@@ -222,17 +223,17 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 		case TYPE_negation: {
 			Type.Negation n = (Type.Negation) type;
-			return isContractive(name,n.getElement(),visited);
+			return isContractive(name, n.getElement(), visited);
 		}
 		default:
 		case TYPE_nominal: {
 			Type.Nominal n = (Type.Nominal) type;
 			Decl.Type decl = typeSystem.resolveExactly(n.getName(), Decl.Type.class);
 			NameID nid = decl.getQualifiedName().toNameID();
-			if(nid.equals(name)) {
+			if (nid.equals(name)) {
 				// We have identified a non-contract type.
 				return false;
-			} else if(visited.contains(nid)) {
+			} else if (visited.contains(nid)) {
 				// NOTE: this identifies a type (other than the one we are looking for) which is
 				// not contractive. It may seem odd then, that we pretend it is in fact
 				// contractive. The reason for this is simply that we cannot tell here with the
@@ -242,7 +243,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				return true;
 			} else {
 				visited.add(nid);
-				return isContractive(name,decl.getType(),visited);
+				return isContractive(name, decl.getType(), visited);
 			}
 		}
 		}
@@ -253,7 +254,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		HashSetAssumptions assumptions = new HashSetAssumptions();
 		Term<?> term = new Term<>(true, type, true);
 		// FIXME: lifetime relation cannot be null here
-		return isVoidTerm(term,term,assumptions,lifetimes);
+		return isVoidTerm(term, term, assumptions, lifetimes);
 	}
 
 	@Override
@@ -280,7 +281,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions, LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
+			throws ResolutionError {
 		//
 		if (assumptions.isAssumedVoid(lhs, rhs)) {
 			// This represents the "coinductive" case. That is, we have
@@ -319,8 +321,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		// FIXME: there is a bug in the following case which needs to be
 		// addressed:
 		//
@@ -431,7 +433,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions, LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions, LifetimeRelation lifetimes)
+			throws ResolutionError {
 		// At this point, we have several cases left to consider.
 		boolean aSign = a.sign;
 		boolean bSign = b.sign;
@@ -498,7 +501,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	private static int normaliseOpcode(int opcode) {
-		switch(opcode) {
+		switch (opcode) {
 		case TYPE_method:
 			return TYPE_function;
 		case TYPE_staticreference:
@@ -534,15 +537,25 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
-		if (lhs.sign || rhs.sign) {
-			Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
-			Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
+	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
+		Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
+		Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
+		if (lhs.sign && rhs.sign) {
 			// In this case, we are intersecting two array types, of which at
 			// least one is positive. This is void only if there is no
 			// intersection of the underlying element types. For example, int[]
-			// and bool[] is void, whilst (int|null)[] and int[] is not.
+			// and bool[] is void, whilst (int|null)[] and int[] is not. Note that void[]
+			// always intersects with another array type regardless and, hence, we must
+			// check whether the element type of each is void or not.
+			return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)
+					&& !isVoidTerm(lhsTerm, lhsTerm, assumptions, lifetimes)
+					&& !isVoidTerm(rhsTerm, rhsTerm, assumptions, lifetimes);
+		} else if(lhs.sign || rhs.sign) {
+			// int[] & !bool[] != 0, as int & !bool != 0
+			// int[] & !int[]  == 0, as int & !int == 0
+			// void[] & !int[] == 0, as void && !int == 0
+			// int[] & !void[] != 0, as int && !void != 0
 			return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
 		} else {
 			// In this case, we are intersecting two negative array types. For
@@ -588,7 +601,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			// reduces to void if the fields in either of these differ (e.g.
 			// {int f} and {int g}), or if there is no intersection between the
 			// same field in either (e.g. {int f} and {bool f}).
-			int matches = matchRecordFields(lhs,rhs,assumptions,lifetimes);
+			int matches = matchRecordFields(lhs, rhs, assumptions, lifetimes);
 			//
 			if (matches == -1) {
 				return lhs.sign == rhs.sign;
@@ -603,8 +616,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
@@ -649,33 +662,33 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		// me, you don't know what you are doing.
 		//
 		// Perform comparison
-		State lhsState = compare(matches,lhsOpen,lhsFields,rhsOpen,rhsFields);
+		State lhsState = compare(matches, lhsOpen, lhsFields, rhsOpen, rhsFields);
 		// Exhaustive case analysis
-		switch(lhsState) {
+		switch (lhsState) {
 		case UNCOMPARABLE:
-			//  {int x}       &  {int y} == 0
-			//  {int x, ...}  &  {int y} == 0
-			//  {int x, ...}  &  {int y, ...} != 0
-			//  {int x}       & !{int y} != 0
-			// !{int x}       & !{int y} != 0
+			// {int x} & {int y} == 0
+			// {int x, ...} & {int y} == 0
+			// {int x, ...} & {int y, ...} != 0
+			// {int x} & !{int y} != 0
+			// !{int x} & !{int y} != 0
 			return lhsSign && rhsSign && !(lhsOpen && rhsOpen);
 		case SMALLER:
-			//  {int x}  &  {int x, ...} != 0
-			// !{int x}  &  {int x, ...} != 0
-			// !{int x}  & !{int x, ...} != 0
-			//  {int x}  & !{int x, ...} == 0
+			// {int x} & {int x, ...} != 0
+			// !{int x} & {int x, ...} != 0
+			// !{int x} & !{int x, ...} != 0
+			// {int x} & !{int x, ...} == 0
 			return lhsSign && !rhsSign && rhsOpen;
 		case GREATER:
-			//  {int x, ...}  &  {int x} != 0
-			//  {int x, ...}  & !{int x} != 0
-			// !{int x, ...}  & !{int x} != 0
-			// !{int x, ...}  &  {int x} == 0
+			// {int x, ...} & {int x} != 0
+			// {int x, ...} & !{int x} != 0
+			// !{int x, ...} & !{int x} != 0
+			// !{int x, ...} & {int x} == 0
 			return !lhsSign && rhsSign && lhsOpen;
 		case EQUAL:
-			//  {int x}      &  {int x} != 0
-		    //  {int x, ...} &  {int x, ...} != 0
-		    //  {int x}      & !{int x} == 0
-		    //  {int x, ...} & !{int x, ...} == 0
+			// {int x} & {int x} != 0
+			// {int x, ...} & {int x, ...} != 0
+			// {int x} & !{int x} == 0
+			// {int x, ...} & !{int x, ...} == 0
 			return lhsSign != rhsSign;
 		default:
 			throw new RuntimeException(); // dead code
@@ -683,10 +696,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	protected enum State {
-		EQUAL,
-		UNCOMPARABLE,
-		SMALLER,
-		GREATER
+		EQUAL, UNCOMPARABLE, SMALLER, GREATER
 	}
 
 	protected State compare(int matches, boolean lhsOpen, Tuple<Decl.Variable> lhsFields, boolean rhsOpen,
@@ -694,19 +704,19 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		int lhsSize = lhsFields.size();
 		int rhsSize = rhsFields.size();
 		//
-		if(matches < lhsSize && matches < rhsSize) {
+		if (matches < lhsSize && matches < rhsSize) {
 			return State.UNCOMPARABLE;
-		} else if(matches < lhsSize) {
+		} else if (matches < lhsSize) {
 			// {int x, int y} != {int x}
 			// {int x, int y} << {int x, ...}
 			return rhsOpen ? State.SMALLER : State.UNCOMPARABLE;
-		} else if(matches < rhsSize) {
-			//      {int x} != {int x, int y}
+		} else if (matches < rhsSize) {
+			// {int x} != {int x, int y}
 			// {int x, ...} >> {int x, int y}
 			return lhsOpen ? State.GREATER : State.UNCOMPARABLE;
 		} else if (lhsOpen != rhsOpen) {
-			// {int x}       << {int x, ... }
-			// {int x, ...}  >> {int x }
+			// {int x} << {int x, ... }
+			// {int x, ...} >> {int x }
 			return lhsOpen ? State.GREATER : State.SMALLER;
 		} else {
 			// {int x,int y} == {int x,int y}
@@ -742,8 +752,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions,
+			LifetimeRelation lifetimes) throws ResolutionError {
 		String lhsLifetime = extractLifetime(lhs.type);
 		String rhsLifetime = extractLifetime(rhs.type);
 		// FIXME: need to look at lifetime parameters
@@ -756,9 +766,9 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
 		boolean elemRhsSubsetLhs = isVoidTerm(rhsFalseTerm, lhsTrueTerm, assumptions, lifetimes);
 		// Check whether lhs within rhs
-		boolean lhsWithinRhs = lifetimes.isWithin(lhsLifetime,rhsLifetime);
+		boolean lhsWithinRhs = lifetimes.isWithin(lhsLifetime, rhsLifetime);
 		// Check whether lhs within rhs
-		boolean rhsWithinLhs = lifetimes.isWithin(rhsLifetime,lhsLifetime);
+		boolean rhsWithinLhs = lifetimes.isWithin(rhsLifetime, lhsLifetime);
 		// Calculate whether lhs == rhs
 		boolean elemEqual = elemLhsSubsetRhs && elemRhsSubsetLhs;
 		//
@@ -778,7 +788,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	private String extractLifetime(Type.Reference ref) {
-		if(ref.hasLifetime()) {
+		if (ref.hasLifetime()) {
 			return ref.getLifetime().get();
 		} else {
 			return "*";

@@ -15,4 +15,4 @@ ensures |vr| == |v1|:
 public export method test() :
     assume add([1, 2, 3], [4, 5, 6]) == [5,7,9]
     assume add([1], [4]) == [5]
-    assume add([0;0], [0;0]) == [0;0]
+    assume add([], []) == [0;0]
