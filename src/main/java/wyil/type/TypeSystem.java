@@ -19,9 +19,7 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wyc.util.WhileyFileResolver;
 import wyil.type.SubtypeOperator.LifetimeRelation;
 import wyil.type.extractors.ReadableTypeExtractor;
-import wyil.type.extractors.WriteableArrayExtractor;
-import wyil.type.extractors.WriteableRecordExtractor;
-import wyil.type.extractors.WriteableReferenceExtractor;
+import wyil.type.extractors.WriteableTypeExtractor;
 import wyil.type.rewriters.AlgebraicTypeSimplifier;
 import wyil.type.subtyping.RelaxedSubtypeOperator;
 import wyil.type.subtyping.StrictSubtypeOperator;
@@ -64,9 +62,7 @@ public class TypeSystem {
 	private final SubtypeOperator strictSubtypeOperator;
 	private final SubtypeOperator coerciveSubtypeOperator;
 	private final TypeExtractor<Type,Object> readableTypeExtractor;
-	private final TypeExtractor<Type.Record,Object> writeableRecordExtractor;
-	private final TypeExtractor<Type.Array,Object> writeableArrayExtractor;
-	private final TypeExtractor<Type.Reference,Object> writeableReferenceExtractor;
+	private final TypeExtractor<Type,Object> writeableTypeExtractor;
 //	private final TypeInvariantExtractor typeInvariantExtractor;
 	private final TypeRewriter typeSimplifier;
 
@@ -75,9 +71,7 @@ public class TypeSystem {
 		this.strictSubtypeOperator = new StrictSubtypeOperator(this);
 		this.coerciveSubtypeOperator = new RelaxedSubtypeOperator(this);
 		this.readableTypeExtractor = new ReadableTypeExtractor(resolver,this);
-		this.writeableRecordExtractor = new WriteableRecordExtractor(resolver,this);
-		this.writeableArrayExtractor = new WriteableArrayExtractor(resolver,this);
-		this.writeableReferenceExtractor = new WriteableReferenceExtractor(resolver,this);
+		this.writeableTypeExtractor = new WriteableTypeExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
 		this.typeSimplifier = new AlgebraicTypeSimplifier();
 	}
@@ -263,7 +257,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Record extractWriteableRecord(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return writeableRecordExtractor.extract(type,lifetimes,null);
+		type = writeableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Record) {
+			return (Type.Record) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -294,7 +293,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Array extractWriteableArray(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return writeableArrayExtractor.extract(type,lifetimes,null);
+		type = writeableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Array) {
+			return (Type.Array) type;
+		} else {
+			return null;
+		}
 	}
 
 
@@ -328,7 +332,12 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 */
 	public Type.Reference extractWriteableReference(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		return writeableReferenceExtractor.extract(type,lifetimes,null);
+		type = writeableTypeExtractor.extract(type, lifetimes, null);
+		if(type instanceof Type.Reference) {
+			return (Type.Reference) type;
+		} else {
+			return null;
+		}
 	}
 
 	/**
