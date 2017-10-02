@@ -212,6 +212,21 @@ public class TypeSystem {
 	}
 
 	/**
+	 * For a given type extract its readable type, such as a readable record or
+	 * array type. For example, the type
+	 * <code>({int x, int y}|{int x, int z})</code> has readable record type
+	 * <code>{int x, ...}</code>.
+	 *
+	 * @param type
+	 * @param lifetimes
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type extractReadableType(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+		return readableTypeExtractor.extract(type, lifetimes, null);
+	}
+
+	/**
 	 * For a given type, extract its readable record type. For example, the type
 	 * <code>({int x, int y}|{int x, int z})</code> has readable record type
 	 * <code>{int x, ...}</code>. The following illustrates some more cases:
