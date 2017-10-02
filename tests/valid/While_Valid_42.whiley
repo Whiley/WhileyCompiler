@@ -23,7 +23,7 @@ ensures all { i in 0 .. |xs| | ys[i] == xs[|xs| - (i+1)] }:
 
 
 public export method test():
-    assume reverse([0;0]) == [0;0]
+    assume reverse([]) == [0;0]
     assume reverse([1]) == [1]
     assume reverse([1,2,3]) == [3,2,1]
     assume reverse([1,2,3,4,5,6]) == [6,5,4,3,2,1]

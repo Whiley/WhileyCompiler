@@ -5,4 +5,4 @@ function f(int[] xs) -> int[]:
 
 public export method test() :
     assume f([1, 4]) == [1,4]
-    assume f([0;0]) == [0;0]
+    assume f([]) == []

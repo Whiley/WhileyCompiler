@@ -83,6 +83,7 @@ public class AllValidVerificationTest {
 		// Flow Typing and VerificationConditionGeneration
 		IGNORED.put("RecursiveType_Valid_3", "#781");
 		// WyTP Variable Ordering Effect
+		IGNORED.put("ConstrainedList_Valid_26", "#782");
 		IGNORED.put("While_Valid_29", "#782");
 		IGNORED.put("While_Valid_42", "#782");
 
