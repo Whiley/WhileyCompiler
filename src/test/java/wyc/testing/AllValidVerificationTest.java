@@ -86,8 +86,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_29", "#782");
 		IGNORED.put("While_Valid_42", "#782");
 		// Mistaken Precondition Check on Assertion
-		IGNORED.put("ConstrainedList_Valid_22", "#800");
-		IGNORED.put("Assert_Valid_1", "#800");
+//		IGNORED.put("ConstrainedList_Valid_22", "#800");
+
 
 		// ===============================================================
 		// Whiley Theorem Prover faults
@@ -105,6 +105,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("While_Valid_32", "WyTP#12");
 		// Issue 29 "Triggerless Quantifier Instantiation"
+		IGNORED.put("Assert_Valid_1", "#29");
 		IGNORED.put("ConstrainedList_Valid_14", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
 		// Issue 36 "Support for Division Operator Feature"
