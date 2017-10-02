@@ -648,7 +648,7 @@ public class VerificationConditionGenerator {
 		Expr source = p1.first();
 		Expr index = p2.first();
 		// Emit verification conditions to check access in bounds
-		checkIndexOutOfBounds(lval, p2.second());
+		checkExpressionPreconditions(lval, p2.second());
 		// Construct array update for "pass thru"
 		Expr.Operator update = new Expr.ArrayUpdate(source, index, rval);
 		return translateSingleAssignment((LVal) lval.getFirstOperand(), update, p2.second());
@@ -928,7 +928,7 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
+	public void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
 		if (typeMayHaveInvariant(lhs, context)) {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
@@ -1243,121 +1243,7 @@ public class VerificationConditionGenerator {
 
 	@SuppressWarnings("unchecked")
 	private void checkExpressionPreconditions(WhileyFile.Expr expr, Context context) {
-		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
-			@Override
-			public void visitLogicalAnd(WhileyFile.Expr.LogicalAnd expr, Context context) {
-				// In the case of a logical and condition we need to propagate
-				// the left-hand side as an assumption into the right-hand side.
-				// This is an artifact of short-circuiting whereby terms on the
-				// right-hand side only execute when the left-hand side is known
-				// to hold.
-				Tuple<WhileyFile.Expr> operands = expr.getOperands();
-				for (int i = 0; i != operands.size(); ++i) {
-					super.visitExpression(operands.get(i), context);
-					Expr e = translateExpression(operands.get(i), null, context.getEnvironment());
-					context = context.assume(e);
-				}
-			}
-			@Override
-			public void visitInvoke(WhileyFile.Expr.Invoke expr, Context context) {
-				super.visitInvoke(expr,context);
-				checkInvokePreconditions(expr, context);
-			}
-			@Override
-			public void visitIntegerDivision(WhileyFile.Expr.IntegerDivision expr, Context context) {
-				super.visitIntegerDivision(expr,context);
-				checkDivideByZero(expr, context);
-			}
-			@Override
-			public void visitIntegerRemainder(WhileyFile.Expr.IntegerRemainder expr, Context context) {
-				super.visitIntegerRemainder(expr,context);
-				checkDivideByZero(expr, context);
-			}
-			@Override
-			public void visitArrayAccess(WhileyFile.Expr.ArrayAccess expr, Context context) {
-				super.visitArrayAccess(expr,context);
-				checkIndexOutOfBounds(expr, context);
-			}
-			@Override
-			public void visitArrayGenerator(WhileyFile.Expr.ArrayGenerator expr, Context context) {
-				super.visitArrayGenerator(expr,context);
-				checkArrayGeneratorLength(expr, context);
-			}
-
-			@Override
-			public void visitType(WhileyFile.Type type, Context context) {
-				// NOTE: don't need to visit types.
-			}
-		};
-		visitor.visitExpression(expr, context);
-	}
-
-	private void checkInvokePreconditions(WhileyFile.Expr.Invoke expr, Context context) {
-		try {
-			WhileyFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
-			//
-			WhileyFile.Decl.Callable fmp = lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(), expr);
-			if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
-				WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
-				int numPreconditions = fm.getRequires().size();
-				// There is at least one precondition for the function/method being
-				// called. Therefore, we need to generate a verification condition
-				// which will check that the precondition holds.
-				Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
-				String prefix = fm.getName() + "_requires_";
-				// Finally, generate an appropriate verification condition to check
-				// each precondition clause
-				for (int i = 0; i != numPreconditions; ++i) {
-					// FIXME: name needs proper path information
-					WyalFile.Name name = convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
-					Expr clause = new Expr.Invoke(null, name, null, arguments);
-					context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
-							expr.getParent(WhileyFile.Attribute.Span.class)));
-				}
-				// Perform parameter checks
-				for (int i = 0; i != parameterTypes.size(); ++i) {
-					generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
-				}
-			}
-		} catch (NameResolver.ResolutionError e) {
-			// FIXME: this should eventually be unnecessary
-			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
-		}
-	}
-
-	private void checkDivideByZero(WhileyFile.Expr.BinaryOperator expr, Context context) {
-		Expr rhs = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
-		Value zero = new Value.Int(BigInteger.ZERO);
-		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.NotEqual(rhs, constant);
-		//
-		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
-	}
-
-	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
-		Expr src = translateExpression(expr.getFirstOperand(), null, context.getEnvironment());
-		Expr idx = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
-		Expr zero = new Expr.Constant(new Value.Int(BigInteger.ZERO));
-		Expr length = new Expr.ArrayLength(src);
-		//
-		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
-		Expr lenTest = new Expr.LessThan(idx, length);
-		//
-		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
-		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
-				lenTest, expr.getParent(WhileyFile.Attribute.Span.class)));
-	}
-
-	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
-		Expr len = translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
-		Value zero = new Value.Int(BigInteger.ZERO);
-		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.GreaterThanOrEqual(len, constant);
-		//
-		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
+		new PreconditionGenerator(this).apply(expr, context);
 	}
 
 	private Context assumeExpressionPostconditions(WhileyFile.Expr expr, Context context) {
@@ -1439,7 +1325,7 @@ public class VerificationConditionGenerator {
 	// Expression
 	// =========================================================================
 
-	private Expr[] translateExpressions(Tuple<WhileyFile.Expr> loc, LocalEnvironment environment) {
+	public Expr[] translateExpressions(Tuple<WhileyFile.Expr> loc, LocalEnvironment environment) {
 		ArrayList<Expr> results = new ArrayList<>();
 		for (int i = 0; i != loc.size(); ++i) {
 			WhileyFile.Expr operand = loc.get(i);
@@ -1463,7 +1349,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private Expr translateExpression(WhileyFile.Expr expr, Integer selector, LocalEnvironment environment) {
+	public Expr translateExpression(WhileyFile.Expr expr, Integer selector, LocalEnvironment environment) {
 		Expr result;
 		try {
 			switch (expr.getOpcode()) {
@@ -1607,7 +1493,7 @@ public class VerificationConditionGenerator {
 		return translateAsUnknown(expr, environment);
 	}
 
-	private Expr translateInvoke(WhileyFile.Expr.Invoke expr, Integer selector, LocalEnvironment environment) {
+	public Expr translateInvoke(WhileyFile.Expr.Invoke expr, Integer selector, LocalEnvironment environment) {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		// FIXME: name needs proper path information
 		return new Expr.Invoke(null, expr.getName(), selector, operands);
@@ -2430,11 +2316,11 @@ public class VerificationConditionGenerator {
 	 * @param id
 	 * @return
 	 */
-	private WyalFile.Name convert(NameID id, SyntacticItem context) {
+	public WyalFile.Name convert(NameID id, SyntacticItem context) {
 		return convert(id.module(), id.name(), context);
 	}
 
-	private WyalFile.Name convert(Path.ID module, String name, SyntacticItem context) {
+	public WyalFile.Name convert(Path.ID module, String name, SyntacticItem context) {
 		if(module.equals(wyalFile.getEntry().id())) {
 			// This is a local name. Therefore, it does not need to be fully
 			// qualified.
@@ -2465,7 +2351,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private WyalFile.Type convert(WhileyFile.Type type, SyntacticItem context) {
+	public WyalFile.Type convert(WhileyFile.Type type, SyntacticItem context) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
@@ -2850,13 +2736,13 @@ public class VerificationConditionGenerator {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class VerificationCondition extends SyntacticElement.Impl {
+	public static class VerificationCondition extends SyntacticElement.Impl {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;
 		private final WhileyFile.Attribute.Span span;
 
-		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent, WhileyFile.Attribute.Span span) {
+		public VerificationCondition(String description, AssumptionSet antecedent, Expr consequent, WhileyFile.Attribute.Span span) {
 			this.description = description;
 			this.antecedent = antecedent;
 			this.consequent = consequent;
@@ -2993,7 +2879,7 @@ public class VerificationConditionGenerator {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class LocalEnvironment {
+	public class LocalEnvironment {
 		/**
 		 * Provides access to the global environment
 		 */
@@ -3117,7 +3003,7 @@ public class VerificationConditionGenerator {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class Context {
+	public static class Context {
 		/**
 		 * Represents the wyalfile being generated. This is useful if we want to
 		 * add macro definitions, etc.
@@ -3164,6 +3050,10 @@ public class VerificationConditionGenerator {
 
 		public WhileyFile getEnclosingFile() {
 			return (WhileyFile) environment.getParent().enclosingDeclaration.getHeap();
+		}
+
+		public AssumptionSet getAssumptions() {
+			return assumptions;
 		}
 
 		/**
