@@ -2168,6 +2168,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				this.opcode = EXPR_variablemove;
 			}
 
+			public boolean isMove() {
+				return this.opcode == EXPR_variablemove;
+			}
+
 			@Override
 			public VariableAccess clone(SyntacticItem[] operands) {
 				return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
