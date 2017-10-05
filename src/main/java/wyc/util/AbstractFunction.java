@@ -36,7 +36,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitDeclaration(Declaration decl, P data) {
+	public R visitDeclaration(Decl decl, P data) {
 		switch (decl.getOpcode()) {
 		case DECL_importfrom:
 		case DECL_import:
@@ -323,6 +323,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 		case EXPR_arraylength:
 			return visitUnaryOperator((Expr.UnaryOperator) expr, data);
 		// Binary Operators
@@ -342,6 +343,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 		case EXPR_arrayrange:
 		case EXPR_recordupdate:
 		case EXPR_arraygenerator:
@@ -387,6 +389,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			return visitRecordAccess((Expr.RecordAccess) expr, data);
 		case EXPR_arraylength:
 			return visitArrayLength((Expr.ArrayLength) expr, data);
@@ -431,6 +434,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_arraygenerator:
 			return visitArrayGenerator((Expr.ArrayGenerator) expr, data);
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			return visitArrayAccess((Expr.ArrayAccess) expr, data);
 		case EXPR_arrayrange:
 			return visitArrayRange((Expr.ArrayRange) expr, data);

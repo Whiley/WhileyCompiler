@@ -17,6 +17,9 @@ import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.AbstractConsumer;
 import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Expr;
+import wyc.lang.WhileyFile.Stmt;
+
 import static wyc.lang.WhileyFile.*;
 
 /**
@@ -72,6 +75,10 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 		visitWhileyFile(module,null);
 	}
 
+	// ===========================================================================
+	// DECLARATIONS
+	// ===========================================================================
+
 	@Override
 	public void visitType(Decl.Type t, Boolean consumed) {
 		visitExpressions(t.getInvariant(), false);
@@ -85,38 +92,83 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 	}
 
 	@Override
-	public void visitAssign(Stmt.Assign stmt, Boolean consumed) {
-		visitLVals(stmt.getLeftHandSide(), true);
-		visitExpressions(stmt.getRightHandSide(), true);
-	}
-
-	@Override
-	public void visitReturn(Stmt.Return stmt, Boolean consumed) {
-		visitExpressions(stmt.getReturns(), true);
-	}
-
-	@Override
 	public void visitVariable(Decl.Variable stmt, Boolean consumed) {
 		if (stmt.hasInitialiser()) {
 			visitExpression(stmt.getInitialiser(), true);
 		}
 	}
 
+	// ===========================================================================
+	// STATEMENTS
+	// ===========================================================================
 
 	@Override
-	public void visitVariableAccess(Expr.VariableAccess expr, Boolean consumed) {
-		if (!consumed) {
-			// In this case, we have identified a variable access which is
-			// not consumed and therefore can be implemented as a move.
+	public void visitAssert(Stmt.Assert stmt, Boolean consumed) {
+		visitExpression(stmt.getCondition(), false);
+	}
 
-			// FIXME: implement change to variable move
+	@Override
+	public void visitAssign(Stmt.Assign stmt, Boolean consumed) {
+		visitLVals(stmt.getLeftHandSide(), false);
+		visitExpressions(stmt.getRightHandSide(), true);
+	}
+
+	@Override
+	public void visitAssume(Stmt.Assume stmt, Boolean consumed) {
+		visitExpression(stmt.getCondition(), false);
+	}
+
+	@Override
+	public void visitDebug(Stmt.Debug stmt, Boolean consumed) {
+		visitExpression(stmt.getOperand(), false);
+	}
+
+	@Override
+	public void visitDoWhile(Stmt.DoWhile stmt, Boolean consumed) {
+		visitStatement(stmt.getBody(), null);
+		visitExpression(stmt.getCondition(),false);
+		visitExpressions(stmt.getInvariant(),false);
+	}
+
+
+	@Override
+	public void visitIfElse(Stmt.IfElse stmt, Boolean consumed) {
+		visitExpression(stmt.getCondition(),false);
+		visitStatement(stmt.getTrueBranch(),null);
+		if (stmt.hasFalseBranch()) {
+			visitStatement(stmt.getFalseBranch(),null);
+		}
+	}
+	@Override
+	public void visitReturn(Stmt.Return stmt, Boolean consumed) {
+		visitExpressions(stmt.getReturns(), true);
+	}
+
+	@Override
+	public void visitSwitch(Stmt.Switch stmt, Boolean consumed) {
+		visitExpression(stmt.getCondition(), false);
+		Tuple<Stmt.Case> cases = stmt.getCases();
+		for (int i = 0; i != cases.size(); ++i) {
+			visitCase((Stmt.Case) cases.get(i), null);
 		}
 	}
 
 	@Override
-	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Boolean consumed) {
-		// FIXME: unsure what to do here?
+	public void visitCase(Stmt.Case stmt, Boolean consume) {
+		visitExpressions(stmt.getConditions(), false);
+		visitStatement(stmt.getBlock(),null);
 	}
+
+	@Override
+	public void visitWhile(Stmt.While stmt, Boolean consumed) {
+		visitExpression(stmt.getCondition(),false);
+		visitExpressions(stmt.getInvariant(),false);
+		visitStatement(stmt.getBody(),null);
+	}
+
+	// ===========================================================================
+	// GENERAL EXPRESSIONS
+	// ===========================================================================
 
 	@Override public void visitInvoke(Expr.Invoke expr, Boolean consumed) {
 		visitExpressions(expr.getOperands(), true);
@@ -132,14 +184,273 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 	}
 
 	@Override
+	public void visitVariableAccess(Expr.VariableAccess expr, Boolean consumed) {
+		if (!consumed) {
+			// In this case, we have identified a variable access which is
+			// not consumed and therefore can be implemented as a move.
+			expr.setMove();
+		}
+	}
+
+	@Override
+	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Boolean consumed) {
+
+	}
+
+	@Override
+	public void visitCast(Expr.Cast expr, Boolean consumed) {
+		visitExpression(expr.getOperand(), false);
+	}
+
+	@Override
+	public void visitConstant(Expr.Constant expr, Boolean consumed) {
+
+	}
+
+	@Override
+	public void visitEqual(Expr.Equal expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitNotEqual(Expr.NotEqual expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
+	}
+
+	// ===========================================================================
+	// ARRAY EXPRESSIONS
+	// ===========================================================================
+
+	@Override
+	public void visitArrayAccess(Expr.ArrayAccess expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+		if(!consumed) {
+			expr.setMove();
+		}
+	}
+
+	@Override
+	public void visitArrayLength(Expr.ArrayLength expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+	}
+
+	@Override
+	public void visitArrayGenerator(Expr.ArrayGenerator expr, Boolean consumed) {
+		// FIXME: am unsure about this one.
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
+	}
+
+	@Override
+	public void visitArrayInitialiser(Expr.ArrayInitialiser expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(), true);
+	}
+
+	@Override
+	public void visitArrayRange(Expr.ArrayRange expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
+	}
+
+	@Override
+	public void visitArrayUpdate(Expr.ArrayUpdate expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
+		visitExpression(expr.getThirdOperand(), true);
+	}
+
+	// ===========================================================================
+	// BITWISE EXPRESSIONS
+	// ===========================================================================
+
+
+	@Override
+	public void visitBitwiseComplement(Expr.BitwiseComplement expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+	}
+
+	@Override
+	public void visitBitwiseAnd(Expr.BitwiseAnd expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(),false);
+	}
+
+	@Override
+	public void visitBitwiseOr(Expr.BitwiseOr expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(),false);
+	}
+
+	@Override
+	public void visitBitwiseXor(Expr.BitwiseXor expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(),false);
+	}
+
+	@Override
+	public void visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitBitwiseShiftRight(Expr.BitwiseShiftRight expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	// ===========================================================================
+	// INTEGER EXPRESSIONS
+	// ===========================================================================
+
+	@Override
+	public void visitIntegerLessThan(Expr.IntegerLessThan expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerNegation(Expr.IntegerNegation expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerAddition(Expr.IntegerAddition expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerDivision(Expr.IntegerDivision expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitIntegerRemainder(Expr.IntegerRemainder expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	// ===========================================================================
+	// LOGICAL EXPRESSIONS
+	// ===========================================================================
+
+
+	@Override
+	public void visitLogicalAnd(Expr.LogicalAnd expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(), false);
+	}
+
+	@Override
+	public void visitLogicalImplication(Expr.LogicalImplication expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitLogicalIff(Expr.LogicalIff expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(),false);
+		visitExpression(expr.getSecondOperand(),false);
+	}
+
+	@Override
+	public void visitLogicalNot(Expr.LogicalNot expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+	}
+
+	@Override
+	public void visitLogicalOr(Expr.LogicalOr expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(),false);
+	}
+
+	@Override
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Boolean consumed) {
+		visitVariables(expr.getParameters(),true);
 		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Boolean consumed) {
+		visitVariables(expr.getParameters(),true);
 		visitExpression(expr.getOperand(), false);
 	}
 
-	// FIXME: this needs considerable thought to make it work nicely.
+	// ===========================================================================
+	// RECORD EXPRESSIONS
+	// ===========================================================================
+
+	@Override
+	public void visitRecordAccess(Expr.RecordAccess expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+		if(!consumed) {
+			expr.setMove();
+		}
+	}
+
+	@Override
+	public void visitRecordInitialiser(Expr.RecordInitialiser expr, Boolean consumed) {
+		visitExpressions(expr.getOperands(),true);
+	}
+
+	@Override
+	public void visitRecordUpdate(Expr.RecordUpdate expr, Boolean consumed) {
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), true);
+	}
+
+	// ===========================================================================
+	// REFERENCE EXPRESSIONS
+	// ===========================================================================
+
+	@Override
+	public void visitDereference(Expr.Dereference expr, Boolean consumed) {
+		visitExpression(expr.getOperand(),false);
+	}
+
+
+	@Override
+	public void visitNew(Expr.New expr, Boolean consumed) {
+		visitExpression(expr.getOperand(), true);
+	}
+
+	// ===========================================================================
+	// TYPES
+	// ===========================================================================
+
+	@Override
+	public void visitType(Type type, Boolean consumed) {
+		// no need to visit types at all
+		return;
+	}
 }

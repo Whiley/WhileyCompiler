@@ -15,7 +15,7 @@ ensures r >= 0:
     return x
 
 public export method test():
-    assume sum([0;0]) == 0
+    assume sum([]) == 0
     assume sum([0]) == 0
     assume sum([1]) == 1
     assume sum([1,2,3]) == 6

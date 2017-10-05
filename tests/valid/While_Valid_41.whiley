@@ -17,7 +17,7 @@ function zeroOut(int[] items) -> int[]:
 
 
 public export method test():
-    assume zeroOut([0;0]) == [0;0]
+    assume zeroOut([]) == [0;0]
     assume zeroOut([1]) == [0]
     assume zeroOut([1,2]) == [0,0]
     assume zeroOut([1,2,3]) == [0,0,0]

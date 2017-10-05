@@ -30,7 +30,7 @@ requires n >= 0:
 
 public export method test():
     //
-    assume buildNatList(0) == [0;0]
+    assume buildNatList(0) == []
     assume buildNatList(1) == [0]
     assume buildNatList(2) == [0,1]
     assume buildNatList(3) == [0,1,2]

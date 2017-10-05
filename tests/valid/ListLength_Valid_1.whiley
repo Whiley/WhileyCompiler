@@ -7,4 +7,4 @@ function f(int[] xs) -> nat:
 
 public export method test() :
     assume f([1, 2, 3]) == 3
-    assume f([0;0]) == 0
+    assume f([]) == 0

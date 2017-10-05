@@ -19,7 +19,7 @@ function run(Matrix A, Matrix B) -> (Matrix C)
 requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
-    int[][] C_data = [[0;0]; A.height]
+    int[][] C_data = [[]; A.height]
     int i = 0
     while i < A.height where i >= 0 where |C_data| == A.height:
         int[] row = [0; B.width]

@@ -1319,9 +1319,11 @@ public class FlowTypeCheck {
 			type = checkStaticVariableLVal((Expr.StaticVariableAccess) lval, environment);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			type = checkArrayLVal((Expr.ArrayAccess) lval, environment);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			type = checkRecordLVal((Expr.RecordAccess) lval, environment);
 			break;
 		case EXPR_dereference:
@@ -1445,14 +1447,15 @@ public class FlowTypeCheck {
 			type = checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
 			break;
 		case EXPR_cast:
-			return checkCast((Expr.Cast) expression, environment);
+			type = checkCast((Expr.Cast) expression, environment);
+			break;
 		case EXPR_invoke: {
 			Tuple<Type> types = checkInvoke((Expr.Invoke) expression, environment);
 			// Deal with potential for multiple values
 			if (types.size() == 0) {
-				syntaxError("no return value", expression);
+				return syntaxError("no return value", expression);
 			} else if (types.size() > 1) {
-				syntaxError("too many return values", expression);
+				return syntaxError("too many return values", expression);
 			} else {
 				return types.get(0);
 			}
@@ -1461,12 +1464,13 @@ public class FlowTypeCheck {
 			Tuple<Type> types = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
 			// Deal with potential for multiple values
 			if (types.size() == 0) {
-				syntaxError("no return value", expression);
+				return syntaxError("no return value", expression);
 			} else if (types.size() > 1) {
-				syntaxError("too many return values", expression);
+				return syntaxError("too many return values", expression);
 			} else {
-				return types.get(0);
+				type = types.get(0);
 			}
+			break;
 		}
 		// Conditions
 		case EXPR_logicalnot:
@@ -1516,6 +1520,7 @@ public class FlowTypeCheck {
 			type = checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
 			break;
 		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			type = checkRecordAccess((Expr.RecordAccess) expression, environment);
 			break;
 		case EXPR_recordupdate:
@@ -1532,6 +1537,7 @@ public class FlowTypeCheck {
 			type = checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
 			break;
 		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
 			break;
 		case EXPR_arrayupdate:

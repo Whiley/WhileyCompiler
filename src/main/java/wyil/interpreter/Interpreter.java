@@ -363,12 +363,12 @@ public class Interpreter {
 	private Status executeDebug(Stmt.Debug stmt, CallStack frame, EnclosingScope scope) {
 		//
 		// FIXME: need to do something with this
-//		Value.Array arr = executeExpression(ARRAY_T, stmt.getCondition(), frame);
-//		for (Constant item : arr.values()) {
-//			BigInteger b = ((Constant.Integer) item).value();
-//			char c = (char) b.intValue();
-//			debug.print(c);
-//		}
+		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame);
+		for (RValue item : arr.getElements()) {
+			RValue.Int i = (RValue.Int) item;
+			char c = (char) i.intValue();
+			debug.print(c);
+		}
 		//
 		return Status.NEXT;
 	}
@@ -605,6 +605,7 @@ public class Interpreter {
 				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 				break;
 			case WhileyFile.EXPR_recordaccess:
+			case WhileyFile.EXPR_recordborrow:
 				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
@@ -613,6 +614,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_invoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
+			case WhileyFile.EXPR_variablemove:
 			case WhileyFile.EXPR_variablecopy:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
@@ -695,6 +697,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_bitwiseshr:
 				val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
 				break;
+			case WhileyFile.EXPR_arrayborrow:
 			case WhileyFile.EXPR_arrayaccess:
 				val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
 				break;
@@ -1160,6 +1163,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_constant:
 			case WhileyFile.EXPR_cast:
 			case WhileyFile.EXPR_recordaccess:
+			case WhileyFile.EXPR_recordborrow:
 			case WhileyFile.DECL_lambda:
 			case WhileyFile.EXPR_logicalexistential:
 			case WhileyFile.EXPR_logicaluniversal:
@@ -1247,6 +1251,7 @@ public class Interpreter {
 	 */
 	private LValue constructLVal(Expr expr, CallStack frame) {
 		switch (expr.getOpcode()) {
+		case EXPR_arrayborrow:
 		case EXPR_arrayaccess: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
 			LValue src = constructLVal(e.getFirstOperand(), frame);
@@ -1258,11 +1263,13 @@ public class Interpreter {
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Dereference(src);
 		}
-		case EXPR_recordaccess: {
+		case EXPR_recordaccess:
+		case EXPR_recordborrow: {
 			Expr.RecordAccess e = (Expr.RecordAccess) expr;
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Record(src, e.getField());
 		}
+		case EXPR_variablemove:
 		case EXPR_variablecopy: {
 			Expr.VariableAccess e = (Expr.VariableAccess) expr;
 			Decl.Variable decl = e.getVariableDeclaration();

@@ -66,20 +66,13 @@ public class AllValidVerificationTest {
 		// absolutely no point trying to see whether these work or not, since we
 		// already know they will not.
 		IGNORED.putAll(AllValidTest.IGNORED);
-		//
-		IGNORED.put("ConstrainedList_Valid_28", "#666");
-		//
+		// Null Checks as Type Tests in VCG (closed)
 		IGNORED.put("IfElse_Valid_4", "#712");
 		IGNORED.put("Complex_Valid_4", "#712");
 		IGNORED.put("ListAccess_Valid_6", "712");
-		//
+		// Reasoning about Function Postconditions
 		IGNORED.put("Record_Valid_3", "#714");
-		//
-		//IGNORED.put("Ensures_Valid_3", "#730");
-		//
-		IGNORED.put("ConstrainedList_Valid_22", "#731");
-		IGNORED.put("Assert_Valid_1", "#731");
-		//
+		// Verification Condition Generation and Dereference Assignment
 		IGNORED.put("Process_Valid_1", "#743");
 		IGNORED.put("Process_Valid_9", "#743");
 		IGNORED.put("Process_Valid_10", "#743");
@@ -87,14 +80,13 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_2", "#743");
 		IGNORED.put("Reference_Valid_3", "#743");
 		IGNORED.put("Reference_Valid_6", "#743");
-		//
-		IGNORED.put("Lifetime_Lambda_Valid_2", "#764");
-		IGNORED.put("Lifetime_Lambda_Valid_3", "#764");
-		//
+		// Flow Typing and VerificationConditionGeneration
 		IGNORED.put("RecursiveType_Valid_3", "#781");
-		//
+		// WyTP Variable Ordering Effect
+		IGNORED.put("ConstrainedList_Valid_26", "#782");
 		IGNORED.put("While_Valid_29", "#782");
 		IGNORED.put("While_Valid_42", "#782");
+
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
@@ -111,6 +103,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("While_Valid_32", "WyTP#12");
 		// Issue 29 "Triggerless Quantifier Instantiation"
+		IGNORED.put("Assert_Valid_1", "#29");
 		IGNORED.put("ConstrainedList_Valid_14", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
 		// Issue 36 "Support for Division Operator Feature"
@@ -157,9 +150,7 @@ public class AllValidVerificationTest {
 		// Issue 114 "Limitation with TypeTestClosure"
 		IGNORED.put("RecursiveType_Valid_4", "WyTP#114");
 		//
-//		//IGNORED.put("Byte_Valid_3", "WyTP#124");
 		IGNORED.put("Ensures_Valid_3", "WyTP#124");
-//		IGNORED.put("FunctionRef_Valid_4", "WyTP#124");
 		IGNORED.put("While_Valid_1", "WyTP#124");
 		IGNORED.put("While_Valid_44", "WyTP#124");
 		//
@@ -167,6 +158,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_22", "WyTP#133");
 		IGNORED.put("While_Valid_24", "WyTP#133");
 		IGNORED.put("While_Valid_35", "WyTP#133");
+		// Unexpected Postcondition Failure
+		IGNORED.put("Assert_Valid_2", "#801");
 		//
 		IGNORED.put("While_Valid_34", "??");
 		IGNORED.put("String_Valid_6", "??");

@@ -1,79 +1,139 @@
-// Copyright 2011 The Whiley Project Developers
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 package wyil.type.extractors;
 
 import java.util.ArrayList;
 
-import static wyc.lang.WhileyFile.*;
-
 import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.Decl;
+import static wyc.lang.WhileyFile.*;
+
 import wyc.lang.WhileyFile.Type;
+import wyc.lang.WhileyFile.Type.Atom;
 import wyil.type.TypeSystem;
 
 /**
  * <p>
- * Responsible for extracting a "writeable record" from a given type. A
- * writeable record is a conservative approximation of the records described in
- * a given type. Furthermore, it is safe to use when writing field values to
- * that type. For example, the type <code>{int f}|{any f}</code> has a writeable
- * record type of <code>{int f}</code>. This is the writeable type as, if we
- * were to write field <code>f</code> with an <code>int</code> this is safe for
- * either bound. However, we cannot use the writeable record types for reading
- * as this could be unsafe. For example, if we actually had a record of type
- * <code>{bool f}</code>, then reading a int value is not permitted.
+ * Responsible for extracting a readable type, such as a readable array or
+ * readable record type. This is a conservative approximation of that described
+ * in a given type which is safe to use when reading elements from that type.
+ * For example, <code>(int[]|bool[])</code> has a readable array type.
  * </p>
  * <p>
- * Not all types have writeable record type and, furthermore, care must be
- * exercised for those that do. For example, <code>{int f}|int</code> does not
- * have a writeable record type. Likewise, the writeable record type for
- * <code>{T1 f, T2 g}|{T3 f}</code> is <code>{T1&T3 f, ...}</code>. Finally,
- * negations play an important role in determining the writeable record type.
- * For example, <code>{int|null f} & !{int f}</code> generates the writeable
- * record type <code>{null f}</code>.
+ * <b>Readable Arrays</b>. For example, the type <code>(int[])|(bool[])</code>
+ * has a readable array type of <code>(int|bool)[]</code>. This is the readable
+ * type as, if we were to read an element from either bound, the return type
+ * would be in <code>int|bool</code>. However, we cannot use the readable array
+ * type for writing as this could be unsafe. For example, if we actually had an
+ * array of type <code>int[]</code>, then writing a boolean value is not
+ * permitted. Not all types have readable array type and, furthermore, care must
+ * be exercised for those that do. For example, <code>(int[])|int</code> does
+ * not have a readable array type. Finally, negations play an important role in
+ * determining the readable array type. For example,
+ * <code>(int|null)[] & !(int[])</code> generates the readable array type
+ * <code>null[]</code>.
+ * </p>
+ *
+ * <p>
+ * <b>Readable Records</b>. For example, the type <code>{int f}|{bool f}</code>
+ * has a readable record type of <code>{int|bool f}</code>. This is the readable
+ * type as, if we were to read field <code>f</code> from either bound, the
+ * return type would be in <code>int|bool</code>. However, we cannot use the
+ * readable record type for writing as this could be unsafe. For example, if we
+ * actually had a record of type <code>{int f}</code>, then writing a boolean
+ * value is not permitted. Not all types have readable record type and,
+ * furthermore, care must be exercised for those that do. For example,
+ * <code>{int f}|int</code> does not have a readable record type. Likewise, the
+ * readable record type for <code>{int f, int g}|{bool f}</code> is
+ * <code>{int|bool f, ...}</code>. Finally, negations play an important role in
+ * determining the readable record type. For example,
+ * <code>{int|null f} & !{int f}</code> generates the readable record type
+ * <code>{null f}</code>.
+ * </p>
+ *
+ * <p>
+ * <b>Readable References.</b>For example, the type <code>(&int)|(&bool)</code>
+ * has a readable reference type of <code>&(int|bool)</code>. This is the
+ * readable type as, if we were to read an element from either bound, the return
+ * type would be in <code>int|bool</code>. However, we cannot use the readable
+ * reference type for writing as this could be unsafe. For example, if we
+ * actually had an reference of type <code>&int</code>, then writing a boolean
+ * value is not permitted. Not all types have a readable reference type and,
+ * furthermore, care must be exercised for those that do. For example,
+ * <code>(&int)|int</code> does not have a readable reference type.
  * </p>
  *
  * @author David J. Pearce
  *
  */
-public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record> {
+public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 
-	public WriteableRecordExtractor(NameResolver resolver, TypeSystem typeSystem) {
+	public ReadableTypeExtractor(NameResolver resolver, TypeSystem typeSystem) {
 		super(resolver, typeSystem);
 	}
 
-//	@Override
-//	public Type.Record extract(Type type, Object supplementary) throws ResolutionError {
-//		System.out.println("EXTRACTING RECORD: " + type);
-//		Type.Record r = super.extract(type, supplementary);
-//		System.out.println("DONE EXTRACTING: " + type + " => " + r);
-//		return r;
-//	}
-
 	@Override
-	protected Type.Record construct(Type.Atom type) {
-		if(type instanceof Type.Record) {
-			return (Type.Record) type;
-		} else {
-			return null;
-		}
+	protected Type construct(Atom type) {
+		return type;
 	}
 
 	@Override
+	protected Type union(Type lhs, Type rhs) {
+		int opcode = lhs.getOpcode();
+		if(opcode == rhs.getOpcode()) {
+			switch (opcode) {
+			case TYPE_record:
+				return union((Type.Record) lhs, (Type.Record) rhs);
+			case TYPE_array:
+				return union((Type.Array) lhs, (Type.Array) rhs);
+			case TYPE_reference:
+				return union((Type.Reference) lhs, (Type.Reference) rhs);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	protected Type intersect(Type lhs, Type rhs) {
+		int opcode = lhs.getOpcode();
+		if(opcode == rhs.getOpcode()) {
+			switch (opcode) {
+			case TYPE_record:
+				return intersect((Type.Record) lhs, (Type.Record) rhs);
+			case TYPE_array:
+				return intersect((Type.Array) lhs, (Type.Array) rhs);
+			case TYPE_reference:
+				return intersect((Type.Reference) lhs, (Type.Reference) rhs);
+			}
+		}
+		return null;
+	}
+
+	@Override
+	protected Type subtract(Type lhs, Type rhs) {
+		int opcode = lhs.getOpcode();
+		if(opcode == rhs.getOpcode()) {
+			switch (opcode) {
+			case TYPE_record:
+				return subtract((Type.Record) lhs, (Type.Record) rhs);
+			case TYPE_array:
+				return subtract((Type.Array) lhs, (Type.Array) rhs);
+			case TYPE_reference:
+				return subtract((Type.Reference) lhs, (Type.Reference) rhs);
+			}
+		}
+		// In this case, there is nothing useful to subtract. For example, {int x} - int
+		// is just {int x}.
+		return lhs;
+	}
+
+	// ============================================================
+	// Primitives
+	// ============================================================
+
+	// ============================================================
+	// Records
+	// ============================================================
+
 	protected Type.Record union(Type.Record lhs, Type.Record rhs) {
 		ArrayList<Decl.Variable> fields = new ArrayList<>();
 		Tuple<Decl.Variable> lhsFields = lhs.getFields();
@@ -85,7 +145,7 @@ public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record>
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					Type type = intersectionHelper(lhsField.getType(), rhsField.getType());
+					Type type = unionHelper(lhsField.getType(), rhsField.getType());
 					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
 				}
 			}
@@ -97,7 +157,6 @@ public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record>
 		return new Type.Record(isOpenRecord, new Tuple<>(fields));
 	}
 
-	@Override
 	protected Type.Record subtract(Type.Record lhs, Type.Record rhs) {
 		ArrayList<Decl.Variable> fields = new ArrayList<>();
 		Tuple<Decl.Variable> lhsFields = lhs.getFields();
@@ -125,7 +184,6 @@ public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record>
 		}
 	}
 
-	@Override
 	protected Type.Record intersect(Type.Record lhs, Type.Record rhs) {
 		//
 		Tuple<Decl.Variable> lhsFields = lhs.getFields();
@@ -244,5 +302,38 @@ public class WriteableRecordExtractor extends AbstractTypeExtractor<Type.Record>
 			result[index++] = lhsFields.get(i);
 		}
 		return index;
+	}
+	// ============================================================
+	// Arrays
+	// ============================================================
+
+	protected Type.Array union(Type.Array lhs, Type.Array rhs) {
+		//
+		return new Type.Array(unionHelper(lhs.getElement(), rhs.getElement()));
+	}
+
+	protected Type.Array subtract(Type.Array lhs, Type.Array rhs) {
+		return new Type.Array(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+	}
+
+	protected Type.Array intersect(Type.Array lhs, Type.Array rhs) {
+		return new Type.Array(intersectionHelper(lhs.getElement(), rhs.getElement()));
+	}
+
+	// ============================================================
+	// References
+	// ============================================================
+
+	protected Type.Reference union(Type.Reference lhs, Type.Reference rhs) {
+		//
+		return new Type.Reference(intersectionHelper(lhs.getElement(),rhs.getElement()));
+	}
+
+	protected Type.Reference subtract(Type.Reference lhs, Type.Reference rhs) {
+		return new Type.Reference(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+	}
+
+	protected Type.Reference intersect(Type.Reference lhs, Type.Reference rhs) {
+		return new Type.Reference(intersectionHelper(lhs.getElement(), rhs.getElement()));
 	}
 }

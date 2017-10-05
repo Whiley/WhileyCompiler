@@ -8,4 +8,4 @@ requires |xs| == 0:
 
 public export method test() :
     nat[] rs = f([0;0])
-    assume rs == [0;0]
+    assume rs == []
