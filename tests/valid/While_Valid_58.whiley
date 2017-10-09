@@ -1,0 +1,14 @@
+function double(int n) -> (int m):
+   assume n >= 0
+   int i = 0
+   m = 0
+   while i < n where i >= 0 && i <= n && m==2*i:
+     i = i+1
+     m = m+2
+   assert m == 2*n
+   return m
+
+public export method test():
+    assume double(0) == 0
+    assume double(1) == 2
+    assume double(2) == 4
