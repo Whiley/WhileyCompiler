@@ -517,23 +517,59 @@ public class VerificationConditionGenerator {
 	private Context translateAssign(WhileyFile.Stmt.Assign stmt, Context context) throws ResolutionError {
 		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
 		Tuple<WhileyFile.Expr> rhs = stmt.getRightHandSide();
-
+		WhileyFile.LVal[][] lvals = new LVal[rhs.size()][];
+		Expr[][] rvals = new Expr[rhs.size()][];
+		// First, generate bundles
 		for (int i = 0, j = 0; i != rhs.size(); ++i) {
 			WhileyFile.Expr rval = rhs.get(i);
-			Tuple<WhileyFile.Type> types = rval.getTypes();
-			WhileyFile.LVal[] lval;
-			if(types == null) {
-				lval = new WhileyFile.LVal[] {lhs.get(j++)};
-			} else {
-				lval = new WhileyFile.LVal[types.size()];
-				for(int k=0;k!=types.size();++k) {
-					lval[k] = lhs.get(j++);
-				}
-			}
-			context = translateAssign(lval, rval, context);
+			lvals[i] = generateEmptyLValBundle(rval.getTypes(),lhs,j);
+			j += lvals[i].length;
+			Pair<Expr[],Context> p = generateRValBundle(rval,context);
+			rvals[i] = p.first();
+			context = p.second();
+		}
+		// Second, apply the bundles to implement assignments.
+		for (int i = 0; i != rhs.size(); ++i) {
+			context = translateAssign(lvals[i], rvals[i], context);
 		}
 		// Done
 		return context;
+	}
+
+	private WhileyFile.LVal[] generateEmptyLValBundle(Tuple<WhileyFile.Type> types, Tuple<WhileyFile.LVal> lhs, int j) {
+		WhileyFile.LVal[] lval;
+		if(types == null) {
+			lval = new WhileyFile.LVal[] {lhs.get(j)};
+		} else {
+			lval = new WhileyFile.LVal[types.size()];
+			for(int k=0;k!=types.size();++k) {
+				lval[k] = lhs.get(j++);
+			}
+		}
+		return lval;
+	}
+
+	private Pair<Expr[], Context> generateRValBundle(WhileyFile.Expr rhs, Context context) {
+		Tuple<WhileyFile.Type> types = rhs.getTypes();
+		int size = (types == null) ? 1 : types.size();
+		Expr[] rvals = new Expr[size];
+		for (int i = 0; i != rvals.length; ++i) {
+			if (i == 0) {
+				// First time around, we should generate appropriate
+				// precondition checks. We also need to determine whether the
+				// selector is null or not.
+				Integer selector = (size == 1) ? null : i;
+				Pair<Expr, Context> rp = translateExpressionWithChecks(rhs, selector, context);
+				context = rp.second();
+				rvals[i] = rp.first();
+			} else {
+				// Second time around, don't need to regenerate the precondition
+				// checks. We also know that the selector should be non-null.
+				rvals[i] = translateExpression(rhs, i, context.getEnvironment());
+			}
+		}
+		//
+		return new Pair<>(rvals, context);
 	}
 
 	/**
@@ -549,27 +585,12 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Context translateAssign(WhileyFile.LVal[] lval, WhileyFile.Expr rval, Context context) throws ResolutionError {
+	private Context translateAssign(WhileyFile.LVal[] lval, Expr[] rval, Context context) throws ResolutionError {
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
-			Expr rhs;
-			if(i == 0) {
-				// First time around, we should generate appropriate
-				// precondition checks. We also need to determine whether the
-				// selector is null or not.
-				Integer selector = ls.length == 1 ? null : i;
-				Pair<Expr, Context> rp = translateExpressionWithChecks(rval, selector, context);
-				context = rp.second();
-				rhs = rp.first();
-			} else {
-				// Second time around, don't need to regenerate the precondition
-				// checks. We also know that the selector should be non-null.
-				rhs = translateExpression(rval, i, context.getEnvironment());
-			}
-
 			WhileyFile.LVal lhs = lval[i];
-			generateTypeInvariantCheck(lhs.getType(),rhs,context);
-			context = translateSingleAssignment(lval[i], rhs, context);
+			generateTypeInvariantCheck(lhs.getType(), rval[i], context);
+			context = translateSingleAssignment(lval[i], rval[i], context);
 		}
 		return context;
 	}
