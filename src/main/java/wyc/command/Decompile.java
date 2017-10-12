@@ -21,6 +21,7 @@ import java.util.List;
 
 import wybs.util.StdProject;
 import wyc.command.Decompile;
+import wyc.command.Compile.Result;
 import wyc.io.WhileyFilePrinter;
 import wyc.lang.WhileyFile;
 import wyc.util.AbstractProjectCommand;
@@ -113,8 +114,12 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 				wyp.apply(wf);
 			}
 		} catch (IOException e) {
-			// FIXME: this is no solution
-			throw new RuntimeException(e);
+			// FIXME: need a better error reporting mechanism
+			System.err.println("internal failure: " + e.getMessage());
+			if (verbose) {
+				e.printStackTrace();
+			}
+			return Result.INTERNAL_FAILURE;
 		}
 		return Result.SUCCESS;
 	}

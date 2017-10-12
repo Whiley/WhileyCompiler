@@ -310,8 +310,12 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return compile(project,entries);
 		} catch(RuntimeException e) {
 			throw e;
-		} catch (Exception e) {
-			// FIXME: this is a problem because it is swallowing exceptions!!
+		} catch (IOException e) {
+			// FIXME: need a better error reporting mechanism
+			System.err.println("internal failure: " + e.getMessage());
+			if (verbose) {
+				printStackTrace(syserr, e);
+			}
 			return Result.INTERNAL_FAILURE;
 		}
 	}
@@ -322,8 +326,12 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return compile(project,entries);
 		} catch (RuntimeException e) {
 			throw e;
-		} catch (Exception e) {
-			// FIXME: this is a problem because it is swallowing exceptions!!
+		} catch (IOException e) {
+			// FIXME: need a better error reporting mechanism
+			System.err.println("internal failure: " + e.getMessage());
+			if (verbose) {
+				printStackTrace(syserr, e);
+			}
 			return Result.INTERNAL_FAILURE;
 		}
 	}

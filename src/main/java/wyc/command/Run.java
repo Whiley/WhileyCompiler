@@ -20,6 +20,7 @@ import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
 import wyc.command.Run;
+import wyc.command.Decompile.Result;
 import wyc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content;
@@ -87,8 +88,10 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 			NameID name = new NameID(id, args[1]);
 			executeFunctionOrMethod(name, sig, project);
 		} catch (IOException e) {
-			// FIXME: this is broken
-			throw new RuntimeException(e);
+			// FIXME: need a better error reporting mechanism
+			System.err.println("internal failure: " + e.getMessage());
+			e.printStackTrace();
+			return Result.INTERNAL_FAILURE;
 		}
 		return Result.SUCCESS;
 	}
