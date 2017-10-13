@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_17.whiley:7: loop invariant does not hold on entry
+    while k < |a| where |c| == |a| && 0 <= k && k <= |a| &&
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
