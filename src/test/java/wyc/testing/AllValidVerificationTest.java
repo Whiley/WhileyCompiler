@@ -70,8 +70,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("IfElse_Valid_4", "#712");
 		IGNORED.put("Complex_Valid_4", "#712");
 		IGNORED.put("ListAccess_Valid_6", "712");
-		// Reasoning about Function Postconditions
-		IGNORED.put("Record_Valid_3", "#714");
 		// Verification Condition Generation and Dereference Assignment
 		IGNORED.put("Process_Valid_1", "#743");
 		IGNORED.put("Process_Valid_9", "#743");
@@ -84,13 +82,10 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_3", "#781");
 		// WyTP Variable Ordering Effect
 		IGNORED.put("ConstrainedList_Valid_26", "#782");
-		IGNORED.put("While_Valid_29", "#782");
-		IGNORED.put("While_Valid_42", "#782");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
 		IGNORED.put("Complex_Valid_3", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_23", "too long for Travis");
 		IGNORED.put("Complex_Valid_8", "too long for Travis");
 		IGNORED.put("RecursiveType_Valid_2", "too long for Travis");
 		IGNORED.put("RecursiveType_Valid_12", "too long for Travis");
@@ -144,10 +139,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_26", "WyTP#112");
 		// Issue 114 "Limitation with TypeTestClosure"
 		IGNORED.put("RecursiveType_Valid_4", "WyTP#114");
-		//
-//		IGNORED.put("Ensures_Valid_3", "WyTP#124");
-//		IGNORED.put("While_Valid_1", "WyTP#124");
-//		IGNORED.put("While_Valid_44", "WyTP#124");
 		//
 		IGNORED.put("Ensures_Valid_6", "WyTP#133");
 		IGNORED.put("RecursiveType_Valid_22", "WyTP#133");
