@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_18.whiley:15: loop invariant does not hold on entry
+    where i > 0 && |items| == length
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^

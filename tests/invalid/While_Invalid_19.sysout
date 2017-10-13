@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_19.whiley:10: type invariant not satisfied
+    nat length = (end - start)
+                  ^^^^^^^^^^^

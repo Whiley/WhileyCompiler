@@ -1,0 +1,34 @@
+type nat is (int x) where x >= 0
+
+property sorted(int[] arr, int n)
+where all { i in 1..n | arr[i-1] < arr[i] }
+
+function create(int start, int end) -> (int[] result)
+requires start < end
+ensures sorted(result,|result|) && |result| == (end - start):
+    //
+    nat i = 1
+    nat length = (end - start)
+    int[] items = [start;length]
+    //
+    while i < length
+    where i > 0 && |items| == length
+    where sorted(items,i) && items[i-1] == (start+(i-1)):
+        items[i] = start + (i-1)
+        i = i + 1
+    // Done
+    return items
+
+public export method test():
+    //
+    assume create(0,1) == [0]
+    //
+    assume create(0,2) == [0,1]
+    //
+    assume create(0,3) == [0,1,2]
+    //
+    assume create(1,4) == [1,2,3]
+    //
+    assume create(2,4) == [2,3]
+    //
+    assume create(3,4) == [3]
