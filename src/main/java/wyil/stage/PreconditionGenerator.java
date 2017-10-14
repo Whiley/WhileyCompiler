@@ -13,6 +13,7 @@ import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Type;
 import wyc.util.AbstractConsumer;
+import wycc.util.Pair;
 import wyil.stage.VerificationConditionGenerator.Context;
 import wyil.stage.VerificationConditionGenerator.VerificationCondition;
 
@@ -162,7 +163,9 @@ public class PreconditionGenerator {
 				// There is at least one precondition for the function/method being
 				// called. Therefore, we need to generate a verification condition
 				// which will check that the precondition holds.
-				Expr[] arguments = vcg.translateExpressions(expr.getOperands(), context.getEnvironment());
+				Pair<Expr[],Context> r = vcg.translateExpressionsWithChecks(expr.getOperands(), context);
+				Expr[] arguments = r.first();
+				context = r.second();
 				String prefix = fm.getName() + "_requires_";
 				// Finally, generate an appropriate verification condition to check
 				// each precondition clause
@@ -185,23 +188,25 @@ public class PreconditionGenerator {
 	}
 
 	private void checkDivideByZero(WhileyFile.Expr.BinaryOperator expr, Context context) {
-		Expr rhs = vcg.translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
+		Pair<Expr,Context> rhs = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, context);
+		context = rhs.second();
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.NotEqual(rhs, constant);
+		Expr neqZero = new Expr.NotEqual(rhs.first(), constant);
 		//
 		context.emit(new VerificationCondition("division by zero", context.getAssumptions(), neqZero,
 				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
 
 	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
-		Expr src = vcg.translateExpression(expr.getFirstOperand(), null, context.getEnvironment());
-		Expr idx = vcg.translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
+		Pair<Expr,Context> src = vcg.translateExpressionWithChecks(expr.getFirstOperand(), null, context);
+		Pair<Expr,Context> idx = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, src.second());
+		context = idx.second();
 		Expr zero = new Expr.Constant(new Value.Int(BigInteger.ZERO));
-		Expr length = new Expr.ArrayLength(src);
+		Expr length = new Expr.ArrayLength(src.first());
 		//
-		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
-		Expr lenTest = new Expr.LessThan(idx, length);
+		Expr negTest = new Expr.GreaterThanOrEqual(idx.first(), zero);
+		Expr lenTest = new Expr.LessThan(idx.first(), length);
 		//
 		context.emit(new VerificationCondition("index out of bounds (negative)", context.getAssumptions(), negTest,
 				expr.getParent(WhileyFile.Attribute.Span.class)));
@@ -210,80 +215,13 @@ public class PreconditionGenerator {
 	}
 
 	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
-		Expr len = vcg.translateExpression(expr.getSecondOperand(), null, context.getEnvironment());
+		Pair<Expr,Context> len = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, context);
+		context = len.second();
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.GreaterThanOrEqual(len, constant);
+		Expr neqZero = new Expr.GreaterThanOrEqual(len.first(), constant);
 		//
 		context.emit(new VerificationCondition("negative length possible", context.getAssumptions(), neqZero,
 				expr.getParent(WhileyFile.Attribute.Span.class)));
 	}
-
-	private Context assumeExpressionPostconditions(WhileyFile.Expr expr, Context context) {
-		try {
-			// First, propagate through all subexpressions
-			for (int i = 0; i != expr.size(); ++i) {
-				SyntacticItem operand = expr.get(i);
-				if (operand instanceof WhileyFile.Expr) {
-					context = assumeExpressionPostconditions((WhileyFile.Expr) operand, context);
-				} else if (operand instanceof WhileyFile.Pair || operand instanceof WhileyFile.Tuple) {
-					for (int j = 0; j != operand.size(); ++j) {
-						SyntacticItem suboperand = operand.get(j);
-						if (suboperand instanceof WhileyFile.Expr) {
-							context = assumeExpressionPostconditions((WhileyFile.Expr) suboperand, context);
-						}
-					}
-				}
-			}
-			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_invoke:
-				context = assumeInvokePostconditions((WhileyFile.Expr.Invoke) expr, context);
-				break;
-			}
-			return context;
-		} catch (InternalFailure e) {
-			throw e;
-		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
-		}
-	}
-
-	private Context assumeInvokePostconditions(WhileyFile.Expr.Invoke expr, Context context) throws Exception {
-		// WhileyFile.Declaration declaration =
-		// expr.getEnclosingTree().getEnclosingDeclaration();
-		//
-		WhileyFile.Decl.Callable fmp = vcg.lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(), expr);
-		if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
-			WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
-			int numPostconditions = fm.getEnsures().size();
-			//
-			if (numPostconditions > 0) {
-				// There is at least one postcondition for the function/method being
-				// called. Therefore, we need to generate a verification condition
-				// which will check that the precondition holds.
-				//
-				Type.Callable fmt = fm.getType();
-				Expr[] parameters = vcg.translateExpressions(expr.getOperands(), context.getEnvironment());
-				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fmt.getReturns().size());
-				//
-				for (int i = 0; i != fmt.getReturns().size(); ++i) {
-					Integer selector = fmt.getReturns().size() > 1 ? i : null;
-					arguments[parameters.length + i] = vcg.translateInvoke(expr, selector, context.getEnvironment());
-				}
-				//
-				String prefix = fmp.getName() + "_ensures_";
-				// Finally, generate an appropriate verification condition to check
-				// each precondition clause
-				for (int i = 0; i != numPostconditions; ++i) {
-					// FIXME: name needs proper path information
-					WyalFile.Name name = vcg.convert(fmp.getQualifiedName().toNameID().module(), prefix + i, expr);
-					Expr clause = new Expr.Invoke(null, name, null, arguments);
-					context = context.assume(clause);
-				}
-			}
-		}
-		//
-		return context;
-	}
-
 }

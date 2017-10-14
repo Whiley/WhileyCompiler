@@ -1,0 +1,3 @@
+tests/invalid/Array_Invalid_20.whiley:11: index out of bounds (negative)
+    return xs[indices[0]]
+           ^^^^^^^^^^^^^^

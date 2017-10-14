@@ -1,0 +1,3 @@
+tests/invalid/Array_Invalid_9.whiley:13: precondition not satisfied
+    g(f([0]))
+    ^^^^^^^^^

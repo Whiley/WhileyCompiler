@@ -456,13 +456,11 @@ public class VerificationConditionGenerator {
 			case WhileyFile.STMT_ifelse:
 				return translateIf((WhileyFile.Stmt.IfElse) stmt, context);
 			case WhileyFile.EXPR_indirectinvoke:
-				checkExpressionPreconditions((WhileyFile.Expr) stmt, context);
-				translateIndirectInvoke((WhileyFile.Expr.IndirectInvoke) stmt, context.getEnvironment());
-				return context;
-			case WhileyFile.EXPR_invoke:
-				checkExpressionPreconditions((WhileyFile.Expr) stmt, context);
-				translateInvoke((WhileyFile.Expr.Invoke) stmt, null, context.getEnvironment());
-				return context;
+			case WhileyFile.EXPR_invoke: {
+				WhileyFile.Expr expr = (WhileyFile.Expr) stmt;
+				Pair<Expr,Context> r = translateExpressionWithChecks(expr, null, context);
+				return r.second();
+			}
 			case WhileyFile.STMT_namedblock:
 				return translateNamedBlock((WhileyFile.Stmt.NamedBlock) stmt, context);
 			case WhileyFile.STMT_return:
@@ -1228,12 +1226,12 @@ public class VerificationConditionGenerator {
 	 *            --- Context in which translation is occurring
 	 * @return
 	 */
-	private Pair<Expr[], Context> translateExpressionsWithChecks(Tuple<WhileyFile.Expr> exprs, Context context) {
+	public Pair<Expr[], Context> translateExpressionsWithChecks(Tuple<WhileyFile.Expr> exprs, Context context) {
 		// Generate expression preconditions as verification conditions
 		for (WhileyFile.Expr expr : exprs) {
 			checkExpressionPreconditions(expr, context);
 		}
-		// Gather up any postconditions from function invocations
+		// Gather up any postconditions from function invocations.
 		for (WhileyFile.Expr expr : exprs) {
 			context = assumeExpressionPostconditions(expr, context);
 		}
@@ -1253,10 +1251,10 @@ public class VerificationConditionGenerator {
 	 *            --- Context in which translation is occurring
 	 * @return
 	 */
-	private Pair<Expr, Context> translateExpressionWithChecks(WhileyFile.Expr expr, Integer selector, Context context) {
+	public Pair<Expr, Context> translateExpressionWithChecks(WhileyFile.Expr expr, Integer selector, Context context) {
 		// Generate expression preconditions as verification conditions
 		checkExpressionPreconditions(expr, context);
-		// Gather up any postconditions from function invocations
+		// Gather up any postconditions from function invocations.
 		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
 		return new Pair<>(translateExpression(expr, selector, context.getEnvironment()), context);
