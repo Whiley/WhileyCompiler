@@ -1226,16 +1226,14 @@ public class VerificationConditionGenerator {
 	 *            --- Context in which translation is occurring
 	 * @return
 	 */
-	private Pair<Expr[], Context> translateExpressionsWithChecks(Tuple<WhileyFile.Expr> exprs, Context context) {
-		// Gather up any postconditions from function invocations.  This must be done
-		// before checking expression preconditions as those checks may depend on some
-		// postconditions of invocations.
-		for (WhileyFile.Expr expr : exprs) {
-			context = assumeExpressionPostconditions(expr, context);
-		}
+	public Pair<Expr[], Context> translateExpressionsWithChecks(Tuple<WhileyFile.Expr> exprs, Context context) {
 		// Generate expression preconditions as verification conditions
 		for (WhileyFile.Expr expr : exprs) {
 			checkExpressionPreconditions(expr, context);
+		}
+		// Gather up any postconditions from function invocations.
+		for (WhileyFile.Expr expr : exprs) {
+			context = assumeExpressionPostconditions(expr, context);
 		}
 		// Translate expression in the normal fashion
 		return new Pair<>(translateExpressions(exprs, context.getEnvironment()), context);
@@ -1253,13 +1251,11 @@ public class VerificationConditionGenerator {
 	 *            --- Context in which translation is occurring
 	 * @return
 	 */
-	private Pair<Expr, Context> translateExpressionWithChecks(WhileyFile.Expr expr, Integer selector, Context context) {
-		// Gather up any postconditions from function invocations. This must be done
-		// before checking expression preconditions as those checks may depend on some
-		// postconditions of invocations.
-		context = assumeExpressionPostconditions(expr, context);
+	public Pair<Expr, Context> translateExpressionWithChecks(WhileyFile.Expr expr, Integer selector, Context context) {
 		// Generate expression preconditions as verification conditions
 		checkExpressionPreconditions(expr, context);
+		// Gather up any postconditions from function invocations.
+		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
 		return new Pair<>(translateExpression(expr, selector, context.getEnvironment()), context);
 	}
