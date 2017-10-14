@@ -1,0 +1,3 @@
+tests/invalid/Array_Invalid_10.whiley:13: index out of bounds (not less than length)
+    x[i] = n
+    ^^^^

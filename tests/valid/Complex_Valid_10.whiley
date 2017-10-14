@@ -189,7 +189,7 @@ where all { i in 0..|sequence| | sequence[i] < 52 }
 
 function Random(nat[] sequence) -> Random
 requires |sequence| > 0
-requires all { i in 0..|sequence| | sequence[i] < 52 }
+requires all { i in 0..|sequence| | sequence[i] < 52 }:
     return { index: 0, sequence: sequence }
 
 function next(Random r) -> (nat index, Random nr)
