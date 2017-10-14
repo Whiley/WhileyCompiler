@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_23.whiley:16: loop invariant does not hold on entry
+    where sorted(items,i) && items[i-1] < (start+i):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

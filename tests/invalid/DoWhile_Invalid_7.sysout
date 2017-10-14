@@ -1,0 +1,3 @@
+tests/invalid/DoWhile_Invalid_7.whiley:21: index out of bounds (negative)
+            if items[i-1] > items[i]:
+               ^^^^^^^^^^

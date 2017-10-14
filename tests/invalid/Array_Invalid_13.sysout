@@ -1,0 +1,3 @@
+tests/invalid/Array_Invalid_13.whiley:11: index out of bounds (not less than length)
+    return xs[0]
+           ^^^^^

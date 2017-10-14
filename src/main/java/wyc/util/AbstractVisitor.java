@@ -15,6 +15,7 @@ package wyc.util;
 
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
+import wyc.lang.WhileyFile.Expr;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -335,18 +336,6 @@ public abstract class AbstractVisitor {
 			visitUnaryOperator((Expr.UnaryOperator) expr);
 			break;
 		// Binary Operators
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
-		case EXPR_arrayaccess:
-		case EXPR_arrayborrow:
-		case EXPR_arrayrange:
-		case EXPR_recordupdate:
-		case EXPR_arraygenerator:
-			visitBinaryOperator((Expr.BinaryOperator) expr);
-			break;
-		// Nary Operators
-		case EXPR_logicaland:
-		case EXPR_logicalor:
 		case EXPR_logiaclimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
@@ -360,6 +349,18 @@ public abstract class AbstractVisitor {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
+		case EXPR_arrayrange:
+		case EXPR_recordupdate:
+		case EXPR_arraygenerator:
+			visitBinaryOperator((Expr.BinaryOperator) expr);
+			break;
+		// Nary Operators
+		case EXPR_logicaland:
+		case EXPR_logicalor:
 		case EXPR_invoke:
 		case EXPR_bitwiseand:
 		case EXPR_bitwiseor:
@@ -423,6 +424,45 @@ public abstract class AbstractVisitor {
 	public void visitBinaryOperator(Expr.BinaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
+		case EXPR_equal:
+			visitEqual((Expr.Equal) expr);
+			break;
+		case EXPR_notequal:
+			visitNotEqual((Expr.NotEqual) expr);
+			break;
+		case EXPR_logiaclimplication:
+			visitLogicalImplication((Expr.LogicalImplication) expr);
+			break;
+		case EXPR_logicaliff:
+			visitLogicalIff((Expr.LogicalIff) expr);
+			break;
+		case EXPR_integerlessthan:
+			visitIntegerLessThan((Expr.IntegerLessThan) expr);
+			break;
+		case EXPR_integerlessequal:
+			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr);
+			break;
+		case EXPR_integergreaterthan:
+			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr);
+			break;
+		case EXPR_integergreaterequal:
+			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr);
+			break;
+		case EXPR_integeraddition:
+			visitIntegerAddition((Expr.IntegerAddition) expr);
+			break;
+		case EXPR_integersubtraction:
+			visitIntegerSubtraction((Expr.IntegerSubtraction) expr);
+			break;
+		case EXPR_integermultiplication:
+			visitIntegerMultiplication((Expr.IntegerMultiplication) expr);
+			break;
+		case EXPR_integerdivision:
+			visitIntegerDivision((Expr.IntegerDivision) expr);
+			break;
+		case EXPR_integerremainder:
+			visitIntegerRemainder((Expr.IntegerRemainder) expr);
+			break;
 		case EXPR_bitwiseshl:
 			visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr);
 			break;
@@ -473,33 +513,6 @@ public abstract class AbstractVisitor {
 		case EXPR_bitwisexor:
 			visitBitwiseXor((Expr.BitwiseXor) expr);
 			break;
-		case EXPR_integerlessthan:
-			visitIntegerLessThan((Expr.IntegerLessThan) expr);
-			break;
-		case EXPR_integerlessequal:
-			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr);
-			break;
-		case EXPR_integergreaterthan:
-			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr);
-			break;
-		case EXPR_integergreaterequal:
-			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr);
-			break;
-		case EXPR_integeraddition:
-			visitIntegerAddition((Expr.IntegerAddition) expr);
-			break;
-		case EXPR_integersubtraction:
-			visitIntegerSubtraction((Expr.IntegerSubtraction) expr);
-			break;
-		case EXPR_integermultiplication:
-			visitIntegerMultiplication((Expr.IntegerMultiplication) expr);
-			break;
-		case EXPR_integerdivision:
-			visitIntegerDivision((Expr.IntegerDivision) expr);
-			break;
-		case EXPR_integerremainder:
-			visitIntegerRemainder((Expr.IntegerRemainder) expr);
-			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) expr);
 			break;
@@ -508,18 +521,6 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_logicalor:
 			visitLogicalOr((Expr.LogicalOr) expr);
-			break;
-		case EXPR_logiaclimplication:
-			visitLogicalImplication((Expr.LogicalImplication) expr);
-			break;
-		case EXPR_logicaliff:
-			visitLogicalIff((Expr.LogicalIff) expr);
-			break;
-		case EXPR_equal:
-			visitEqual((Expr.Equal) expr);
-			break;
-		case EXPR_notequal:
-			visitNotEqual((Expr.NotEqual) expr);
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr);

@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_20.whiley:16: index out of bounds (negative)
+        items[i] = items[i-1]
+                   ^^^^^^^^^^

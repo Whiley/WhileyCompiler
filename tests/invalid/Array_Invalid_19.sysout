@@ -1,0 +1,3 @@
+tests/invalid/Array_Invalid_19.whiley:3: negative length possible
+    return [0; n]
+           ^^^^^^
