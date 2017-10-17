@@ -86,6 +86,8 @@ public class ErrorMessages {
 	public static final MsgWithNoParams UNKNOWN_VARIABLE = new MsgWithNoParams("unknown variable");
 	public static final MsgWithNoParams UNKNOWN_FUNCTION_OR_METHOD = new MsgWithNoParams("unknown function or method");
 	public static final MsgWithNoParams VARIABLE_POSSIBLY_UNITIALISED = new MsgWithNoParams("variable may be uninitialised");
+	public static final MsgWithNoParams PARAMETER_REASSIGNED = new MsgWithNoParams("cannot assign parameter");
+	public static final MsgWithNoParams FINAL_VARIABLE_REASSIGNED = new MsgWithNoParams("cannot reassign final variable");
 	public static final MsgWithStringParam VARIABLE_ALREADY_DEFINED = new MsgWithStringParam("variable $0 already defined");
 	public static final MsgWithNoParams DUPLICATE_DEFAULT_LABEL = new MsgWithNoParams("duplicate default label");
 	public static final MsgWithNoParams DUPLICATE_CASE_LABEL = new MsgWithNoParams("duplicate case label");
