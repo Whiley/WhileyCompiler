@@ -19,6 +19,9 @@ import java.util.*;
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile;
+import wyc.util.AbstractConsumer;
+import wyc.util.AbstractVisitor;
+
 import static wyc.lang.WhileyFile.*;
 
 /**
@@ -27,16 +30,12 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public final class WhileyFilePrinter {
-	private PrintWriter out;
+public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
+	private final PrintWriter out;
 	private boolean verbose = false;
 
-	public WhileyFilePrinter(Build.Task builder) {
-
-	}
-
-	public WhileyFilePrinter(PrintWriter writer) {
-		this.out = writer;
+	public WhileyFilePrinter(PrintWriter visitr) {
+		this.out = visitr;
 	}
 
 	public WhileyFilePrinter(OutputStream stream) {
@@ -55,293 +54,272 @@ public final class WhileyFilePrinter {
 	// Apply Method
 	// ======================================================================
 
-	public void apply(WhileyFile module) throws IOException {
+	public void apply(WhileyFile module) {
+		visitWhileyFile(module,0);
+	}
+
+	@Override
+	public void visitWhileyFile(WhileyFile module, Integer indent) {
 		out.println();
-		for(Decl d : module.getDeclarations()) {
-			write(d,out);
-		}
+		super.visitWhileyFile(module, indent);
 		out.flush();
 	}
 
-	private void write(Decl d, PrintWriter out) {
-		if(d instanceof Decl.StaticVariable) {
-			write((Decl.StaticVariable) d, out);
-		} else if(d instanceof Decl.Type) {
-			write((Decl.Type) d, out);
-		} else if(d instanceof Decl.Property){
-			write((Decl.Property) d, out);
-		} else {
-			write((Decl.FunctionOrMethod) d, out);
-		}
+	@Override
+	public void visitDeclaration(Decl decl, Integer indent) {
+		super.visitDeclaration(decl, indent);
+		out.println();
 	}
 
-	private void write(Decl.StaticVariable decl, PrintWriter out) {
-		writeModifiers(decl.getModifiers(), out);
+	@Override
+	public void visitStaticVariable(Decl.StaticVariable decl, Integer indent) {
+		visitModifiers(decl.getModifiers());
 		out.print(decl.getType());
 		out.print(" ");
 		out.println(decl.getName() + " = " + decl.getInitialiser());
 	}
 
-	private void write(Decl.Type decl, PrintWriter out) {
-		writeModifiers(decl.getModifiers(), out);
+	@Override
+	public void visitType(Decl.Type decl, Integer indent) {
+		visitModifiers(decl.getModifiers());
 		out.print("type " + decl.getName() + " is (");
-		writeVariableDeclaration(0, decl.getVariableDeclaration(), out);
+		visitVariable(decl.getVariableDeclaration(), 0);
 		out.println(")");
 		for (Expr invariant : decl.getInvariant()) {
 			out.print("where ");
-			writeExpression(invariant, out);
+			visitExpression(invariant, indent);
 			out.println();
 		}
 		out.println();
 	}
-	private void write(Decl.Property decl, PrintWriter out) {
+
+	@Override
+	public void visitProperty(Decl.Property decl, Integer indent) {
 		out.print("property ");
 		out.print(decl.getName());
-		writeParameters(decl.getParameters(),out);
+		visitVariables(decl.getParameters(), indent);
 	}
 
-	private void write(Decl.FunctionOrMethod decl, PrintWriter out) {
+	@Override
+	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl, Integer indent) {
 		//
-		writeModifiers(decl.getModifiers(), out);
+		visitModifiers(decl.getModifiers());
 		if (decl instanceof Decl.Function) {
 			out.print("function ");
 		} else {
 			out.print("method ");
 		}
 		out.print(decl.getName());
-		writeParameters(decl.getParameters(),out);
+		visitVariables(decl.getParameters(), indent);
 		if (decl.getReturns().size() != 0) {
 			out.print(" -> ");
-			writeParameters(decl.getReturns(),out);
+			visitVariables(decl.getReturns(), indent);
 		}
 		//
 		for (Expr precondition : decl.getRequires()) {
 			out.println();
 			out.print("requires ");
-			writeExpression(precondition, out);
+			visitExpression(precondition, indent);
 		}
 		for (Expr postcondition : decl.getEnsures()) {
 			out.println();
 			out.print("ensures ");
-			writeExpression(postcondition, out);
+			visitExpression(postcondition, indent);
 		}
 		if (decl.getBody() != null) {
 			out.println(": ");
-			writeBlock(0, decl.getBody(), out);
+			visitBlock(decl.getBody(), indent);
 		}
 	}
 
-	private void writeParameters(Tuple<Decl.Variable> parameters, PrintWriter out) {
+	@Override
+	public void visitVariables(Tuple<Decl.Variable> parameters, Integer indent) {
 		out.print("(");
 		for (int i = 0; i != parameters.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeVariableDeclaration(0, parameters.get(i), out);
+			visitVariable(parameters.get(i), indent);
 		}
 		out.print(")");
 	}
 
-	private void writeVariableDeclaration(int indent, Decl.Variable decl, PrintWriter out) {
+	@Override
+	public void visitVariable(Decl.Variable decl, Integer indent) {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
 		if (decl.hasInitialiser()) {
 			out.print(" = ");
-			writeExpression(decl.getInitialiser(), out);
-		}
-		out.println();
-	}
-
-	private void writeBlock(int indent, Stmt.Block block, PrintWriter out) {
-		for (int i = 0; i != block.size(); ++i) {
-			writeStatement(indent, block.get(i), out);
+			visitExpression(decl.getInitialiser(), indent);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void writeStatement(int indent, Stmt c, PrintWriter out) {
-		tabIndent(indent+1,out);
-		switch(c.getOpcode()) {
-		case STMT_assert:
-			writeAssert(indent, (Stmt.Assert) c, out);
-			break;
-		case STMT_assume:
-			writeAssume(indent, (Stmt.Assume) c, out);
-			break;
-		case STMT_assign:
-			writeAssign(indent, (Stmt.Assign) c, out);
-			break;
-		case STMT_break:
-			writeBreak(indent, (Stmt.Break) c, out);
-			break;
-		case STMT_continue:
-			writeContinue(indent, (Stmt.Continue) c, out);
-			break;
-		case STMT_debug:
-			writeDebug(indent, (Stmt.Debug) c, out);
-			break;
-		case STMT_dowhile:
-			writeDoWhile(indent, (Stmt.DoWhile) c, out);
-			break;
-		case STMT_fail:
-			writeFail(indent, (Stmt.Fail) c, out);
-			break;
-		case STMT_if:
-		case STMT_ifelse:
-			writeIf(indent, (Stmt.IfElse) c, out);
-			break;
-		case STMT_namedblock:
-			writeNamedBlock(indent, (Stmt.NamedBlock) c, out);
-			break;
-		case STMT_while:
-			writeWhile(indent, (Stmt.While) c, out);
-			break;
-		case STMT_return:
-			writeReturn(indent, (Stmt.Return) c, out);
-			break;
-		case STMT_skip:
-			writeSkip(indent, (Stmt.Skip) c, out);
-			break;
-		case STMT_switch:
-			writeSwitch(indent, (Stmt.Switch) c, out);
-			break;
-		case EXPR_indirectinvoke:
-			writeIndirectInvoke((Expr.IndirectInvoke) c, out);
-			break;
-		case EXPR_invoke:
-			writeInvoke((Expr.Invoke) c, out);
-			break;
+	@Override
+	public void visitBlock(Stmt.Block stmt, Integer indent) {
+		super.visitBlock(stmt, indent+1);
+	}
+
+	@Override
+	public void visitStatement(Stmt stmt, Integer indent) {
+		super.visitStatement(stmt, indent);
+		// Touch up a few
+		switch(stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
-			writeVariableDeclaration(indent, (Decl.Variable) c, out);
-			break;
-		default:
-			throw new IllegalArgumentException("unknown bytecode encountered");
+			out.println();
 		}
 	}
 
-	private void writeAssert(int indent, Stmt.Assert stmt, PrintWriter out) {
+	@Override
+	public void visitAssert(Stmt.Assert stmt, Integer indent) {
+		tabIndent(indent);
 		out.print("assert ");
-		writeExpression(stmt.getCondition(),out);
+		visitExpression(stmt.getCondition(), indent);
 		out.println();
 	}
 
-	private void writeAssume(int indent, Stmt.Assume stmt, PrintWriter out) {
+	@Override
+	public void visitAssume(Stmt.Assume stmt, Integer indent) {
+		tabIndent(indent);
 		out.print("assume ");
-		writeExpression(stmt.getCondition(),out);
+		visitExpression(stmt.getCondition(), indent);
 		out.println();
 	}
 
-	private void writeAssign(int indent, Stmt.Assign stmt, PrintWriter out) {
+	@Override
+	public void visitAssign(Stmt.Assign stmt, Integer indent) {
+		tabIndent(indent);
 		Tuple<LVal> lhs = stmt.getLeftHandSide();
 		Tuple<Expr> rhs = stmt.getRightHandSide();
 		if(lhs.size() > 0) {
 			for(int i=0;i!=lhs.size();++i) {
 				if(i!=0) { out.print(", "); }
-				writeExpression(lhs.get(i),out);
+				visitExpression(lhs.get(i), indent);
 			}
 			out.print(" = ");
 		}
-		writeExpressions(rhs,out);
+		visitExpressions(rhs, indent);
 		out.println();
 	}
 
-	private void writeBreak(int indent, Stmt.Break stmt, PrintWriter out) {
+	@Override
+	public void visitBreak(Stmt.Break stmt, Integer indent) {
+		tabIndent(indent);
 		out.println("break");
 	}
 
-	private void writeContinue(int indent, Stmt.Continue stmt, PrintWriter out) {
+	@Override
+	public void visitContinue(Stmt.Continue stmt, Integer indent) {
+		tabIndent(indent);
 		out.println("continue");
 	}
 
-	private void writeDebug(int indent, Stmt.Debug stmt, PrintWriter out) {
+	@Override
+	public void visitDebug(Stmt.Debug stmt, Integer indent) {
+		tabIndent(indent);
 		out.println("debug");
 	}
 
-	private void writeDoWhile(int indent, Stmt.DoWhile stmt, PrintWriter out) {
+	@Override
+	public void visitDoWhile(Stmt.DoWhile stmt, Integer indent) {
+		tabIndent(indent);
 		Tuple<Expr> loopInvariant = stmt.getInvariant();
 		// Location<?>[] modifiedOperands = b.getOperandGroup(1);
 		out.println("do:");
 		//
-		writeBlock(indent+1,stmt.getBody(),out);
-		tabIndent(indent+1,out);
+		visitBlock(stmt.getBody(), indent);
+		tabIndent(indent);
 		out.print("while ");
-		writeExpression(stmt.getCondition(),out);
+		visitExpression(stmt.getCondition(), indent);
 		out.print(" modifies ");
-		//writeExpressions(modifiedOperands,out);
+		//visitExpressions(modifiedOperands);
 		for(Expr invariant : loopInvariant) {
 			out.println();
-			tabIndent(indent+1,out);
+			tabIndent(indent);
 			out.print("where ");
-			writeExpression(invariant,out);
+			visitExpression(invariant, indent);
 		}
 		// FIXME: add invariants
 		out.println();
 	}
 
-	private void writeFail(int indent, Stmt.Fail stmt, PrintWriter out) {
+	@Override
+	public void visitFail(Stmt.Fail stmt, Integer indent) {
+		tabIndent(indent);
 		out.println("fail");
 	}
 
-	private void writeIf(int indent, Stmt.IfElse stmt, PrintWriter out) {
+	@Override
+	public void visitIfElse(Stmt.IfElse stmt, Integer indent) {
+		tabIndent(indent);
 		out.print("if ");
-		writeExpression(stmt.getCondition(),out);
+		visitExpression(stmt.getCondition(), indent);
 		out.println(":");
-		writeBlock(indent+1,stmt.getTrueBranch(),out);
+		visitBlock(stmt.getTrueBranch(), indent);
 		if(stmt.hasFalseBranch()) {
-			tabIndent(indent+1,out);
+			tabIndent(indent);
 			out.println("else:");
-			writeBlock(indent+1,stmt.getFalseBranch(),out);
+			visitBlock(stmt.getFalseBranch(), indent);
 		}
 	}
 
-	private void writeNamedBlock(int indent, Stmt.NamedBlock stmt, PrintWriter out) {
+	@Override
+	public void visitNamedBlock(Stmt.NamedBlock stmt, Integer indent) {
+		tabIndent(indent);
 		out.print(stmt.getName());
 		out.println(":");
-		writeBlock(indent+1,stmt.getBlock(),out);
+		visitBlock(stmt.getBlock(), indent+1);
 	}
 
-	private void writeWhile(int indent, Stmt.While stmt, PrintWriter out) {
+	@Override
+	public void visitWhile(Stmt.While stmt, Integer indent) {
+		tabIndent(indent);
 		out.print("while ");
-		writeExpression(stmt.getCondition(), out);
+		visitExpression(stmt.getCondition(), indent);
 		Tuple<Expr> loopInvariant = stmt.getInvariant();
 		// Location<?>[] modifiedOperands = b.getOperandGroup(1);
 		// out.print(" modifies ");
-		// writeExpressions(modifiedOperands,out);
+		// visitExpressions(modifiedOperands);
 		//
 		for (Expr invariant : loopInvariant) {
 			out.println();
-			tabIndent(indent + 1, out);
+			tabIndent(indent);
 			out.print("where ");
-			writeExpression(invariant, out);
+			visitExpression(invariant, indent);
 		}
 		out.println(":");
-		writeBlock(indent + 1, stmt.getBody(), out);
+		visitBlock(stmt.getBody(), indent);
 	}
 
-	private void writeReturn(int indent, Stmt.Return stmt, PrintWriter out) {
+	@Override
+	public void visitReturn(Stmt.Return stmt, Integer indent) {
+		tabIndent(indent);
 		Tuple<Expr> returns = stmt.getReturns();
 		out.print("return");
 		if(returns.size() > 0) {
 			out.print(" ");
-			writeExpressions(returns,out);
+			visitExpressions(returns, indent);
 		}
 		out.println();
 	}
 
-	private void writeSkip(int indent, Stmt.Skip stmt, PrintWriter out) {
+	@Override
+	public void visitSkip(Stmt.Skip stmt, Integer indent) {
+		tabIndent(indent);
 		out.println("skip");
 	}
 
-	private void writeSwitch(int indent, Stmt.Switch stmt, PrintWriter out) {
+	@Override
+	public void visitSwitch(Stmt.Switch stmt, Integer indent) {
+		tabIndent(indent);
 		out.print("switch ");
-		writeExpression(stmt.getCondition(), out);
+		visitExpression(stmt.getCondition(), indent);
 		out.println(":");
 		for (Stmt.Case cAse : stmt.getCases()) {
 			// FIXME: ugly
 			Tuple<Expr> values = cAse.getConditions();
-			tabIndent(indent + 2, out);
+			tabIndent(indent + 1);
 			if (values.size() == 0) {
 				out.println("default:");
 			} else {
@@ -350,11 +328,11 @@ public final class WhileyFilePrinter {
 					if (j != 0) {
 						out.print(", ");
 					}
-					writeExpression(values.get(j), out);
+					visitExpression(values.get(j), indent);
 				}
 				out.println(":");
 			}
-			writeBlock(indent + 2, cAse.getBlock(), out);
+			visitBlock(cAse.getBlock(), indent + 1);
 		}
 	}
 
@@ -366,75 +344,39 @@ public final class WhileyFilePrinter {
 	 * @param enclosing
 	 * @param out
 	 */
-	private void writeBracketedExpression(Expr expr, PrintWriter out) {
+	public void visitBracketedExpression(Expr expr, Integer indent) {
 		boolean needsBrackets = needsBrackets(expr);
 		if (needsBrackets) {
 			out.print("(");
 		}
-		writeExpression(expr, out);
+		visitExpression(expr, indent);
 		if (needsBrackets) {
 			out.print(")");
 		}
 	}
 
-	private void writeExpressions(Tuple<Expr> exprs, PrintWriter out) {
+	@Override
+	public void visitExpressions(Tuple<Expr> exprs, Integer indent) {
 		for (int i = 0; i != exprs.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(exprs.get(i), out);
+			visitExpression(exprs.get(i), indent);
 		}
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	private void writeExpression(Expr expr, PrintWriter out) {
+	public void visitExpression(Expr expr, Integer indent) {
 		switch (expr.getOpcode()) {
-		case EXPR_arraylength:
-			writeArrayLength((Expr.ArrayLength) expr,out);
-			break;
-		case EXPR_arrayaccess:
-			writeArrayIndex((Expr.ArrayAccess) expr,out);
-			break;
-		case EXPR_arrayinitialiser:
-			writeArrayInitialiser((Expr.ArrayInitialiser) expr,out);
-			break;
-		case EXPR_arraygenerator:
-			writeArrayGenerator((Expr.ArrayGenerator) expr,out);
-			break;
-		case EXPR_cast:
-			writeConvert((Expr.Cast) expr, out);
-			break;
-		case EXPR_constant:
-			writeConst((Expr.Constant) expr, out);
-			break;
-		case EXPR_recordaccess:
-			writeFieldLoad((Expr.RecordAccess) expr, out);
-			break;
-		case EXPR_indirectinvoke:
-			writeIndirectInvoke((Expr.IndirectInvoke) expr, out);
-			break;
-		case EXPR_invoke:
-			writeInvoke((Expr.Invoke) expr, out);
-			break;
-		case DECL_lambda:
-			writeLambda((Decl.Lambda) expr, out);
-			break;
-		case EXPR_recordinitialiser:
-			writeRecordConstructor((Expr.RecordInitialiser) expr, out);
-			break;
-		case EXPR_new:
-			writeNewObject((Expr.New) expr,out);
-			break;
 		case EXPR_dereference:
 		case EXPR_logicalnot:
 		case EXPR_integernegation:
 		case EXPR_bitwisenot:
-			writePrefixLocations((Expr.UnaryOperator) expr,out);
+			visitPrefixLocations((Expr.UnaryOperator) expr, indent);
 			break;
-		case EXPR_logicaluniversal:
-		case EXPR_logicalexistential:
-			writeQuantifier((Expr.Quantifier) expr, out);
-			break;
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
 		case EXPR_integeraddition:
 		case EXPR_integersubtraction:
 		case EXPR_integermultiplication:
@@ -446,98 +388,106 @@ public final class WhileyFilePrinter {
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
+			visitInfixLocations((Expr.BinaryOperator) expr, indent);
+			break;
 		case EXPR_logicaland:
 		case EXPR_logicalor:
 		case EXPR_bitwiseor:
 		case EXPR_bitwisexor:
 		case EXPR_bitwiseand:
 		case EXPR_is:
-			writeInfixLocations((Expr.NaryOperator) expr, out);
-			break;
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
-			writeInfixLocations((Expr.BinaryOperator) expr, out);
-			break;
-		case EXPR_variablecopy:
-			writeVariableAccess((Expr.VariableAccess) expr, out);
+			visitInfixLocations((Expr.NaryOperator) expr, indent);
 			break;
 		default:
-			throw new IllegalArgumentException("unknown bytecode encountered: " + expr);
+			super.visitExpression(expr, indent);
 		}
 	}
 
 
-	private void writeArrayLength(Expr.ArrayLength expr, PrintWriter out) {
+	@Override
+	public void visitArrayLength(Expr.ArrayLength expr, Integer indent) {
 		out.print("|");
-		writeExpression(expr.getOperand(), out);
+		visitExpression(expr.getOperand(), indent);
 		out.print("|");
 	}
 
-	private void writeArrayIndex(Expr.ArrayAccess expr, PrintWriter out) {
-		writeExpression(expr.getFirstOperand(), out);
+	@Override
+	public void visitArrayAccess(Expr.ArrayAccess expr, Integer indent) {
+		visitExpression(expr.getFirstOperand(), indent);
 		out.print("[");
-		writeExpression(expr.getSecondOperand(), out);
+		visitExpression(expr.getSecondOperand(), indent);
 		out.print("]");
 	}
 
-	private void writeArrayInitialiser(Expr.ArrayInitialiser expr, PrintWriter out) {
+	@Override
+	public void visitArrayInitialiser(Expr.ArrayInitialiser expr, Integer indent) {
 		Tuple<Expr> operands = expr.getOperands();
 		out.print("[");
 		for(int i=0;i!=operands.size();++i) {
 			if(i != 0) {
 				out.print(", ");
 			}
-			writeExpression(operands.get(i),out);
+			visitExpression(operands.get(i), indent);
 		}
 		out.print("]");
 	}
 
-	private void writeArrayGenerator(Expr.ArrayGenerator expr, PrintWriter out) {
+	@Override
+	public void visitArrayGenerator(Expr.ArrayGenerator expr, Integer indent) {
 		out.print("[");
-		writeExpression(expr.getFirstOperand(), out);
+		visitExpression(expr.getFirstOperand(), indent);
 		out.print(" ; ");
-		writeExpression(expr.getSecondOperand(), out);
+		visitExpression(expr.getSecondOperand(), indent);
 		out.print("]");
 	}
-	private void writeConvert(Expr.Cast expr, PrintWriter out) {
+
+	@Override
+	public void visitCast(Expr.Cast expr, Integer indent) {
 		out.print("(" + expr.getType() + ") ");
-		writeExpression(expr.getOperand(),out);
+		visitExpression(expr.getOperand(), indent);
 	}
-	private void writeConst(Expr.Constant expr, PrintWriter out) {
+
+	@Override
+	public void visitConstant(Expr.Constant expr, Integer indent) {
 		out.print(expr.getValue());
 	}
-	private void writeFieldLoad(Expr.RecordAccess expr, PrintWriter out) {
-		writeBracketedExpression(expr.getOperand(),out);
+
+	@Override
+	public void visitRecordAccess(Expr.RecordAccess expr, Integer indent) {
+		visitBracketedExpression(expr.getOperand(), indent);
 		out.print("." + expr.getField());
 	}
 
-	private void writeIndirectInvoke(Expr.IndirectInvoke expr, PrintWriter out) {
+	@Override
+	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Integer indent) {
 		Tuple<Expr> args = expr.getArguments();
-		writeExpression(expr.getSource(), out);
+		visitExpression(expr.getSource(), indent);
 		out.print("(");
 		for (int i = 0; i != args.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(args.get(i), out);
+			visitExpression(args.get(i), indent);
 		}
 		out.print(")");
 	}
 
-	private void writeInvoke(Expr.Invoke expr, PrintWriter out) {
+	@Override
+	public void visitInvoke(Expr.Invoke expr, Integer indent) {
 		out.print(expr.getName() + "(");
 		Tuple<Expr> args = expr.getOperands();
 		for (int i = 0; i != args.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(args.get(i), out);
+			visitExpression(args.get(i), indent);
 		}
 		out.print(")");
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	private void writeLambda(Decl.Lambda expr, PrintWriter out) {
+	public void visitLambda(Decl.Lambda expr, Integer indent) {
 //		out.print("&[");
 //		Location<?>[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
 //		for (int i = 0; i != environment.length; ++i) {
@@ -561,11 +511,12 @@ public final class WhileyFilePrinter {
 //			out.print(var.getBytecode().getName());
 //		}
 //		out.print(" -> ");
-//		writeExpression(expr.getOperand(0), out);
+//		visitExpression(expr.getOperand(0));
 //		out.print(")");
 	}
 
-	private void writeRecordConstructor(Expr.RecordInitialiser expr, PrintWriter out) {
+	@Override
+	public void visitRecordInitialiser(Expr.RecordInitialiser expr, Integer indent) {
 		out.print("{");
 		Tuple<WhileyFile.Identifier> fields = expr.getFields();
 		Tuple<WhileyFile.Expr> operands = expr.getOperands();
@@ -577,31 +528,32 @@ public final class WhileyFilePrinter {
 			}
 			out.print(field);
 			out.print(": ");
-			writeExpression(operand, out);
+			visitExpression(operand, indent);
 		}
 		out.print("}");
 	}
 
-	private void writeNewObject(Expr.New expr, PrintWriter out) {
+	@Override
+	public void visitNew(Expr.New expr, Integer indent) {
 		out.print("new ");
-		writeExpression(expr.getOperand(), out);
+		visitExpression(expr.getOperand(), indent);
 	}
 
-	private void writePrefixLocations(Expr.UnaryOperator expr, PrintWriter out) {
+	public void visitPrefixLocations(Expr.UnaryOperator expr, Integer indent) {
 		// Prefix operators
 		out.print(opcode(expr.getOpcode()));
-		writeBracketedExpression(expr.getOperand(),out);
+		visitBracketedExpression(expr.getOperand(), indent);
 	}
 
-	private void writeInfixLocations(Expr.BinaryOperator expr, PrintWriter out) {
-		writeBracketedExpression(expr.getFirstOperand(),out);
+	public void visitInfixLocations(Expr.BinaryOperator expr, Integer indent) {
+		visitBracketedExpression(expr.getFirstOperand(), indent);
 		out.print(" ");
 		out.print(opcode(expr.getOpcode()));
 		out.print(" ");
-		writeBracketedExpression(expr.getSecondOperand(),out);
+		visitBracketedExpression(expr.getSecondOperand(), indent);
 	}
 
-	private void writeInfixLocations(Expr.NaryOperator expr, PrintWriter out) {
+	public void visitInfixLocations(Expr.NaryOperator expr, Integer indent) {
 		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
 			if (i != 0) {
@@ -609,12 +561,22 @@ public final class WhileyFilePrinter {
 				out.print(opcode(expr.getOpcode()));
 				out.print(" ");
 			}
-			writeBracketedExpression(operands.get(i), out);
+			visitBracketedExpression(operands.get(i), indent);
 		}
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	private void writeQuantifier(Expr.Quantifier expr, PrintWriter out) {
+	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Integer indent) {
+		visitQuantifier(expr,indent);
+	}
+
+	@Override
+	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Integer indent) {
+		visitQuantifier(expr,indent);
+	}
+
+	public void visitQuantifier(Expr.Quantifier expr, Integer indent) {
 		out.print(quantifierKind(expr));
 		out.print(" { ");
 		Tuple<Decl.Variable> params = expr.getParameters();
@@ -625,15 +587,16 @@ public final class WhileyFilePrinter {
 			}
 			out.print(v.getName());
 			out.print(" in ");
-			writeExpression(v.getInitialiser(), out);
+			visitExpression(v.getInitialiser(), indent);
 		}
 		out.print(" | ");
-		writeExpression(expr.getOperand(), out);
+		visitExpression(expr.getOperand(), indent);
 		out.print(" } ");
 	}
 
-	private void writeVariableAccess(Expr.VariableAccess loc, PrintWriter out) {
-		out.print(loc.getVariableDeclaration().getName());
+	@Override
+	public void visitVariableAccess(Expr.VariableAccess expr, Integer indent) {
+		out.print(expr.getVariableDeclaration().getName());
 	}
 
 	private String quantifierKind(Expr.Quantifier c) {
@@ -646,7 +609,7 @@ public final class WhileyFilePrinter {
 		throw new IllegalArgumentException();
 	}
 
-	private static void writeModifiers(Tuple<Modifier> modifiers, PrintWriter out) {
+	private void visitModifiers(Tuple<Modifier> modifiers) {
 		for(Modifier m : modifiers) {
 			out.print(m.toString());
 			out.print(" ");
@@ -736,7 +699,7 @@ public final class WhileyFilePrinter {
 		}
 	}
 
-	private static void tabIndent(int indent, PrintWriter out) {
+	private void tabIndent(int indent) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {
 			out.print(" ");
