@@ -67,6 +67,13 @@ import wybs.lang.SyntaxError;
 public class DefiniteUnassignmentCheck extends
 		AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
 
+	/**
+	 * NOTE: the following is left in place to facilitate testing for the final
+	 * parameters RFC. This RFC may not be accepted, in which case this feature
+	 * should eventually be removed.
+	 */
+	private boolean finalParameters = false;
+
 	public void check(WhileyFile wf) {
 		visitWhileyFile(wf, null);
 	}
@@ -201,7 +208,7 @@ public class DefiniteUnassignmentCheck extends
 
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
-		if(isParameter(var)) {
+		if(finalParameters && isParameter(var)) {
 			WhileyFile file = ((WhileyFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
 		} else if(isFinal(var) && environment.contains(var)) {
@@ -223,8 +230,7 @@ public class DefiniteUnassignmentCheck extends
 	}
 
 	public boolean isFinal(Decl.Variable var) {
-		// NOTE: currently, final modifier is not supported.
-		return false;
+		return var.getModifiers().match(Modifier.Final.class) != null;
 	}
 
 	@Override
