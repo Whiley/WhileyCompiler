@@ -82,8 +82,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_3", "#781");
 		// WyTP Variable Ordering Effect
 		IGNORED.put("ConstrainedList_Valid_26", "#782");
-		// Failing to Verify Switch Statement
-		IGNORED.put("Final_Valid_7", "#825");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
