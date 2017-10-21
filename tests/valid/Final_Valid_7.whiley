@@ -1,12 +1,12 @@
 // Test local variable initialisation
 function id(int x) -> (int r)
-ensures (r == 0) || (r == x):
+ensures (r == 0):
     //
     final int y
     //
     switch(x):
         case 0:
-            y = x        
+            y = x
         default:
             return 0
     //

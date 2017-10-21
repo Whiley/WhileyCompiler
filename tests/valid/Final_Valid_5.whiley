@@ -1,6 +1,7 @@
 // Test local variable initialisation
 function id(int x) -> (int r)
-ensures (r == 0) || (r == x):
+ensures (x >= 0) ==> (r == 0)
+ensures (x < 0) ==> (r == x):
     //
     final int y
     //

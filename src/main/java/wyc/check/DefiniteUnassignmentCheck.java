@@ -19,10 +19,13 @@ import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
 import static wyc.util.ErrorMessages.errorMessage;
 
 import wyc.lang.WhileyFile;
+import wyc.task.CompileTask;
 import wyc.util.AbstractFunction;
+import wyil.type.TypeSystem;
 
 import java.util.BitSet;
 
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntaxError;
 
 /**
@@ -64,8 +67,14 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  *
  */
-public class DefiniteUnassignmentCheck extends
-		AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
+public class DefiniteUnassignmentCheck
+		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
+
+	private final TypeSystem typeSystem;
+
+	public DefiniteUnassignmentCheck(CompileTask builder) {
+		this.typeSystem = builder.getTypeSystem();
+	}
 
 	/**
 	 * NOTE: the following is left in place to facilitate testing for the final
@@ -182,10 +191,14 @@ public class DefiniteUnassignmentCheck extends
 	}
 
 	public void visitLVal(LVal lval, MaybeAssignedSet environment) {
-		switch(lval.getOpcode()) {
+		switch (lval.getOpcode()) {
 		case EXPR_variablecopy:
 		case EXPR_variablemove: {
 			visitVariableAssignment((Expr.VariableAccess) lval, environment);
+			break;
+		}
+		case EXPR_staticvariable: {
+			visitStaticVariableAssignment((Expr.StaticVariableAccess) lval, environment);
 			break;
 		}
 		case EXPR_recordaccess:
@@ -203,17 +216,32 @@ public class DefiniteUnassignmentCheck extends
 		case EXPR_dereference:
 			// NOTE: don't need to handle this case
 			break;
+		default:
+			throw new UnsupportedOperationException("unknown lval (" + lval.getClass().getName() + ")");
 		}
 	}
 
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
-		if(finalParameters && isParameter(var)) {
+		if (finalParameters && isParameter(var)) {
 			WhileyFile file = ((WhileyFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
-		} else if(isFinal(var) && environment.contains(var)) {
+		} else if (isFinal(var) && environment.contains(var)) {
 			WhileyFile file = ((WhileyFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+		}
+	}
+
+	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
+		try {
+			// FIXME: we shouldn't have to perform resolution here.
+			Decl.StaticVariable var = typeSystem.resolveExactly(lval.getName(), Decl.StaticVariable.class);
+			if (isFinal(var)) {
+				WhileyFile file = ((WhileyFile) lval.getHeap());
+				throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+			}
+		} catch (ResolutionError e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -221,8 +249,8 @@ public class DefiniteUnassignmentCheck extends
 		// FIXME: this might be a little inefficient
 		Decl.FunctionOrMethod parent = var.getAncestor(Decl.FunctionOrMethod.class);
 		Tuple<Decl.Variable> parameters = parent.getParameters();
-		for(int i=0;i!=parameters.size();++i) {
-			if(parameters.get(i) == var) {
+		for (int i = 0; i != parameters.size(); ++i) {
+			if (parameters.get(i) == var) {
 				return true;
 			}
 		}
@@ -274,13 +302,14 @@ public class DefiniteUnassignmentCheck extends
 	public ControlFlow visitIfElse(Stmt.IfElse stmt, MaybeAssignedSet environment) {
 		//
 		ControlFlow left = visitBlock(stmt.getTrueBranch(), environment);
+		ControlFlow right;
 		if (stmt.hasFalseBranch()) {
-			ControlFlow right = visitBlock(stmt.getFalseBranch(), environment);
-			// Now, merge all generated control-flow paths together
-			return left.merge(right);
+			right = visitBlock(stmt.getFalseBranch(), environment);
 		} else {
-			return new ControlFlow(environment, null);
+			right = new ControlFlow(environment, null);
 		}
+		// Now, merge all generated control-flow paths together
+		return left.merge(right);
 	}
 
 	@Override
@@ -313,33 +342,18 @@ public class DefiniteUnassignmentCheck extends
 		MaybeAssignedSet caseEnvironment = null;
 		MaybeAssignedSet breakEnvironment = null;
 		//
-		boolean hasDefault = false;
 		for (Stmt.Case c : stmt.getCases()) {
 			ControlFlow cf = visitBlock(c.getBlock(), environment);
 			caseEnvironment = join(caseEnvironment, cf.nextEnvironment);
 			breakEnvironment = join(breakEnvironment, cf.breakEnvironment);
-			if (c.getConditions().size() == 0) {
-				hasDefault = true;
-			}
 		}
 		//
-		if (hasDefault) {
-			// Having a default makes a big difference. Without one, then
-			// everything that wasn't defined beforehand remains undefined. So,
-			// it's only in the case that there is a default statement that
-			// individual case statements can have an effect on the resulting
-			// set of definitely assigned variables.
-			environment = caseEnvironment;
-		}
-		//
-		return new ControlFlow(environment, breakEnvironment);
+		return new ControlFlow(caseEnvironment, breakEnvironment);
 	}
 
 	@Override
 	public ControlFlow visitWhile(Stmt.While stmt, MaybeAssignedSet environment) {
-		visitBlock(stmt.getBody(), environment);
-		//
-		return new ControlFlow(environment, null);
+		return visitBlock(stmt.getBody(), environment);
 	}
 
 	@Override
