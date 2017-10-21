@@ -1,0 +1,3 @@
+tests/invalid/Final_Invalid_9.whiley:6: cannot reassign final variable
+        y = y + 1
+        ^
