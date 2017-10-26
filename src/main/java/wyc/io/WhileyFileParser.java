@@ -71,7 +71,7 @@ public class WhileyFileParser {
 			if (lookahead.kind == Import) {
 				declaration = parseImportDeclaration();
 			} else {
-				Tuple<Modifier> modifiers = parseModifiers();
+				Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final);
 				checkNotEof();
 				lookahead = tokens.get(index);
 				if (lookahead.text.equals("type")) {
@@ -179,11 +179,11 @@ public class WhileyFileParser {
 		}
 	}
 
-	private Tuple<Modifier> parseModifiers() {
+	private Tuple<Modifier> parseModifiers(Token.Kind... kinds) {
 		ArrayList<Modifier> mods = new ArrayList<>();
 		Token lookahead;
 		boolean visible = false;
-		while ((lookahead = tryAndMatch(true, Public, Private, Native, Export)) != null) {
+		while ((lookahead = tryAndMatch(true, kinds)) != null) {
 			switch (lookahead.kind) {
 			case Public:
 			case Private:
@@ -205,6 +205,9 @@ public class WhileyFileParser {
 				break;
 			case Export:
 				mods.add(annotateSourceLocation(new Modifier.Export(),index-1));
+				break;
+			case Final:
+				mods.add(annotateSourceLocation(new Modifier.Final(),index-1));
 				break;
 			}
 		}
@@ -355,10 +358,9 @@ public class WhileyFileParser {
 			}
 			firstTime = false;
 			int start = index;
+			Tuple<Modifier> modifiers = parseModifiers(Final);
 			Pair<Type, Identifier> p = parseMixedType(scope);
 			Identifier id = p.getSecond();
-			// FIXME: actually parse modifiers?
-			Tuple<Modifier> modifiers = new Tuple<>();
 			Decl.Variable decl = new Decl.Variable(modifiers, id, p.getFirst());
 			decl = annotateSourceLocation(decl, start);
 			scope.declareVariable(decl);
@@ -695,7 +697,7 @@ public class WhileyFileParser {
 		// assignment   : Identifier | LeftBrace | Star
 		// variable decl: Identifier | LeftBrace | LeftCurly | Ampersand
 		// invoke       : Identifier | LeftBrace | Star
-		if(skipType(scope) && tryAndMatch(false,Identifier) != null) {
+		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
 			// Must be a variable declaration as this is the only situation in which a type
 			// can be followed by an identifier.
 			index = start; // backtrack
@@ -746,7 +748,7 @@ public class WhileyFileParser {
 	private Decl.Variable parseVariableDeclaration(EnclosingScope scope) {
 		int start = index;
 		//
-		Tuple<Modifier> modifiers = new Tuple<>();
+		Tuple<Modifier> modifiers = parseModifiers(Final);
 		Type type = parseType(scope);
 		Identifier name = parseIdentifier();
 		// Ensure at least one variable is defined by this pattern.

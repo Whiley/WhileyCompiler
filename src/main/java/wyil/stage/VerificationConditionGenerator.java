@@ -1027,6 +1027,7 @@ public class VerificationConditionGenerator {
 		WyalFile.Stmt defaultValue = null;
 		Context[] descendants = new Context[cases.size() + 1];
 		Context defaultContext = null;
+		boolean hasDefault = false;
 		//
 		for (int i = 0; i != cases.size(); ++i) {
 			WhileyFile.Stmt.Case caSe = cases.get(i);
@@ -1045,10 +1046,11 @@ public class VerificationConditionGenerator {
 			} else {
 				defaultContext = context.assume(defaultValue);
 				defaultContext = translateStatementBlock(caSe.getBlock(), defaultContext);
+				hasDefault = true;
 			}
 		}
 		// Sort out default context
-		if (defaultContext == null) {
+		if (!hasDefault) {
 			// indicates no default block was present, so we just assume what we
 			// know and treat it as a fall through.
 			defaultContext = context.assume(defaultValue);

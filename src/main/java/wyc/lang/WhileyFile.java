@@ -170,9 +170,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	public static final int MOD_native = DECL_mask + 11;
 	public static final int MOD_export = DECL_mask + 12;
-	public static final int MOD_protected = DECL_mask + 13;
-	public static final int MOD_private = DECL_mask + 14;
-	public static final int MOD_public = DECL_mask + 15;
+	public static final int MOD_final = DECL_mask + 13;
+	public static final int MOD_protected = DECL_mask + 14;
+	public static final int MOD_private = DECL_mask + 15;
+	public static final int MOD_public = DECL_mask + 16;
 	// TYPES: 00100000 (32) -- 00111111 (63)
 	public static final int TYPE_mask = 0b000100000;
 	public static final int TYPE_void = TYPE_mask + 0;
@@ -4649,6 +4650,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Export();
 			}
 		}
+
+		public static final class Final extends AbstractSyntacticItem implements Modifier {
+			public Final() {
+				super(MOD_final);
+			}
+
+			@Override
+			public String toString() {
+				return "final";
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Final();
+			}
+		}
 	}
 
 	// ==============================================================================
@@ -4785,6 +4802,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Modifier.Export();
+			}
+		};
+		schema[MOD_final] = new Schema(Operands.ZERO, Data.ZERO, "MOD_final") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Modifier.Final();
 			}
 		};
 		schema[MOD_private] = new Schema(Operands.ZERO, Data.ZERO, "MOD_private") {
