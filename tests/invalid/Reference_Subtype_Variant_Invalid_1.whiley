@@ -1,4 +1,4 @@
-method f(&int x, &any y) -> (int r):
+method f(&int x, &(int|bool) y) -> (int r):
     *y = true
     return *x
 

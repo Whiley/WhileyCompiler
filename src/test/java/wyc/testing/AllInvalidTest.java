@@ -74,6 +74,8 @@ public class AllInvalidTest {
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#765");
 		// Access Static Variable from Type Invariant
 		IGNORED.put("Type_Invalid_11", "793");
+		// Infinite Array Types
+		IGNORED.put("Type_Invalid_10", "823");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

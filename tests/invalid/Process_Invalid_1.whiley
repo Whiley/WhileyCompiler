@@ -1,7 +1,7 @@
 type MyProc1 is &{int data}
-type MyProc2 is &{any data}
+type MyProc2 is &{int|bool data}
 
-method set(MyProc2 _this, any d) :
+method set(MyProc2 _this, int|bool d) :
     _this.data = d
 
 method get(MyProc1 _this) -> int:
