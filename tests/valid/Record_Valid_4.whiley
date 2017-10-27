@@ -1,7 +1,7 @@
-type nat is (int x) where x >= 0
+type neg is (int x) where x < 0
 //
 type structA is { bool r }
-type structB is { !nat r } // => { void r } & { bool r }
+type structB is { neg|bool r }
 //
 function f(structA x) -> (structB y):
     return x

@@ -1,6 +1,6 @@
 
 
-function f(int[] x) -> !null | int:
+function f(int[] x) -> int[] | int:
     return x
 
 public export method test() :

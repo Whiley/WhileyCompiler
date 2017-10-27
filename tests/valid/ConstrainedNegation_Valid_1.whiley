@@ -1,10 +1,10 @@
 
 type nat is (int x) where x >= 0
-type neg is !nat
+type neg is (int x) where x < 0
 
-function f(neg x) -> (int y)
+function f(int x) -> (int y)
 ensures y < 0:
-    if x is int:
+    if x is neg:
         return x
     else:
         return -1

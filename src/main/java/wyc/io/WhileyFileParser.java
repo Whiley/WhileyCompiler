@@ -3172,9 +3172,6 @@ public class WhileyFileParser {
 			return result;
 		} else if (type instanceof Type.Array) {
 			return true;
-		} else if (type instanceof Type.Negation) {
-			Type.Negation tt = (Type.Negation) type;
-			return mustParseAsType(tt.getElement());
 		} else if (type instanceof Type.Nominal) {
 			return false; // always can be an expression
 		} else if (type instanceof Type.Reference) {
@@ -3241,8 +3238,6 @@ public class WhileyFileParser {
 			return skipBracketedType(scope);
 		case LeftCurly:
 			return skipRecordType(scope);
-		case Shreak:
-			return skipNegationType(scope);
 		case Ampersand:
 			return skipReferenceType(scope);
 		case Identifier:
@@ -3259,11 +3254,6 @@ public class WhileyFileParser {
 	public boolean skipBracketedType(EnclosingScope scope) {
 		match(LeftBrace);
 		return skipType(scope) && tryAndMatch(false, RightBrace) != null;
-	}
-
-	public boolean skipNegationType(EnclosingScope scope) {
-		match(Shreak);
-		return skipType(scope);
 	}
 
 	public boolean skipReferenceType(EnclosingScope scope) {
@@ -3483,8 +3473,6 @@ public class WhileyFileParser {
 			return parseBracketedType(scope);
 		case LeftCurly:
 			return parseRecordType(scope);
-		case Shreak:
-			return parseNegationType(scope);
 		case Ampersand:
 			return parseReferenceType(scope);
 		case Identifier:
@@ -3499,23 +3487,6 @@ public class WhileyFileParser {
 		}
 		match(token.kind);
 		return annotateSourceLocation(t,start);
-	}
-
-	/**
-	 * Parse a negation type, which is of the form:
-	 *
-	 * <pre>
-	 * NegationType ::= '!' Type
-	 * </pre>
-	 *
-	 * @return
-	 */
-	private Type parseNegationType(EnclosingScope scope) {
-		int start = index;
-		match(Shreak);
-		Type element = parseArrayType(scope);
-		Type type = new Type.Negation(element);
-		return annotateSourceLocation(type,start);
 	}
 
 	/**
