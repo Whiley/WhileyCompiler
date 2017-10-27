@@ -741,9 +741,6 @@ public abstract class AbstractVisitor {
 		case TYPE_array:
 			visitArray((Type.Array) type);
 			break;
-		case TYPE_any:
-			visitAny((Type.Any) type);
-			break;
 		case TYPE_bool:
 			visitBool((Type.Bool) type);
 			break;
@@ -809,10 +806,6 @@ public abstract class AbstractVisitor {
 
 	public void visitArray(Type.Array type) {
 		visitType(type.getElement());
-	}
-
-	public void visitAny(Type.Any type) {
-
 	}
 
 	public void visitBool(Type.Bool type) {

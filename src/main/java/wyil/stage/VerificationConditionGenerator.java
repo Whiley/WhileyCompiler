@@ -2376,9 +2376,7 @@ public class VerificationConditionGenerator {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
-		if (type instanceof Type.Any) {
-			result = new WyalFile.Type.Any();
-		} else if (type instanceof Type.Void) {
+		if (type instanceof Type.Void) {
 			result = new WyalFile.Type.Void();
 		} else if (type instanceof Type.Null) {
 			result = new WyalFile.Type.Null();
@@ -2453,9 +2451,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private static boolean typeMayHaveInvariant(Type type, Context context) {
-		if (type instanceof Type.Any) {
-			return false;
-		} else if (type instanceof Type.Void) {
+		if (type instanceof Type.Void) {
 			return false;
 		} else if (type instanceof Type.Null) {
 			return false;

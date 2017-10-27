@@ -1,18 +1,16 @@
-
-
-type MyProc2 is &{any data}
+type MyProc2 is &{int|bool data}
 
 method set(MyProc2 _this, int d) :
-    _this->data = (any)d
+    _this->data = d
 
-method get(MyProc2 _this) -> any:
+method get(MyProc2 _this) -> (int|bool r):
     return _this->data
 
-method create(any data) -> MyProc2:
+method create(int|bool data) -> MyProc2:
     return new {data: data}
 
 public export method test() :
     MyProc2 p2 = create(false)
     set(p2,1)
-    any result = get(p2)
+    int|bool result = get(p2)
     assume result == 1

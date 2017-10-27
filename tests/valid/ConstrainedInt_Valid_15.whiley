@@ -6,7 +6,7 @@ type neg is (int x) where x < 0
 
 type posneg is pos | neg
 
-function isPosNeg(any v) -> bool:
+function isPosNeg(int v) -> bool:
     if v is posneg:
         return true
     else:

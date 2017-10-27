@@ -1,7 +1,5 @@
-
-
-function f(any x) -> !null:
-    if x is null:
+function f(int[]|int x) -> !null:
+    if x is int:
         return 1
     else:
         return x

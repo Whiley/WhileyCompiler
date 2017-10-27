@@ -2,7 +2,7 @@
 
 type pos is (int p) where p > 0
 
-type rec1 is {any f1, pos f2}
+type rec1 is {int[] f1, pos f2}
 
 type rec2 is {int f1, int f2}
 

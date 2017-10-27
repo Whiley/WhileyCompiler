@@ -1,6 +1,6 @@
 type IntInt is int&int
-type AnyInt is any&int
-type IntAny is int&any
+type NotBoolInt is ((!bool)&int x)
+type IntNotBool is (int&(!bool) x)
 
 function f1(IntInt i) -> (int r):
     return i
@@ -8,16 +8,16 @@ function f1(IntInt i) -> (int r):
 function f2(int i) -> (IntInt r):
     return i
 
-function f3(AnyInt i) -> (int r):
+function f3(NotBoolInt i) -> (int r):
     return i
 
-function f4(int i) -> (AnyInt r):
+function f4(int i) -> (NotBoolInt r):
     return i
 
-function f5(IntAny i) -> (int r):
+function f5(IntNotBool i) -> (int r):
     return i
 
-function f6(int i) -> (IntAny r):
+function f6(int i) -> (IntNotBool r):
     return i
 
 public export method test() :

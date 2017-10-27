@@ -736,8 +736,6 @@ public abstract class AbstractFunction<P,R> {
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			return visitArray((Type.Array) type, data);
-		case TYPE_any:
-			return visitAny((Type.Any) type, data);
 		case TYPE_bool:
 			return visitBool((Type.Bool) type, data);
 		case TYPE_byte:
@@ -786,10 +784,6 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitArray(Type.Array type, P data) {
 		visitType(type.getElement(), data);
-		return null;
-	}
-
-	public R visitAny(Type.Any type, P data) {
 		return null;
 	}
 
