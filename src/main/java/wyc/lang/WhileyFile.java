@@ -3629,7 +3629,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	public interface Type extends SyntacticItem {
 
-		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
@@ -3667,34 +3666,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type.Callable substitute(Map<Identifier,Identifier> binding);
-		}
-
-		/**
-		 * The type <code>any</code> represents the type whose variables may hold any
-		 * possible value. <b>NOTE:</b> the any type is top in the type lattice.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static class Any extends AbstractSyntacticItem implements Primitive {
-			public Any() {
-				super(TYPE_any);
-			}
-
-			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
-				return this;
-			}
-
-			@Override
-			public Any clone(SyntacticItem[] operands) {
-				return new Any();
-			}
-
-			@Override
-			public String toString() {
-				return "any";
-			}
 		}
 
 		/**
@@ -4827,12 +4798,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Void();
-			}
-		};
-		schema[TYPE_any] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_any") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Any();
 			}
 		};
 		schema[TYPE_null] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {

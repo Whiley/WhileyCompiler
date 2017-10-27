@@ -1,4 +1,4 @@
-method f(any _this) :
+method f(int|null p) :
     skip
 
 method g() :

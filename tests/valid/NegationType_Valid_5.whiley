@@ -1,4 +1,4 @@
-function f() -> !null | int:
+function f() -> int[] | int:
     return 1
 
 public export method test() :

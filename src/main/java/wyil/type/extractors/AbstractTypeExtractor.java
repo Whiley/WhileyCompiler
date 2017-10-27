@@ -244,20 +244,13 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		Type.Atom[] positives = type.positives;
 		for (int i = 0; i != positives.length; ++i) {
 			Type.Atom pos = positives[i];
-			if(pos instanceof Type.Any) {
-				// This is an exceptional case, since can never extract a
-				// specific type from any. And yet, intersecting any with any
-				// type T gives that type T.
-				continue;
+			T tmp = construct(pos);
+			if (tmp == null) {
+				return null;
+			} else if (result == null) {
+				result = tmp;
 			} else {
-				T tmp = construct(pos);
-				if (tmp == null) {
-					return null;
-				} else if (result == null) {
-					result = tmp;
-				} else {
-					result = intersect(result, tmp);
-				}
+				result = intersect(result, tmp);
 			}
 		}
 		if (result != null) {
@@ -294,10 +287,6 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	protected Type unionHelper(Type lhs, Type rhs) {
 		if(lhs.equals(rhs)) {
 			return lhs;
-		} else if(lhs instanceof Type.Any) {
-			return lhs;
-		} else if(rhs instanceof Type.Any) {
-			return rhs;
 		} else if(lhs instanceof Type.Void) {
 			return rhs;
 		} else if(rhs instanceof Type.Void) {
@@ -319,10 +308,6 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	 */
 	protected Type intersectionHelper(Type lhs, Type rhs) {
 		if(lhs.equals(rhs)) {
-			return lhs;
-		} else if(lhs instanceof Type.Any) {
-			return rhs;
-		} else if(rhs instanceof Type.Any) {
 			return lhs;
 		} else if(lhs instanceof Type.Void) {
 			return lhs;

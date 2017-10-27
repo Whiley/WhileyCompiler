@@ -1,1 +1,1 @@
-type Contractive is !Contractive
+type Contractive is Contractive

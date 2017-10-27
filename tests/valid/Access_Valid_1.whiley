@@ -1,6 +1,6 @@
 type list is int[]
 
-function index(list l, int index) -> any
+function index(list l, int index) -> int
 requires index >= 0 && index < |l|:
     //
     return l[index]

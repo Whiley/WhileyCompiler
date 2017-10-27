@@ -1,10 +1,10 @@
-type fun_t is function(int)->(any)
+type fun_t is function(int)->(int|bool)
 type gun_t is function(int)->(int)
 
 function f(int x) -> (int y):
     return 0
 
-function g(int x) -> (any y):
+function g(int x) -> (int|bool y):
     return 0
 
 method test():

@@ -1,8 +1,6 @@
-
-
 type imsg is int | {int[] msg}
 
-function getMessage(imsg m) -> any:
+function getMessage(imsg m) -> int[]|int:
     if m is {int[] msg}:
         return m.msg
     else:

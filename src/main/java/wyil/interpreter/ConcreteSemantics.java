@@ -93,9 +93,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		@Override
 		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			// Handle generic cases here
-			if (type instanceof Type.Any) {
-				return True;
-			} else if (type instanceof Type.Void) {
+			if (type instanceof Type.Void) {
 				return False;
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal nom = (Type.Nominal) type;

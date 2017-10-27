@@ -1,9 +1,5 @@
-
-
-type C1 is null | any
-
-type C2 is null | any
-
+type C1 is null | bool
+type C2 is null | bool
 type C3 is C1 | C2
 
 method f(C1 x) -> C3:

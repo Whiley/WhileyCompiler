@@ -742,9 +742,6 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_array:
 			visitArray((Type.Array) type, data);
 			break;
-		case TYPE_any:
-			visitAny((Type.Any) type, data);
-			break;
 		case TYPE_bool:
 			visitBool((Type.Bool) type, data);
 			break;
@@ -810,10 +807,6 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitArray(Type.Array type, T data) {
 		visitType(type.getElement(), data);
-	}
-
-	public void visitAny(Type.Any type, T data) {
-
 	}
 
 	public void visitBool(Type.Bool type, T data) {

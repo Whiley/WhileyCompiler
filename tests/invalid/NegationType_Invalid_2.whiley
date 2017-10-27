@@ -1,2 +1,2 @@
-function f(int x) -> !null & !int:
+function f(int x) -> ((int|null) & (null|bool) r):
     return x

@@ -1,3 +1,5 @@
-type t is method(any)->()
-public export method test(any x):
-    !t m = &test
+type t is method(int)->()
+type s is method(int)->()|method(bool)->()
+
+public export method test(s x):
+    t m = &test

@@ -92,7 +92,6 @@ import wycc.util.ArrayUtils;
  *
  */
 public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
-	private static Type T_ANY = new Type.Any();
 	private static Type T_VOID = new Type.Void();
 
 	@Override
@@ -113,11 +112,6 @@ public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
 	protected Type rewriteUnion(Type.Union type) {
 		Type[] types = type.getAll();
 		Type[] nTypes = rewrite(types);
-		// Check whether matches any
-		if (ArrayUtils.firstIndexOf(types, T_ANY) >= 0) {
-			// Any union containing any equals any
-			return T_ANY;
-		}
 		// Expand any nested unions
 		nTypes = inlineNestedDisjuncts(nTypes);
 		// Remove any duplicate types
@@ -149,12 +143,8 @@ public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
 		nTypes = inlineNestedConjuncts(nTypes);
 		// Remove any duplicate types
 		nTypes = ArrayUtils.removeDuplicates(nTypes);
-		// Remove all occurences of void
-		nTypes = ArrayUtils.removeAll(nTypes, T_ANY);
 		//
-		if(types.length == 0) {
-			return new Type.Any();
-		} else if(types.length == 1) {
+		if(types.length == 1) {
 			return types[0];
 		} else if(types == nTypes) {
 			return type;
