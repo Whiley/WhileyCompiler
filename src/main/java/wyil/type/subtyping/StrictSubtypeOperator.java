@@ -221,9 +221,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			}
 			return true;
 		}
-		case TYPE_negation: {
-			Type.Negation n = (Type.Negation) type;
-			return isContractive(name, n.getElement(), visited);
+		case TYPE_difference: {
+			Type.Difference n = (Type.Difference) type;
+			return isContractive(name, n.getLeftHandSide(), visited)
+					&& isContractive(name, n.getRightHandSide(), visited);
 		}
 		default:
 		case TYPE_nominal: {
@@ -388,9 +389,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				}
 				break;
 			}
-			case TYPE_negation: {
-				Type.Negation nt = (Type.Negation) t;
-				worklist.push(!item.sign, nt.getElement(), !item.maximise);
+			case TYPE_difference: {
+				Type.Difference nt = (Type.Difference) t;
+				worklist.push(item.sign, nt.getLeftHandSide(), !item.maximise);
+				worklist.push(!item.sign, nt.getRightHandSide(), !item.maximise);
 				break;
 			}
 			case TYPE_nominal: {

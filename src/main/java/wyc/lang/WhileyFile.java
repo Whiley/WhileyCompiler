@@ -192,7 +192,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_invariant = TYPE_mask + 14;
 	public static final int TYPE_union = TYPE_mask + 15;
 	public static final int TYPE_intersection = TYPE_mask + 16;
-	public static final int TYPE_negation = TYPE_mask + 17;
+	public static final int TYPE_difference = TYPE_mask + 17;
 	public static final int TYPE_byte = TYPE_mask + 18;
 	public static final int TYPE_unresolved = TYPE_mask + 19;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
@@ -4096,46 +4096,52 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Parse a negation type, which is of the form:
+		 * Parse a difference type, which is of the form:
 		 *
 		 * <pre>
-		 * ReferenceType ::= '!' Type
+		 * DifferenceType ::= Type '-' Type
 		 * </pre>
 		 *
-		 * Represents the set of types which are not in a given type. For example,
-		 * <code>!int</code> is the set of all values which are not integers. Thus, for
-		 * example, the type <code>bool</code> is a subtype of <code>!int</code> .
+		 * This corresponds roughly to set difference. For example,
+		 * <code>(int|null)-int</code> is the set <code>int|null</code> less members of
+		 * <code>int</code>. In other words, it's equivalent to <code>null</code>.
 		 *
 		 * @return
 		 */
-		public static class Negation extends AbstractSyntacticItem implements Type {
-			public Negation(Type element) {
-				super(TYPE_negation, element);
+		public static class Difference extends AbstractSyntacticItem implements Type {
+			public Difference(Type lhs, Type rhs) {
+				super(TYPE_difference, lhs, rhs);
 			}
 
-			public Type getElement() {
+			public Type getLeftHandSide() {
 				return (Type) get(0);
 			}
 
+			public Type getRightHandSide() {
+				return (Type) get(1);
+			}
+
 			@Override
-			public Type.Negation substitute(Map<Identifier,Identifier> binding) {
-				Type before = getElement();
-				Type after = before.substitute(binding);
-				if(before == after) {
+			public Type.Difference substitute(Map<Identifier,Identifier> binding) {
+				Type lhsBefore = getLeftHandSide();
+				Type rhsBefore = getRightHandSide();
+				Type lhsAfter = lhsBefore.substitute(binding);
+				Type rhsAfter = rhsBefore.substitute(binding);
+				if(lhsBefore == lhsAfter && rhsBefore == rhsAfter) {
 					return this;
 				} else {
-					return new Type.Negation(after);
+					return new Type.Difference(lhsAfter, rhsAfter);
 				}
 			}
 
 			@Override
-			public Negation clone(SyntacticItem[] operands) {
-				return new Negation((Type) operands[0]);
+			public Difference clone(SyntacticItem[] operands) {
+				return new Difference((Type) operands[0], (Type) operands[1]);
 			}
 
 			@Override
 			public String toString() {
-				return "!" + braceAsNecessary(getElement());
+				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
 			}
 		}
 
@@ -4202,9 +4208,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += get(i);
+					r += braceAsNecessary(get(i));
 				}
-				return "(" + r + ")";
+				return r;
 			}
 		}
 
@@ -4255,9 +4261,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "&";
 					}
-					r += get(i);
+					r += braceAsNecessary(get(i));
 				}
-				return "(" + r + ")";
+				return r;
 			}
 		}
 
@@ -4883,10 +4889,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Intersection(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_negation] = new Schema(Operands.ONE, Data.ZERO, "TYPE_negation") {
+		schema[TYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_difference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Negation((Type) operands[0]);
+				return new Type.Difference((Type) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_byte] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {

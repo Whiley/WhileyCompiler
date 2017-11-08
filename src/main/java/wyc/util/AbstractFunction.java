@@ -744,8 +744,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitInt((Type.Int) type, data);
 		case TYPE_intersection:
 			return visitIntersection((Type.Intersection) type, data);
-		case TYPE_negation:
-			return visitNegation((Type.Negation) type, data);
+		case TYPE_difference:
+			return visitDifference((Type.Difference) type, data);
 		case TYPE_nominal:
 			return visitNominal((Type.Nominal) type, data);
 		case TYPE_null:
@@ -818,8 +818,9 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitNegation(Type.Negation type, P data) {
-		visitType(type.getElement(), data);
+	public R visitDifference(Type.Difference type, P data) {
+		visitType(type.getLeftHandSide(), data);
+		visitType(type.getRightHandSide(), data);
 		return null;
 	}
 

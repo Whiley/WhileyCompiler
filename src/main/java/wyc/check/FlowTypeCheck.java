@@ -1159,11 +1159,10 @@ public class FlowTypeCheck {
 		try {
 			Expr lhs = expr.getOperand();
 			Type rhsT = expr.getTestType();
-			//
 			Type lhsT = checkExpression(expr.getOperand(), environment);
 			// Sanity check operands for this type test
-			Type glbForFalseBranch = new Type.Intersection(lhsT, negate(rhsT));
 			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
+			Type glbForFalseBranch = new Type.Difference(lhsT, rhsT);
 			if (typeSystem.isVoid(glbForFalseBranch, environment)) {
 				// DEFINITE TRUE CASE
 				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
@@ -1172,10 +1171,10 @@ public class FlowTypeCheck {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
 			// Account for case when this test is inverted
-			rhsT = sign ? rhsT : negate(rhsT);
+			Type type = sign ? glbForTrueBranch : glbForFalseBranch;
 			// TODO: implement a proper intersection test here to ensure lhsT and
 			// rhs types make sense (i.e. have some intersection).
-			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhsT);
+			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, type);
 			if (extraction != null) {
 				Decl.Variable var = extraction.getFirst();
 				// Update the typing environment accordingly.
@@ -1276,26 +1275,6 @@ public class FlowTypeCheck {
 			return left;
 		} else {
 			return new Type.Union(new Type[] { left, right });
-		}
-	}
-
-	/**
-	 * Negate a given type whilst trying to maintain simplicity. For example,
-	 * negating <code>int</code> gives <code>!int</code>. However, negating
-	 * <code>!int</code> gives <code>int</code> (i.e. rather than
-	 * <code>!!int</code>).
-	 *
-	 * @param type
-	 * @return
-	 */
-	public Type negate(Type type) {
-		// FIXME: a more comprehensive simplification strategy would make sense
-		// here.
-		if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			return nt.getElement();
-		} else {
-			return new Type.Negation(type);
 		}
 	}
 
@@ -2796,9 +2775,9 @@ public class FlowTypeCheck {
 		}
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
-			Type type = intersect(getType(var), refinement);
+			//Type type = intersect(getType(var), refinement);
 			Environment r = new Environment(this.refinements, this.withins);
-			r.refinements.put(var, type);
+			r.refinements.put(var, refinement);
 			return r;
 		}
 

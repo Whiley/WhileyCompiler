@@ -166,10 +166,8 @@ public class WriteableTypeExtractor extends AbstractTypeExtractor<Type> {
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					// FIXME: could potentially do better here
-					Type negatedRhsType = new Type.Negation(rhsField.getType());
-					Type type = intersectionHelper(lhsField.getType(), negatedRhsType);
-					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
+					Type diff = new Type.Difference(lhsField.getType(),rhsField.getType());
+					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, diff));
 					break;
 				}
 			}
@@ -312,7 +310,7 @@ public class WriteableTypeExtractor extends AbstractTypeExtractor<Type> {
 	}
 
 	protected Type.Array subtract(Type.Array lhs, Type.Array rhs) {
-		return new Type.Array(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+		return new Type.Array(new Type.Difference(lhs.getElement(),rhs.getElement()));
 	}
 
 	protected Type.Array intersect(Type.Array lhs, Type.Array rhs) {
@@ -329,7 +327,7 @@ public class WriteableTypeExtractor extends AbstractTypeExtractor<Type> {
 	}
 
 	protected Type.Reference subtract(Type.Reference lhs, Type.Reference rhs) {
-		return new Type.Reference(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+		return new Type.Reference(new Type.Difference(lhs.getElement(),rhs.getElement()));
 	}
 
 	protected Type.Reference intersect(Type.Reference lhs, Type.Reference rhs) {

@@ -122,9 +122,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 					}
 				}
 				return True;
-			} else if (type instanceof Type.Negation) {
-				Type.Negation t = (Type.Negation) type;
-				return this.is(t.getElement(), instance).not();
+			} else if (type instanceof Type.Difference) {
+				Type.Difference t = (Type.Difference) type;
+				Bool lhs = this.is(t.getLeftHandSide(), instance);
+				Bool rhs = this.is(t.getRightHandSide(), instance);
+				if(lhs == True && rhs == False) {
+					return True;
+				}
 			}
 			// Default case.
 			return False;

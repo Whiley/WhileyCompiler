@@ -112,8 +112,8 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 			return toDisjunctiveNormalForm((Type.Record) type);
 		} else if (type instanceof Type.Callable) {
 			return toDisjunctiveNormalForm((Type.Callable) type);
-		} else if (type instanceof Type.Negation) {
-			return toDisjunctiveNormalForm((Type.Negation) type);
+		} else if (type instanceof Type.Difference) {
+			return toDisjunctiveNormalForm((Type.Difference) type);
 		} else if (type instanceof Type.Nominal) {
 			return toDisjunctiveNormalForm((Type.Nominal) type);
 		} else if (type instanceof Type.Union) {
@@ -143,9 +143,10 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		return new Disjunct(type);
 	}
 
-	protected Disjunct toDisjunctiveNormalForm(Type.Negation type) throws ResolutionError {
-		Disjunct element = toDisjunctiveNormalForm(type.getElement());
-		return element.negate();
+	protected Disjunct toDisjunctiveNormalForm(Type.Difference type) throws ResolutionError {
+		Disjunct lhs = toDisjunctiveNormalForm(type.getLeftHandSide());
+		Disjunct rhs = toDisjunctiveNormalForm(type.getLeftHandSide());
+		return lhs.intersect(rhs.negate());
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Union type) throws ResolutionError {
@@ -229,13 +230,10 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		// unnecessary copying of data.
 		Type.Atom[] positives = type.positives;
 		Type.Atom[] negatives = type.negatives;
-		Type[] terms = new Type[positives.length + negatives.length];
-		System.arraycopy(positives, 0, terms, 0, positives.length);
-		for(int i=0,j=positives.length;i!=negatives.length;++i,++j) {
-			terms[j] = new Type.Negation(negatives[i]);
-		}
+		Type.Union lhs = new Type.Union(positives);
+		Type.Union rhs = new Type.Union(negatives);
 		//
-		return typeSystem.isVoid(new Type.Intersection(terms), lifetimes);
+		return typeSystem.isVoid(new Type.Difference(lhs,rhs), lifetimes);
 	}
 
 	protected T construct(Conjunct type) {
