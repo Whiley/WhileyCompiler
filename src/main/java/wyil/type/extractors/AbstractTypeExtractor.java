@@ -145,7 +145,7 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Difference type) throws ResolutionError {
 		Disjunct lhs = toDisjunctiveNormalForm(type.getLeftHandSide());
-		Disjunct rhs = toDisjunctiveNormalForm(type.getLeftHandSide());
+		Disjunct rhs = toDisjunctiveNormalForm(type.getRightHandSide());
 		return lhs.intersect(rhs.negate());
 	}
 
