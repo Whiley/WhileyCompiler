@@ -228,9 +228,9 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		// particular, when Type.Union and Type.Intersection are interfaces, we
 		// can make Disjunct and Conjunct implement them, thus avoiding this
 		// unnecessary copying of data.
-		Type.Atom[] positives = type.positives;
-		Type.Atom[] negatives = type.negatives;
-		Type.Union lhs = new Type.Union(positives);
+		Type.Atom[] positives = Arrays.copyOf(type.positives,type.positives.length);
+		Type.Atom[] negatives = Arrays.copyOf(type.negatives,type.negatives.length);
+		Type.Intersection lhs = new Type.Intersection(positives);
 		Type.Union rhs = new Type.Union(negatives);
 		//
 		return typeSystem.isVoid(new Type.Difference(lhs,rhs), lifetimes);

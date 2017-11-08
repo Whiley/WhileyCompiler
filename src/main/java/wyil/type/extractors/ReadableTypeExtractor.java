@@ -94,6 +94,7 @@ public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 
 	@Override
 	protected Type intersect(Type lhs, Type rhs) {
+		System.out.println("INTERSECTING: " + lhs + ", " + rhs);
 		int opcode = lhs.getOpcode();
 		if(opcode == rhs.getOpcode()) {
 			switch (opcode) {
