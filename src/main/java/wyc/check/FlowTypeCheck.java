@@ -1170,11 +1170,9 @@ public class FlowTypeCheck {
 				// DEFINITE FALSE CASE
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
-			// Account for case when this test is inverted
-			Type type = sign ? glbForTrueBranch : glbForFalseBranch;
 			// TODO: implement a proper intersection test here to ensure lhsT and
 			// rhs types make sense (i.e. have some intersection).
-			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, type);
+			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, sign, rhsT, environment);
 			if (extraction != null) {
 				Decl.Variable var = extraction.getFirst();
 				// Update the typing environment accordingly.
@@ -1208,15 +1206,21 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return A pair on successful extraction, or null if possible extraction.
 	 */
-	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, Type type) {
+	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, boolean sign, Type type, Environment environment) {
 		if (expr instanceof Expr.VariableAccess) {
 			Expr.VariableAccess var = (Expr.VariableAccess) expr;
+			Decl.Variable decl = var.getVariableDeclaration();
+			if(sign) {
+				type = new Type.Intersection(environment.getType(decl),type);
+			} else {
+				type = new Type.Difference(environment.getType(decl),type);
+			}
 			return new Pair<>(var.getVariableDeclaration(), type);
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
 			Decl.Variable field = new Decl.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(), type);
 			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getOperand(), recT);
+			return extractTypeTest(ra.getOperand(), sign, recT, environment);
 		} else {
 			// no extraction is possible
 			return null;
