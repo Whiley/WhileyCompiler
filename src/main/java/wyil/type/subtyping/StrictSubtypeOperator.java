@@ -391,7 +391,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			}
 			case TYPE_difference: {
 				Type.Difference nt = (Type.Difference) t;
-				worklist.push(item.sign, nt.getLeftHandSide(), !item.maximise);
+				worklist.push(item.sign, nt.getLeftHandSide(), item.maximise);
 				worklist.push(!item.sign, nt.getRightHandSide(), !item.maximise);
 				break;
 			}
