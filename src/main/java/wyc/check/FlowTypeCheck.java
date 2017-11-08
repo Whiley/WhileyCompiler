@@ -1159,11 +1159,10 @@ public class FlowTypeCheck {
 		try {
 			Expr lhs = expr.getOperand();
 			Type rhsT = expr.getTestType();
-			//
 			Type lhsT = checkExpression(expr.getOperand(), environment);
 			// Sanity check operands for this type test
-			Type glbForFalseBranch = new Type.Intersection(lhsT, negate(rhsT));
 			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
+			Type glbForFalseBranch = new Type.Difference(lhsT, rhsT);
 			if (typeSystem.isVoid(glbForFalseBranch, environment)) {
 				// DEFINITE TRUE CASE
 				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
@@ -1171,11 +1170,9 @@ public class FlowTypeCheck {
 				// DEFINITE FALSE CASE
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
-			// Account for case when this test is inverted
-			rhsT = sign ? rhsT : negate(rhsT);
 			// TODO: implement a proper intersection test here to ensure lhsT and
 			// rhs types make sense (i.e. have some intersection).
-			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhsT);
+			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, sign, rhsT, environment);
 			if (extraction != null) {
 				Decl.Variable var = extraction.getFirst();
 				// Update the typing environment accordingly.
@@ -1209,15 +1206,21 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return A pair on successful extraction, or null if possible extraction.
 	 */
-	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, Type type) {
+	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, boolean sign, Type type, Environment environment) {
 		if (expr instanceof Expr.VariableAccess) {
 			Expr.VariableAccess var = (Expr.VariableAccess) expr;
+			Decl.Variable decl = var.getVariableDeclaration();
+			if(sign) {
+				type = new Type.Intersection(environment.getType(decl),type);
+			} else {
+				type = new Type.Difference(environment.getType(decl),type);
+			}
 			return new Pair<>(var.getVariableDeclaration(), type);
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
 			Decl.Variable field = new Decl.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(), type);
 			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getOperand(), recT);
+			return extractTypeTest(ra.getOperand(), sign, recT, environment);
 		} else {
 			// no extraction is possible
 			return null;
@@ -1276,26 +1279,6 @@ public class FlowTypeCheck {
 			return left;
 		} else {
 			return new Type.Union(new Type[] { left, right });
-		}
-	}
-
-	/**
-	 * Negate a given type whilst trying to maintain simplicity. For example,
-	 * negating <code>int</code> gives <code>!int</code>. However, negating
-	 * <code>!int</code> gives <code>int</code> (i.e. rather than
-	 * <code>!!int</code>).
-	 *
-	 * @param type
-	 * @return
-	 */
-	public Type negate(Type type) {
-		// FIXME: a more comprehensive simplification strategy would make sense
-		// here.
-		if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			return nt.getElement();
-		} else {
-			return new Type.Negation(type);
 		}
 	}
 
@@ -2796,9 +2779,9 @@ public class FlowTypeCheck {
 		}
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
-			Type type = intersect(getType(var), refinement);
+			//Type type = intersect(getType(var), refinement);
 			Environment r = new Environment(this.refinements, this.withins);
-			r.refinements.put(var, type);
+			r.refinements.put(var, refinement);
 			return r;
 		}
 

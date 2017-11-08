@@ -95,16 +95,35 @@ public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
 	private static Type T_VOID = new Type.Void();
 
 	@Override
-	protected Type rewriteNegation(Type.Negation type) {
-		Type element = type.getElement();
-		Type nElement = rewrite(element);
-		if (nElement instanceof Type.Negation || nElement instanceof Type.Union
-				|| nElement instanceof Type.Intersection) {
-			return negate(nElement);
-		} else if (element == nElement) {
+	protected Type rewriteDifference(Type.Difference type) {
+		Type lhs = type.getLeftHandSide();
+		Type rhs = type.getRightHandSide();
+		Type nLhs = rewrite(lhs);
+		Type nRhs = rewrite(rhs);
+		if (nLhs instanceof Type.Primitive && nRhs instanceof Type.Primitive) {
+			return nLhs.equals(nLhs) ? Type.Void : nLhs;
+		} else if (nLhs instanceof Type.Union) {
+			Type.Union union = (Type.Union) nLhs;
+			Type[] types = new Type[union.size()];
+			for (int i = 0; i != union.size(); ++i) {
+				types[i] = rewriteDifference(new Type.Difference(union.get(i), nRhs));
+			}
+			return rewriteUnion(new Type.Union(types));
+		} else if(nRhs instanceof Type.Union) {
+			Type.Union union = (Type.Union) nRhs;
+			Type[] types = new Type[union.size()];
+			for(int i=0;i!=types.length;++i) {
+				types[i] = rewriteDifference(new Type.Difference(nLhs, union.get(i)));
+			}
+			return rewriteIntersection(new Type.Intersection(types));
+		} else if (nRhs instanceof Type.Void) {
+			return nLhs;
+		} else if (nLhs == lhs && nRhs == rhs) {
 			return type;
 		} else {
-			return new Type.Negation(nElement);
+			// FIXME: we could do more here I think. In particular, if we have two non-open
+			// records.
+			return new Type.Difference(nLhs, nRhs);
 		}
 	}
 
@@ -195,29 +214,5 @@ public class AlgebraicTypeSimplifier extends AbstractTypeRewriter {
 		System.arraycopy(child, 0, types, index, child.length);
 		System.arraycopy(parent, index + 1, types, index + child.length, parent.length - (index + 1));
 		return types;
-	}
-
-	private static Type[] negate(Type[] types) {
-		Type[] nTypes = new Type[types.length];
-		for(int i=0;i!=types.length;++i) {
-			nTypes[i] = negate(types[i]);
-		}
-		return nTypes;
-	}
-
-	private static Type negate(Type type) {
-		if (type instanceof Type.Negation) {
-			return ((Type.Negation) type).getElement();
-		} else if (type instanceof Type.Union) {
-			Type.Union disjunct = (Type.Union) type;
-			Type[] negated = negate(disjunct.getAll());
-			return new Type.Intersection(negated);
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection conjunct = (Type.Intersection) type;
-			Type[] negated = negate(conjunct.getAll());
-			return new Type.Union(negated);
-		} else {
-			return new Type.Negation(type);
-		}
 	}
 }

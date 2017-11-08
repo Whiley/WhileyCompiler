@@ -1,3 +1,3 @@
-tests/invalid/TypeEquals_Invalid_8.whiley:6: expected type bool, found ((bool|int|null)&(((bool|int|null)&bool)|(((bool|int|null)&!bool)&int)))
+tests/invalid/TypeEquals_Invalid_8.whiley:6: expected type bool, found ((bool|int|null)&bool)|(((bool|int|null)-bool)&int)
         return x
                ^

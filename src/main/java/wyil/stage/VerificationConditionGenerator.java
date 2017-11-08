@@ -2421,10 +2421,13 @@ public class VerificationConditionGenerator {
 				elements[i] = convert(t.get(i), context);
 			}
 			result = new WyalFile.Type.Intersection(elements);
-		} else if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			WyalFile.Type elem = convert(nt.getElement(), context);
-			result = new WyalFile.Type.Negation(elem);
+		} else if (type instanceof Type.Difference) {
+			Type.Difference nt = (Type.Difference) type;
+			WyalFile.Type lhs = convert(nt.getLeftHandSide(), context);
+			WyalFile.Type rhs = convert(nt.getRightHandSide(), context);
+			// FIXME: this is essentially a hack for now, though it is semantically
+			// equivalent.
+			result = new WyalFile.Type.Intersection(new WyalFile.Type[] { lhs, new WyalFile.Type.Negation(rhs) });
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			// FIXME: need to do something better here
@@ -2493,9 +2496,10 @@ public class VerificationConditionGenerator {
 				}
 			}
 			return false;
-		} else if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			return typeMayHaveInvariant(nt.getElement(), context);
+		} else if (type instanceof Type.Difference) {
+			Type.Difference nt = (Type.Difference) type;
+			return typeMayHaveInvariant(nt.getLeftHandSide(), context)
+					|| typeMayHaveInvariant(nt.getRightHandSide(), context);
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
