@@ -1851,13 +1851,18 @@ public class FlowTypeCheck {
 		Tuple<Type> parameterTypes = parameters.project(2, Type.class);
 		Type result = checkExpression(expr.getBody(), env);
 		// Determine whether or not this is a pure or impure lambda.
+		Type.Callable signature;
 		if (isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
-			return new Type.Function(parameterTypes, new Tuple<>(result));
+			signature = new Type.Function(parameterTypes, new Tuple<>(result));
 		} else {
 			// This is an impure lambda, hence it has method type.
-			return new Type.Method(parameterTypes, new Tuple<>(result), expr.getCaptures(), expr.getLifetimes());
+			signature = new Type.Method(parameterTypes, new Tuple<>(result), expr.getCaptures(), expr.getLifetimes());
 		}
+		// Update with inferred signature
+		expr.setType(expr.getHeap().allocate(signature));
+		// Done
+		return signature;
 	}
 
 	/**

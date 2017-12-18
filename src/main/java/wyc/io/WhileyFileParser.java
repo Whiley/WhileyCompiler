@@ -3016,8 +3016,8 @@ public class WhileyFileParser {
 		// NOTE: expression guanrateed to be terminated by ')'
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
-		return annotateSourceLocation(new Decl.Lambda(new Tuple<>(), new Identifier(""), parameters,
-				new Tuple<>(), captures, lifetimeParameters, body), start);
+		return annotateSourceLocation(new Decl.Lambda(new Tuple<>(), new Identifier(""), parameters, captures,
+				lifetimeParameters, body, new Type.Unresolved()), start);
 	}
 
 	/**

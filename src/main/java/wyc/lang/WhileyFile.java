@@ -790,8 +790,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Lambda extends Callable implements Expr {
 
 			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Decl.Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
-				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body);
+					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WhileyFile.Type.Callable signature) {
+				this(modifiers, name, parameters, new Tuple<Decl.Variable>(), captures, lifetimes, body, signature);
+			}
+
+			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,Tuple<Decl.Variable> returns,
+					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WhileyFile.Type.Callable signature) {
+				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body, signature);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -811,15 +816,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public WhileyFile.Type.Callable getType() {
 				// FIXME: need to determine whether function or method!
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
-				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
+//				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+//				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+//				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
+				return (WhileyFile.Type.Callable) super.get(7);
 			}
 
 			@Override
 			public void setType(WhileyFile.Type type) {
-				throw new UnsupportedOperationException();
+				if(type instanceof WhileyFile.Type.Callable) {
+					operands[7] = type;
+				} else {
+					throw new IllegalArgumentException();
+				}
 			}
+
 
 			@Override
 			public Tuple<WhileyFile.Type> getTypes() {
@@ -831,7 +842,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
+						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6],
+						(WhileyFile.Type.Callable) operands[7]);
 			}
 		}
 
@@ -4745,13 +4757,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 						(Tuple<Expr>) operands[4]);
 			}
 		};
-		schema[DECL_lambda] = new Schema(Operands.SEVEN, Data.ZERO, "DECL_lambda") {
+		schema[DECL_lambda] = new Schema(Operands.EIGHT, Data.ZERO, "DECL_lambda") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
+						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6],
+						(Type.Callable) operands[7]);
 			}
 		};
 		schema[DECL_variable] = new Schema(Operands.THREE, Data.ZERO, "DECL_var") {
