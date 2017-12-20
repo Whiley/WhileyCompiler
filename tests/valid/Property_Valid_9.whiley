@@ -1,0 +1,21 @@
+property sum(int n, int[] xs, int i)
+where (i >= |xs|) ==> (n == 0)
+where (i < |xs|) ==> sum(n-xs[i],xs,i+1)
+
+function fsum(int[] xs, int s, int[] ys) -> (int r)
+requires sum(s,xs,0) && sum(s,ys,0)
+ensures r == 0:
+    //
+    return 0
+
+method main(int x):
+    assert fsum([1],1,[1]) == 0
+    assert fsum([1],1,[1,0]) == 0
+    assert fsum([1,0],1,[1]) == 0
+    assert fsum([1,2],3,[1,2]) == 0
+    assert fsum([2,1],3,[1,2]) == 0
+    assert fsum([1,2],3,[2,1]) == 0
+    assert fsum([1,2],3,[1,1,1]) == 0
+    assert fsum([1,1,1],3,[1,2]) == 0
+    assert fsum([1,1,1],3,[1,1,1]) == 0
+    assert fsum([x,x],2*x,[x,x]) == 0
