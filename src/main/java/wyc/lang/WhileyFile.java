@@ -25,6 +25,7 @@ import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
+import wyc.util.AbstractConsumer;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -799,8 +800,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body, signature);
 			}
 
+			public Set<Decl.Variable> getCapturedVariables() {
+				HashSet<Decl.Variable> captured = new HashSet<>();
+				usedVariableExtractor.visitExpression(getBody(), captured);
+				Tuple<Decl.Variable> parameters = getParameters();
+				for(int i=0;i!=parameters.size();++i) {
+					captured.remove(parameters.get(i));
+				}
+				return captured;
+			}
+
 			@SuppressWarnings("unchecked")
-			public Tuple<Identifier> getCaptures() {
+			public Tuple<Identifier> getCapturedLifetimes() {
 				return (Tuple<Identifier>) get(4);
 			}
 
@@ -815,10 +826,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public WhileyFile.Type.Callable getType() {
-				// FIXME: need to determine whether function or method!
-//				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-//				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
-//				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
 				return (WhileyFile.Type.Callable) super.get(7);
 			}
 
@@ -5347,4 +5354,35 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		};
 		return schema;
 	}
+
+	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
+	    @Override
+	    public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
+	        used.add(expr.getVariableDeclaration());
+	    }
+	    @Override
+	    public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
+	        visitVariables(expr.getParameters(), used);
+	        visitExpression(expr.getOperand(), used);
+	        removeAllDeclared(expr.getParameters(),used);
+	    }
+
+	    @Override
+	    public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
+	        visitVariables(expr.getParameters(), used);
+	        visitExpression(expr.getOperand(), used);
+	        removeAllDeclared(expr.getParameters(),used);
+	    }
+
+	    @Override
+	    public void visitType(WhileyFile.Type type, HashSet<Decl.Variable> used) {
+	        // No need to visit types
+	    }
+
+	    private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+	        for (int i = 0; i != parameters.size(); ++i) {
+	            used.remove(parameters.get(i));
+	        }
+	    }
+	};
 }
