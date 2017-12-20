@@ -112,8 +112,8 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 			return toDisjunctiveNormalForm((Type.Record) type);
 		} else if (type instanceof Type.Callable) {
 			return toDisjunctiveNormalForm((Type.Callable) type);
-		} else if (type instanceof Type.Negation) {
-			return toDisjunctiveNormalForm((Type.Negation) type);
+		} else if (type instanceof Type.Difference) {
+			return toDisjunctiveNormalForm((Type.Difference) type);
 		} else if (type instanceof Type.Nominal) {
 			return toDisjunctiveNormalForm((Type.Nominal) type);
 		} else if (type instanceof Type.Union) {
@@ -143,9 +143,10 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		return new Disjunct(type);
 	}
 
-	protected Disjunct toDisjunctiveNormalForm(Type.Negation type) throws ResolutionError {
-		Disjunct element = toDisjunctiveNormalForm(type.getElement());
-		return element.negate();
+	protected Disjunct toDisjunctiveNormalForm(Type.Difference type) throws ResolutionError {
+		Disjunct lhs = toDisjunctiveNormalForm(type.getLeftHandSide());
+		Disjunct rhs = toDisjunctiveNormalForm(type.getRightHandSide());
+		return lhs.intersect(rhs.negate());
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Union type) throws ResolutionError {
@@ -227,15 +228,12 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		// particular, when Type.Union and Type.Intersection are interfaces, we
 		// can make Disjunct and Conjunct implement them, thus avoiding this
 		// unnecessary copying of data.
-		Type.Atom[] positives = type.positives;
-		Type.Atom[] negatives = type.negatives;
-		Type[] terms = new Type[positives.length + negatives.length];
-		System.arraycopy(positives, 0, terms, 0, positives.length);
-		for(int i=0,j=positives.length;i!=negatives.length;++i,++j) {
-			terms[j] = new Type.Negation(negatives[i]);
-		}
+		Type.Atom[] positives = Arrays.copyOf(type.positives,type.positives.length);
+		Type.Atom[] negatives = Arrays.copyOf(type.negatives,type.negatives.length);
+		Type.Intersection lhs = new Type.Intersection(positives);
+		Type.Union rhs = new Type.Union(negatives);
 		//
-		return typeSystem.isVoid(new Type.Intersection(terms), lifetimes);
+		return typeSystem.isVoid(new Type.Difference(lhs,rhs), lifetimes);
 	}
 
 	protected T construct(Conjunct type) {
@@ -244,20 +242,13 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 		Type.Atom[] positives = type.positives;
 		for (int i = 0; i != positives.length; ++i) {
 			Type.Atom pos = positives[i];
-			if(pos instanceof Type.Any) {
-				// This is an exceptional case, since can never extract a
-				// specific type from any. And yet, intersecting any with any
-				// type T gives that type T.
-				continue;
+			T tmp = construct(pos);
+			if (tmp == null) {
+				return null;
+			} else if (result == null) {
+				result = tmp;
 			} else {
-				T tmp = construct(pos);
-				if (tmp == null) {
-					return null;
-				} else if (result == null) {
-					result = tmp;
-				} else {
-					result = intersect(result, tmp);
-				}
+				result = intersect(result, tmp);
 			}
 		}
 		if (result != null) {
@@ -294,10 +285,6 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	protected Type unionHelper(Type lhs, Type rhs) {
 		if(lhs.equals(rhs)) {
 			return lhs;
-		} else if(lhs instanceof Type.Any) {
-			return lhs;
-		} else if(rhs instanceof Type.Any) {
-			return rhs;
 		} else if(lhs instanceof Type.Void) {
 			return rhs;
 		} else if(rhs instanceof Type.Void) {
@@ -319,10 +306,6 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	 */
 	protected Type intersectionHelper(Type lhs, Type rhs) {
 		if(lhs.equals(rhs)) {
-			return lhs;
-		} else if(lhs instanceof Type.Any) {
-			return rhs;
-		} else if(rhs instanceof Type.Any) {
 			return lhs;
 		} else if(lhs instanceof Type.Void) {
 			return lhs;

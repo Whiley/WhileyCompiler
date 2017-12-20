@@ -1,7 +1,7 @@
 type fun_t is function(int)->(int)
-type gun_t is function(any)->(int)
+type gun_t is function(int|bool)->(int)
 
-function f(any x) -> (int y):
+function f(int|bool x) -> (int y):
     return 0
 
 function g(int x) -> (int y):

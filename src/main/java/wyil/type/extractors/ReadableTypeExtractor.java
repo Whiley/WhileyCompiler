@@ -3,6 +3,7 @@ package wyil.type.extractors;
 import java.util.ArrayList;
 
 import wybs.lang.NameResolver;
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import static wyc.lang.WhileyFile.*;
@@ -10,6 +11,7 @@ import static wyc.lang.WhileyFile.*;
 import wyc.lang.WhileyFile.Type;
 import wyc.lang.WhileyFile.Type.Atom;
 import wyil.type.TypeSystem;
+import wyil.type.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -69,6 +71,11 @@ public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 
 	public ReadableTypeExtractor(NameResolver resolver, TypeSystem typeSystem) {
 		super(resolver, typeSystem);
+	}
+
+	@Override
+	public Type extract(Type type, LifetimeRelation lifetimes, Object supplementary) throws ResolutionError {
+		return super.extract(type, lifetimes, supplementary);
 	}
 
 	@Override
@@ -162,26 +169,31 @@ public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 		Tuple<Decl.Variable> lhsFields = lhs.getFields();
 		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		for (int i = 0; i != lhsFields.size(); ++i) {
+			Decl.Variable lhsField = lhsFields.get(i);
+			Identifier lhsFieldName = lhsField.getName();
+			boolean matched = false;
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable lhsField = lhsFields.get(i);
 				Decl.Variable rhsField = rhsFields.get(j);
-				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					// FIXME: could potentially do better here
-					Type negatedRhsType = new Type.Negation(rhsField.getType());
-					Type type = intersectionHelper(lhsField.getType(), negatedRhsType);
-					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
+					Type diff = new Type.Difference(lhsField.getType(),rhsField.getType());
+					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, diff));
+					matched = true;
 					break;
 				}
 			}
+			//
+			if(!matched && !rhs.isOpen()) {
+				// We didn't find a corresponding field, and the rhs is fixed. This means the
+				// rhs is not compatible with the lhs and can be ignored.
+				return lhs;
+			} else if(!matched) {
+				// We didn't find a corresponding field, and the rhs is open. This just means
+				// the rhs is not taking anything away from the lhs (for this field).
+				fields.add(lhsField);
+			}
 		}
-		if(fields.size() != lhsFields.size()) {
-			// FIXME: need to handle the case of open records here.
-			return lhs;
-		} else {
-			return new Type.Record(lhs.isOpen(), new Tuple<>(fields));
-		}
+		return new Type.Record(lhs.isOpen(), new Tuple<>(fields));
 	}
 
 	protected Type.Record intersect(Type.Record lhs, Type.Record rhs) {
@@ -313,7 +325,7 @@ public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 	}
 
 	protected Type.Array subtract(Type.Array lhs, Type.Array rhs) {
-		return new Type.Array(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+		return new Type.Array(new Type.Difference(lhs.getElement(),rhs.getElement()));
 	}
 
 	protected Type.Array intersect(Type.Array lhs, Type.Array rhs) {
@@ -330,7 +342,7 @@ public class ReadableTypeExtractor extends AbstractTypeExtractor<Type> {
 	}
 
 	protected Type.Reference subtract(Type.Reference lhs, Type.Reference rhs) {
-		return new Type.Reference(intersectionHelper(lhs.getElement(), new Type.Negation(rhs.getElement())));
+		return new Type.Reference(new Type.Difference(lhs.getElement(),rhs.getElement()));
 	}
 
 	protected Type.Reference intersect(Type.Reference lhs, Type.Reference rhs) {

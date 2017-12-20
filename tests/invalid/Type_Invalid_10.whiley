@@ -1,2 +1,2 @@
 type Other is Contractive
-type Contractive is !Other
+type Contractive is Other[]

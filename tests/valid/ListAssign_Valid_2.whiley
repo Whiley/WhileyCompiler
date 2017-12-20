@@ -1,8 +1,6 @@
-
-
 type intlist is int | int[]
 
-function f(intlist[] l) -> any:
+function f(intlist[] l) -> intlist[]:
     return l
 
 public export method test() :

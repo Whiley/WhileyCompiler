@@ -47,8 +47,8 @@ public class AbstractTypeRewriter implements TypeRewriter {
 			return rewriteFunction((Type.Function) type);
 		} else if (type instanceof Type.Property) {
 			return rewriteMacro((Type.Property) type);
-		} else if (type instanceof Type.Negation) {
-			return rewriteNegation((Type.Negation) type);
+		} else if (type instanceof Type.Difference) {
+			return rewriteDifference((Type.Difference) type);
 		} else if (type instanceof Type.Union) {
 			return rewriteUnion((Type.Union) type);
 		} else {
@@ -137,13 +137,15 @@ public class AbstractTypeRewriter implements TypeRewriter {
 		}
 	}
 
-	protected Type rewriteNegation(Type.Negation type) {
-		Type element = type.getElement();
-		Type nElement = rewrite(element);
-		if (element != nElement) {
-			return new Type.Negation(nElement);
-		} else {
+	protected Type rewriteDifference(Type.Difference type) {
+		Type lhs = type.getLeftHandSide();
+		Type rhs = type.getRightHandSide();
+		Type nLhs = rewrite(lhs);
+		Type nRhs = rewrite(rhs);
+		if (lhs == nLhs && rhs == nRhs) {
 			return type;
+		} else {
+			return new Type.Difference(nLhs, nRhs);
 		}
 	}
 

@@ -73,6 +73,8 @@ public class AllValidTest {
 		IGNORED.put("TypeEquals_Valid_25", "#787");
 		IGNORED.put("TypeEquals_Valid_30", "#787");
 		IGNORED.put("TypeEquals_Valid_41", "#787");
+		//
+		IGNORED.put("ConstrainedReference_Valid_1", "#827");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 	}

@@ -3,7 +3,7 @@ type nat is (int x) where x >= 0
 function f(int v) -> (int r)
 ensures r >= 0:
     //
-    if v is !nat:
+    if !(v is nat):
         return 0
     //
     return v+1

@@ -544,7 +544,6 @@ public class WhileyFileLexer {
 		{
 			// types
 			put("void", Token.Kind.Void);
-			put("any", Token.Kind.Any);
 			put("null", Token.Kind.Null);
 			put("bool", Token.Kind.Bool);
 			put("byte", Token.Kind.Byte);
@@ -622,7 +621,6 @@ public class WhileyFileLexer {
 			// Types
 			Null("null"),
 			Void("void"),
-			Any("any"),
 			Bool("bool"),
 			Byte("byte"),
 			Int("int"),

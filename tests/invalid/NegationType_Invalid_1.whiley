@@ -1,3 +1,3 @@
 
-function f(any x) -> !null:
+function f(int|null x) -> int|bool:
     return x

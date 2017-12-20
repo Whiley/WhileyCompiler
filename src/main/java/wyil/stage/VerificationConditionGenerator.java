@@ -2376,9 +2376,7 @@ public class VerificationConditionGenerator {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
-		if (type instanceof Type.Any) {
-			result = new WyalFile.Type.Any();
-		} else if (type instanceof Type.Void) {
+		if (type instanceof Type.Void) {
 			result = new WyalFile.Type.Void();
 		} else if (type instanceof Type.Null) {
 			result = new WyalFile.Type.Null();
@@ -2423,10 +2421,13 @@ public class VerificationConditionGenerator {
 				elements[i] = convert(t.get(i), context);
 			}
 			result = new WyalFile.Type.Intersection(elements);
-		} else if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			WyalFile.Type elem = convert(nt.getElement(), context);
-			result = new WyalFile.Type.Negation(elem);
+		} else if (type instanceof Type.Difference) {
+			Type.Difference nt = (Type.Difference) type;
+			WyalFile.Type lhs = convert(nt.getLeftHandSide(), context);
+			WyalFile.Type rhs = convert(nt.getRightHandSide(), context);
+			// FIXME: this is essentially a hack for now, though it is semantically
+			// equivalent.
+			result = new WyalFile.Type.Intersection(new WyalFile.Type[] { lhs, new WyalFile.Type.Negation(rhs) });
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			// FIXME: need to do something better here
@@ -2453,9 +2454,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private static boolean typeMayHaveInvariant(Type type, Context context) {
-		if (type instanceof Type.Any) {
-			return false;
-		} else if (type instanceof Type.Void) {
+		if (type instanceof Type.Void) {
 			return false;
 		} else if (type instanceof Type.Null) {
 			return false;
@@ -2497,9 +2496,10 @@ public class VerificationConditionGenerator {
 				}
 			}
 			return false;
-		} else if (type instanceof Type.Negation) {
-			Type.Negation nt = (Type.Negation) type;
-			return typeMayHaveInvariant(nt.getElement(), context);
+		} else if (type instanceof Type.Difference) {
+			Type.Difference nt = (Type.Difference) type;
+			return typeMayHaveInvariant(nt.getLeftHandSide(), context)
+					|| typeMayHaveInvariant(nt.getRightHandSide(), context);
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);

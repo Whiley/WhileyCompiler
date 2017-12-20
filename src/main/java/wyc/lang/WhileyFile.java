@@ -25,6 +25,7 @@ import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
+import wyc.util.AbstractConsumer;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -192,7 +193,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_invariant = TYPE_mask + 14;
 	public static final int TYPE_union = TYPE_mask + 15;
 	public static final int TYPE_intersection = TYPE_mask + 16;
-	public static final int TYPE_negation = TYPE_mask + 17;
+	public static final int TYPE_difference = TYPE_mask + 17;
 	public static final int TYPE_byte = TYPE_mask + 18;
 	public static final int TYPE_unresolved = TYPE_mask + 19;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
@@ -790,12 +791,27 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Lambda extends Callable implements Expr {
 
 			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Decl.Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
-				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body);
+					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WhileyFile.Type.Callable signature) {
+				this(modifiers, name, parameters, new Tuple<Decl.Variable>(), captures, lifetimes, body, signature);
+			}
+
+			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,Tuple<Decl.Variable> returns,
+					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WhileyFile.Type.Callable signature) {
+				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body, signature);
+			}
+
+			public Set<Decl.Variable> getCapturedVariables() {
+				HashSet<Decl.Variable> captured = new HashSet<>();
+				usedVariableExtractor.visitExpression(getBody(), captured);
+				Tuple<Decl.Variable> parameters = getParameters();
+				for(int i=0;i!=parameters.size();++i) {
+					captured.remove(parameters.get(i));
+				}
+				return captured;
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Identifier> getCaptures() {
+			public Tuple<Identifier> getCapturedLifetimes() {
 				return (Tuple<Identifier>) get(4);
 			}
 
@@ -810,16 +826,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public WhileyFile.Type.Callable getType() {
-				// FIXME: need to determine whether function or method!
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
-				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
+				return (WhileyFile.Type.Callable) super.get(7);
 			}
 
 			@Override
 			public void setType(WhileyFile.Type type) {
-				throw new UnsupportedOperationException();
+				if(type instanceof WhileyFile.Type.Callable) {
+					operands[7] = type;
+				} else {
+					throw new IllegalArgumentException();
+				}
 			}
+
 
 			@Override
 			public Tuple<WhileyFile.Type> getTypes() {
@@ -831,7 +849,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
+						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6],
+						(WhileyFile.Type.Callable) operands[7]);
 			}
 		}
 
@@ -3629,7 +3648,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	public interface Type extends SyntacticItem {
 
-		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
@@ -3667,34 +3685,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type.Callable substitute(Map<Identifier,Identifier> binding);
-		}
-
-		/**
-		 * The type <code>any</code> represents the type whose variables may hold any
-		 * possible value. <b>NOTE:</b> the any type is top in the type lattice.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static class Any extends AbstractSyntacticItem implements Primitive {
-			public Any() {
-				super(TYPE_any);
-			}
-
-			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
-				return this;
-			}
-
-			@Override
-			public Any clone(SyntacticItem[] operands) {
-				return new Any();
-			}
-
-			@Override
-			public String toString() {
-				return "any";
-			}
 		}
 
 		/**
@@ -4125,46 +4115,52 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Parse a negation type, which is of the form:
+		 * Parse a difference type, which is of the form:
 		 *
 		 * <pre>
-		 * ReferenceType ::= '!' Type
+		 * DifferenceType ::= Type '-' Type
 		 * </pre>
 		 *
-		 * Represents the set of types which are not in a given type. For example,
-		 * <code>!int</code> is the set of all values which are not integers. Thus, for
-		 * example, the type <code>bool</code> is a subtype of <code>!int</code> .
+		 * This corresponds roughly to set difference. For example,
+		 * <code>(int|null)-int</code> is the set <code>int|null</code> less members of
+		 * <code>int</code>. In other words, it's equivalent to <code>null</code>.
 		 *
 		 * @return
 		 */
-		public static class Negation extends AbstractSyntacticItem implements Type {
-			public Negation(Type element) {
-				super(TYPE_negation, element);
+		public static class Difference extends AbstractSyntacticItem implements Type {
+			public Difference(Type lhs, Type rhs) {
+				super(TYPE_difference, lhs, rhs);
 			}
 
-			public Type getElement() {
+			public Type getLeftHandSide() {
 				return (Type) get(0);
 			}
 
+			public Type getRightHandSide() {
+				return (Type) get(1);
+			}
+
 			@Override
-			public Type.Negation substitute(Map<Identifier,Identifier> binding) {
-				Type before = getElement();
-				Type after = before.substitute(binding);
-				if(before == after) {
+			public Type.Difference substitute(Map<Identifier,Identifier> binding) {
+				Type lhsBefore = getLeftHandSide();
+				Type rhsBefore = getRightHandSide();
+				Type lhsAfter = lhsBefore.substitute(binding);
+				Type rhsAfter = rhsBefore.substitute(binding);
+				if(lhsBefore == lhsAfter && rhsBefore == rhsAfter) {
 					return this;
 				} else {
-					return new Type.Negation(after);
+					return new Type.Difference(lhsAfter, rhsAfter);
 				}
 			}
 
 			@Override
-			public Negation clone(SyntacticItem[] operands) {
-				return new Negation((Type) operands[0]);
+			public Difference clone(SyntacticItem[] operands) {
+				return new Difference((Type) operands[0], (Type) operands[1]);
 			}
 
 			@Override
 			public String toString() {
-				return "!" + braceAsNecessary(getElement());
+				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
 			}
 		}
 
@@ -4231,9 +4227,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += get(i);
+					r += braceAsNecessary(get(i));
 				}
-				return "(" + r + ")";
+				return r;
 			}
 		}
 
@@ -4284,9 +4280,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "&";
 					}
-					r += get(i);
+					r += braceAsNecessary(get(i));
 				}
-				return "(" + r + ")";
+				return r;
 			}
 		}
 
@@ -4768,13 +4764,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 						(Tuple<Expr>) operands[4]);
 			}
 		};
-		schema[DECL_lambda] = new Schema(Operands.SEVEN, Data.ZERO, "DECL_lambda") {
+		schema[DECL_lambda] = new Schema(Operands.EIGHT, Data.ZERO, "DECL_lambda") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
+						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6],
+						(Type.Callable) operands[7]);
 			}
 		};
 		schema[DECL_variable] = new Schema(Operands.THREE, Data.ZERO, "DECL_var") {
@@ -4827,12 +4824,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Void();
-			}
-		};
-		schema[TYPE_any] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_any") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Any();
 			}
 		};
 		schema[TYPE_null] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {
@@ -4918,10 +4909,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Intersection(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_negation] = new Schema(Operands.ONE, Data.ZERO, "TYPE_negation") {
+		schema[TYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_difference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Negation((Type) operands[0]);
+				return new Type.Difference((Type) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_byte] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {
@@ -5363,4 +5354,35 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		};
 		return schema;
 	}
+
+	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
+	    @Override
+	    public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
+	        used.add(expr.getVariableDeclaration());
+	    }
+	    @Override
+	    public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
+	        visitVariables(expr.getParameters(), used);
+	        visitExpression(expr.getOperand(), used);
+	        removeAllDeclared(expr.getParameters(),used);
+	    }
+
+	    @Override
+	    public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
+	        visitVariables(expr.getParameters(), used);
+	        visitExpression(expr.getOperand(), used);
+	        removeAllDeclared(expr.getParameters(),used);
+	    }
+
+	    @Override
+	    public void visitType(WhileyFile.Type type, HashSet<Decl.Variable> used) {
+	        // No need to visit types
+	    }
+
+	    private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+	        for (int i = 0; i != parameters.size(); ++i) {
+	            used.remove(parameters.get(i));
+	        }
+	    }
+	};
 }

@@ -2,7 +2,7 @@ type nat is (int x) where x >= 0
 
 function f(int|null x) -> nat:
     //
-    if x is !nat:
+    if x is null || x < 0:
         return 0
     else:
         return x

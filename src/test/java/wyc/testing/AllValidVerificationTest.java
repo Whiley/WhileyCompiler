@@ -95,6 +95,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Assert_Valid_1", "#29");
 		IGNORED.put("ConstrainedList_Valid_14", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
+		IGNORED.put("Quantifiers_Valid_2", "WyTP#29");
 		// Issue 36 "Support for Division Operator Feature"
 		IGNORED.put("Cast_Valid_5", "WyTP#36");
 		IGNORED.put("IntOp_Valid_1", "WyTP#36");

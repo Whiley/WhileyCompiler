@@ -742,9 +742,6 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_array:
 			visitArray((Type.Array) type, data);
 			break;
-		case TYPE_any:
-			visitAny((Type.Any) type, data);
-			break;
 		case TYPE_bool:
 			visitBool((Type.Bool) type, data);
 			break;
@@ -757,8 +754,8 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_intersection:
 			visitIntersection((Type.Intersection) type, data);
 			break;
-		case TYPE_negation:
-			visitNegation((Type.Negation) type, data);
+		case TYPE_difference:
+			visitDifference((Type.Difference) type, data);
 			break;
 		case TYPE_nominal:
 			visitNominal((Type.Nominal) type, data);
@@ -812,10 +809,6 @@ public abstract class AbstractConsumer<T> {
 		visitType(type.getElement(), data);
 	}
 
-	public void visitAny(Type.Any type, T data) {
-
-	}
-
 	public void visitBool(Type.Bool type, T data) {
 
 	}
@@ -844,8 +837,9 @@ public abstract class AbstractConsumer<T> {
 		visitTypes(type.getReturns(), data);
 	}
 
-	public void visitNegation(Type.Negation type, T data) {
-		visitType(type.getElement(), data);
+	public void visitDifference(Type.Difference type, T data) {
+		visitType(type.getLeftHandSide(), data);
+		visitType(type.getRightHandSide(), data);
 	}
 
 	public void visitNominal(Type.Nominal type, T data) {
