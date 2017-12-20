@@ -8,7 +8,12 @@ ensures r == 0:
     //
     return 0
 
-method main(int x):
+function f() -> (int r):
+    return 123678
+
+public export method test():
+    int x = f()
+    //
     assert fsum([1],1,[1]) == 0
     assert fsum([1],1,[1,0]) == 0
     assert fsum([1,0],1,[1]) == 0
