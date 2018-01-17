@@ -4,7 +4,7 @@ type l10 is (int x) where x < 10
 function f(int v) -> (int r)
 ensures r >= 0:
     //
-    if v is nat&l10:
+    if v is nat && v is l10:
         return 1
     //
     return 0
