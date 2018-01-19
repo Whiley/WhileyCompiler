@@ -15,9 +15,9 @@ package wyil.type.subtyping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.HashSet;
 
+import wycc.util.ArrayUtils;
 import wycc.util.Pair;
 import wyil.type.SubtypeOperator;
 import wyil.type.TypeSystem;
@@ -187,6 +187,58 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		this.typeSystem = typeSystem;
 	}
 
+
+	@Override
+	public Disjunct toSemanticType(Type type) {
+		try {
+		switch(type.getOpcode()) {
+		case TYPE_union: {
+			Type.Union t = (Type.Union) type;
+			Disjunct r = null;
+			for(int i=0;i!=t.size();++i) {
+				Disjunct ith = toSemanticType(t.get(i));
+				if(r == null) {
+					r = ith;
+				} else {
+					r = r.union(ith);
+				}
+			}
+			return r;
+		}
+		case TYPE_nominal: {
+			Type.Nominal nom = (Type.Nominal) type;
+			Decl.Type decl = typeSystem.resolveExactly(nom.getName(), Decl.Type.class);
+			// FIXME: need to deal properly with maximisation
+			// To do this, we need to somehow encode the fact as to whether or not this is
+			// constrained.  That should go into the worklist item and replace maximise.
+			//
+			//
+			//if (item.maximise || decl.getInvariant().size() == 0) {
+			//	worklist.push(item.sign, decl.getType(), item.maximise);
+			//} else if (item.sign) {
+			//	// Corresponds to void, so we're done on this path.
+			//	return true;
+			//}
+			return toSemanticType(decl.getType());
+		}
+		default:
+			// ASSERT: type instanceof Type.Atom
+			return new Disjunct((Type.Atom) type);
+		}
+		} catch(NameResolver.ResolutionError e) {
+			throw new IllegalArgumentException("invalid nominal type encountered",e);
+		}
+	}
+
+	public Disjunct toSemanticType(boolean sign, Type type) throws ResolutionError {
+		Disjunct d = toSemanticType(type);
+		if(sign) {
+			return d;
+		} else {
+			return d.negate();
+		}
+	}
+
 	@Override
 	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
 		HashSet<NameID> visited = new HashSet<>();
@@ -211,20 +263,14 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		case TYPE_byte:
 		case TYPE_unresolved:
 			return true;
-		case TYPE_union:
-		case TYPE_intersection: {
-			Type.Combinator c = (Type.Combinator) type;
+		case TYPE_union: {
+			Type.Union c = (Type.Union) type;
 			for (int i = 0; i != c.size(); ++i) {
 				if (!isContractive(name, c.get(i), visited)) {
 					return false;
 				}
 			}
 			return true;
-		}
-		case TYPE_difference: {
-			Type.Difference n = (Type.Difference) type;
-			return isContractive(name, n.getLeftHandSide(), visited)
-					&& isContractive(name, n.getRightHandSide(), visited);
 		}
 		default:
 		case TYPE_nominal: {
@@ -251,38 +297,48 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	@Override
-	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError {
-		HashSetAssumptions assumptions = new HashSetAssumptions();
-		Term<?> term = new Term<>(true, type, true);
-		// FIXME: lifetime relation cannot be null here
-		return isVoidTerm(term, term, assumptions, lifetimes);
-	}
-
-	@Override
-	public Result isSubtype(Type parent, Type child, LifetimeRelation lifetimes) throws ResolutionError {
-		// FIXME: we can do better in some situations here. For example, if we
-		// have the same nominal types they can cancel each other.
-		HashSetAssumptions assumptions = new HashSetAssumptions();
-		Term<?> lhsMaxTerm = new Term<>(false, parent, true);
-		Term<?> rhsMaxTerm = new Term<>(true, child, true);
-		boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions, lifetimes);
-		//
-		// FIXME: I don't think this logic is correct yet for some reason.
-		if (!max) {
-			return Result.False;
+	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) throws ResolutionError {
+		if (type instanceof Disjunct) {
+			HashSetAssumptions assumptions = new HashSetAssumptions();
+			Term term = new Term((Disjunct) type, true);
+			// FIXME: lifetime relation cannot be null here
+			return isVoidTerm(term, term, assumptions, lifetimes);
 		} else {
-			Term<?> lhsMinTerm = new Term<>(false, parent, false);
-			Term<?> rhsMinTerm = new Term<>(true, child, false);
-			boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions, lifetimes);
-			if (min) {
-				return Result.True;
-			} else {
-				return Result.Unknown;
-			}
+			throw new IllegalArgumentException(
+					"Incompatible semantic type (perhaps created from another subtype operator?)");
 		}
 	}
 
-	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
+	@Override
+	public Result isSubtype(SemanticType parent, SemanticType child, LifetimeRelation lifetimes) throws ResolutionError {
+		System.out.println("CHECKING: " + parent + " :> " + child);
+		if(parent instanceof Disjunct && child instanceof Disjunct) {
+			// FIXME: we can do better in some situations here. For example, if we
+			// have the same nominal types they can cancel each other.
+			HashSetAssumptions assumptions = new HashSetAssumptions();
+			Term lhsMaxTerm = new Term(((Disjunct) parent).negate(), true);
+			Term rhsMaxTerm = new Term((Disjunct) child, true);
+			boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions, lifetimes);
+			//
+			// FIXME: I don't think this logic is correct yet for some reason.
+			if (!max) {
+				return Result.False;
+			} else {
+				Term lhsMinTerm = new Term(lhsMaxTerm.type, false);
+				Term rhsMinTerm = new Term(rhsMaxTerm.type, false);
+				boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions, lifetimes);
+				if (min) {
+					return Result.True;
+				} else {
+					return Result.Unknown;
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("Incompatible semantic type (perhaps created from another subtype operator?)");
+		}
+	}
+
+	protected boolean isVoidTerm(Term lhs, Term rhs, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		//
 		if (assumptions.isAssumedVoid(lhs, rhs)) {
@@ -361,55 +417,35 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		} else {
 			// In this case, we still have items on the worklist which need to
 			// be processed. That is, broken down into "atomic" terms.
-			Term<Type> item = worklist.pop();
-			Type t = item.type;
-			boolean conjunct = item.sign;
+			Term item = worklist.pop();
+			Conjunct[] conjuncts = item.type.conjuncts;
 			//
-			switch (t.getOpcode()) {
-			case TYPE_union:
-				conjunct = !conjunct;
-			case TYPE_intersection: {
-				Type.Combinator ut = (Type.Combinator) t;
-				Type[] operands = ut.toArray(Type.class);
-				if (conjunct) {
-					// Conjunction
-					worklist.push(item.sign, operands, item.maximise);
-				} else {
-					// Disjunction
-					for (int i = 0; i != operands.length; ++i) {
-						Worklist tmp = (Worklist) worklist.clone();
-						tmp.push(item.sign, operands[i], item.maximise);
-						if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions, lifetimes)) {
-							// If a single clause of the disjunct is definitely
-							// not void, then the whole thing is not void.
-							return false;
-						}
-					}
-					return true;
+			for(int i=0;i!=conjuncts.length;++i) {
+				Conjunct c = conjuncts[i];
+				Worklist ws = worklist;
+				ArrayList<Atom<?>> ts = truths;
+				// First, check whether clones are required
+				if(i+1 < conjuncts.length) {
+					// Yes they are
+					ws = ws.clone();
+					ts = (ArrayList<Atom<?>>) ts.clone();
 				}
-				break;
-			}
-			case TYPE_difference: {
-				Type.Difference nt = (Type.Difference) t;
-				worklist.push(item.sign, nt.getLeftHandSide(), item.maximise);
-				worklist.push(!item.sign, nt.getRightHandSide(), !item.maximise);
-				break;
-			}
-			case TYPE_nominal: {
-				Type.Nominal nom = (Type.Nominal) t;
-				Decl.Type decl = typeSystem.resolveExactly(nom.getName(), Decl.Type.class);
-				if (item.maximise || decl.getInvariant().size() == 0) {
-					worklist.push(item.sign, decl.getType(), item.maximise);
-				} else if (item.sign) {
-					// Corresponds to void, so we're done on this path.
-					return true;
+				// Second, handle positives
+				Type[] positives = c.positives;
+				for(int j=0;j!=positives.length;++j) {
+					ts.add(new Atom<>(true, (Type.Atom) positives[j], item.maximise));
 				}
-				break;
+				// Third, handle negatives
+				Type[] negatives = c.negatives;
+				for(int j=0;j!=negatives.length;++j) {
+					ts.add(new Atom<>(false, (Type.Atom) negatives[j], item.maximise));
+				}
+				// Finally, make the recursive call
+				if(!isVoid(ts, ws, assumptions, lifetimes)) {
+					return false;
+				}
 			}
-			default:
-				truths.add(new Atom(item.sign, (Type.Atom) item.type, item.maximise));
-			}
-			return isVoid(truths, worklist, assumptions, lifetimes);
+			return true;
 		}
 	}
 
@@ -541,8 +577,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 */
 	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
-		Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
+		Term lhsTerm = new Term(toSemanticType(lhs.sign, lhs.type.getElement()), lhs.maximise);
+		Term rhsTerm = new Term(toSemanticType(rhs.sign, rhs.type.getElement()), rhs.maximise);
 		if (lhs.sign && rhs.sign) {
 			// In this case, we are intersecting two array types, of which at
 			// least one is positive. This is void only if there is no
@@ -628,13 +664,13 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			Decl.Variable lhsField = lhsFields.get(i);
-			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			Term lhsTerm = new Term(toSemanticType(lhs.sign, lhsField.getType()), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
 				Decl.Variable rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
-					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					Term rhsTerm = new Term(toSemanticType(rhs.sign, rhsField.getType()), rhs.maximise);
 					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection
@@ -759,10 +795,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		String lhsLifetime = extractLifetime(lhs.type);
 		String rhsLifetime = extractLifetime(rhs.type);
 		// FIXME: need to look at lifetime parameters
-		Term<?> lhsTrueTerm = new Term<>(true, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsTrueTerm = new Term<>(true, rhs.type.getElement(), rhs.maximise);
-		Term<?> lhsFalseTerm = new Term<>(false, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsFalseTerm = new Term<>(false, rhs.type.getElement(), rhs.maximise);
+		Term lhsTrueTerm = new Term(toSemanticType(true, lhs.type.getElement()), lhs.maximise);
+		Term rhsTrueTerm = new Term(toSemanticType(true, rhs.type.getElement()), rhs.maximise);
+		Term lhsFalseTerm = new Term(toSemanticType(false, lhs.type.getElement()), lhs.maximise);
+		Term rhsFalseTerm = new Term(toSemanticType(false, rhs.type.getElement()), rhs.maximise);
 		// Check whether lhs :> rhs (as (!lhs & rhs) == 0)
 		boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions, lifetimes);
 		// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
@@ -888,8 +924,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			for (int i = 0; i != lhs.size(); ++i) {
 				Type lhsParameter = lhs.get(i);
 				Type rhsParameter = rhs.get(i);
-				Term<?> lhsTerm = new Term<>(lhsSign, lhsParameter, lhsMax);
-				Term<?> rhsTerm = new Term<>(rhsSign, rhsParameter, rhsMax);
+				Term lhsTerm = new Term(toSemanticType(lhsSign, lhsParameter), lhsMax);
+				Term rhsTerm = new Term(toSemanticType(rhsSign, rhsParameter), rhsMax);
 				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 					// For pos-pos / neg-neg case, there is no intersection
 					// between this parameterand, hence, no intersection
@@ -921,13 +957,13 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	// Helpers
 	// ========================================================================
 
-	private final static class Worklist extends ArrayList<Term<Type>> {
+	private final static class Worklist extends ArrayList<Term> {
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 1L;
 
-		public Term<Type> top() {
+		public Term top() {
 			return get(size() - 1);
 		}
 
@@ -935,18 +971,18 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			add(item);
 		}
 
-		public void push(boolean sign, Type type, boolean maximise) {
-			add(new Term(sign, type, maximise));
+		public void push(Disjunct type, boolean maximise) {
+			add(new Term(type, maximise));
 		}
 
-		public void push(boolean sign, Type[] types, boolean maximise) {
+		public void push(Disjunct[] types, boolean maximise) {
 			for (int i = 0; i != types.length; ++i) {
-				add(new Term(sign, types[i], maximise));
+				add(new Term(types[i], maximise));
 			}
 		}
 
-		public Term<Type> pop() {
-			Term<Type> i = get(size() - 1);
+		public Term pop() {
+			Term i = get(size() - 1);
 			remove(size() - 1);
 			return i;
 		}
@@ -959,27 +995,25 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected static class Term<T extends Type> {
-		public final boolean sign;
-		public final T type;
+	protected static class Term {
+		public final Disjunct type;
 		public final boolean maximise;
 
-		public Term(boolean sign, T type, boolean maximise) {
+		public Term(Disjunct type, boolean maximise) {
 			this.type = type;
-			this.sign = sign;
 			this.maximise = maximise;
 		}
 
 		@Override
 		public String toString() {
-			return type.toString() + ":" + sign + ":" + maximise;
+			return type.toString() + ":" + maximise;
 		}
 
 		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Term) {
 				Term t = (Term) o;
-				return sign == t.sign && maximise == t.maximise && type.equals(t.type);
+				return maximise == t.maximise && type.equals(t.type);
 			}
 			return false;
 		}
@@ -990,9 +1024,29 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected static class Atom<T extends Type.Atom> extends Term<T> {
+	protected static class Atom<T extends Type.Atom> {
+		public final boolean sign;
+		public final T type;
+		public final boolean maximise;
+
 		public Atom(boolean sign, T type, boolean maximise) {
-			super(sign, type, maximise);
+			this.type = type;
+			this.sign = sign;
+			this.maximise = maximise;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof Atom) {
+				Atom<?> t = (Atom<?>) o;
+				return sign == t.sign && maximise == t.maximise && type.equals(t.type);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return type.hashCode();
 		}
 
 		@Override
@@ -1007,11 +1061,11 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	protected interface Assumptions {
-		public boolean isAssumedVoid(Term<?> lhs, Term<?> rhs);
+		public boolean isAssumedVoid(Term lhs, Term rhs);
 
-		public void setAssumedVoid(Term<?> lhs, Term<?> rhs);
+		public void setAssumedVoid(Term lhs, Term rhs);
 
-		public void clearAssumedVoid(Term<?> lhs, Term<?> rhs);
+		public void clearAssumedVoid(Term lhs, Term rhs);
 	}
 
 	private static final class HashSetAssumptions implements Assumptions {
@@ -1022,71 +1076,155 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 
 		@Override
-		public boolean isAssumedVoid(Term<?> lhs, Term<?> rhs) {
+		public boolean isAssumedVoid(Term lhs, Term rhs) {
 			return assumptions.contains(new Pair<>(lhs, rhs));
 		}
 
 		@Override
-		public void setAssumedVoid(Term<?> lhs, Term<?> rhs) {
+		public void setAssumedVoid(Term lhs, Term rhs) {
 			assumptions.add(new Pair<>(lhs, rhs));
 		}
 
 		@Override
-		public void clearAssumedVoid(Term<?> lhs, Term<?> rhs) {
+		public void clearAssumedVoid(Term lhs, Term rhs) {
 			assumptions.remove(new Pair<>(lhs, rhs));
 		}
 	}
 
-	private static final class BitSetAssumptions implements Assumptions {
-		private final BitSet assumptions;
+	protected static class Disjunct implements SemanticType {
+		private final Conjunct[] conjuncts;
 
-		public BitSetAssumptions(int size) {
-			this.assumptions = new BitSet(size);
+		public Disjunct(Type.Atom atom) {
+			conjuncts = new Conjunct[]{new Conjunct(atom)};
 		}
 
-		public BitSetAssumptions(BitSet assumptions) {
-			this.assumptions = assumptions;
-		}
-
-		public int size() {
-			return assumptions.size();
+		public Disjunct(Conjunct... conjuncts) {
+			for(int i=0;i!=conjuncts.length;++i) {
+				if(conjuncts[i] == null) {
+					throw new IllegalArgumentException("conjuncts cannot contain null");
+				}
+			}
+			this.conjuncts = conjuncts;
 		}
 
 		@Override
-		public boolean isAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			if (assumptions != null) {
-				return assumptions.get(indexOf(lhs.sign, lhs.type, rhs.sign, rhs.type));
-			} else {
-				return false;
-			}
+		public Disjunct union(SemanticType type) {
+			return null;
 		}
 
 		@Override
-		public void setAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			if (assumptions != null) {
-				assumptions.set(indexOf(lhs.sign, lhs.type, rhs.sign, rhs.type));
-			}
+		public Disjunct intersect(SemanticType type) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		@Override
-		public void clearAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			if (assumptions != null) {
-				assumptions.clear(indexOf(lhs.sign, lhs.type, rhs.sign, rhs.type));
-			}
+		public Disjunct subtract(SemanticType type) {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
-		protected int indexOf(boolean lhsSign, Type lhs, boolean rhsSign, Type rhs) {
-			int lhsSize = lhs.getHeap().size();
-			int rhsSize = rhs.getHeap().size();
-			int lhsIndex = lhs.getIndex();
-			int rhsIndex = rhs.getIndex();
-			if (lhsSign) {
-				lhsIndex += lhsSize;
-			}
-			if (rhsSign) {
-				rhsIndex += rhsSize;
-			}
-			return (lhsIndex * rhsSize * 2) + rhsIndex;
+		public Disjunct union(Disjunct other) {
+			Conjunct[] otherConjuncts = other.conjuncts;
+			int length = conjuncts.length + otherConjuncts.length;
+			Conjunct[] combinedConjuncts = Arrays.copyOf(conjuncts, length);
+			System.arraycopy(otherConjuncts, 0, combinedConjuncts, conjuncts.length, otherConjuncts.length);
+			return new Disjunct(combinedConjuncts);
 		}
+
+		public Disjunct intersect(Disjunct other) {
+			Conjunct[] otherConjuncts = other.conjuncts;
+			int length = conjuncts.length * otherConjuncts.length;
+			Conjunct[] combinedConjuncts = new Conjunct[length];
+			int k = 0;
+			for (int i = 0; i != conjuncts.length; ++i) {
+				Conjunct ith = conjuncts[i];
+				for (int j = 0; j != otherConjuncts.length; ++j) {
+					Conjunct jth = otherConjuncts[j];
+					combinedConjuncts[k++] = ith.intersect(jth);
+				}
+			}
+			return new Disjunct(combinedConjuncts);
+		}
+
+		public Disjunct negate() {
+			Disjunct result = null;
+			for (int i = 0; i != conjuncts.length; ++i) {
+				Disjunct d = conjuncts[i].negate();
+				if (result == null) {
+					result = d;
+				} else {
+					result = result.intersect(d);
+				}
+			}
+			return result;
+		}
+
+		@Override
+		public String toString() {
+			String r = "";
+			for(int i=0;i!=conjuncts.length;++i) {
+				if(i != 0) {
+					r += " \\/ ";
+				}
+				r += conjuncts[i];
+			}
+			return r;
+		}
+	}
+
+	protected static class Conjunct {
+		private final Type.Atom[] positives;
+		private final Type.Atom[] negatives;
+
+		public Conjunct(Type.Atom positive) {
+			positives = new Type.Atom[]{positive};
+			negatives = new Type.Atom[0];
+		}
+
+		public Conjunct(Type.Atom[] positives, Type.Atom[] negatives) {
+			this.positives = positives;
+			this.negatives = negatives;
+		}
+
+		public Conjunct intersect(Conjunct other) {
+			Type.Atom[] combinedPositives = ArrayUtils.append(positives, other.positives);
+			Type.Atom[] combinedNegatives = ArrayUtils.append(negatives, other.negatives);
+			return new Conjunct(combinedPositives,combinedNegatives);
+		}
+
+		public Disjunct negate() {
+			int length = positives.length + negatives.length;
+			Conjunct[] conjuncts = new Conjunct[length];
+			for (int i = 0; i != positives.length; ++i) {
+				Type.Atom positive = positives[i];
+				conjuncts[i] = new Conjunct(EMPTY_ATOMS, new Type.Atom[] { positive });
+			}
+			for (int i = 0, j = positives.length; i != negatives.length; ++i, ++j) {
+				Type.Atom negative = negatives[i];
+				conjuncts[j] = new Conjunct(negative);
+			}
+			return new Disjunct(conjuncts);
+		}
+
+		@Override
+		public String toString() {
+			String r = "(";
+			for(int i=0;i!=positives.length;++i) {
+				if(i != 0) {
+					r += " /\\ ";
+				}
+				r += positives[i];
+			}
+			r += ") - (";
+			for(int i=0;i!=negatives.length;++i) {
+				if(i != 0) {
+					r += " \\/ ";
+				}
+				r += negatives[i];
+			}
+			return r + ")";
+		}
+		private static final Type.Atom[] EMPTY_ATOMS = new Type.Atom[0];
 	}
 }

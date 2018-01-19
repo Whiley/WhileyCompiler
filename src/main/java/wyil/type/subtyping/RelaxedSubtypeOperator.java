@@ -64,13 +64,13 @@ public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			Decl.Variable lhsField = lhsFields.get(i);
-			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			Term lhsTerm = new Term(toSemanticType(lhs.sign, lhsField.getType()), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
 				Decl.Variable rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
-					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					Term rhsTerm = new Term(toSemanticType(rhs.sign, rhsField.getType()), rhs.maximise);
 					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection

@@ -750,12 +750,6 @@ public abstract class AbstractVisitor {
 		case TYPE_int:
 			visitInt((Type.Int) type);
 			break;
-		case TYPE_intersection:
-			visitIntersection((Type.Intersection) type);
-			break;
-		case TYPE_difference:
-			visitDifference((Type.Difference) type);
-			break;
 		case TYPE_nominal:
 			visitNominal((Type.Nominal) type);
 			break;
@@ -825,20 +819,9 @@ public abstract class AbstractVisitor {
 
 	}
 
-	public void visitIntersection(Type.Intersection type) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i));
-		}
-	}
-
 	public void visitMethod(Type.Method type) {
 		visitTypes(type.getParameters());
 		visitTypes(type.getReturns());
-	}
-
-	public void visitDifference(Type.Difference type) {
-		visitType(type.getLeftHandSide());
-		visitType(type.getRightHandSide());
 	}
 
 	public void visitNominal(Type.Nominal type) {

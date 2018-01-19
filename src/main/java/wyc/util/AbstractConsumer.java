@@ -751,12 +751,6 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_int:
 			visitInt((Type.Int) type, data);
 			break;
-		case TYPE_intersection:
-			visitIntersection((Type.Intersection) type, data);
-			break;
-		case TYPE_difference:
-			visitDifference((Type.Difference) type, data);
-			break;
 		case TYPE_nominal:
 			visitNominal((Type.Nominal) type, data);
 			break;
@@ -826,20 +820,9 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
-	public void visitIntersection(Type.Intersection type, T data) {
-		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
-		}
-	}
-
 	public void visitMethod(Type.Method type, T data) {
 		visitTypes(type.getParameters(), data);
 		visitTypes(type.getReturns(), data);
-	}
-
-	public void visitDifference(Type.Difference type, T data) {
-		visitType(type.getLeftHandSide(), data);
-		visitType(type.getRightHandSide(), data);
 	}
 
 	public void visitNominal(Type.Nominal type, T data) {

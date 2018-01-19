@@ -2414,20 +2414,6 @@ public class VerificationConditionGenerator {
 				elements[i] = convert(tu.get(i), context);
 			}
 			result = new WyalFile.Type.Union(elements);
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection t = (Type.Intersection) type;
-			WyalFile.Type[] elements = new WyalFile.Type[t.size()];
-			for (int i = 0; i != t.size(); ++i) {
-				elements[i] = convert(t.get(i), context);
-			}
-			result = new WyalFile.Type.Intersection(elements);
-		} else if (type instanceof Type.Difference) {
-			Type.Difference nt = (Type.Difference) type;
-			WyalFile.Type lhs = convert(nt.getLeftHandSide(), context);
-			WyalFile.Type rhs = convert(nt.getRightHandSide(), context);
-			// FIXME: this is essentially a hack for now, though it is semantically
-			// equivalent.
-			result = new WyalFile.Type.Intersection(new WyalFile.Type[] { lhs, new WyalFile.Type.Negation(rhs) });
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			// FIXME: need to do something better here
@@ -2488,18 +2474,6 @@ public class VerificationConditionGenerator {
 				}
 			}
 			return false;
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection t = (Type.Intersection) type;
-			for(int i=0;i!=t.size();++i) {
-				if(typeMayHaveInvariant(t.get(i), context)) {
-					return true;
-				}
-			}
-			return false;
-		} else if (type instanceof Type.Difference) {
-			Type.Difference nt = (Type.Difference) type;
-			return typeMayHaveInvariant(nt.getLeftHandSide(), context)
-					|| typeMayHaveInvariant(nt.getRightHandSide(), context);
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);

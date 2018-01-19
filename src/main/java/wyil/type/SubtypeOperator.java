@@ -17,7 +17,6 @@ import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.NameID;
 import wybs.lang.NameResolver.ResolutionError;
-import wyil.type.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -35,10 +34,59 @@ import wyil.type.SubtypeOperator.LifetimeRelation;
 public interface SubtypeOperator {
 
 	enum Result {
-		True,
-		False,
-		Unknown
+		True, False, Unknown
 	}
+
+	/**
+	 * A semantic type provides a more abstract notion of a syntactic type in
+	 * Whiley. The key here is that a semantic type supports various operators for
+	 * combining syntactic types, such as intersetion and difference.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	interface SemanticType {
+		/**
+		 * Union this semantic type with another given semantic type. For example,
+		 * unioning <code>{int x, int y}</code> and <code>MyType</code> produces a
+		 * semantic type which represents either an instanceof of
+		 * <code>{int x, int y}</code> or an instance of <code>MyType</code>.
+		 *
+		 * @param type
+		 * @return
+		 */
+		public SemanticType union(SemanticType type);
+
+		/**
+		 * Intersect this semantic type with another given semantic type. For example,
+		 * intersecting <code>{int x, int y}</code> and <code>MyType</code> produces a
+		 * semantic type which represents both an instanceof of
+		 * <code>{int x, int y}</code> and an instance of <code>MyType</code>.
+		 *
+		 * @param type
+		 * @return
+		 */
+		public SemanticType intersect(SemanticType type);
+
+		/**
+		 * Subtract from this semantic type a given semantic type. For example, subtract
+		 * <code>int</code> from <code>int|null</code> produces a semantic type
+		 * equivalent to <code>null</code>.
+		 *
+		 * @param type
+		 * @return
+		 */
+		public SemanticType subtract(SemanticType type);
+	}
+
+	/**
+	 * Convert a given syntactic type into a semantic type such that it can be used
+	 * for subtype testing and/or combined with other semantic types in various ways.
+	 *
+	 * @param type
+	 * @return
+	 */
+	public SemanticType toSemanticType(Type type);
 
 	/**
 	 * <p>
@@ -85,7 +133,7 @@ public interface SubtypeOperator {
 	 *             possible matching declaration, or it cannot be resolved to a
 	 *             corresponding type declaration.
 	 */
-	public Result isSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes) throws ResolutionError;
+	public Result isSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes) throws ResolutionError;
 
 	/**
 	 * <p>
@@ -119,14 +167,14 @@ public interface SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError;
+	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) throws ResolutionError;
 
 	/**
 	 * <p>
-	 * Contractive types are types which cannot accept value because they have
-	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
-	 * terminating it. For example, <code>X<{X field}></code> is contractive,
-	 * where as <code>X<{null|X field}></code> is not.
+	 * Contractive types are types which cannot accept value because they have an
+	 * <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive, where
+	 * as <code>X<{null|X field}></code> is not.
 	 * </p>
 	 *
 	 * <p>
@@ -135,7 +183,8 @@ public interface SubtypeOperator {
 	 * considered contracted.
 	 * </p>
 	 *
-	 * @param type --- type to test for contractivity.
+	 * @param type
+	 *            --- type to test for contractivity.
 	 * @return
 	 * @throws ResolveError
 	 */
@@ -165,7 +214,6 @@ public interface SubtypeOperator {
 	 *
 	 */
 	public interface LifetimeRelation {
-
 		/**
 		 * Determine whether one lifetime is contained entirely within another. This is
 		 * the critical test for ensuring sound subtyping between references.

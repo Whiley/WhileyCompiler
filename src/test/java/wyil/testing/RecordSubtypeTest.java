@@ -18,7 +18,9 @@ import org.junit.*;
 
 import wybs.lang.NameResolver;
 import wyc.util.TestUtils;
+import wyil.type.SubtypeOperator;
 import wyil.type.TypeSystem;
+import wyil.type.subtyping.StrictSubtypeOperator;
 
 import static org.junit.Assert.*;
 import static wyc.lang.WhileyFile.Type;
@@ -1790,21 +1792,23 @@ public class RecordSubtypeTest {
 	@Test public void test_5776() { checkIsSubtype("{int f2}|int","{int f2}|int"); }
 
 	private void checkIsSubtype(String from, String to) {
-		Type ft = TestUtils.fromString(from);
-		Type tt = TestUtils.fromString(to);
+		StrictSubtypeOperator ss = new StrictSubtypeOperator(new TypeSystem(null));
+		SubtypeOperator.SemanticType ft = ss.toSemanticType(TestUtils.fromString(from));
+		SubtypeOperator.SemanticType tt = ss.toSemanticType(TestUtils.fromString(to));
 		try {
-			assertTrue(new TypeSystem(null).isRawSubtype(ft,tt, null));
+			assertTrue(ss.isSubtype(ft,tt,null) != SubtypeOperator.Result.False);
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		Type ft = TestUtils.fromString(from);
-		Type tt = TestUtils.fromString(to);
+		StrictSubtypeOperator ss = new StrictSubtypeOperator(new TypeSystem(null));
+		SubtypeOperator.SemanticType ft = ss.toSemanticType(TestUtils.fromString(from));
+		SubtypeOperator.SemanticType tt = ss.toSemanticType(TestUtils.fromString(to));
 		try {
-			assertFalse(new TypeSystem(null).isRawSubtype(ft, tt, null));
-		} catch (NameResolver.ResolutionError e) {
+			assertFalse(ss.isSubtype(ft,tt,null) != SubtypeOperator.Result.False);
+		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -36,6 +36,7 @@ import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.type.SubtypeOperator.LifetimeRelation;
+import wyil.type.SubtypeOperator.SemanticType;
 import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Type;
@@ -1158,11 +1159,13 @@ public class FlowTypeCheck {
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
 		try {
 			Expr lhs = expr.getOperand();
-			Type rhsT = expr.getTestType();
 			Type lhsT = checkExpression(expr.getOperand(), environment);
+			Type rhsT = expr.getTestType();
+			SemanticType lhsST = toSemanticType(lhsT);
+			SemanticType rhsST = toSemanticType(rhsT);
 			// Sanity check operands for this type test
-			Type glbForTrueBranch = new Type.Intersection(lhsT, rhsT);
-			Type glbForFalseBranch = new Type.Difference(lhsT, rhsT);
+			SemanticType glbForTrueBranch = lhsST.intersect(rhsST);
+			SemanticType glbForFalseBranch = lhsST.subtract(rhsST);
 			if (typeSystem.isVoid(glbForFalseBranch, environment)) {
 				// DEFINITE TRUE CASE
 				syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
@@ -1170,13 +1173,13 @@ public class FlowTypeCheck {
 				// DEFINITE FALSE CASE
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
-			// TODO: implement a proper intersection test here to ensure lhsT and
-			// rhs types make sense (i.e. have some intersection).
-			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, sign, rhsT, environment);
+			//
+			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, expr.getTestType(), environment);
 			if (extraction != null) {
 				Decl.Variable var = extraction.getFirst();
+				SemanticType refinement = toSemanticType(extraction.getSecond());
 				// Update the typing environment accordingly.
-				environment = environment.refineType(var, extraction.getSecond());
+				environment = environment.refineType(var, refinement, sign);
 			}
 			//
 			return environment;
@@ -1206,21 +1209,16 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return A pair on successful extraction, or null if possible extraction.
 	 */
-	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, boolean sign, Type type, Environment environment) {
+	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, Type type, Environment environment) {
 		if (expr instanceof Expr.VariableAccess) {
 			Expr.VariableAccess var = (Expr.VariableAccess) expr;
 			Decl.Variable decl = var.getVariableDeclaration();
-			if(sign) {
-				type = new Type.Intersection(environment.getType(decl),type);
-			} else {
-				type = new Type.Difference(environment.getType(decl),type);
-			}
 			return new Pair<>(var.getVariableDeclaration(), type);
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
 			Decl.Variable field = new Decl.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(), type);
 			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getOperand(), sign, recT, environment);
+			return extractTypeTest(ra.getOperand(), recT, environment);
 		} else {
 			// no extraction is possible
 			return null;
@@ -1251,34 +1249,17 @@ public class FlowTypeCheck {
 			return right;
 		} else {
 			Environment result = new Environment();
-
-			for (Decl.Variable var : left.getRefinedVariables()) {
-				Type declT = var.getType();
-				Type rightT = right.getType(var);
-				if (rightT != declT) {
+			Set<Decl.Variable> leftRefinements = left.getRefinedVariables();
+			Set<Decl.Variable> rightRefinements = right.getRefinedVariables();
+			for (Decl.Variable var : leftRefinements) {
+				if (rightRefinements.contains(var)) {
 					// We have a refinement on both branches
-					Type leftT = left.getType(var);
-					result = result.refineType(var, union(leftT, rightT));
+					SemanticType leftT = left.getType(var);
+					SemanticType rightT = right.getType(var);
+					result = result.setType(var, leftT.union(rightT));
 				}
 			}
 			return result;
-		}
-	}
-
-	/**
-	 * Union two types together whilst trying to maintain simplicity.
-	 *
-	 * @param left
-	 * @param right
-	 * @return
-	 */
-	public Type union(Type left, Type right) {
-		// FIXME: a more comprehensive simplification strategy would make sense
-		// here.
-		if (left == right || left.equals(right)) {
-			return left;
-		} else {
-			return new Type.Union(new Type[] { left, right });
 		}
 	}
 
@@ -1584,6 +1565,7 @@ public class FlowTypeCheck {
 	 */
 	private Type checkVariable(Expr.VariableAccess expr, Environment env) {
 		Decl.Variable var = expr.getVariableDeclaration();
+		// FIXME: this is where we need to do some serious work!!
 		return env.getType(var);
 	}
 
@@ -1656,7 +1638,7 @@ public class FlowTypeCheck {
 			Type lhs = checkExpression(expr.getFirstOperand(), environment);
 			Type rhs = checkExpression(expr.getSecondOperand(), environment);
 			// Sanity check that the types of operands are actually comparable.
-			Type glb = new Type.Intersection(lhs, rhs);
+			SemanticType glb = toSemanticType(lhs).intersect(toSemanticType(rhs));
 			if (typeSystem.isVoid(glb, environment)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
 				return null;
@@ -2356,8 +2338,8 @@ public class FlowTypeCheck {
 				// Number of parameters matches number of arguments. Now, check that
 				// each argument is a subtype of its corresponding parameter.
 				for (int i = 0; i != args.length; ++i) {
-					Type param = parameters.get(i);
-					if (!typeSystem.isRawCoerciveSubtype(param, args[i], lifetimes)) {
+					SemanticType param = toSemanticType(parameters.get(i));
+					if (!typeSystem.isRawCoerciveSubtype(param, toSemanticType(args[i]), lifetimes)) {
 						return false;
 					}
 				}
@@ -2528,8 +2510,8 @@ public class FlowTypeCheck {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != parentParams.size(); ++i) {
-				Type parentParam = parentParams.get(i);
-				Type childParam = childParams.get(i);
+				SemanticType parentParam = toSemanticType(parentParams.get(i));
+				SemanticType childParam = toSemanticType(childParams.get(i));
 				if (!typeSystem.isRawCoerciveSubtype(parentParam, childParam, lifetimes)) {
 					return false;
 				}
@@ -2573,9 +2555,13 @@ public class FlowTypeCheck {
 	// Helpers
 	// ==========================================================================
 
+	public SemanticType toSemanticType(Type type) {
+		return typeSystem.toSemanticType(type);
+	}
+
 	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
 		try {
-			if (!typeSystem.isRawCoerciveSubtype(lhs, rhs, lifetimes)) {
+			if (!typeSystem.isRawCoerciveSubtype(toSemanticType(lhs), toSemanticType(rhs), lifetimes)) {
 				syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
 			}
 		} catch (NameResolver.ResolutionError e) {
@@ -2614,7 +2600,7 @@ public class FlowTypeCheck {
 	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
 		try {
 			Type type = d.getType();
-			if (typeSystem.isVoid(type, lifetimes)) {
+			if (typeSystem.isVoid(toSemanticType(type), lifetimes)) {
 				syntaxError("empty type encountered", type);
 			}
 		} catch (NameResolver.ResolutionError e) {
@@ -2646,7 +2632,7 @@ public class FlowTypeCheck {
 		throw new InternalFailure(msg, cu.getEntry(), e, ex);
 	}
 
-	private static final Environment BOTTOM = new Environment();
+	private final Environment BOTTOM = new Environment();
 
 	// ==========================================================================
 	// Enclosing Scope
@@ -2760,8 +2746,8 @@ public class FlowTypeCheck {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Environment implements LifetimeRelation {
-		private final Map<Decl.Variable, Type> refinements;
+	public class Environment implements LifetimeRelation {
+		private final Map<Decl.Variable, SemanticType> refinements;
 		private final Map<String, String[]> withins;
 
 		public Environment() {
@@ -2769,22 +2755,34 @@ public class FlowTypeCheck {
 			this.withins = new HashMap<>();
 		}
 
-		public Environment(Map<Decl.Variable, Type> refinements, Map<String, String[]> withins) {
+		public Environment(Map<Decl.Variable, SemanticType> refinements, Map<String, String[]> withins) {
 			this.refinements = new HashMap<>(refinements);
 			this.withins = new HashMap<>(withins);
 		}
 
-		public Type getType(Decl.Variable var) {
-			Type refined = refinements.get(var);
-			if (refined != null) {
-				return refined;
-			} else {
-				return var.getType();
+		public SemanticType getType(Decl.Variable var) {
+			SemanticType refined = refinements.get(var);
+			if (refined == null) {
+				// Lazily populate the environment
+				refined = typeSystem.toSemanticType(var.getType());
+				refinements.put(var, refined);
 			}
+			return refined;
 		}
 
-		public Environment refineType(Decl.Variable var, Type refinement) {
-			//Type type = intersect(getType(var), refinement);
+		public Environment setType(Decl.Variable var, SemanticType refinement) {
+			Environment r = new Environment(this.refinements, this.withins);
+			r.refinements.put(var, refinement);
+			return r;
+		}
+
+		public Environment refineType(Decl.Variable var, SemanticType refinement, boolean sign) {
+			SemanticType type = getType(var);
+			if(sign) {
+				refinement = refinement.intersect(type);
+			} else {
+				refinement = refinement.subtract(type);
+			}
 			Environment r = new Environment(this.refinements, this.withins);
 			r.refinements.put(var, refinement);
 			return r;
@@ -2806,16 +2804,6 @@ public class FlowTypeCheck {
 				r += var.getName() + "->" + getType(var);
 			}
 			return r + "}";
-		}
-
-		private Type intersect(Type left, Type right) {
-			// FIXME: a more comprehensive simplification strategy would make sense
-			// here.
-			if (left == right || left.equals(right)) {
-				return left;
-			} else {
-				return new Type.Intersection(new Type[] { left, right });
-			}
 		}
 
 		@Override

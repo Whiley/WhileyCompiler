@@ -3163,13 +3163,6 @@ public class WhileyFileParser {
 		} else if (type instanceof Type.Callable) {
 			// "function" and "method" are keywords, cannot parse as expression.
 			return true;
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection tt = (Type.Intersection) type;
-			boolean result = false;
-			for(int i=0;i!=tt.size();++i) {
-				result |= mustParseAsType(tt.get(i));
-			}
-			return result;
 		} else if (type instanceof Type.Array) {
 			return true;
 		} else if (type instanceof Type.Nominal) {

@@ -192,8 +192,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_property = TYPE_mask + 13;
 	public static final int TYPE_invariant = TYPE_mask + 14;
 	public static final int TYPE_union = TYPE_mask + 15;
-	public static final int TYPE_intersection = TYPE_mask + 16;
-	public static final int TYPE_difference = TYPE_mask + 17;
+	public static final int TYPEX_intersection = TYPE_mask + 16;
+	public static final int TYPEX_difference = TYPE_mask + 17;
 	public static final int TYPE_byte = TYPE_mask + 18;
 	public static final int TYPE_unresolved = TYPE_mask + 19;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
@@ -3643,7 +3643,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	}
 
 	// =========================================================================
-	// Types
+	// Syntactic Type
 	// =========================================================================
 
 	public interface Type extends SyntacticItem {
@@ -4115,72 +4115,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Parse a difference type, which is of the form:
-		 *
-		 * <pre>
-		 * DifferenceType ::= Type '-' Type
-		 * </pre>
-		 *
-		 * This corresponds roughly to set difference. For example,
-		 * <code>(int|null)-int</code> is the set <code>int|null</code> less members of
-		 * <code>int</code>. In other words, it's equivalent to <code>null</code>.
-		 *
-		 * @return
-		 */
-		public static class Difference extends AbstractSyntacticItem implements Type {
-			public Difference(Type lhs, Type rhs) {
-				super(TYPE_difference, lhs, rhs);
-			}
-
-			public Type getLeftHandSide() {
-				return (Type) get(0);
-			}
-
-			public Type getRightHandSide() {
-				return (Type) get(1);
-			}
-
-			@Override
-			public Type.Difference substitute(Map<Identifier,Identifier> binding) {
-				Type lhsBefore = getLeftHandSide();
-				Type rhsBefore = getRightHandSide();
-				Type lhsAfter = lhsBefore.substitute(binding);
-				Type rhsAfter = rhsBefore.substitute(binding);
-				if(lhsBefore == lhsAfter && rhsBefore == rhsAfter) {
-					return this;
-				} else {
-					return new Type.Difference(lhsAfter, rhsAfter);
-				}
-			}
-
-			@Override
-			public Difference clone(SyntacticItem[] operands) {
-				return new Difference((Type) operands[0], (Type) operands[1]);
-			}
-
-			@Override
-			public String toString() {
-				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
-			}
-		}
-
-		public abstract static class Combinator extends AbstractSyntacticItem implements Type {
-			public Combinator(int kind, Type[] types) {
-				super(kind, types);
-			}
-
-			@Override
-			public Type get(int i) {
-				return (Type) super.get(i);
-			}
-
-			@Override
-			public Type[] getAll() {
-				return (Type[]) super.getAll();
-			}
-		}
-
-		/**
 		 * Represents a union type, which is of the form:
 		 *
 		 * <pre>
@@ -4199,9 +4133,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Union extends Combinator {
+		public static class Union extends AbstractSyntacticItem implements Type, TypeCombinator {
 			public Union(Type... types) {
 				super(TYPE_union, types);
+			}
+
+			@Override
+			public Type get(int i) {
+				return (Type) super.get(i);
+			}
+
+			@Override
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
 			}
 
 			@Override
@@ -4226,59 +4170,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				for (int i = 0; i != size(); ++i) {
 					if (i != 0) {
 						r += "|";
-					}
-					r += braceAsNecessary(get(i));
-				}
-				return r;
-			}
-		}
-
-		/**
-		 * Represents an intersection type, which is of the form:
-		 *
-		 * <pre>
-		 * IntersectionType ::= BaseType ('&' BaseType)*
-		 * </pre>
-		 *
-		 * Intersection types are used to unify types together. For example, the type
-		 * <code>{int x, int y}&MyType</code> represents the type which is both an
-		 * instanceof of <code>{int x, int y}</code> and an instance of
-		 * <code>MyType</code>.
-		 *
-		 * Represents the intersection of one or more types together. For example, the
-		 * intersection of <code>T1</code> and <code>T2</code> is <code>T1&T2</code>.
-		 * Furthermore, any variable of this type must be both an instanceof
-		 * <code>T1</code> and an instanceof <code>T2</code>.
-		 *
-		 * @return
-		 */
-		public static class Intersection extends Combinator {
-			public Intersection(Type... types) {
-				super(TYPE_intersection, types);
-			}
-
-			@Override
-			public Type.Intersection substitute(Map<Identifier,Identifier> binding) {
-				Type[] before = getAll();
-				Type[] after = WhileyFile.substitute(before,binding);
-				if(before == after) {
-					return this;
-				} else {
-					return new Type.Intersection(after);
-				}
-			}
-
-			@Override
-			public Intersection clone(SyntacticItem[] operands) {
-				return new Intersection(ArrayUtils.toArray(Type.class, operands));
-			}
-
-			@Override
-			public String toString() {
-				String r = "";
-				for (int i = 0; i != size(); ++i) {
-					if (i != 0) {
-						r += "&";
 					}
 					r += braceAsNecessary(get(i));
 				}
@@ -4508,6 +4399,99 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				return "(???)->(???)";
+			}
+		}
+	}
+
+	public interface TypeCombinator extends SyntacticItem {
+
+		/**
+		 * Represents an intersection type, which is of the form:
+		 *
+		 * <pre>
+		 * IntersectionType ::= BaseType ('&' BaseType)*
+		 * </pre>
+		 *
+		 * Intersection types are used to unify types together. For example, the type
+		 * <code>{int x, int y}&MyType</code> represents the type which is both an
+		 * instanceof of <code>{int x, int y}</code> and an instance of
+		 * <code>MyType</code>.
+		 *
+		 * Represents the intersection of one or more types together. For example, the
+		 * intersection of <code>T1</code> and <code>T2</code> is <code>T1&T2</code>.
+		 * Furthermore, any variable of this type must be both an instanceof
+		 * <code>T1</code> and an instanceof <code>T2</code>.
+		 *
+		 * @return
+		 */
+		public static class Intersection extends AbstractSyntacticItem implements TypeCombinator {
+			public Intersection(Type... types) {
+				super(TYPEX_intersection, types);
+			}
+
+			@Override
+			public Type get(int i) {
+				return (Type) super.get(i);
+			}
+
+			@Override
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
+			}
+
+			@Override
+			public Intersection clone(SyntacticItem[] operands) {
+				return new Intersection(ArrayUtils.toArray(Type.class, operands));
+			}
+
+			@Override
+			public String toString() {
+				String r = "";
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += "&";
+					}
+					r += braceAsNecessary(get(i));
+				}
+				return r;
+			}
+		}
+
+
+		/**
+		 * Parse a difference type, which is of the form:
+		 *
+		 * <pre>
+		 * DifferenceType ::= Type '-' Type
+		 * </pre>
+		 *
+		 * This corresponds roughly to set difference. For example,
+		 * <code>(int|null)-int</code> is the set <code>int|null</code> less members of
+		 * <code>int</code>. In other words, it's equivalent to <code>null</code>.
+		 *
+		 * @return
+		 */
+		public static class Difference extends AbstractSyntacticItem implements TypeCombinator {
+			public Difference(Type lhs, Type rhs) {
+				super(TYPEX_difference, lhs, rhs);
+			}
+
+			public Type getLeftHandSide() {
+				return (Type) get(0);
+			}
+
+			public Type getRightHandSide() {
+				return (Type) get(1);
+			}
+
+			@Override
+			public Difference clone(SyntacticItem[] operands) {
+				return new Difference((Type) operands[0], (Type) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
 			}
 		}
 	}
@@ -4903,16 +4887,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_intersection] = new Schema(Operands.MANY, Data.ZERO, "TYPE_intersection") {
+		schema[TYPEX_intersection] = new Schema(Operands.MANY, Data.ZERO, "TYPE_intersection") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Intersection(ArrayUtils.toArray(Type.class, operands));
+				return new TypeCombinator.Intersection(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_difference") {
+		schema[TYPEX_difference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_difference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Difference((Type) operands[0], (Type) operands[1]);
+				return new TypeCombinator.Difference((Type) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_byte] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {

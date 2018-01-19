@@ -167,20 +167,11 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 
 	@Override
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
-		try {
-			// Check whether invoking an impure method in a pure context
-			if (context != Context.IMPURE) {
-				// FIXME: should probably not use a null LifetimeRelation here.
-				Type.Callable type = types.extractReadableLambda(expr.getSource().getType(),null);
-				if (type instanceof Type.Method) {
-					invalidMethodCall(expr, context);
-				}
-			}
-			super.visitIndirectInvoke(expr, context);
-		} catch (ResolutionError e) {
-			// This really should be dead code
-			throw new RuntimeException(e);
+		// Check whether invoking an impure method in a pure context
+		if (context != Context.IMPURE && isMethodType(expr.getSource().getType())) {
+			invalidMethodCall(expr, context);
 		}
+		super.visitIndirectInvoke(expr, context);
 	}
 
 	@Override
@@ -204,6 +195,23 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		// NOTE: don't traverse types as this is unnecessary. Even in a pure context,
 		// seemingly impure types (e.g. references and methods) can still be used
 		// safely.
+	}
+
+	public boolean isMethodType(Type type) {
+		try {
+			if (type instanceof Type.Method) {
+				return true;
+			} else if (type instanceof Type.Nominal) {
+				Type.Nominal n = (Type.Nominal) type;
+				Decl.Type decl = types.resolveExactly(n.getName(), Decl.Type.class);
+				return isMethodType(decl.getType());
+			} else {
+				return false;
+			}
+		} catch (ResolutionError e) {
+			// This really should be dead code
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
