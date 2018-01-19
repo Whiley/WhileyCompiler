@@ -3,7 +3,10 @@
 type listibr is int[] | bool[]
 
 function len(listibr l) -> int:
-    return |l|
+    if l is int[]:
+        return |l|
+    else:
+        return |l|
 
 public export method test() :
     bool[] s = [true,false,true]

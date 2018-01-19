@@ -17,14 +17,17 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
+import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
+import wyc.lang.WhileyFile.Type;
 import wyc.util.AbstractConsumer;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
@@ -182,20 +185,27 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_null = TYPE_mask + 2;
 	public static final int TYPE_bool = TYPE_mask + 3;
 	public static final int TYPE_int = TYPE_mask + 4;
-	public static final int TYPE_nominal = TYPE_mask + 6;
-	public static final int TYPE_reference = TYPE_mask + 7;
-	public static final int TYPE_staticreference = TYPE_mask + 8;
-	public static final int TYPE_array = TYPE_mask + 9;
-	public static final int TYPE_record = TYPE_mask + 10;
+	public static final int TYPE_nominal = TYPE_mask + 5;
+	public static final int TYPE_reference = TYPE_mask + 6;
+	public static final int TYPE_staticreference = TYPE_mask + 7;
+	public static final int TYPE_array = TYPE_mask + 8;
+	public static final int TYPE_record = TYPE_mask + 9;
+	public static final int TYPE_field = TYPE_mask + 10;
 	public static final int TYPE_function = TYPE_mask + 11;
 	public static final int TYPE_method = TYPE_mask + 12;
 	public static final int TYPE_property = TYPE_mask + 13;
 	public static final int TYPE_invariant = TYPE_mask + 14;
 	public static final int TYPE_union = TYPE_mask + 15;
-	public static final int TYPEX_intersection = TYPE_mask + 16;
-	public static final int TYPEX_difference = TYPE_mask + 17;
-	public static final int TYPE_byte = TYPE_mask + 18;
-	public static final int TYPE_unresolved = TYPE_mask + 19;
+	public static final int TYPE_byte = TYPE_mask + 16;
+	public static final int TYPE_unresolved = TYPE_mask + 17;
+	public static final int SEMTYPE_reference = TYPE_mask + 18;
+	public static final int SEMTYPE_staticreference = TYPE_mask + 19;
+	public static final int SEMTYPE_array = TYPE_mask + 20;
+	public static final int SEMTYPE_record = TYPE_mask + 21;
+	public static final int SEMTYPE_field = TYPE_mask + 22;
+	public static final int SEMTYPE_union = TYPE_mask + 23;
+	public static final int SEMTYPE_intersection = TYPE_mask + 24;
+	public static final int SEMTYPE_difference = TYPE_mask + 25;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -3646,8 +3656,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// Syntactic Type
 	// =========================================================================
 
-	public interface Type extends SyntacticItem {
+	public static interface Type extends SemanticType {
 
+		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
@@ -3662,11 +3673,79 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public Type substitute(Map<Identifier,Identifier> binding);
 
-		public interface Atom extends Type {
+		@Override
+		public Type.Record asRecord(NameResolver resolver);
+
+		@Override
+		public Type.Reference asReference(NameResolver resolver);
+
+		@Override
+		public Type.Callable asCallable(NameResolver resolver);
+
+		public interface Atom extends Type, SemanticType.Atom {
 		}
 
 		public interface Primitive extends Atom {
 
+		}
+
+		static abstract class AbstractType extends AbstractSemanticType {
+			AbstractType(int opcode) {
+				super(opcode);
+			}
+
+			AbstractType(int opcode, SyntacticItem operand) {
+				super(opcode, operand);
+			}
+
+			AbstractType(int opcode, SyntacticItem... operands) {
+				super(opcode, operands);
+			}
+
+			@Override
+			public Type.Record asRecord(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public Type.Reference asReference(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public Type.Callable asCallable(NameResolver resolver) {
+				return null;
+			}
+
+		}
+
+		/**
+		 * An any type represents the type whose variables can hold any possible value.
+		 * Such types cannot currently be expressed at the source level, though remain
+		 * useful for the purposes of type checking.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Any extends AbstractType implements Primitive {
+			public Any() {
+				super(TYPE_any);
+			}
+
+			@Override
+			public Type substitute(Map<Identifier, Identifier> binding) {
+				return this;
+			}
+
+			@Override
+			public Any clone(SyntacticItem[] operands) {
+				return new Any();
+			}
+
+			@Override
+			public String toString() {
+				return "any";
+			}
 		}
 
 		/**
@@ -3697,7 +3776,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Void extends AbstractSyntacticItem implements Primitive {
+		public static class Void extends AbstractType implements Primitive {
 			public Void() {
 				super(TYPE_void);
 			}
@@ -3731,7 +3810,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Null extends AbstractSyntacticItem implements Primitive {
+		public static class Null extends AbstractType implements Primitive {
 			public Null() {
 				super(TYPE_null);
 			}
@@ -3758,7 +3837,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Bool extends AbstractSyntacticItem implements Primitive {
+		public static class Bool extends AbstractType implements Primitive {
 			public Bool() {
 				super(TYPE_bool);
 			}
@@ -3789,7 +3868,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Byte extends AbstractSyntacticItem implements Primitive {
+		public static class Byte extends AbstractType implements Primitive {
 			public Byte() {
 				super(TYPE_byte);
 			}
@@ -3818,7 +3897,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Int extends AbstractSyntacticItem implements Primitive {
+		public static class Int extends AbstractType implements Primitive {
 			public Int() {
 				super(TYPE_int);
 			}
@@ -3852,11 +3931,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Array extends AbstractSyntacticItem implements Atom {
+		public static class Array extends SemanticType.Array implements Atom {
 			public Array(Type element) {
 				super(TYPE_array, element);
 			}
 
+			@Override
 			public Type getElement() {
 				return (Type) get(0);
 			}
@@ -3873,13 +3953,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Array clone(SyntacticItem[] operands) {
-				return new Array((Type) operands[0]);
+			public Type.Reference asReference(NameResolver resolver) {
+				return null;
 			}
 
 			@Override
-			public String toString() {
-				return braceAsNecessary(getElement()) + "[]";
+			public Type.Record asRecord(NameResolver resolver) {
+				return null;
+			}
+
+
+			@Override
+			public Type.Array clone(SyntacticItem[] operands) {
+				return new Type.Array((Type) operands[0]);
 			}
 		}
 
@@ -3896,7 +3982,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Reference extends AbstractSyntacticItem implements Atom {
+		public static class Reference extends SemanticType.Reference implements Atom {
 			public Reference(Type element) {
 				super(TYPE_staticreference, element);
 			}
@@ -3905,14 +3991,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(TYPE_reference, element, lifetime);
 			}
 
+			@Override
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
 			}
 
+			@Override
 			public Type getElement() {
 				return (Type) get(0);
 			}
 
+			@Override
 			public Identifier getLifetime() {
 				return (Identifier) get(1);
 			}
@@ -3935,21 +4024,21 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Reference((Type) operands[0]);
-				} else {
-					return new Reference((Type) operands[0], (Identifier) operands[1]);
-				}
+			public Type.Reference asReference(NameResolver resolver) {
+				return this;
 			}
 
 			@Override
-			public String toString() {
-				if (hasLifetime()) {
-					Identifier lifetime = getLifetime();
-					return "&" + lifetime + ":" + braceAsNecessary(getElement());
+			public Type.Record asRecord(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public Type.Reference clone(SyntacticItem[] operands) {
+				if (operands.length == 1) {
+					return new Type.Reference((Type) operands[0]);
 				} else {
-					return "&" + braceAsNecessary(getElement());
+					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
 				}
 			}
 		}
@@ -3967,75 +4056,56 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Record extends AbstractSyntacticItem implements Atom {
-			public Record(boolean isOpen, Tuple<Decl.Variable> fields) {
+		public static class Record extends SemanticType.Record implements Atom {
+			public Record(boolean isOpen, Tuple<Type.Field> fields) {
 				this(new Value.Bool(isOpen), fields);
 			}
 
-			public Record(Value.Bool isOpen, Tuple<Decl.Variable> fields) {
+			public Record(Value.Bool isOpen, Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
 			}
 
-			private Record(SyntacticItem[] operands) {
-				super(TYPE_record, operands);
-			}
-
+			@Override
 			public boolean isOpen() {
 				Value.Bool flag = (Value.Bool) get(0);
 				return flag.get();
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Decl.Variable> getFields() {
-				return (Tuple<Decl.Variable>) get(1);
+			@Override
+			public Type getField(Identifier identifier) {
+				return (Type) super.getField(identifier);
 			}
 
-			public Type getField(Identifier fieldName) {
-				Tuple<Decl.Variable> fields = getFields();
-				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable vd = fields.get(i);
-					Identifier declaredFieldName = vd.getName();
-					if (declaredFieldName.equals(fieldName)) {
-						return vd.getType();
-					}
-				}
-				return null;
+			@Override
+			@SuppressWarnings("unchecked")
+			public Tuple<Type.Field> getFields() {
+				return (Tuple<Type.Field>) get(1);
 			}
 
 			@Override
 			public Type.Record substitute(Map<Identifier,Identifier> binding) {
-				Tuple<Decl.Variable> before = getFields();
-				Tuple<Decl.Variable> after = substitute(before,binding);
+				Tuple<Type.Field> before = getFields();
+				Tuple<Type.Field> after = substitute(before,binding);
 				if(before == after) {
 					return this;
 				} else {
 					return new Type.Record(isOpen(),after);
 				}
 			}
+
 			@Override
-			public Record clone(SyntacticItem[] operands) {
-				return new Record(operands);
+			public Type.Reference asReference(NameResolver resolver) {
+				return null;
 			}
 
 			@Override
-			public String toString() {
-				String r = "{";
-				Tuple<Decl.Variable> fields = getFields();
-				for (int i = 0; i != fields.size(); ++i) {
-					if (i != 0) {
-						r += ",";
-					}
-					Decl.Variable field = fields.get(i);
-					r += field.getType() + " " + field.getName();
-				}
-				if (isOpen()) {
-					if (fields.size() > 0) {
-						r += ", ...";
-					} else {
-						r += "...";
-					}
-				}
-				return r + "}";
+			public Type.Record asRecord(NameResolver resolver) {
+				return this;
+			}
+
+			@Override
+			public Type.Record clone(SyntacticItem[] operands) {
+				return new Type.Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
 			}
 
 			/**
@@ -4045,22 +4115,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			 * @param binding
 			 * @return
 			 */
-			private static Tuple<Decl.Variable> substitute(Tuple<Decl.Variable> fields,
+			private static Tuple<Type.Field> substitute(Tuple<Type.Field> fields,
 					Map<Identifier, Identifier> binding) {
 				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable field = fields.get(i);
+					Type.Field field = fields.get(i);
 					Type before = field.getType();
 					Type after = before.substitute(binding);
 					if (before != after) {
 						// Now committed to a change
-						Decl.Variable[] nFields = fields.toArray(Decl.Variable.class);
-						nFields[i] = new Decl.Variable(field.getModifiers(), field.getName(), after);
+						Type.Field[] nFields = fields.toArray(Type.Field.class);
+						nFields[i] = new Type.Field(field.getName(), after);
 						for (int j = i + 1; j < fields.size(); ++j) {
 							field = fields.get(j);
 							before = field.getType();
 							after = before.substitute(binding);
 							if (before != after) {
-								nFields[j] = new Decl.Variable(field.getModifiers(), field.getName(), after);
+								nFields[j] = new Type.Field(field.getName(), after);
 							}
 						}
 						return new Tuple<>(nFields);
@@ -4070,6 +4140,29 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return fields;
 			}
 		}
+
+		public static class Field extends SemanticType.Field {
+
+			public Field(Identifier name, Type type) {
+				super(TYPE_field,name,type);
+			}
+
+			@Override
+			public Identifier getName() {
+				return (Identifier) get(0);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) get(1);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Type.Field((Identifier) operands[0], (Type) operands[1]);
+			}
+		}
+
 
 		/**
 		 * Represents a nominal type, which is of the form:
@@ -4084,7 +4177,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Nominal extends AbstractSyntacticItem implements Type {
+		public static class Nominal extends AbstractSemanticType implements Type {
 
 			public Nominal(Name name) {
 				super(TYPE_nominal, name);
@@ -4101,6 +4194,43 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Type.Nominal substitute(Map<Identifier,Identifier> binding) {
 				return this;
+			}
+
+			@Override
+			public Type.Record asRecord(NameResolver resolver) {
+				try {
+					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
+					return decl.getType().asRecord(resolver);
+				} catch (NameResolver.ResolutionError e) {
+					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
+					// future, the use of NameResolver will be deprecated.
+					throw new RuntimeException(e);
+				}
+			}
+
+			@Override
+			public Type.Reference asReference(NameResolver resolver) {
+				try {
+					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
+					return decl.getType().asReference(resolver);
+				} catch (NameResolver.ResolutionError e) {
+					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
+					// future, the use of NameResolver will be deprecated.
+					throw new RuntimeException(e);
+				}
+			}
+
+
+			@Override
+			public Type.Callable asCallable(NameResolver resolver) {
+				try {
+					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
+					return decl.getType().asCallable(resolver);
+				} catch (NameResolver.ResolutionError e) {
+					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
+					// future, the use of NameResolver will be deprecated.
+					throw new RuntimeException(e);
+				}
 			}
 
 			@Override
@@ -4133,7 +4263,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 * @return
 		 */
-		public static class Union extends AbstractSyntacticItem implements Type, TypeCombinator {
+		public static class Union extends SemanticType.Union implements Type {
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
@@ -4160,8 +4290,20 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Union clone(SyntacticItem[] operands) {
-				return new Union(ArrayUtils.toArray(Type.class, operands));
+			public Type.Union clone(SyntacticItem[] operands) {
+				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
+			}
+
+			@Override
+			public Type.Record asRecord(NameResolver resolver) {
+				// FIXME:
+				return null;
+			}
+
+			@Override
+			public Type.Reference asReference(NameResolver resolver) {
+				// FIXME:
+				return null;
 			}
 
 			@Override
@@ -4186,7 +4328,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Function extends AbstractSyntacticItem implements Type.Callable {
+		public static class Function extends AbstractType implements Type.Callable {
 			public Function(Tuple<Type> parameters, Tuple<Type> returns) {
 				super(TYPE_function, parameters, returns);
 			}
@@ -4216,6 +4358,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				}
 			}
 
+			@Override
+			public Type.Callable asCallable(NameResolver resolver) {
+				return this;
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Function clone(SyntacticItem[] operands) {
@@ -4238,7 +4385,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Method extends AbstractSyntacticItem implements Type.Callable {
+		public static class Method extends AbstractType implements Type.Callable {
 
 			public Method(Tuple<Type> parameters, Tuple<Type> returns, Tuple<Identifier> captures,
 					Tuple<Identifier> lifetimes) {
@@ -4295,6 +4442,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
+			public Type.Callable asCallable(NameResolver resolver) {
+				return this;
+			}
+
+			@Override
 			public String toString() {
 				Tuple<Identifier> captured = getCapturedLifetimes();
 				Tuple<Identifier> lifetimes = getLifetimeParameters();
@@ -4324,7 +4476,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Property extends AbstractSyntacticItem implements Type.Callable {
+		public static class Property extends AbstractType implements Type.Callable {
 			public Property(Tuple<Type> parameters) {
 				super(TYPE_property, parameters, new Tuple<>(new Type.Bool()));
 			}
@@ -4371,7 +4523,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		}
 
-		public static class Unresolved extends AbstractSyntacticItem implements Callable {
+		public static class Unresolved extends AbstractType implements Callable {
 			public Unresolved() {
 				super(TYPE_unresolved);
 			}
@@ -4399,99 +4551,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				return "(???)->(???)";
-			}
-		}
-	}
-
-	public interface TypeCombinator extends SyntacticItem {
-
-		/**
-		 * Represents an intersection type, which is of the form:
-		 *
-		 * <pre>
-		 * IntersectionType ::= BaseType ('&' BaseType)*
-		 * </pre>
-		 *
-		 * Intersection types are used to unify types together. For example, the type
-		 * <code>{int x, int y}&MyType</code> represents the type which is both an
-		 * instanceof of <code>{int x, int y}</code> and an instance of
-		 * <code>MyType</code>.
-		 *
-		 * Represents the intersection of one or more types together. For example, the
-		 * intersection of <code>T1</code> and <code>T2</code> is <code>T1&T2</code>.
-		 * Furthermore, any variable of this type must be both an instanceof
-		 * <code>T1</code> and an instanceof <code>T2</code>.
-		 *
-		 * @return
-		 */
-		public static class Intersection extends AbstractSyntacticItem implements TypeCombinator {
-			public Intersection(Type... types) {
-				super(TYPEX_intersection, types);
-			}
-
-			@Override
-			public Type get(int i) {
-				return (Type) super.get(i);
-			}
-
-			@Override
-			public Type[] getAll() {
-				return (Type[]) super.getAll();
-			}
-
-			@Override
-			public Intersection clone(SyntacticItem[] operands) {
-				return new Intersection(ArrayUtils.toArray(Type.class, operands));
-			}
-
-			@Override
-			public String toString() {
-				String r = "";
-				for (int i = 0; i != size(); ++i) {
-					if (i != 0) {
-						r += "&";
-					}
-					r += braceAsNecessary(get(i));
-				}
-				return r;
-			}
-		}
-
-
-		/**
-		 * Parse a difference type, which is of the form:
-		 *
-		 * <pre>
-		 * DifferenceType ::= Type '-' Type
-		 * </pre>
-		 *
-		 * This corresponds roughly to set difference. For example,
-		 * <code>(int|null)-int</code> is the set <code>int|null</code> less members of
-		 * <code>int</code>. In other words, it's equivalent to <code>null</code>.
-		 *
-		 * @return
-		 */
-		public static class Difference extends AbstractSyntacticItem implements TypeCombinator {
-			public Difference(Type lhs, Type rhs) {
-				super(TYPEX_difference, lhs, rhs);
-			}
-
-			public Type getLeftHandSide() {
-				return (Type) get(0);
-			}
-
-			public Type getRightHandSide() {
-				return (Type) get(1);
-			}
-
-			@Override
-			public Difference clone(SyntacticItem[] operands) {
-				return new Difference((Type) operands[0], (Type) operands[1]);
-			}
-
-			@Override
-			public String toString() {
-				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
 			}
 		}
 	}
@@ -4528,6 +4587,419 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 		//
 		return types;
+	}
+
+	// ============================================================
+	// Semantic Types
+	// ============================================================
+
+	public static interface SemanticType extends SyntacticItem {
+
+		public SemanticType.Record asRecord(NameResolver resolver);
+
+		public SemanticType.Reference asReference(NameResolver resolver);
+
+		public Type.Callable asCallable(NameResolver resolver);
+
+		public SemanticType union(SemanticType t);
+
+		public SemanticType intersect(SemanticType t);
+
+		public SemanticType negate(SemanticType t);
+
+		public static abstract class AbstractSemanticType extends AbstractSyntacticItem implements SemanticType {
+
+			public AbstractSemanticType(int opcode, SyntacticItem... operands) {
+				super(opcode,operands);
+			}
+
+			@Override
+			public Record asRecord(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public Reference asReference(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public Type.Callable asCallable(NameResolver resolver) {
+				return null;
+			}
+
+			@Override
+			public SemanticType union(SemanticType t) {
+				return null;
+			}
+
+			@Override
+			public SemanticType intersect(SemanticType t) {
+				return null;
+			}
+
+			@Override
+			public SemanticType negate(SemanticType t) {
+				return null;
+			}
+
+		}
+
+		public interface Atom extends SemanticType {
+		}
+
+		public static interface Leaf extends SemanticType {
+		}
+
+
+		/**
+		 * A semantic type combinator represents either the intersection or union of
+		 * semantic types. Thus, it is an operator over one or more component types.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface Combinator extends SemanticType {
+			/**
+			 * Get number of component types in this combinator
+			 */
+			@Override
+			public int size();
+
+			/**
+			 * Get the ith component type in this combinator
+			 */
+			@Override
+			public SemanticType get(int i);
+
+			/**
+			 * Get all component types in this combinator
+			 */
+			@Override
+			public SemanticType[] getAll();
+		}
+
+		public static class Reference extends AbstractSemanticType implements SemanticType.Atom {
+			public Reference(SemanticType element) {
+				super(SEMTYPE_staticreference,element);
+			}
+
+			public Reference(SemanticType element, Identifier lifetime) {
+				super(SEMTYPE_reference,element,lifetime);
+			}
+
+			protected Reference(int opcode, SemanticType element) {
+				// NOTE: this is specifically to handle Type.Reference
+				super(opcode,element);
+				if(opcode != TYPE_reference && opcode != TYPE_staticreference) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			protected Reference(int opcode, SemanticType element, Identifier lifetime) {
+				// NOTE: this is specifically to handle Type.Reference
+				super(opcode,element,lifetime);
+				if(opcode != TYPE_reference) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			public boolean hasLifetime() {
+				return opcode == SEMTYPE_reference;
+			}
+
+			public SemanticType getElement() {
+				return (SemanticType) get(0);
+			}
+
+			public Identifier getLifetime() {
+				return (Identifier) get(1);
+			}
+
+			@Override
+			public Reference asReference(NameResolver resolver) {
+				return this;
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				if(operands.length == 1) {
+					return new Reference((SemanticType) operands[0]);
+				} else {
+					return new Reference((SemanticType) operands[0], (Identifier) operands[1]);
+				}
+			}
+
+			@Override
+			public String toString() {
+				if (hasLifetime()) {
+					Identifier lifetime = getLifetime();
+					return "&" + lifetime + ":" + braceAsNecessary(getElement());
+				} else {
+					return "&" + braceAsNecessary(getElement());
+				}
+			}
+		}
+
+		public static class Array extends AbstractSemanticType implements SemanticType.Atom {
+
+			public Array(SemanticType element) {
+				super(SEMTYPE_array,element);
+			}
+
+			protected Array(int opcode, SemanticType element) {
+				// NOTE: this is specifically to handle Type.Array
+				super(opcode,element);
+				if(opcode != TYPE_array) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			public SemanticType getElement() {
+				return (SemanticType) get(0);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Array((SemanticType) operands[0]);
+			}
+
+			@Override
+			public String toString() {
+				return braceAsNecessary(getElement()) + "[]";
+			}
+		}
+
+		public static class Field extends AbstractSyntacticItem {
+
+			public Field(Identifier name, SemanticType type) {
+				super(SEMTYPE_field,name,type);
+			}
+
+			protected Field(int opcode, Identifier name, SemanticType type) {
+				// NOTE: specifically to handle Type.Field
+				super(opcode,name,type);
+				if(opcode != TYPE_field) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			public Identifier getName() {
+				return (Identifier) get(0);
+			}
+
+			public SemanticType getType() {
+				return (SemanticType) get(1);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Field((Identifier) operands[0], (SemanticType) operands[1]);
+			}
+		}
+
+		public static class Record extends AbstractSemanticType implements SemanticType.Atom {
+			public Record(boolean isOpen, Tuple<Field> fields) {
+				super(SEMTYPE_record, new Value.Bool(isOpen), fields);
+			}
+
+			protected Record(int opcode, Value.Bool isOpen, Tuple<Type.Field> fields) {
+				// NOTE: this is specifically to handle Type.Record
+				super(opcode, isOpen, fields);
+				if(opcode != TYPE_record) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			public boolean isOpen() {
+				Value.Bool flag = (Value.Bool) get(0);
+				return flag.get();
+			}
+
+			public Tuple<? extends Field> getFields() {
+				return (Tuple<Field>) get(1);
+			}
+
+			public SemanticType getField(Identifier fieldName) {
+				Tuple<? extends Field> fields = getFields();
+				for (int i = 0; i != fields.size(); ++i) {
+					Field vd = fields.get(i);
+					Identifier declaredFieldName = vd.getName();
+					if (declaredFieldName.equals(fieldName)) {
+						return vd.getType();
+					}
+				}
+				return null;
+			}
+
+			@Override
+			public Record asRecord(NameResolver resolver) {
+				return this;
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				boolean isOpen = ((Value.Bool)operands[0]).get();
+				return new Record(isOpen,(Tuple<Field>) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				String r = "{";
+				Tuple<? extends Field> fields = getFields();
+				for (int i = 0; i != fields.size(); ++i) {
+					if (i != 0) {
+						r += ",";
+					}
+					Field field = fields.get(i);
+					r += field.getType() + " " + field.getName();
+				}
+				if (isOpen()) {
+					if (fields.size() > 0) {
+						r += ", ...";
+					} else {
+						r += "...";
+					}
+				}
+				return r + "}";
+			}
+		}
+
+		public static class Union extends AbstractSemanticType implements Combinator {
+			public Union(SemanticType... types) {
+				super(SEMTYPE_union, types);
+			}
+
+			protected Union(int opcode, SemanticType... types) {
+				// NOTE: this is specifically to handle Type.Union
+				super(opcode, types);
+				if(opcode != TYPE_union) {
+					throw new IllegalArgumentException("invalid opcode");
+				}
+			}
+
+			@Override
+			public SemanticType get(int i)  {
+				return (SemanticType) super.get(i);
+			}
+
+			@Override
+			public SemanticType[] getAll() {
+				return (SemanticType[]) super.getAll();
+			}
+
+			@Override
+			public Record asRecord(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Reference asReference(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Union(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+
+			@Override
+			public String toString() {
+				String r = "";
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += "|";
+					}
+					r += braceAsNecessary(get(i));
+				}
+				return r;
+			}
+		}
+
+		public static class Intersection extends AbstractSemanticType implements Combinator {
+			public Intersection(SemanticType... types) {
+				super(SEMTYPE_intersection, types);
+			}
+
+			@Override
+			public SemanticType get(int i)  {
+				return (SemanticType) super.get(i);
+			}
+
+			@Override
+			public SemanticType[] getAll() {
+				return (SemanticType[]) super.getAll();
+			}
+
+			@Override
+			public Record asRecord(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Reference asReference(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Intersection(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+
+
+			@Override
+			public String toString() {
+				String r = "";
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += "&";
+					}
+					r += braceAsNecessary(get(i));
+				}
+				return r;
+			}
+		}
+
+		public static class Difference extends AbstractSemanticType {
+
+			public Difference(SemanticType lhs, SemanticType rhs) {
+				super(SEMTYPE_difference,lhs,rhs);
+			}
+
+			public SemanticType getLeftHandSide()  {
+				return (SemanticType) get(0);
+			}
+
+			public SemanticType getRightHandSide()  {
+				return (SemanticType) get(1);
+			}
+
+			@Override
+			public Record asRecord(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Reference asReference(NameResolver resolver) {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Difference((SemanticType) operands[0],(SemanticType) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
+			}
+		}
 	}
 
 	// ============================================================
@@ -4661,7 +5133,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 	}
 
-	private static boolean needsBraces(Type type) {
+	private static String braceAsNecessary(SemanticType type) {
+		String str = type.toString();
+		if (needsBraces(type)) {
+			return "(" + str + ")";
+		} else {
+			return str;
+		}
+	}
+
+	private static boolean needsBraces(SemanticType type) {
 		if (type instanceof Type.Atom || type instanceof Type.Nominal) {
 			return false;
 		} else {
@@ -4810,6 +5291,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Void();
 			}
 		};
+		schema[TYPE_any] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_any") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Any();
+			}
+		};
 		schema[TYPE_null] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -4856,7 +5343,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Record((Value.Bool) operands[0], (Tuple<Decl.Variable>) operands[1]);
+				return new Type.Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
+			}
+		};
+		schema[TYPE_field] = new Schema(Operands.TWO, Data.ZERO, "TYPE_field") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Field((Identifier) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_function] = new Schema(Operands.TWO, Data.ZERO, "TYPE_function") {
@@ -4885,18 +5379,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
-			}
-		};
-		schema[TYPEX_intersection] = new Schema(Operands.MANY, Data.ZERO, "TYPE_intersection") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new TypeCombinator.Intersection(ArrayUtils.toArray(Type.class, operands));
-			}
-		};
-		schema[TYPEX_difference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_difference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new TypeCombinator.Difference((Type) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_byte] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {

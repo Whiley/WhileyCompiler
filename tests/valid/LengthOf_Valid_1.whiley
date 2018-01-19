@@ -3,7 +3,10 @@
 type list is int[] | bool[]
 
 function len(list l) -> int:
-    return |l|
+    if l is int[]:
+        return |l|
+    else:
+        return |l|
 
 public export method test() :
     int[] l = [1, 2, 3]

@@ -17,11 +17,11 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
-import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -97,8 +97,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return False;
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal nom = (Type.Nominal) type;
-				TypeSystem types = instance.getTypeSystem();
-				Decl.Type decl = types.resolveExactly(nom.getName(), Decl.Type.class);
+				NameResolver resolver = instance.getNameResolver();
+				Decl.Type decl = resolver.resolveExactly(nom.getName(), Decl.Type.class);
 				Decl.Variable var = decl.getVariableDeclaration();
 				if(is(var.getType(), instance) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();
@@ -577,9 +577,9 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Decl.Variable> tFields = t.getFields();
+					Tuple<Type.Field> tFields = t.getFields();
 					for (int i = 0; i != tFields.size(); ++i) {
-						Decl.Variable f = tFields.get(i);
+						Type.Field f = tFields.get(i);
 						if (hasField(f.getName())) {
 							RValue val = read(f.getName());
 							// Matching field
@@ -602,10 +602,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue convert(Type type) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Decl.Variable> fields = t.getFields();
+					Tuple<Type.Field> fields = t.getFields();
 					RValue.Record rec = this;
 					for (int i = 0; i != fields.size(); ++i) {
-						Decl.Variable f = fields.get(i);
+						Type.Field f = fields.get(i);
 						RValue v = this.read(f.getName()).convert(f.getType());
 						rec = rec.write(f.getName(), v);
 					}

@@ -4,11 +4,17 @@ type rec is in_rec | ib_rec
 
 function read(rec x) -> (int|null|bool r):
     //
-    return x.f
+    if x is in_rec:
+        return x.f
+    else:
+        return x.f
 
 function write(rec x, int n) -> (rec r):
     //
-    x.f = n
+    if x is in_rec:
+        x.f = n
+    else:
+        x.f = n
     //
     return x
 

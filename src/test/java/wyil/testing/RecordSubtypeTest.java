@@ -17,10 +17,11 @@ package wyil.testing;
 import org.junit.*;
 
 import wybs.lang.NameResolver;
+import wyc.lang.WhileyFile.Type;
 import wyc.util.TestUtils;
-import wyil.type.SubtypeOperator;
-import wyil.type.TypeSystem;
-import wyil.type.subtyping.StrictSubtypeOperator;
+import wyil.type.subtyping.SubtypeOperator;
+import wyil.type.subtyping.RelaxedTypeEmptinessTest;
+import wyil.type.subtyping.StrictTypeEmptinessTest;
 
 import static org.junit.Assert.*;
 import static wyc.lang.WhileyFile.Type;
@@ -1792,22 +1793,26 @@ public class RecordSubtypeTest {
 	@Test public void test_5776() { checkIsSubtype("{int f2}|int","{int f2}|int"); }
 
 	private void checkIsSubtype(String from, String to) {
-		StrictSubtypeOperator ss = new StrictSubtypeOperator(new TypeSystem(null));
-		SubtypeOperator.SemanticType ft = ss.toSemanticType(TestUtils.fromString(from));
-		SubtypeOperator.SemanticType tt = ss.toSemanticType(TestUtils.fromString(to));
+		NameResolver resolver = null;
+		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
+				new RelaxedTypeEmptinessTest(resolver));
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(ss.isSubtype(ft,tt,null) != SubtypeOperator.Result.False);
+			assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		StrictSubtypeOperator ss = new StrictSubtypeOperator(new TypeSystem(null));
-		SubtypeOperator.SemanticType ft = ss.toSemanticType(TestUtils.fromString(from));
-		SubtypeOperator.SemanticType tt = ss.toSemanticType(TestUtils.fromString(to));
+		NameResolver resolver = null;
+		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
+				new RelaxedTypeEmptinessTest(resolver));
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(ss.isSubtype(ft,tt,null) != SubtypeOperator.Result.False);
+			assertFalse(subtypeOperator.isSubtype(ft,tt,null));
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}

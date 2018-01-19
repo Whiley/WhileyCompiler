@@ -137,7 +137,7 @@ public class ErrorMessages {
 	 * @param data
 	 * @return
 	 */
-	public static String errorMessage(MsgWithTypeParam msg, Type t1) {
+	public static String errorMessage(MsgWithTypeParam msg, Object t1) {
 		return msg.msg.replaceAll("\\$0",t1.toString());
 	}
 
@@ -148,7 +148,7 @@ public class ErrorMessages {
 	 * @param data
 	 * @return
 	 */
-	public static String errorMessage(MsgWithTypeParams msg, Type t1, Type t2) {
+	public static String errorMessage(MsgWithTypeParams msg, Object t1, Object t2) {
 		return msg.msg.replaceAll("\\$0",t1.toString()).replaceAll("\\$1",t2.toString());
 	}
 }

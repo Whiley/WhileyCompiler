@@ -487,7 +487,7 @@ public class WhileyFileParser {
 			// This is currently the only situation in which field aliases can
 			// arise.
 			Type.Record r = (Type.Record) t;
-			for (Decl.Variable fd : r.getFields()) {
+			for (Type.Field fd : r.getFields()) {
 				scope.declareFieldAlias(fd.getName());
 			}
 		}
@@ -3562,11 +3562,9 @@ public class WhileyFileParser {
 	private Type parseRecordType(EnclosingScope scope) {
 		int start = index;
 		match(LeftCurly);
-		ArrayList<Decl.Variable> types = new ArrayList<>();
-		// FIXME: parse modifiers
-		Tuple<Modifier> modifiers = new Tuple<>();
+		ArrayList<Type.Field> types = new ArrayList<>();
 		Pair<Type, Identifier> p = parseMixedType(scope);
-		types.add(new Decl.Variable(modifiers, p.getSecond(), p.getFirst()));
+		types.add(new Type.Field(p.getSecond(), p.getFirst()));
 		HashSet<Identifier> names = new HashSet<>();
 		names.add(p.getSecond());
 		// Now, we continue to parse any remaining fields.
@@ -3585,11 +3583,11 @@ public class WhileyFileParser {
 					syntaxError("duplicate record key", id);
 				}
 				names.add(id);
-				types.add(new Decl.Variable(modifiers, id, p.getFirst()));
+				types.add(new Type.Field(id, p.getFirst()));
 			}
 		}
 		// Done
-		Tuple<Decl.Variable> fields = new Tuple<>(types);
+		Tuple<Type.Field> fields = new Tuple<>(types);
 		return annotateSourceLocation(new Type.Record(isOpen, fields), start);
 	}
 

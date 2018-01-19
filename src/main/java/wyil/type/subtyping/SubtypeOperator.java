@@ -11,12 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.type;
+package wyil.type.subtyping;
 
 import static wyc.lang.WhileyFile.*;
 
+import java.util.HashSet;
+
 import wybs.lang.NameID;
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
+import wyc.lang.WhileyFile.Decl;
+import wyc.lang.WhileyFile.Type;
+import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 
 /**
  * <p>
@@ -31,62 +37,18 @@ import wybs.lang.NameResolver.ResolutionError;
  * @author David J. Pearce
  *
  */
-public interface SubtypeOperator {
+public class SubtypeOperator {
+	private final NameResolver resolver;
+	private final EmptinessTest<SemanticType> emptinessTest;
 
 	enum Result {
 		True, False, Unknown
 	}
 
-	/**
-	 * A semantic type provides a more abstract notion of a syntactic type in
-	 * Whiley. The key here is that a semantic type supports various operators for
-	 * combining syntactic types, such as intersetion and difference.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	interface SemanticType {
-		/**
-		 * Union this semantic type with another given semantic type. For example,
-		 * unioning <code>{int x, int y}</code> and <code>MyType</code> produces a
-		 * semantic type which represents either an instanceof of
-		 * <code>{int x, int y}</code> or an instance of <code>MyType</code>.
-		 *
-		 * @param type
-		 * @return
-		 */
-		public SemanticType union(SemanticType type);
-
-		/**
-		 * Intersect this semantic type with another given semantic type. For example,
-		 * intersecting <code>{int x, int y}</code> and <code>MyType</code> produces a
-		 * semantic type which represents both an instanceof of
-		 * <code>{int x, int y}</code> and an instance of <code>MyType</code>.
-		 *
-		 * @param type
-		 * @return
-		 */
-		public SemanticType intersect(SemanticType type);
-
-		/**
-		 * Subtract from this semantic type a given semantic type. For example, subtract
-		 * <code>int</code> from <code>int|null</code> produces a semantic type
-		 * equivalent to <code>null</code>.
-		 *
-		 * @param type
-		 * @return
-		 */
-		public SemanticType subtract(SemanticType type);
+	public SubtypeOperator(NameResolver resolver, EmptinessTest<SemanticType> emptinessTest) {
+		this.resolver = resolver;
+		this.emptinessTest = emptinessTest;
 	}
-
-	/**
-	 * Convert a given syntactic type into a semantic type such that it can be used
-	 * for subtype testing and/or combined with other semantic types in various ways.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public SemanticType toSemanticType(Type type);
 
 	/**
 	 * <p>
@@ -133,7 +95,22 @@ public interface SubtypeOperator {
 	 *             possible matching declaration, or it cannot be resolved to a
 	 *             corresponding type declaration.
 	 */
-	public Result isSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes) throws ResolutionError;
+	public boolean isSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes) throws ResolutionError {
+		boolean max = emptinessTest.isVoid(lhs, EmptinessTest.NegativeMax, rhs, EmptinessTest.PositiveMax, lifetimes);
+		//
+		// FIXME: I don't think this logic is correct yet for some reason.
+		if (!max) {
+			return false;
+		} else {
+			boolean min = emptinessTest.isVoid(lhs, EmptinessTest.NegativeMin, rhs, EmptinessTest.PositiveMin,
+					lifetimes);
+			if (min) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
 
 	/**
 	 * <p>
@@ -167,7 +144,9 @@ public interface SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) throws ResolutionError;
+	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) throws ResolutionError {
+		return emptinessTest.isVoid(type, EmptinessTest.PositiveMax, type, EmptinessTest.PositiveMax, lifetimes);
+	}
 
 	/**
 	 * <p>
@@ -188,43 +167,59 @@ public interface SubtypeOperator {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public boolean isContractive(NameID nid, Type type) throws ResolutionError;
+	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
+		HashSet<NameID> visited = new HashSet<>();
+		return isContractive(nid, type, visited);
+	}
 
-	/**
-	 * <p>
-	 * A lifetime relation determines, for any two lifetimes <code>l</code> and
-	 * <code>m</code>, whether <code>l</code> is contained within <code>m</code> or
-	 * not. This information is critical for subtype checking of reference types.
-	 * Consider this minimal example:
-	 * </p>
-	 *
-	 * <pre>
-	 * method create() -> (&*:int r):
-	 *    return this:new 42
-	 * </pre>
-	 * <p>
-	 * This example should not compile. The reason is that the lifetime
-	 * <code>this</code> is contained <i>within</i> the static lifetime
-	 * <code>*</code>. Thus, the cell allocated within <code>create()</code> will be
-	 * deallocated when the method ends and, hence, the method will return a
-	 * <i>dangling reference</i>.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface LifetimeRelation {
-		/**
-		 * Determine whether one lifetime is contained entirely within another. This is
-		 * the critical test for ensuring sound subtyping between references.
-		 * Specifically, an assignment <code>&l:T p = q</code> is only considered safe
-		 * if it can be shown that the lifetime of the cell referred to by
-		 * <code>p</code> is <i>within</i> that of <code>q</code>.
-		 *
-		 * @param outer
-		 * @param inner
-		 * @return
-		 */
-		public boolean isWithin(String inner, String outer);
+	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) throws ResolutionError {
+		switch (type.getOpcode()) {
+		case TYPE_void:
+		case TYPE_any:
+		case TYPE_null:
+		case TYPE_bool:
+		case TYPE_int:
+		case TYPE_staticreference:
+		case TYPE_reference:
+		case TYPE_array:
+		case TYPE_record:
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property:
+		case TYPE_invariant:
+		case TYPE_byte:
+		case TYPE_unresolved:
+			return true;
+		case TYPE_union: {
+			Type.Union c = (Type.Union) type;
+			for (int i = 0; i != c.size(); ++i) {
+				if (!isContractive(name, c.get(i), visited)) {
+					return false;
+				}
+			}
+			return true;
+		}
+		default:
+		case TYPE_nominal: {
+			Type.Nominal n = (Type.Nominal) type;
+			Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
+			NameID nid = decl.getQualifiedName().toNameID();
+			if (nid.equals(name)) {
+				// We have identified a non-contract type.
+				return false;
+			} else if (visited.contains(nid)) {
+				// NOTE: this identifies a type (other than the one we are looking for) which is
+				// not contractive. It may seem odd then, that we pretend it is in fact
+				// contractive. The reason for this is simply that we cannot tell here with the
+				// type we are interested in is contractive or not. Thus, to improve the error
+				// messages reported we ignore this non-contractiveness here (since we know
+				// it'll be caught down the track anyway).
+				return true;
+			} else {
+				visited.add(nid);
+				return isContractive(name, decl.getType(), visited);
+			}
+		}
+		}
 	}
 }

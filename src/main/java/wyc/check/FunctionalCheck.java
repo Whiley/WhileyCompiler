@@ -13,6 +13,7 @@
 // limitations under the License.
 package wyc.check;
 
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -20,7 +21,6 @@ import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
-import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
@@ -74,10 +74,10 @@ import static wyc.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
-	public TypeSystem types;
+	public NameResolver resolver;
 
 	public FunctionalCheck(CompileTask builder) {
-		this.types = builder.getTypeSystem();
+		this.resolver = builder.getNameResolver();
 	}
 
 	public void check(WhileyFile file) {
@@ -203,7 +203,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 				return true;
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal n = (Type.Nominal) type;
-				Decl.Type decl = types.resolveExactly(n.getName(), Decl.Type.class);
+				Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
 				return isMethodType(decl.getType());
 			} else {
 				return false;
