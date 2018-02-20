@@ -31,6 +31,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyc.check.FlowTypeUtils.Environment;
 import wyc.lang.*;
 import wyc.util.AbstractVisitor;
 import wyc.util.ErrorMessages;
@@ -198,7 +199,7 @@ public class FlowTypeCheck {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Update environment so this within declared lifetimes
-		environment = declareThisWithin(d, environment);
+		environment = FlowTypeUtils.declareThisWithin(d, environment);
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
 		checkNonEmpty(d.getParameters(), environment);
@@ -223,23 +224,6 @@ public class FlowTypeCheck {
 	}
 
 	/**
-	 * Update the environment to reflect the fact that the special "this" lifetime
-	 * is contained within all declared lifetime parameters. Observe that this only
-	 * makes sense if the enclosing declaration is for a method.
-	 *
-	 * @param decl
-	 * @param environment
-	 * @return
-	 */
-	public Environment declareThisWithin(Decl.FunctionOrMethod decl, Environment environment) {
-		if (decl instanceof Decl.Method) {
-			Decl.Method method = (Decl.Method) decl;
-			environment = environment.declareWithin("this", method.getLifetimes());
-		}
-		return environment;
-	}
-
-	/**
 	 * Check that a return value is provided when it is needed. For example, a
 	 * return value is not required for a method that has no return type. Likewise,
 	 * we don't expect one from a native method since there was no body to analyse.
@@ -248,7 +232,7 @@ public class FlowTypeCheck {
 	 * @param last
 	 */
 	private void checkReturnValue(Decl.FunctionOrMethod d, Environment last) {
-		if (d.match(Modifier.Native.class) == null && last != BOTTOM && d.getReturns().size() != 0) {
+		if (d.match(Modifier.Native.class) == null && last != FlowTypeUtils.BOTTOM && d.getReturns().size() != 0) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
@@ -307,7 +291,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
 		try {
-			if (environment == BOTTOM) {
+			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
 				return syntaxError(errorMessage(UNREACHABLE_CODE), stmt);
 			} else if (stmt instanceof Decl.Variable) {
@@ -404,7 +388,7 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Environment checkFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
-		return BOTTOM;
+		return FlowTypeUtils.BOTTOM;
 	}
 
 	/**
@@ -464,7 +448,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkBreak(Stmt.Break stmt, Environment environment, EnclosingScope scope) {
 		// FIXME: need to check environment to the break destination
-		return BOTTOM;
+		return FlowTypeUtils.BOTTOM;
 	}
 
 	/**
@@ -481,7 +465,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkContinue(Stmt.Continue stmt, Environment environment, EnclosingScope scope) {
 		// FIXME: need to check environment to the continue destination
-		return BOTTOM;
+		return FlowTypeUtils.BOTTOM;
 	}
 
 	/**
@@ -521,7 +505,7 @@ public class FlowTypeCheck {
 		// Type check invariants
 		checkConditions(stmt.getInvariant(), true, environment);
 		// Determine and update modified variables
-		Tuple<Decl.Variable> modified = determineModifiedVariables(stmt.getBody());
+		Tuple<Decl.Variable> modified = FlowTypeUtils.determineModifiedVariables(stmt.getBody());
 		stmt.setModified(stmt.getHeap().allocate(modified));
 		// Type condition assuming its false to represent the terminated loop.
 		// This is important if the condition contains a type test, as we'll
@@ -583,7 +567,7 @@ public class FlowTypeCheck {
 			trueEnvironment = checkBlock(stmt.getTrueBranch(), trueEnvironment, scope);
 		}
 		// Join results back together
-		return union(trueEnvironment, falseEnvironment);
+		return FlowTypeUtils.union(trueEnvironment, falseEnvironment);
 	}
 
 	/**
@@ -616,7 +600,7 @@ public class FlowTypeCheck {
 		// Return bottom as following environment to signal that control-flow
 		// cannot continue here. Thus, any following statements will encounter
 		// the BOTTOM environment and, hence, report an appropriate error.
-		return BOTTOM;
+		return FlowTypeUtils.BOTTOM;
 	}
 
 	/**
@@ -704,7 +688,7 @@ public class FlowTypeCheck {
 			if (finalEnv == null) {
 				finalEnv = localEnv;
 			} else {
-				finalEnv = union(finalEnv, localEnv);
+				finalEnv = FlowTypeUtils.union(finalEnv, localEnv);
 			}
 			// Keep track of whether a default
 			hasDefault |= (c.getConditions().size() == 0);
@@ -715,7 +699,7 @@ public class FlowTypeCheck {
 			// therefore assume that there are values which will fall right
 			// through the switch statement without hitting a case. Therefore,
 			// we must include the original environment to accound for this.
-			finalEnv = union(finalEnv, environment);
+			finalEnv = FlowTypeUtils.union(finalEnv, environment);
 		}
 
 		return finalEnv;
@@ -768,109 +752,11 @@ public class FlowTypeCheck {
 		// Type loop body using true environment
 		checkBlock(stmt.getBody(), trueEnvironment, scope);
 		// Determine and update modified variables
-		Tuple<Decl.Variable> modified = determineModifiedVariables(stmt.getBody());
+		Tuple<Decl.Variable> modified = FlowTypeUtils.determineModifiedVariables(stmt.getBody());
 		stmt.setModified(stmt.getHeap().allocate(modified));
 		// Return false environment to represent flow after loop.
 		return falseEnvironment;
 	}
-
-	/**
-	 * Determine the set of modifier variables for a given statement block. A
-	 * modified variable is one which is assigned.
-	 *
-	 * @param block
-	 * @param scope
-	 * @param modified
-	 */
-	private Tuple<Decl.Variable> determineModifiedVariables(Stmt.Block block) {
-		HashSet<Decl.Variable> modified = new HashSet<>();
-		determineModifiedVariables(block, modified);
-		return new Tuple<>(modified);
-	}
-
-	private void determineModifiedVariables(Stmt.Block block, Set<Decl.Variable> modified) {
-		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
-			switch (stmt.getOpcode()) {
-			case STMT_assign: {
-				Stmt.Assign s = (Stmt.Assign) stmt;
-				for (LVal lval : s.getLeftHandSide()) {
-					Expr.VariableAccess lv = extractAssignedVariable(lval);
-					if (lv == null) {
-						// FIXME: this is not an ideal solution long term. In
-						// particular, we really need this method to detect not
-						// just modified variables, but also modified locations
-						// in general (e.g. assignments through references, etc)
-						continue;
-					} else {
-						modified.add(lv.getVariableDeclaration());
-					}
-				}
-				break;
-			}
-			case STMT_dowhile: {
-				Stmt.DoWhile s = (Stmt.DoWhile) stmt;
-				determineModifiedVariables(s.getBody(), modified);
-				break;
-			}
-			case STMT_if:
-			case STMT_ifelse: {
-				Stmt.IfElse s = (Stmt.IfElse) stmt;
-				determineModifiedVariables(s.getTrueBranch(), modified);
-				if (s.hasFalseBranch()) {
-					determineModifiedVariables(s.getFalseBranch(), modified);
-				}
-				break;
-			}
-			case STMT_namedblock: {
-				Stmt.NamedBlock s = (Stmt.NamedBlock) stmt;
-				determineModifiedVariables(s.getBlock(), modified);
-				break;
-			}
-			case STMT_switch: {
-				Stmt.Switch s = (Stmt.Switch) stmt;
-				for (Stmt.Case c : s.getCases()) {
-					determineModifiedVariables(c.getBlock(), modified);
-				}
-				break;
-			}
-			case STMT_while: {
-				Stmt.While s = (Stmt.While) stmt;
-				determineModifiedVariables(s.getBody(), modified);
-				break;
-			}
-			}
-		}
-	}
-
-	/**
-	 * Determine the modified variable for a given LVal. Almost all lvals modify
-	 * exactly one variable, though dereferences don't.
-	 *
-	 * @param lval
-	 * @param scope
-	 * @return
-	 */
-	private Expr.VariableAccess extractAssignedVariable(LVal lval) {
-		if (lval instanceof Expr.VariableAccess) {
-			return (Expr.VariableAccess) lval;
-		} else if (lval instanceof Expr.RecordAccess) {
-			Expr.RecordAccess e = (Expr.RecordAccess) lval;
-			return extractAssignedVariable((LVal) e.getOperand());
-		} else if (lval instanceof Expr.ArrayAccess) {
-			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
-			return extractAssignedVariable((LVal) e.getFirstOperand());
-		} else if (lval instanceof Expr.Dereference) {
-			return null;
-		} else {
-			internalFailure(errorMessage(INVALID_LVAL_EXPRESSION), lval);
-			return null; // dead code
-		}
-	}
-
-	// =========================================================================
-	// LVals
-	// =========================================================================
 
 	// =========================================================================
 	// Condition
@@ -1062,7 +948,7 @@ public class FlowTypeCheck {
 				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
-			return union(refinements);
+			return FlowTypeUtils.union(refinements);
 		} else {
 			for (int i = 0; i != operands.size(); ++i) {
 				environment = checkCondition(operands.get(i), sign, environment);
@@ -1106,7 +992,7 @@ public class FlowTypeCheck {
 				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
-			return union(refinements);
+			return FlowTypeUtils.union(refinements);
 		}
 	}
 
@@ -1120,7 +1006,7 @@ public class FlowTypeCheck {
 			// ... and then passes this into the then body
 			Environment right = checkCondition(expr.getSecondOperand(), true, environment);
 			//
-			return union(left, right);
+			return FlowTypeUtils.union(left, right);
 		} else {
 			// Effectively, this is a conjunction equivalent to A && !B
 			environment = checkCondition(expr.getFirstOperand(), true, environment);
@@ -1155,7 +1041,7 @@ public class FlowTypeCheck {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
 			}
 			//
-			Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, expr.getTestType());
+			Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
 			if (extraction != null) {
 				Decl.Variable var = extraction.getFirst();
 				SemanticType varT = environment.getType(var);
@@ -1175,42 +1061,6 @@ public class FlowTypeCheck {
 		}
 	}
 
-	/**
-	 * <p>
-	 * Extract the "true" test from a given type test in order that we might try to
-	 * retype it. This does not always succeed if, for example, the expression being
-	 * tested cannot be retyped. An example would be a test like
-	 * <code>arr[i] is int</code> as, in this case, we cannot retype
-	 * <code>arr[i]</code>.
-	 * </p>
-	 *
-	 * <p>
-	 * In the simple case of e.g. <code>x is int</code> we just extract
-	 * <code>x</code> and type <code>int</code>. The more interesting case arises
-	 * when there is at least one field access involved. For example,
-	 * <code>x.f is int</code> extracts variable <code>x</code> with type
-	 * <code>{int f, ...}</code> (which is a safe approximation).
-	 * </p>
-	 *
-	 * @param expr
-	 * @param type
-	 * @return A pair on successful extraction, or null if possible extraction.
-	 */
-	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, Type type) {
-		if (expr instanceof Expr.VariableAccess) {
-			Expr.VariableAccess var = (Expr.VariableAccess) expr;
-			return new Pair<>(var.getVariableDeclaration(), type);
-		} else if (expr instanceof Expr.RecordAccess) {
-			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
-			Type.Field field = new Type.Field(((Expr.RecordAccess) expr).getField(), type);
-			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getOperand(), recT);
-		} else {
-			// no extraction is possible
-			return null;
-		}
-	}
-
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment env) {
 		checkNonEmpty(stmt.getParameters(), env);
 		// NOTE: We throw away the returned environment from the body. This is
@@ -1219,36 +1069,9 @@ public class FlowTypeCheck {
 		return env;
 	}
 
-	protected Environment union(Environment... environments) {
-		Environment result = environments[0];
-		for (int i = 1; i != environments.length; ++i) {
-			result = union(result, environments[i]);
-		}
-		//
-		return result;
-	}
-
-	public Environment union(Environment left, Environment right) {
-		if (left == right || right == BOTTOM) {
-			return left;
-		} else if (left == BOTTOM) {
-			return right;
-		} else {
-			Environment result = new Environment();
-			Set<Decl.Variable> leftRefinements = left.getRefinedVariables();
-			Set<Decl.Variable> rightRefinements = right.getRefinedVariables();
-			for (Decl.Variable var : leftRefinements) {
-				if (rightRefinements.contains(var)) {
-					// We have a refinement on both branches
-					SemanticType leftT = left.getType(var);
-					SemanticType rightT = right.getType(var);
-					SemanticType mergeT = new SemanticType.Union(leftT, rightT);
-					result = result.refineType(var, mergeT);
-				}
-			}
-			return result;
-		}
-	}
+	// =========================================================================
+	// LVals
+	// =========================================================================
 
 	/**
 	 * Type check a given lval assuming an initial environment. This returns the
@@ -2747,8 +2570,6 @@ public class FlowTypeCheck {
 		throw new InternalFailure(msg, cu.getEntry(), e, ex);
 	}
 
-	private final Environment BOTTOM = new Environment();
-
 	// ==========================================================================
 	// Enclosing Scope
 	// ==========================================================================
@@ -2852,86 +2673,4 @@ public class FlowTypeCheck {
 		}
 	}
 
-	/**
-	 * Provides a very simple typing environment which defaults to using the
-	 * declared type for a variable (this is the "null" case). However, the
-	 * environment can also be updated to override the declared type with a new type
-	 * as appropriate.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public class Environment implements LifetimeRelation {
-		private final Map<Decl.Variable, SemanticType> refinements;
-		private final Map<String, String[]> withins;
-
-		public Environment() {
-			this.refinements = new HashMap<>();
-			this.withins = new HashMap<>();
-		}
-
-		public Environment(Map<Decl.Variable, SemanticType> refinements, Map<String, String[]> withins) {
-			this.refinements = new HashMap<>(refinements);
-			this.withins = new HashMap<>(withins);
-		}
-
-		public SemanticType getType(Decl.Variable var) {
-			SemanticType refined = refinements.get(var);
-			if (refined == null) {
-				return var.getType();
-			} else {
-				return refined;
-			}
-		}
-
-		public Environment refineType(Decl.Variable var, SemanticType refinement) {
-			Environment r = new Environment(this.refinements, this.withins);
-			r.refinements.put(var, refinement);
-			return r;
-		}
-
-		public Set<Decl.Variable> getRefinedVariables() {
-			return refinements.keySet();
-		}
-
-		@Override
-		public String toString() {
-			String r = "{";
-			boolean firstTime = true;
-			for (Decl.Variable var : refinements.keySet()) {
-				if (!firstTime) {
-					r += ", ";
-				}
-				firstTime = false;
-				r += var.getName() + "->" + getType(var);
-			}
-			return r + "}";
-		}
-
-		@Override
-		public boolean isWithin(String inner, String outer) {
-			//
-			if (outer.equals("*") || inner.equals(outer)) {
-				// Cover easy cases first
-				return true;
-			} else {
-				String[] outers = withins.get(inner);
-				return outers != null && (ArrayUtils.firstIndexOf(outers, outer) >= 0);
-			}
-		}
-
-		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
-			String[] outs = new String[outers.size()];
-			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers.get(i).get();
-			}
-			return declareWithin(inner, outs);
-		}
-
-		public Environment declareWithin(String inner, String... outers) {
-			Environment nenv = new Environment(refinements, withins);
-			nenv.withins.put(inner, outers);
-			return nenv;
-		}
-	}
 }
