@@ -1475,27 +1475,25 @@ public class FlowTypeCheck {
 
 	private Tuple<Type> checkInvoke(Expr.Invoke expr, Environment environment) {
 		try {
-			// Determine the argument types
+			// Determine the concrete argument types
 			Tuple<Expr> arguments = expr.getOperands();
+			SemanticType[] argumentTypes = new SemanticType[arguments.size()];
 			List<Decl.Callable> candidates = resolver.resolveAll(expr.getName(), Decl.Callable.class);
 			filterCandidateTypesByLength(candidates,arguments.size());
-			// Filter candidates based on what we find
+			// Filter candidates based on what we find and determine concrete types
 			for (int j = 0; j != arguments.size(); ++j) {
 				Type[] parameterCandidates = extractParameterTypeCandidates(candidates, j);
-				SemanticType type = checkExpression(arguments.get(j), environment, parameterCandidates); // FIXME
+				SemanticType type = checkExpression(arguments.get(j), environment, parameterCandidates);
 				filterCandidateTypesByParameter(candidates, j, type, environment);
+				argumentTypes[j] = type;
 			}
-			if(candidates.isEmpty()) {
-				return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr.getName());
-			} else if (candidates.size() > 1) {
-				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), expr.getName());
-			}
-			// FIXME: need to bind lifetime parameters somehow
-			Type.Callable selected = candidates.get(0).getType();
+			// Binding any lifetime parameters appropriately using concrete argument types.
+			Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(argumentTypes),
+					expr.getLifetimes(), environment);
 			// Assign descriptor to this expression
-			expr.setSignature(expr.getHeap().allocate(selected));
+			expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
 			// Finally, return the declared returns/
-			return selected.getReturns();
+			return binding.getConcreteType().getReturns();
 		} catch (ResolutionError e) {
 			return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr, e);
 		}
@@ -1951,29 +1949,61 @@ public class FlowTypeCheck {
 	 *
 	 * @return
 	 */
-	private Binding resolveAsCallable(Name name, Tuple<Type> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
+	private Binding resolveAsCallable(Name name, Tuple<? extends SemanticType> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
 			List<Decl.Callable> candidates = resolver.resolveAll(name, Decl.Callable.class);
-			// Bind candidate types to given argument types which, in particular, will
-			// produce bindings for lifetime variables
-			List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
-			// Sanity check bindings generated
-			if (bindings.isEmpty()) {
-				return syntaxError("unable to resolve name (no match for " + name + parameterString(arguments) + ")"
-						+ foundCandidatesString(candidates), name);
-			}
-			// Select the most precise signature from the candidate bindings
-			Binding selected = selectCallableCandidate(name, bindings, lifetimes);
-			// Sanity check result
-			if (selected == null) {
-				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundBindingsString(bindings)), name);
-			}
-			return selected;
+			// Now attempt to bind the given candidate declarations against the concrete argument types.
+			return generateCallableBinding(name,candidates,arguments,lifetimeArguments,lifetimes);
 		} catch (ResolutionError e) {
 			return syntaxError(e.getMessage(), name);
 		}
+	}
+
+	/**
+	 * Determine appropriate lifetime bindings for a given set of candidate function
+	 * or method declarations and concrete argument types. For example:
+	 *
+	 * <pre>
+	 * method f<a>(&a:int ptr):
+	 *    ...
+	 *
+	 * method g() -> int:
+	 *    &this:int ptr = this::new(1)
+	 *    f(ptr)
+	 *    return *ptr
+	 * </pre>
+	 *
+	 * Here, the invocation <code>f(ptr)</code> needs to bind the parameter type
+	 * <code>&a:int</code> with the concrete argument type <code>&this:int</code> by
+	 * mapping lifetime parameter <code>a</code> to lifetime argument
+	 * <code>this</code>.
+	 *
+	 * @param name
+	 * @param candidates
+	 * @param arguments
+	 * @param lifetimeArguments
+	 * @param lifetimes
+	 * @return
+	 */
+	private Binding generateCallableBinding(Name name, List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
+			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
+		// Bind candidate types to given argument types which, in particular, will
+		// produce bindings for lifetime variables
+		List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
+		// Sanity check bindings generated
+		if (bindings.isEmpty()) {
+			return syntaxError("unable to resolve name (no match for " + name + parameterString(arguments) + ")"
+					+ foundCandidatesString(candidates), name);
+		}
+		// Select the most precise signature from the candidate bindings
+		Binding selected = selectCallableCandidate(name, bindings, lifetimes);
+		// Sanity check result
+		if (selected == null) {
+			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundBindingsString(bindings)), name);
+		}
+		return selected;
 	}
 
 	/**
@@ -2052,7 +2082,7 @@ public class FlowTypeCheck {
 	 *            Within relationship beteween declared lifetimes
 	 * @return
 	 */
-	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, Tuple<Type> arguments,
+	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
@@ -2073,7 +2103,7 @@ public class FlowTypeCheck {
 	}
 
 	private void generateApplicableBindings(Decl.Method candidate, List<Binding> bindings,
-			Tuple<Type> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
+			Tuple<? extends SemanticType> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		Type.Method type = candidate.getType();
 		Tuple<Identifier> lifetimeParameters = type.getLifetimeParameters();
 		Tuple<Type> parameters = type.getParameters();
@@ -2213,7 +2243,7 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Identifier[] extractLifetimes(Tuple<Type> args) {
+	private Identifier[] extractLifetimes(Tuple<? extends SemanticType> args) {
 		final HashSet<Identifier> lifetimes = new HashSet<>();
 		// Construct the type visitor
 		AbstractVisitor visitor = new AbstractVisitor() {
@@ -2277,7 +2307,7 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes, Tuple<Type> args) {
+	private boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes, Tuple<? extends SemanticType> args) {
 		Tuple<Type> parameters = candidate.getParameters();
 		if (parameters.size() != args.size()) {
 			// Differing number of parameters / arguments. Since we don't
@@ -2358,7 +2388,7 @@ public class FlowTypeCheck {
 		return bestValidWinner ? best : null;
 	}
 
-	private String parameterString(Tuple<Type> paramTypes) {
+	private String parameterString(Tuple<? extends SemanticType> paramTypes) {
 		String paramStr = "(";
 		boolean firstTime = true;
 		if (paramTypes == null) {
