@@ -4601,12 +4601,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public Type.Callable asCallable(NameResolver resolver);
 
-		public SemanticType union(SemanticType t);
-
-		public SemanticType intersect(SemanticType t);
-
-		public SemanticType negate(SemanticType t);
-
 		public static abstract class AbstractSemanticType extends AbstractSyntacticItem implements SemanticType {
 
 			public AbstractSemanticType(int opcode, SyntacticItem... operands) {
@@ -4627,22 +4621,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Type.Callable asCallable(NameResolver resolver) {
 				return null;
 			}
-
-			@Override
-			public SemanticType union(SemanticType t) {
-				return null;
-			}
-
-			@Override
-			public SemanticType intersect(SemanticType t) {
-				return null;
-			}
-
-			@Override
-			public SemanticType negate(SemanticType t) {
-				return null;
-			}
-
 		}
 
 		public interface Atom extends SemanticType {

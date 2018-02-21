@@ -1566,21 +1566,20 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkEqualityOperator(Expr.BinaryOperator expr, Environment environment, Type... expected) {
-		//try {
-		checkIsSubtype(expected,Type.Bool,environment,expr);
-		SemanticType lhs = checkExpression(expr.getFirstOperand(), environment, Type.Any);
-		SemanticType rhs = checkExpression(expr.getSecondOperand(), environment, Type.Any);
+		try {
+			checkIsSubtype(expected,Type.Bool,environment,expr);
+			SemanticType lhs = checkExpression(expr.getFirstOperand(), environment, Type.Any);
+			SemanticType rhs = checkExpression(expr.getSecondOperand(), environment, Type.Any);
 			// Sanity check that the types of operands are actually comparable.
-// FIXME: restore this
-//			SemanticType glb = toSemanticType(lhs).intersect(toSemanticType(rhs));
-//			if (typeSystem.isVoid(glb, environment)) {
-//				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
-//				return null;
-//			}
+			SemanticType glb = new SemanticType.Intersection(lhs,rhs);
+			if (strictSubtypeOperator.isVoid(glb, environment)) {
+				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
+				return null;
+			}
 			return Type.Bool;
-//		} catch (ResolutionError e) {
-//			return syntaxError(e.getMessage(), expr);
-//		}
+		} catch (ResolutionError e) {
+			return syntaxError(e.getMessage(), expr);
+		}
 	}
 
 	private SemanticType checkIntegerComparator(Expr.BinaryOperator expr, Environment environment, Type... expected) {
