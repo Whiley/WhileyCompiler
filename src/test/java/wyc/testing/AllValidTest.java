@@ -73,11 +73,16 @@ public class AllValidTest {
 		IGNORED.put("TypeEquals_Valid_25", "#787");
 		IGNORED.put("TypeEquals_Valid_30", "#787");
 		IGNORED.put("TypeEquals_Valid_41", "#787");
-		//
+		// Remove Any and Negation Types
 		IGNORED.put("ConstrainedReference_Valid_1", "#827");
+		// Temporary Removal of Intersections
+		IGNORED.put("Intersection_Valid_1", "#843");
+		IGNORED.put("Intersection_Valid_2", "#843");
+		IGNORED.put("NegationType_Valid_3", "#843");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 	}
+
 
 	/**
 	 * The directory where compiler libraries are stored. This is necessary

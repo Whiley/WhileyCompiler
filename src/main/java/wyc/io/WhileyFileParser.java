@@ -713,7 +713,7 @@ public class WhileyFileParser {
 			// Must be an invocation since these are neither valid
 			// lvals (i.e. they cannot be assigned) nor types.
 			matchEndLine();
-			return (Stmt) e;
+			return e;
 		} else {
 			// At this point, the only remaining option is an assignment statement.
 			// Therefore, it must be that.
@@ -3412,17 +3412,22 @@ public class WhileyFileParser {
 		Type t = parseArrayType(scope);
 
 		// Now, attempt to look for union and/or intersection types
-		if (tryAndMatch(true, Ampersand) != null) {
-			// This is a union type
-			ArrayList<Type> types = new ArrayList<>();
-			types.add(t);
-			do {
-				types.add(parseArrayType(scope));
-			} while (tryAndMatch(true, Ampersand) != null);
-			//
-			Type[] bounds = types.toArray(new Type[types.size()]);
-			t = annotateSourceLocation(new Type.Intersection(bounds),start);
-		}
+
+// =============================================================================
+// FIXME: this is commented out in connection with RFC#20. The intention is that
+// it should be restored at some point in the future.
+// =============================================================================
+//		if (tryAndMatch(true, Ampersand) != null) {
+//			// This is a union type
+//			ArrayList<Type> types = new ArrayList<>();
+//			types.add(t);
+//			do {
+//				types.add(parseArrayType(scope));
+//			} while (tryAndMatch(true, Ampersand) != null);
+//			//
+//			Type[] bounds = types.toArray(new Type[types.size()]);
+//			t = annotateSourceLocation(new Type.Intersection(bounds),start);
+//		}
 		return t;
 	}
 
