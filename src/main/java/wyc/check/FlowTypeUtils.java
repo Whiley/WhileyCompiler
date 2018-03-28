@@ -16,6 +16,26 @@ package wyc.check;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
+import static wyc.lang.WhileyFile.SEMTYPE_array;
+import static wyc.lang.WhileyFile.SEMTYPE_record;
+import static wyc.lang.WhileyFile.SEMTYPE_reference;
+import static wyc.lang.WhileyFile.SEMTYPE_staticreference;
+import static wyc.lang.WhileyFile.SEMTYPE_union;
+import static wyc.lang.WhileyFile.SEMTYPE_intersection;
+import static wyc.lang.WhileyFile.SEMTYPE_difference;
+import static wyc.lang.WhileyFile.TYPE_void;
+import static wyc.lang.WhileyFile.TYPE_null;
+import static wyc.lang.WhileyFile.TYPE_bool;
+import static wyc.lang.WhileyFile.TYPE_byte;
+import static wyc.lang.WhileyFile.TYPE_int;
+import static wyc.lang.WhileyFile.TYPE_nominal;
+import static wyc.lang.WhileyFile.TYPE_array;
+import static wyc.lang.WhileyFile.TYPE_record;
+import static wyc.lang.WhileyFile.TYPE_reference;
+import static wyc.lang.WhileyFile.TYPE_staticreference;
+import static wyc.lang.WhileyFile.TYPE_union;
+import static wyc.lang.WhileyFile.TYPE_function;
+import static wyc.lang.WhileyFile.TYPE_method;
 import static wyc.lang.WhileyFile.STMT_assign;
 import static wyc.lang.WhileyFile.STMT_dowhile;
 import static wyc.lang.WhileyFile.STMT_if;
@@ -26,6 +46,7 @@ import static wyc.lang.WhileyFile.STMT_while;
 import static wyc.util.ErrorMessages.INVALID_LVAL_EXPRESSION;
 import static wyc.util.ErrorMessages.errorMessage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,12 +58,14 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
+import wyc.check.FlowTypeUtils.Environment;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Expr;
 import wyc.lang.WhileyFile.LVal;
 import wyc.lang.WhileyFile.SemanticType;
 import wyc.lang.WhileyFile.Stmt;
 import wyc.lang.WhileyFile.Type;
+import wyc.lang.WhileyFile.SemanticType.Record;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.*;
@@ -73,7 +96,6 @@ public class FlowTypeUtils {
 		}
 		return environment;
 	}
-
 
 	public static Environment union(Environment... environments) {
 		Environment result = environments[0];
@@ -236,7 +258,6 @@ public class FlowTypeUtils {
 		}
 	}
 
-
 	// ===============================================================================================================
 	// isPure
 	// ===============================================================================================================
@@ -263,7 +284,7 @@ public class FlowTypeUtils {
 		} else if (item instanceof Expr.IndirectInvoke) {
 			Expr.IndirectInvoke e = (Expr.IndirectInvoke) item;
 			// FIXME: need to do something here.
-			internalFailure("purity checking currently does not support indirect invocation",item);
+			internalFailure("purity checking currently does not support indirect invocation", item);
 		}
 		// Recursively examine any subexpressions. The uniform nature of
 		// syntactic items makes this relatively easy.
@@ -275,7 +296,6 @@ public class FlowTypeUtils {
 		return result;
 	}
 
-
 	// ===============================================================================================================
 	// Environment
 	// ===============================================================================================================
@@ -285,7 +305,6 @@ public class FlowTypeUtils {
 	 * maps no variables.
 	 */
 	public static final Environment BOTTOM = new Environment();
-
 
 	/**
 	 * Provides a very simple typing environment which defaults to using the
@@ -392,7 +411,7 @@ public class FlowTypeUtils {
 	 */
 	public static Type.Array[] typeArrayConstructor(Type[] types) {
 		Type.Array[] arrayTypes = new Type.Array[types.length];
-		for(int i=0;i!=types.length;++i) {
+		for (int i = 0; i != types.length; ++i) {
 			arrayTypes[i] = new Type.Array(types[i]);
 		}
 		return arrayTypes;
@@ -415,12 +434,11 @@ public class FlowTypeUtils {
 	 */
 	public static Type[] typeArrayElementConstructor(Type.Array[] types) {
 		Type[] elements = new Type[types.length];
-		for(int i=0;i!=types.length;++i) {
+		for (int i = 0; i != types.length; ++i) {
 			elements[i] = types[i].getElement();
 		}
 		return elements;
 	}
-
 
 	/**
 	 * Given an array of expected element types, construct corresponding expected
@@ -467,11 +485,11 @@ public class FlowTypeUtils {
 	 */
 	public static Type[] typeRecordFieldConstructor(Type.Record[] types, Identifier fieldName) {
 		Type[] fields = new Type[types.length];
-		for(int i=0;i!=fields.length;++i) {
+		for (int i = 0; i != fields.length; ++i) {
 			Type.Record type = types[i];
 			Type field = type.getField(fieldName);
-			if(field == null) {
-				if(type.isOpen()) {
+			if (field == null) {
+				if (type.isOpen()) {
 					field = Type.Any;
 				} else {
 					return null;
@@ -480,7 +498,7 @@ public class FlowTypeUtils {
 			fields[i] = field;
 		}
 		fields = ArrayUtils.removeAll(fields, null);
-		if(fields.length == 0) {
+		if (fields.length == 0) {
 			return null;
 		} else {
 			return fields;
@@ -506,12 +524,11 @@ public class FlowTypeUtils {
 	 */
 	public static Type[] typeReferenceElementConstructor(Type.Reference[] types) {
 		Type[] elements = new Type[types.length];
-		for(int i=0;i!=types.length;++i) {
+		for (int i = 0; i != types.length; ++i) {
 			elements[i] = types[i].getElement();
 		}
 		return elements;
 	}
-
 
 	/**
 	 * Given an array of expected lambda types, construct corresponding expected
@@ -535,14 +552,14 @@ public class FlowTypeUtils {
 	 */
 	public static Type[] typeLambdaReturnConstructor(Type.Callable[] types) {
 		Type[] returnTypes = new Type[types.length];
-		for(int i=0;i!=types.length;++i) {
-			// NOTE: this is an implicit assumption that typeLambdaFilter() only ever returns
+		for (int i = 0; i != types.length; ++i) {
+			// NOTE: this is an implicit assumption that typeLambdaFilter() only ever
+			// returns
 			// lambda types with exactly one return type.
 			returnTypes[i] = types[i].getReturns().get(0);
 		}
 		return returnTypes;
 	}
-
 
 	// ===============================================================================================================
 	// Type Filters
@@ -624,9 +641,9 @@ public class FlowTypeUtils {
 	 */
 	public static Type.Record[] typeRecordFieldFilter(Type.Record[] types, Tuple<Identifier> fields) {
 		Type.Record[] result = new Type.Record[types.length];
-		for(int i=0;i!=result.length;++i) {
+		for (int i = 0; i != result.length; ++i) {
 			Type.Record ith = types[i];
-			if(compareFields(ith,fields)) {
+			if (compareFields(ith, fields)) {
 				result[i] = ith;
 			}
 		}
@@ -730,85 +747,11 @@ public class FlowTypeUtils {
 	private static final AbstractTypeFilter<Type.Array> TYPE_ARRAY_FILTER = new AbstractTypeFilter<>(Type.Array.class,
 			new Type.Array(Type.Any));
 
-	private static final AbstractTypeFilter<Type.Record> TYPE_RECORD_FILTER = new AbstractTypeFilter<>(Type.Record.class,
-			new Type.Record(true, new Tuple<>()));
+	private static final AbstractTypeFilter<Type.Record> TYPE_RECORD_FILTER = new AbstractTypeFilter<>(
+			Type.Record.class, new Type.Record(true, new Tuple<>()));
 
-	private static final AbstractTypeFilter<Type.Reference> TYPE_REFERENCE_FILTER = new AbstractTypeFilter<>(Type.Reference.class,
-			new Type.Reference(Type.Any));
-
-	// ===============================================================================================================
-	// Type Extractors
-	// ===============================================================================================================
-
-	/**
-	 * <p>
-	 * Responsible for extracting a readable array type. This is a conservative
-	 * approximation of that described in a given type which is safe to use when
-	 * reading elements from that type. For example, the type
-	 * <code>(int[])|(bool[])</code> has a readable array type of
-	 * <code>(int|bool)[]</code>. This is the readable type as, if we were to read
-	 * an element from either bound, the return type would be in
-	 * <code>int|bool</code>. However, we cannot use the readable array type for
-	 * writing as this could be unsafe. For example, if we actually had an array of
-	 * type <code>int[]</code>, then writing a boolean value is not permitted. Not
-	 * all types have readable array type and, furthermore, care must be exercised
-	 * for those that do. For example, <code>(int[])|int</code> does not have a
-	 * readable array type. Finally, negations play an important role in determining
-	 * the readable array type. For example, <code>(int|null)[] & !(int[])</code>
-	 * generates the readable array type <code>null[]</code>.
-	 * </p>
-	 *
-	 */
-	public static SemanticType.Array typeArrayExtractor(SemanticType type, LifetimeRelation lifetimes,
-			SubtypeOperator subtypeOperator, NameResolver resolver) {
-		return new TypeArrayExtractor(resolver, subtypeOperator).apply(type, lifetimes);
-	}
-
-	/**
-	 * <p>
-	 * Responsible for extracting a readable record type. This is a conservative
-	 * approximation of that described in a given type which is safe to use when
-	 * reading elements from that type. For example, the type
-	 * <code>{int f}|{bool f}</code> has a readable record type of
-	 * <code>{int|bool f}</code>. This is the readable type as, if we were to read
-	 * field <code>f</code> from either bound, the return type would be in
-	 * <code>int|bool</code>. However, we cannot use the readable record type for
-	 * writing as this could be unsafe. For example, if we actually had a record of
-	 * type <code>{int f}</code>, then writing a boolean value is not permitted. Not
-	 * all types have readable record type and, furthermore, care must be exercised
-	 * for those that do. For example, <code>{int f}|int</code> does not have a
-	 * readable record type. Likewise, the readable record type for
-	 * <code>{int f, int g}|{bool f}</code> is <code>{int|bool f, ...}</code>.
-	 * Finally, negations play an important role in determining the readable record
-	 * type. For example, <code>{int|null f} & !{int f}</code> generates the
-	 * readable record type <code>{null f}</code>.
-	 * </p>
-	 */
-	public static SemanticType.Record typeRecordExtractor(SemanticType type, LifetimeRelation lifetimes,
-			SubtypeOperator subtypeOperator, NameResolver resolver) {
-		return new TypeRecordExtractor(resolver, subtypeOperator).apply(type, lifetimes);
-	}
-
-	/**
-	 * <p>
-	 * Responsible for extracting a readable reference type. This is a conservative
-	 * approximation of that described in a given type which is safe to use when
-	 * reading elements from that type. For example, the type
-	 * <code>(&int)|(&bool)</code> has a readable reference type of
-	 * <code>&(int|bool)</code>. This is the readable type as, if we were to read an
-	 * element from either bound, the return type would be in <code>int|bool</code>.
-	 * However, we cannot use the readable reference type for writing as this could
-	 * be unsafe. For example, if we actually had an reference of type
-	 * <code>&int</code>, then writing a boolean value is not permitted. Not all
-	 * types have a readable reference type and, furthermore, care must be exercised
-	 * for those that do. For example, <code>(&int)|int</code> does not have a
-	 * readable reference type.
-	 * </p>
-	 */
-	public static SemanticType.Reference typeReferenceExtractor(SemanticType type, LifetimeRelation lifetimes,
-			SubtypeOperator subtypeOperator, NameResolver resolver) {
-		return new TypeReferenceExtractor(resolver, subtypeOperator).apply(type, lifetimes);
-	}
+	private static final AbstractTypeFilter<Type.Reference> TYPE_REFERENCE_FILTER = new AbstractTypeFilter<>(
+			Type.Reference.class, new Type.Reference(Type.Any));
 
 	// ===============================================================================================================
 	// Misc helpers

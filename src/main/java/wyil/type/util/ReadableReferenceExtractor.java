@@ -39,9 +39,9 @@ import wyil.type.subtyping.SubtypeOperator;
  * @author David J. Pearce
  *
  **/
-public class TypeReferenceExtractor extends AbstractTypeExtractor<SemanticType.Reference> {
+public class ReadableReferenceExtractor extends AbstractTypeExtractor<SemanticType.Reference> {
 
-	public TypeReferenceExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
+	public ReadableReferenceExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
 		super(resolver, subtypeOperator);
 	}
 

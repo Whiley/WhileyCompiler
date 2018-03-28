@@ -40,9 +40,9 @@ import wyil.type.subtyping.SubtypeOperator;
  * @author David J. Pearce
  *
  */
-public class TypeArrayExtractor extends AbstractTypeExtractor<SemanticType.Array> {
+public class ReadableArrayExtractor extends AbstractTypeExtractor<SemanticType.Array> {
 
-	public TypeArrayExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
+	public ReadableArrayExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
 		super(resolver, subtypeOperator);
 	}
 

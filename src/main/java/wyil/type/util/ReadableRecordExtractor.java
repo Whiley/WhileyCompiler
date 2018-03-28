@@ -45,9 +45,9 @@ import wyil.type.subtyping.SubtypeOperator;
  * readable record type <code>{null f}</code>.
  * </p>
  */
-public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Record> {
+public class ReadableRecordExtractor extends AbstractTypeExtractor<SemanticType.Record> {
 
-	public TypeRecordExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
+	public ReadableRecordExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
 		super(resolver, subtypeOperator);
 	}
 
@@ -74,21 +74,13 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 		boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
 		isOpenRecord |= (lhsFields.size() > count || rhsFields.size() > count);
 		//
-		if(lhs instanceof Type && rhs instanceof Type) {
-			// NOTE: this case is required to ensure that, when given two Types, the type
-			// extractor produces a Type (rather than a SemanticType).
-			Type.Field[] fields = new Type.Field[count];
-			extractMatchingFieldsUnioned(lhsFields,rhsFields,fields,true);
-			return new Type.Record(isOpenRecord, new Tuple<>(fields));
-		} else {
-			SemanticType.Field[] fields = new SemanticType.Field[count];
-			extractMatchingFieldsUnioned(lhsFields,rhsFields,fields,false);
-			return new SemanticType.Record(isOpenRecord, new Tuple<>(fields));
-		}
+		SemanticType.Field[] fields = constructFieldArray(count);
+		extractMatchingFieldsUnioned(lhsFields,rhsFields,fields);
+		return constructRecord(isOpenRecord, fields);
 	}
 
 	protected int extractMatchingFieldsUnioned(Tuple<? extends SemanticType.Field> lhsFields,
-			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result, boolean concrete) {
+			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result) {
 		int index = 0;
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
@@ -99,8 +91,7 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					SemanticType type = unionHelper(lhsField.getType(), rhsField.getType());
-					SemanticType.Field combined = concrete ? new Type.Field(lhsFieldName, (Type) type)
-							: new SemanticType.Field(lhsFieldName, type);
+					SemanticType.Field combined = constructField(lhsFieldName,type);
 					result[index++] = combined;
 				}
 			}
@@ -132,7 +123,7 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 			// job is to determine the final set of field declarations.
 			int lhsRemainder = lhsFields.size() - matches;
 			int rhsRemainder = rhsFields.size() - matches;
-			SemanticType.Field[] fields = new SemanticType.Field[matches + lhsRemainder + rhsRemainder];
+			SemanticType.Field[] fields = constructFieldArray(matches + lhsRemainder + rhsRemainder);
 			// Extract all matching fields first
 			int index = extractMatchingFields(lhsFields, rhsFields, fields);
 			// Extract remaining lhs fields second
@@ -143,7 +134,7 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 			// are themselves open.
 			boolean isOpen = lhs.isOpen() && rhs.isOpen();
 			//
-			return new SemanticType.Record(isOpen, new Tuple<>(fields));
+			return constructRecord(isOpen,fields);
 		}
 	}
 
@@ -162,7 +153,7 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					SemanticType diff = new SemanticType.Difference(lhsField.getType(), rhsField.getType());
-					fields.add(new SemanticType.Field(lhsFieldName, diff));
+					fields.add(constructField(lhsFieldName, diff));
 					matched = true;
 					break;
 				}
@@ -225,7 +216,7 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					SemanticType type = intersectionHelper(lhsField.getType(), rhsField.getType());
-					SemanticType.Field combined = new SemanticType.Field(lhsFieldName, type);
+					SemanticType.Field combined = constructField(lhsFieldName, type);
 					result[index++] = combined;
 				}
 			}
@@ -260,5 +251,19 @@ public class TypeRecordExtractor extends AbstractTypeExtractor<SemanticType.Reco
 			result[index++] = lhsFields.get(i);
 		}
 		return index;
-}
+	}
+
+  protected SemanticType.Field[] constructFieldArray(int size) {
+    return new SemanticType.Field[size];
+  }
+
+  protected SemanticType.Field constructField(Identifier name, SemanticType type) {
+    return new SemanticType.Field(name,type);
+  }
+
+
+  public SemanticType.Record constructRecord(boolean isOpen, SemanticType.Field[] fields) {
+    return new SemanticType.Record(isOpen, new Tuple<>(fields));
+  }
+
 }
