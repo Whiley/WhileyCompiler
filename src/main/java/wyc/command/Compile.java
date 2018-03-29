@@ -362,13 +362,14 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		} catch (SyntaxError e) {
 			SyntacticItem element = e.getElement();
 			e.outputSourceError(syserr, brief);
-			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
-				findCounterexamples((WyalFile.Declaration.Assert)element,project);
-			}
 			if (verbose) {
 				printStackTrace(syserr, e);
 			}
-			return Result.ERRORS;
+			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
+				return findCounterexamples((WyalFile.Declaration.Assert)element,project);
+			} else {
+				return Result.ERRORS;
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			// now what?
@@ -436,19 +437,26 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		}
 	}
 
-	public void findCounterexamples(WyalFile.Declaration.Assert assertion, StdProject project) {
+	public Result findCounterexamples(WyalFile.Declaration.Assert assertion, StdProject project) {
 		// FIXME: it doesn't feel right creating new instances here.
 		NameResolver resolver = new WyalFileResolver(project);
 		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
 		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
 		try {
 			Interpreter.Result result = interpreter.evaluate(assertion);
-			if(!result.holds()) {
+			if (!result.holds()) {
 				syserr.println("counterexample: " + result.getEnvironment());
 			}
-		} catch(Interpreter.UndefinedException e) {
+		} catch (Interpreter.UndefinedException e) {
 			// do nothing for now
+		} catch (Throwable t) {
+			System.err.println("internal failure (counterexample generation): " + t.getMessage());
+			if (verbose) {
+				printStackTrace(syserr, t);
+			}
+			return Result.INTERNAL_FAILURE;
 		}
+		return Result.ERRORS;
 	}
 
 	public List getModifiedSourceFiles() throws IOException {
