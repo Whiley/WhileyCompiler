@@ -1,6 +1,7 @@
 type nat is (int n) where n >= 0
 
-function f(int|{int f}|{int|null f} x) -> (int r):
+function f(int|{int f}|{int|null f} x) -> (int r)
+ensures x is {int f} ==> (r == x.f):
     //
     if x is {int f}:
         return x.f

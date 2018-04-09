@@ -3673,15 +3673,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public Type substitute(Map<Identifier,Identifier> binding);
 
-		@Override
-		public Type.Record asRecord(NameResolver resolver);
-
-		@Override
-		public Type.Reference asReference(NameResolver resolver);
-
-		@Override
-		public Type.Callable asCallable(NameResolver resolver);
-
 		public interface Atom extends Type, SemanticType.Atom {
 		}
 
@@ -3700,21 +3691,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			AbstractType(int opcode, SyntacticItem... operands) {
 				super(opcode, operands);
-			}
-
-			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Type.Callable asCallable(NameResolver resolver) {
-				return null;
 			}
 
 		}
@@ -3953,17 +3929,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				return null;
-			}
-
-
-			@Override
 			public Type.Array clone(SyntacticItem[] operands) {
 				return new Type.Array((Type) operands[0]);
 			}
@@ -4024,16 +3989,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				return this;
-			}
-
-			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
 				if (operands.length == 1) {
 					return new Type.Reference((Type) operands[0]);
@@ -4091,16 +4046,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				} else {
 					return new Type.Record(isOpen(),after);
 				}
-			}
-
-			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				return this;
 			}
 
 			@Override
@@ -4197,43 +4142,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				try {
-					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
-					return decl.getType().asRecord(resolver);
-				} catch (NameResolver.ResolutionError e) {
-					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
-					// future, the use of NameResolver will be deprecated.
-					throw new RuntimeException(e);
-				}
-			}
-
-			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				try {
-					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
-					return decl.getType().asReference(resolver);
-				} catch (NameResolver.ResolutionError e) {
-					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
-					// future, the use of NameResolver will be deprecated.
-					throw new RuntimeException(e);
-				}
-			}
-
-
-			@Override
-			public Type.Callable asCallable(NameResolver resolver) {
-				try {
-					Decl.Type decl = resolver.resolveExactly(getName(), Decl.Type.class);
-					return decl.getType().asCallable(resolver);
-				} catch (NameResolver.ResolutionError e) {
-					// FIXME: This is obviously not ideal, but it's a temporary fix for now. In the
-					// future, the use of NameResolver will be deprecated.
-					throw new RuntimeException(e);
-				}
-			}
-
-			@Override
 			public Nominal clone(SyntacticItem[] operands) {
 				return new Nominal((Name) operands[0]);
 			}
@@ -4295,18 +4203,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type.Record asRecord(NameResolver resolver) {
-				// FIXME:
-				return null;
-			}
-
-			@Override
-			public Type.Reference asReference(NameResolver resolver) {
-				// FIXME:
-				return null;
-			}
-
-			@Override
 			public String toString() {
 				String r = "";
 				for (int i = 0; i != size(); ++i) {
@@ -4356,11 +4252,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				} else {
 					return new Type.Function(parametersAfter, returnsAfter);
 				}
-			}
-
-			@Override
-			public Type.Callable asCallable(NameResolver resolver) {
-				return this;
 			}
 
 			@SuppressWarnings("unchecked")
@@ -4439,11 +4330,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				} else {
 					return new Type.Method(parametersAfter, returnsAfter, getCapturedLifetimes(), getLifetimeParameters());
 				}
-			}
-
-			@Override
-			public Type.Callable asCallable(NameResolver resolver) {
-				return this;
 			}
 
 			@Override
@@ -4595,32 +4481,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	public static interface SemanticType extends SyntacticItem {
 
-		public SemanticType.Record asRecord(NameResolver resolver);
-
-		public SemanticType.Reference asReference(NameResolver resolver);
-
-		public Type.Callable asCallable(NameResolver resolver);
-
 		public static abstract class AbstractSemanticType extends AbstractSyntacticItem implements SemanticType {
 
 			public AbstractSemanticType(int opcode, SyntacticItem... operands) {
 				super(opcode,operands);
 			}
 
-			@Override
-			public Record asRecord(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Reference asReference(NameResolver resolver) {
-				return null;
-			}
-
-			@Override
-			public Type.Callable asCallable(NameResolver resolver) {
-				return null;
-			}
 		}
 
 		public interface Atom extends SemanticType {
@@ -4692,11 +4558,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Identifier getLifetime() {
 				return (Identifier) get(1);
-			}
-
-			@Override
-			public Reference asReference(NameResolver resolver) {
-				return this;
 			}
 
 			@Override
@@ -4811,11 +4672,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Record asRecord(NameResolver resolver) {
-				return this;
-			}
-
-			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				boolean isOpen = ((Value.Bool)operands[0]).get();
 				return new Record(isOpen,(Tuple<Field>) operands[1]);
@@ -4867,18 +4723,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Record asRecord(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Reference asReference(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Union(ArrayUtils.toArray(SemanticType.class, operands));
 			}
@@ -4912,18 +4756,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Record asRecord(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Reference asReference(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Intersection(ArrayUtils.toArray(SemanticType.class, operands));
 			}
@@ -4954,18 +4786,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public SemanticType getRightHandSide()  {
 				return (SemanticType) get(1);
-			}
-
-			@Override
-			public Record asRecord(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Reference asReference(NameResolver resolver) {
-				// TODO Auto-generated method stub
-				return null;
 			}
 
 			@Override

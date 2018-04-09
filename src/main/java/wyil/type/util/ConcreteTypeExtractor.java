@@ -197,6 +197,11 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType,LifetimeRe
     if (lhsKind == rhsKind) {
       // Easy case.
       switch (lhsKind) {
+      case TYPE_null:
+        case TYPE_bool:
+        case TYPE_byte:
+        case TYPE_int:
+        	return sign ? lhs : Type.Void;
         case TYPE_array:
           return intersect((Type.Array) lhs, (SemanticType.Array) rhs, sign, lifetimes);
         case TYPE_reference:
@@ -209,9 +214,10 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType,LifetimeRe
           return intersect((Type.Function) lhs, (Type.Function) rhs, sign, lifetimes);
         case TYPE_method:
           return intersect((Type.Method) lhs, (Type.Method) rhs, sign, lifetimes);
+        case TYPE_nominal:
+          return intersect((Type.Nominal) lhs, rhs, sign, lifetimes);
         default:
-          // This covers all default cases, such as primities
-          return lhs;
+        	throw new IllegalArgumentException("invalid type encountered: " + lhs);
       }
     } else if (lhs instanceof Type.Union) {
       return intersect((Type.Union) lhs, rhs, sign, lifetimes);
@@ -420,13 +426,13 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType,LifetimeRe
    * @param sign
    * @return
    */
-  private Type intersect(Type lhs, SemanticType.Union rhs, boolean sign, LifetimeRelation lifetimes) {
-    if (sign) {
-      return union(lhs, sign, lifetimes, rhs.getAll());
-    } else {
-      return intersect(lhs, sign, lifetimes, rhs.getAll());
-    }
-  }
+	private Type intersect(Type lhs, SemanticType.Union rhs, boolean sign, LifetimeRelation lifetimes) {
+		if (sign) {
+			return union(lhs, sign, lifetimes, rhs.getAll());
+		} else {
+			return intersect(lhs, sign, lifetimes, rhs.getAll());
+		}
+	}
 
   /**
    * Intersect a given non-union type (e.g. int) with a given semantic
@@ -612,6 +618,9 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType,LifetimeRe
       return TYPE_function;
     case TYPE_method:
       return TYPE_method;
+    case SEMTYPE_intersection:
+    case SEMTYPE_difference:
+        return opcode;
     default:
       // Should be deadcode.
       throw new IllegalArgumentException("invalid type - " + type);

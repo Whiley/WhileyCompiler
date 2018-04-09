@@ -1,6 +1,7 @@
 type nat is (int n) where n >= 0
 
-function f(int|int[]|(int|null)[] x) -> (int r):
+function f(int|int[]|(int|null)[] x) -> (int r)
+ensures (x is int[] && |x| > 0) ==> (r == x[0]):
     //
     if x is int[] && |x| > 0:
         return x[0]

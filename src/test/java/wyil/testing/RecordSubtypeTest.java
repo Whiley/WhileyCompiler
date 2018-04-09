@@ -1795,7 +1795,7 @@ public class RecordSubtypeTest {
 	private void checkIsSubtype(String from, String to) {
 		NameResolver resolver = null;
 		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
-				new RelaxedTypeEmptinessTest(resolver));
+				new StrictTypeEmptinessTest(resolver));
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
@@ -1808,7 +1808,7 @@ public class RecordSubtypeTest {
 	private void checkNotSubtype(String from, String to) {
 		NameResolver resolver = null;
 		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
-				new RelaxedTypeEmptinessTest(resolver));
+				new StrictTypeEmptinessTest(resolver));
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {

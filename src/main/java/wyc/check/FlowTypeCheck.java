@@ -35,10 +35,7 @@ import wyil.type.subtyping.RelaxedTypeEmptinessTest;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
-import wyil.type.util.ReadableArrayExtractor;
-import wyil.type.util.ReadableRecordExtractor;
-import wyil.type.util.ReadableReferenceExtractor;
-import wyil.type.util.WriteableTypeExtractor;
+import wyil.type.util.ReadWriteTypeExtractor;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Type;
@@ -105,25 +102,19 @@ public class FlowTypeCheck {
 	private final NameResolver resolver;
 	private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
-	 private final ConcreteTypeExtractor concreteTypeExtractor;
-	private final ReadableRecordExtractor readableRecordExtractor;
-  private final ReadableArrayExtractor readableArrayExtractor;
-  private final ReadableReferenceExtractor readableReferenceExtractor;
-  private final WriteableTypeExtractor writeableTypeExtractor;
+	private final ConcreteTypeExtractor concreteTypeExtractor;
+	private final ReadWriteTypeExtractor rwTypeExtractor;
 
-	public FlowTypeCheck(CompileTask builder) {
-		this.builder = builder;
-		this.resolver = builder.getNameResolver();
-		this.concreteTypeExtractor = new ConcreteTypeExtractor(resolver);
-		this.relaxedSubtypeOperator = new SubtypeOperator(resolver,
-				new RelaxedTypeEmptinessTest(resolver));
-		this.strictSubtypeOperator = new SubtypeOperator(resolver,
-				new StrictTypeEmptinessTest(resolver));
-    this.readableRecordExtractor = new ReadableRecordExtractor(resolver,strictSubtypeOperator);
-    this.readableArrayExtractor = new ReadableArrayExtractor(resolver,strictSubtypeOperator);
-    this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,strictSubtypeOperator);
-    this.writeableTypeExtractor = new WriteableTypeExtractor(resolver,strictSubtypeOperator);
-	}
+  public FlowTypeCheck(CompileTask builder) {
+    this.builder = builder;
+    this.resolver = builder.getNameResolver();
+    this.concreteTypeExtractor = new ConcreteTypeExtractor(resolver);
+    this.relaxedSubtypeOperator = new SubtypeOperator(resolver,
+        new RelaxedTypeEmptinessTest(resolver));
+    this.strictSubtypeOperator = new SubtypeOperator(resolver,
+        new StrictTypeEmptinessTest(resolver));
+    this.rwTypeExtractor = new ReadWriteTypeExtractor(resolver, strictSubtypeOperator);
+  }
 
 	// =========================================================================
 	// WhileyFile(s)
@@ -1136,48 +1127,40 @@ public class FlowTypeCheck {
 		}
 	}
 
-  public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-    Type srcT = checkLVal((LVal) lval.getFirstOperand(), environment);
-    // NOTE: the following cast is safe because, given a Type, we cannot extract a
-    // SemanticType. Furthermore, since we know the result is an instanceof
-    // SemanticType.Array, it follows that it must be an instance of Type.Array (or
-    // null).
-    Type.Array arrT = (Type.Array) writeableTypeExtractor.apply(srcT, environment, Type.Array.class);
-    if (arrT == null) {
-      return syntaxError("expected array type", lval.getFirstOperand());
-    } else {
-      SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
-      checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
-      //
-      return arrT.getElement();
-    }
-  }
+	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
+
+		SemanticType src = checkExpression(lval.getFirstOperand(), environment);
+		SemanticType.Array arrT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY);
+		if (arrT == null) {
+			return syntaxError("expected array type", lval.getFirstOperand());
+		} else {
+			SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
+			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
+			//
+			return concreteTypeExtractor.apply(arrT.getElement(), environment);
+		}
+	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
-		Type src = checkLVal((LVal) lval.getOperand(), environment);
-		// NOTE: the following cast is safe because, given a Type, we cannot extract a
-		// SemanticType. Furthermore, since we know the result is an instanceof
-		// SemanticType.Record, it follows that it must be an instance of Type.Record
-		// (or null).
-		Type.Record recT = (Type.Record) writeableTypeExtractor.apply(src, environment, Type.Record.class);
+		SemanticType src = checkExpression(lval.getOperand(), environment);
+		//
+		SemanticType.Record recT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.WRITEABLE_RECORD);
 		if (recT == null) {
 			return syntaxError("expected record type", lval.getOperand());
 		} else {
-			return recT.getField(lval.getField());
+			return concreteTypeExtractor.apply(recT.getField(lval.getField()),environment);
 		}
 	}
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
-		Type srcT = checkLVal((LVal) lval.getOperand(), environment);
-		// NOTE: the following cast is safe because, given a Type, we cannot extract a
-		// SemanticType. Furthermore, since we know the result is an instance of
-		// SemanticType.Reference, it follows that it must be an instance of
-		// Type.Reference (or null).
-		Type.Reference refT = (Type.Reference) writeableTypeExtractor.apply(srcT, environment, Type.Reference.class);
-		if(refT == null) {
+		SemanticType src = checkExpression(lval.getOperand(), environment);
+		//
+		SemanticType.Reference refT = rwTypeExtractor.apply(src, environment,
+				ReadWriteTypeExtractor.WRITEABLE_REFERENCE);
+		if (refT == null) {
 			return syntaxError("expected reference type", lval.getOperand());
 		} else {
-			return refT.getElement();
+			return concreteTypeExtractor.apply(refT.getElement(),environment);
 		}
 	}
 
@@ -1283,7 +1266,8 @@ public class FlowTypeCheck {
 			default:
 				syntaxError("too few return values", expression);
 			}
-			return types.get(0);
+			type = types.get(0);
+			break;
 		}
 		// Conditions
 		case EXPR_logicalnot:
@@ -1372,7 +1356,7 @@ public class FlowTypeCheck {
 					expression);
 		}
 		// Allocate and set type for expression
-    Type concreteType = concreteTypeExtractor.apply(type, environment);
+		Type concreteType = concreteTypeExtractor.apply(type, environment);
 		expression.setType(expression.getHeap().allocate(concreteType));
 		return type;
 	}
@@ -1461,7 +1445,11 @@ public class FlowTypeCheck {
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
 		// Determine signature type from source
 		SemanticType type = checkExpression(expr.getSource(), environment);
-		Type.Callable sig = checkIsCallableType(type, environment, expr.getSource());
+		Type.Callable sig = rwTypeExtractor.apply(type, environment, ReadWriteTypeExtractor.READABLE_CALLABLE);
+		//checkIsCallableType(type, environment, expr.getSource());
+		if (sig == null) {
+			return syntaxError("expected lambda type", expr.getSource());
+		}
 		// Determine the argument types
 		Tuple<Expr> arguments = expr.getArguments();
 		Tuple<Type> parameters = sig.getParameters();
@@ -1550,7 +1538,7 @@ public class FlowTypeCheck {
     // Check expression against expected record types
     SemanticType src = checkExpression(expr.getOperand(), environment);
     // Following may produce null if field not present
-    SemanticType.Record type = readableRecordExtractor.apply(src, environment);
+    SemanticType.Record type = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_RECORD);
     // Check whether field present or not.
     if (type == null) {
       return syntaxError("expected record type", expr.getOperand());
@@ -1568,7 +1556,7 @@ public class FlowTypeCheck {
     // Check src and value expressions
     SemanticType src = checkExpression(expr.getFirstOperand(), environment);
     SemanticType val = checkExpression(expr.getSecondOperand(), environment);
-    SemanticType.Record readableRecordT = readableRecordExtractor.apply(src, environment);
+    SemanticType.Record readableRecordT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_RECORD);
     //
     String actualFieldName = expr.getField().get();
     Tuple<? extends SemanticType.Field> fields = readableRecordT.getFields();
@@ -1603,12 +1591,12 @@ public class FlowTypeCheck {
 	private SemanticType checkArrayLength(Expr.ArrayLength expr, Environment environment) {
 		SemanticType src = checkExpression(expr.getOperand(), environment);
 		// Check whether the source returns an array type or not.
-    SemanticType.Array arrT = readableArrayExtractor.apply(src, environment);
-    if (arrT == null) {
-      return syntaxError("expected array type", expr.getOperand());
-    } else {
-      return Type.Int;
-    }
+		SemanticType.Array arrT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
+		if (arrT == null) {
+			return syntaxError("expected array type", expr.getOperand());
+		} else {
+			return Type.Int;
+		}
 	}
 
 	private SemanticType checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
@@ -1655,7 +1643,7 @@ public class FlowTypeCheck {
     SemanticType sourceT = checkExpression(source, environment);
     SemanticType subscriptT = checkExpression(subscript, environment);
     // Check whether source operand yielded an array type
-    SemanticType.Array sourceArrayT = readableArrayExtractor.apply(sourceT, environment);
+    SemanticType.Array sourceArrayT = rwTypeExtractor.apply(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
     if (sourceArrayT == null) {
       return syntaxError("expected array type", source);
     } else {
@@ -1673,7 +1661,7 @@ public class FlowTypeCheck {
     SemanticType subscriptT = checkExpression(subscript, environment);
     SemanticType valueT = checkExpression(value, environment);
     // Extract the determined array type
-    SemanticType.Array sourceArrayT = readableArrayExtractor.apply(sourceT, environment);
+    SemanticType.Array sourceArrayT = rwTypeExtractor.apply(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
     if (sourceArrayT == null) {
       return syntaxError("expected array type", source);
     } else {
@@ -1686,7 +1674,7 @@ public class FlowTypeCheck {
 	private SemanticType checkDereference(Expr.Dereference expr, Environment environment) {
 		SemanticType operandT = checkExpression(expr.getOperand(), environment);
 		// Extract an appropriate reference type form the source.
-		SemanticType.Reference readableReferenceT = readableReferenceExtractor.apply(operandT, environment);
+		SemanticType.Reference readableReferenceT = rwTypeExtractor.apply(operandT, environment, ReadWriteTypeExtractor.READABLE_REFERENCE);
 		// Check successfully extracted a reference type.
 		if(readableReferenceT == null) {
 			return syntaxError("expected reference type", expr);
@@ -1753,23 +1741,6 @@ public class FlowTypeCheck {
 	// ===========================================================================================
 	// Reference Helpers
 	// ===========================================================================================
-
-	/**
-	 * Check whether a given type is a callable type of some sort.
-	 *
-	 * @param type
-	 * @return
-	 */
-	private Type.Callable checkIsCallableType(SemanticType type, LifetimeRelation lifetimes, SyntacticItem element) {
-		// FIXME: this prohibits effective callable types
-		Type.Callable t = type.asCallable(resolver);
-		if (t != null) {
-			return t;
-		} else {
-			return syntaxError("expected lambda type", element);
-		}
-
-	}
 
 	/**
 	 * Attempt to determine the declared function or macro to which a given

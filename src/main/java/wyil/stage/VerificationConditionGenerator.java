@@ -2411,10 +2411,17 @@ public class VerificationConditionGenerator {
 				elements[i] = convert(tu.get(i), context);
 			}
 			result = new WyalFile.Type.Union(elements);
-		} else if (type instanceof Type.Callable) {
-			Type.Callable ft = (Type.Callable) type;
-			// FIXME: need to do something better here
-			result = new WyalFile.Type.Any();
+		} else if (type instanceof Type.Function) {
+			Type.Function ft = (Type.Function) type;
+			Tuple<WyalFile.Type> parameters = convert(ft.getParameters(), context);
+			Tuple<WyalFile.Type> returns = convert(ft.getReturns(), context);
+			return new WyalFile.Type.Function(parameters,returns);
+		} else if (type instanceof Type.Method) {
+			Type.Method mt = (Type.Method) type;
+			Tuple<WyalFile.Type> parameters = convert(mt.getParameters(), context);
+			Tuple<WyalFile.Type> returns = convert(mt.getReturns(), context);
+			// FIXME: this needs to be figure out!
+			return new WyalFile.Type.Function(parameters,returns);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.getName().toNameID();
@@ -2427,6 +2434,14 @@ public class VerificationConditionGenerator {
 		result = allocate(result,context.getParent(WhileyFile.Attribute.Span.class));
 		//
 		return result;
+	}
+
+	public Tuple<WyalFile.Type> convert(Tuple<WhileyFile.Type> types, SyntacticItem context) {
+		WyalFile.Type[] nTypes = new WyalFile.Type[types.size()];
+		for (int i = 0; i != types.size(); ++i) {
+			nTypes[i] = convert(types.get(i), context);
+		}
+		return new Tuple<>(nTypes);
 	}
 
 	/**

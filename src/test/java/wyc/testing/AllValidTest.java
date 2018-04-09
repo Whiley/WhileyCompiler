@@ -83,6 +83,10 @@ public class AllValidTest {
 		IGNORED.put("Function_Valid_22", "#845");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
+		// Readable Reference Types
+		IGNORED.put("UnionType_Valid_26", "#849");
+		// Rethinking Runtime Type Test Operator ?
+		IGNORED.put("RecordAssign_Valid_11", "#850");
 	}
 
 
