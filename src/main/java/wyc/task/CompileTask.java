@@ -24,7 +24,6 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.stage.MoveAnalysis;
-import wyil.type.TypeSystem;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
@@ -34,6 +33,7 @@ import wyc.check.FlowTypeCheck;
 import wyc.check.FunctionalCheck;
 import wyc.check.StaticVariableCheck;
 import wyc.lang.*;
+import wyc.util.WhileyFileResolver;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
@@ -96,7 +96,7 @@ public final class CompileTask implements Build.Task {
 	 * and performing subtype tests, etc. This object may cache results to
 	 * improve performance of some operations.
 	 */
-	private final TypeSystem typeSystem;
+	private final NameResolver resolver;
 
 	/**
 	 * The logger used for logging system events
@@ -119,7 +119,7 @@ public final class CompileTask implements Build.Task {
 	public CompileTask(Build.Project project) {
 		this.logger = Logger.NULL;
 		this.project = project;
-		this.typeSystem = new TypeSystem(project);
+		this.resolver = new WhileyFileResolver(project);
 	}
 
 	public String id() {
@@ -136,8 +136,8 @@ public final class CompileTask implements Build.Task {
 	 *
 	 * @return
 	 */
-	public TypeSystem getTypeSystem() {
-		return typeSystem;
+	public NameResolver getNameResolver() {
+		return resolver;
 	}
 
 	public void setLogger(Logger logger) {

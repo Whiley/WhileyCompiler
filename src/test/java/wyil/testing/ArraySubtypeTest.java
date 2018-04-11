@@ -22,7 +22,9 @@ import wybs.lang.NameResolver;
 import static wyc.lang.WhileyFile.Type;
 
 import wyc.util.TestUtils;
-import wyil.type.TypeSystem;
+import wyil.type.subtyping.RelaxedTypeEmptinessTest;
+import wyil.type.subtyping.SubtypeOperator;
+import wyil.type.subtyping.StrictTypeEmptinessTest;
 
 public class ArraySubtypeTest {
 	@Test public void test_52() { checkIsSubtype("null","null"); }
@@ -283,21 +285,27 @@ public class ArraySubtypeTest {
 	@Test public void test_2500() { checkIsSubtype("int[]|int","int[]|int"); }
 
 	private void checkIsSubtype(String from, String to) {
+		NameResolver resolver = null;
+		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
+				new RelaxedTypeEmptinessTest(resolver));
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(new TypeSystem(null).isRawCoerciveSubtype(ft,tt,null));
+			assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	private void checkNotSubtype(String from, String to) {
+		NameResolver resolver = null;
+		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
+				new RelaxedTypeEmptinessTest(resolver));
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(new TypeSystem(null).isRawCoerciveSubtype(ft, tt,null));
-		} catch (NameResolver.ResolutionError e) {
+			assertFalse(subtypeOperator.isSubtype(ft,tt,null));
+		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}

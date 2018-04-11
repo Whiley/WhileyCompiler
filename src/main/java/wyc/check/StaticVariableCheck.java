@@ -9,17 +9,16 @@ import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
-import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.CYCLIC_STATIC_INITIALISER;
 import static wyc.util.ErrorMessages.errorMessage;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
-	private final TypeSystem typeSystem;
+	private final NameResolver resolver;
 
 	public StaticVariableCheck(CompileTask builder) {
-		this.typeSystem = builder.getTypeSystem();
+		this.resolver = builder.getNameResolver();
 	}
 
 	public void check(WhileyFile wf) {
@@ -60,7 +59,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Set<NameID> accessed) {
 		try {
-			Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), Decl.StaticVariable.class);
+			Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), Decl.StaticVariable.class);
 			NameID name = decl.getQualifiedName().toNameID();
 			if (decl.hasInitialiser() && !accessed.contains(name)) {
 				accessed.add(name);

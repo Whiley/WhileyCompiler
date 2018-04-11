@@ -19,9 +19,6 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 import wycc.util.Pair;
-import wyil.type.SubtypeOperator;
-import wyil.type.TypeSystem;
-import wyil.type.SubtypeOperator.LifetimeRelation;
 import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
@@ -180,106 +177,21 @@ import static wyc.lang.WhileyFile.Name;
  * @author David J. Pearce
  *
  */
-public class StrictSubtypeOperator implements SubtypeOperator {
-	protected final TypeSystem typeSystem;
+public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
+	protected final NameResolver resolver;
 
-	public StrictSubtypeOperator(TypeSystem typeSystem) {
-		this.typeSystem = typeSystem;
+	public StrictTypeEmptinessTest(NameResolver resolver) {
+		this.resolver = resolver;
 	}
 
 	@Override
-	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
-		HashSet<NameID> visited = new HashSet<>();
-		return isContractive(nid, type, visited);
-	}
-
-	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) throws ResolutionError {
-		switch (type.getOpcode()) {
-		case TYPE_void:
-		case TYPE_any:
-		case TYPE_null:
-		case TYPE_bool:
-		case TYPE_int:
-		case TYPE_staticreference:
-		case TYPE_reference:
-		case TYPE_array:
-		case TYPE_record:
-		case TYPE_function:
-		case TYPE_method:
-		case TYPE_property:
-		case TYPE_invariant:
-		case TYPE_byte:
-		case TYPE_unresolved:
-			return true;
-		case TYPE_union:
-		case TYPE_intersection: {
-			Type.Combinator c = (Type.Combinator) type;
-			for (int i = 0; i != c.size(); ++i) {
-				if (!isContractive(name, c.get(i), visited)) {
-					return false;
-				}
-			}
-			return true;
-		}
-		case TYPE_difference: {
-			Type.Difference n = (Type.Difference) type;
-			return isContractive(name, n.getLeftHandSide(), visited)
-					&& isContractive(name, n.getRightHandSide(), visited);
-		}
-		default:
-		case TYPE_nominal: {
-			Type.Nominal n = (Type.Nominal) type;
-			Decl.Type decl = typeSystem.resolveExactly(n.getName(), Decl.Type.class);
-			NameID nid = decl.getQualifiedName().toNameID();
-			if (nid.equals(name)) {
-				// We have identified a non-contract type.
-				return false;
-			} else if (visited.contains(nid)) {
-				// NOTE: this identifies a type (other than the one we are looking for) which is
-				// not contractive. It may seem odd then, that we pretend it is in fact
-				// contractive. The reason for this is simply that we cannot tell here with the
-				// type we are interested in is contractive or not. Thus, to improve the error
-				// messages reported we ignore this non-contractiveness here (since we know
-				// it'll be caught down the track anyway).
-				return true;
-			} else {
-				visited.add(nid);
-				return isContractive(name, decl.getType(), visited);
-			}
-		}
-		}
-	}
-
-	@Override
-	public boolean isVoid(Type type, LifetimeRelation lifetimes) throws ResolutionError {
+	public boolean isVoid(SemanticType lhs, EmptinessTest.State lhsState, SemanticType rhs, EmptinessTest.State rhsState,
+			LifetimeRelation lifetimes) throws ResolutionError {
+		// FIXME: this is really temporary for now.
+		Term<?> lhsTerm = new Term<>(lhsState.sign, lhs, lhsState.maximise);
+		Term<?> rhsTerm = new Term<>(rhsState.sign, rhs, rhsState.maximise);
 		HashSetAssumptions assumptions = new HashSetAssumptions();
-		Term<?> term = new Term<>(true, type, true);
-		// FIXME: lifetime relation cannot be null here
-		return isVoidTerm(term, term, assumptions, lifetimes);
-	}
-
-	@Override
-	public Result isSubtype(Type parent, Type child, LifetimeRelation lifetimes) throws ResolutionError {
-		// FIXME: we can do better in some situations here. For example, if we
-		// have the same nominal types they can cancel each other.
-		HashSetAssumptions assumptions = new HashSetAssumptions();
-		Term<?> lhsMaxTerm = new Term<>(false, parent, true);
-		Term<?> rhsMaxTerm = new Term<>(true, child, true);
-		boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions, lifetimes);
-		//
-		// FIXME: I don't think this logic is correct yet for some reason.
-		if (!max) {
-			return Result.False;
-		} else {
-			Term<?> lhsMinTerm = new Term<>(false, parent, false);
-			Term<?> rhsMinTerm = new Term<>(true, child, false);
-			boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions, lifetimes);
-			if (min) {
-				return Result.True;
-			} else {
-				return Result.Unknown;
-			}
-		}
+		return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
 	}
 
 	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, Assumptions assumptions, LifetimeRelation lifetimes)
@@ -361,43 +273,33 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		} else {
 			// In this case, we still have items on the worklist which need to
 			// be processed. That is, broken down into "atomic" terms.
-			Term<Type> item = worklist.pop();
-			Type t = item.type;
-			boolean conjunct = item.sign;
+			Term<SemanticType> item = worklist.pop();
+			SemanticType t = item.type;
 			//
+			boolean conjunct = item.sign;
 			switch (t.getOpcode()) {
+			case SEMTYPE_union:
 			case TYPE_union:
 				conjunct = !conjunct;
-			case TYPE_intersection: {
+			case SEMTYPE_intersection: {
 				Type.Combinator ut = (Type.Combinator) t;
-				Type[] operands = ut.toArray(Type.class);
 				if (conjunct) {
-					// Conjunction
-					worklist.push(item.sign, operands, item.maximise);
+					worklist.push(item.sign, ut.getAll(), item.maximise);
 				} else {
-					// Disjunction
-					for (int i = 0; i != operands.length; ++i) {
-						Worklist tmp = (Worklist) worklist.clone();
-						tmp.push(item.sign, operands[i], item.maximise);
-						if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions, lifetimes)) {
-							// If a single clause of the disjunct is definitely
-							// not void, then the whole thing is not void.
-							return false;
-						}
-					}
-					return true;
+					return isVoidDisjunction(ut, item.sign, item.maximise, truths, worklist, assumptions,
+							lifetimes);
 				}
 				break;
 			}
-			case TYPE_difference: {
-				Type.Difference nt = (Type.Difference) t;
+			case SEMTYPE_difference: {
+				SemanticType.Difference nt = (SemanticType.Difference) t;
 				worklist.push(item.sign, nt.getLeftHandSide(), item.maximise);
 				worklist.push(!item.sign, nt.getRightHandSide(), !item.maximise);
 				break;
 			}
 			case TYPE_nominal: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Decl.Type decl = typeSystem.resolveExactly(nom.getName(), Decl.Type.class);
+				Decl.Type decl = resolver.resolveExactly(nom.getName(), Decl.Type.class);
 				if (item.maximise || decl.getInvariant().size() == 0) {
 					worklist.push(item.sign, decl.getType(), item.maximise);
 				} else if (item.sign) {
@@ -407,10 +309,25 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				break;
 			}
 			default:
-				truths.add(new Atom(item.sign, (Type.Atom) item.type, item.maximise));
+				truths.add(new Atom(item.sign, (SemanticType.Atom) item.type, item.maximise));
 			}
 			return isVoid(truths, worklist, assumptions, lifetimes);
 		}
+	}
+
+	protected boolean isVoidDisjunction(Type.Combinator combinator, boolean sign, boolean maximise, ArrayList<Atom<?>> truths,
+			Worklist worklist, Assumptions assumptions, LifetimeRelation lifetimes) throws ResolutionError {
+		SemanticType[] operands = combinator.getAll();
+		for (int i = 0; i != operands.length; ++i) {
+			Worklist tmp = worklist.clone();
+			tmp.push(sign, operands[i], maximise);
+			if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions, lifetimes)) {
+				// If a single clause of the disjunct is definitely
+				// not void, then the whole thing is not void.
+				return false;
+			}
+		}
+		return true;
 	}
 
 	protected Name[] append(Name[] lhs, Name rhs) {
@@ -435,6 +352,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
+	@SuppressWarnings("unchecked")
 	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, Assumptions assumptions, LifetimeRelation lifetimes)
 			throws ResolutionError {
 		// At this point, we have several cases left to consider.
@@ -464,18 +382,18 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				// any & !any => void
 				// int & !int => void
 				return (aSign != bSign) ? true : false;
-			case TYPE_array:
-				return isVoidArray((Atom<Type.Array>) a, (Atom<Type.Array>) b, assumptions, lifetimes);
-			case TYPE_record:
-				return isVoidRecord((Atom<Type.Record>) a, (Atom<Type.Record>) b, assumptions, lifetimes);
-			case TYPE_reference:
-				return isVoidReference((Atom<Type.Reference>) a, (Atom<Type.Reference>) b, assumptions, lifetimes);
+			case SEMTYPE_array:
+				return isVoidArray((Atom<SemanticType.Array>) a, (Atom<SemanticType.Array>) b, assumptions, lifetimes);
+			case SEMTYPE_record:
+				return isVoidRecord((Atom<SemanticType.Record>) a, (Atom<SemanticType.Record>) b, assumptions, lifetimes);
+			case SEMTYPE_reference:
+				return isVoidReference((Atom<SemanticType.Reference>) a, (Atom<SemanticType.Reference>) b, assumptions, lifetimes);
 			case TYPE_function:
 			case TYPE_method:
 			case TYPE_property:
 				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions, lifetimes);
 			default:
-				throw new RuntimeException("invalid type encountered: " + aOpcode);
+				throw new RuntimeException("invalid type encountered: " + a);
 			}
 		} else if (aSign && bSign) {
 			// We have two positive atoms of different kind. For example, int
@@ -504,10 +422,17 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 
 	private static int normaliseOpcode(int opcode) {
 		switch (opcode) {
+		case TYPE_array:
+			return SEMTYPE_array;
+		case TYPE_record:
+			return SEMTYPE_record;
+		case TYPE_reference:
+		case TYPE_staticreference:
+			return SEMTYPE_reference;
+		case TYPE_union:
+			return SEMTYPE_union;
 		case TYPE_method:
 			return TYPE_function;
-		case TYPE_staticreference:
-			return TYPE_reference;
 		}
 		return opcode;
 	}
@@ -539,7 +464,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidArray(Atom<Type.Array> lhs, Atom<Type.Array> rhs, Assumptions assumptions,
+	protected boolean isVoidArray(Atom<SemanticType.Array> lhs, Atom<SemanticType.Array> rhs, Assumptions assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
 		Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
 		Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
@@ -593,10 +518,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+	protected boolean isVoidRecord(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, Assumptions assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
-		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
-		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
+		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
+		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//
 		if (lhs.sign || rhs.sign) {
 			// Attempt to match all fields In the positive-positive case this
@@ -618,19 +543,19 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, Assumptions assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
-		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
-		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
+		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
+		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//
 		boolean sign = (lhs.sign == rhs.sign);
 		int matches = 0;
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			Decl.Variable lhsField = lhsFields.get(i);
+			SemanticType.Field lhsField = lhsFields.get(i);
 			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable rhsField = rhsFields.get(j);
+				SemanticType.Field rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
@@ -659,7 +584,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	protected boolean analyseRecordMatches(int matches, boolean lhsSign, boolean lhsOpen,
-			Tuple<Decl.Variable> lhsFields, boolean rhsSign, boolean rhsOpen, Tuple<Decl.Variable> rhsFields) {
+			Tuple<? extends SemanticType.Field> lhsFields, boolean rhsSign, boolean rhsOpen,
+			Tuple<? extends SemanticType.Field> rhsFields) {
 		// NOTE: Don't touch this method unless you know what you are doing. And, trust
 		// me, you don't know what you are doing.
 		//
@@ -701,8 +627,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		EQUAL, UNCOMPARABLE, SMALLER, GREATER
 	}
 
-	protected State compare(int matches, boolean lhsOpen, Tuple<Decl.Variable> lhsFields, boolean rhsOpen,
-			Tuple<Decl.Variable> rhsFields) {
+	protected State compare(int matches, boolean lhsOpen, Tuple<? extends SemanticType.Field> lhsFields,
+			boolean rhsOpen, Tuple<? extends SemanticType.Field> rhsFields) {
 		int lhsSize = lhsFields.size();
 		int rhsSize = rhsFields.size();
 		//
@@ -754,7 +680,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidReference(Atom<Type.Reference> lhs, Atom<Type.Reference> rhs, Assumptions assumptions,
+	protected boolean isVoidReference(Atom<SemanticType.Reference> lhs, Atom<SemanticType.Reference> rhs, Assumptions assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
 		String lhsLifetime = extractLifetime(lhs.type);
 		String rhsLifetime = extractLifetime(rhs.type);
@@ -789,7 +715,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	private String extractLifetime(Type.Reference ref) {
+	private String extractLifetime(SemanticType.Reference ref) {
 		if (ref.hasLifetime()) {
 			return ref.getLifetime().get();
 		} else {
@@ -921,13 +847,13 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	// Helpers
 	// ========================================================================
 
-	private final static class Worklist extends ArrayList<Term<Type>> {
+	private final static class Worklist extends ArrayList<Term<SemanticType>> {
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 1L;
 
-		public Term<Type> top() {
+		public Term<SemanticType> top() {
 			return get(size() - 1);
 		}
 
@@ -935,18 +861,18 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			add(item);
 		}
 
-		public void push(boolean sign, Type type, boolean maximise) {
+		public void push(boolean sign, SemanticType type, boolean maximise) {
 			add(new Term(sign, type, maximise));
 		}
 
-		public void push(boolean sign, Type[] types, boolean maximise) {
+		public void push(boolean sign, SemanticType[] types, boolean maximise) {
 			for (int i = 0; i != types.length; ++i) {
 				add(new Term(sign, types[i], maximise));
 			}
 		}
 
-		public Term<Type> pop() {
-			Term<Type> i = get(size() - 1);
+		public Term<SemanticType> pop() {
+			Term<SemanticType> i = get(size() - 1);
 			remove(size() - 1);
 			return i;
 		}
@@ -959,7 +885,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected static class Term<T extends Type> {
+	public static class Term<T extends SemanticType> {
 		public final boolean sign;
 		public final T type;
 		public final boolean maximise;
@@ -990,7 +916,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected static class Atom<T extends Type.Atom> extends Term<T> {
+	protected static class Atom<T extends SemanticType.Atom> extends Term<T> {
 		public Atom(boolean sign, T type, boolean maximise) {
 			super(sign, type, maximise);
 		}
@@ -1075,7 +1001,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			}
 		}
 
-		protected int indexOf(boolean lhsSign, Type lhs, boolean rhsSign, Type rhs) {
+		protected int indexOf(boolean lhsSign, SemanticType lhs, boolean rhsSign, SemanticType rhs) {
 			int lhsSize = lhs.getHeap().size();
 			int rhsSize = rhs.getHeap().size();
 			int lhsIndex = lhs.getIndex();

@@ -76,6 +76,12 @@ public class AllInvalidTest {
 		IGNORED.put("Type_Invalid_11", "793");
 		// Infinite Array Types
 		IGNORED.put("Type_Invalid_10", "823");
+		// Temporary Removal of Intersections
+		IGNORED.put("Intersection_Invalid_1", "#843");
+		IGNORED.put("Intersection_Invalid_2", "#843");
+		IGNORED.put("NegationType_Invalid_2", "#843");
+		IGNORED.put("Type_Invalid_6", "#843");
+		IGNORED.put("Type_Invalid_9", "#843");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
