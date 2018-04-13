@@ -29,7 +29,6 @@ import wyc.lang.WhileyFile.Expr;
 import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 import wyc.util.AbstractTypedVisitor;
-import wyc.util.AbstractTypedVisitor.Environment;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.BinaryRelation;

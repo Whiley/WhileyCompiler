@@ -46,6 +46,7 @@ public abstract class AbstractConsumer<T> {
 			visitStaticVariable((Decl.StaticVariable) decl, data);
 			break;
 		case DECL_type:
+		case DECL_rectype:
 			visitType((Decl.Type) decl, data);
 			break;
 		case DECL_function:

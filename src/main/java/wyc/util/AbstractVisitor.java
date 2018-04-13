@@ -49,6 +49,7 @@ public abstract class AbstractVisitor {
 			visitStaticVariable((Decl.StaticVariable) decl);
 			break;
 		case DECL_type:
+		case DECL_rectype:
 			visitType((Decl.Type) decl);
 			break;
 		case DECL_function:

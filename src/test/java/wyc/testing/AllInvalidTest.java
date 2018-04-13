@@ -82,6 +82,9 @@ public class AllInvalidTest {
 		IGNORED.put("NegationType_Invalid_2", "#843");
 		IGNORED.put("Type_Invalid_6", "#843");
 		IGNORED.put("Type_Invalid_9", "#843");
+		//
+		IGNORED.put("StaticVar_Invalid_10", "830");
+		IGNORED.put("Type_Invalid_12", "830");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

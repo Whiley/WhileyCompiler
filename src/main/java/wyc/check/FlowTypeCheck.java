@@ -166,7 +166,7 @@ public class FlowTypeCheck {
 		// Check type is contractive
 		checkContractive(decl);
 		// Check variable declaration is not empty
-		checkNonEmpty(decl.getVariableDeclaration(), environment);
+		checkVariableDeclaration(decl.getVariableDeclaration(), environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -178,13 +178,11 @@ public class FlowTypeCheck {
 	 *            Constant declaration to check.
 	 * @throws IOException
 	 */
-	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
-		Environment environment = new Environment();
-		if (decl.hasInitialiser()) {
-			SemanticType type = checkExpression(decl.getInitialiser(), environment);
-			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
-		}
-	}
+  public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
+    Environment environment = new Environment();
+    // Check type not void
+    checkVariableDeclaration(decl, environment);
+  }
 
 	/**
 	 * Type check a given function or method declaration.
@@ -200,8 +198,8 @@ public class FlowTypeCheck {
 		environment = FlowTypeUtils.declareThisWithin(d, environment);
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
-		checkNonEmpty(d.getParameters(), environment);
-		checkNonEmpty(d.getReturns(), environment);
+		checkVariableDeclarations(d.getParameters(), environment);
+		checkVariableDeclarations(d.getReturns(), environment);
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -244,8 +242,8 @@ public class FlowTypeCheck {
 		Environment environment = new Environment();
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
-		checkNonEmpty(d.getParameters(), environment);
-		checkNonEmpty(d.getReturns(), environment);
+		checkVariableDeclarations(d.getParameters(), environment);
+		checkVariableDeclarations(d.getReturns(), environment);
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -387,6 +385,23 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
 		return FlowTypeUtils.BOTTOM;
+	}
+
+	/**
+	 * Type check a given sequence of variable declarations.
+	 *
+	 * @param decls
+	 * @param environment
+	 *            Determines the type of all variables immediately going into this
+	 *            statement.
+	 * @return
+	 * @throws IOException
+	 */
+	private Environment checkVariableDeclarations(Tuple<Decl.Variable> decls, Environment environment) {
+		for(int i=0;i!=decls.size();++i) {
+			environment = checkVariableDeclaration(decls.get(i),environment);
+		}
+		return environment;
 	}
 
 	/**
@@ -1063,16 +1078,17 @@ public class FlowTypeCheck {
 		}
 	}
 
-	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment env) {
-		Tuple<Decl.Variable> parameters = stmt.getParameters();
-		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable parameter = parameters.get(i);
-			checkExpression(parameter.getInitialiser(),env);
+	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
+		checkNonEmpty(stmt.getParameters(), environment);
+		// Check array initialisers
+		for (Decl.Variable decl : stmt.getParameters()) {
+			checkExpression(decl.getInitialiser(), environment);
 		}
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
-		checkCondition(stmt.getOperand(), true, env);
-		return env;
+		checkCondition(stmt.getOperand(), true, environment);
+		//
+		return environment;
 	}
 
 	// =========================================================================
@@ -1623,32 +1639,28 @@ public class FlowTypeCheck {
 		}
 	}
 
-	private SemanticType checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
-		// Check initialiser expressions
-		Tuple<Expr> operands = expr.getOperands();
-		SemanticType[] ts = new SemanticType[operands.size()];
-		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.get(i), environment);
-		}
-		ts = ArrayUtils.removeDuplicates(ts);
-		SemanticType element;
-		switch(ts.length) {
-		case 0:
-			element = Type.Void;
-			break;
-		case 1:
-			element = ts[0];
-			break;
-		default: {
-			// TODO: update SemanticType.Union to hold multiple elements
-			element = ts[0];
-			for(int i=1;i!=ts.length;++i) {
-				element = new SemanticType.Union(element, ts[i]);
-			}
-		}
-		}
-		return new SemanticType.Array(element);
-	}
+  private SemanticType checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
+    // Check initialiser expressions
+    Tuple<Expr> operands = expr.getOperands();
+    SemanticType[] ts = new SemanticType[operands.size()];
+    for (int i = 0; i != ts.length; ++i) {
+      ts[i] = checkExpression(operands.get(i), environment);
+    }
+    ts = ArrayUtils.removeDuplicates(ts);
+    SemanticType element;
+    switch (ts.length) {
+      case 0:
+        element = Type.Void;
+        break;
+      case 1:
+        element = ts[0];
+        break;
+      default: {
+        element = new SemanticType.Union(ts);
+      }
+    }
+    return new SemanticType.Array(element);
+  }
 
 	private SemanticType checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
 		Expr value = expr.getFirstOperand();
@@ -2455,16 +2467,16 @@ public class FlowTypeCheck {
 	}
 
 	/**
-	 * Check a given set of variable declarations are not "empty". That is, their
-	 * declared type is not equivalent to void.
-	 *
-	 * @param decls
-	 */
-	private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
-		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.get(i), lifetimes);
-		}
-	}
+   * Check a given set of variable declarations are not "empty". That is, their
+   * declared type is not equivalent to void.
+   *
+   * @param decls
+   */
+  private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
+    for (int i = 0; i != decls.size(); ++i) {
+      checkNonEmpty(decls.get(i), lifetimes);
+    }
+  }
 
 	/**
 	 * Check that a given variable declaration is not empty. That is, the declared
