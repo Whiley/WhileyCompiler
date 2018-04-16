@@ -27,6 +27,7 @@ import wyil.stage.MoveAnalysis;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
+import wyc.check.AmbiguousCoercionCheck;
 import wyc.check.DefiniteAssignmentCheck;
 import wyc.check.DefiniteUnassignmentCheck;
 import wyc.check.FlowTypeCheck;
@@ -212,6 +213,7 @@ public final class CompileTask implements Build.Task {
 			new DefiniteUnassignmentCheck(this).check(wf);
 			new FunctionalCheck(this).check(wf);
 			new StaticVariableCheck(this).check(wf);
+			new AmbiguousCoercionCheck(this).check(wf);
 			new MoveAnalysis(this).apply(wf);
 			// new CoercionCheck(this);
 		}

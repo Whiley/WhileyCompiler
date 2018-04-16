@@ -291,7 +291,7 @@ public class FlowTypeCheck {
 				// Sanity check incoming environment
 				return syntaxError(errorMessage(UNREACHABLE_CODE), stmt);
 			} else if (stmt instanceof Decl.Variable) {
-				return checkVariableDeclaration((Decl.Variable) stmt, environment, scope);
+				return checkVariableDeclaration((Decl.Variable) stmt, environment);
 			} else if (stmt instanceof Stmt.Assign) {
 				return checkAssign((Stmt.Assign) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Return) {
@@ -399,16 +399,17 @@ public class FlowTypeCheck {
 	 *            block
 	 * @return
 	 */
-  private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment,
-      EnclosingScope scope) throws IOException {
-    // Check type of initialiser.
-    if (decl.hasInitialiser()) {
-      SemanticType type = checkExpression(decl.getInitialiser(), environment);
-      checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
-    }
-    // Done.
-    return environment;
-  }
+	private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment) {
+		// Check type is sensible
+		checkNonEmpty(decl, environment);
+		// Check type of initialiser.
+		if (decl.hasInitialiser()) {
+			SemanticType type = checkExpression(decl.getInitialiser(), environment);
+			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
+		}
+		// Done.
+		return environment;
+	}
 
 	/**
 	 * Type check an assignment statement.
@@ -592,7 +593,7 @@ public class FlowTypeCheck {
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
 		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
-		Tuple<Type> types = fm.getReturns().project(2, Type.class);
+		Tuple<Type> types = fm.getType().getReturns();
 		// Type check the operands for the return statement (if any)
 		checkMultiExpressions(stmt.getReturns(), environment, types);
 		// Return bottom as following environment to signal that control-flow
@@ -1061,7 +1062,11 @@ public class FlowTypeCheck {
 	}
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment env) {
-		checkNonEmpty(stmt.getParameters(), env);
+		Tuple<Decl.Variable> parameters = stmt.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			Decl.Variable parameter = parameters.get(i);
+			checkExpression(parameter.getInitialiser(),env);
+		}
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
 		checkCondition(stmt.getOperand(), true, env);
@@ -1337,6 +1342,9 @@ public class FlowTypeCheck {
 		case EXPR_arrayborrow:
 			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
 			break;
+		case EXPR_arrayrange:
+			type = checkArrayRange((Expr.ArrayRange) expression, environment);
+			break;
 		case EXPR_arrayupdate:
 			type = checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
 			break;
@@ -1357,6 +1365,7 @@ public class FlowTypeCheck {
 		}
 		// Allocate and set type for expression
 		Type concreteType = concreteTypeExtractor.apply(type, environment);
+		System.out.println("CONCRETE TYPE: " + concreteType + " FROM: " + type);
 		expression.setType(expression.getHeap().allocate(concreteType));
 		return type;
 	}
@@ -1438,6 +1447,8 @@ public class FlowTypeCheck {
         environment);
     // Assign descriptor to this expression
     expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
+    // Set inferred lifetime parameters as well
+    expr.setLifetimes(expr.getHeap().allocate(binding.getLifetimeArguments()));
     // Finally, return the declared returns/
     return binding.getConcreteType().getReturns();
   }
@@ -1652,6 +1663,16 @@ public class FlowTypeCheck {
     }
   }
 
+  private SemanticType checkArrayRange(Expr.ArrayRange expr, Environment environment) {
+	  SemanticType lhsT = checkExpression(expr.getFirstOperand(), environment);
+	  SemanticType rhsT = checkExpression(expr.getSecondOperand(), environment);
+	  // Check integer types
+	  checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
+	  checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
+	  // FIXME: what if lhsT and rhsT differ?
+	  return new SemanticType.Array(lhsT);
+  }
+
   private SemanticType checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
     Expr source = expr.getFirstOperand();
     Expr subscript = expr.getSecondOperand();
@@ -1717,7 +1738,7 @@ public class FlowTypeCheck {
 
   private SemanticType checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
     Tuple<Decl.Variable> parameters = expr.getParameters();
-    Tuple<Type> parameterTypes = parameters.project(2, Type.class);
+    Tuple<Type> parameterTypes = parameters.map((Decl.Variable p) -> p.getType());
     // Sanity check no parameter is "empty", that is equivalent to void.
     checkNonEmpty(parameters, environment);
     // Type check the body of the lambda using the expected return types
@@ -1955,7 +1976,7 @@ public class FlowTypeCheck {
 			// guessing appropriate bindings.
 			Type.Method concreteType = substitute(type, lifetimeArguments);
 			if(isApplicable(concreteType,lifetimes,arguments)){
-				bindings.add(new Binding(candidate,concreteType));
+				bindings.add(new Binding(candidate,concreteType,lifetimeArguments));
 			}
 		} else {
 			// Extract all lifetimes used in the type arguments
@@ -2103,20 +2124,26 @@ public class FlowTypeCheck {
 	}
 
 	private static class Binding {
-		private final HashMap<Identifier,Identifier> binding;
+		private final Tuple<Identifier> lifetimeArguments;
 		private final Decl.Callable candidate;
 		private final Type.Callable concreteType;
 
 		public Binding(Decl.Callable candidate, Type.Callable concreteType) {
 			this.candidate = candidate;
 			this.concreteType = concreteType;
-			this.binding = null;
+			this.lifetimeArguments = new Tuple<>();
 		}
 
-		public Binding(Decl.Callable candidate, Type.Method concreteType, Map<Identifier,Identifier> binding) {
+		public Binding(Decl.Callable candidate, Type.Method concreteType, Tuple<Identifier> lifetimes) {
 			this.candidate = candidate;
 			this.concreteType = concreteType;
-			this.binding = new HashMap<>(binding);
+			this.lifetimeArguments = lifetimes;
+		}
+
+		public Binding(Decl.Method candidate, Type.Method concreteType, Map<Identifier,Identifier> binding) {
+			this.candidate = candidate;
+			this.concreteType = concreteType;
+			this.lifetimeArguments = extract(candidate, binding);
 		}
 
 		public Decl.Callable getCandidiateDeclaration() {
@@ -2127,8 +2154,29 @@ public class FlowTypeCheck {
 			return concreteType;
 		}
 
-		public Map<Identifier,Identifier> getBinding() {
+		public Tuple<Identifier> getLifetimeArguments() {
+			return lifetimeArguments;
+		}
+
+		public Map<Identifier, Identifier> getBinding() {
+			HashMap<Identifier, Identifier> binding = new HashMap<>();
+			if (candidate instanceof Decl.Method) {
+				Decl.Method decl = (Decl.Method) candidate;
+				Tuple<Identifier> lifetimes = decl.getType().getLifetimeParameters();
+				for (int i = 0; i != lifetimes.size(); ++i) {
+					binding.put(lifetimes.get(i), lifetimeArguments.get(i));
+				}
+			}
 			return binding;
+		}
+
+		private Tuple<Identifier> extract(Decl.Method candidate, Map<Identifier,Identifier> binding) {
+			Tuple<Identifier> lifetimes = candidate.getType().getLifetimeParameters();
+			Identifier[] result = new Identifier[lifetimes.size()];
+			for(int i=0;i!=result.length;++i) {
+				result[i] = binding.get(lifetimes.get(i));
+			}
+			return new Tuple<>(result);
 		}
 	}
 

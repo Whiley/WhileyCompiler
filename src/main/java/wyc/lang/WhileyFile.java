@@ -25,6 +25,7 @@ import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile.Type;
@@ -634,8 +635,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Function getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().map((WhileyFile.Decl.Variable d) -> d.getType());
 				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
 			}
 
@@ -697,8 +698,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Method getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+			  Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
+        Tuple<WhileyFile.Type> projectedReturns = getReturns().map((WhileyFile.Decl.Variable d) -> d.getType());
 				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(), getLifetimes());
 			}
 
@@ -758,7 +759,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Property getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+			  Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
 				Tuple<WhileyFile.Type> projectedReturns = new Tuple<>(WhileyFile.Type.Bool);
 				return new WhileyFile.Type.Property(projectedParameters, projectedReturns);
 			}
@@ -1925,14 +1926,28 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				Tuple<Type> returns = getSignature().getReturns();
+				Type.Callable signature = getSignature();
+				Tuple<Type> returns = signature.getReturns();
 				// NOTE: if this method is called then it is assumed to be in a position which
 				// requires exactly one return type. Anything else is an error which should have
 				// been caught earlier in the pipeline.
 				if (returns.size() != 1) {
 					throw new IllegalArgumentException();
 				}
-				return returns.get(0);
+				Type type = returns.get(0);
+				if(signature instanceof Type.Method) {
+					// Need to substitute return type here
+					Type.Method m = (Type.Method) signature;
+					Tuple<Identifier> declared = m.getLifetimeParameters();
+					Tuple<Identifier> actual = getLifetimes();
+					HashMap<Identifier, Identifier> binding = new HashMap<>();
+					for (int i = 0; i != declared.size(); ++i) {
+						binding.put(declared.get(i), actual.get(i));
+					}
+					return type.substitute(binding);
+				} else {
+					return type;
+				}
 			}
 
 			@Override
