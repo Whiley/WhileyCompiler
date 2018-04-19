@@ -21,7 +21,6 @@ import wyc.lang.WhileyFile;
 import wyc.util.AbstractFunction;
 
 import java.util.BitSet;
-import java.util.HashSet;
 
 import wybs.lang.SyntaxError;
 

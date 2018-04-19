@@ -30,6 +30,7 @@ import wybs.util.AbstractCompilationUnit.Value;
 import wyc.check.FlowTypeUtils.Environment;
 import wyc.util.AbstractVisitor;
 import wycc.util.ArrayUtils;
+import wyil.type.subtyping.EmptinessTest;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.RelaxedTypeEmptinessTest;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
@@ -105,16 +106,17 @@ public class FlowTypeCheck {
 	private final ConcreteTypeExtractor concreteTypeExtractor;
 	private final ReadWriteTypeExtractor rwTypeExtractor;
 
-  public FlowTypeCheck(CompileTask builder) {
-    this.builder = builder;
-    this.resolver = builder.getNameResolver();
-    this.concreteTypeExtractor = new ConcreteTypeExtractor(resolver);
-    this.relaxedSubtypeOperator = new SubtypeOperator(resolver,
-        new RelaxedTypeEmptinessTest(resolver));
-    this.strictSubtypeOperator = new SubtypeOperator(resolver,
-        new StrictTypeEmptinessTest(resolver));
-    this.rwTypeExtractor = new ReadWriteTypeExtractor(resolver, strictSubtypeOperator);
-  }
+	public FlowTypeCheck(CompileTask builder) {
+		this.builder = builder;
+		this.resolver = builder.getNameResolver();
+		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest(resolver);
+		this.concreteTypeExtractor = new ConcreteTypeExtractor(resolver,strictEmptiness);
+		this.relaxedSubtypeOperator = new SubtypeOperator(resolver,
+				new RelaxedTypeEmptinessTest(resolver));
+		this.strictSubtypeOperator = new SubtypeOperator(resolver,
+				strictEmptiness);
+		this.rwTypeExtractor = new ReadWriteTypeExtractor(resolver, strictSubtypeOperator);
+	}
 
 	// =========================================================================
 	// WhileyFile(s)
@@ -1365,8 +1367,8 @@ public class FlowTypeCheck {
 		}
 		// Allocate and set type for expression
 		Type concreteType = concreteTypeExtractor.apply(type, environment);
-		System.out.println("CONCRETE TYPE: " + concreteType + " FROM: " + type);
 		expression.setType(expression.getHeap().allocate(concreteType));
+		// Done
 		return type;
 	}
 

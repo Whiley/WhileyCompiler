@@ -42,10 +42,15 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 
 /**
- * A simple visitor over all declarations, statements, expressions and types in
- * a given WhileyFile which accepts no additional data parameters and returns
- * nothing. The intention is that this is extended as necessary to provide
- * custom functionality.
+ * A more complex visitor over all declarations, statements, expressions and
+ * types in a given WhileyFile which accepts no additional data parameters and
+ * returns nothing. The intention is that this is extended as necessary to
+ * provide custom functionality. The key distinction from
+ * <code>AbstractVisitor</code> is that this produces <i>concrete</i> type
+ * information for all expressions based on a downward propagation (i.e.
+ * propagating from assigned locations down through expressions). This gives a
+ * more accurate view of type information and allows, for example, ambiguous
+ * coercions to be detetected.
  *
  * @author David J. Pearce
  *
@@ -220,10 +225,10 @@ public abstract class AbstractTypedVisitor {
 			visitIfElse((Stmt.IfElse) stmt, environment, scope);
 			break;
 		case EXPR_invoke:
-			visitInvoke((Expr.Invoke) stmt, Type.Void, environment);
+			visitInvoke((Expr.Invoke) stmt, new Tuple<>(), environment);
 			break;
 		case EXPR_indirectinvoke:
-			visitIndirectInvoke((Expr.IndirectInvoke) stmt, Type.Void, environment);
+			visitIndirectInvoke((Expr.IndirectInvoke) stmt, new Tuple<>(), environment);
 			break;
 		case STMT_namedblock:
 			visitNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
@@ -345,14 +350,34 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitExpressions(Tuple<Expr> exprs, Tuple<Type> targets, Environment environment) {
+		int j=0;
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.get(i), targets.get(i), environment);
+			Expr e = exprs.get(i);
+			// Handle multi expressions
+			if(e.getTypes() != null) {
+				int len = e.getTypes().size();
+				Tuple<Type> types = targets.get(j,j+len);
+				visitMultiExpression(e,types,environment);
+				j = j + len;
+			} else {
+				// Default to single expression
+				visitExpression(exprs.get(i), targets.get(j), environment);
+				j = j + 1;
+			}
 		}
 	}
 
 	public void visitExpressions(Tuple<Expr> exprs, Type target, Environment environment) {
 		for (int i = 0; i != exprs.size(); ++i) {
 			visitExpression(exprs.get(i), target, environment);
+		}
+	}
+
+	public void visitMultiExpression(Expr expr, Tuple<Type> types, Environment environment) {
+		if (expr instanceof Expr.Invoke) {
+			visitInvoke((Expr.Invoke) expr, types, environment);
+		} else {
+			visitIndirectInvoke((Expr.IndirectInvoke) expr, types, environment);
 		}
 	}
 
@@ -370,7 +395,7 @@ public abstract class AbstractTypedVisitor {
 			visitConstant((Expr.Constant) expr, target, environment);
 			break;
 		case EXPR_indirectinvoke:
-			visitIndirectInvoke((Expr.IndirectInvoke) expr, target, environment);
+			visitIndirectInvoke((Expr.IndirectInvoke) expr, new Tuple<>(target), environment);
 			break;
 		case EXPR_lambdaaccess:
 			visitLambdaAccess((Expr.LambdaAccess) expr, target, environment);
@@ -603,7 +628,7 @@ public abstract class AbstractTypedVisitor {
 			visitBitwiseXor((Expr.BitwiseXor) expr, environment);
 			break;
 		case EXPR_invoke:
-			visitInvoke((Expr.Invoke) expr, target, environment);
+			visitInvoke((Expr.Invoke) expr, new Tuple<>(target), environment);
 			break;
 		case EXPR_logicaland:
 			visitLogicalAnd((Expr.LogicalAnd) expr, environment);
@@ -785,7 +810,7 @@ public abstract class AbstractTypedVisitor {
 		visitExpression(expr.getOperand(), Type.Bool, environment);
 	}
 
-	public void visitInvoke(Expr.Invoke expr, Type target, Environment environment) {
+	public void visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
 		Type.Callable signature = expr.getSignature();
 		Tuple<Type> parameters = signature.getParameters();
 		if(signature instanceof Type.Method) {
@@ -796,7 +821,7 @@ public abstract class AbstractTypedVisitor {
 		visitExpressions(expr.getOperands(), parameters, environment);
 	}
 
-	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Type target, Environment environment) {
+	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Tuple<Type> targets, Environment environment) {
 		Type.Callable sourceT = asType(expr.getSource().getType(), Type.Callable.class);
 		visitExpression(expr.getSource(), sourceT, environment);
 		visitExpressions(expr.getArguments(), sourceT.getParameters(), environment);
