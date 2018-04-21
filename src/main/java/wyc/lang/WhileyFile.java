@@ -207,6 +207,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int SEMTYPE_union = TYPE_mask + 23;
 	public static final int SEMTYPE_intersection = TYPE_mask + 24;
 	public static final int SEMTYPE_difference = TYPE_mask + 25;
+	public static final int TYPE_recursive = TYPE_mask + 26;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -4123,7 +4124,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-
 		/**
 		 * Represents a nominal type, which is of the form:
 		 *
@@ -4164,6 +4164,38 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				return getName().toString();
+			}
+		}
+
+
+		/**
+		 * Represents a recursive link. That is a backlink into the type itself.
+		 *
+		 * @return
+		 */
+		public static class Recursive extends AbstractSemanticType implements Type {
+
+			public Recursive(Ref<Type> reference) {
+				super(TYPE_recursive, reference);
+			}
+
+			public Type getHead() {
+				Ref<Type> r = (Ref<Type>) get(0);
+				return r.get();
+			}
+
+			public void setHead(Ref<Type> ref) {
+				operands[0] = ref;
+			}
+
+			@Override
+			public Recursive substitute(Map<Identifier,Identifier> binding) {
+				return this;
+			}
+
+			@Override
+			public Recursive clone(SyntacticItem[] operands) {
+				return new Recursive((Ref<Type>) operands[0]);
 			}
 		}
 
@@ -5206,6 +5238,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Unresolved();
 			}
 		};
+		schema[TYPE_recursive] = new Schema(Operands.ONE, Data.ZERO, "TYPE_recursive") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Recursive((Ref<Type>) operands[0]);
+			}
+		};
+
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
 		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
 			@Override

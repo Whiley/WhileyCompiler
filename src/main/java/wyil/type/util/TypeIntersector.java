@@ -14,6 +14,9 @@
 package wyil.type.util;
 
 import wyc.lang.WhileyFile.Type;
+
+import java.util.Set;
+
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -21,6 +24,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile.SemanticType;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.type.util.AbstractTypeCombinator.Linkage;
 
 /**
  * Intersect a concrete type with a semantic type. The rough idea is that the
@@ -67,9 +71,9 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type lhs, Type rhs, LifetimeRelation lifetimes) {
-		Type t = super.apply(lhs,rhs,lifetimes);
-		if(t == null) {
+	protected Type apply(Type lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		Type t = super.apply(lhs, rhs, lifetimes, stack);
+		if (t == null) {
 			return Type.Void;
 		} else {
 			return t;
@@ -77,22 +81,22 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type.Null lhs, Type.Null rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Null lhs, Type.Null rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return lhs;
 	}
 
 	@Override
-	protected Type apply(Type.Bool lhs, Type.Bool rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Bool lhs, Type.Bool rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return lhs;
 	}
 
 	@Override
-	protected Type apply(Type.Byte lhs, Type.Byte rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Byte lhs, Type.Byte rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return lhs;
 	}
 
 	@Override
-	protected Type apply(Type.Int lhs, Type.Int rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Int lhs, Type.Int rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return lhs;
 	}
 
@@ -118,9 +122,9 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	 * @return
 	 */
 	@Override
-	protected Type apply(Type.Array lhs, Type.Array rhs, LifetimeRelation lifetimes) {
-		Type element = apply(lhs.getElement(), rhs.getElement(), lifetimes);
-		if(element instanceof Type.Void) {
+	protected Type apply(Type.Array lhs, Type.Array rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		Type element = apply(lhs.getElement(), rhs.getElement(), lifetimes, stack);
+		if (element instanceof Type.Void) {
 			return Type.Void;
 		} else {
 			return new Type.Array(element);
@@ -128,7 +132,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type.Reference lhs, Type.Reference rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Reference lhs, Type.Reference rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		try {
 			if (subtyping.isSubtype(lhs, rhs, lifetimes) && subtyping.isSubtype(rhs, lhs, lifetimes)) {
 				return lhs;
@@ -141,7 +145,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type.Record lhs, Type.Record rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Record lhs, Type.Record rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		Tuple<Type.Field> lhsFields = lhs.getFields();
 		Tuple<Type.Field> rhsFields = rhs.getFields();
 		// Determine the number of matching fields. That is, fields with the
@@ -166,7 +170,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 			int rhsRemainder = rhsFields.size() - matches;
 			Type.Field[] fields = new Type.Field[matches + lhsRemainder + rhsRemainder];
 			// Extract all matching fields first
-			int index = extractMatchingFields(lhsFields, rhsFields, fields, lifetimes);
+			int index = extractMatchingFields(lhsFields, rhsFields, fields, lifetimes, stack);
 			// Extract remaining lhs fields second
 			index = extractNonMatchingFields(lhsFields, rhsFields, fields, index);
 			// Extract remaining rhs fields last
@@ -174,13 +178,20 @@ public class TypeIntersector extends AbstractTypeCombinator {
 			// The intersection of two records can only be open when both
 			// are themselves open.
 			boolean isOpen = lhs.isOpen() && rhs.isOpen();
-			//
+			// Finally, sanity check the result. If any field has type void, then the whole
+			// thing is void.
+			for(int i=0;i!=fields.length;++i) {
+				if(fields[i].getType() instanceof Type.Void) {
+					return Type.Void;
+				}
+			}
+			// Done
 			return new Type.Record(isOpen, new Tuple<>(fields));
 		}
 	}
 
 	@Override
-	protected Type apply(Type.Function lhs, Type.Function rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Function lhs, Type.Function rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		if (lhs.equals(rhs)) {
 			return lhs;
 		} else {
@@ -189,11 +200,20 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected  Type apply(Type.Method lhs, Type.Method rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Method lhs, Type.Method rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		if (lhs.equals(rhs)) {
 			return lhs;
 		} else {
 			return Type.Void;
+		}
+	}
+
+	@Override
+	protected Type apply(Type.Nominal lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		if (lhs.getName().equals(rhs.getName())) {
+			return lhs;
+		} else {
+			return super.apply(lhs, rhs, lifetimes, stack);
 		}
 	}
 
@@ -211,7 +231,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 	 * @return
 	 */
 	private int extractMatchingFields(Tuple<Type.Field> lhsFields, Tuple<Type.Field> rhsFields, Type.Field[] result,
-			LifetimeRelation lifetimes) {
+			LifetimeRelation lifetimes, LinkageStack stack) {
 		int index = 0;
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
@@ -221,7 +241,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					Type type = apply(lhsField.getType(), rhsField.getType(), lifetimes);
+					Type type = apply(lhsField.getType(), rhsField.getType(), lifetimes, stack);
 					Type.Field combined = new Type.Field(lhsFieldName, type);
 					result[index++] = combined;
 				}

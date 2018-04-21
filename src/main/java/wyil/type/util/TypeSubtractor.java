@@ -14,12 +14,12 @@
 package wyil.type.util;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.SemanticType;
 import wyc.lang.WhileyFile.Type;
 import wyc.lang.WhileyFile.Type.Array;
 import wyc.lang.WhileyFile.Type.Function;
@@ -36,8 +36,8 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type lhs, Type rhs, LifetimeRelation lifetimes) {
-		Type t = super.apply(lhs,rhs,lifetimes);
+	protected Type apply(Type lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		Type t = super.apply(lhs,rhs,lifetimes, stack);
 		if(t == null) {
 			return lhs;
 		} else {
@@ -46,29 +46,28 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type.Null lhs, Type.Null rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Null lhs, Type.Null rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return Type.Void;
 	}
 
 	@Override
-	protected Type apply(Type.Bool lhs, Type.Bool rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Bool lhs, Type.Bool rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return Type.Void;
 	}
 
 	@Override
-	protected Type apply(Type.Byte lhs, Type.Byte rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Byte lhs, Type.Byte rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return Type.Void;
 	}
 
 	@Override
-	protected Type apply(Type.Int lhs, Type.Int rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Type.Int lhs, Type.Int rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		return Type.Void;
 	}
 
-
 	@Override
-	protected Type apply(Array lhs, Array rhs, LifetimeRelation lifetimes) {
-		Type element = apply(lhs.getElement(), rhs.getElement(), lifetimes);
+	protected Type apply(Array lhs, Array rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		Type element = apply(lhs.getElement(), rhs.getElement(), lifetimes, stack);
 		if (element instanceof Type.Void) {
 			return Type.Void;
 		} else {
@@ -77,7 +76,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Reference lhs, Reference rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		//
 		try {
 			if (subtyping.isSubtype(lhs, rhs, lifetimes)) {
@@ -91,7 +90,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Record lhs, Record rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Record lhs, Record rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		ArrayList<Type.Field> fields = new ArrayList<>();
 		Tuple<Type.Field> lhsFields = lhs.getFields();
 		Tuple<Type.Field> rhsFields = rhs.getFields();
@@ -103,7 +102,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 				Type.Field rhsField = rhsFields.get(j);
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					Type diff = apply(lhsField.getType(), rhsField.getType(), lifetimes);
+					Type diff = apply(lhsField.getType(), rhsField.getType(), lifetimes, stack);
 					fields.add(new Type.Field(lhsFieldName, diff));
 					matched = true;
 					break;
@@ -120,11 +119,19 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 				fields.add(lhsField);
 			}
 		}
+		// Finally, sanity check the result. If any field has type void, then the whole
+		// thing is void.
+		for(int i=0;i!=fields.size();++i) {
+			if(fields.get(i).getType() instanceof Type.Void) {
+				return Type.Void;
+			}
+		}
+		// Done
 		return new Type.Record(lhs.isOpen(), new Tuple<>(fields));
 	}
 
 	@Override
-	protected Type apply(Function lhs, Function rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Function lhs, Function rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		if (lhs.equals(rhs)) {
 			return Type.Void;
 		} else {
@@ -133,7 +140,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Method lhs, Method rhs, LifetimeRelation lifetimes) {
+	protected Type apply(Method lhs, Method rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		if (lhs.equals(rhs)) {
 			return Type.Void;
 		} else {
@@ -141,4 +148,14 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 		}
 	}
 
+	@Override
+	protected Type apply(Type.Nominal lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		if (lhs.getName().equals(rhs.getName())) {
+			// Easy case to handle
+			return Type.Void;
+		} else {
+			// Harder case to handle, especially for recursive types
+			return super.apply(lhs, rhs, lifetimes, stack);
+		}
+	}
 }
