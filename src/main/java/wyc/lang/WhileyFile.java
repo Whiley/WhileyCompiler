@@ -4197,6 +4197,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Recursive clone(SyntacticItem[] operands) {
 				return new Recursive((Ref<Type>) operands[0]);
 			}
+
+			@Override
+			public String toString() {
+				SyntacticItem head = getHead();
+				if(head.getHeap() != null) {
+					return "?" + head.getIndex();
+				} else {
+					return "?";
+				}
+			}
 		}
 
 		/**

@@ -82,9 +82,7 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType, LifetimeR
 	 */
 	@Override
 	public Type apply(SemanticType type, LifetimeRelation lifetimes) {
-		Type t = apply2(type,lifetimes);
-		System.out.println("EXTRACTED: " + type + " => " + t);
-		return t;
+		return  apply2(type,lifetimes);
 	}
 	public Type apply2(SemanticType type, LifetimeRelation lifetimes) {
 		switch (type.getOpcode()) {
