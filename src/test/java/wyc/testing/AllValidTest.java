@@ -87,6 +87,10 @@ public class AllValidTest {
 		IGNORED.put("UnionType_Valid_26", "#849");
 		// Rethinking Runtime Type Test Operator ?
 		IGNORED.put("RecordAssign_Valid_11", "#850");
+		// Ambiguous coercions
+		IGNORED.put("TypeEquals_Valid_33", "#837");
+		IGNORED.put("TypeEquals_Valid_35", "#837");
+		IGNORED.put("Coercion_Valid_10", "#837");
 	}
 
 

@@ -64,11 +64,9 @@ public class AbstractTypeFilter<T extends Type> {
 		this.any = any;
 	}
 
-	public T[] apply(Type[] types, NameResolver resolver) {
+	public T[] apply(Type type, NameResolver resolver) {
 		ArrayList<T> results = new ArrayList<>();
-		for (int i = 0; i != types.length; ++i) {
-			filter(types[i], results, resolver);
-		}
+		filter(type, results, resolver);
 		return ArrayUtils.toArray(kind, results);
 	}
 

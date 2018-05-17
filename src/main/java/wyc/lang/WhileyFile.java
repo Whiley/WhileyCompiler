@@ -25,6 +25,7 @@ import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile.Type;
@@ -206,6 +207,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int SEMTYPE_union = TYPE_mask + 23;
 	public static final int SEMTYPE_intersection = TYPE_mask + 24;
 	public static final int SEMTYPE_difference = TYPE_mask + 25;
+	public static final int TYPE_recursive = TYPE_mask + 26;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -634,8 +636,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Function getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().map((WhileyFile.Decl.Variable d) -> d.getType());
 				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
 			}
 
@@ -697,8 +699,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Method getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+			  Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
+        Tuple<WhileyFile.Type> projectedReturns = getReturns().map((WhileyFile.Decl.Variable d) -> d.getType());
 				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(), getLifetimes());
 			}
 
@@ -758,7 +760,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public WhileyFile.Type.Property getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+			  Tuple<WhileyFile.Type> projectedParameters = getParameters().map((WhileyFile.Decl.Variable d) -> d.getType());
 				Tuple<WhileyFile.Type> projectedReturns = new Tuple<>(WhileyFile.Type.Bool);
 				return new WhileyFile.Type.Property(projectedParameters, projectedReturns);
 			}
@@ -1925,14 +1927,28 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Type getType() {
-				Tuple<Type> returns = getSignature().getReturns();
+				Type.Callable signature = getSignature();
+				Tuple<Type> returns = signature.getReturns();
 				// NOTE: if this method is called then it is assumed to be in a position which
 				// requires exactly one return type. Anything else is an error which should have
 				// been caught earlier in the pipeline.
 				if (returns.size() != 1) {
 					throw new IllegalArgumentException();
 				}
-				return returns.get(0);
+				Type type = returns.get(0);
+				if(signature instanceof Type.Method) {
+					// Need to substitute return type here
+					Type.Method m = (Type.Method) signature;
+					Tuple<Identifier> declared = m.getLifetimeParameters();
+					Tuple<Identifier> actual = getLifetimes();
+					HashMap<Identifier, Identifier> binding = new HashMap<>();
+					for (int i = 0; i != declared.size(); ++i) {
+						binding.put(declared.get(i), actual.get(i));
+					}
+					return type.substitute(binding);
+				} else {
+					return type;
+				}
 			}
 
 			@Override
@@ -4108,7 +4124,6 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-
 		/**
 		 * Represents a nominal type, which is of the form:
 		 *
@@ -4149,6 +4164,48 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				return getName().toString();
+			}
+		}
+
+
+		/**
+		 * Represents a recursive link. That is a backlink into the type itself.
+		 *
+		 * @return
+		 */
+		public static class Recursive extends AbstractSemanticType implements Type {
+
+			public Recursive(Ref<Type> reference) {
+				super(TYPE_recursive, reference);
+			}
+
+			public Type getHead() {
+				Ref<Type> r = (Ref<Type>) get(0);
+				return r.get();
+			}
+
+			public void setHead(Ref<Type> ref) {
+				operands[0] = ref;
+			}
+
+			@Override
+			public Recursive substitute(Map<Identifier,Identifier> binding) {
+				return this;
+			}
+
+			@Override
+			public Recursive clone(SyntacticItem[] operands) {
+				return new Recursive((Ref<Type>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
+				SyntacticItem head = getHead();
+				if(head.getHeap() != null) {
+					return "?" + head.getIndex();
+				} else {
+					return "?";
+				}
 			}
 		}
 
@@ -5191,6 +5248,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Unresolved();
 			}
 		};
+		schema[TYPE_recursive] = new Schema(Operands.ONE, Data.ZERO, "TYPE_recursive") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Recursive((Ref<Type>) operands[0]);
+			}
+		};
+
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
 		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
 			@Override

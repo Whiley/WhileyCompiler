@@ -308,6 +308,11 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 				}
 				break;
 			}
+			case TYPE_recursive: {
+				Type.Recursive rec = (Type.Recursive) t;
+				worklist.push(item.sign, rec.getHead(), item.maximise);
+				break;
+			}
 			default:
 				truths.add(new Atom(item.sign, (SemanticType.Atom) item.type, item.maximise));
 			}
