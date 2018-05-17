@@ -7,10 +7,7 @@ requires i >= 0
 requires (x is in_arr ==> i < |x|)
 requires (x is ib_arr ==> i < |x|):
     //
-    if x is in_arr:
-        return x[i]
-    else:
-        return x[i]
+    return x[i]
 
 function write(arr x, int i, int n) -> (arr r)
 requires i >= 0 && i < |x|:

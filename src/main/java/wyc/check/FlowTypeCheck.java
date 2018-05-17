@@ -1135,7 +1135,6 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-
 		SemanticType src = checkExpression(lval.getFirstOperand(), environment);
 		SemanticType.Array arrT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY);
 		if (arrT == null) {

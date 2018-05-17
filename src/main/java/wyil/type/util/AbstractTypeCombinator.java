@@ -28,6 +28,7 @@ import static wyc.lang.WhileyFile.TYPE_union;
 import static wyc.util.ErrorMessages.errorMessage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import wyc.lang.WhileyFile.Type;
@@ -240,7 +241,7 @@ public abstract class AbstractTypeCombinator {
 		}
 	}
 
-	private Type union(Type... types) {
+	protected Type union(Type... types) {
 		types = ArrayUtils.removeAll(types, Type.Void);
 		switch (types.length) {
 		case 0:

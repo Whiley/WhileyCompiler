@@ -27,6 +27,7 @@ import wyc.lang.WhileyFile.Type.Method;
 import wyc.lang.WhileyFile.Type.Record;
 import wyc.lang.WhileyFile.Type.Reference;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.type.subtyping.SubtypeOperator;
 
 public class TypeSubtractor extends AbstractTypeCombinator {
@@ -157,5 +158,18 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 			// Harder case to handle, especially for recursive types
 			return super.apply(lhs, rhs, lifetimes, stack);
 		}
+	}
+
+	@Override
+	protected Type apply(Type lhs, Type.Union rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		Type[] types = new Type[rhs.size()];
+		for (int i = 0; i != types.length; ++i) {
+			types[i] = apply(lhs, rhs.get(i), lifetimes, stack);
+			// If any element of rhs subsumes lhs, then all subsumed.
+			if(types[i] instanceof Type.Void) {
+				return Type.Void;
+			}
+		}
+		return union(types);
 	}
 }
