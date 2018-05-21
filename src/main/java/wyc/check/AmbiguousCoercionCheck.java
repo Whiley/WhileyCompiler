@@ -31,6 +31,8 @@ import wyc.util.AbstractTypedVisitor;
 import wyc.util.AbstractTypedVisitor.Environment;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
+import wyil.type.util.BinaryRelation;
+import wyil.type.util.HashSetBinaryRelation;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 
 /**
@@ -106,62 +108,82 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	private void checkCoercion(Expr expr, Type target, Environment environment) {
+		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Type source = expr.getType();
-		if (!checkCoercion(target, source, environment)) {
+		if (!checkCoercion(target, source, environment, assumptions)) {
 			syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
 		}
 	}
 
 	private void checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
 			Type target = targets.get(j);
 			Type source = types.get(j);
-			if (!checkCoercion(target, source, environment)) {
+			if (!checkCoercion(target, source, environment, assumptions)) {
 				syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
 			}
 		}
 	}
 
-	private boolean checkCoercion(Type target, Type source, Environment environment) {
-		// FIXME: need to add coinduction here!!
+	private boolean checkCoercion(Type target, Type source, Environment environment, BinaryRelation<Type> assumptions) {
+		// Check we have already encountered this one or not.
+		if (target.equals(source)) {
+			// Common case: target and source types identical
+			return true;
+		} else if(assumptions.get(target, source)) {
+			// Yes, this is already an assumption. Therefore, terminate early to enforce the
+			// coinduction rule and prevent an infinite loop.
+			return true;
+		} else {
+			// No, this is not an assumption. Therefore, register is an assumption.
+			assumptions.set(target, source, true);
+		}
+		// Display on the target type in question
 		try {
+			boolean r;
 			if (target instanceof Type.Atom) {
 				// Have reached an atom, and we need to decompose this more.
-				return checkCoercion((Type.Atom) target, source, environment);
+				r = checkCoercion((Type.Atom) target, source, environment, assumptions);
 			} else if (target instanceof Type.Nominal) {
 				// Have reached a nominal so we just expand this as is.
-				return checkCoercion((Type.Nominal) target, source, environment);
+				r = checkCoercion((Type.Nominal) target, source, environment, assumptions);
 			} else {
 				// Have reached a decision point. Therefore, need to try and make the decision.
-				return checkCoercion((Type.Union) target, source, environment);
+				r = checkCoercion((Type.Union) target, source, environment, assumptions);
 			}
-		}catch (ResolutionError e) {
+			// Unset the assumption to avoid interference.
+			assumptions.set(target, source, false);
+			// Done
+			return r;
+		} catch (ResolutionError e) {
 			throw new IllegalArgumentException("invalid coercion " + source + " to " + target);
 		}
 	}
 
-	private boolean checkCoercion(Type.Atom target, Type source, Environment environment) throws ResolutionError {
+	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
+			BinaryRelation<Type> assumptions) throws ResolutionError {
 		if (target instanceof Type.Primitive) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
 			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
-			return checkCoercion(target,decl.getType(),environment);
+			return checkCoercion(target,decl.getType(),environment, assumptions);
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
 			for (int i = 0; i != s.size(); ++i) {
-				if (!checkCoercion(target, s.get(i), environment)) {
+				if (!checkCoercion(target, s.get(i), environment, assumptions)) {
 					return false;
 				}
 			}
 			return true;
 		} else if (target instanceof Type.Array) {
-			return checkCoercion((Type.Array) target, (Type.Array) source, environment);
+			return checkCoercion((Type.Array) target, (Type.Array) source, environment, assumptions);
 		} else if (target instanceof Type.Reference) {
-			return checkCoercion((Type.Reference) target, (Type.Reference) source, environment);
+			return checkCoercion((Type.Reference) target, (Type.Reference) source, environment, assumptions);
 		} else if (target instanceof Type.Record) {
-			return checkCoercion((Type.Record) target, (Type.Record) source, environment);
+			return checkCoercion((Type.Record) target, (Type.Record) source, environment, assumptions);
 		} else if (target instanceof Type.Callable) {
 			return checkCoercion((Type.Callable) target, (Type.Callable) source, environment);
 		} else {
@@ -169,21 +191,24 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		}
 	}
 
-	private boolean checkCoercion(Type.Array target, Type.Array source, Environment environment) throws ResolutionError {
-		return checkCoercion(target.getElement(),source.getElement(),environment);
+	private boolean checkCoercion(Type.Array target, Type.Array source, Environment environment,
+			BinaryRelation<Type> assumptions) throws ResolutionError {
+		return checkCoercion(target.getElement(), source.getElement(), environment, assumptions);
 	}
 
-	private boolean checkCoercion(Type.Reference target, Type.Reference source, Environment environment) throws ResolutionError {
-		return checkCoercion(target.getElement(),source.getElement(),environment);
+	private boolean checkCoercion(Type.Reference target, Type.Reference source, Environment environment,
+			BinaryRelation<Type> assumptions) throws ResolutionError {
+		return checkCoercion(target.getElement(), source.getElement(), environment, assumptions);
 	}
 
-	private boolean checkCoercion(Type.Record target, Type.Record source, Environment environment)
+	private boolean checkCoercion(Type.Record target, Type.Record source, Environment environment,
+			BinaryRelation<Type> assumptions)
 			throws ResolutionError {
 		Tuple<Type.Field> fields = target.getFields();
 		for (int i = 0; i != fields.size(); ++i) {
 			Type.Field field = fields.get(i);
 			Type type = source.getField(field.getName());
-			if (!checkCoercion(field.getType(), type, environment)) {
+			if (!checkCoercion(field.getType(), type, environment, assumptions)) {
 				return false;
 			}
 		}
@@ -196,28 +221,30 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		return true;
 	}
 
-	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment) throws ResolutionError {
-		Type.Nominal t = (Type.Nominal) target;
+	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment,
+			BinaryRelation<Type> assumptions) throws ResolutionError {
+		Type.Nominal t = target;
 		Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
-		return checkCoercion(decl.getType(), source, environment);
+		return checkCoercion(decl.getType(), source, environment, assumptions);
 	}
 
-	private boolean checkCoercion(Type.Union target, Type source, Environment environment) throws ResolutionError {
-		Type.Union ut = (Type.Union) target;
+	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
+			BinaryRelation<Type> assumptions) throws ResolutionError {
+		Type.Union ut = target;
 		Type candidate = selectCoercionCandidate(ut.getAll(), source, environment);
 		if (candidate != null) {
 			// Indicates decision made easily enough. Continue traversal down the type.
-			return checkCoercion(candidate, source, environment);
+			return checkCoercion(candidate, source, environment, assumptions);
 		} else if (source instanceof Type.Nominal) {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
 			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
-			return checkCoercion(target,decl.getType(),environment);
+			return checkCoercion(target,decl.getType(),environment, assumptions);
 		} else if (source instanceof Type.Union) {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
 			for (int i = 0; i != su.size(); ++i) {
-				if (!checkCoercion(target, su.get(i), environment)) {
+				if (!checkCoercion(target, su.get(i), environment, assumptions)) {
 					return false;
 				}
 			}
@@ -263,5 +290,9 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntaxError(msg, cu.getEntry(), e);
+	}
+
+	protected interface Assumptions {
+
 	}
 }
