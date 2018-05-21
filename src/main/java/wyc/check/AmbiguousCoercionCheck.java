@@ -18,6 +18,7 @@ import java.util.Arrays;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.NameResolver;
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -104,30 +105,132 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		super.visitMultiExpression(expr, targets, environment);
 	}
 
-
 	private void checkCoercion(Expr expr, Type target, Environment environment) {
-		Type.Atom[] targets = expand(target);
-		Type.Atom[] sources = expand(expr.getType());
-		for(int i=0;i!=sources.length;++i) {
-			Type match = selectCandidate(targets,sources[i],environment);
-			if(match == null) {
-				syntaxError("ambiguous coercion required (" + sources[i] + " to " + target + ")",expr);
+		Type source = expr.getType();
+		if (!checkCoercion(target, source, environment)) {
+			syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+		}
+	}
+
+	private void checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+		Tuple<Type> types = expr.getTypes();
+		for(int j=0;j!=targets.size();++j) {
+			Type target = targets.get(j);
+			Type source = types.get(j);
+			if (!checkCoercion(target, source, environment)) {
+				syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
 			}
 		}
 	}
 
-	private void checkCoercion(Expr expr, Tuple<Type> target, Environment environment) {
-		Tuple<Type> types = expr.getTypes();
-		for(int j=0;j!=target.size();++j) {
-			Type.Atom[] targets = expand(target.get(j));
-			Type.Atom[] sources = expand(types.get(j));
-			for(int i=0;i!=sources.length;++i) {
-				Type match = selectCandidate(targets,sources[i],environment);
-				if(match == null) {
-					syntaxError("ambiguous coercion required (" + sources[i] + " to " + target + ")",expr);
+	private boolean checkCoercion(Type target, Type source, Environment environment) {
+		// FIXME: need to add coinduction here!!
+		try {
+			if (target instanceof Type.Atom) {
+				// Have reached an atom, and we need to decompose this more.
+				return checkCoercion((Type.Atom) target, source, environment);
+			} else if (target instanceof Type.Nominal) {
+				// Have reached a nominal so we just expand this as is.
+				return checkCoercion((Type.Nominal) target, source, environment);
+			} else {
+				// Have reached a decision point. Therefore, need to try and make the decision.
+				return checkCoercion((Type.Union) target, source, environment);
+			}
+		}catch (ResolutionError e) {
+			throw new IllegalArgumentException("invalid coercion " + source + " to " + target);
+		}
+	}
+
+	private boolean checkCoercion(Type.Atom target, Type source, Environment environment) throws ResolutionError {
+		if (target instanceof Type.Primitive) {
+			return true;
+		} else if(source instanceof Type.Nominal) {
+			Type.Nominal s = (Type.Nominal) source;
+			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
+			return checkCoercion(target,decl.getType(),environment);
+		} else if(source instanceof Type.Union) {
+			Type.Union s = (Type.Union) source;
+			for (int i = 0; i != s.size(); ++i) {
+				if (!checkCoercion(target, s.get(i), environment)) {
+					return false;
 				}
 			}
+			return true;
+		} else if (target instanceof Type.Array) {
+			return checkCoercion((Type.Array) target, (Type.Array) source, environment);
+		} else if (target instanceof Type.Reference) {
+			return checkCoercion((Type.Reference) target, (Type.Reference) source, environment);
+		} else if (target instanceof Type.Record) {
+			return checkCoercion((Type.Record) target, (Type.Record) source, environment);
+		} else if (target instanceof Type.Callable) {
+			return checkCoercion((Type.Callable) target, (Type.Callable) source, environment);
+		} else {
+			throw new IllegalArgumentException("unknown type encountered: " + target);
 		}
+	}
+
+	private boolean checkCoercion(Type.Array target, Type.Array source, Environment environment) throws ResolutionError {
+		return checkCoercion(target.getElement(),source.getElement(),environment);
+	}
+
+	private boolean checkCoercion(Type.Reference target, Type.Reference source, Environment environment) throws ResolutionError {
+		return checkCoercion(target.getElement(),source.getElement(),environment);
+	}
+
+	private boolean checkCoercion(Type.Record target, Type.Record source, Environment environment)
+			throws ResolutionError {
+		Tuple<Type.Field> fields = target.getFields();
+		for (int i = 0; i != fields.size(); ++i) {
+			Type.Field field = fields.get(i);
+			Type type = source.getField(field.getName());
+			if (!checkCoercion(field.getType(), type, environment)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean checkCoercion(Type.Callable target, Type.Callable source, Environment environment) throws ResolutionError {
+		// FIXME: this is considered safe at this point only because the subtype
+		// operator currently does not allow any kind of subtyping between parameters.
+		return true;
+	}
+
+	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment) throws ResolutionError {
+		Type.Nominal t = (Type.Nominal) target;
+		Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
+		return checkCoercion(decl.getType(), source, environment);
+	}
+
+	private boolean checkCoercion(Type.Union target, Type source, Environment environment) throws ResolutionError {
+		Type.Union ut = (Type.Union) target;
+		Type candidate = selectCoercionCandidate(ut.getAll(), source, environment);
+		if (candidate != null) {
+			// Indicates decision made easily enough. Continue traversal down the type.
+			return checkCoercion(candidate, source, environment);
+		} else if (source instanceof Type.Nominal) {
+			// Proceed by expanding source
+			Type.Nominal s = (Type.Nominal) source;
+			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
+			return checkCoercion(target,decl.getType(),environment);
+		} else if (source instanceof Type.Union) {
+			// Proceed by expanding source
+			Type.Union su = (Type.Union) source;
+			for (int i = 0; i != su.size(); ++i) {
+				if (!checkCoercion(target, su.get(i), environment)) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			// Cannot proceed
+			return false;
+		}
+	}
+
+	private Type selectCoercionCandidate(Type[] candidates, Type type, Environment environment) {
+		// FIXME: this is temporary
+		return super.selectCandidate(candidates, type, environment);
 	}
 
 	private Type.Atom[] expand(Type type) {

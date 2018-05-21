@@ -1268,9 +1268,9 @@ public abstract class AbstractTypedVisitor {
 	 * @return
 	 */
 	public <T extends Type> T selectCandidate(T[] candidates, T actual, Environment environment) {
-	  // FIXME: where should this call be done?
-	  candidates = ArrayUtils.removeDuplicates(candidates);
-	  //
+		// FIXME: where should this call be done?
+		//candidates = ArrayUtils.removeDuplicates(candidates);
+		//
 		try {
 			T candidate = null;
 			for (int i = 0; i != candidates.length; ++i) {
