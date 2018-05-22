@@ -1268,8 +1268,6 @@ public abstract class AbstractTypedVisitor {
 	 * @return
 	 */
 	public <T extends Type> T selectCandidate(T[] candidates, T actual, Environment environment) {
-		// FIXME: where should this call be done?
-		//candidates = ArrayUtils.removeDuplicates(candidates);
 		//
 		try {
 			T candidate = null;
@@ -1279,7 +1277,7 @@ public abstract class AbstractTypedVisitor {
 					if (candidate == null) {
 						candidate = next;
 					} else {
-						candidate = selectCandidate(candidate, next, environment);
+						candidate = selectCandidate(candidate, next, actual, environment);
 					}
 				}
 			}
@@ -1302,7 +1300,8 @@ public abstract class AbstractTypedVisitor {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public <T extends Type> T selectCandidate(T candidate, T next, Environment environment) throws ResolutionError {
+	public <T extends Type> T selectCandidate(T candidate, T next, T actual, Environment environment)
+			throws ResolutionError {
 		// Found a viable candidate
 		boolean left = subtypeOperator.isSubtype(candidate, next, environment);
 		boolean right = subtypeOperator.isSubtype(next, candidate, environment);
@@ -1312,7 +1311,49 @@ public abstract class AbstractTypedVisitor {
 		} else if (right && !left) {
 			return candidate;
 		}
-		return null;
+		// Unable to distinguish options based on subtyping alone
+		left = isDerivation(next, actual);
+		right = isDerivation(candidate, actual);
+		if (left && !right) {
+			// Yes, is better than current candidate
+			return next;
+		} else if (right && !left) {
+			return candidate;
+		} else {
+			return null;
+		}
+
+	}
+
+	/**
+	 * Check whether one type is a derivation of another. For example, in this
+	 * scenario:
+	 *
+	 * <pre>
+	 * type parent is (int p) where ...
+	 * type child is (parent c) where ...
+	 * </pre>
+	 *
+	 * @param parent
+	 *            The type being derived to
+	 * @param child
+	 *            The type we are trying to derive
+	 * @return
+	 */
+	public boolean isDerivation(Type parent, Type child) {
+		if (child.equals(parent)) {
+			return true;
+		} else if (child instanceof Type.Nominal) {
+			try {
+				Type.Nominal t = (Type.Nominal) child;
+				Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
+				return isDerivation(parent, decl.getType());
+			} catch (NameResolver.ResolutionError e) {
+				throw new IllegalArgumentException("invalid type: " + child);
+			}
+		} else {
+			return false;
+		}
 	}
 
 	/**
