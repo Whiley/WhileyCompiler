@@ -7,4 +7,4 @@ function f(wur4nat x) -> int:
     return x
 
 public export method test() :
-    assume f(1) == 1
+    assume f((ur4nat) 1) == 1

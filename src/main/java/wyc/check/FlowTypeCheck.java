@@ -1366,7 +1366,13 @@ public class FlowTypeCheck {
 		}
 		// Allocate and set type for expression
 		Type concreteType = concreteTypeExtractor.apply(type, environment);
-		expression.setType(expression.getHeap().allocate(concreteType));
+		// Sanity check output
+		if(concreteType instanceof Type.Void) {
+			// Something has definitely gone wrong in the type extraction process.
+			internalFailure("empty type encountered", expression);
+		} else {
+			expression.setType(expression.getHeap().allocate(concreteType));
+		}
 		// Done
 		return type;
 	}
