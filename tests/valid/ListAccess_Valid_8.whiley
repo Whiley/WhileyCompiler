@@ -3,8 +3,8 @@
 public function toUnsignedInt(byte b) -> int:
     int r = 0
     int base = 1
-    while b != 0b:
-        if (b & 00000001b) == 00000001b:
+    while b != 0b0:
+        if (b & 0b00000001) == 0b00000001:
             r = r + base
         b = b >> 1
         base = base * 2
@@ -21,6 +21,6 @@ public function meth(byte[] bytes) -> int[]:
     return data
 
 public export method test() :
-    byte[] bytes = [00000000b, 00000001b, 00000011b, 00000111b]
+    byte[] bytes = [0b00000000, 0b00000001, 0b00000011, 0b00000111]
     assume meth(bytes) == [0,1,3,7]
 

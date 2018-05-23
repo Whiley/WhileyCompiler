@@ -8,7 +8,7 @@ public export method test():
     // <*, this> --> ((&*:int)|(&this:bool), &this:int)
     (&*:int)|(&*:bool) x = *:new 1
     &this:int y = this:new 0
-    &this:byte z = this:new 01101b
+    &this:byte z = this:new 0b00_1101
 
     &this:int p1 = m<this, *>(x, y)
     &*:int p2 = m<*, this>(x, z)
