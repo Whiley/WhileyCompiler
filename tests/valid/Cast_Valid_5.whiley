@@ -1,4 +1,4 @@
-type u8 is (int n) where 0 <= n && n <= 255
+type u8 is (int n) where 0 <= n && n <= 0x00_ff
 
 int[] bases = [1,2,4,8,16,32,64,128]
 
@@ -20,7 +20,7 @@ ensures 0 <= r && r <= 255:
         where 0 <= i
         where 0 <= x && x < base
         where base == bases[i]:
-        if (b & 00000001b) == 00000001b:
+        if (b & 0b00000001) == 0b0000_0001:
             x = x + base
         b = b >> 1
         base = base * 2
@@ -30,8 +30,8 @@ ensures 0 <= r && r <= 255:
 
 public function toUnsignedByte(u8 v) -> byte:
     //
-    byte mask = 00000001b
-    byte r = 0b
+    byte mask = 0b0000_0001
+    byte r = 0b0
     int i = 0
     while i < 8:
         if (v % 2) == 1:

@@ -14,12 +14,12 @@ function match(byte[] data, nat offset, nat end) -> int:
 
 public export method test() :
     byte[] xs = [
-        00000000b,
-        00000101b,
-        00000000b,
-        00000110b,
-        00000000b,
-        00000101b
+        0b0000_0000,
+        0b0000_0101,
+        0b0000_0000,
+        0b0000_0110,
+        0b0000_0000,
+        0b0000_0101
     ]
     int x = match(xs, 0, |xs| - 2)
     assume x == 2

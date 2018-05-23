@@ -1,7 +1,7 @@
-type u8 is (int n) where 0 <= n && n <= 255
+type u8 is (int n) where 0 <= n && n <= 0xff
 
 function f(int x) -> u8[]
-requires x == 0 || x == 169:
+requires x == 0 || x == 0xA9:
     return [x]
 
 public export method test() :
