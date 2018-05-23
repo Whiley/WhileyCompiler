@@ -357,8 +357,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			wyaldir.flush();
 			//
 			return Result.SUCCESS;
-		} catch(InternalFailure e) {
-			throw e;
 		} catch (SyntaxError e) {
 			SyntacticItem element = e.getElement();
 			e.outputSourceError(syserr, brief);

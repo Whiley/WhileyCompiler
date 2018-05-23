@@ -14,5 +14,5 @@ function f(intlist x) -> int:
 public export method test() :
     int x = f([1, 2, 3])
     assume x == 1
-    x = f(123)
+    x = f((pos) 123)
     assume x == 123

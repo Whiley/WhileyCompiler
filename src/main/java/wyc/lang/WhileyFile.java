@@ -4200,8 +4200,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				SyntacticItem head = getHead();
-				if(head.getHeap() != null) {
+				Type head = getHead();
+				if (head instanceof Type.Atom || head instanceof Type.Nominal) {
+					return "?" + head;
+				} else if(head.getHeap() != null) {
 					return "?" + head.getIndex();
 				} else {
 					return "?";
