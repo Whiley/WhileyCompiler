@@ -2300,19 +2300,23 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Bool(true)), index++);
 		case False:
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Bool(false)), index++);
-		case ByteValue: {
-			byte val = parseByte(token);
+		case BinaryLiteral: {
+			byte val = parseBinaryLiteral(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Byte(val)), index++);
 		}
-		case CharValue: {
+		case CharLiteral: {
 			BigInteger val = parseCharacter(token.text);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
 		}
-		case IntValue: {
-			BigInteger val = new BigInteger(token.text);
+		case IntegerLiteral: {
+			BigInteger val = parseIntegerLiteral(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
 		}
-		case StringValue: {
+		case HexLiteral: {
+			BigInteger val = parseHexLiteral(token);
+			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
+		}
+		case StringLiteral: {
 			byte[] val = parseUnicodeString(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.UTF8(val)), index++);
 		}
@@ -4352,23 +4356,37 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a token representing a byte value. Every such token is a sequence
-	 * of one or more binary digits ('0' or '1') followed by 'b'. For example,
-	 * "00110b" is parsed as the byte value 6.
+	 * Parse a token representing an integer literal, such as "112", "1_024", etc.
+	 *
+	 * @param input
+	 *            The token representing the integer value.
+	 * @return
+	 */
+	private BigInteger parseIntegerLiteral(Token input) {
+		return new BigInteger(input.text.replace("_", ""));
+	}
+
+	/**
+	 * Parse a token representing a binary literal, such as "0b0110", "0b1111_0101",
+	 * etc.
 	 *
 	 * @param input
 	 *            The token representing the byte value.
 	 * @return
 	 */
-	private byte parseByte(Token input) {
+	private byte parseBinaryLiteral(Token input) {
 		String text = input.text;
-		if (text.length() > 9) {
+		if (text.length() > 11) {
+			// FIXME: this will be deprecated!
 			syntaxError("invalid binary literal (too long)", input);
 		}
 		int val = 0;
-		for (int i = 0; i != text.length() - 1; ++i) {
-			val = val << 1;
+		// Start past 0b
+		for (int i = 2; i != text.length(); ++i) {
 			char c = text.charAt(i);
+			// Skip underscore
+			if(c == '_') { continue; }
+			val = val << 1;
 			if (c == '1') {
 				val = val | 1;
 			} else if (c == '0') {
@@ -4378,6 +4396,31 @@ public class WhileyFileParser {
 			}
 		}
 		return (byte) val;
+	}
+
+	/**
+	 * Parse a token representing a hex literal, such as "0x
+	 *
+	 * @param input
+	 *            The token representing the byte value.
+	 * @return
+	 */
+	private BigInteger parseHexLiteral(Token input) {
+		String text = input.text;
+		// Start past 0x
+		for (int i = 2; i != text.length(); ++i) {
+			char c = text.charAt(i);
+			if(c != '_' && !isHexDigit(c)) {
+				syntaxError("invalid hex literal (invalid characters)", input);
+			}
+		}
+		// Remove "0x" and "_"
+		text = input.text.substring(2).replace("_", "");
+		return new BigInteger(text,16);
+	}
+
+	private boolean isHexDigit(char c) {
+		return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
 	}
 
 	private String[] toStringArray(Tuple<Identifier> identifiers) {
