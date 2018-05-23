@@ -18,6 +18,7 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.lang.WhileyFile.SemanticType;
+import wyil.type.util.BinaryRelation;
 
 /**
  * <p>
@@ -53,7 +54,7 @@ public class RelaxedTypeEmptinessTest extends StrictTypeEmptinessTest {
 	}
 
 	@Override
-	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, Assumptions assumptions,
+	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, BinaryRelation<Term<?>> assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
 		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
 		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
