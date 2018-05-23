@@ -25,6 +25,7 @@ import static wyc.util.ErrorMessages.errorMessage;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.type.subtyping.SubtypeOperator;
 
 import java.util.ArrayList;
@@ -89,14 +90,14 @@ import wyc.lang.WhileyFile.SemanticType;
  */
 public class ReadWriteTypeExtractor {
 
-	public static final Combinator<SemanticType.Record> READABLE_RECORD = new ReadableRecordCombinator();
-	public static final Combinator<SemanticType.Record> WRITEABLE_RECORD = new WriteableRecordCombinator();
 	public static final Combinator<SemanticType.Array> READABLE_ARRAY = new ReadableArrayCombinator();
 	public static final Combinator<SemanticType.Array> WRITEABLE_ARRAY = new WriteableArrayCombinator();
 	public static final Combinator<SemanticType.Reference> READABLE_REFERENCE = new ReadableReferenceCombinator();
 	public static final Combinator<SemanticType.Reference> WRITEABLE_REFERENCE = new ReadableReferenceCombinator();
 	public static final Combinator<Type.Callable> READABLE_CALLABLE = new ReadableCallableCombinator();
-
+	public static final Combinator<SemanticType.Record> READABLE_RECORD = new ReadableRecordCombinator();
+	public static final Combinator<SemanticType.Record> WRITEABLE_RECORD = new WriteableRecordCombinator();
+	//
 	private final NameResolver resolver;
 	private final SubtypeOperator subtypeOperator;
 
@@ -105,8 +106,7 @@ public class ReadWriteTypeExtractor {
 		this.subtypeOperator = subtypeOperator;
 	}
 
-  public <T extends SemanticType.Atom> T apply(SemanticType type, LifetimeRelation lifetimes,
-      Combinator<T> kind) {
+	public <T extends SemanticType.Atom> T apply(SemanticType type, LifetimeRelation lifetimes, Combinator<T> kind) {
 		//
 		// First, convert type into conjunctive normal form. This allows all atom
 		// combinations to be tried and potentially reduced to void which, in turn,
@@ -245,26 +245,25 @@ public class ReadWriteTypeExtractor {
 	 * @return
 	 * @throws ResolutionError
 	 */
-  protected <T extends SemanticType.Atom> T construct(Disjunct type, LifetimeRelation lifetimes,
-      Combinator<T> kind) {
-    T result = null;
-    Conjunct[] conjuncts = type.conjuncts;
-    for (int i = 0; i != conjuncts.length; ++i) {
-      Conjunct conjunct = conjuncts[i];
-      if (!isVoid(conjunct, lifetimes)) {
-        T tmp = construct(conjunct, lifetimes, kind);
-        if (tmp == null) {
-          // This indicates one of the conjuncts did not generate a proper
-          // extraction. In this case, we can simply ignore it.
-        } else if (result == null) {
-          result = tmp;
-        } else {
-          result = kind.union(result, tmp, lifetimes);
-        }
-      }
-    }
-    return result;
-  }
+	protected <T extends SemanticType.Atom> T construct(Disjunct type, LifetimeRelation lifetimes, Combinator<T> kind) {
+		T result = null;
+		Conjunct[] conjuncts = type.conjuncts;
+		for (int i = 0; i != conjuncts.length; ++i) {
+			Conjunct conjunct = conjuncts[i];
+			if (!isVoid(conjunct, lifetimes)) {
+				T tmp = construct(conjunct, lifetimes, kind);
+				if (tmp == null) {
+					// This indicates one of the conjuncts did not generate a proper
+					// extraction. In this case, we can simply ignore it.
+				} else if (result == null) {
+					result = tmp;
+				} else {
+					result = kind.union(result, tmp, lifetimes);
+				}
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * Determine whether a given conjunct is equivalent to <code>void</code> or not.
@@ -290,34 +289,33 @@ public class ReadWriteTypeExtractor {
 		}
 	}
 
-  protected <T extends SemanticType.Atom> T construct(Conjunct type, LifetimeRelation lifetimes,
-      Combinator<T> kind) {
-    T result = null;
-    // First, combine the positive terms together
-    SemanticType.Atom[] positives = type.positives;
-    for (int i = 0; i != positives.length; ++i) {
-      SemanticType.Atom pos = positives[i];
-      T tmp = kind.extract(pos, lifetimes);
-      if (tmp == null) {
-        return null;
-      } else if (result == null) {
-        result = tmp;
-      } else {
-        result = kind.intersect(result, tmp, lifetimes);
-      }
-    }
-    if (result != null) {
-      // Second, subtract all the negative types
-      SemanticType.Atom[] negatives = type.negatives;
-      for (int i = 0; i != negatives.length; ++i) {
-        T tmp = kind.extract(negatives[i], lifetimes);
-        if (tmp != null) {
-          result = kind.subtract(result, tmp, lifetimes);
-        }
-      }
-    }
-    return result;
-  }
+	protected <T extends SemanticType.Atom> T construct(Conjunct type, LifetimeRelation lifetimes, Combinator<T> kind) {
+		T result = null;
+		// First, combine the positive terms together
+		SemanticType.Atom[] positives = type.positives;
+		for (int i = 0; i != positives.length; ++i) {
+			SemanticType.Atom pos = positives[i];
+			T tmp = kind.extract(pos, lifetimes);
+			if (tmp == null) {
+				return null;
+			} else if (result == null) {
+				result = tmp;
+			} else {
+				result = kind.intersect(result, tmp, lifetimes);
+			}
+		}
+		if (result != null) {
+			// Second, subtract all the negative types
+			SemanticType.Atom[] negatives = type.negatives;
+			for (int i = 0; i != negatives.length; ++i) {
+				T tmp = kind.extract(negatives[i], lifetimes);
+				if (tmp != null) {
+					result = kind.subtract(result, tmp, lifetimes, subtypeOperator);
+				}
+			}
+		}
+		return result;
+	}
 
 	// ====================================================================================
 	// Disjunct
@@ -444,348 +442,433 @@ public class ReadWriteTypeExtractor {
 		private static final Type.Atom[] EMPTY_ATOMS = new Type.Atom[0];
 	}
 
-  // ======================================================================================================
-  // Combinator
-  // ======================================================================================================
+	// ======================================================================================================
+	// Combinator
+	// ======================================================================================================
 
-  public interface Combinator<T extends SemanticType.Atom> {
-    public T extract(SemanticType.Atom atom, LifetimeRelation lifetimes);
+	public interface Combinator<T extends SemanticType.Atom> {
+		public T extract(SemanticType.Atom atom, LifetimeRelation lifetimes);
 
-    public T union(T lhs, T rhs, LifetimeRelation lifetimes);
+		public T union(T lhs, T rhs, LifetimeRelation lifetimes);
 
-    public T intersect(T lhs, T rhs, LifetimeRelation lifetimes);
+		public T intersect(T lhs, T rhs, LifetimeRelation lifetimes);
 
-    public T subtract(T lhs, T rhs, LifetimeRelation lifetimes);
-  }
+		public T subtract(T lhs, T rhs, LifetimeRelation lifetimes, SubtypeOperator subtyping);
+	}
 
+	// ======================================================================================================
+	// Readable /Writeable Record Combinators
+	// ======================================================================================================
 
+	private static class ReadableRecordCombinator implements Combinator<SemanticType.Record> {
 
-  // ======================================================================================================
-  // Readable /Writeable Record Combinators
-  // ======================================================================================================
+		@Override
+		public SemanticType.Record extract(Atom atom, LifetimeRelation lifetimes) {
+			if (atom instanceof SemanticType.Record) {
+				return (SemanticType.Record) atom;
+			} else {
+				return null;
+			}
+		}
 
-  private static class ReadableRecordCombinator implements Combinator<SemanticType.Record> {
+		@Override
+		public Record union(Record lhs, Record rhs, LifetimeRelation lifetimes) {
+			Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
+			Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
+			// Determine the number of matching fields in the two records, as this is the
+			// critical factor in determining the outcome.
+			int count = countMatchingFields(lhsFields, rhsFields);
+			// Determine whether result is an open record or not. If either of the records
+			// is open, then the result is open. Likewise, the result is open if we
+			// "compact" two compatible records down into one.
+			boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
+			isOpenRecord |= (lhsFields.size() > count || rhsFields.size() > count);
+			//
+			SemanticType.Field[] fields = new SemanticType.Field[count];
+			extractMatchingFieldsUnioned(lhsFields, rhsFields, fields);
+			return new SemanticType.Record(isOpenRecord, new Tuple<>(fields));
+		}
 
-    @Override
-    public SemanticType.Record extract(Atom atom, LifetimeRelation lifetimes) {
-      if(atom instanceof SemanticType.Record) {
-        return (SemanticType.Record) atom;
-      } else {
-        return null;
-      }
-    }
+		@Override
+		public Record intersect(Record lhs, Record rhs, LifetimeRelation lifetimes) {
+			Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
+			Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
+			// Determine the number of matching fields. That is, fields with the
+			// same name.
+			int matches = countMatchingFields(lhsFields, rhsFields);
+			// When intersecting two records, the number of fields is only
+			// allowed to differ if one of them is an open record. Therefore, we
+			// need to pay careful attention to the size of the resulting match
+			// in comparison with the original records.
+			if (matches < lhsFields.size() && !rhs.isOpen()) {
+				// Not enough matches made to meet the requirements of the lhs
+				// type.
+				return null;
+			} else if (matches < rhsFields.size() && !lhs.isOpen()) {
+				// Not enough matches made to meet the requirements of the rhs
+				// type.
+				return null;
+			} else {
+				// At this point, we know the intersection succeeds. The next
+				// job is to determine the final set of field declarations.
+				int lhsRemainder = lhsFields.size() - matches;
+				int rhsRemainder = rhsFields.size() - matches;
+				SemanticType.Field[] fields = new SemanticType.Field[matches + lhsRemainder + rhsRemainder];
+				// Extract all matching fields first
+				int index = extractMatchingFields(lhsFields, rhsFields, fields);
+				// Extract remaining lhs fields second
+				index = extractNonMatchingFields(lhsFields, rhsFields, fields, index);
+				// Extract remaining rhs fields last
+				index = extractNonMatchingFields(rhsFields, lhsFields, fields, index);
+				// The intersection of two records can only be open when both
+				// are themselves open.
+				boolean isOpen = lhs.isOpen() && rhs.isOpen();
+				//
+				return new SemanticType.Record(isOpen, new Tuple<>(fields));
+			}
+		}
 
-    @Override
-    public Record union(Record lhs, Record rhs, LifetimeRelation lifetimes) {
-        Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
-        Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
-        // Determine the number of matching fields in the two records, as this is the
-        // critical factor in determining the outcome.
-        int count = countMatchingFields(lhsFields, rhsFields);
-        // Determine whether result is an open record or not. If either of the records
-        // is open, then the result is open. Likewise, the result is open if we
-        // "compact" two compatible records down into one.
-        boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
-        isOpenRecord |= (lhsFields.size() > count || rhsFields.size() > count);
-        //
-        SemanticType.Field[] fields = new SemanticType.Field[count];
-        extractMatchingFieldsUnioned(lhsFields, rhsFields, fields);
-        return new SemanticType.Record(isOpenRecord, new Tuple<>(fields));
-    }
+		@Override
+		public Record subtract(Record lhs, Record rhs, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
+			Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
+			Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
+			// Check the number of field matches
+			int matches = countFieldMatches(lhsFields,rhsFields);
+			if(matches < rhsFields.size()) {
+				// At least one field in rhs has no match in lhs. This is definitely a redundant
+				// subtraction.
+				return lhs;
+			} else if(matches < lhsFields.size() && !rhs.isOpen()) {
+				// At least one field in lhs has not match in rhs. If the rhs is open, this is
+				// fine as it will auto-fill. But, if its not open, then this is redundant.
+				return lhs;
+			}
+			// Extract all pivot fields (i.e. fields with non-void subtraction)
+			SemanticType.Field[] pivots = determinePivotFields(lhsFields, rhsFields, lifetimes, subtyping);
+			// Check how many pivots we have actually found
+			int count = countPivots(pivots);
+			// Act on number of pivots found
+			switch(count) {
+			case 0:
+				// no pivots found means everything was void.
+				return lhs.isOpen() == rhs.isOpen() ? null : lhs;
+			case 1:
+				// Exactly one pivot found. This is something we can work with!
+				for(int i=0;i!=pivots.length;++i) {
+					if(pivots[i] == null) {
+						pivots[i] = lhsFields.get(i);
+					}
+				}
+				return new SemanticType.Record(lhs.isOpen(), new Tuple<>(pivots));
+			default:
+				// All other cases basically are redundant.
+				return lhs;
+			}
 
-    @Override
-    public Record intersect(Record lhs, Record rhs, LifetimeRelation lifetimes) {
-    	Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
-    	Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
-    	// Determine the number of matching fields. That is, fields with the
-    	// same name.
-    	int matches = countMatchingFields(lhsFields, rhsFields);
-    	// When intersecting two records, the number of fields is only
-    	// allowed to differ if one of them is an open record. Therefore, we
-    	// need to pay careful attention to the size of the resulting match
-    	// in comparison with the original records.
-    	if (matches < lhsFields.size() && !rhs.isOpen()) {
-    		// Not enough matches made to meet the requirements of the lhs
-    		// type.
-    		return null;
-    	} else if (matches < rhsFields.size() && !lhs.isOpen()) {
-    		// Not enough matches made to meet the requirements of the rhs
-    		// type.
-    		return null;
-    	} else {
-    		// At this point, we know the intersection succeeds. The next
-    		// job is to determine the final set of field declarations.
-    		int lhsRemainder = lhsFields.size() - matches;
-    		int rhsRemainder = rhsFields.size() - matches;
-    		SemanticType.Field[] fields = new SemanticType.Field[matches + lhsRemainder + rhsRemainder];
-    		// Extract all matching fields first
-    		int index = extractMatchingFields(lhsFields, rhsFields, fields);
-    		// Extract remaining lhs fields second
-    		index = extractNonMatchingFields(lhsFields, rhsFields, fields, index);
-    		// Extract remaining rhs fields last
-    		index = extractNonMatchingFields(rhsFields, lhsFields, fields, index);
-    		// The intersection of two records can only be open when both
-    		// are themselves open.
-    		boolean isOpen = lhs.isOpen() && rhs.isOpen();
-    		//
-    		return new SemanticType.Record(isOpen, new Tuple<>(fields));
-    	}
-    }
+		}
 
-    @Override
-    public Record subtract(Record lhs, Record rhs, LifetimeRelation lifetimes) {
-    	ArrayList<SemanticType.Field> fields = new ArrayList<>();
-    	Tuple<? extends SemanticType.Field> lhsFields = lhs.getFields();
-    	Tuple<? extends SemanticType.Field> rhsFields = rhs.getFields();
-    	for (int i = 0; i != lhsFields.size(); ++i) {
-    		SemanticType.Field lhsField = lhsFields.get(i);
-    		Identifier lhsFieldName = lhsField.getName();
-    		boolean matched = false;
-    		for (int j = 0; j != rhsFields.size(); ++j) {
-    			SemanticType.Field rhsField = rhsFields.get(j);
-    			Identifier rhsFieldName = rhsField.getName();
-    			if (lhsFieldName.equals(rhsFieldName)) {
-    				SemanticType diff = new SemanticType.Difference(lhsField.getType(), rhsField.getType());
-    				fields.add(new SemanticType.Field(lhsFieldName, diff));
-    				matched = true;
-    				break;
-    			}
-    		}
-    		//
-    		if (!matched && !rhs.isOpen()) {
-    			// We didn't find a corresponding field, and the rhs is fixed. This means the
-    			// rhs is not compatible with the lhs and can be ignored.
-    			return lhs;
-    		} else if (!matched) {
-    			// We didn't find a corresponding field, and the rhs is open. This just means
-    			// the rhs is not taking anything away from the lhs (for this field).
-    			fields.add(lhsField);
-    		}
-    	}
-    	return new SemanticType.Record(lhs.isOpen(), new Tuple<>(fields));
-    }
-  }
+		/**
+		 * Simply count the number of fields in the lhs which match a field in the rhs.
+		 * This provides critical information. For example, when subtracting
+		 * <code>{int f, int g}</code> from <code>{int f, int h}</code> it is apparent
+		 * that not all fields in the lhs are matched.
+		 *
+		 * @param lhsFields
+		 * @param rhsFields
+		 * @return
+		 */
+		private int countFieldMatches(Tuple<? extends SemanticType.Field> lhsFields, Tuple<? extends SemanticType.Field> rhsFields) {
+			int matches = 0;
+			for (int i = 0; i != lhsFields.size(); ++i) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				Identifier lhsFieldName = lhsField.getName();
+				for (int j = 0; j != rhsFields.size(); ++j) {
+					SemanticType.Field rhsField = rhsFields.get(j);
+					Identifier rhsFieldName = rhsField.getName();
+					if (lhsFieldName.equals(rhsFieldName)) {
+						matches++;
+						break;
+					}
+				}
+			}
+			return matches;
+		}
 
-  private static class WriteableRecordCombinator extends ReadableRecordCombinator {
-    @Override
-    public Record union(Record lhs, Record rhs, LifetimeRelation lifetimes) {
-      return intersect(lhs,rhs,lifetimes);
-    }
-  }
+		/**
+		 * Find all pivots between the lhs and rhs fields, and calculate their types.
+		 *
+		 * @param lhsFields
+		 * @param rhsFields
+		 * @param lifetimes
+		 * @param stack
+		 * @return
+		 */
+		private SemanticType.Field[] determinePivotFields(Tuple<? extends SemanticType.Field> lhsFields,
+				Tuple<? extends SemanticType.Field> rhsFields, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
+			try {
+				SemanticType.Field[] pivots = new SemanticType.Field[lhsFields.size()];
+				//
+				for (int i = 0; i != lhsFields.size(); ++i) {
+					SemanticType.Field lhsField = lhsFields.get(i);
+					Identifier lhsFieldName = lhsField.getName();
+					for (int j = 0; j != rhsFields.size(); ++j) {
+						SemanticType.Field rhsField = rhsFields.get(j);
+						Identifier rhsFieldName = rhsField.getName();
+						if (lhsFieldName.equals(rhsFieldName)) {
+							// Matched field, now compute its type.
+							SemanticType type = new SemanticType.Difference(lhsField.getType(), rhsField.getType());
+							// Check whether is a pivot or not
+							if (!subtyping.isVoid(type, lifetimes)) {
+								// Yes, is a pivot
+								pivots[i] = new SemanticType.Field(lhsFieldName, type);
+							}
+							break;
+						}
+					}
+				}
+				return pivots;
+			} catch (NameResolver.ResolutionError e) {
+				// FIXME: this is a kludge for now. Fortunately, this exception should go away
+				// when resolution is finally fixed 8)
+				throw new RuntimeException(e);
+			}
+		}
 
-  // ======================================================================================================
-  // Readable Array Combinator
-  // ======================================================================================================
+		/**
+		 * Count the number of pivots (i.e. non-null entries) in a given array.
+		 *
+		 * @param pivots
+		 * @return
+		 */
+		private int countPivots(SemanticType.Field[] pivots) {
+			int count = 0;
+			for(int i=0;i!=pivots.length;++i) {
+				if(pivots[i] != null) {
+					count = count + 1;
+				}
+			}
+			return count;
+		}
+	}
 
-  private static class ReadableArrayCombinator implements Combinator<SemanticType.Array> {
+	private static class WriteableRecordCombinator extends ReadableRecordCombinator {
+		@Override
+		public Record union(Record lhs, Record rhs, LifetimeRelation lifetimes) {
+			return intersect(lhs, rhs, lifetimes);
+		}
+	}
 
-    @Override
-    public Array extract(Atom atom, LifetimeRelation lifetimes) {
-      if(atom instanceof SemanticType.Array) {
-        return (SemanticType.Array) atom;
-      } else {
-        return null;
-      }
-    }
+	// ======================================================================================================
+	// Readable Array Combinator
+	// ======================================================================================================
 
-    @Override
-    public Array union(Array lhs, Array rhs, LifetimeRelation lifetimes) {
-        return new SemanticType.Array(unionHelper(lhs.getElement(), rhs.getElement()));
-    }
+	private static class ReadableArrayCombinator implements Combinator<SemanticType.Array> {
 
-    @Override
-    public Array intersect(Array lhs, Array rhs, LifetimeRelation lifetimes) {
-        return new SemanticType.Array(intersectionHelper(lhs.getElement(), rhs.getElement()));
-    }
+		@Override
+		public Array extract(Atom atom, LifetimeRelation lifetimes) {
+			if (atom instanceof SemanticType.Array) {
+				return (SemanticType.Array) atom;
+			} else {
+				return null;
+			}
+		}
 
-    @Override
-    public Array subtract(Array lhs, Array rhs, LifetimeRelation lifetimes) {
-    	return new SemanticType.Array(new SemanticType.Difference(lhs.getElement(), rhs.getElement()));
-    }
-  }
+		@Override
+		public Array union(Array lhs, Array rhs, LifetimeRelation lifetimes) {
+			return new SemanticType.Array(unionHelper(lhs.getElement(), rhs.getElement()));
+		}
 
-  private static class WriteableArrayCombinator extends ReadableArrayCombinator {
-    @Override
-    public Array union(Array lhs, Array rhs, LifetimeRelation lifetimes) {
-      return intersect(lhs,rhs,lifetimes);
-    }
+		@Override
+		public Array intersect(Array lhs, Array rhs, LifetimeRelation lifetimes) {
+			return new SemanticType.Array(intersectionHelper(lhs.getElement(), rhs.getElement()));
+		}
 
-  }
+		@Override
+		public Array subtract(Array lhs, Array rhs, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
+			return new SemanticType.Array(new SemanticType.Difference(lhs.getElement(), rhs.getElement()));
+		}
+	}
 
-  // ======================================================================================================
-  // Readable Reference Combinator
-  // ======================================================================================================
+	private static class WriteableArrayCombinator extends ReadableArrayCombinator {
+		@Override
+		public Array union(Array lhs, Array rhs, LifetimeRelation lifetimes) {
+			return intersect(lhs, rhs, lifetimes);
+		}
 
-  private static class ReadableReferenceCombinator implements Combinator<SemanticType.Reference> {
+	}
 
-    @Override
-    public SemanticType.Reference extract(Atom atom, LifetimeRelation lifetimes) {
-      if(atom instanceof SemanticType.Reference) {
-        return (SemanticType.Reference) atom;
-      } else {
-        return null;
-      }
-    }
+	// ======================================================================================================
+	// Readable Reference Combinator
+	// ======================================================================================================
 
-    @Override
-    public Reference union(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
-        return new SemanticType.Reference(intersectionHelper(lhs.getElement(), rhs.getElement()));
-    }
+	private static class ReadableReferenceCombinator implements Combinator<SemanticType.Reference> {
 
-    @Override
-    public Reference intersect(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
-    	return new SemanticType.Reference(intersectionHelper(lhs.getElement(), rhs.getElement()));
-    }
+		@Override
+		public SemanticType.Reference extract(Atom atom, LifetimeRelation lifetimes) {
+			if (atom instanceof SemanticType.Reference) {
+				return (SemanticType.Reference) atom;
+			} else {
+				return null;
+			}
+		}
 
-    @Override
-    public Reference subtract(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
-       return new SemanticType.Reference(new SemanticType.Difference(lhs.getElement(), rhs.getElement()));
-    }
-  }
+		@Override
+		public Reference union(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
+			return new SemanticType.Reference(intersectionHelper(lhs.getElement(), rhs.getElement()));
+		}
 
+		@Override
+		public Reference intersect(Reference lhs, Reference rhs, LifetimeRelation lifetimes) {
+			return new SemanticType.Reference(intersectionHelper(lhs.getElement(), rhs.getElement()));
+		}
 
-  // ======================================================================================================
-  // Readable Reference Combinator
-  // ======================================================================================================
+		@Override
+		public Reference subtract(Reference lhs, Reference rhs, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
+			return new SemanticType.Reference(new SemanticType.Difference(lhs.getElement(), rhs.getElement()));
+		}
+	}
 
-  private static class ReadableCallableCombinator implements Combinator<Type.Callable> {
+	// ======================================================================================================
+	// Readable Reference Combinator
+	// ======================================================================================================
 
-    @Override
-    public Type.Callable extract(Atom atom, LifetimeRelation lifetimes) {
-      if(atom instanceof Type.Callable) {
-        return (Type.Callable) atom;
-      } else {
-        return null;
-      }
-    }
+	private static class ReadableCallableCombinator implements Combinator<Type.Callable> {
 
-    @Override
-    public Type.Callable union(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
-    	return null;
-    }
+		@Override
+		public Type.Callable extract(Atom atom, LifetimeRelation lifetimes) {
+			if (atom instanceof Type.Callable) {
+				return (Type.Callable) atom;
+			} else {
+				return null;
+			}
+		}
 
-    @Override
-    public Type.Callable intersect(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
-      return null;
-    }
+		@Override
+		public Type.Callable union(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
+			return null;
+		}
 
-    @Override
-    public Type.Callable subtract(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
-      return null;
-    }
-  }
+		@Override
+		public Type.Callable intersect(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
+			return null;
+		}
 
+		@Override
+		public Type.Callable subtract(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
+			return null;
+		}
+	}
 
 	// ===============================================================
 	// Misc
 	// ===============================================================
-  protected static int extractMatchingFieldsUnioned(Tuple<? extends SemanticType.Field> lhsFields,
-      Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result) {
-    int index = 0;
-    // Extract all matching fields first.
-    for (int i = 0; i != lhsFields.size(); ++i) {
-      for (int j = 0; j != rhsFields.size(); ++j) {
-        SemanticType.Field lhsField = lhsFields.get(i);
-        SemanticType.Field rhsField = rhsFields.get(j);
-        Identifier lhsFieldName = lhsField.getName();
-        Identifier rhsFieldName = rhsField.getName();
-        if (lhsFieldName.equals(rhsFieldName)) {
-          SemanticType type = unionHelper(lhsField.getType(), rhsField.getType());
-          SemanticType.Field combined = new SemanticType.Field(lhsFieldName, type);
-          result[index++] = combined;
-        }
-      }
-    }
-    return index;
-  }
-
-  /**
-   * Count the number of matching fields. That is, fields with the same name.
-   *
-   * @param lhsFields
-   * @param rhsFields
-   * @return
-   */
-  protected static int countMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
-      Tuple<? extends SemanticType.Field> rhsFields) {
-    int count = 0;
-    for (int i = 0; i != lhsFields.size(); ++i) {
-      for (int j = 0; j != rhsFields.size(); ++j) {
-        SemanticType.Field lhsField = lhsFields.get(i);
-        SemanticType.Field rhsField = rhsFields.get(j);
-        Identifier lhsFieldName = lhsField.getName();
-        Identifier rhsFieldName = rhsField.getName();
-        if (lhsFieldName.equals(rhsFieldName)) {
-          count = count + 1;
-        }
-      }
-    }
-    return count;
-  }
-
-  /**
-   * Extract all matching fields (i.e. fields with the same name) into the result
-   * array.
-   *
-   * @param lhsFields
-   * @param rhsFields
-   * @param result
-   * @return
-   */
-  protected static int extractMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
-      Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result) {
-    int index = 0;
-    // Extract all matching fields first.
-    for (int i = 0; i != lhsFields.size(); ++i) {
-      for (int j = 0; j != rhsFields.size(); ++j) {
-        SemanticType.Field lhsField = lhsFields.get(i);
-        SemanticType.Field rhsField = rhsFields.get(j);
-        Identifier lhsFieldName = lhsField.getName();
-        Identifier rhsFieldName = rhsField.getName();
-        if (lhsFieldName.equals(rhsFieldName)) {
-          SemanticType type = intersectionHelper(lhsField.getType(), rhsField.getType());
-          SemanticType.Field combined = new SemanticType.Field(lhsFieldName, type);
-          result[index++] = combined;
-        }
-      }
-    }
-    return index;
-  }
-
-  /**
-   * Extract fields from lhs which do not match any field in the rhs. That is,
-   * there is no field in the rhs with the same name.
-   *
-   * @param lhsFields
-   * @param rhsFields
-   * @param result
-   * @param index
-   * @return
-   */
-  protected static int extractNonMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
-      Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result, int index) {
-    outer: for (int i = 0; i != lhsFields.size(); ++i) {
-      for (int j = 0; j != rhsFields.size(); ++j) {
-        SemanticType.Field lhsField = lhsFields.get(i);
-        SemanticType.Field rhsField = rhsFields.get(j);
-        Identifier lhsFieldName = lhsField.getName();
-        Identifier rhsFieldName = rhsField.getName();
-        if (lhsFieldName.equals(rhsFieldName)) {
-          // This is a matching field. Therefore, continue on to the
-          // next lhs field
-          continue outer;
-        }
-      }
-      result[index++] = lhsFields.get(i);
-    }
-    return index;
-  }
+	protected static int extractMatchingFieldsUnioned(Tuple<? extends SemanticType.Field> lhsFields,
+			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result) {
+		int index = 0;
+		// Extract all matching fields first.
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field rhsField = rhsFields.get(j);
+				Identifier lhsFieldName = lhsField.getName();
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					SemanticType type = unionHelper(lhsField.getType(), rhsField.getType());
+					SemanticType.Field combined = new SemanticType.Field(lhsFieldName, type);
+					result[index++] = combined;
+				}
+			}
+		}
+		return index;
+	}
 
 	/**
-	 * Provides a simplistic form of type union which, in some cases, does
-	 * slightly better than simply creating a new union. For example, unioning
-	 * <code>int</code> with <code>int</code> will return <code>int</code>
-	 * rather than <code>int|int</code>.
+	 * Count the number of matching fields. That is, fields with the same name.
+	 *
+	 * @param lhsFields
+	 * @param rhsFields
+	 * @return
+	 */
+	protected static int countMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
+			Tuple<? extends SemanticType.Field> rhsFields) {
+		int count = 0;
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field rhsField = rhsFields.get(j);
+				Identifier lhsFieldName = lhsField.getName();
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					count = count + 1;
+				}
+			}
+		}
+		return count;
+	}
+
+	/**
+	 * Extract all matching fields (i.e. fields with the same name) into the result
+	 * array.
+	 *
+	 * @param lhsFields
+	 * @param rhsFields
+	 * @param result
+	 * @return
+	 */
+	protected static int extractMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
+			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result) {
+		int index = 0;
+		// Extract all matching fields first.
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field rhsField = rhsFields.get(j);
+				Identifier lhsFieldName = lhsField.getName();
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					SemanticType type = intersectionHelper(lhsField.getType(), rhsField.getType());
+					SemanticType.Field combined = new SemanticType.Field(lhsFieldName, type);
+					result[index++] = combined;
+				}
+			}
+		}
+		return index;
+	}
+
+	/**
+	 * Extract fields from lhs which do not match any field in the rhs. That is,
+	 * there is no field in the rhs with the same name.
+	 *
+	 * @param lhsFields
+	 * @param rhsFields
+	 * @param result
+	 * @param index
+	 * @return
+	 */
+	protected static int extractNonMatchingFields(Tuple<? extends SemanticType.Field> lhsFields,
+			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result, int index) {
+		outer: for (int i = 0; i != lhsFields.size(); ++i) {
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field rhsField = rhsFields.get(j);
+				Identifier lhsFieldName = lhsField.getName();
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					// This is a matching field. Therefore, continue on to the
+					// next lhs field
+					continue outer;
+				}
+			}
+			result[index++] = lhsFields.get(i);
+		}
+		return index;
+	}
+
+	/**
+	 * Provides a simplistic form of type union which, in some cases, does slightly
+	 * better than simply creating a new union. For example, unioning
+	 * <code>int</code> with <code>int</code> will return <code>int</code> rather
+	 * than <code>int|int</code>.
 	 *
 	 * @param lhs
 	 * @param rhs
@@ -793,16 +876,16 @@ public class ReadWriteTypeExtractor {
 	 */
 	@SuppressWarnings("unchecked")
 	protected static <T extends SemanticType> T unionHelper(T lhs, T rhs) {
-		if(lhs.equals(rhs)) {
+		if (lhs.equals(rhs)) {
 			return lhs;
-		} else if(lhs instanceof Type.Void) {
+		} else if (lhs instanceof Type.Void) {
 			return rhs;
-		} else if(rhs instanceof Type.Void) {
+		} else if (rhs instanceof Type.Void) {
 			return lhs;
-		} else if(lhs instanceof Type && rhs instanceof Type) {
-			return (T) new Type.Union(new Type[]{(Type)lhs,(Type)rhs});
+		} else if (lhs instanceof Type && rhs instanceof Type) {
+			return (T) new Type.Union(new Type[] { (Type) lhs, (Type) rhs });
 		} else {
-			return (T) new SemanticType.Union(new SemanticType[]{lhs,rhs});
+			return (T) new SemanticType.Union(new SemanticType[] { lhs, rhs });
 		}
 	}
 
@@ -817,14 +900,14 @@ public class ReadWriteTypeExtractor {
 	 * @return
 	 */
 	protected static SemanticType intersectionHelper(SemanticType lhs, SemanticType rhs) {
-		if(lhs.equals(rhs)) {
+		if (lhs.equals(rhs)) {
 			return lhs;
-		} else if(lhs instanceof Type.Void) {
+		} else if (lhs instanceof Type.Void) {
 			return lhs;
-		} else if(rhs instanceof Type.Void) {
+		} else if (rhs instanceof Type.Void) {
 			return rhs;
 		} else {
-			return new SemanticType.Intersection(new SemanticType[]{lhs,rhs});
+			return new SemanticType.Intersection(new SemanticType[] { lhs, rhs });
 		}
 	}
 

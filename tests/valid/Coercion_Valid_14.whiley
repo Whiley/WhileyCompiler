@@ -3,7 +3,8 @@ type neg is (int x) where x < 0
 
 type A1 is ((pos|neg)[] x)
 
-function f(int x) -> (A1 r):
+function f(int x) -> (A1 r)
+ensures r == [x]:
     return [(pos) x]
 
 public export method test():

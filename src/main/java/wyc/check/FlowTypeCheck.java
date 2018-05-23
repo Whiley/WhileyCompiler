@@ -1186,14 +1186,14 @@ public class FlowTypeCheck {
 	 * @param environment
 	 */
 	public final void checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
-		for (int i=0,j=0;i!=expressions.size();++i) {
+		for (int i = 0, j = 0; i != expressions.size(); ++i) {
 			Expr expression = expressions.get(i);
 			switch (expression.getOpcode()) {
 			case EXPR_invoke: {
 				Tuple<Type> results = checkInvoke((Expr.Invoke) expression, environment);
 				// FIXME: THIS LOOP IS UGLY
-				for(int k=0;k!=results.size();++k) {
-					checkIsSubtype(expected.get(j+k),results.get(k),environment,expression);
+				for (int k = 0; k != results.size(); ++k) {
+					checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
 				}
 				j = j + results.size();
 				break;
@@ -1201,21 +1201,21 @@ public class FlowTypeCheck {
 			case EXPR_indirectinvoke: {
 				Tuple<Type> results = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
 				// FIXME: THIS LOOP IS UGLY
-				for(int k=0;k!=results.size();++k) {
-					checkIsSubtype(expected.get(j+k),results.get(k),environment,expression);
+				for (int k = 0; k != results.size(); ++k) {
+					checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
 				}
 				j = j + results.size();
 				break;
 			}
 			default:
-				if ((expected.size()-j) < 1) {
+				if ((expected.size() - j) < 1) {
 					syntaxError("too many return values", expression);
-				} else if ((i+1) == expressions.size() && (expected.size()-j) > 1) {
+				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
 					syntaxError("too few return values", expression);
 				}
-          SemanticType type = checkExpression(expression, environment);
-          checkIsSubtype(expected.get(j), type, environment, expression);
-          j = j + 1;
+				SemanticType type = checkExpression(expression, environment);
+				checkIsSubtype(expected.get(j), type, environment, expression);
+				j = j + 1;
 			}
 		}
 	}
@@ -1272,8 +1272,9 @@ public class FlowTypeCheck {
 			default:
 				syntaxError("too few return values", expression);
 			}
-			type = types.get(0);
-			break;
+			// NOTE: can return directly here as checkIndirectInvoke must already set the
+			// return types.
+			return types.get(0);
 		}
 		// Conditions
 		case EXPR_logicalnot:
@@ -1369,7 +1370,7 @@ public class FlowTypeCheck {
 		// Sanity check output
 		if(concreteType instanceof Type.Void) {
 			// Something has definitely gone wrong in the type extraction process.
-			internalFailure("empty type encountered", expression);
+			internalFailure("extracted empty type (" + type + "=>" + concreteType + ")", expression);
 		} else {
 			expression.setType(expression.getHeap().allocate(concreteType));
 		}
@@ -1482,6 +1483,11 @@ public class FlowTypeCheck {
 			// Check argument is subtype of parameter
 			checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 		}
+		//
+		if(sig.getReturns().size() > 1) {
+			internalFailure("need support for multiple returns and indirect invocation", expr);
+		}
+		expr.setType(sig.getReturns().get(0));
 		//
 		return sig.getReturns();
 	}

@@ -13,6 +13,8 @@
 // limitations under the License.
 package wyil.type.util;
 
+import static wyc.util.ErrorMessages.errorMessage;
+
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -20,12 +22,14 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Type;
 import wyc.lang.WhileyFile.Type.Array;
 import wyc.lang.WhileyFile.Type.Function;
 import wyc.lang.WhileyFile.Type.Method;
 import wyc.lang.WhileyFile.Type.Record;
 import wyc.lang.WhileyFile.Type.Reference;
+import wyc.util.ErrorMessages;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.type.subtyping.SubtypeOperator;
@@ -38,8 +42,8 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		Type t = super.apply(lhs,rhs,lifetimes, stack);
-		if(t == null) {
+		Type t = super.apply(lhs, rhs, lifetimes, stack);
+		if (t == null) {
 			return lhs;
 		} else {
 			return t;
@@ -90,45 +94,142 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 		}
 	}
 
+	/**
+	 * <p>
+	 * Subtract one record from another. For example, subtracting
+	 * <code>{null f}</code> from <code>{int|null f}</code> leaves
+	 * <code>{int f}</code>. Unfortunately, there are relatively limited conditions
+	 * when a genuine subtraction can occur. For example, subtracting
+	 * <code>{null f, null g}</code> from <code>{int|null f, int|null g}</code>
+	 * leaves <code>{int|null f, int|null g}</code>! This may seem surprising but it
+	 * makes sense if we consider that without <code>{null f, null g}</code> the
+	 * type <code>{int|null f, int|null g}</code> still contains
+	 * <code>{int f, int|null g}</code> and <code>{int|null f, int g}</code>.
+	 * </p>
+	 * <p>
+	 * What are the conditions under which a subtraction can take place? When
+	 * subtracting <code>{S1 f1, ..., Sn fn}</code> from
+	 * <code>{T1 f1, ..., Tn fn}</code> we can have at most one "pivot". That is
+	 * some <code>i</code> where <code>Ti - Si != void</code>. For example,
+	 * subtracting <code>{int|null f, int g}</code> from
+	 * <code>{int|null f, int|null g}</code> the pivot is field <code>g</code>. The
+	 * final result is then (perhaps surprisingly)
+	 * <code>{int|null f, null g}</code>.
+	 * </p>
+	 */
 	@Override
 	protected Type apply(Record lhs, Record rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		ArrayList<Type.Field> fields = new ArrayList<>();
 		Tuple<Type.Field> lhsFields = lhs.getFields();
 		Tuple<Type.Field> rhsFields = rhs.getFields();
+		// Check the number of field matches
+		int matches = countFieldMatches(lhsFields,rhsFields);
+		if(matches < rhsFields.size()) {
+			// At least one field in rhs has no match in lhs. This is definitely a redundant
+			// subtraction.
+			return lhs;
+		} else if(matches < lhsFields.size() && !rhs.isOpen()) {
+			// At least one field in lhs has not match in rhs. If the rhs is open, this is
+			// fine as it will auto-fill. But, if its not open, then this is redundant.
+			return lhs;
+		}
+		// Extract all pivot fields (i.e. fields with non-void subtraction)
+		Type.Field[] pivots = determinePivotFields(lhsFields, rhsFields, lifetimes, stack);
+		// Check how many pivots we have actuallyfound
+		int count = countPivots(pivots);
+		// Act on number of pivots found
+		switch(count) {
+		case 0:
+			// no pivots found means everything was void.
+			return lhs.isOpen() == rhs.isOpen() ? Type.Void : lhs;
+		case 1:
+			// Exactly one pivot found. This is something we can work with!
+			for(int i=0;i!=pivots.length;++i) {
+				if(pivots[i] == null) {
+					pivots[i] = lhsFields.get(i);
+				}
+			}
+			return new Type.Record(lhs.isOpen(),new Tuple<>(pivots));
+		default:
+			// All other cases basically are redundant.
+			return lhs;
+		}
+	}
+
+	/**
+	 * Simply count the number of fields in the lhs which match a field in the rhs.
+	 * This provides critical information. For example, when subtracting
+	 * <code>{int f, int g}</code> from <code>{int f, int h}</code> it is apparent
+	 * that not all fields in the lhs are matched.
+	 *
+	 * @param lhsFields
+	 * @param rhsFields
+	 * @return
+	 */
+	private int countFieldMatches(Tuple<Type.Field> lhsFields, Tuple<Type.Field> rhsFields) {
+		int matches = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			Type.Field lhsField = lhsFields.get(i);
 			Identifier lhsFieldName = lhsField.getName();
-			boolean matched = false;
 			for (int j = 0; j != rhsFields.size(); ++j) {
 				Type.Field rhsField = rhsFields.get(j);
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
-					Type diff = apply(lhsField.getType(), rhsField.getType(), lifetimes, stack);
-					fields.add(new Type.Field(lhsFieldName, diff));
-					matched = true;
+					matches++;
 					break;
 				}
 			}
-			//
-			if (!matched && !rhs.isOpen()) {
-				// We didn't find a corresponding field, and the rhs is fixed. This means the
-				// rhs is not compatible with the lhs and can be ignored.
-				return lhs;
-			} else if (!matched) {
-				// We didn't find a corresponding field, and the rhs is open. This just means
-				// the rhs is not taking anything away from the lhs (for this field).
-				fields.add(lhsField);
+		}
+		return matches;
+	}
+
+	/**
+	 * Find all pivots between the lhs and rhs fields, and calculate their types.
+	 *
+	 * @param lhsFields
+	 * @param rhsFields
+	 * @param lifetimes
+	 * @param stack
+	 * @return
+	 */
+	private Type.Field[] determinePivotFields(Tuple<Type.Field> lhsFields, Tuple<Type.Field> rhsFields,
+			LifetimeRelation lifetimes, LinkageStack stack) {
+		Type.Field[] pivots = new Type.Field[lhsFields.size()];
+		//
+		for (int i = 0; i != lhsFields.size(); ++i) {
+			Type.Field lhsField = lhsFields.get(i);
+			Identifier lhsFieldName = lhsField.getName();
+			for (int j = 0; j != rhsFields.size(); ++j) {
+				Type.Field rhsField = rhsFields.get(j);
+				Identifier rhsFieldName = rhsField.getName();
+				if (lhsFieldName.equals(rhsFieldName)) {
+					// Matched field, now compute its type.
+					Type type = apply(lhsField.getType(), rhsField.getType(), lifetimes, stack);
+					// Check whether is a pivot or not
+					if (!(type instanceof Type.Void)) {
+						// Yes, is a pivot
+						pivots[i] = new Type.Field(lhsFieldName, type);
+					}
+					break;
+				}
 			}
 		}
-		// Finally, sanity check the result. If any field has type void, then the whole
-		// thing is void.
-		for(int i=0;i!=fields.size();++i) {
-			if(fields.get(i).getType() instanceof Type.Void) {
-				return Type.Void;
+		return pivots;
+	}
+
+	/**
+	 * Count the number of pivots (i.e. non-null entries) in a given array.
+	 *
+	 * @param pivots
+	 * @return
+	 */
+	private int countPivots(Type.Field[] pivots) {
+		int count = 0;
+		for(int i=0;i!=pivots.length;++i) {
+			if(pivots[i] != null) {
+				count = count + 1;
 			}
 		}
-		// Done
-		return new Type.Record(lhs.isOpen(), new Tuple<>(fields));
+		return count;
 	}
 
 	@Override
@@ -150,13 +251,17 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	}
 
 	@Override
-	protected Type apply(Type.Nominal lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		if (lhs.getName().equals(rhs.getName())) {
-			// Easy case to handle
-			return Type.Void;
-		} else {
-			// Harder case to handle, especially for recursive types
-			return super.apply(lhs, rhs, lifetimes, stack);
+	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
+		try {
+			Decl.Type decl = resolver.resolveExactly(rhs.getName(), Decl.Type.class);
+			if (decl.getInvariant().size() > 0) {
+				// rhs is a constrained type, meaning we cannot subtract anything.
+				return lhs;
+			} else {
+				return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
+			}
+		} catch (ResolutionError e) {
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, rhs.getName().toString()), lhs);
 		}
 	}
 
@@ -166,7 +271,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 		for (int i = 0; i != types.length; ++i) {
 			types[i] = apply(lhs, rhs.get(i), lifetimes, stack);
 			// If any element of rhs subsumes lhs, then all subsumed.
-			if(types[i] instanceof Type.Void) {
+			if (types[i] instanceof Type.Void) {
 				return Type.Void;
 			}
 		}

@@ -151,7 +151,6 @@ public abstract class AbstractTypeCombinator {
 			try {
 				// Expand the lhs and continue
 				Decl.Type decl = resolver.resolveExactly(lhs.getName(), Decl.Type.class);
-				// FIXME: probably bug related to type invariants
 				Type t = apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
 				stack.popAndLink(t);
 				return t;
@@ -164,7 +163,6 @@ public abstract class AbstractTypeCombinator {
 	protected Type apply(Type.Nominal lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		try {
 			Decl.Type decl = resolver.resolveExactly(lhs.getName(), Decl.Type.class);
-			// FIXME: probably bug related to type invariants
 			return apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
 		} catch (ResolutionError e) {
 			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, lhs.getName().toString()), lhs);
@@ -174,7 +172,6 @@ public abstract class AbstractTypeCombinator {
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		try {
 			Decl.Type decl = resolver.resolveExactly(rhs.getName(), Decl.Type.class);
-			// FIXME: probably bug related to type invariants
 			return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
 		} catch (ResolutionError e) {
 			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, rhs.getName().toString()), lhs);
@@ -230,7 +227,7 @@ public abstract class AbstractTypeCombinator {
 		}
 	}
 
-	private static int normalise(SemanticType type) {
+	protected static int normalise(SemanticType type) {
 		int opcode = type.getOpcode();
 		switch (opcode) {
 		case TYPE_reference:
@@ -253,7 +250,7 @@ public abstract class AbstractTypeCombinator {
 		}
 	}
 
-	private <T> T syntaxError(String msg, SyntacticItem e) {
+	protected <T> T syntaxError(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntaxError(msg, cu.getEntry(), e);
