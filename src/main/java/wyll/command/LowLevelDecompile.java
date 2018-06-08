@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.command;
+package wyll.command;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wybs.util.StdProject;
-import wyc.command.Decompile;
 import wyc.command.Compile.Result;
-import wyc.io.WhileyFilePrinter;
-import wyc.lang.WhileyFile;
+import wyll.io.WyllFilePrinter;
+import wyll.io.WyllFileReader;
+import wyll.core.WyllFile;
 import wyc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content;
@@ -37,7 +37,7 @@ import wyil.io.WyilFileReader;
  * @author David J. Pearce
  *
  */
-public class Decompile extends AbstractProjectCommand<Decompile.Result> {
+public class LowLevelDecompile extends AbstractProjectCommand<LowLevelDecompile.Result> {
 	/**
 	 * Result kind for this command
 	 *
@@ -54,7 +54,7 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 	 */
 	private boolean verbose;
 
-	public Decompile(Content.Registry registry, Logger logger) {
+	public LowLevelDecompile(Content.Registry registry, Logger logger) {
 		super(registry, logger);
 	}
 
@@ -64,7 +64,7 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 
 	@Override
 	public String getDescription() {
-		return "Decompile one or more binary WyIL files";
+		return "Decompile one or more binary WyLL files";
 	}
 
 	public String describeVerbose() {
@@ -77,7 +77,7 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 
 	@Override
 	public String getName() {
-		return "decompile";
+		return "lldecompile";
 	}
 
 	// =======================================================================
@@ -105,10 +105,10 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 			// Finalise the configuration before continuing.
 			StdProject project = initialiseProject();
 			// Determine source files to build
-			List<Path.Entry<WhileyFile>> entries = wyildir.find(delta, WhileyFile.BinaryContentType);
-			for (Path.Entry<WhileyFile> e : entries) {
-				WhileyFile wf = new WyilFileReader(e).read();
-				WhileyFilePrinter wyp = new WhileyFilePrinter(System.out);
+			List<Path.Entry<WyllFile>> entries = wyildir.find(delta, WyllFile.ContentType);
+			for (Path.Entry<WyllFile> e : entries) {
+				WyllFile wf = new WyllFileReader(e).read();
+				WyllFilePrinter wyp = new WyllFilePrinter(System.out);
 				wyp.setVerbose(verbose);
 				wyp.apply(wf);
 			}
