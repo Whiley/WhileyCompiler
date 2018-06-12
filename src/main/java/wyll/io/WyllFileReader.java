@@ -14,6 +14,7 @@
 package wyll.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import wybs.io.SyntacticHeapReader;
 import wybs.lang.SyntacticItem;
@@ -36,6 +37,12 @@ public final class WyllFileReader extends SyntacticHeapReader {
 		super(entry.inputStream(), WyllFile.getSchema());
 		this.entry = entry;
 	}
+
+
+	public WyllFileReader(InputStream inputStream) throws IOException {
+		super(inputStream, WyllFile.getSchema());
+	}
+
 
 	@Override
 	public WyllFile read() throws IOException {

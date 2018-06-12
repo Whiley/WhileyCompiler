@@ -1414,7 +1414,7 @@ public class CompileTask {
 			WhileyFile.Decl.Type decl = typeSystem.resolveExactly(type.getName(), WhileyFile.Decl.Type.class);
 			if (decl.isRecursive()) {
 				// FIXME: is this always the correct translation?
-				return new WyllFile.Type.Recursive(type.getName());
+				return new WyllFile.Type.Nominal(type.getName());
 			} else {
 				return translateType(decl.getType());
 			}
@@ -1772,7 +1772,7 @@ public class CompileTask {
 	public WyllFile.Expr getDefaultValue(WyllFile.Type type) {
 		Value value;
 		switch (type.getOpcode()) {
-		case WyllFile.TYPE_recursive:
+		case WyllFile.TYPE_nominal:
 		case WyllFile.TYPE_reference:
 		case WyllFile.TYPE_null:
 			value = new Value.Null();

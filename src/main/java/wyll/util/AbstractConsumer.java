@@ -44,7 +44,7 @@ public abstract class AbstractConsumer<T> {
 			visitStaticVariable((Decl.StaticVariable) decl, data);
 			break;
 		case DECL_type:
-		//case DECL_rectype:
+		case DECL_rectype:
 			visitType((Decl.Type) decl, data);
 			break;
 		case DECL_method:
@@ -86,13 +86,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitType(Decl.Type decl, T data) {
-		visitVariable(decl.getVariableDeclaration(), data);
-		visitExpressions(decl.getInvariant(), data);
+		visitType(decl.getType(), data);
 	}
 
 	public void visitMethod(Decl.Method decl, T data) {
 		visitVariables(decl.getParameters(), data);
-		visitVariables(decl.getReturns(), data);
+		visitType(decl.getReturn(), data);
 		visitStatement(decl.getBody(), data);
 	}
 
@@ -125,6 +124,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt, data);
+			break;
+		case STMT_foreach:
+			visitForEach((Stmt.ForEach) stmt, data);
 			break;
 		case STMT_if:
 		case STMT_ifelse:
@@ -193,6 +195,12 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitFail(Stmt.Fail stmt, T data) {
 
+	}
+
+	public void visitForEach(Stmt.ForEach stmt, T data) {
+		visitExpression(stmt.getStart(),data);
+		visitExpression(stmt.getEnd(),data);
+		visitBlock(stmt.getBody(),data);
 	}
 
 	public void visitIfElse(Stmt.IfElse stmt, T data) {
@@ -266,6 +274,9 @@ public abstract class AbstractConsumer<T> {
 			visitVariableAccess((Expr.VariableAccess) expr, data);
 			break;
 		// Unary Operators
+		case EXPR_unionaccess:
+			visitUnionAccess((Expr.UnionAccess) expr, data);
+			break;
 		// case EXPR_cast:
 		case EXPR_integernegation:
 		case EXPR_logicalnot:
@@ -587,6 +598,10 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
+	public void visitUnionAccess(Expr.UnionAccess expr, T data) {
+		visitExpression(expr.getOperand(), data);
+	}
+
 	public void visitVariableAccess(Expr.VariableAccess expr, T data) {
 
 	}
@@ -648,7 +663,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitTypeMethod(Type.Method type, T data) {
 		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeNominal(Type.Nominal type, T data) {

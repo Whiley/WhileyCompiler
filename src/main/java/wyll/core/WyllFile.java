@@ -28,6 +28,7 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Ref;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Expr;
 import wyc.lang.WhileyFile.LVal;
@@ -39,6 +40,7 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyil.io.WyilFileWriter;
+import wyll.io.WyllFileReader;
 import wyll.io.WyllFileWriter;
 
 
@@ -52,7 +54,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 
 		@Override
 		public WyllFile read(Path.Entry<WyllFile> e, InputStream inputstream) throws IOException {
-			throw new UnsupportedOperationException();
+			return new WyllFileReader(e).read();
 		}
 
 		@Override
@@ -76,6 +78,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 	public static final int DECL_module = DECL_mask + 0;
 	public static final int DECL_staticvar = DECL_mask + 3;
 	public static final int DECL_type = DECL_mask + 4;
+	public static final int DECL_rectype = DECL_mask + 5;
 	public static final int DECL_method = DECL_mask + 6;
 	public static final int DECL_variable = DECL_mask + 9;
 	public static final int DECL_variableinitialiser = DECL_mask + 10;
@@ -91,7 +94,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 	public static final int TYPE_null = TYPE_mask + 2;
 	public static final int TYPE_bool = TYPE_mask + 3;
 	public static final int TYPE_int = TYPE_mask + 4;
-	public static final int TYPE_recursive = TYPE_mask + 6;
+	public static final int TYPE_nominal = TYPE_mask + 6;
 	public static final int TYPE_reference = TYPE_mask + 7;
 	public static final int TYPE_array = TYPE_mask + 9;
 	public static final int TYPE_record = TYPE_mask + 10;
@@ -198,6 +201,22 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		return modules.get(0).getDeclarations();
 	}
 
+
+	public <S extends Decl.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
+		List<S> matches = super.getSyntacticItems(kind);
+		for (int i = 0; i != matches.size(); ++i) {
+			S match = matches.get(i);
+			if (match.getName().equals(name)) {
+				if (signature != null && signature.equals(match.getType())) {
+					return match;
+				} else if (signature == null) {
+					return match;
+				}
+			}
+		}
+		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
+	}
+
 	// ============================================================
 	// Declarations
 	// ============================================================
@@ -269,6 +288,8 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 				return (Identifier) super.get(1);
 			}
 
+			abstract public WyllFile.Type getType();
+
 			public Name getQualifiedName() {
 				Module module = getAncestor(Decl.Module.class);
 				Name name = module.getName();
@@ -280,10 +301,9 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		}
 
 		public static class Method extends Named {
-
 			public Method(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Decl.Variable> returns, Stmt.Block body) {
-				super(DECL_method, modifiers, name, parameters, returns, body);
+					WyllFile.Type ret, Stmt.Block body) {
+				super(DECL_method, modifiers, name, parameters, ret, body);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -292,20 +312,25 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Decl.Variable> getReturns() {
-				return (Tuple<Decl.Variable>) get(3);
+			public WyllFile.Type getReturn() {
+				return (WyllFile.Type) get(3);
 			}
 
 			public Stmt.Block getBody() {
 				return (Stmt.Block) get(4);
 			}
 
+			@Override
+			public WyllFile.Type.Method getType() {
+			  Tuple<WyllFile.Type> projectedParameters = getParameters().map((Decl.Variable d) -> d.getType());
+			  return new WyllFile.Type.Method(projectedParameters, getReturn());
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Method clone(SyntacticItem[] operands) {
 				return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Stmt.Block) operands[4]);
+						(Tuple<Decl.Variable>) operands[2], (WyllFile.Type) operands[3], (Stmt.Block) operands[4]);
 			}
 		}
 
@@ -335,24 +360,24 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		 *
 		 */
 		public static class Type extends Named {
-			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl, Tuple<Expr> invariant) {
-				super(DECL_type, modifiers, name, vardecl, invariant);
+			public Type(Tuple<Modifier> modifiers, Identifier name, WyllFile.Type type, boolean recursive) {
+				super(recursive ? DECL_rectype : DECL_type, modifiers, name, type);
 			}
 
-			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) get(2);
+			@Override
+			public WyllFile.Type getType() {
+				return (WyllFile.Type) get(2);
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) get(3);
+			public boolean isRecursive() {
+				return getOpcode() == DECL_rectype;
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Decl.Type clone(SyntacticItem[] operands) {
 				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Decl.Variable) operands[2], (Tuple<Expr>) operands[3]);
+						(WyllFile.Type) operands[2], isRecursive());
 			}
 		}
 
@@ -395,6 +420,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 				return getOpcode() == DECL_variableinitialiser;
 			}
 
+			@Override
 			public WyllFile.Type getType() {
 				return (WyllFile.Type) get(2);
 			}
@@ -1172,14 +1198,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 
 			@Override
 			public Type getType() {
-				Tuple<Type> returns = getSignature().getReturns();
-				// NOTE: if this method is called then it is assumed to be in a position which
-				// requires exactly one return type. Anything else is an error which should have
-				// been caught earlier in the pipeline.
-				if (returns.size() != 1) {
-					throw new IllegalArgumentException();
-				}
-				return returns.get(0);
+				return getSignature().getReturn();
 			}
 
 			public Name getName() {
@@ -2549,14 +2568,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		public static final Int Int = new Int();
 		public static final Null Null = new Null();
 
-		/**
-		 * Substitute for lifetime parameters
-		 *
-		 * @param binding
-		 * @return
-		 */
-		public Type substitute(Map<Identifier,Identifier> binding);
-
 		public interface Atom extends Type {
 		}
 
@@ -2577,11 +2588,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		public static class Void extends AbstractSyntacticItem implements Primitive {
 			public Void() {
 				super(TYPE_void);
-			}
-
-			@Override
-			public Type substitute(Map<Identifier, Identifier> binding) {
-				return this;
 			}
 
 			@Override
@@ -2614,11 +2620,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
-				return this;
-			}
-
-			@Override
 			public Null clone(SyntacticItem[] operands) {
 				return new Null();
 			}
@@ -2638,11 +2639,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		public static class Bool extends AbstractSyntacticItem implements Primitive {
 			public Bool() {
 				super(TYPE_bool);
-			}
-
-			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
-				return this;
 			}
 
 			@Override
@@ -2667,11 +2663,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		public static class Int extends AbstractSyntacticItem implements Primitive {
 			public Int() {
 				super(TYPE_int);
-			}
-
-			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
-				return this;
 			}
 
 			@Override
@@ -2708,17 +2699,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@Override
-			public Type.Array substitute(Map<Identifier,Identifier> binding) {
-				Type before = getElement();
-				Type after = before.substitute(binding);
-				if(before == after) {
-					return this;
-				} else {
-					return new Type.Array(after);
-				}
-			}
-
-			@Override
 			public Array clone(SyntacticItem[] operands) {
 				return new Array((Type) operands[0]);
 			}
@@ -2749,17 +2729,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 
 			public Type getElement() {
 				return (Type) get(0);
-			}
-
-			@Override
-			public Type.Reference substitute(Map<Identifier,Identifier> binding) {
-				Type elementBefore = getElement();
-				Type elementAfter = elementBefore.substitute(binding);
-				if(elementBefore != elementAfter) {
-					return new Type.Reference(elementAfter);
-				} else {
-					return this;
-				}
 			}
 
 			@Override
@@ -2822,16 +2791,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@Override
-			public Type.Record substitute(Map<Identifier,Identifier> binding) {
-				Tuple<Decl.Variable> before = getFields();
-				Tuple<Decl.Variable> after = substitute(before,binding);
-				if(before == after) {
-					return this;
-				} else {
-					return new Type.Record(isOpen(),after);
-				}
-			}
-			@Override
 			public Record clone(SyntacticItem[] operands) {
 				return new Record(operands);
 			}
@@ -2856,38 +2815,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 				}
 				return r + "}";
 			}
-
-			/**
-			 * Substitute through fields whilst minimising memory allocations
-			 *
-			 * @param fields
-			 * @param binding
-			 * @return
-			 */
-			private static Tuple<Decl.Variable> substitute(Tuple<Decl.Variable> fields,
-					Map<Identifier, Identifier> binding) {
-				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable field = fields.get(i);
-					Type before = field.getType();
-					Type after = before.substitute(binding);
-					if (before != after) {
-						// Now committed to a change
-						Decl.Variable[] nFields = fields.toArray(Decl.Variable.class);
-						nFields[i] = new Decl.Variable(field.getModifiers(), field.getName(), after);
-						for (int j = i + 1; j < fields.size(); ++j) {
-							field = fields.get(j);
-							before = field.getType();
-							after = before.substitute(binding);
-							if (before != after) {
-								nFields[j] = new Decl.Variable(field.getModifiers(), field.getName(), after);
-							}
-						}
-						return new Tuple<>(nFields);
-					}
-				}
-				//
-				return fields;
-			}
 		}
 
 		/**
@@ -2903,10 +2830,10 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		 *
 		 * @return
 		 */
-		public static class Recursive extends AbstractSyntacticItem implements Type {
+		public static class Nominal extends AbstractSyntacticItem implements Type {
 
-			public Recursive(Name name) {
-				super(TYPE_recursive, name);
+			public Nominal(Name name) {
+				super(TYPE_nominal, name);
 			}
 
 			public Name getName() {
@@ -2918,13 +2845,8 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@Override
-			public Type.Recursive substitute(Map<Identifier,Identifier> binding) {
-				return this;
-			}
-
-			@Override
-			public Recursive clone(SyntacticItem[] operands) {
-				return new Recursive((Name) operands[0]);
+			public Nominal clone(SyntacticItem[] operands) {
+				return new Nominal((Name) operands[0]);
 			}
 
 			@Override
@@ -2968,17 +2890,6 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@Override
-			public Type.Union substitute(Map<Identifier,Identifier> binding) {
-				Type[] before = getAll();
-				Type[] after = WyllFile.substitute(before,binding);
-				if(before == after) {
-					return this;
-				} else {
-					return new Type.Union(after);
-				}
-			}
-
-			@Override
 			public Union clone(SyntacticItem[] operands) {
 				return new Union(ArrayUtils.toArray(Type.class, operands));
 			}
@@ -3008,8 +2919,8 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 		 */
 		public static class Method extends AbstractSyntacticItem implements Type {
 
-			public Method(Tuple<Type> parameters, Tuple<Type> returns) {
-				super(TYPE_method, new SyntacticItem[] { parameters, returns });
+			public Method(Tuple<Type> parameters, Type returns) {
+				super(TYPE_method, parameters, returns);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3018,70 +2929,22 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) get(1);
-			}
-
-			@Override
-			public Type.Method substitute(Map<Identifier, Identifier> binding) {
-				// Proceed with the potentially updated binding
-				Tuple<Type> parametersBefore = getParameters();
-				Tuple<Type> parametersAfter = WyllFile.substitute(parametersBefore, binding);
-				Tuple<Type> returnsBefore = getReturns();
-				Tuple<Type> returnsAfter = WyllFile.substitute(returnsBefore, binding);
-				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
-					return this;
-				} else {
-					return new Type.Method(parametersAfter, returnsAfter);
-				}
+			public Type getReturn() {
+				return (Type) get(1);
 			}
 
 			@Override
 			public String toString() {
 				String r = "method";
-				return r + getParameters().toString() + "->" + getReturns();
+				return r + getParameters().toString() + "->" + getReturn();
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Method clone(SyntacticItem[] operands) {
-				return new Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
+				return new Method((Tuple<Type>) operands[0], (Type) operands[1]);
 			}
 		}
-	}
-
-	private static Type[] substitute(Type[] types, Map<Identifier,Identifier> binding) {
-		Type[] nTypes = types;
-		for(int i=0;i!=nTypes.length;++i) {
-			Type before = types[i];
-			Type after = before.substitute(binding);
-			if(before != after) {
-				if(nTypes == types) {
-					nTypes = Arrays.copyOf(types,types.length);
-				}
-				nTypes[i] = after;
-			}
-		}
-		//
-		return nTypes;
-	}
-
-	public static Tuple<Type> substitute(Tuple<Type> types, Map<Identifier,Identifier> binding) {
-		for(int i=0;i!=types.size();++i) {
-			Type before = types.get(i);
-			Type after = before.substitute(binding);
-			if(before != after) {
-				// Now committed to a change
-				Type[] nTypes = types.toArray(Type.class);
-				nTypes[i] = after;
-				for(int j=i+1;j<types.size();++j) {
-					nTypes[j] = types.get(j).substitute(binding);
-				}
-				return new Tuple<>(nTypes);
-			}
-		}
-		//
-		return types;
 	}
 
 	// ============================================================
@@ -3200,7 +3063,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 	}
 
 	private static boolean needsBraces(Type type) {
-		if (type instanceof Type.Atom || type instanceof Type.Recursive) {
+		if (type instanceof Type.Atom || type instanceof Type.Nominal) {
 			return false;
 		} else {
 			return true;
@@ -3250,30 +3113,29 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 						(Type) operands[2], (Expr) operands[3]);
 			}
 		};
-		schema[DECL_type] = new Schema(Operands.FOUR, Data.ZERO, "DECL_type") {
+		schema[DECL_type] = new Schema(Operands.THREE, Data.ZERO, "DECL_type") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Decl.Variable) operands[2], (Tuple<Expr>) operands[3]);
+						(Type) operands[2],false);
 			}
 		};
-//		schema[DECL_rectype] = new Schema(Operands.FOUR, Data.ZERO, "DECL_rectype") {
-//			@SuppressWarnings("unchecked")
-//			@Override
-//			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-//				Decl.Type r = new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-//						(Decl.Variable) operands[2], (Tuple<Expr>) operands[3]);
-//				r.setRecursive();
-//				return r;
-//			}
-//		};
+		schema[DECL_rectype] = new Schema(Operands.THREE, Data.ZERO, "DECL_rectype") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				Decl.Type r = new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Type) operands[2],true);
+				return r;
+			}
+		};
 		schema[DECL_method] = new Schema(Operands.FIVE, Data.ZERO, "DECL_method") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3], (Stmt.Block) operands[4]);
+						(Tuple<Decl.Variable>) operands[2], (Type) operands[3], (Stmt.Block) operands[4]);
 			}
 		};
 //		schema[DECL_lambda] = new Schema(Operands.EIGHT, Data.ZERO, "DECL_lambda") {
@@ -3350,12 +3212,12 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 				return new Type.Int();
 			}
 		};
-//		schema[TYPE_nominal] = new Schema(Operands.ONE, Data.ZERO, "TYPE_nominal") {
-//			@Override
-//			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-//				return new Type.Nominal((Name) operands[0]);
-//			}
-//		};
+		schema[TYPE_nominal] = new Schema(Operands.ONE, Data.ZERO, "TYPE_nominal") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Nominal((Name) operands[0]);
+			}
+		};
 		schema[TYPE_reference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -3379,7 +3241,7 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
+				return new Type.Method((Tuple<Type>) operands[0], (Type) operands[1]);
 			}
 		};
 		schema[TYPE_union] = new Schema(Operands.MANY, Data.ZERO, "TYPE_union") {
@@ -3456,6 +3318,13 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Stmt.Fail();
+			}
+		};
+		schema[STMT_foreach] = new Schema(Operands.FOUR, Data.ZERO, "STMT_fail") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Stmt.ForEach((Decl.Variable) operands[0], (Expr) operands[1], (Expr) operands[2],
+						(Stmt.Block) operands[3]);
 			}
 		};
 		schema[STMT_if] = new Schema(Operands.ONE, Data.ZERO, "STMT_if") {
@@ -3559,6 +3428,13 @@ public class WyllFile extends AbstractCompilationUnit<WyllFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalOr((Tuple<Expr>) operands[0]);
+			}
+		};
+		// UNIONS
+		schema[EXPR_unionaccess] = new Schema(Operands.TWO, Data.ZERO, "EXPR_unionaccess") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.UnionAccess((Type) operands[0], (Expr) operands[1]);
 			}
 		};
 		// COMPARATORS

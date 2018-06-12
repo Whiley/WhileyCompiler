@@ -34,6 +34,7 @@ import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.AbstractTypeFilter;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
+import wyll.core.LowLevel;
 import wyll.core.WyllFile;
 
 import static wyc.lang.WhileyFile.*;
@@ -161,6 +162,10 @@ public class LowLevelCompileTask implements Build.Task {
 		for (Decl decl : wf.getDeclarations()) {
 			visitDeclaration(decl, context);
 		}
+		// Construct any runtime type tests
+		constructRuntimeTypeTests(context);
+		// Construct any type coercions
+		// Done
 		List<WyllFile.Decl> declarations =  context.getDeclarations();
 		// FIXME: following ilne is a hack
 		Name name = wf.getSyntacticItems(Decl.Module.class).get(0).getName();
@@ -206,11 +211,13 @@ public class LowLevelCompileTask implements Build.Task {
 	}
 
 	public void visitType(Decl.Type decl, Context context) {
-//		Decl.Variable var = decl.getVariableDeclaration();
+		Tuple<WyllFile.Modifier> modifiers = new Tuple<>();
+		Decl.Variable var = decl.getVariableDeclaration();
+		WyllFile.Type type = translateType(var.getType());
 //		Environment environment = new Environment(context);
 //		Tuple<WyllFile.Expr> invariant = visitExpressions(decl.getInvariant(), Type.Bool, environment);
 //		return reducer.visitType(decl.getName(), decl.getType(), var.getName(), invariant);
-		throw new RuntimeException("implement type invariant methods");
+		context.declare(new WyllFile.Decl.Type(modifiers, decl.getName(), type, decl.isRecursive()));
 	}
 
 	public void visitCallable(Decl.Callable decl, Context context) {
@@ -254,12 +261,12 @@ public class LowLevelCompileTask implements Build.Task {
 		//
 		Tuple<WyllFile.Modifier> modifiers = new Tuple<>();
 		Tuple<WyllFile.Decl.Variable> parameters = translateParameters(decl.getParameters(), context);
-		Tuple<WyllFile.Decl.Variable> returns = translateParameters(decl.getReturns(), context);
+		WyllFile.Type ret = translateType(getMultipleReturnType(decl.getType().getReturns()));
 		Tuple<WyllFile.Expr> requires = visitExpressions(decl.getRequires(), Type.Bool, environment);
 		Tuple<WyllFile.Expr> ensures = visitExpressions(decl.getEnsures(), Type.Bool, environment);
 		WyllFile.Stmt.Block body = visitBlock(decl.getBody(), environment, new FunctionOrMethodScope(decl));
 		//
-		context.declare(new WyllFile.Decl.Method(modifiers, decl.getName(), parameters, returns, body));
+		context.declare(new WyllFile.Decl.Method(modifiers, decl.getName(), parameters, ret, body));
 	}
 
 	public void visitMethod(Decl.Method decl, Context context) {
@@ -269,12 +276,12 @@ public class LowLevelCompileTask implements Build.Task {
 		//
 		Tuple<WyllFile.Modifier> modifiers = new Tuple<>();
 		Tuple<WyllFile.Decl.Variable> parameters = translateParameters(decl.getParameters(), context);
-		Tuple<WyllFile.Decl.Variable> returns = translateParameters(decl.getReturns(), context);
+		WyllFile.Type ret = translateType(getMultipleReturnType(decl.getType().getReturns()));
 		Tuple<WyllFile.Expr> requires = visitExpressions(decl.getRequires(), Type.Bool, environment);
 		Tuple<WyllFile.Expr> ensures = visitExpressions(decl.getEnsures(), Type.Bool, environment);
 		WyllFile.Stmt.Block body = visitBlock(decl.getBody(), environment, new FunctionOrMethodScope(decl));
 		//
-		context.declare(new WyllFile.Decl.Method(modifiers, decl.getName(), parameters, returns, body));
+		context.declare(new WyllFile.Decl.Method(modifiers, decl.getName(), parameters, ret, body));
 	}
 
 
@@ -511,7 +518,7 @@ public class LowLevelCompileTask implements Build.Task {
 			if (rhsTypes == null) {
 				// Easy case for single assignments
 				Expr lv = lhs.get(j++);
-				WyllFile.LVal lval = (WyllFile.LVal) visitExpression(lv, null, environment);
+				WyllFile.LVal lval = (WyllFile.LVal) visitExpression(lv, lv.getType(), environment);
 				WyllFile.Expr rval = new WyllFile.Expr.VariableAccess(decl.getType(), decl.getName());
 				stmts.add(new WyllFile.Stmt.Assign(lval, rval));
 			} else {
@@ -578,15 +585,14 @@ public class LowLevelCompileTask implements Build.Task {
 		// FIXME: need to handle arbitrary chains here
 		WyllFile.Expr condition = visitExpression(stmt.getCondition(), Type.Bool, environment);
 		WyllFile.Stmt.Block trueBranch = visitBlock(stmt.getTrueBranch(), environment, scope);
-		WyllFile.Pair<WyllFile.Expr, WyllFile.Stmt.Block>[] branches;
+		WyllFile.Pair<WyllFile.Expr, WyllFile.Stmt.Block>[] branches = new WyllFile.Pair[] {
+				new WyllFile.Pair<>(condition, trueBranch) };
 		if (stmt.hasFalseBranch()) {
 			WyllFile.Stmt.Block falseBranch = visitBlock(stmt.getFalseBranch(), environment, scope);
-			branches = new WyllFile.Pair[] { new WyllFile.Pair<>(condition, trueBranch),
-					new WyllFile.Pair<>(null, falseBranch) };
+			return new WyllFile.Stmt.IfElse(new Tuple<>(branches), falseBranch);
 		} else {
-			branches = new WyllFile.Pair[] { new WyllFile.Pair<>(condition, trueBranch) };
+			return new WyllFile.Stmt.IfElse(new Tuple<>(branches));
 		}
-		return new WyllFile.Stmt.IfElse(new Tuple<>(branches));
 	}
 
 	public WyllFile.Stmt visitNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
@@ -1179,72 +1185,7 @@ public class LowLevelCompileTask implements Build.Task {
 	public WyllFile.Expr visitIs(Expr.Is expr, Environment environment) {
 		Type type = expr.getOperand().getType();
 		WyllFile.Expr operand = visitExpression(expr.getOperand(), type, environment);
-		// FIXME: this is broken in the case of a method call or other side-effecting
-		// operation. The reason being that we may end up duplicating the lhs. When the
-		// time comes, we can fix this by introducing an assignment expression. This
-		// turns out to be a *very* convenient solution since all target platforms
-		// support this. This would also help with the similar problem of multiple
-		// returns.
-		return constructRuntimeTypeTest(operand, type, expr.getTestType(), environment.getContext());
-	}
-
-	public WyllFile.Expr constructRuntimeTypeTest(WyllFile.Expr expr, Type actual, Type test, Context context) {
-		if (actual instanceof Type.Nominal) {
-			return constructRuntimeTypeTest(expr, (Type.Nominal) actual, test, context);
-		} else if (test instanceof Type.Nominal) {
-			return constructRuntimeTypeTest(expr, actual, (Type.Nominal) test, context);
-		}
-		switch (actual.getOpcode()) {
-		case TYPE_int:
-			return constructFiniteRuntimeTypeTest(expr, (Type.Int) actual, test, context);
-		case TYPE_union:
-			return constructFiniteRuntimeTypeTest(expr, (Type.Union) actual, test, context);
-		default:
-			return internalFailure("need to implement type tests", expr);
-		}
-	}
-
-	public WyllFile.Expr constructRuntimeTypeTest(WyllFile.Expr expr, Type.Nominal actual, Type test,
-			Context context) {
-		try {
-			WhileyFile.Decl.Type decl = resolver.resolveExactly(actual.getName(), WhileyFile.Decl.Type.class);
-			return constructRuntimeTypeTest(expr,decl.getType(),test,context);
-		} catch (ResolutionError e) {
-			return internalFailure(e.getMessage(),expr,e);
-		}
-	}
-
-	public WyllFile.Expr constructRuntimeTypeTest(WyllFile.Expr expr, Type actual, Type.Nominal test,
-			Context context) {
-		try {
-			WhileyFile.Decl.Type decl = resolver.resolveExactly(test.getName(), WhileyFile.Decl.Type.class);
-			return constructRuntimeTypeTest(expr,actual,decl.getType(),context);
-		} catch (ResolutionError e) {
-			return internalFailure(e.getMessage(),expr,e);
-		}
-	}
-
-	public WyllFile.Expr constructFiniteRuntimeTypeTest(WyllFile.Expr expr, Type.Int actual, Type test,
-			Context context) {
-		// FIXME: need to actually do a runtime test here
-		return new WyllFile.Expr.BoolConstant(new WyllFile.Value.Bool(true));
-	}
-
-	public WyllFile.Expr constructFiniteRuntimeTypeTest(WyllFile.Expr expr, Type.Union actual, Type test,
-			Context context) {
-		int tag = determineTag(actual, test);
-		Type refined = actual.get(tag);
-		expr = new WyllFile.Expr.UnionAccess(WyllFile.Type.Int, expr);
-		expr = new WyllFile.Expr.Equal(expr, new WyllFile.Expr.IntConstant(WyllFile.Type.Int, new Value.Int(tag)));
-		// FIXME: type invariants
-		if (!refined.equals(test)) {
-			// FIXME: there maybe other situations where actual is equivalent to test, or
-			// perhaps smaller than test?
-			WyllFile.Expr rest = constructRuntimeTypeTest(addCoercion(expr, actual, refined, context), refined, test,
-					context);
-			expr = new WyllFile.Expr.LogicalAnd(new Tuple<>(expr, rest));
-		}
-		return expr;
+		return callRuntimeTypeTest(operand, type, expr.getTestType(), environment.getContext());
 	}
 
 	public WyllFile.Expr visitLogicalAnd(Expr.LogicalAnd expr, Environment environment) {
@@ -1276,31 +1217,11 @@ public class LowLevelCompileTask implements Build.Task {
 	}
 
 	public WyllFile.Expr visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Environment environment) {
-//		ArrayList<Triple<Identifier, E, E>> initialisers = new ArrayList<>();
-//		Tuple<Decl.Variable> parameters = expr.getParameters();
-//		for (int i = 0; i != parameters.size(); ++i) {
-//			Decl.Variable parameter = parameters.get(i);
-//			Expr.ArrayRange range = (Expr.ArrayRange) parameter.getInitialiser();
-//			WyllFile.Expr start = visitExpression(range.getFirstOperand(), TYPE_ARRAY_INT, environment);
-//			WyllFile.Expr end = visitExpression(range.getSecondOperand(), TYPE_ARRAY_INT, environment);
-//			initialisers.add(new Triple<>(parameter.getName(), start, end));
-//		}
-//		WyllFile.Expr body = visitExpression(expr.getOperand(), Type.Bool, environment);
-		throw new IllegalArgumentException("Implement existential quantifier");
+		return constructQuantifier(expr,environment);
 	}
 
 	public WyllFile.Expr visitUniversalQuantifier(Expr.UniversalQuantifier expr, Environment environment) {
-//		ArrayList<Triple<Identifier, , E>> initialisers = new ArrayList<>();
-//		Tuple<Decl.Variable> parameters = expr.getParameters();
-//		for (int i = 0; i != parameters.size(); ++i) {
-//			Decl.Variable parameter = parameters.get(i);
-//			Expr.ArrayRange range = (Expr.ArrayRange) parameter.getInitialiser();
-//			WyllFile.Expr start = visitExpression(range.getFirstOperand(), TYPE_ARRAY_INT, environment);
-//			WyllFile.Expr end = visitExpression(range.getSecondOperand(), TYPE_ARRAY_INT, environment);
-//			initialisers.add(new Triple<>(parameter.getName(), start, end));
-//		}
-//		WyllFile.Expr body = visitExpression(expr.getOperand(), Type.Bool, environment);
-		throw new IllegalArgumentException("Implement universal quantifier");
+		return constructQuantifier(expr,environment);
 	}
 
 	public WyllFile.Expr visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
@@ -1514,7 +1435,7 @@ public class LowLevelCompileTask implements Build.Task {
 
 	public WyllFile.Type.Method translateFunction(Type.Function type) {
 		Tuple<WyllFile.Type> parameters = translateTypes(type.getParameters());
-		Tuple<WyllFile.Type> returns = translateTypes(type.getReturns());
+		WyllFile.Type returns = translateType(getMultipleReturnType(type.getReturns()));
 		return new WyllFile.Type.Method(parameters, returns);
 	}
 
@@ -1524,7 +1445,7 @@ public class LowLevelCompileTask implements Build.Task {
 
 	public WyllFile.Type.Method translateMethod(Type.Method type) {
 		Tuple<WyllFile.Type> parameters = translateTypes(type.getParameters());
-		Tuple<WyllFile.Type> returns = translateTypes(type.getReturns());
+		WyllFile.Type returns = translateType(getMultipleReturnType(type.getReturns()));
 		return new WyllFile.Type.Method(parameters, returns);
 	}
 
@@ -1533,7 +1454,7 @@ public class LowLevelCompileTask implements Build.Task {
 			WhileyFile.Decl.Type decl = resolver.resolveExactly(type.getName(), WhileyFile.Decl.Type.class);
 			if (decl.isRecursive()) {
 				// FIXME: is this always the correct translation?
-				return new WyllFile.Type.Recursive(type.getName());
+				return new WyllFile.Type.Nominal(type.getName());
 			} else {
 				return translateType(decl.getType());
 			}
@@ -1548,7 +1469,7 @@ public class LowLevelCompileTask implements Build.Task {
 
 	public WyllFile.Type.Method translateProperty(Type.Property type) {
 		Tuple<WyllFile.Type> parameters = translateTypes(type.getParameters());
-		Tuple<WyllFile.Type> returns = translateTypes(type.getReturns());
+		WyllFile.Type returns = translateType(getMultipleReturnType(type.getReturns()));
 		return new WyllFile.Type.Method(parameters, returns);
 	}
 
@@ -1580,6 +1501,322 @@ public class LowLevelCompileTask implements Build.Task {
 	public WyllFile.Type translateVoid(Type.Void type) {
 		return new WyllFile.Type.Void();
 	}
+
+	// =============================================================================================
+	// Type invariants
+	// =============================================================================================
+
+	// =============================================================================================
+	// Coercions
+	// =============================================================================================
+
+	// =============================================================================================
+	// Runtime Type Tests
+	// =============================================================================================
+
+	/**
+	 * Construct an invocation to a runtime type test. In some cases, this could
+	 * potentially inline the test. For now, it always calls a method which gets
+	 * generated.
+	 *
+	 * @param expr
+	 * @param actual
+	 * @param test
+	 * @param context
+	 * @return
+	 */
+	public WyllFile.Expr callRuntimeTypeTest(WyllFile.Expr expr, Type actual, Type test, Context context) {
+		WyllFile.Type parameter = translateType(actual);
+		WyllFile.Type.Method signature = new WyllFile.Type.Method(new Tuple<>(parameter), WyllFile.Type.Bool);
+		Name name = context.registerRuntimeTypeTest(actual,test);
+		return new WyllFile.Expr.Invoke(name, new Tuple<>(expr), signature);
+	}
+
+	public void constructRuntimeTypeTests(Context context) {
+		// This goes through the list of register runtime type tests and creates them.
+		List<Pair<Type, Type>> typeTests = context.runtimeTypeTests();
+		for (int i = 0; i != typeTests.size(); ++i) {
+			Pair<Type, Type> rtt = typeTests.get(i);
+			WyllFile.Stmt.Block body = constructRuntimeTypeTest(rtt.first(), rtt.second(), context);
+			// FIXME: what modifiers should this have?
+			Tuple<WyllFile.Modifier> modifiers = new Tuple<>();
+			WyllFile.Type type = translateType(rtt.first());
+			WyllFile.Decl.Variable parameter = new WyllFile.Decl.Variable(modifiers, new Identifier("x"), type);
+			Identifier name = new Identifier("is$" + i);
+			Tuple<WyllFile.Decl.Variable> parameters = new Tuple<>(parameter);
+			WyllFile.Decl.Method method = new WyllFile.Decl.Method(modifiers, name, parameters, WyllFile.Type.Bool,
+					body);
+			context.declarations.add(method);
+		}
+	}
+
+	public WyllFile.Stmt.Block constructRuntimeTypeTest(Type actual, Type test, Context context) {
+		if(actual.equals(test)) {
+			// FIXME: should prevent this
+			return constructTrivialRuntimeTypeTest();
+		} else if (actual.getOpcode() == test.getOpcode()) {
+			switch (actual.getOpcode()) {
+			case TYPE_null:
+			case TYPE_bool:
+			case TYPE_byte:
+			case TYPE_int:
+				// FIXME: should prevent this
+				return constructTrivialRuntimeTypeTest();
+			case TYPE_union:
+				return constructUnionUnionRuntimeTypeTest((Type.Union) actual, (Type.Union) test, context);
+			case TYPE_nominal:
+				return constructNominalNominalRuntimeTypeTest((Type.Nominal) actual, (Type.Nominal) test, context);
+			default:
+				return internalFailure("need to implement type tests", test);
+			}
+		} else if (actual instanceof Type.Nominal) {
+			return constructNominalTypeRuntimeTypeTest((Type.Nominal) actual, test, context);
+		} else if (actual instanceof Type.Union) {
+			return constructUnionTypeRuntimeTypeTest((Type.Union) actual, test, context);
+		} else if (test instanceof Type.Union) {
+			return constructTypeUnionRuntimeTypeTest(actual, (Type.Union) test, context);
+		} else if (test instanceof Type.Nominal) {
+			return constructTypeNominalRuntimeTypeTest(actual, (Type.Nominal) test, context);
+		} else {
+			return internalFailure("need to implement type tests", test);
+		}
+	}
+
+	public WyllFile.Stmt.Block constructTrivialRuntimeTypeTest() {
+		WyllFile.Stmt.Return ret = new WyllFile.Stmt.Return(new WyllFile.Expr.BoolConstant(new WyllFile.Value.Bool(true)));
+		return new WyllFile.Stmt.Block(ret);
+	}
+
+	public WyllFile.Stmt.Block constructNominalTypeRuntimeTypeTest(Type.Nominal actual, Type test, Context context) {
+		try {
+			WhileyFile.Decl.Type decl = resolver.resolveExactly(actual.getName(), WhileyFile.Decl.Type.class);
+			return constructRuntimeTypeTest(decl.getType(), test, context);
+		} catch (ResolutionError e) {
+			return internalFailure(e.getMessage(), test, e);
+		}
+	}
+
+	public WyllFile.Stmt.Block constructTypeNominalRuntimeTypeTest(Type actual, Type.Nominal test, Context context) {
+		try {
+			WhileyFile.Decl.Type decl = resolver.resolveExactly(test.getName(), WhileyFile.Decl.Type.class);
+			return constructRuntimeTypeTest(actual, decl.getType(), context);
+		} catch (ResolutionError e) {
+			return internalFailure(e.getMessage(), test, e);
+		}
+	}
+
+	public WyllFile.Stmt.Block constructNominalNominalRuntimeTypeTest(Type.Nominal actual, Type.Nominal test,
+			Context context) {
+		try {
+			WhileyFile.Decl.Type decl = resolver.resolveExactly(test.getName(), WhileyFile.Decl.Type.class);
+			return constructRuntimeTypeTest(actual,decl.getType(),context);
+		} catch (ResolutionError e) {
+			return internalFailure(e.getMessage(),test,e);
+		}
+	}
+
+	/**
+	 * Translate a runtime type test such as the following:
+	 *
+	 * <pre>
+	 * type neg is (int p) where p < 0
+	 * type pos is (int p) where p > 0
+	 *
+	 * function f(int x) -> bool:
+	 *     return x is pos|neg
+	 * </pre>
+	 *
+	 * This is expanded into roughly the following lowlevel code:
+	 *
+	 * <pre>
+	 * bool neg$inv(int p) {
+	 * 	return p < 0;
+	 * }
+	 *
+	 * bool pos$inv(int p) {
+	 * 	return p > 0;
+	 * }
+	 *
+	 * bool f(int x) {
+	 * 	return is$0(x)
+	 * }
+	 *
+	 * bool is$0(int x) {
+	 *   return neg$inv(x) || pos$inv(x);
+	 * }
+	 * </pre>
+	 *
+	 * The key is that the different cases in the test union are translated into
+	 * logical disjunctions.
+	 *
+	 * @param expr
+	 * @param actual
+	 * @param test
+	 * @return
+	 */
+	public WyllFile.Stmt.Block constructTypeUnionRuntimeTypeTest(Type actual, Type.Union test, Context context) {
+		WyllFile.Stmt.Return ret = new WyllFile.Stmt.Return(new WyllFile.Expr.BoolConstant(new WyllFile.Value.Bool(true)));
+		return new WyllFile.Stmt.Block(ret);
+	}
+
+	/**
+	 * Translate a runtime type test such as the following:
+	 *
+	 * <pre>
+	 * function f(int|null x) -> bool:
+	 * 	 return x is int
+	 * </pre>
+	 *
+	 * This is expanded roughly speaking into the following low level code:
+	 *
+	 * <pre>
+	 * bool f(int|null x) {
+	 *   return is$0(x);
+	 * }
+	 *
+	 * bool is$0(int|null x) {
+	 *   return #x == 0
+	 * }
+	 * </pre>
+	 *
+	 *
+	 *
+	 * @param actual
+	 * @param test
+	 * @return
+	 */
+	public WyllFile.Stmt.Block constructUnionTypeRuntimeTypeTest(Type.Union actual, Type test, Context context) {
+		int tag = determineTag(actual,test);
+		WyllFile.Type llActual = translateType(actual);
+		WyllFile.Expr var = new WyllFile.Expr.VariableAccess(llActual, new Identifier("x"));
+		WyllFile.Expr lhs = new WyllFile.Expr.UnionAccess(llActual, var);
+		WyllFile.Expr rhs = new WyllFile.Expr.IntConstant(WyllFile.Type.Int, new Value.Int(tag));
+		WyllFile.Expr condition = new WyllFile.Expr.Equal(lhs, rhs);
+		WyllFile.Stmt.Return ret = new WyllFile.Stmt.Return(condition);
+		return new WyllFile.Stmt.Block(ret);
+	}
+
+	public WyllFile.Stmt.Block constructUnionUnionRuntimeTypeTest(Type.Union actual, Type.Union test, Context context) {
+		WyllFile.Stmt.Return ret = new WyllFile.Stmt.Return(new WyllFile.Expr.BoolConstant(new WyllFile.Value.Bool(true)));
+		return new WyllFile.Stmt.Block(ret);
+	}
+
+	// =============================================================================================
+	// Quantifiers
+	// =============================================================================================
+
+	/**
+	 * Quantifier expressions are interesting because they generally have no direct
+	 * counterpart in the target language. Instead, they are implemented as for
+	 * loops over the array in question. To support the embedding of a statement
+	 * block as an expression, we employ internal methods. For example:
+	 *
+	 * <pre>
+	 * assert some { k in 0..|xs| | xs[k] == 0 }
+	 * </pre>
+	 *
+	 * This Whiley statement is translated into the following low-level statement:
+	 *
+	 * <pre>
+	 * assert expr$1(xs);
+	 * </pre>
+	 *
+	 * Where the internal method <code>expr$1</code> is defined as follows:
+	 *
+	 * <pre>
+	 * method bool expr$1(int[] xs) {
+	 *   for(int k=0;k!=|xs|;k=k+1) {
+	 *      if(xs[k] == 0) {
+	 *        return true;
+	 *      }
+	 *   }
+	 *   return false;
+	 * }
+	 * </pre>
+	 *
+	 * This provides a relatively straightforward implementation of quantifiers. In
+	 * principle, this could be optimised by inlining the method where appropriate.
+	 *
+	 * @param expr
+	 * @return
+	 */
+	public WyllFile.Expr constructQuantifier(Expr.Quantifier expr, Environment environment) {
+		Context context = environment.getContext();
+		boolean isUniversal = expr instanceof Expr.UniversalQuantifier;
+		// Determine the set of used variables within the quantifier body. This is
+		// necessary to ensure that these are passed appropriately as parameters.
+		Set<WhileyFile.Decl.Variable> uses = determineUsedVariables(expr);
+		// Construct the set of parameters which will be passed into the quantifier
+		// method.
+		Tuple<WyllFile.Decl.Variable> parameters = constructQuantifierParameters(uses);
+		// Construct the loop nest
+		WyllFile.Expr condition = visitExpression(expr.getOperand(), Type.Bool, environment);
+		WyllFile.Stmt loop = constructQuantifierBody(expr,0,condition,environment);
+		// Construct final return statement to catch where have come through entire loop.
+		WyllFile.Expr retval = new WyllFile.Expr.BoolConstant(new Value.Bool(isUniversal));
+		WyllFile.Stmt.Return ret = new WyllFile.Stmt.Return(retval);
+		// Construct method itself
+		Tuple<WyllFile.Modifier> modifiers = new Tuple<>();
+		Identifier name = new Identifier("expr$" + context.declarations.size());
+		WyllFile.Stmt.Block body = new WyllFile.Stmt.Block(loop, ret);
+		context.declarations.add(new WyllFile.Decl.Method(modifiers, name, parameters, WyllFile.Type.Bool, body));
+		// Construct method invocation
+		Tuple<WyllFile.Type> parameterTypes = parameters.map((WyllFile.Decl.Variable x) -> x.getType());
+		WyllFile.Type.Method signature = new WyllFile.Type.Method(parameterTypes, WyllFile.Type.Bool);
+		return new WyllFile.Expr.Invoke(new Name(name), constructQuantifierArguments(parameters), signature);
+	}
+
+	public Tuple<WyllFile.Decl.Variable> constructQuantifierParameters(Set<WhileyFile.Decl.Variable> uses) {
+		WyllFile.Decl.Variable[] parameters = new WyllFile.Decl.Variable[uses.size()];
+		int index = 0;
+		for (WhileyFile.Decl.Variable use : uses) {
+			WyllFile.Type type = translateType(use.getType());
+			parameters[index++] = new WyllFile.Decl.Variable(new Tuple<>(), use.getName(), type);
+		}
+		return new Tuple<>(parameters);
+	}
+
+	public Tuple<WyllFile.Expr> constructQuantifierArguments(Tuple<WyllFile.Decl.Variable> parameters) {
+		WyllFile.Expr[] args = new WyllFile.Expr[parameters.size()];
+		for (int i = 0; i != parameters.size(); ++i) {
+			WyllFile.Decl.Variable parameter = parameters.get(i);
+			args[i] = new WyllFile.Expr.VariableAccess(parameter.getType(), parameter.getName());
+		}
+		return new Tuple<>(args);
+	}
+
+	public WyllFile.Stmt constructQuantifierBody(Expr.Quantifier expr, int index, WyllFile.Expr condition, Environment environment) {
+		boolean isUniversal = expr instanceof Expr.UniversalQuantifier;
+		Tuple<Decl.Variable> parameters = expr.getParameters();
+		if (index == parameters.size()) {
+			// This indicates we are now within the innermost loop body. Therefore, we
+			// create the necessary test for the quantifier condition.
+			WyllFile.Expr retval = new WyllFile.Expr.BoolConstant(new Value.Bool(!isUniversal));
+			WyllFile.Stmt retstmt = new WyllFile.Stmt.Return(retval);
+			WyllFile.Stmt.Block block = new WyllFile.Stmt.Block(retstmt);
+			if(isUniversal) {
+				condition = new WyllFile.Expr.LogicalNot(condition);
+			}
+			WyllFile.Pair<WyllFile.Expr,WyllFile.Stmt.Block> branch = new WyllFile.Pair<>(condition,block);
+			return new WyllFile.Stmt.IfElse(new Tuple<>(branch));
+		} else {
+			// This is the recursive case. For each parameter we create a nested foreach
+			// loop which iterates over the given range
+			Decl.Variable parameter = parameters.get(index);
+			Expr.ArrayRange range = (Expr.ArrayRange) parameter.getInitialiser();
+			// FIXME: should be usize
+			WyllFile.Expr start = visitExpression(range.getFirstOperand(), Type.Int, environment);
+			WyllFile.Expr end = visitExpression(range.getSecondOperand(), Type.Int, environment);
+			// Construct index variable
+			WyllFile.Type type = translateType(parameter.getType());
+			WyllFile.Decl.Variable var = new WyllFile.Decl.Variable(new Tuple<>(), parameter.getName(), type);
+			// Recursively create nested loops for remaining parameters
+			WyllFile.Stmt body = constructQuantifierBody(expr, index + 1, condition, environment);
+			// Return the loop for this parameter
+			return new WyllFile.Stmt.ForEach(var, start, end, new WyllFile.Stmt.Block(body));
+		}
+	}
+
 	// =============================================================================================
 	// Misc
 	// =============================================================================================
@@ -1981,7 +2218,7 @@ public class LowLevelCompileTask implements Build.Task {
 	public WyllFile.Expr getDefaultValue(WyllFile.Type type) {
 		Value value;
 		switch (type.getOpcode()) {
-		case WyllFile.TYPE_recursive:
+		case WyllFile.TYPE_nominal:
 		case WyllFile.TYPE_reference:
 		case WyllFile.TYPE_null:
 			return new WyllFile.Expr.NullConstant();
@@ -2056,6 +2293,55 @@ public class LowLevelCompileTask implements Build.Task {
 		} catch (ResolutionError e) {
 			throw new RuntimeException("internal failure");
 		}
+	}
+
+
+	/**
+	 * Determine the set of used variables in a given expression. A used variable is
+	 * simply one that is accessed from within the expression. Care needs to be
+	 * taken for expressions which declare parameters in order to avoid capturing
+	 * these.
+	 *
+	 * @param expr
+	 * @return
+	 */
+	public Set<WhileyFile.Decl.Variable> determineUsedVariables(WhileyFile.Expr expr) {
+		final HashSet<WhileyFile.Decl.Variable> used = new HashSet<>();
+		// Create a translateor to extract all uses from the given expression.
+		final AbstractVisitor translateor = new AbstractVisitor() {
+			@Override
+			public void visitVariableAccess(WhileyFile.Expr.VariableAccess expr) {
+				used.add(expr.getVariableDeclaration());
+			}
+
+			@Override
+			public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr) {
+				visitVariables(expr.getParameters());
+				visitExpression(expr.getOperand());
+				removeAllDeclared(expr.getParameters());
+			}
+
+			@Override
+			public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr) {
+				visitVariables(expr.getParameters());
+				visitExpression(expr.getOperand());
+				removeAllDeclared(expr.getParameters());
+			}
+
+			@Override
+			public void visitType(WhileyFile.Type type) {
+				// No need to visit types
+			}
+
+			private void removeAllDeclared(Tuple<Decl.Variable> parameters) {
+				for (int i = 0; i != parameters.size(); ++i) {
+					used.remove(parameters.get(i));
+				}
+			}
+		};
+		//
+		translateor.visitExpression(expr);
+		return used;
 	}
 
 	/**
@@ -2232,7 +2518,11 @@ public class LowLevelCompileTask implements Build.Task {
 	private static class Context {
 		private final List<WyllFile.Decl> declarations;
 		/**
-		 * Maps each opt-level declaration to the set of variable names used within.
+		 * The list of register type tests to be generated.
+		 */
+		private final ArrayList<Pair<Type,Type>> typeTests;
+		/**
+		 * Maps each top-level declaration to the set of variable names used within.
 		 * This is used to ensure temporary variable names do not clash.
 		 */
 		private final IdentityHashMap<WhileyFile.Decl,HashSet<String>> variables;
@@ -2240,6 +2530,7 @@ public class LowLevelCompileTask implements Build.Task {
 		public Context() {
 			this.declarations = new ArrayList<>();
 			this.variables = new IdentityHashMap<>();
+			this.typeTests = new ArrayList<>();
 		}
 
 		public List<WyllFile.Decl> getDeclarations() {
@@ -2282,6 +2573,25 @@ public class LowLevelCompileTask implements Build.Task {
 			visitor.visitDeclaration(d);
 			//
 			return vars;
+		}
+
+		public Name registerRuntimeTypeTest(Type actual, Type test) {
+			// Check whether type test already register.
+			for (int i = 0; i != typeTests.size(); ++i) {
+				Pair<Type, Type> p = typeTests.get(i);
+				if (actual.equals(p.first()) && test.equals(p.second())) {
+					// Yes, found existing test
+					return new Name(new Identifier("is$" + i));
+				}
+			}
+			// No existing test found. Register a new one.
+			Name name = new Name(new Identifier("is$" + typeTests.size()));
+			typeTests.add(new Pair<>(actual, test));
+			return name;
+		}
+
+		public List<Pair<Type,Type>> runtimeTypeTests() {
+			return typeTests;
 		}
 	}
 
