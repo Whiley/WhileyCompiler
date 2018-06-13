@@ -16,8 +16,11 @@ package wyc.util;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Expr;
+import wyc.lang.WhileyFile.Type;
 
 import static wyc.lang.WhileyFile.*;
+
+import wybs.util.AbstractCompilationUnit.Tuple;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -46,6 +49,7 @@ public abstract class AbstractVisitor {
 			visitStaticVariable((Decl.StaticVariable) decl);
 			break;
 		case DECL_type:
+		case DECL_rectype:
 			visitType((Decl.Type) decl);
 			break;
 		case DECL_function:
@@ -276,7 +280,7 @@ public abstract class AbstractVisitor {
 		visitExpression(stmt.getCondition());
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for (int i = 0; i != cases.size(); ++i) {
-			visitCase((Stmt.Case) cases.get(i));
+			visitCase(cases.get(i));
 		}
 	}
 
@@ -739,140 +743,192 @@ public abstract class AbstractVisitor {
 	public void visitType(Type type) {
 		switch (type.getOpcode()) {
 		case TYPE_array:
-			visitArray((Type.Array) type);
+			visitTypeArray((Type.Array) type);
 			break;
 		case TYPE_bool:
-			visitBool((Type.Bool) type);
+			visitTypeBool((Type.Bool) type);
 			break;
 		case TYPE_byte:
-			visitByte((Type.Byte) type);
+			visitTypeByte((Type.Byte) type);
 			break;
 		case TYPE_int:
-			visitInt((Type.Int) type);
-			break;
-		case TYPE_intersection:
-			visitIntersection((Type.Intersection) type);
-			break;
-		case TYPE_difference:
-			visitDifference((Type.Difference) type);
+			visitTypeInt((Type.Int) type);
 			break;
 		case TYPE_nominal:
-			visitNominal((Type.Nominal) type);
+			visitTypeNominal((Type.Nominal) type);
 			break;
 		case TYPE_null:
-			visitNull((Type.Null) type);
+			visitTypeNull((Type.Null) type);
 			break;
 		case TYPE_record:
-			visitRecord((Type.Record) type);
+			visitTypeRecord((Type.Record) type);
 			break;
 		case TYPE_staticreference:
 		case TYPE_reference:
-			visitReference((Type.Reference) type);
+			visitTypeReference((Type.Reference) type);
 			break;
 		case TYPE_function:
 		case TYPE_method:
 		case TYPE_property:
-			visitCallable((Type.Callable) type);
+			visitTypeCallable((Type.Callable) type);
 			break;
 		case TYPE_union:
-			visitUnion((Type.Union) type);
+			visitTypeUnion((Type.Union) type);
 			break;
 		case TYPE_unresolved:
-			visitUnresolved((Type.Unresolved) type);
+			visitTypeUnresolved((Type.Unresolved) type);
 			break;
 		case TYPE_void:
-			visitVoid((Type.Void) type);
+			visitTypeVoid((Type.Void) type);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
 	}
 
-	public void visitCallable(Type.Callable type) {
+	public void visitTypeCallable(Type.Callable type) {
 		switch (type.getOpcode()) {
 		case TYPE_function:
-			visitFunction((Type.Function) type);
+			visitTypeFunction((Type.Function) type);
 			break;
 		case TYPE_method:
-			visitMethod((Type.Method) type);
+			visitTypeMethod((Type.Method) type);
 			break;
 		case TYPE_property:
-			visitProperty((Type.Property) type);
+			visitTypeProperty((Type.Property) type);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
 	}
 
-	public void visitArray(Type.Array type) {
+	public void visitTypeArray(Type.Array type) {
 		visitType(type.getElement());
 	}
 
-	public void visitBool(Type.Bool type) {
+	public void visitTypeBool(Type.Bool type) {
 
 	}
 
-	public void visitByte(Type.Byte type) {
+	public void visitTypeByte(Type.Byte type) {
 
 	}
 
-	public void visitFunction(Type.Function type) {
+	public void visitTypeFunction(Type.Function type) {
 		visitTypes(type.getParameters());
 		visitTypes(type.getReturns());
 	}
 
-	public void visitInt(Type.Int type) {
+	public void visitTypeInt(Type.Int type) {
 
 	}
 
-	public void visitIntersection(Type.Intersection type) {
+	public void visitTypeMethod(Type.Method type) {
+		visitTypes(type.getParameters());
+		visitTypes(type.getReturns());
+	}
+
+	public void visitTypeNominal(Type.Nominal type) {
+
+	}
+
+	public void visitTypeNull(Type.Null type) {
+
+	}
+
+	public void visitTypeProperty(Type.Property type) {
+		visitTypes(type.getParameters());
+		visitTypes(type.getReturns());
+	}
+
+	public void visitTypeRecord(Type.Record type) {
+		visitFields(type.getFields());
+	}
+
+	public void visitFields(Tuple<Type.Field> fields) {
+		for(int i=0;i!=fields.size();++i) {
+			visitField(fields.get(i));
+		}
+	}
+
+	public void visitField(Type.Field field) {
+		visitType(field.getType());
+	}
+
+
+	public void visitTypeReference(Type.Reference type) {
+		visitType(type.getElement());
+	}
+
+	public void visitTypeUnion(Type.Union type) {
 		for (int i = 0; i != type.size(); ++i) {
 			visitType(type.get(i));
 		}
 	}
 
-	public void visitMethod(Type.Method type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
-	}
-
-	public void visitDifference(Type.Difference type) {
-		visitType(type.getLeftHandSide());
-		visitType(type.getRightHandSide());
-	}
-
-	public void visitNominal(Type.Nominal type) {
+	public void visitTypeUnresolved(Type.Unresolved type) {
 
 	}
 
-	public void visitNull(Type.Null type) {
+	public void visitTypeVoid(Type.Void type) {
 
 	}
 
-	public void visitProperty(Type.Property type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
-	}
-
-	public void visitRecord(Type.Record type) {
-		visitVariables(type.getFields());
-	}
-
-	public void visitReference(Type.Reference type) {
-		visitType(type.getElement());
-	}
-
-	public void visitUnion(Type.Union type) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i));
+	public void visitSemanticType(SemanticType type) {
+		switch (type.getOpcode()) {
+		case SEMTYPE_array:
+			visitSemanticTypeArray((SemanticType.Array) type);
+			break;
+		case SEMTYPE_record:
+			visitSemanticTypeRecord((SemanticType.Record) type);
+			break;
+		case SEMTYPE_staticreference:
+		case SEMTYPE_reference:
+			visitSemanticTypeReference((SemanticType.Reference) type);
+			break;
+		case SEMTYPE_union:
+			visitSemanticTypeUnion((SemanticType.Union) type);
+			break;
+		case SEMTYPE_intersection:
+			visitSemanticTypeIntersection((SemanticType.Intersection) type);
+			break;
+		case SEMTYPE_difference:
+			visitSemanticTypeDifference((SemanticType.Difference) type);
+			break;
+		default:
+			// Handle leaf cases
+			visitType((Type) type);
 		}
 	}
 
-	public void visitUnresolved(Type.Unresolved type) {
-
+	public void visitSemanticTypeArray(SemanticType.Array type) {
+		visitSemanticType(type.getElement());
 	}
 
-	public void visitVoid(Type.Void type) {
+	public void visitSemanticTypeRecord(SemanticType.Record type) {
+		for(SemanticType.Field f : type.getFields()) {
+			visitSemanticType(f.getType());
+		}
+	}
 
+	public void visitSemanticTypeReference(SemanticType.Reference type) {
+		visitSemanticType(type.getElement());
+	}
+
+	public void visitSemanticTypeUnion(SemanticType.Union type) {
+		for(SemanticType t : type.getAll()) {
+			visitSemanticType(t);
+		}
+	}
+
+	public void visitSemanticTypeIntersection(SemanticType.Intersection type) {
+		for(SemanticType t : type.getAll()) {
+			visitSemanticType(t);
+		}
+	}
+
+	public void visitSemanticTypeDifference(SemanticType.Difference type) {
+		visitSemanticType(type.getLeftHandSide());
+		visitSemanticType(type.getRightHandSide());
 	}
 }

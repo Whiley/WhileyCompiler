@@ -3,7 +3,9 @@ type ib_arr is ((int|bool)[] n)
 type arr is in_arr | ib_arr
 
 function read(arr x, int i) -> (int|null|bool r)
-requires i >= 0 && i < |x|:
+requires i >= 0
+requires (x is in_arr ==> i < |x|)
+requires (x is ib_arr ==> i < |x|):
     //
     return x[i]
 

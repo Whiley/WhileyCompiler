@@ -72,7 +72,8 @@ public class Activator implements Module.Activator {
 		final Command[] commands = {
 				new Compile(registry, logger),
 				new Decompile(registry, logger),
-				new Run(registry, logger) };
+				new Run(registry, logger)
+		};
 		// Register all commands
 		for (Command c : commands) {
 			context.register(wycc.lang.Command.class, c);

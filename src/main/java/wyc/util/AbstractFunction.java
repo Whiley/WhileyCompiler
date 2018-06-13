@@ -15,8 +15,12 @@ package wyc.util;
 
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
+import wyc.lang.WhileyFile.SemanticType;
+import wyc.lang.WhileyFile.Type;
 
 import static wyc.lang.WhileyFile.*;
+
+import wybs.util.AbstractCompilationUnit.Tuple;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -44,6 +48,7 @@ public abstract class AbstractFunction<P,R> {
 		case DECL_staticvar:
 			return visitStaticVariable((Decl.StaticVariable) decl, data);
 		case DECL_type:
+		case DECL_rectype:
 			return visitType((Decl.Type) decl, data);
 		case DECL_function:
 		case DECL_method:
@@ -270,7 +275,7 @@ public abstract class AbstractFunction<P,R> {
 		visitExpression(stmt.getCondition(), data);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for(int i=0;i!=cases.size();++i) {
-			visitCase((Stmt.Case) cases.get(i), data);
+			visitCase(cases.get(i), data);
 		}
 		return null;
 	}
@@ -735,131 +740,186 @@ public abstract class AbstractFunction<P,R> {
 	public R visitType(Type type, P data) {
 		switch (type.getOpcode()) {
 		case TYPE_array:
-			return visitArray((Type.Array) type, data);
+			return visitTypeArray((Type.Array) type, data);
 		case TYPE_bool:
-			return visitBool((Type.Bool) type, data);
+			return visitTypeBool((Type.Bool) type, data);
 		case TYPE_byte:
-			return visitByte((Type.Byte) type, data);
+			return visitTypeByte((Type.Byte) type, data);
 		case TYPE_int:
-			return visitInt((Type.Int) type, data);
-		case TYPE_intersection:
-			return visitIntersection((Type.Intersection) type, data);
-		case TYPE_difference:
-			return visitDifference((Type.Difference) type, data);
+			return visitTypeInt((Type.Int) type, data);
 		case TYPE_nominal:
-			return visitNominal((Type.Nominal) type, data);
+			return visitTypeNominal((Type.Nominal) type, data);
 		case TYPE_null:
-			return visitNull((Type.Null) type, data);
+			return visitTypeNull((Type.Null) type, data);
 		case TYPE_record:
-			return visitRecord((Type.Record) type, data);
+			return visitTypeRecord((Type.Record) type, data);
 		case TYPE_reference:
-			return visitReference((Type.Reference) type, data);
+			return visitTypeReference((Type.Reference) type, data);
 		case TYPE_function:
 		case TYPE_method:
 		case TYPE_property:
-			return visitCallable((Type.Callable) type, data);
+			return visitTypeCallable((Type.Callable) type, data);
 		case TYPE_union:
-			return visitUnion((Type.Union) type, data);
+			return visitTypeUnion((Type.Union) type, data);
 		case TYPE_unresolved:
-			return visitUnresolved((Type.Unresolved) type, data);
+			return visitTypeUnresolved((Type.Unresolved) type, data);
 		case TYPE_void:
-			return visitVoid((Type.Void) type, data);
+			return visitTypeVoid((Type.Void) type, data);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
 	}
 
-	public R visitCallable(Type.Callable type, P data) {
+	public R visitTypeCallable(Type.Callable type, P data) {
 		switch (type.getOpcode()) {
 		case TYPE_function:
-			visitFunction((Type.Function) type, data);
+			visitTypeFunction((Type.Function) type, data);
 		case TYPE_method:
-			visitMethod((Type.Method) type, data);
+			visitTypeMethod((Type.Method) type, data);
 		case TYPE_property:
-			visitProperty((Type.Property) type, data);
+			visitTypeProperty((Type.Property) type, data);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
 	}
 
-	public R visitArray(Type.Array type, P data) {
+	public R visitTypeArray(Type.Array type, P data) {
 		visitType(type.getElement(), data);
 		return null;
 	}
 
-	public R visitBool(Type.Bool type, P data) {
+	public R visitTypeBool(Type.Bool type, P data) {
 		return null;
 	}
 
-	public R visitByte(Type.Byte type, P data) {
+	public R visitTypeByte(Type.Byte type, P data) {
 		return null;
 	}
 
-	public R visitFunction(Type.Function type, P data) {
+	public R visitTypeFunction(Type.Function type, P data) {
 		visitTypes(type.getParameters(), data);
 		visitTypes(type.getReturns(), data);
 		return null;
 	}
 
-	public R visitInt(Type.Int type, P data) {
+	public R visitTypeInt(Type.Int type, P data) {
 		return null;
 	}
 
-	public R visitIntersection(Type.Intersection type, P data) {
+	public R visitTypeMethod(Type.Method type, P data) {
+		visitTypes(type.getParameters(), data);
+		visitTypes(type.getReturns(), data);
+		return null;
+	}
+
+	public R visitTypeNominal(Type.Nominal type, P data) {
+		return null;
+	}
+
+	public R visitTypeNull(Type.Null type, P data) {
+		return null;
+	}
+
+	public R visitTypeProperty(Type.Property type, P data) {
+		visitTypes(type.getParameters(), data);
+		visitTypes(type.getReturns(), data);
+		return null;
+	}
+
+	public R visitTypeRecord(Type.Record type, P data) {
+		visitFields(type.getFields(), data);
+		return null;
+	}
+
+	public R visitFields(Tuple<Type.Field> fields, P data) {
+		for(int i=0;i!=fields.size();++i) {
+			visitField(fields.get(i), data);
+		}
+		return null;
+	}
+
+	public R visitField(Type.Field field, P data) {
+		visitType(field.getType(), data);
+		return null;
+	}
+
+	public R visitTypeReference(Type.Reference type, P data) {
+		visitType(type.getElement(), data);
+		return null;
+	}
+
+	public R visitTypeUnion(Type.Union type, P data) {
 		for(int i=0;i!=type.size();++i) {
 			visitType(type.get(i), data);
 		}
 		return null;
 	}
 
-	public R visitMethod(Type.Method type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+	public R visitTypeUnresolved(Type.Unresolved type, P data) {
 		return null;
 	}
 
-	public R visitDifference(Type.Difference type, P data) {
-		visitType(type.getLeftHandSide(), data);
-		visitType(type.getRightHandSide(), data);
+	public R visitTypeVoid(Type.Void type, P data) {
 		return null;
 	}
 
-	public R visitNominal(Type.Nominal type, P data) {
+
+	public R visitSemanticType(SemanticType type, P data) {
+		switch (type.getOpcode()) {
+		case SEMTYPE_array:
+			return visitSemanticTypeArray((SemanticType.Array) type, data);
+		case SEMTYPE_record:
+			return visitSemanticTypeRecord((SemanticType.Record) type, data);
+		case SEMTYPE_staticreference:
+		case SEMTYPE_reference:
+			return visitSemanticTypeReference((SemanticType.Reference) type, data);
+		case SEMTYPE_union:
+			return visitSemanticTypeUnion((SemanticType.Union) type, data);
+		case SEMTYPE_intersection:
+			return visitSemanticTypeIntersection((SemanticType.Intersection) type, data);
+		case SEMTYPE_difference:
+			return visitSemanticTypeDifference((SemanticType.Difference) type, data);
+		default:
+			// Handle leaf cases
+			return visitType((Type) type, data);
+		}
+	}
+
+	public R visitSemanticTypeArray(SemanticType.Array type, P data) {
+		visitSemanticType(type.getElement(), data);
 		return null;
 	}
 
-	public R visitNull(Type.Null type, P data) {
-		return null;
-	}
-
-	public R visitProperty(Type.Property type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
-		return null;
-	}
-
-	public R visitRecord(Type.Record type, P data) {
-		visitVariables(type.getFields(), data);
-		return null;
-	}
-
-	public R visitReference(Type.Reference type, P data) {
-		visitType(type.getElement(), data);
-		return null;
-	}
-
-	public R visitUnion(Type.Union type, P data) {
-		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
+	public R visitSemanticTypeRecord(SemanticType.Record type, P data) {
+		for(SemanticType.Field f : type.getFields()) {
+			visitSemanticType(f.getType(), data);
 		}
 		return null;
 	}
 
-	public R visitUnresolved(Type.Unresolved type, P data) {
+	public R visitSemanticTypeReference(SemanticType.Reference type, P data) {
+		visitSemanticType(type.getElement(), data);
 		return null;
 	}
 
-	public R visitVoid(Type.Void type, P data) {
+	public R visitSemanticTypeUnion(SemanticType.Union type, P data) {
+		for(SemanticType t : type.getAll()) {
+			visitSemanticType(t, data);
+		}
 		return null;
 	}
+
+	public R visitSemanticTypeIntersection(SemanticType.Intersection type, P data) {
+		for(SemanticType t : type.getAll()) {
+			visitSemanticType(t, data);
+		}
+		return null;
+	}
+
+	public R visitSemanticTypeDifference(SemanticType.Difference type, P data) {
+		visitSemanticType(type.getLeftHandSide(), data);
+		visitSemanticType(type.getRightHandSide(), data);
+		return null;
+	}
+
 }

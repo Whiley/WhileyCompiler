@@ -9,4 +9,4 @@ function f(wurf1nat x) -> int:
     return x
 
 function g(int x) -> int:
-    return f(x)
+    return f((urf1nat) x)

@@ -150,6 +150,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_12", "??");
 		// Performance problems?
 		IGNORED.put("Complex_Valid_10", "??");
+		// Type Test operator?
+		IGNORED.put("TypeEquals_Valid_58", "??");
+		IGNORED.put("TypeEquals_Valid_59", "??");
 	}
 
 	/**

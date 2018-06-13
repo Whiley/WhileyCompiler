@@ -8,7 +8,7 @@ int FIFTY_CENTS = 4
 int ONE_DOLLAR = 5
 int FIVE_DOLLARS = 6
 int TEN_DOLLARS = 7
-int[] Value = [1, 5, 10, 20, 50, 100, 500, 1000]
+int[] Value = [1, 5, 10, 20, 50, 100, 500, 1_000]
 
 type Cash is (nat[] coins) where |coins| == |Value|
 

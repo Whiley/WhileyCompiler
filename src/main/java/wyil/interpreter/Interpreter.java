@@ -24,7 +24,7 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wyfs.lang.Path;
-import wyil.type.TypeSystem;
+import wyc.util.WhileyFileResolver;
 
 import static wyc.lang.WhileyFile.*;
 import static wyil.interpreter.ConcreteSemantics.LValue;
@@ -55,15 +55,9 @@ public class Interpreter {
 	private final Build.Project project;
 
 	/**
-	 * Provides mechanism for operating on types. For example, expanding them
-	 * and performing subtype tests, etc.
-	 */
-	private final TypeSystem typeSystem;
-
-	/**
 	 * Provides mechanism for resolving names.
 	 */
-	//private final NameResolver resolver;
+	private final NameResolver resolver;
 
 	/**
 	 * Determines the underlying semantics used for this interpreter.
@@ -79,7 +73,7 @@ public class Interpreter {
 	public Interpreter(Build.Project project, PrintStream debug) {
 		this.project = project;
 		this.debug = debug;
-		this.typeSystem = new TypeSystem(project);
+		this.resolver = new WhileyFileResolver(project);
 		this.semantics = new ConcreteSemantics();
 	}
 
@@ -90,8 +84,8 @@ public class Interpreter {
 		NEXT
 	}
 
-	public TypeSystem getTypeSystem() {
-		return typeSystem;
+	public NameResolver getNameResolver() {
+		return resolver;
 	}
 
 	/**
@@ -872,7 +866,7 @@ public class Interpreter {
 	}
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) throws ResolutionError {
-		Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), Decl.StaticVariable.class);
+		Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), Decl.StaticVariable.class);
 		NameID nid = decl.getQualifiedName().toNameID();
 		return frame.getStatic(nid);
 	}
@@ -1101,7 +1095,7 @@ public class Interpreter {
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
 		// Locate the function or method body in order to execute it
 		// FIXME: This is horrendous. Should be able to use descriptor here!!
-		Decl.FunctionOrMethod decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+		Decl.FunctionOrMethod decl = resolveExactly(expr.getName(), expr.getSignature(),
 				Decl.FunctionOrMethod.class);
 		// Clone frame to ensure it executes in this exact environment.
 		return semantics.Lambda(decl, frame.clone(), decl.getBody());
@@ -1227,7 +1221,7 @@ public class Interpreter {
 	 */
 	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) throws ResolutionError {
 		// Resolve function or method being invoked to a concrete declaration
-		Decl.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+		Decl.Callable decl = resolveExactly(expr.getName(), expr.getSignature(),
 				Decl.Callable.class);
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
@@ -1518,5 +1512,19 @@ public class Interpreter {
 		public Decl.Callable getContext() {
 			return context;
 		}
+	}
+
+	public <T extends Decl.Callable> T resolveExactly(Name name, Type.Callable signature, Class<T> kind)
+			throws ResolutionError {
+		for (T decl : resolveAll(name, kind)) {
+			if (decl.getType().equals(signature)) {
+				return decl;
+			}
+		}
+		return null;
+	}
+
+	public <T extends Decl.Named> List<T> resolveAll(Name name, Class<T> kind) throws ResolutionError {
+		return resolver.resolveAll(name, kind);
 	}
 }

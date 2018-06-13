@@ -13,6 +13,7 @@
 // limitations under the License.
 package wyc.check;
 
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -20,7 +21,6 @@ import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
-import wyil.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
@@ -74,10 +74,10 @@ import static wyc.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
-	public TypeSystem types;
+	public NameResolver resolver;
 
 	public FunctionalCheck(CompileTask builder) {
-		this.types = builder.getTypeSystem();
+		this.resolver = builder.getNameResolver();
 	}
 
 	public void check(WhileyFile file) {
@@ -167,20 +167,11 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 
 	@Override
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
-		try {
-			// Check whether invoking an impure method in a pure context
-			if (context != Context.IMPURE) {
-				// FIXME: should probably not use a null LifetimeRelation here.
-				Type.Callable type = types.extractReadableLambda(expr.getSource().getType(),null);
-				if (type instanceof Type.Method) {
-					invalidMethodCall(expr, context);
-				}
-			}
-			super.visitIndirectInvoke(expr, context);
-		} catch (ResolutionError e) {
-			// This really should be dead code
-			throw new RuntimeException(e);
+		// Check whether invoking an impure method in a pure context
+		if (context != Context.IMPURE && isMethodType(expr.getSource().getType())) {
+			invalidMethodCall(expr, context);
 		}
+		super.visitIndirectInvoke(expr, context);
 	}
 
 	@Override
@@ -204,6 +195,23 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		// NOTE: don't traverse types as this is unnecessary. Even in a pure context,
 		// seemingly impure types (e.g. references and methods) can still be used
 		// safely.
+	}
+
+	public boolean isMethodType(Type type) {
+		try {
+			if (type instanceof Type.Method) {
+				return true;
+			} else if (type instanceof Type.Nominal) {
+				Type.Nominal n = (Type.Nominal) type;
+				Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
+				return isMethodType(decl.getType());
+			} else {
+				return false;
+			}
+		} catch (ResolutionError e) {
+			// This really should be dead code
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**

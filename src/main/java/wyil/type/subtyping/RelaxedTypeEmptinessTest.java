@@ -14,11 +14,11 @@
 package wyil.type.subtyping;
 
 
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
-import wyil.type.TypeSystem;
+import wyc.lang.WhileyFile.SemanticType;
+import wyil.type.util.BinaryRelation;
 
 /**
  * <p>
@@ -42,31 +42,31 @@ import wyil.type.TypeSystem;
  * layout and, hence, many more conversions between layouts are required.
  * </p>
  *
- * @see StrictSubtypeOperator
+ * @see StrictTypeEmptinessTest
  *
  * @author David J. Pearce
  *
  */
-public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
+public class RelaxedTypeEmptinessTest extends StrictTypeEmptinessTest {
 
-	public RelaxedSubtypeOperator(TypeSystem typeSystem) {
-		super(typeSystem);
+	public RelaxedTypeEmptinessTest(NameResolver resolver) {
+		super(resolver);
 	}
 
 	@Override
-	protected int matchRecordFields(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions,
+	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, BinaryRelation<Term<?>> assumptions,
 			LifetimeRelation lifetimes) throws ResolutionError {
-		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
-		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
+		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
+		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//
 		boolean sign = (lhs.sign == rhs.sign);
 		int matches = 0;
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			Decl.Variable lhsField = lhsFields.get(i);
+			SemanticType.Field lhsField = lhsFields.get(i);
 			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Decl.Variable rhsField = rhsFields.get(j);
+				SemanticType.Field rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
@@ -94,9 +94,11 @@ public class RelaxedSubtypeOperator extends StrictSubtypeOperator {
 		return matches;
 	}
 
+
 	@Override
 	protected boolean analyseRecordMatches(int matches, boolean lhsSign, boolean lhsOpen,
-			Tuple<Decl.Variable> lhsFields, boolean rhsSign, boolean rhsOpen, Tuple<Decl.Variable> rhsFields) {
+			Tuple<? extends SemanticType.Field> lhsFields, boolean rhsSign, boolean rhsOpen,
+			Tuple<? extends SemanticType.Field> rhsFields) {
 		return super.analyseRecordMatches(matches, lhsSign, true, lhsFields, rhsSign, true, rhsFields);
 	}
 }

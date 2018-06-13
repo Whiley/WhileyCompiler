@@ -1,4 +1,4 @@
-function f(int x):
+function f(int x) -> int:
     if(x >= 0):
       int y = x + 1
     //

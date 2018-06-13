@@ -36,11 +36,9 @@ import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
-import wyil.type.TypeSystem;
 import wyc.lang.WhileyFile;
 import wyc.task.Wyil2WyalBuilder;
 import wyc.util.AbstractConsumer;
-import wyc.util.AbstractVisitor;
 
 import static wyc.lang.WhileyFile.*;
 
@@ -114,13 +112,11 @@ import static wyc.lang.WhileyFile.*;
  *
  */
 public class VerificationConditionGenerator {
-	private final Wyil2WyalBuilder builder;
-	private final TypeSystem typeSystem;
+	private final NameResolver resolver;
 	private final WyalFile wyalFile;
 
-	public VerificationConditionGenerator(WyalFile wyalFile, Wyil2WyalBuilder builder) {
-		this.builder = builder;
-		this.typeSystem = new TypeSystem(builder.project());
+	public VerificationConditionGenerator(WyalFile wyalFile, NameResolver resolver) {
+		this.resolver = resolver;
 		this.wyalFile = wyalFile;
 	}
 
@@ -701,7 +697,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateVariableAssign(WhileyFile.Expr.VariableAccess lval, Expr rval,Context context) {
-		WhileyFile.Decl.Variable decl = (WhileyFile.Decl.Variable) lval.getVariableDeclaration();
+		WhileyFile.Decl.Variable decl = lval.getVariableDeclaration();
 		context = context.havoc(decl);
 		WyalFile.VariableDeclaration nVersionedVar = context.read(decl);
 		Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
@@ -1738,7 +1734,7 @@ public class VerificationConditionGenerator {
 		try {
 			// FIXME: yes, this is a hack to temporarily handle the transition from
 			// constants to static variables.
-			WhileyFile.Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), WhileyFile.Decl.StaticVariable.class);
+			WhileyFile.Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), WhileyFile.Decl.StaticVariable.class);
 			return translateExpression(decl.getInitialiser(), null, environment);
 		} catch (ResolutionError e) {
 			throw new RuntimeException(e);
@@ -2394,10 +2390,10 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Array(elem);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
-			Tuple<WhileyFile.Decl.Variable> fields = rt.getFields();
+			Tuple<Type.Field> fields = rt.getFields();
 			WyalFile.FieldDeclaration[] elements = new WyalFile.FieldDeclaration[fields.size()];
 			for (int i = 0; i != elements.length; ++i) {
-				WhileyFile.Decl.Variable field = fields.get(i);
+				Type.Field field = fields.get(i);
 				WyalFile.Type fieldType = convert(field.getType(), context);
 				elements[i] = new WyalFile.FieldDeclaration(fieldType, new WyalFile.Identifier(field.getName().get()));
 			}
@@ -2414,24 +2410,17 @@ public class VerificationConditionGenerator {
 				elements[i] = convert(tu.get(i), context);
 			}
 			result = new WyalFile.Type.Union(elements);
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection t = (Type.Intersection) type;
-			WyalFile.Type[] elements = new WyalFile.Type[t.size()];
-			for (int i = 0; i != t.size(); ++i) {
-				elements[i] = convert(t.get(i), context);
-			}
-			result = new WyalFile.Type.Intersection(elements);
-		} else if (type instanceof Type.Difference) {
-			Type.Difference nt = (Type.Difference) type;
-			WyalFile.Type lhs = convert(nt.getLeftHandSide(), context);
-			WyalFile.Type rhs = convert(nt.getRightHandSide(), context);
-			// FIXME: this is essentially a hack for now, though it is semantically
-			// equivalent.
-			result = new WyalFile.Type.Intersection(new WyalFile.Type[] { lhs, new WyalFile.Type.Negation(rhs) });
-		} else if (type instanceof Type.Callable) {
-			Type.Callable ft = (Type.Callable) type;
-			// FIXME: need to do something better here
-			result = new WyalFile.Type.Any();
+		} else if (type instanceof Type.Function) {
+			Type.Function ft = (Type.Function) type;
+			Tuple<WyalFile.Type> parameters = convert(ft.getParameters(), context);
+			Tuple<WyalFile.Type> returns = convert(ft.getReturns(), context);
+			return new WyalFile.Type.Function(parameters,returns);
+		} else if (type instanceof Type.Method) {
+			Type.Method mt = (Type.Method) type;
+			Tuple<WyalFile.Type> parameters = convert(mt.getParameters(), context);
+			Tuple<WyalFile.Type> returns = convert(mt.getReturns(), context);
+			// FIXME: this needs to be figure out!
+			return new WyalFile.Type.Function(parameters,returns);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.getName().toNameID();
@@ -2444,6 +2433,14 @@ public class VerificationConditionGenerator {
 		result = allocate(result,context.getParent(WhileyFile.Attribute.Span.class));
 		//
 		return result;
+	}
+
+	public Tuple<WyalFile.Type> convert(Tuple<WhileyFile.Type> types, SyntacticItem context) {
+		WyalFile.Type[] nTypes = new WyalFile.Type[types.size()];
+		for (int i = 0; i != types.size(); ++i) {
+			nTypes[i] = convert(types.get(i), context);
+		}
+		return new Tuple<>(nTypes);
 	}
 
 	/**
@@ -2469,9 +2466,9 @@ public class VerificationConditionGenerator {
 			return typeMayHaveInvariant(lt.getElement(), context);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
-			Tuple<WhileyFile.Decl.Variable> fields = rt.getFields();
+			Tuple<Type.Field> fields = rt.getFields();
 			for (int i = 0; i != fields.size(); ++i) {
-				WhileyFile.Decl.Variable field = fields.get(i);
+				Type.Field field = fields.get(i);
 				if (typeMayHaveInvariant(field.getType(), context)) {
 					return true;
 				}
@@ -2488,18 +2485,6 @@ public class VerificationConditionGenerator {
 				}
 			}
 			return false;
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection t = (Type.Intersection) type;
-			for(int i=0;i!=t.size();++i) {
-				if(typeMayHaveInvariant(t.get(i), context)) {
-					return true;
-				}
-			}
-			return false;
-		} else if (type instanceof Type.Difference) {
-			Type.Difference nt = (Type.Difference) type;
-			return typeMayHaveInvariant(nt.getLeftHandSide(), context)
-					|| typeMayHaveInvariant(nt.getRightHandSide(), context);
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
@@ -2566,10 +2551,15 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public WhileyFile.Decl.Callable lookupFunctionOrMethodOrProperty(WhileyFile.Name name, Type.Callable fun,
+	public WhileyFile.Decl.Callable lookupFunctionOrMethodOrProperty(WhileyFile.Name name, Type.Callable signature,
 			WhileyFile.Stmt stmt) throws NameResolver.ResolutionError {
 		//
-		return typeSystem.resolveExactly(name, fun, WhileyFile.Decl.Callable.class);
+		for (WhileyFile.Decl.Callable decl : resolver.resolveAll(name, WhileyFile.Decl.Callable.class)) {
+			if (decl.getType().equals(signature)) {
+				return decl;
+			}
+		}
+		return null;
 	}
 
 	/**

@@ -21,10 +21,10 @@ import static wyc.util.ErrorMessages.errorMessage;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.util.AbstractFunction;
-import wyil.type.TypeSystem;
 
 import java.util.BitSet;
 
+import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntaxError;
 
@@ -70,10 +70,10 @@ import wybs.lang.SyntaxError;
 public class DefiniteUnassignmentCheck
 		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
 
-	private final TypeSystem typeSystem;
+	private final NameResolver resolver;
 
 	public DefiniteUnassignmentCheck(CompileTask builder) {
-		this.typeSystem = builder.getTypeSystem();
+		this.resolver = builder.getNameResolver();
 	}
 
 	/**
@@ -235,7 +235,7 @@ public class DefiniteUnassignmentCheck
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
 		try {
 			// FIXME: we shouldn't have to perform resolution here.
-			Decl.StaticVariable var = typeSystem.resolveExactly(lval.getName(), Decl.StaticVariable.class);
+			Decl.StaticVariable var = resolver.resolveExactly(lval.getName(), Decl.StaticVariable.class);
 			if (isFinal(var)) {
 				WhileyFile file = ((WhileyFile) lval.getHeap());
 				throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);

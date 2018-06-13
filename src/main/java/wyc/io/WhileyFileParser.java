@@ -487,7 +487,7 @@ public class WhileyFileParser {
 			// This is currently the only situation in which field aliases can
 			// arise.
 			Type.Record r = (Type.Record) t;
-			for (Decl.Variable fd : r.getFields()) {
+			for (Type.Field fd : r.getFields()) {
 				scope.declareFieldAlias(fd.getName());
 			}
 		}
@@ -510,7 +510,7 @@ public class WhileyFileParser {
 	 * the decimal value "3.141592654". Constant declarations may also have
 	 * modifiers, such as <code>public</code> and <code>private</code>.
 	 *
-	 * @see wyc.lang.WhileyFile.StaticVariable
+	 * @see wyc.lang.WhielyFile.StaticVariable
 	 *
 	 * @param modifiers
 	 *            --- The list of modifiers for this declaration (which were
@@ -2300,19 +2300,23 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Bool(true)), index++);
 		case False:
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Bool(false)), index++);
-		case ByteValue: {
-			byte val = parseByte(token);
+		case BinaryLiteral: {
+			byte val = parseBinaryLiteral(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Byte(val)), index++);
 		}
-		case CharValue: {
+		case CharLiteral: {
 			BigInteger val = parseCharacter(token.text);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
 		}
-		case IntValue: {
-			BigInteger val = new BigInteger(token.text);
+		case IntegerLiteral: {
+			BigInteger val = parseIntegerLiteral(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
 		}
-		case StringValue: {
+		case HexLiteral: {
+			BigInteger val = parseHexLiteral(token);
+			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.Int(val)), index++);
+		}
+		case StringLiteral: {
 			byte[] val = parseUnicodeString(token);
 			return annotateSourceLocation(new Expr.Constant(Type.Void, new Value.UTF8(val)), index++);
 		}
@@ -3163,13 +3167,6 @@ public class WhileyFileParser {
 		} else if (type instanceof Type.Callable) {
 			// "function" and "method" are keywords, cannot parse as expression.
 			return true;
-		} else if (type instanceof Type.Intersection) {
-			Type.Intersection tt = (Type.Intersection) type;
-			boolean result = false;
-			for(int i=0;i!=tt.size();++i) {
-				result |= mustParseAsType(tt.get(i));
-			}
-			return result;
 		} else if (type instanceof Type.Array) {
 			return true;
 		} else if (type instanceof Type.Nominal) {
@@ -3569,11 +3566,9 @@ public class WhileyFileParser {
 	private Type parseRecordType(EnclosingScope scope) {
 		int start = index;
 		match(LeftCurly);
-		ArrayList<Decl.Variable> types = new ArrayList<>();
-		// FIXME: parse modifiers
-		Tuple<Modifier> modifiers = new Tuple<>();
+		ArrayList<Type.Field> types = new ArrayList<>();
 		Pair<Type, Identifier> p = parseMixedType(scope);
-		types.add(new Decl.Variable(modifiers, p.getSecond(), p.getFirst()));
+		types.add(new Type.Field(p.getSecond(), p.getFirst()));
 		HashSet<Identifier> names = new HashSet<>();
 		names.add(p.getSecond());
 		// Now, we continue to parse any remaining fields.
@@ -3592,11 +3587,11 @@ public class WhileyFileParser {
 					syntaxError("duplicate record key", id);
 				}
 				names.add(id);
-				types.add(new Decl.Variable(modifiers, id, p.getFirst()));
+				types.add(new Type.Field(id, p.getFirst()));
 			}
 		}
 		// Done
-		Tuple<Decl.Variable> fields = new Tuple<>(types);
+		Tuple<Type.Field> fields = new Tuple<>(types);
 		return annotateSourceLocation(new Type.Record(isOpen, fields), start);
 	}
 
@@ -4361,23 +4356,37 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a token representing a byte value. Every such token is a sequence
-	 * of one or more binary digits ('0' or '1') followed by 'b'. For example,
-	 * "00110b" is parsed as the byte value 6.
+	 * Parse a token representing an integer literal, such as "112", "1_024", etc.
+	 *
+	 * @param input
+	 *            The token representing the integer value.
+	 * @return
+	 */
+	private BigInteger parseIntegerLiteral(Token input) {
+		return new BigInteger(input.text.replace("_", ""));
+	}
+
+	/**
+	 * Parse a token representing a binary literal, such as "0b0110", "0b1111_0101",
+	 * etc.
 	 *
 	 * @param input
 	 *            The token representing the byte value.
 	 * @return
 	 */
-	private byte parseByte(Token input) {
+	private byte parseBinaryLiteral(Token input) {
 		String text = input.text;
-		if (text.length() > 9) {
+		if (text.length() > 11) {
+			// FIXME: this will be deprecated!
 			syntaxError("invalid binary literal (too long)", input);
 		}
 		int val = 0;
-		for (int i = 0; i != text.length() - 1; ++i) {
-			val = val << 1;
+		// Start past 0b
+		for (int i = 2; i != text.length(); ++i) {
 			char c = text.charAt(i);
+			// Skip underscore
+			if(c == '_') { continue; }
+			val = val << 1;
 			if (c == '1') {
 				val = val | 1;
 			} else if (c == '0') {
@@ -4387,6 +4396,31 @@ public class WhileyFileParser {
 			}
 		}
 		return (byte) val;
+	}
+
+	/**
+	 * Parse a token representing a hex literal, such as "0x
+	 *
+	 * @param input
+	 *            The token representing the byte value.
+	 * @return
+	 */
+	private BigInteger parseHexLiteral(Token input) {
+		String text = input.text;
+		// Start past 0x
+		for (int i = 2; i != text.length(); ++i) {
+			char c = text.charAt(i);
+			if(c != '_' && !isHexDigit(c)) {
+				syntaxError("invalid hex literal (invalid characters)", input);
+			}
+		}
+		// Remove "0x" and "_"
+		text = input.text.substring(2).replace("_", "");
+		return new BigInteger(text,16);
+	}
+
+	private boolean isHexDigit(char c) {
+		return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
 	}
 
 	private String[] toStringArray(Tuple<Identifier> identifiers) {

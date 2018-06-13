@@ -12,5 +12,5 @@ function f(oddeven x) -> even:
 
 public export method test() :
     int y = 1
-    y = f(1)
+    y = f((odd) 1)
     assume y == 2

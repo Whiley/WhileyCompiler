@@ -13,5 +13,5 @@ function f(expr e) :
         g(e)
 
 public export method test() :
-    f(-1)
-    f(1)
+    f((neg) -1)
+    f((pos) 1)

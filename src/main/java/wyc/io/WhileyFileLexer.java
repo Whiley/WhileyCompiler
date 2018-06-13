@@ -74,11 +74,11 @@ public class WhileyFileLexer {
 			char c = input.charAt(pos);
 
 			if (isDigit(c)) {
-				tokens.add(scanNumericConstant());
+				tokens.add(scanNumericLiteral());
 			} else if (c == '"') {
-				tokens.add(scanStringConstant());
+				tokens.add(scanStringLiteral());
 			} else if (c == '\'') {
-				tokens.add(scanCharacterConstant());
+				tokens.add(scanCharacterLiteral());
 			} else if (isOperatorStart(c)) {
 				tokens.add(scanOperator());
 			} else if (isLetter(c) || c == '_') {
@@ -94,49 +94,71 @@ public class WhileyFileLexer {
 	}
 
 	/**
-	 * Scan a numeric constant. That is a sequence of digits which gives either
-	 * an integer constant, or a real constant (if it includes a dot) or a byte
-	 * (if it ends in a 'b').
+	 * Scan a numeric constant. That is a sequence of digits which constitutes an
+	 * integer literal (e.g. 12 or 1_000), a binary literal (e.g. 0b1001_0011) or a
+	 * hex literal (e.g. 0xff).
 	 *
 	 * @return
 	 */
-	public Token scanNumericConstant() {
+	public Token scanNumericLiteral() {
 		int start = pos;
-		while (pos < input.length() && isDigit(input.charAt(pos))) {
-			pos = pos + 1;
-		}
-		if (pos < input.length() && input.charAt(pos) == '.') {
-			pos = pos + 1;
-			if (pos < input.length() && input.charAt(pos) == '.') {
-				// this is case for range e.g. 0..1
-				pos = pos - 1;
-				return new Token(Token.Kind.IntValue, input.substring(start,
-						pos), start);
-			}
-			while (pos < input.length() && isDigit(input.charAt(pos))) {
-				pos = pos + 1;
-			}
-			return new Token(Token.Kind.RealValue, input.substring(start, pos),
-					start);
-		} else if(pos < input.length() && input.charAt(pos) == 'b') {
-			pos = pos + 1;
-			return new Token(Token.Kind.ByteValue, input.substring(start, pos),
-					start);
+		int next = pos + 1;
+		// Decide whether it's an integer, binary or hexadecimal literal
+		if (next < input.length() && input.charAt(pos) == '0' && input.charAt(next) == 'x') {
+			// Hexadecimal literal
+			return scanHexLiteral();
+		} else if (next < input.length() && input.charAt(pos) == '0' && input.charAt(next) == 'b') {
+			// Binary literal
+			return scanBinaryLiteral();
 		} else {
-			return new Token(Token.Kind.IntValue, input.substring(start, pos),
-					start);
+			return scanIntegerLiteral();
 		}
 	}
 
+	public Token scanIntegerLiteral() {
+		int start = pos;
+		while (pos < input.length() && (input.charAt(pos) == '_' || isDigit(input.charAt(pos)))) {
+			pos = pos + 1;
+		}
+		// Extract literal characters
+		String literal = input.substring(start, pos);
+		// Done
+		return new Token(Token.Kind.IntegerLiteral, literal, start);
+	}
+
+	public Token scanHexLiteral() {
+		int start = pos;
+		pos = pos + 2; // skip "0x"
+		while (pos < input.length() && (input.charAt(pos) == '_' || isLetterOrDigit(input.charAt(pos)))) {
+			pos = pos + 1;
+		}
+		// Extract literal characters
+		String literal = input.substring(start, pos);
+		// Done
+		return new Token(Token.Kind.HexLiteral, literal, start);
+	}
+
+	public Token scanBinaryLiteral() {
+		int start = pos;
+		pos = pos + 2; // skip "0b"
+		while (pos < input.length() && (input.charAt(pos) == '_' || isDigit(input.charAt(pos)))) {
+			pos = pos + 1;
+		}
+		// Extract literal characters
+		String literal = input.substring(start, pos);
+		// Done
+		return new Token(Token.Kind.BinaryLiteral, literal, start);
+	}
+
 	/**
-	 * Scan a character constant, such as e.g. 'c'. Observe that care must be
+	 * Scan a character literal, such as e.g. 'c'. Observe that care must be
 	 * taken to properly handle escape codes. For example, '\n' is a single
 	 * character constant which is made up from two characters in the input
 	 * string.
 	 *
 	 * @return
 	 */
-	public Token scanCharacterConstant() {
+	public Token scanCharacterLiteral() {
 		int start = pos;
 		pos++;
 		char c = input.charAt(pos++);
@@ -175,11 +197,11 @@ public class WhileyFileLexer {
 			syntaxError("unexpected end-of-character", pos);
 		}
 		pos = pos + 1;
-		return new Token(Token.Kind.CharValue, input.substring(start, pos),
+		return new Token(Token.Kind.CharLiteral, input.substring(start, pos),
 				start);
 	}
 
-	public Token scanStringConstant() {
+	public Token scanStringLiteral() {
 		int start = pos;
 		boolean escaped = false;
 		pos++;
@@ -187,7 +209,7 @@ public class WhileyFileLexer {
 			char c = input.charAt(pos);
 			if (c == '"' && !escaped) {
 				String v = input.substring(start, ++pos);
-				return new Token(Token.Kind.StringValue, v, start);
+				return new Token(Token.Kind.StringLiteral, v, start);
 			} else if(c == '\\' && !escaped) {
 				escaped = true;
 			} else {
@@ -522,7 +544,6 @@ public class WhileyFileLexer {
 		return isLetter(c) || isDigit(c);
 	}
 
-
 	/**
 	 * Raise a syntax error with a given message at given index.
 	 *
@@ -613,11 +634,11 @@ public class WhileyFileLexer {
 			// Constants
 			True("true"),
 			False("false"),
-			ByteValue,
-			RealValue,
-			IntValue,
-			CharValue,
-			StringValue,
+			BinaryLiteral,
+			IntegerLiteral,
+			HexLiteral,
+			CharLiteral,
+			StringLiteral,
 			// Types
 			Null("null"),
 			Void("void"),

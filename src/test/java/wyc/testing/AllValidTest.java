@@ -79,8 +79,18 @@ public class AllValidTest {
 		IGNORED.put("Intersection_Valid_1", "#843");
 		IGNORED.put("Intersection_Valid_2", "#843");
 		IGNORED.put("NegationType_Valid_3", "#843");
+		// Problems with relaxed versus strict subtype operator
+		IGNORED.put("Function_Valid_22", "#845");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
+		// Readable Reference Types
+		IGNORED.put("UnionType_Valid_26", "#849");
+		// Rethinking Runtime Type Test Operator ?
+		IGNORED.put("RecordAssign_Valid_11", "#850");
+		// Ambiguous coercions
+		IGNORED.put("TypeEquals_Valid_33", "#837");
+		IGNORED.put("TypeEquals_Valid_35", "#837");
+		IGNORED.put("Coercion_Valid_10", "#837");
 	}
 
 

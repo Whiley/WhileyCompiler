@@ -1,3 +1,3 @@
-tests/invalid/UnionType_Invalid_11.whiley:3: expected type int&bool, found bool
+tests/invalid/UnionType_Invalid_11.whiley:3: expected type void, found bool
     x.f = false
           ^^^^^

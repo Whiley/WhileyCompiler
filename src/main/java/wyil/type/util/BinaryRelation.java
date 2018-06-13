@@ -11,11 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package wyil.type.util;
+
 /**
- * Provides core algorithms for rewriting types, usually for the purposes of
- * simplification. Such simplifications are typically to aid human readability
- * of produced error messages and warnings (amongst other things).
+ * Implements a binary relation between values of a given type.
  *
  * @author David J. Pearce
+ *
+ * @param <L>
+ * @param <R>
  */
-package wyil.type.rewriters;
+public interface BinaryRelation<T> {
+
+	/**
+	 * Check whether a relationship exists between two values or not.
+	 *
+	 * @param lhs
+	 *            First value
+	 * @param rhs
+	 *            Second value
+	 * @return
+	 */
+	public boolean get(T lhs, T rhs);
+
+	/**
+	 * Set the relationship status between two values.
+	 *
+	 * @param lhs
+	 *            First value
+	 * @param rhs
+	 *            Second value
+	 * @param value
+	 *            Status (i.e. related or not)
+	 */
+	public void set(T lhs, T rhs, boolean value);
+}
