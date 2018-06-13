@@ -25,8 +25,37 @@ import static wyc.lang.WhileyFile.*;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * <p>
+ * A simple analysis of types to identify which are recurisve and which are not.
+ * This works by traversing all nominal types in a given Whiley file and check
+ * which lead back to themselves. For example:
+ * </p>
+ *
+ * <pre>
+ * type nat is (int x) where x >= 0
+ *
+ * type List is null|{int data, List next}
+ * </pre>
+ *
+ * <p>
+ * In traversing the type <code>nat</code>, we go into its definition and reach
+ * the terminal type <code>int</code>. Thus, <code>nat</code> is not considered
+ * a recursive type. However, in traversing the type <code>List</code> things
+ * are more complex. In this case, we get to its definition
+ * <code>null|{int data, List next}</code> and we then traverse down all paths
+ * of the union. On the first path, we reach the terminal type <code>null</code>
+ * and that traversal ends. On the second path, we reach
+ * <code>{int data, List next}</code> and, again, traverse all paths within.
+ * Eventually, we traverse the type <code>List</code> which has been encountered
+ * before. Hence, <code>List</code> is hereafter marked as a recursive type.
+ * </p>
+ *
+ * @author David J. Pearce
+ *
+ */
 public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WhileyFile> {
-  private final NameResolver resolver;
+	private final NameResolver resolver;
 
 	public RecursiveTypeAnalysis(CompileTask builder) {
 	  resolver = builder.getNameResolver();

@@ -18,9 +18,6 @@ import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyll.command.LowLevelCompile;
-import wyll.command.LowLevelDecompile;
-import wyll.core.WyllFile;
 import wyal.lang.WyalFile;
 import wyc.command.Compile;
 import wyc.command.Decompile;
@@ -46,8 +43,6 @@ public class Activator implements Module.Activator {
 				e.associate(WhileyFile.BinaryContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
-			} else if (suffix.equals("wyll")) {
-				e.associate(WyllFile.ContentType, null);
 			}
 		}
 
@@ -77,10 +72,8 @@ public class Activator implements Module.Activator {
 		final Command[] commands = {
 				new Compile(registry, logger),
 				new Decompile(registry, logger),
-				new Run(registry, logger),
-				new LowLevelCompile(registry,logger),
-				new LowLevelDecompile(registry,logger)
-				};
+				new Run(registry, logger)
+		};
 		// Register all commands
 		for (Command c : commands) {
 			context.register(wycc.lang.Command.class, c);
