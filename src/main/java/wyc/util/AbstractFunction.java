@@ -48,6 +48,7 @@ public abstract class AbstractFunction<P,R> {
 		case DECL_staticvar:
 			return visitStaticVariable((Decl.StaticVariable) decl, data);
 		case DECL_type:
+		case DECL_rectype:
 			return visitType((Decl.Type) decl, data);
 		case DECL_function:
 		case DECL_method:

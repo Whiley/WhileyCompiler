@@ -24,6 +24,7 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.stage.MoveAnalysis;
+import wyil.stage.RecursiveTypeAnalysis;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
@@ -215,6 +216,7 @@ public final class CompileTask implements Build.Task {
 			new StaticVariableCheck(this).check(wf);
 			new AmbiguousCoercionCheck(this).check(wf);
 			new MoveAnalysis(this).apply(wf);
+			new RecursiveTypeAnalysis(this).apply(wf);
 			// new CoercionCheck(this);
 		}
 

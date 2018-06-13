@@ -510,7 +510,7 @@ public class WhileyFileParser {
 	 * the decimal value "3.141592654". Constant declarations may also have
 	 * modifiers, such as <code>public</code> and <code>private</code>.
 	 *
-	 * @see wyc.lang.WhileyFile.StaticVariable
+	 * @see wyc.lang.WhielyFile.StaticVariable
 	 *
 	 * @param modifiers
 	 *            --- The list of modifiers for this declaration (which were

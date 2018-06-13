@@ -91,7 +91,6 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 		for (String arg : args) {
 			delta.add(new File(arg));
 		}
-
 		// FIXME: somehow, needing to use physical files at this point is
 		// rather cumbersome. It would be much better if the enclosing
 		// framework could handle this aspect for us.

@@ -5,6 +5,7 @@
 *.wyal
 *.wyasm
 *.wycs
+*.wyll
 *~
 *.c
 *.o
