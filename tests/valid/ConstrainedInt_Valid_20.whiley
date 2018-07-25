@@ -4,7 +4,8 @@ type a_nat is int
 
 type b_nat is int
 
-function f(a_nat x) -> b_nat:
+function f(a_nat x) -> b_nat
+requires x >= 0:
     if x == 0:
         return 1
     else:
