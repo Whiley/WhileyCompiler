@@ -36,6 +36,7 @@ import wyc.check.FunctionalCheck;
 import wyc.check.StaticVariableCheck;
 import wyc.lang.*;
 import wyc.util.WhileyFileResolver;
+import wycc.cfg.Configuration;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;

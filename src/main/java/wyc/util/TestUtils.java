@@ -19,23 +19,37 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import wyc.command.Compile;
-import wyc.command.Run;
+import wyal.lang.WyalFile;
+import wybs.lang.Build;
+import wybs.lang.NameID;
+import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.StdBuildRule;
+import wybs.util.StdProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.lang.WhileyFile.Type;
+import wyc.task.CompileTask;
+import wyc.task.Wyil2WyalBuilder;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.Trie;
+import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter;
+import wytp.provers.AutomatedTheoremProver;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -107,28 +121,110 @@ public class TestUtils {
 	}
 
 	/**
+	 * Identifies which whiley source files should be considered for compilation. By
+	 * default, all files reachable from srcdir are considered.
+	 */
+	private static Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+	/**
+	 * Identifies which WyIL source files should be considered for verification. By
+	 * default, all files reachable from srcdir are considered.
+	 */
+	private static Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
+	/**
+	 * Identifies which WyAL source files should be considered for verification. By
+	 * default, all files reachable from srcdir are considered.
+	 */
+	private static Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
+	/**
+	 * A simple default registry which knows about whiley files and wyil files.
+	 */
+	private static final Content.Registry registry = new wyc.Activator.Registry();
+
+	/**
 	 * Run the Whiley Compiler with the given list of arguments.
 	 *
-	 * @param args
-	 *            --- list of command-line arguments to provide to the Whiley
-	 *            Compiler.
+	 * @param args --- list of tests to compile.
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Compile.Result,String> compile(File whileydir, boolean verify, String... args) throws IOException {
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, String... args) throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
-		Content.Registry registry = new wyc.Activator.Registry();
-		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
-		cmd.setWhileydir(whileydir);
-		cmd.setWyaldir(whileydir); //
-		cmd.setVerify(verify);
-//		cmd.setVerbose(true);
-		Compile.Result result = cmd.execute(args);
+		//
+		boolean result = true;
+		//
+		try {
+			// Construct the project
+			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
+			StdProject project = new StdProject(Arrays.asList(root));
+			// Add build rules
+			addCompilationRules(project,root,verify);
+			// Identify source files and build project
+			project.build(findSourceFiles(root,args));
+			// Flush any created resources (e.g. wyil files)
+			root.flush();
+		} catch (SyntaxError e) {
+			// Print out the syntax error
+			e.outputSourceError(new PrintStream(syserr),false);
+			result = false;
+		} catch (Exception e) {
+			// Print out the syntax error
+			e.printStackTrace(new PrintStream(syserr));
+			result = false;
+		}
+		// Convert bytes produced into resulting string.
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
-		return new Pair<>(result,output);
+		return new Pair<>(result, output);
+	}
+
+	/**
+	 * Add compilation rules for compiling a Whiley file into a WyIL file and, where
+	 * appropriate, for performing verification as well.
+	 *
+	 * @param project
+	 * @param root
+	 * @param verify
+	 */
+	private static void addCompilationRules(StdProject project, Path.Root root, boolean verify) {
+		CompileTask task = new CompileTask(project);
+		// Add compilation rule(s) (whiley => wyil)
+		project.add(new StdBuildRule(task, root, whileyIncludes, null, root));
+		// Rule for compiling WyIL to WyAL. This will force generation of WyAL files
+		// regardless of whether verification is enabled or not.
+		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, null, root));
+		//
+		if(verify) {
+			// Only configure verification if we're actually going to do it!
+			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
+			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+			wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
+			wyalBuildTask.setVerify(verify);
+			project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, null, root));
+		}
+	}
+
+	/**
+	 * For each test, identify the corresponding Whiley file entry in the source
+	 * root.
+	 *
+	 * @param root
+	 * @param args
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, String... args) throws IOException {
+		List<Path.Entry<WhileyFile>> sources = new ArrayList<>();
+		for (String arg : args) {
+			Path.Entry<WhileyFile> e = root.get(Trie.fromString(arg), WhileyFile.ContentType);
+			if (e == null) {
+				throw new IllegalArgumentException("file not found: " + arg);
+			}
+			sources.add(e);
+		}
+		return sources;
 	}
 
 	/**
@@ -140,12 +236,38 @@ public class TestUtils {
 	 *            The name of the WyIL file
 	 * @throws IOException
 	 */
-	public static void execWyil(File wyilDir, Path.ID id) throws IOException {
-		Content.Registry registry = new wyc.Activator.Registry();
-		Run cmd = new Run(registry,Logger.NULL);
-		cmd.setWyildir(wyilDir);
-		cmd.execute(id.toString(),"test");
+	public static void execWyil(File wyildir, Path.ID id) throws IOException {
+		StdProject project = new StdProject();
+		project.roots().add(new DirectoryRoot(wyildir, registry));
+		// Empty signature
+		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
+		NameID name = new NameID(id, "test");
+		executeFunctionOrMethod(name, sig, project);
 	}
+
+	/**
+	 * Execute a given function or method in a wyil file.
+	 *
+	 * @param id
+	 * @param signature
+	 * @param project
+	 * @throws IOException
+	 */
+	private static void executeFunctionOrMethod(NameID id, Type.Callable signature, Build.Project project)
+			throws IOException {
+		// Try to run the given function or method
+		Interpreter interpreter = new Interpreter(project, System.out);
+		RValue[] returns = interpreter.execute(id, signature, interpreter.new CallStack());
+		// Print out any return values produced
+		if (returns != null) {
+			for (int i = 0; i != returns.length; ++i) {
+				if (i != 0) {
+					System.out.println(", ");
+				}
+				System.out.println(returns[i]);
+			}
+		}
+}
 
 	/**
 	 * Compare the output of executing java on the test case with a reference
