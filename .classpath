@@ -10,6 +10,7 @@
 		<attributes>
 			<attribute name="optional" value="true"/>
 			<attribute name="maven.pomderived" value="true"/>
+			<attribute name="test" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
@@ -23,7 +24,5 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry combineaccessrules="false" kind="src" path="/WhileyCompilerCollection"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/WhileyTheoremProver"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
