@@ -27,7 +27,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;
@@ -114,18 +113,16 @@ public class AllInvalidTest {
 	 */
 	protected void runTest(String name) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
-		// this will need to turn on verification at some point.
-		String filename = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		Pair<Compile.Result,String> p = TestUtils.compile(
+		Pair<Boolean,String> p = TestUtils.compile(
 				whileySrcDir,      // location of source directory
 				true,                // enable verification
-				filename);           // name of test to compile
+				name);           // name of test to compile
 
-		Compile.Result r = p.first();
+		boolean r = p.first();
 		String output = p.second();
 
-		if (r == Compile.Result.SUCCESS) {
+		if (r) {
 			// This indicates the problem is some form of assertion error.
 			// Therefore, execute the code whilst expecting an assertion failure
 			//try {
@@ -134,9 +131,6 @@ public class AllInvalidTest {
 //			} catch(AssertionError e) {
 //				// OK
 //			}
-		} else if (r == Compile.Result.INTERNAL_FAILURE) {
-			// This indicates some other kind of internal failure.
-			fail("Test caused internal failure!\n" + output);
 		} else {
 			// Now, let's check the expected output against the file which
 			// contains the sample output for this test

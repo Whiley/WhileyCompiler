@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;
@@ -129,25 +128,19 @@ public class AllValidTest {
 	 */
 	protected void runTest(String testName) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
-		// this will need to turn on verification at some point.
-		String whileyFilename = WHILEY_SRC_DIR + File.separatorChar + testName
-				+ ".whiley";
-
-		Pair<Compile.Result,String> p = TestUtils.compile(
+		//
+		Pair<Boolean,String> p = TestUtils.compile(
 				whileySrcDir,      // location of source directory
 				false,               // no verification
-				whileyFilename);     // name of test to compile
+				testName);     // name of test to compile
 
-		Compile.Result r = p.first();
+		boolean r = p.first();
 
 		System.out.print(p.second());
 
-		if (r != Compile.Result.SUCCESS) {
+		if (!r) {
 			fail("Test failed to compile!");
-		} else if (r == Compile.Result.INTERNAL_FAILURE) {
-			fail("Test caused internal failure!");
 		}
-
 		// Execute the compile WyIL file
 		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
 	}
