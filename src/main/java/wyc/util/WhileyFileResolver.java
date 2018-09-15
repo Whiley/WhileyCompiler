@@ -18,7 +18,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wyc.Activator;
 import wyc.lang.WhileyFile;
+import wycc.cfg.Configuration;
+
 import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.Build;
@@ -28,6 +31,7 @@ import wybs.lang.NameResolver;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Value;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -119,6 +123,38 @@ public final class WhileyFileResolver implements NameResolver {
 		}
 	}
 
+
+	/**
+	 * Load a given WyIL file from this project. This will search through local
+	 * roots and package dependencies in search of a matching file.
+	 *
+	 * @param id
+	 *            The module ID of the file to load.
+	 * @return
+	 * @throws IOException
+	 */
+	public Path.Entry<WhileyFile> load(Path.ID id) throws IOException {
+		// Check within this project
+		for(Path.Root root : project.getRoots()) {
+			Path.Entry<WhileyFile> e = root.get(id, WhileyFile.BinaryContentType);
+			if(e != null) {
+				return e;
+			}
+		}
+		// Check within dependencies
+		for(Build.Package pkg : project.getPackages()) {
+			Path.Root root = getPlatformBinaryRoot(pkg);
+			//
+			Path.Entry<WhileyFile> e = root.get(id, WhileyFile.BinaryContentType);
+			if(e != null) {
+				return e;
+			}
+		}
+		//
+		return null;
+	}
+
+
 	private WhileyFile loadModule(NameID nid, CompilationUnit.Name name) throws IOException, ResolutionError {
 		WhileyFile enclosing = getWhileyFile(name.getHeap());
 		if (enclosing.getEntry().id().equals(nid.module())) {
@@ -131,7 +167,7 @@ public final class WhileyFileResolver implements NameResolver {
 			return enclosing;
 		} else {
 			// This is a non-local lookup.
-			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
+			Path.Entry<WhileyFile> entry = load(nid.module());
 			if (entry != null) {
 				return entry.read();
 			} else {
@@ -190,25 +226,27 @@ public final class WhileyFileResolver implements NameResolver {
 			}
 			// Check whether name is fully qualified or not
 			NameID nid = name.toNameID();
-			if (name.size() > 1 && project.exists(nid.module(), WhileyFile.BinaryContentType)) {
-				// Yes, this is a fully qualified name so load the module
-				WhileyFile module = project.get(nid.module(), WhileyFile.BinaryContentType).read();
-				// Look inside to see whether a matching item is found
-				if (localNameLookup(nid.name(), module)) {
-					return nid;
+			if (name.size() > 1) {
+				// Could be fully or partially qualified name
+				Path.Entry<WhileyFile> e = load(nid.module());
+				if (e != null) {
+					// Look inside to see whether a matching item is found
+					if (localNameLookup(nid.name(), e.read())) {
+						return nid;
+					}
+				} else {
+					// If we get here, then there is still an actual chance it could
+					// be referring to something declared in this compilation unit
+					// (i.e. a local lookup with a partially- or fully-qualified
+					// name)
+					Path.ID localPathID = enclosing.getEntry().id();
+					//
+					if (matchPartialModulePath(nid.module(), localPathID)) {
+						// Yes, ok, we've matched a local item!
+						return new NameID(localPathID, nid.name());
+					}
+					// Otherwise, we really couldn't figure out this name.
 				}
-			} else if(name.size() > 1){
-				// If we get here, then there is still an actual chance it could
-				// be referring to something declared in this compilation unit
-				// (i.e. a local lookup with a partially- or fully-qualified
-				// name)
-				Path.ID localPathID = enclosing.getEntry().id();
-				//
-				if (matchPartialModulePath(nid.module(), localPathID)) {
-					// Yes, ok, we've matched a local item!
-					return new NameID(localPathID, nid.name());
-				}
-				// Otherwise, we really couldn't figure out this name.
 			}
 		} catch (IOException e) {
 
@@ -261,16 +299,18 @@ public final class WhileyFileResolver implements NameResolver {
 			}
 		} else if(name.size() > 1) {
 			//
-			for (Path.Entry<WhileyFile> module : expandImport(imp)) {
+			for (Path.Entry<WhileyFile> e : expandImport(imp)) {
+				WhileyFile module = e.read();
+				Path.ID id = toPathID(module.getModule().getName());
 				// Determine whether this concrete module path matches the partial
 				// module path or not.
-				if (matchPartialModulePath(nid.module(), module.id())) {
+				if (matchPartialModulePath(nid.module(), id)) {
 					// Yes, it does match. Therefore, do we now have a valid name
 					// identifier?
-					if (localNameLookup(nid.name(), module.read())) {
+					if (localNameLookup(nid.name(), module)) {
 						// Ok, we have found a matching item. Therefore, we are
 						// done.
-						return new NameID(module.id(), nid.name());
+						return new NameID(id, nid.name());
 					}
 				}
 			}
@@ -322,6 +362,7 @@ public final class WhileyFileResolver implements NameResolver {
 	private List<Path.Entry<WhileyFile>> expandImport(WhileyFile.Decl.Import imp) throws IOException {
 		Trie filter = Trie.ROOT;
 		Tuple<Identifier> path = imp.getPath();
+		//
 		for (int i = 0; i != path.size(); ++i) {
 			Identifier component = path.get(i);
 			if (component == null) {
@@ -330,7 +371,30 @@ public final class WhileyFileResolver implements NameResolver {
 				filter = filter.append(component.get());
 			}
 		}
-		return project.get(Content.filter(filter, WhileyFile.BinaryContentType));
+		//
+		Content.Filter<WhileyFile> cf = Content.filter(filter, WhileyFile.BinaryContentType);
+		//
+		ArrayList<Path.Entry<WhileyFile>> matches = new ArrayList<>();
+		//
+		for(Path.Root root : project.getRoots()) {
+			matches.addAll(root.get(cf));
+		}
+		// Check within dependencies
+		for(Build.Package pkg : project.getPackages()) {
+			Path.Root root = getPlatformBinaryRoot(pkg);
+			matches.addAll(root.get(cf));
+		}
+		return matches;
+	}
+
+	private Path.Root getPlatformBinaryRoot(Build.Package pkg) throws IOException {
+		// Extract package configuration. This tells us where the binary root for the
+		// "whiley" platform is.
+		Configuration configuration = pkg.getConfiguration();
+		// Extract the path for the binary root of the Whiley platform.
+		Path.ID binroot = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
+		// Create relative root from pkg root.
+		return pkg.getRoot().createRelativeRoot(binroot);
 	}
 
 	public WhileyFile getWhileyFile(SyntacticHeap heap) {
@@ -339,5 +403,13 @@ public final class WhileyFileResolver implements NameResolver {
 		} else {
 			return getWhileyFile(heap.getParent());
 		}
+	}
+
+	private Path.ID toPathID(CompilationUnit.Name name) {
+		Trie r = Trie.ROOT;
+		for(int i=0;i!=name.size();++i) {
+			r = r.append(name.get(i).get());
+		}
+		return r;
 	}
 }
