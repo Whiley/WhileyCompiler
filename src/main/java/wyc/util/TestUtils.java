@@ -238,7 +238,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
 		StdProject project = new StdProject();
-		project.roots().add(new DirectoryRoot(wyildir, registry));
+		project.getRoots().add(new DirectoryRoot(wyildir, registry));
 		// Empty signature
 		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
 		NameID name = new NameID(id, "test");

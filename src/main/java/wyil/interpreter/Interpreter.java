@@ -57,7 +57,7 @@ public class Interpreter {
 	/**
 	 * Provides mechanism for resolving names.
 	 */
-	private final NameResolver resolver;
+	private final WhileyFileResolver resolver;
 
 	/**
 	 * Determines the underlying semantics used for this interpreter.
@@ -110,7 +110,7 @@ public class Interpreter {
 			// NOTE: need to read WyilFile here as, otherwose, it forces a
 			// rereading of the Whiley source file and a loss of all generation
 			// information.
-			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
+			Path.Entry<WhileyFile> entry = resolver.load(nid.module());
 			if (entry == null) {
 				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
 			}
@@ -1442,7 +1442,7 @@ public class Interpreter {
 				// to be loaded.
 				modules.add(mid);
 				try {
-					WhileyFile module = project.get(mid, WhileyFile.BinaryContentType).read();
+					WhileyFile module = resolver.load(mid).read();
 					for (WhileyFile.Decl d : module.getDeclarations()) {
 						if (d instanceof Decl.StaticVariable) {
 							Decl.StaticVariable decl = (Decl.StaticVariable) d;

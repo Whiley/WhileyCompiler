@@ -39,12 +39,12 @@ import wyc.task.CompileTask;
 
 public class Activator implements Module.Activator {
 
-	private static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
-	private static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
+	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
+	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
-	private static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
