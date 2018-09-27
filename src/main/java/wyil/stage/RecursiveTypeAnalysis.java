@@ -17,10 +17,10 @@ import wybs.lang.Build;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.util.AbstractConsumer;
-import wyc.lang.WhileyFile;
+import wyil.lang.WyilFile;
 import wyc.task.CompileTask;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -54,7 +54,7 @@ import java.util.Set;
  * @author David J. Pearce
  *
  */
-public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WhileyFile> {
+public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WyilFile> {
 	private final NameResolver resolver;
 
 	public RecursiveTypeAnalysis(CompileTask builder) {
@@ -62,7 +62,7 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	}
 
 	@Override
-	public void apply(WhileyFile module) {
+	public void apply(WyilFile module) {
 		visitWhileyFile(module, new HashSet<>());
 	}
 
@@ -106,7 +106,7 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	@Override
 	public void visitTypeNominal(Type.Nominal type, Set<Name> visited) {
 		try {
-			Decl.Type decl = resolver.resolveExactly(type.getName(), WhileyFile.Decl.Type.class);
+			Decl.Type decl = resolver.resolveExactly(type.getName(), WyilFile.Decl.Type.class);
 			visitType(decl, visited);
 		} catch (ResolutionError e) {
 			throw new IllegalArgumentException("invalid nominal type: " + type);

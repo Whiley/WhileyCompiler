@@ -28,6 +28,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -554,7 +555,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, new WhileyFile.Attribute.Span(null,index,index));
+		throw new SyntaxError(msg, entry, new WyilFile.Attribute.Span(null,index,index));
 
 	}
 

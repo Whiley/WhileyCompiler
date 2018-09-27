@@ -13,14 +13,14 @@
 // limitations under the License.
 package wyil.stage;
 
+import static wyil.lang.WyilFile.*;
+
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.AbstractConsumer;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.Stmt;
-
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Stmt;
 
 /**
  * <p>
@@ -65,13 +65,13 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WhileyFile> {
+public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WyilFile> {
 	public MoveAnalysis(Build.Task builder) {
 
 	}
 
 	@Override
-	public void apply(WhileyFile module) {
+	public void apply(WyilFile module) {
 		visitWhileyFile(module,null);
 	}
 

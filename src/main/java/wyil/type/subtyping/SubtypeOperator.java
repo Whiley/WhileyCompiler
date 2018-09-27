@@ -13,15 +13,15 @@
 // limitations under the License.
 package wyil.type.subtyping;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
 
 import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 
 /**

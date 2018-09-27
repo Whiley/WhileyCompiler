@@ -30,6 +30,9 @@ import wybs.util.AbstractCompilationUnit.Value;
 import wyc.check.FlowTypeUtils.Environment;
 import wyc.util.AbstractVisitor;
 import wycc.util.ArrayUtils;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.RelaxedTypeEmptinessTest;
@@ -37,13 +40,10 @@ import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -122,14 +122,14 @@ public class FlowTypeCheck {
 	// WhileyFile(s)
 	// =========================================================================
 
-	public void check(List<WhileyFile> files) {
+	public void check(List<WyilFile> files) {
 		// Perform necessary type checking of Whiley files
-		for (WhileyFile wf : files) {
+		for (WyilFile wf : files) {
 			check(wf);
 		}
 	}
 
-	public void check(WhileyFile wf) {
+	public void check(WyilFile wf) {
 		for (Decl decl : wf.getDeclarations()) {
 			check(decl);
 		}
@@ -2047,8 +2047,8 @@ public class FlowTypeCheck {
 	 */
 	private Type.Method substitute(Type.Method method, Map<Identifier,Identifier> binding) {
 		// Proceed with the potentially updated binding
-		Tuple<Type> parameters = WhileyFile.substitute(method.getParameters(), binding);
-		Tuple<Type> returns = WhileyFile.substitute(method.getReturns(), binding);
+		Tuple<Type> parameters = WyilFile.substitute(method.getParameters(), binding);
+		Tuple<Type> returns = WyilFile.substitute(method.getReturns(), binding);
 		return new Type.Method(parameters, returns, method.getCapturedLifetimes(), new Tuple<>());
 	}
 

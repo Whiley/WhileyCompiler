@@ -19,11 +19,11 @@ import java.util.*;
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.NameResolver;
-import wyc.lang.WhileyFile;
 import wyc.util.WhileyFileResolver;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
 import wyil.stage.VerificationConditionGenerator;
 
 /**
@@ -79,7 +79,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 		NameResolver resolver = new WhileyFileResolver(project);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) p.first();
+			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
 			graph.registerDerivation(source, target);

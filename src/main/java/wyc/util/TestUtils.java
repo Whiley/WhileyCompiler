@@ -38,7 +38,6 @@ import wybs.util.StdProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 import wyc.task.Wyil2WyalBuilder;
 import wycc.util.Logger;
@@ -48,6 +47,8 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
 import wytp.provers.AutomatedTheoremProver;
 
@@ -68,7 +69,7 @@ public class TestUtils {
 	 */
 	public static Type fromString(String from) {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
-		WhileyFile wf = new WhileyFile(null);
+		WyilFile wf = new WyilFile(null);
 		WhileyFileParser parser = new WhileyFileParser(wf, tokens);
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
@@ -129,7 +130,7 @@ public class TestUtils {
 	 * Identifies which WyIL source files should be considered for verification. By
 	 * default, all files reachable from srcdir are considered.
 	 */
-	private static Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
+	private static Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 	/**
 	 * Identifies which WyAL source files should be considered for verification. By
 	 * default, all files reachable from srcdir are considered.

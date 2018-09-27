@@ -17,7 +17,7 @@ package wyil.type.subtyping;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.SemanticType;
+import wyil.lang.WyilFile.SemanticType;
 import wyil.type.util.BinaryRelation;
 
 /**

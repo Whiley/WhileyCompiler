@@ -22,6 +22,8 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
@@ -34,7 +36,6 @@ import wybs.lang.NameID;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 
 public class Activator implements Module.Activator {
@@ -80,7 +81,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Type<?> getTargetType() {
-			return WhileyFile.BinaryContentType;
+			return WyilFile.ContentType;
 		}
 
 		@Override
@@ -90,7 +91,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Filter<?> getTargetFilter() {
-			return Content.filter("**", WhileyFile.BinaryContentType);
+			return Content.filter("**", WyilFile.ContentType);
 		}
 
 		@Override
@@ -137,7 +138,7 @@ public class Activator implements Module.Activator {
 			if (suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
 			} else if (suffix.equals("wyil")) {
-				e.associate(WhileyFile.BinaryContentType, null);
+				e.associate(WyilFile.ContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
 			}
@@ -169,7 +170,7 @@ public class Activator implements Module.Activator {
 		context.register(Build.Platform.class, WHILEY_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
-		context.register(Content.Type.class, WhileyFile.BinaryContentType);
+		context.register(Content.Type.class, WyilFile.ContentType);
 		// Done
 		return new Module() {
 			// what goes here?

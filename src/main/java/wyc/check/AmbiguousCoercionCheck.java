@@ -23,12 +23,12 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 import wyc.util.AbstractTypedVisitor;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.BinaryRelation;
@@ -88,7 +88,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 				new SubtypeOperator(builder.getNameResolver(), new StrictTypeEmptinessTest(builder.getNameResolver())));
 	}
 
-	public void check(WhileyFile file) {
+	public void check(WyilFile file) {
 		visitWhileyFile(file);
 	}
 

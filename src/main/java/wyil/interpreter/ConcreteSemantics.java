@@ -13,6 +13,8 @@
 // limitations under the License.
 package wyil.interpreter;
 
+import static wyil.lang.WyilFile.*;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -22,8 +24,6 @@ import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
-
-import static wyc.lang.WhileyFile.*;
 
 public class ConcreteSemantics implements AbstractSemantics {
 

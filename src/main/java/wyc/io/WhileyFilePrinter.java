@@ -13,16 +13,16 @@
 // limitations under the License.
 package wyc.io;
 
+import static wyil.lang.WyilFile.*;
+
 import java.io.*;
 import java.util.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile;
 import wyc.util.AbstractConsumer;
 import wyc.util.AbstractVisitor;
-
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
 
 /**
  * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.
@@ -54,12 +54,12 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	// Apply Method
 	// ======================================================================
 
-	public void apply(WhileyFile module) {
+	public void apply(WyilFile module) {
 		visitWhileyFile(module,0);
 	}
 
 	@Override
-	public void visitWhileyFile(WhileyFile module, Integer indent) {
+	public void visitWhileyFile(WyilFile module, Integer indent) {
 		out.println();
 		super.visitWhileyFile(module, indent);
 		out.flush();
@@ -518,8 +518,8 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitRecordInitialiser(Expr.RecordInitialiser expr, Integer indent) {
 		out.print("{");
-		Tuple<WhileyFile.Identifier> fields = expr.getFields();
-		Tuple<WhileyFile.Expr> operands = expr.getOperands();
+		Tuple<WyilFile.Identifier> fields = expr.getFields();
+		Tuple<WyilFile.Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
 			Identifier field = fields.get(i);
 			Expr operand = operands.get(i);

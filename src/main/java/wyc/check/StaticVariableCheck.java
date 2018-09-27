@@ -6,13 +6,13 @@ import java.util.Set;
 import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.SyntaxError;
-import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
+import wyil.lang.WyilFile;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.CYCLIC_STATIC_INITIALISER;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	private final NameResolver resolver;
@@ -21,7 +21,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 		this.resolver = builder.getNameResolver();
 	}
 
-	public void check(WhileyFile wf) {
+	public void check(WyilFile wf) {
 		visitWhileyFile(wf, null);
 	}
 
@@ -35,7 +35,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 			if (accessed.contains(name)) {
 				// Indicates a cyclic static initialiser has been detected
 				String msg = errorMessage(CYCLIC_STATIC_INITIALISER);
-				WhileyFile file = ((WhileyFile) initialiser.getHeap());
+				WyilFile file = ((WyilFile) initialiser.getHeap());
 				throw new SyntaxError(msg, file.getEntry(), initialiser);
 			}
 		}

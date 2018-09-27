@@ -17,13 +17,13 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -80,7 +80,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		this.resolver = builder.getNameResolver();
 	}
 
-	public void check(WhileyFile file) {
+	public void check(WyilFile file) {
 		visitWhileyFile(file, null);
 	}
 
@@ -232,19 +232,19 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 
 	public void invalidObjectAllocation(SyntacticItem expression, Context context) {
 		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	public void invalidMethodCall(SyntacticItem expression, Context context) {
 		String msg = errorMessage(METHODCALL_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	public void invalidReferenceAccess(SyntacticItem expression, Context context) {
 		String msg = errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 }

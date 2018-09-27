@@ -13,14 +13,14 @@
 // limitations under the License.
 package wyc.check;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.PARAMETER_REASSIGNED;
 import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
-import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.util.AbstractFunction;
+import wyil.lang.WyilFile;
 
 import java.util.BitSet;
 
@@ -83,7 +83,7 @@ public class DefiniteUnassignmentCheck
 	 */
 	private boolean finalParameters = false;
 
-	public void check(WhileyFile wf) {
+	public void check(WyilFile wf) {
 		visitWhileyFile(wf, null);
 	}
 
@@ -224,10 +224,10 @@ public class DefiniteUnassignmentCheck
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
 		if (finalParameters && isParameter(var)) {
-			WhileyFile file = ((WhileyFile) lval.getHeap());
+			WyilFile file = ((WyilFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
 		} else if (isFinal(var) && environment.contains(var)) {
-			WhileyFile file = ((WhileyFile) lval.getHeap());
+			WyilFile file = ((WyilFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
 		}
 	}
@@ -237,7 +237,7 @@ public class DefiniteUnassignmentCheck
 			// FIXME: we shouldn't have to perform resolution here.
 			Decl.StaticVariable var = resolver.resolveExactly(lval.getName(), Decl.StaticVariable.class);
 			if (isFinal(var)) {
-				WhileyFile file = ((WhileyFile) lval.getHeap());
+				WyilFile file = ((WyilFile) lval.getHeap());
 				throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
 			}
 		} catch (ResolutionError e) {

@@ -17,9 +17,9 @@ import java.math.BigInteger;
 
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Stmt;
-import wyc.lang.WhileyFile.Type;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 
 /**
  * Provides a generic notion of data types for use within the interpreter. Each

@@ -22,16 +22,16 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
-import wyc.lang.WhileyFile.Type.Array;
-import wyc.lang.WhileyFile.Type.Function;
-import wyc.lang.WhileyFile.Type.Method;
-import wyc.lang.WhileyFile.Type.Record;
-import wyc.lang.WhileyFile.Type.Reference;
 import wyc.util.ErrorMessages;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.util.AbstractTypeCombinator.LinkageStack;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Array;
+import wyil.lang.WyilFile.Type.Function;
+import wyil.lang.WyilFile.Type.Method;
+import wyil.lang.WyilFile.Type.Record;
+import wyil.lang.WyilFile.Type.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
 public class TypeSubtractor extends AbstractTypeCombinator {

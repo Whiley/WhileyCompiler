@@ -17,10 +17,9 @@ package wyil.testing;
 
 import org.junit.*;
 import static org.junit.Assert.*;
+import static wyil.lang.WyilFile.Type;
 
 import wybs.lang.NameResolver;
-import static wyc.lang.WhileyFile.Type;
-
 import wyc.util.TestUtils;
 import wyil.type.subtyping.RelaxedTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;

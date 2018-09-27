@@ -14,18 +14,18 @@
 package wyc.util;
 
 import wyc.check.FlowTypeUtils.Environment;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Stmt;
-import wyc.lang.WhileyFile.Type;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.AbstractTypeFilter;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public abstract class AbstractTypedVisitor {
 		this.subtypeOperator = subtypeOperator;
 	}
 
-	public void visitWhileyFile(WhileyFile wf) {
+	public void visitWhileyFile(WyilFile wf) {
 		for (Decl decl : wf.getDeclarations()) {
 			visitDeclaration(decl);
 		}
@@ -1100,7 +1100,7 @@ public abstract class AbstractTypedVisitor {
 		for (int i = 0; i != declared.size(); ++i) {
 			binding.put(declared.get(i), actual.get(i));
 		}
-		return WhileyFile.substitute(type.getParameters(),binding);
+		return WyilFile.substitute(type.getParameters(),binding);
 	}
 
 	public Decl.Method resolveMethod(Name name, Type.Method signature) {

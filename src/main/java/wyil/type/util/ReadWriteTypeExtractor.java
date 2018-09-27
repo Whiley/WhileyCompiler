@@ -13,19 +13,21 @@
 // limitations under the License.
 package wyil.type.util;
 
-import wyc.lang.WhileyFile.Type;
-import wyc.lang.WhileyFile.SemanticType.Array;
-import wyc.lang.WhileyFile.SemanticType.Atom;
-import wyc.lang.WhileyFile.SemanticType.Record;
-import wyc.lang.WhileyFile.SemanticType.Reference;
 import wyc.util.ErrorMessages;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.util.AbstractTypeCombinator.LinkageStack;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.SemanticType.Array;
+import wyil.lang.WyilFile.SemanticType.Atom;
+import wyil.lang.WyilFile.SemanticType.Record;
+import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
 import java.util.ArrayList;
@@ -37,8 +39,6 @@ import wybs.lang.SyntaxError;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
 
 /**
  * <p>

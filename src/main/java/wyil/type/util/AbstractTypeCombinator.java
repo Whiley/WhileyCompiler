@@ -13,36 +13,37 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyc.lang.WhileyFile.TYPE_array;
-import static wyc.lang.WhileyFile.TYPE_bool;
-import static wyc.lang.WhileyFile.TYPE_byte;
-import static wyc.lang.WhileyFile.TYPE_function;
-import static wyc.lang.WhileyFile.TYPE_int;
-import static wyc.lang.WhileyFile.TYPE_method;
-import static wyc.lang.WhileyFile.TYPE_nominal;
-import static wyc.lang.WhileyFile.TYPE_null;
-import static wyc.lang.WhileyFile.TYPE_record;
-import static wyc.lang.WhileyFile.TYPE_reference;
-import static wyc.lang.WhileyFile.TYPE_staticreference;
-import static wyc.lang.WhileyFile.TYPE_union;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import wyc.lang.WhileyFile.Type;
+
 import wybs.lang.CompilationUnit;
 import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Ref;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.SubtypeOperator;
 
 public abstract class AbstractTypeCombinator {

@@ -23,6 +23,7 @@ import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyil.lang.WyilFile;
 import wyil.stage.MoveAnalysis;
 import wyil.stage.RecursiveTypeAnalysis;
 import wybs.lang.*;
@@ -34,6 +35,7 @@ import wyc.check.DefiniteUnassignmentCheck;
 import wyc.check.FlowTypeCheck;
 import wyc.check.FunctionalCheck;
 import wyc.check.StaticVariableCheck;
+import wyc.io.WhileyFileParser;
 import wyc.lang.*;
 import wyc.util.WhileyFileResolver;
 import wycc.cfg.Configuration;
@@ -109,7 +111,7 @@ public final class CompileTask implements Build.Task {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private final HashMap<Path.ID, Path.Entry<WhileyFile>> srcFiles = new HashMap<>();
+	private final HashMap<Path.ID, Path.Entry<WyilFile>> srcFiles = new HashMap<>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -163,7 +165,7 @@ public final class CompileTask implements Build.Task {
 
 		int count = 0;
 
-		ArrayList<WhileyFile> binaryFiles = new ArrayList<>();
+		ArrayList<WyilFile> binaryFiles = new ArrayList<>();
 		Set<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
@@ -172,8 +174,8 @@ public final class CompileTask implements Build.Task {
 				Path.Root bindir = p.second();
 				// Parse Whiley source file. This may produce errors at this
 				// stage, which means compilation of this file cannot proceed
-				WhileyFile wf = source.read();
-				Path.Entry<WhileyFile> target = bindir.create(entry.id(), WhileyFile.BinaryContentType);
+				Path.Entry<WyilFile> target = bindir.create(entry.id(), WyilFile.ContentType);
+				WyilFile wf = compile(source,target);
 				target.write(wf);
 				binaryFiles.add(wf);
 				generatedFiles.add(target);
@@ -210,7 +212,7 @@ public final class CompileTask implements Build.Task {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		for (WhileyFile wf : binaryFiles) {
+		for (WyilFile wf : binaryFiles) {
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck(this).check(wf);
 			new FunctionalCheck(this).check(wf);
@@ -233,5 +235,19 @@ public final class CompileTask implements Build.Task {
 				startMemory - runtime.freeMemory());
 
 		return generatedFiles;
+	}
+
+	/**
+	 * Compile one or more WhileyFiles into a given WyilFile
+	 *
+	 * @param source The source file being compiled.
+	 * @param target The target file being generated.
+	 * @return
+	 * @throws IOException
+	 */
+	private WyilFile compile(Path.Entry<WhileyFile> source, Path.Entry<WyilFile> target) throws IOException {
+		WhileyFile wyf = source.read();
+		WhileyFileParser wyp = new WhileyFileParser(new WyilFile(target), wyf.getTokens());
+		return wyp.read();
 	}
 }

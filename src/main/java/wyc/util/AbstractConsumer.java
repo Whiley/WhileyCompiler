@@ -13,11 +13,11 @@
 // limitations under the License.
 package wyc.util;
 
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
+import static wyil.lang.WyilFile.*;
 
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -30,7 +30,7 @@ import static wyc.lang.WhileyFile.*;
  */
 public abstract class AbstractConsumer<T> {
 
-	public void visitWhileyFile(WhileyFile wf, T data) {
+	public void visitWhileyFile(WyilFile wf, T data) {
 		for (Decl decl : wf.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}

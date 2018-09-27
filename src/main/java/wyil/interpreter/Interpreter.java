@@ -24,14 +24,13 @@ import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyc.util.WhileyFileResolver;
 
-import static wyc.lang.WhileyFile.*;
 import static wyil.interpreter.ConcreteSemantics.LValue;
 import static wyil.interpreter.ConcreteSemantics.RValue;
-
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -110,12 +109,12 @@ public class Interpreter {
 			// NOTE: need to read WyilFile here as, otherwose, it forces a
 			// rereading of the Whiley source file and a loss of all generation
 			// information.
-			Path.Entry<WhileyFile> entry = resolver.load(nid.module());
+			Path.Entry<WyilFile> entry = resolver.load(nid.module());
 			if (entry == null) {
 				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
 			}
 			// Second, find the given function or method
-			WhileyFile wyilFile = entry.read();
+			WyilFile wyilFile = entry.read();
 			Decl.Callable fmp = wyilFile.getDeclaration(name, sig,
 					Decl.Callable.class);
 			if (fmp == null) {
@@ -222,43 +221,43 @@ public class Interpreter {
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
 		try {
 			switch (stmt.getOpcode()) {
-			case WhileyFile.STMT_assert:
+			case WyilFile.STMT_assert:
 				return executeAssert((Stmt.Assert) stmt, frame, scope);
-			case WhileyFile.STMT_assume:
+			case WyilFile.STMT_assume:
 				return executeAssume((Stmt.Assume) stmt, frame, scope);
-			case WhileyFile.STMT_assign:
+			case WyilFile.STMT_assign:
 				return executeAssign((Stmt.Assign) stmt, frame, scope);
-			case WhileyFile.STMT_break:
+			case WyilFile.STMT_break:
 				return executeBreak((Stmt.Break) stmt, frame, scope);
-			case WhileyFile.STMT_continue:
+			case WyilFile.STMT_continue:
 				return executeContinue((Stmt.Continue) stmt, frame, scope);
-			case WhileyFile.STMT_debug:
+			case WyilFile.STMT_debug:
 				return executeDebug((Stmt.Debug) stmt, frame, scope);
-			case WhileyFile.STMT_dowhile:
+			case WyilFile.STMT_dowhile:
 				return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
-			case WhileyFile.STMT_fail:
+			case WyilFile.STMT_fail:
 				return executeFail((Stmt.Fail) stmt, frame, scope);
-			case WhileyFile.STMT_if:
-			case WhileyFile.STMT_ifelse:
+			case WyilFile.STMT_if:
+			case WyilFile.STMT_ifelse:
 				return executeIf((Stmt.IfElse) stmt, frame, scope);
-			case WhileyFile.EXPR_indirectinvoke:
+			case WyilFile.EXPR_indirectinvoke:
 				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 				return Status.NEXT;
-			case WhileyFile.EXPR_invoke:
+			case WyilFile.EXPR_invoke:
 				executeInvoke((Expr.Invoke) stmt, frame);
 				return Status.NEXT;
-			case WhileyFile.STMT_namedblock:
+			case WyilFile.STMT_namedblock:
 				return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
-			case WhileyFile.STMT_while:
+			case WyilFile.STMT_while:
 				return executeWhile((Stmt.While) stmt, frame, scope);
-			case WhileyFile.STMT_return:
+			case WyilFile.STMT_return:
 				return executeReturn((Stmt.Return) stmt, frame, scope);
-			case WhileyFile.STMT_skip:
+			case WyilFile.STMT_skip:
 				return executeSkip((Stmt.Skip) stmt, frame, scope);
-			case WhileyFile.STMT_switch:
+			case WyilFile.STMT_switch:
 				return executeSwitch((Stmt.Switch) stmt, frame, scope);
-			case WhileyFile.DECL_variableinitialiser:
-			case WhileyFile.DECL_variable:
+			case WyilFile.DECL_variableinitialiser:
+			case WyilFile.DECL_variable:
 				return executeVariableDeclaration((Decl.Variable) stmt, frame);
 			}
 		}
@@ -273,7 +272,7 @@ public class Interpreter {
 
 	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
 		// FIXME: handle multi-assignments properly
-		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
+		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
 			LValue lval = constructLVal(lhs.get(i), frame);
@@ -589,134 +588,134 @@ public class Interpreter {
 		try {
 			RValue val;
 			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_constant:
+			case WyilFile.EXPR_constant:
 				val = executeConst((Expr.Constant) expr, frame);
 				break;
-			case WhileyFile.EXPR_cast:
+			case WyilFile.EXPR_cast:
 				val = executeConvert((Expr.Cast) expr, frame);
 				break;
-			case WhileyFile.EXPR_recordinitialiser:
+			case WyilFile.EXPR_recordinitialiser:
 				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 				break;
-			case WhileyFile.EXPR_recordaccess:
-			case WhileyFile.EXPR_recordborrow:
+			case WyilFile.EXPR_recordaccess:
+			case WyilFile.EXPR_recordborrow:
 				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_indirectinvoke:
+			case WyilFile.EXPR_indirectinvoke:
 				val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
 				break;
-			case WhileyFile.EXPR_invoke:
+			case WyilFile.EXPR_invoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
-			case WhileyFile.EXPR_variablemove:
-			case WhileyFile.EXPR_variablecopy:
+			case WyilFile.EXPR_variablemove:
+			case WyilFile.EXPR_variablecopy:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_staticvariable:
+			case WyilFile.EXPR_staticvariable:
 				val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_is:
+			case WyilFile.EXPR_is:
 				val = executeIs((Expr.Is) expr, frame);
 				break;
-			case WhileyFile.EXPR_logicalnot:
+			case WyilFile.EXPR_logicalnot:
 				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
 				break;
-			case WhileyFile.EXPR_logicaland:
+			case WyilFile.EXPR_logicaland:
 				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
 				break;
-			case WhileyFile.EXPR_logicalor:
+			case WyilFile.EXPR_logicalor:
 				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 				break;
-			case WhileyFile.EXPR_logiaclimplication:
+			case WyilFile.EXPR_logiaclimplication:
 				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 				break;
-			case WhileyFile.EXPR_logicaliff:
+			case WyilFile.EXPR_logicaliff:
 				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
 				break;
-			case WhileyFile.EXPR_logicalexistential:
-			case WhileyFile.EXPR_logicaluniversal:
+			case WyilFile.EXPR_logicalexistential:
+			case WyilFile.EXPR_logicaluniversal:
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
-			case WhileyFile.EXPR_equal:
+			case WyilFile.EXPR_equal:
 				val = executeEqual((Expr.Equal) expr, frame);
 				break;
-			case WhileyFile.EXPR_notequal:
+			case WyilFile.EXPR_notequal:
 				val = executeNotEqual((Expr.NotEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_integernegation:
+			case WyilFile.EXPR_integernegation:
 				val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
 				break;
-			case WhileyFile.EXPR_integeraddition:
+			case WyilFile.EXPR_integeraddition:
 				val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
 				break;
-			case WhileyFile.EXPR_integersubtraction:
+			case WyilFile.EXPR_integersubtraction:
 				val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
 				break;
-			case WhileyFile.EXPR_integermultiplication:
+			case WyilFile.EXPR_integermultiplication:
 				val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
 				break;
-			case WhileyFile.EXPR_integerdivision:
+			case WyilFile.EXPR_integerdivision:
 				val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
 				break;
-			case WhileyFile.EXPR_integerremainder:
+			case WyilFile.EXPR_integerremainder:
 				val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
 				break;
-			case WhileyFile.EXPR_integerlessthan:
+			case WyilFile.EXPR_integerlessthan:
 				val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
 				break;
-			case WhileyFile.EXPR_integerlessequal:
+			case WyilFile.EXPR_integerlessequal:
 				val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_integergreaterthan:
+			case WyilFile.EXPR_integergreaterthan:
 				val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
 				break;
-			case WhileyFile.EXPR_integergreaterequal:
+			case WyilFile.EXPR_integergreaterequal:
 				val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwisenot:
+			case WyilFile.EXPR_bitwisenot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseor:
+			case WyilFile.EXPR_bitwiseor:
 				val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwisexor:
+			case WyilFile.EXPR_bitwisexor:
 				val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseand:
+			case WyilFile.EXPR_bitwiseand:
 				val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseshl:
+			case WyilFile.EXPR_bitwiseshl:
 				val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseshr:
+			case WyilFile.EXPR_bitwiseshr:
 				val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
 				break;
-			case WhileyFile.EXPR_arrayborrow:
-			case WhileyFile.EXPR_arrayaccess:
+			case WyilFile.EXPR_arrayborrow:
+			case WyilFile.EXPR_arrayaccess:
 				val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
 				break;
-			case WhileyFile.EXPR_arraygenerator:
+			case WyilFile.EXPR_arraygenerator:
 				val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
 				break;
-			case WhileyFile.EXPR_arraylength:
+			case WyilFile.EXPR_arraylength:
 				val = executeArrayLength((Expr.ArrayLength) expr, frame);
 				break;
-			case WhileyFile.EXPR_arrayinitialiser:
+			case WyilFile.EXPR_arrayinitialiser:
 				val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
 				break;
-			case WhileyFile.EXPR_arrayrange:
+			case WyilFile.EXPR_arrayrange:
 				val = executeArrayRange((Expr.ArrayRange) expr, frame);
 				break;
-			case WhileyFile.EXPR_new:
+			case WyilFile.EXPR_new:
 				val = executeNew((Expr.New) expr, frame);
 				break;
-			case WhileyFile.EXPR_dereference:
+			case WyilFile.EXPR_dereference:
 				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
-			case WhileyFile.EXPR_lambdaaccess:
+			case WyilFile.EXPR_lambdaaccess:
 				val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 				break;
-			case WhileyFile.DECL_lambda:
+			case WyilFile.DECL_lambda:
 				val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
 				break;
 			default:
@@ -1150,17 +1149,17 @@ public class Interpreter {
 	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
 		try {
 			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_indirectinvoke:
+			case WyilFile.EXPR_indirectinvoke:
 				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-			case WhileyFile.EXPR_invoke:
+			case WyilFile.EXPR_invoke:
 				return executeInvoke((Expr.Invoke) expr, frame);
-			case WhileyFile.EXPR_constant:
-			case WhileyFile.EXPR_cast:
-			case WhileyFile.EXPR_recordaccess:
-			case WhileyFile.EXPR_recordborrow:
-			case WhileyFile.DECL_lambda:
-			case WhileyFile.EXPR_logicalexistential:
-			case WhileyFile.EXPR_logicaluniversal:
+			case WyilFile.EXPR_constant:
+			case WyilFile.EXPR_cast:
+			case WyilFile.EXPR_recordaccess:
+			case WyilFile.EXPR_recordborrow:
+			case WyilFile.DECL_lambda:
+			case WyilFile.EXPR_logicalexistential:
+			case WyilFile.EXPR_logicaluniversal:
 			default:
 				RValue val = executeExpression(ANY_T, expr, frame);
 				return new RValue[] { val };
@@ -1442,8 +1441,8 @@ public class Interpreter {
 				// to be loaded.
 				modules.add(mid);
 				try {
-					WhileyFile module = resolver.load(mid).read();
-					for (WhileyFile.Decl d : module.getDeclarations()) {
+					WyilFile module = resolver.load(mid).read();
+					for (WyilFile.Decl d : module.getDeclarations()) {
 						if (d instanceof Decl.StaticVariable) {
 							Decl.StaticVariable decl = (Decl.StaticVariable) d;
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);

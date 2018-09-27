@@ -15,19 +15,14 @@ package wyil.type.subtyping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashSet;
 
-import wycc.util.Pair;
 import wyil.type.util.BinaryRelation;
 import wyil.type.util.HashSetBinaryRelation;
-import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile;
 
-import static wyc.lang.WhileyFile.*;
-import static wyc.lang.WhileyFile.Name;
+import static wyil.lang.WyilFile.Name;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>

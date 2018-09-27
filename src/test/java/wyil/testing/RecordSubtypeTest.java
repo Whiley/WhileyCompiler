@@ -17,14 +17,12 @@ package wyil.testing;
 import org.junit.*;
 
 import wybs.lang.NameResolver;
-import wyc.lang.WhileyFile.Type;
 import wyc.util.TestUtils;
 import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.subtyping.RelaxedTypeEmptinessTest;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 
 import static org.junit.Assert.*;
-import static wyc.lang.WhileyFile.Type;
+import static wyil.lang.WyilFile.Type;
 
 public class RecordSubtypeTest {
 	@Test public void test_78() { checkIsSubtype("null","null"); }

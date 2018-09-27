@@ -26,11 +26,11 @@ import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
-import wyc.lang.WhileyFile.Type.Array;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Array;
 
 /**
  * <p>

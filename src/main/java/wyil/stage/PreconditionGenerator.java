@@ -9,11 +9,11 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
 import wyc.util.AbstractConsumer;
 import wycc.util.Pair;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 import wyil.stage.VerificationConditionGenerator.Context;
 import wyil.stage.VerificationConditionGenerator.VerificationCondition;
 
@@ -64,16 +64,16 @@ public class PreconditionGenerator {
 		this.vcg = vcg;
 	}
 
-	public void apply(WhileyFile.Expr expr, Context context) {
+	public void apply(WyilFile.Expr expr, Context context) {
 		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
 			@Override
-			public void visitLogicalAnd(WhileyFile.Expr.LogicalAnd expr, Context context) {
+			public void visitLogicalAnd(WyilFile.Expr.LogicalAnd expr, Context context) {
 				// In the case of a logical and condition we need to propagate
 				// the left-hand side as an assumption into the right-hand side.
 				// This is an artifact of short-circuiting whereby terms on the
 				// right-hand side only execute when the left-hand side is known
 				// to hold.
-				Tuple<WhileyFile.Expr> operands = expr.getOperands();
+				Tuple<WyilFile.Expr> operands = expr.getOperands();
 				for (int i = 0; i != operands.size(); ++i) {
 					super.visitExpression(operands.get(i), context);
 					Expr e = vcg.translateExpression(operands.get(i), null, context.getEnvironment());
@@ -82,19 +82,19 @@ public class PreconditionGenerator {
 			}
 
 			@Override
-			public void visitExistentialQuantifier(WhileyFile.Expr.ExistentialQuantifier expr, Context context) {
+			public void visitExistentialQuantifier(WyilFile.Expr.ExistentialQuantifier expr, Context context) {
 				visitQuantifier(expr,context);
 			}
 			@Override
-			public void visitUniversalQuantifier(WhileyFile.Expr.UniversalQuantifier expr, Context context) {
+			public void visitUniversalQuantifier(WyilFile.Expr.UniversalQuantifier expr, Context context) {
 				visitQuantifier(expr,context);
 			}
 
-			public void visitQuantifier(WhileyFile.Expr.Quantifier expr, Context context) {
-				Tuple<WhileyFile.Decl.Variable> parameters = expr.getParameters();
+			public void visitQuantifier(WyilFile.Expr.Quantifier expr, Context context) {
+				Tuple<WyilFile.Decl.Variable> parameters = expr.getParameters();
 				for(int i=0;i!=parameters.size();++i) {
 					Decl.Variable parameter = parameters.get(i);
-					WhileyFile.Expr.ArrayRange range = (WhileyFile.Expr.ArrayRange) parameter.getInitialiser();
+					WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) parameter.getInitialiser();
 					super.visitExpression(range, context);
 					// Now generate appropriate bounds for parameter to ensure any subsequently
 					// generate precondition checks hold.  For example, consider the expression
@@ -114,51 +114,51 @@ public class PreconditionGenerator {
 
 
 			@Override
-			public void visitInvoke(WhileyFile.Expr.Invoke expr, Context context) {
+			public void visitInvoke(WyilFile.Expr.Invoke expr, Context context) {
 				super.visitInvoke(expr, context);
 				checkInvokePreconditions(expr, context);
 			}
 
 			@Override
-			public void visitIntegerDivision(WhileyFile.Expr.IntegerDivision expr, Context context) {
+			public void visitIntegerDivision(WyilFile.Expr.IntegerDivision expr, Context context) {
 				super.visitIntegerDivision(expr, context);
 				checkDivideByZero(expr, context);
 			}
 
 			@Override
-			public void visitIntegerRemainder(WhileyFile.Expr.IntegerRemainder expr, Context context) {
+			public void visitIntegerRemainder(WyilFile.Expr.IntegerRemainder expr, Context context) {
 				super.visitIntegerRemainder(expr, context);
 				checkDivideByZero(expr, context);
 			}
 
 			@Override
-			public void visitArrayAccess(WhileyFile.Expr.ArrayAccess expr, Context context) {
+			public void visitArrayAccess(WyilFile.Expr.ArrayAccess expr, Context context) {
 				super.visitArrayAccess(expr, context);
 				checkIndexOutOfBounds(expr, context);
 			}
 
 			@Override
-			public void visitArrayGenerator(WhileyFile.Expr.ArrayGenerator expr, Context context) {
+			public void visitArrayGenerator(WyilFile.Expr.ArrayGenerator expr, Context context) {
 				super.visitArrayGenerator(expr, context);
 				checkArrayGeneratorLength(expr, context);
 			}
 
 			@Override
-			public void visitType(WhileyFile.Type type, Context context) {
+			public void visitType(WyilFile.Type type, Context context) {
 				// NOTE: don't need to visit types.
 			}
 		};
 		visitor.visitExpression(expr, context);
 	}
 
-	private void checkInvokePreconditions(WhileyFile.Expr.Invoke expr, Context context) {
+	private void checkInvokePreconditions(WyilFile.Expr.Invoke expr, Context context) {
 		try {
-			WhileyFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
+			WyilFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
 			//
-			WhileyFile.Decl.Callable fmp = vcg.lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(),
+			WyilFile.Decl.Callable fmp = vcg.lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(),
 					expr);
-			if (fmp instanceof WhileyFile.Decl.FunctionOrMethod) {
-				WhileyFile.Decl.FunctionOrMethod fm = (WhileyFile.Decl.FunctionOrMethod) fmp;
+			if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
+				WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
 				int numPreconditions = fm.getRequires().size();
 				// There is at least one precondition for the function/method being
 				// called. Therefore, we need to generate a verification condition
@@ -174,7 +174,7 @@ public class PreconditionGenerator {
 					WyalFile.Name name = vcg.convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
 					Expr clause = new Expr.Invoke(null, name, null, arguments);
 					context.emit(new VerificationCondition("precondition not satisfied", context.getAssumptions(),
-							clause, expr.getParent(WhileyFile.Attribute.Span.class)));
+							clause, expr.getParent(WyilFile.Attribute.Span.class)));
 				}
 				// Perform parameter checks
 				for (int i = 0; i != parameterTypes.size(); ++i) {
@@ -183,11 +183,11 @@ public class PreconditionGenerator {
 			}
 		} catch (NameResolver.ResolutionError e) {
 			// FIXME: this should eventually be unnecessary
-			throw new InternalFailure(e.getMessage(), ((WhileyFile) expr.getHeap()).getEntry(), expr, e);
+			throw new InternalFailure(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
 		}
 	}
 
-	private void checkDivideByZero(WhileyFile.Expr.BinaryOperator expr, Context context) {
+	private void checkDivideByZero(WyilFile.Expr.BinaryOperator expr, Context context) {
 		Pair<Expr,Context> rhs = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, context);
 		context = rhs.second();
 		Value zero = new Value.Int(BigInteger.ZERO);
@@ -195,10 +195,10 @@ public class PreconditionGenerator {
 		Expr neqZero = new Expr.NotEqual(rhs.first(), constant);
 		//
 		context.emit(new VerificationCondition("division by zero", context.getAssumptions(), neqZero,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
+				expr.getParent(WyilFile.Attribute.Span.class)));
 	}
 
-	private void checkIndexOutOfBounds(WhileyFile.Expr.ArrayAccess expr, Context context) {
+	private void checkIndexOutOfBounds(WyilFile.Expr.ArrayAccess expr, Context context) {
 		Pair<Expr,Context> src = vcg.translateExpressionWithChecks(expr.getFirstOperand(), null, context);
 		Pair<Expr,Context> idx = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, src.second());
 		context = idx.second();
@@ -209,12 +209,12 @@ public class PreconditionGenerator {
 		Expr lenTest = new Expr.LessThan(idx.first(), length);
 		//
 		context.emit(new VerificationCondition("index out of bounds (negative)", context.getAssumptions(), negTest,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
+				expr.getParent(WyilFile.Attribute.Span.class)));
 		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.getAssumptions(),
-				lenTest, expr.getParent(WhileyFile.Attribute.Span.class)));
+				lenTest, expr.getParent(WyilFile.Attribute.Span.class)));
 	}
 
-	private void checkArrayGeneratorLength(WhileyFile.Expr.ArrayGenerator expr, Context context) {
+	private void checkArrayGeneratorLength(WyilFile.Expr.ArrayGenerator expr, Context context) {
 		Pair<Expr,Context> len = vcg.translateExpressionWithChecks(expr.getSecondOperand(), null, context);
 		context = len.second();
 		Value zero = new Value.Int(BigInteger.ZERO);
@@ -222,6 +222,6 @@ public class PreconditionGenerator {
 		Expr neqZero = new Expr.GreaterThanOrEqual(len.first(), constant);
 		//
 		context.emit(new VerificationCondition("negative length possible", context.getAssumptions(), neqZero,
-				expr.getParent(WhileyFile.Attribute.Span.class)));
+				expr.getParent(WyilFile.Attribute.Span.class)));
 	}
 }

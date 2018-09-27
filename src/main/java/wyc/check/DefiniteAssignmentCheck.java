@@ -13,12 +13,12 @@
 // limitations under the License.
 package wyc.check;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
-import wyc.lang.WhileyFile;
 import wyc.util.AbstractFunction;
+import wyil.lang.WyilFile;
 
 import java.util.BitSet;
 
@@ -49,7 +49,7 @@ import wybs.lang.SyntaxError;
  */
 public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
 
-	public void check(WhileyFile wf) {
+	public void check(WyilFile wf) {
 		visitWhileyFile(wf, null);
 	}
 
@@ -345,7 +345,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd)) {
-			WhileyFile file = ((WhileyFile) expression.getHeap());
+			WyilFile file = ((WyilFile) expression.getHeap());
 			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 		return null;

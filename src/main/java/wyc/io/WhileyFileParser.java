@@ -29,10 +29,10 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.io.WhileyFileLexer.Token;
 import static wybs.lang.SyntaxError.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
+import static wyil.lang.WyilFile.*;
 
-import wyc.lang.WhileyFile;
-import static wyc.lang.WhileyFile.*;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -44,11 +44,11 @@ import wyfs.lang.Path;
  *
  */
 public class WhileyFileParser {
-	private final WhileyFile file;
+	private final WyilFile file;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WhileyFileParser(WhileyFile wf, List<Token> tokens) {
+	public WhileyFileParser(WyilFile wf, List<Token> tokens) {
 		this.file = wf;
 		this.tokens = new ArrayList<>(tokens);
 	}
@@ -60,7 +60,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public WhileyFile read() {
+	public WyilFile read() {
 		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = parseModuleName(file.getEntry());
 
@@ -98,7 +98,7 @@ public class WhileyFileParser {
 		return file;
 	}
 
-	private Name parseModuleName(Path.Entry<WhileyFile> entry) {
+	private Name parseModuleName(Path.Entry<WyilFile> entry) {
 		ArrayList<Identifier> components = new ArrayList<>();
 		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword
@@ -316,7 +316,7 @@ public class WhileyFileParser {
 			body = new Stmt.Block();
 		}
 		//
-		WhileyFile.Decl declaration;
+		WyilFile.Decl declaration;
 		if (isFunction) {
 			declaration = new Decl.Function(modifiers, name, parameters, returns, requires, ensures, body);
 		} else {
@@ -434,7 +434,7 @@ public class WhileyFileParser {
 	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 *
-	 * @see wyc.lang.WhileyFile.Type
+	 * @see wyil.lang.WyilFile.Type
 	 *
 	 * @param modifiers
 	 *            --- The list of modifiers for this declaration (which were

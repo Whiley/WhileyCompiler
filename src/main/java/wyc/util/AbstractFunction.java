@@ -13,14 +13,13 @@
 // limitations under the License.
 package wyc.util;
 
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Type;
-
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -33,7 +32,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  */
 public abstract class AbstractFunction<P,R> {
 
-	public R visitWhileyFile(WhileyFile wf, P data) {
+	public R visitWhileyFile(WyilFile wf, P data) {
 		for (Decl decl : wf.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
