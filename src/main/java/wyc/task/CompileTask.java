@@ -167,25 +167,16 @@ public final class CompileTask implements Build.Task {
 
 		ArrayList<WyilFile> binaryFiles = new ArrayList<>();
 		Set<Path.Entry<?>> generatedFiles = new HashSet<>();
+		ArrayList<Path.Entry<WhileyFile>> sources = new ArrayList<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
 			if (entry.contentType() == WhileyFile.ContentType) {
-				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) entry;
-				Path.Root bindir = p.second();
-				// Parse Whiley source file. This may produce errors at this
-				// stage, which means compilation of this file cannot proceed
-				Path.Entry<WyilFile> target = bindir.create(entry.id(), WyilFile.ContentType);
-				WyilFile wf = compile(source,target);
-				target.write(wf);
-				binaryFiles.add(wf);
-				generatedFiles.add(target);
-				// Register the derivation in the build graph. This is important
-				// to understand what a particular intermediate file was
-				// derived from.
-				graph.connect(source, target);
-				count++;
+				sources.add((Path.Entry<WhileyFile>) entry);
 			}
 		}
+
+		Path.Entry<WyilFile> target = null;
+		WyilFile wf = compile(sources,target);
 
 		logger.logTimedMessage("Parsed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
@@ -199,7 +190,7 @@ public final class CompileTask implements Build.Task {
 		tmpMemory = runtime.freeMemory();
 
 		FlowTypeCheck flowChecker = new FlowTypeCheck(this);
-		flowChecker.check(binaryFiles);
+		flowChecker.check(wf);
 
 		logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
@@ -212,16 +203,14 @@ public final class CompileTask implements Build.Task {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		for (WyilFile wf : binaryFiles) {
-			new DefiniteAssignmentCheck().check(wf);
-			new DefiniteUnassignmentCheck(this).check(wf);
-			new FunctionalCheck(this).check(wf);
-			new StaticVariableCheck(this).check(wf);
-			new AmbiguousCoercionCheck(this).check(wf);
-			new MoveAnalysis(this).apply(wf);
-			new RecursiveTypeAnalysis(this).apply(wf);
-			// new CoercionCheck(this);
-		}
+		new DefiniteAssignmentCheck().check(wf);
+		new DefiniteUnassignmentCheck(this).check(wf);
+		new FunctionalCheck(this).check(wf);
+		new StaticVariableCheck(this).check(wf);
+		new AmbiguousCoercionCheck(this).check(wf);
+		new MoveAnalysis(this).apply(wf);
+		new RecursiveTypeAnalysis(this).apply(wf);
+		// new CoercionCheck(this);
 
 		logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
@@ -245,9 +234,17 @@ public final class CompileTask implements Build.Task {
 	 * @return
 	 * @throws IOException
 	 */
-	private WyilFile compile(Path.Entry<WhileyFile> source, Path.Entry<WyilFile> target) throws IOException {
-		WhileyFile wyf = source.read();
-		WhileyFileParser wyp = new WhileyFileParser(new WyilFile(target), wyf.getTokens());
-		return wyp.read();
+	private WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
+		// Construct empty WyilFile.
+		// FIXME: for incremental compilation, this fails.
+		WyilFile wyil = new WyilFile(target);
+		// Parse all modules
+		for(int i=0;i!=sources.size();++i) {
+			Path.Entry<WhileyFile> source = sources.get(i);
+			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
+			WyilFile.Decl.Module module = wyp.read();
+		}
+		//
+		return wyil;
 	}
 }

@@ -71,7 +71,7 @@ public class TestUtils {
 	public static Type fromString(String from) {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
 		WyilFile wf = new WyilFile(null);
-		WhileyFileParser parser = new WhileyFileParser(wf, tokens);
+		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
 	}

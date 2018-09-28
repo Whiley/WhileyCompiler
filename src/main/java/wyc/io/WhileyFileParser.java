@@ -27,6 +27,8 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.io.WhileyFileLexer.Token;
+import wyc.lang.WhileyFile;
+
 import static wybs.lang.SyntaxError.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
 import static wyil.lang.WyilFile.*;
@@ -44,13 +46,18 @@ import wyil.lang.WyilFile;
  *
  */
 public class WhileyFileParser {
-	private final WyilFile file;
+	private final WyilFile parent;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WhileyFileParser(WyilFile wf, List<Token> tokens) {
-		this.file = wf;
-		this.tokens = new ArrayList<>(tokens);
+	public WhileyFileParser(WyilFile target, WhileyFile source) {
+		if(target == null) {
+			throw new IllegalArgumentException("target cannot be null");
+		} else if(source == null) {
+			throw new IllegalArgumentException("source cannot be null");
+		}
+		this.parent = target;
+		this.tokens = new ArrayList<>(source.getTokens());
 	}
 
 	/**
@@ -60,9 +67,9 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public WyilFile read() {
+	public Decl.Module read() {
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = parseModuleName(file.getEntry());
+		Name name = parseModuleName(parent.getEntry());
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -90,12 +97,11 @@ public class WhileyFileParser {
 			declarations.add(declaration);
 			skipWhiteSpace();
 		}
-
 		// Finally, construct the new file.
 		Tuple<Decl> decls = new Tuple<>(declarations);
 		Decl.Module module = new Decl.Module(name,decls);
-		file.allocate(module);
-		return file;
+		// FIXME: update module list?
+		return parent.allocate(module);
 	}
 
 	private Name parseModuleName(Path.Entry<WyilFile> entry) {
@@ -3192,7 +3198,7 @@ public class WhileyFileParser {
 			return result;
 		} else {
 			// Error!
-			throw new InternalFailure("unknown syntactic type encountered", file.getEntry(), type);
+			throw new InternalFailure("unknown syntactic type encountered", parent.getEntry(), type);
 		}
 	}
 
@@ -4160,7 +4166,7 @@ public class WhileyFileParser {
 			} else {
 				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", file.getEntry(), null);
+				throw new SyntaxError("unexpected end-of-file", parent.getEntry(), null);
 			}
 		}
 	}
@@ -4432,11 +4438,11 @@ public class WhileyFileParser {
 	}
 
 	private void syntaxError(String msg, SyntacticItem e) {
-		throw new SyntaxError(msg, file.getEntry(), e);
+		throw new SyntaxError(msg, parent.getEntry(), e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, file.getEntry(), new Attribute.Span(null,t.start,t.end()));
+		throw new SyntaxError(msg, parent.getEntry(), new Attribute.Span(null,t.start,t.end()));
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
@@ -4446,11 +4452,11 @@ public class WhileyFileParser {
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start, int end) {
 		// Allocate item to enclosing WhileyFile. This is necessary so that the
 		// annotations can then be correctly allocated as well.
-		item = file.allocate(item);
+		item = parent.allocate(item);
 		// Determine the first and last token representing this span.
 		Token first = tokens.get(start);
 		Token last = tokens.get(end);
-		file.allocate(new Attribute.Span(item,first.start,last.end()));
+		parent.allocate(new Attribute.Span(item,first.start,last.end()));
 		return item;
 	}
 
