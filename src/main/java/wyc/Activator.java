@@ -30,6 +30,7 @@ import java.io.IOException;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Graph;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
 import wybs.lang.NameID;
@@ -102,6 +103,18 @@ public class Activator implements Module.Activator {
 		@Override
 		public Path.Root getTargetRoot(Path.Root root) throws IOException {
 			return root.createRelativeRoot(target);
+		}
+
+		@Override
+		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
+			//
+			for (Path.Entry<?> source : src.get(getSourceFilter())) {
+				// currently, I'm assuming everything is modified!
+				Path.Entry<?> binary = bin.create(source.id(), getTargetType());
+				// Register this derivation
+				graph.connect(source, binary);
+			}
+			//
 		}
 
 		@Override

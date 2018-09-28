@@ -33,6 +33,7 @@ import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.StdBuildGraph;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.io.WhileyFileLexer;
@@ -161,7 +162,7 @@ public class TestUtils {
 			// Add build rules
 			addCompilationRules(project,root,verify);
 			// Identify source files and build project
-			project.build(findSourceFiles(root,args));
+			project.build(findSourceFiles(root,args), new StdBuildGraph());
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 		} catch (SyntaxError e) {

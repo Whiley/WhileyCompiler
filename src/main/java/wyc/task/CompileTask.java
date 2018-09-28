@@ -182,7 +182,7 @@ public final class CompileTask implements Build.Task {
 				// Register the derivation in the build graph. This is important
 				// to understand what a particular intermediate file was
 				// derived from.
-				graph.registerDerivation(source, target);
+				graph.connect(source, target);
 				count++;
 			}
 		}

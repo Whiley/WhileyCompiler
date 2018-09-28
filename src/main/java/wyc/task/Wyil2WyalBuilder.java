@@ -82,7 +82,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
-			graph.registerDerivation(source, target);
+			graph.connect(source, target);
 			generatedFiles.add(target);
 			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),
 					resolver).translate(source.read());
