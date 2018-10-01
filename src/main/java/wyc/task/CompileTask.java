@@ -108,19 +108,6 @@ public final class CompileTask implements Build.Task {
 	 */
 	private Logger logger;
 
-	/**
-	 * A map of the source files currently being compiled.
-	 */
-	private final HashMap<Path.ID, Path.Entry<WyilFile>> srcFiles = new HashMap<>();
-
-	/**
-	 * The import cache caches specific import queries to their result sets.
-	 * This is extremely important to avoid recomputing these result sets every
-	 * time. For example, the statement <code>import whiley.lang.*</code>
-	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
-	 */
-	private final HashMap<Trie, ArrayList<Path.ID>> importCache = new HashMap<>();
-
 	public CompileTask(Build.Project project) {
 		this.logger = Logger.NULL;
 		this.project = project;
@@ -153,6 +140,24 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
+		// Identify the source compilation groups
+		HashSet<Path.Entry<?>> targets = new HashSet<>();
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> entry = p.first();
+			if (entry.contentType() == WhileyFile.ContentType) {
+				targets.addAll(graph.getChildren((Path.Entry<WhileyFile>) entry));
+			}
+		}
+		// Compile each one in turn
+		for (Path.Entry<?> target : targets) {
+			List sources = graph.getParents(target);
+			build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+		}
+		// Done
+		return targets;
+	}
+
+	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -163,22 +168,9 @@ public final class CompileTask implements Build.Task {
 		// Parse source files
 		// ========================================================================
 
-		int count = 0;
+		WyilFile wf = compile(sources, target);
 
-		ArrayList<WyilFile> binaryFiles = new ArrayList<>();
-		Set<Path.Entry<?>> generatedFiles = new HashSet<>();
-		ArrayList<Path.Entry<WhileyFile>> sources = new ArrayList<>();
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<?> entry = p.first();
-			if (entry.contentType() == WhileyFile.ContentType) {
-				sources.add((Path.Entry<WhileyFile>) entry);
-			}
-		}
-
-		Path.Entry<WyilFile> target = null;
-		WyilFile wf = compile(sources,target);
-
-		logger.logTimedMessage("Parsed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
+		logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
 
 		// ========================================================================
@@ -192,7 +184,7 @@ public final class CompileTask implements Build.Task {
 		FlowTypeCheck flowChecker = new FlowTypeCheck(this);
 		flowChecker.check(wf);
 
-		logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
+		logger.logTimedMessage("Typed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
 
 		// ========================================================================
@@ -212,18 +204,16 @@ public final class CompileTask implements Build.Task {
 		new RecursiveTypeAnalysis(this).apply(wf);
 		// new CoercionCheck(this);
 
-		logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+		logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
+				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 
 		// ========================================================================
 		// Done
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)", endTime - startTime,
+		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 				startMemory - runtime.freeMemory());
-
-		return generatedFiles;
 	}
 
 	/**
@@ -236,14 +226,15 @@ public final class CompileTask implements Build.Task {
 	 */
 	private WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
 		// Construct empty WyilFile.
-		// FIXME: for incremental compilation, this fails.
-		WyilFile wyil = new WyilFile(target);
+		WyilFile wyil = target.read();
 		// Parse all modules
 		for(int i=0;i!=sources.size();++i) {
 			Path.Entry<WhileyFile> source = sources.get(i);
 			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
 			WyilFile.Decl.Module module = wyp.read();
 		}
+		//
+		target.flush();
 		//
 		return wyil;
 	}

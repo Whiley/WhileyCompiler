@@ -109,8 +109,14 @@ public class Activator implements Module.Activator {
 		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
 			//
 			for (Path.Entry<?> source : src.get(getSourceFilter())) {
-				// currently, I'm assuming everything is modified!
-				Path.Entry<?> binary = bin.create(source.id(), getTargetType());
+				// Currently, I'm assuming everything is modified!
+				Path.Entry<WyilFile> binary = bin.get(source.id(), WyilFile.ContentType);
+				// Check whether target binary exists or not
+				if (binary == null) {
+					// Doesn't exist, so create with default value
+					binary = bin.create(source.id(), WyilFile.ContentType);
+					binary.write(new WyilFile(binary));
+				}
 				// Register this derivation
 				graph.connect(source, binary);
 			}
