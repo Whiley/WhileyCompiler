@@ -140,6 +140,7 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
+		System.out.println("BUILDING: " + delta.size() + " files");
 		// Identify the source compilation groups
 		HashSet<Path.Entry<?>> targets = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
@@ -150,6 +151,8 @@ public final class CompileTask implements Build.Task {
 		}
 		// Compile each one in turn
 		for (Path.Entry<?> target : targets) {
+			// FIXME: there is a problem here. That's because not every parent will be in
+			// the delta. Therefore, this is forcing every file to be recompiled.
 			List sources = graph.getParents(target);
 			build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
 		}
@@ -174,27 +177,14 @@ public final class CompileTask implements Build.Task {
 				tmpMemory - runtime.freeMemory());
 
 		// ========================================================================
-		// Flow Type source files
+		// Type Checking & Code Generation
 		// ========================================================================
 
 		runtime = Runtime.getRuntime();
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		FlowTypeCheck flowChecker = new FlowTypeCheck(this);
-		flowChecker.check(wf);
-
-		logger.logTimedMessage("Typed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
-
-		// ========================================================================
-		// Code Generation
-		// ========================================================================
-
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
-
+		new FlowTypeCheck(this).check(wf);
 		new DefiniteAssignmentCheck().check(wf);
 		new DefiniteUnassignmentCheck(this).check(wf);
 		new FunctionalCheck(this).check(wf);
@@ -225,12 +215,15 @@ public final class CompileTask implements Build.Task {
 	 * @throws IOException
 	 */
 	private WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
-		// Construct empty WyilFile.
+		// Read target WyilFile. This may have already been compiled in a previous run
+		// and, in such case, we are invalidating some or all of the existing file.
 		WyilFile wyil = target.read();
 		// Parse all modules
 		for(int i=0;i!=sources.size();++i) {
 			Path.Entry<WhileyFile> source = sources.get(i);
 			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
+			// FIXME: what to do with module added to heap? The problem is that this might
+			// be replaced a module, for example.
 			WyilFile.Decl.Module module = wyp.read();
 		}
 		//

@@ -41,12 +41,15 @@ import wyc.task.CompileTask;
 
 public class Activator implements Module.Activator {
 
+	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
 	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
 	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
 	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+		private Trie pkg;
+		//
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
@@ -66,6 +69,7 @@ public class Activator implements Module.Activator {
 		@Override
 		public void apply(Configuration configuration) {
 			// Extract source path
+			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 		}
@@ -108,15 +112,15 @@ public class Activator implements Module.Activator {
 		@Override
 		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
 			//
+			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+			// Check whether target binary exists or not
+			if (binary == null) {
+				// Doesn't exist, so create with default value
+				binary = bin.create(pkg, WyilFile.ContentType);
+				binary.write(new WyilFile(binary));
+			}
+			//
 			for (Path.Entry<?> source : src.get(getSourceFilter())) {
-				// Currently, I'm assuming everything is modified!
-				Path.Entry<WyilFile> binary = bin.get(source.id(), WyilFile.ContentType);
-				// Check whether target binary exists or not
-				if (binary == null) {
-					// Doesn't exist, so create with default value
-					binary = bin.create(source.id(), WyilFile.ContentType);
-					binary.write(new WyilFile(binary));
-				}
 				// Register this derivation
 				graph.connect(source, binary);
 			}
