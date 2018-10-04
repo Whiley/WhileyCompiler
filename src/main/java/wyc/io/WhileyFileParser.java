@@ -67,7 +67,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public Decl.Module read() {
+	public Decl.Unit read() {
 		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = parseModuleName(parent.getEntry());
 
@@ -99,7 +99,7 @@ public class WhileyFileParser {
 		}
 		// Finally, construct the new file.
 		Tuple<Decl> decls = new Tuple<>(declarations);
-		Decl.Module module = new Decl.Module(name,decls);
+		Decl.Unit module = new Decl.Unit(name,decls);
 		// FIXME: update module list?
 		return parent.allocate(module);
 	}

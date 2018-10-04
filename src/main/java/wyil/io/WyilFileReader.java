@@ -18,6 +18,7 @@ import java.io.IOException;
 import wybs.io.SyntacticHeapReader;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
@@ -41,8 +42,8 @@ public final class WyilFileReader extends SyntacticHeapReader {
 
 	@Override
 	public WyilFile read() throws IOException {
-		SyntacticItem[] items = readItems();
-		return new WyilFile(entry,items);
+		Pair<Integer,SyntacticItem[]> p = readItems();
+		return new WyilFile(entry,p.first(),p.second());
 	}
 
 	@Override

@@ -123,17 +123,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// DECLARATIONS: 00010000 (16) -- 00011111 (31)
 	public static final int DECL_mask = 0b00010000;
 	public static final int DECL_module = DECL_mask + 0;
-	public static final int DECL_import = DECL_mask + 1;
-	public static final int DECL_importfrom = DECL_mask + 2;
-	public static final int DECL_staticvar = DECL_mask + 3;
-	public static final int DECL_type = DECL_mask + 4;
-	public static final int DECL_rectype = DECL_mask + 5;
-	public static final int DECL_function = DECL_mask + 6;
-	public static final int DECL_method = DECL_mask + 7;
-	public static final int DECL_property = DECL_mask + 8;
-	public static final int DECL_lambda = DECL_mask + 9;
-	public static final int DECL_variable = DECL_mask + 10;
-	public static final int DECL_variableinitialiser = DECL_mask + 11;
+	public static final int DECL_unit = DECL_mask + 1;
+	public static final int DECL_import = DECL_mask + 2;
+	public static final int DECL_importfrom = DECL_mask + 3;
+	public static final int DECL_staticvar = DECL_mask + 4;
+	public static final int DECL_type = DECL_mask + 5;
+	public static final int DECL_rectype = DECL_mask + 6;
+	public static final int DECL_function = DECL_mask + 7;
+	public static final int DECL_method = DECL_mask + 8;
+	public static final int DECL_property = DECL_mask + 9;
+	public static final int DECL_lambda = DECL_mask + 10;
+	public static final int DECL_variable = DECL_mask + 11;
+	public static final int DECL_variableinitialiser = DECL_mask + 12;
 
 	public static final int MOD_native = DECL_mask + 12;
 	public static final int MOD_export = DECL_mask + 13;
@@ -257,12 +258,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		super(entry);
 	}
 
-	public WyilFile(Entry<WyilFile> entry, SyntacticItem[] items) {
+	public WyilFile(Entry<WyilFile> entry, int root, SyntacticItem[] items) {
 		super(entry);
+		// Allocate every item into this heap
 		for (int i = 0; i != items.length; ++i) {
 			syntacticItems.add(items[i]);
 			items[i].allocate(this, i);
 		}
+		// Set the distinguished root item
+		setRootItem(getSyntacticItem(root));
 	}
 
 	// =========================================================================
@@ -273,9 +277,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return getModule().getDeclarations();
 	}
 
-	public Decl.Module getModule() {
+	public Decl.Unit getModule() {
 		// The first node is always the declaration root.
-		List<Decl.Module> modules = getSyntacticItems(Decl.Module.class);
+		List<Decl.Unit> modules = getSyntacticItems(Decl.Unit.class);
 		if (modules.size() != 1) {
 			throw new RuntimeException("expecting one module, found " + modules.size());
 		}
@@ -316,6 +320,36 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 *
 	 */
 	public static interface Decl extends CompilationUnit.Declaration {
+		/**
+		 * A WyilFile contains exactly one active module which represents the root of
+		 * all items in the module.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Module extends AbstractSyntacticItem {
+
+			public Module(Name name, Tuple<Decl.Unit> modules, Tuple<Decl.Unit> externs) {
+				super(DECL_module, name, modules, externs);
+			}
+
+			public Name getName() {
+				return (Name) get(0);
+			}
+
+			public Tuple<Decl.Unit> getFiles() {
+				return (Tuple<Decl.Unit>) get(1);
+			}
+
+			public Tuple<Decl.Unit> getExterns() {
+				return (Tuple<Decl.Unit>) get(2);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2]);
+			}
+		}
 
 		/**
 		 * Represents the top-level entity in a Whiley source file. All other
@@ -324,10 +358,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Module extends AbstractSyntacticItem implements Decl {
+		public static class Unit extends AbstractSyntacticItem implements Decl {
 
-			public Module(Name name, Tuple<Decl> declarations) {
-				super(DECL_module, name, declarations);
+			public Unit(Name name, Tuple<Decl> declarations) {
+				super(DECL_unit, name, declarations);
 			}
 
 			public Name getName() {
@@ -342,7 +376,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Module((Name) operands[0], (Tuple<Decl>) operands[1]);
+				return new Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 		}
 
@@ -460,7 +494,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getQualifiedName() {
-				Module module = getAncestor(Decl.Module.class);
+				Unit module = getAncestor(Decl.Unit.class);
 				Name name = module.getName();
 				Identifier[] idents = name.getAll();
 				idents = Arrays.copyOf(idents, idents.length + 1);
@@ -5014,11 +5048,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		SyntacticItem.Schema[] schema = AbstractCompilationUnit.getSchema();
 		schema = Arrays.copyOf(schema, 256);
 		// ==========================================================================
-		schema[DECL_module] = new Schema(Operands.TWO, Data.ZERO, "DECL_module") {
+		schema[DECL_module] = new Schema(Operands.THREE, Data.ZERO, "DECL_module") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Module((Name) operands[0], (Tuple<Decl>) operands[1]);
+				return new Decl.Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
+						(Tuple<Decl.Unit>) operands[1]);
+			}
+		};
+		schema[DECL_unit] = new Schema(Operands.TWO, Data.ZERO, "DECL_unit") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Decl.Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 		};
 		schema[DECL_import] = new Schema(Operands.ONE, Data.ZERO, "DECL_import") {

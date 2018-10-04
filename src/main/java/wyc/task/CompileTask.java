@@ -224,7 +224,7 @@ public final class CompileTask implements Build.Task {
 			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
 			// FIXME: what to do with module added to heap? The problem is that this might
 			// be replaced a module, for example.
-			WyilFile.Decl.Module module = wyp.read();
+			WyilFile.Decl.Unit module = wyp.read();
 		}
 		//
 		target.flush();
