@@ -31,13 +31,16 @@ import wyil.lang.WyilFile.SemanticType;
 public abstract class AbstractConsumer<T> {
 
 	public void visitWhileyFile(WyilFile wf, T data) {
-		for (Decl decl : wf.getDeclarations()) {
+		for (Decl.Unit decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl, data);
 		}
 	}
 
 	public void visitDeclaration(Decl decl, T data) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			visitUnit((Decl.Unit) decl, data);
+			break;
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl, data);
@@ -59,6 +62,11 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
+	public void visitUnit(Decl.Unit unit, T data) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl, data);
+		}
+	}
 	public void visitImport(Decl.Import decl, T data) {
 
 	}

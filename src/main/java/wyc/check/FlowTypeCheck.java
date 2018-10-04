@@ -130,7 +130,7 @@ public class FlowTypeCheck {
 	}
 
 	public void check(WyilFile wf) {
-		for (Decl decl : wf.getDeclarations()) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			check(decl);
 		}
 	}
@@ -140,7 +140,9 @@ public class FlowTypeCheck {
 	// =========================================================================
 
 	public void check(Decl decl) {
-		if (decl instanceof Decl.Import) {
+		if (decl instanceof Decl.Unit) {
+			checkUnit((Decl.Unit)decl);
+		} else if (decl instanceof Decl.Import) {
 			// Can ignore
 		} else if (decl instanceof Decl.StaticVariable) {
 			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
@@ -150,6 +152,12 @@ public class FlowTypeCheck {
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
 		} else {
 			checkPropertyDeclaration((Decl.Property) decl);
+		}
+	}
+
+	public void checkUnit(Decl.Unit unit) {
+		for (Decl decl : unit.getDeclarations()) {
+			check(decl);
 		}
 	}
 

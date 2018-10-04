@@ -146,7 +146,7 @@ public final class CompileTask implements Build.Task {
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
 			if (entry.contentType() == WhileyFile.ContentType) {
-				targets.addAll(graph.getChildren((Path.Entry<WhileyFile>) entry));
+				targets.addAll(graph.getChildren(entry));
 			}
 		}
 		// Compile each one in turn
@@ -224,7 +224,7 @@ public final class CompileTask implements Build.Task {
 			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
 			// FIXME: what to do with module added to heap? The problem is that this might
 			// be replaced a module, for example.
-			WyilFile.Decl.Unit module = wyp.read();
+			wyil.getModule().putUnit(wyp.read());
 		}
 		//
 		target.flush();

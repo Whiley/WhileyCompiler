@@ -300,7 +300,7 @@ public final class WhileyFileResolver implements NameResolver {
 			//
 			for (Path.Entry<WyilFile> e : expandImport(imp)) {
 				WyilFile module = e.read();
-				Path.ID id = toPathID(module.getModule().getName());
+				Path.ID id = toPathID(module.getUnit().getName());
 				// Determine whether this concrete module path matches the partial
 				// module path or not.
 				if (matchPartialModulePath(nid.module(), id)) {

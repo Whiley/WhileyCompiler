@@ -273,11 +273,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Accessors
 	// =========================================================================
 
-	public Tuple<Decl> getDeclarations() {
-		return getModule().getDeclarations();
+	public Decl.Module getModule() {
+		return (Decl.Module) getRootItem();
 	}
 
-	public Decl.Unit getModule() {
+	public Decl.Unit getUnit() {
 		// The first node is always the declaration root.
 		List<Decl.Unit> modules = getSyntacticItems(Decl.Unit.class);
 		if (modules.size() != 1) {
@@ -337,12 +337,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(0);
 			}
 
-			public Tuple<Decl.Unit> getFiles() {
+			public Tuple<Decl.Unit> getUnits() {
 				return (Tuple<Decl.Unit>) get(1);
 			}
 
 			public Tuple<Decl.Unit> getExterns() {
 				return (Tuple<Decl.Unit>) get(2);
+			}
+
+			public void putUnit(Decl.Unit unit) {
+				Tuple<Decl.Unit> units = getUnits();
+				// Check whether replacing unit or adding new
+				for(int i=0;i!=units.size();++i) {
+					Decl.Unit ith = units.get(i);
+					if(ith.getName().equals(unit.getName())) {
+						// We're replacing an existing unit
+						units.setOperand(i, unit);
+						return;
+					}
+				}
+				// We're adding a new unit
+				setOperand(1, getHeap().allocate(units.append(unit)));
 			}
 
 			@Override

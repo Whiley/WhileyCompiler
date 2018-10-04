@@ -33,13 +33,16 @@ import wyil.lang.WyilFile.Type;
 public abstract class AbstractVisitor {
 
 	public void visitWhileyFile(WyilFile wf) {
-		for (Decl decl : wf.getDeclarations()) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl);
 		}
 	}
 
 	public void visitDeclaration(Decl decl) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			visitUnit((Decl.Unit) decl);
+			break;
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
@@ -58,6 +61,12 @@ public abstract class AbstractVisitor {
 			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
+		}
+	}
+
+	public void visitUnit(Decl.Unit unit) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl);
 		}
 	}
 

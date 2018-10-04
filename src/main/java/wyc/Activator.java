@@ -24,6 +24,7 @@ import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Type;
+import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
@@ -117,7 +118,10 @@ public class Activator implements Module.Activator {
 			if (binary == null) {
 				// Doesn't exist, so create with default value
 				binary = bin.create(pkg, WyilFile.ContentType);
-				binary.write(new WyilFile(binary));
+				WyilFile wf = new WyilFile(binary);
+				binary.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>()));
 			}
 			//
 			for (Path.Entry<?> source : src.get(getSourceFilter())) {
