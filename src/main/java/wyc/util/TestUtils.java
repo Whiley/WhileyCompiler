@@ -32,6 +32,7 @@ import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.StdBuildGraph;
 import wybs.util.StdBuildRule;
@@ -161,8 +162,10 @@ public class TestUtils {
 			StdProject project = new StdProject(Arrays.asList(root));
 			// Add build rules
 			addCompilationRules(project,root,verify);
+			// Create empty build graph
+			Build.Graph graph = new StdBuildGraph();
 			// Identify source files and build project
-			project.build(findSourceFiles(root,args), new StdBuildGraph());
+			project.build(findSourceFiles(root,graph,args), graph);
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 		} catch (SyntaxError e) {
@@ -217,14 +220,28 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, String... args) throws IOException {
+	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, Build.Graph graph, String... args)
+			throws IOException {
 		List<Path.Entry<WhileyFile>> sources = new ArrayList<>();
 		for (String arg : args) {
-			Path.Entry<WhileyFile> e = root.get(Trie.fromString(arg), WhileyFile.ContentType);
+			Path.ID id = Trie.fromString(arg);
+			Path.Entry<WhileyFile> e = root.get(id, WhileyFile.ContentType);
 			if (e == null) {
 				throw new IllegalArgumentException("file not found: " + arg);
 			}
 			sources.add(e);
+			// Construct target
+			Path.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
+			// Check whether target binary exists or not
+			if (target == null) {
+				// Doesn't exist, so create with default value
+				target = root.create(id, WyilFile.ContentType);
+				WyilFile wf = new WyilFile(target);
+				target.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>()));
+			}
+			graph.connect(e, target);
 		}
 		return sources;
 	}

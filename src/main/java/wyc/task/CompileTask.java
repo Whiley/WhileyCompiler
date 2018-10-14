@@ -140,7 +140,6 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
-		System.out.println("BUILDING: " + delta.size() + " files");
 		// Identify the source compilation groups
 		HashSet<Path.Entry<?>> targets = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
@@ -161,6 +160,7 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
+		System.out.println("BUILD: " + target.id());
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();

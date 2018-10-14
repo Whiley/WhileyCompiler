@@ -102,6 +102,7 @@ public class Interpreter {
 	 * @return
 	 */
 	public RValue[] execute(NameID nid, Type.Callable sig, CallStack frame, RValue... args) {
+		System.out.println("EXECUTING: " + nid);
 		// First, find the enclosing WyilFile
 		try {
 			// FIXME: NameID needs to be deprecated
@@ -1442,7 +1443,7 @@ public class Interpreter {
 				modules.add(mid);
 				try {
 					WyilFile module = resolver.load(mid).read();
-					for (WyilFile.Decl d : module.getDeclarations()) {
+					for (WyilFile.Decl d : module.getUnit().getDeclarations()) {
 						if (d instanceof Decl.StaticVariable) {
 							Decl.StaticVariable decl = (Decl.StaticVariable) d;
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);

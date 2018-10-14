@@ -136,12 +136,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_variable = DECL_mask + 11;
 	public static final int DECL_variableinitialiser = DECL_mask + 12;
 
-	public static final int MOD_native = DECL_mask + 12;
-	public static final int MOD_export = DECL_mask + 13;
-	public static final int MOD_final = DECL_mask + 14;
-	public static final int MOD_protected = DECL_mask + 15;
-	public static final int MOD_private = DECL_mask + 16;
-	public static final int MOD_public = DECL_mask + 17;
+	public static final int MOD_native = DECL_mask + 13;
+	public static final int MOD_export = DECL_mask + 14;
+	public static final int MOD_final = DECL_mask + 15;
+	public static final int MOD_protected = DECL_mask + 16;
+	public static final int MOD_private = DECL_mask + 17;
+	public static final int MOD_public = DECL_mask + 18;
 	// TYPES: 00100000 (32) -- 00111111 (63)
 	public static final int TYPE_mask = 0b000100000;
 	public static final int TYPE_void = TYPE_mask + 0;
