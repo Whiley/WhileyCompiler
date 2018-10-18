@@ -24,9 +24,11 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.stage.MoveAnalysis;
 import wyil.stage.RecursiveTypeAnalysis;
 import wybs.lang.*;
+import wybs.lang.CompilationUnit.Name;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.check.AmbiguousCoercionCheck;
@@ -160,50 +162,58 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		System.out.println("BUILD: " + target.id());
-		Runtime runtime = Runtime.getRuntime();
-		long startTime = System.currentTimeMillis();
-		long startMemory = runtime.freeMemory();
-		long tmpTime = startTime;
-		long tmpMemory = startMemory;
+		try {
+			Runtime runtime = Runtime.getRuntime();
+			long startTime = System.currentTimeMillis();
+			long startMemory = runtime.freeMemory();
+			long tmpTime = startTime;
+			long tmpMemory = startMemory;
 
-		// ========================================================================
-		// Parse source files
-		// ========================================================================
+			// ========================================================================
+			// Parse source files
+			// ========================================================================
+			WyilFile wf = compile(sources, target);
 
-		WyilFile wf = compile(sources, target);
+			logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
+					tmpMemory - runtime.freeMemory());
 
-		logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+			// ========================================================================
+			// Type Checking & Code Generation
+			// ========================================================================
 
-		// ========================================================================
-		// Type Checking & Code Generation
-		// ========================================================================
+			runtime = Runtime.getRuntime();
+			tmpTime = System.currentTimeMillis();
+			tmpMemory = runtime.freeMemory();
 
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
+			new FlowTypeCheck(this).check(wf);
+			new DefiniteAssignmentCheck().check(wf);
+			new DefiniteUnassignmentCheck(this).check(wf);
+			new FunctionalCheck(this).check(wf);
+			new StaticVariableCheck(this).check(wf);
+			new AmbiguousCoercionCheck(this).check(wf);
+			new MoveAnalysis(this).apply(wf);
+			new RecursiveTypeAnalysis(this).apply(wf);
+			// new CoercionCheck(this);
 
-		new FlowTypeCheck(this).check(wf);
-		new DefiniteAssignmentCheck().check(wf);
-		new DefiniteUnassignmentCheck(this).check(wf);
-		new FunctionalCheck(this).check(wf);
-		new StaticVariableCheck(this).check(wf);
-		new AmbiguousCoercionCheck(this).check(wf);
-		new MoveAnalysis(this).apply(wf);
-		new RecursiveTypeAnalysis(this).apply(wf);
-		// new CoercionCheck(this);
+			logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
+					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 
-		logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
-				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
+			// ========================================================================
+			// Done
+			// ========================================================================
 
-		// ========================================================================
-		// Done
-		// ========================================================================
-
-		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
-				startMemory - runtime.freeMemory());
+			long endTime = System.currentTimeMillis();
+			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
+					startMemory - runtime.freeMemory());
+		} catch(SyntaxError e) {
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			SyntacticItem item = e.getElement();
+			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+			// Determine which source file this entry is contained in
+			Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+			//
+			throw new SyntaxError(e.getMessage(),sf,item);
+		}
 	}
 
 	/**
@@ -230,5 +240,16 @@ public final class CompileTask implements Build.Task {
 		target.flush();
 		//
 		return wyil;
+	}
+
+	private Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
+		String nameStr = name.toString();
+		//
+		for(Path.Entry<WhileyFile> e : sources) {
+			if(e.id().toString().equals(nameStr)) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("unknown unit");
 	}
 }
