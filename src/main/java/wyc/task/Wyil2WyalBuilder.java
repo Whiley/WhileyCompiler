@@ -18,13 +18,11 @@ import java.util.*;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.NameResolver;
-import wyc.util.WhileyFileResolver;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
-import wyil.stage.VerificationConditionGenerator;
+import wyil.transform.VerificationConditionGenerator;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
@@ -76,7 +74,6 @@ public class Wyil2WyalBuilder implements Build.Task {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-		NameResolver resolver = new WhileyFileResolver(project);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
@@ -84,8 +81,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
 			graph.connect(source, target);
 			generatedFiles.add(target);
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),
-					resolver).translate(source.read());
+			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target)).translate(source.read());
 			// Write the file into its destination
 			target.write(contents);
 

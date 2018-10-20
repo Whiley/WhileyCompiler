@@ -11,10 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
@@ -74,10 +72,8 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
-	public NameResolver resolver;
 
 	public FunctionalCheck(CompileTask builder) {
-		this.resolver = builder.getNameResolver();
 	}
 
 	public void check(WyilFile file) {
@@ -198,19 +194,13 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	}
 
 	public boolean isMethodType(Type type) {
-		try {
-			if (type instanceof Type.Method) {
-				return true;
-			} else if (type instanceof Type.Nominal) {
-				Type.Nominal n = (Type.Nominal) type;
-				Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
-				return isMethodType(decl.getType());
-			} else {
-				return false;
-			}
-		} catch (ResolutionError e) {
-			// This really should be dead code
-			throw new RuntimeException(e);
+		if (type instanceof Type.Method) {
+			return true;
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal n = (Type.Nominal) type;
+			return isMethodType(n.getDeclaration().getType());
+		} else {
+			return false;
 		}
 	}
 

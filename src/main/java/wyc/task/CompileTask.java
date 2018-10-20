@@ -23,23 +23,22 @@ import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyil.check.AmbiguousCoercionCheck;
+import wyil.check.DefiniteAssignmentCheck;
+import wyil.check.DefiniteUnassignmentCheck;
+import wyil.check.FlowTypeCheck;
+import wyil.check.FunctionalCheck;
+import wyil.check.StaticVariableCheck;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-import wyil.stage.MoveAnalysis;
-import wyil.stage.RecursiveTypeAnalysis;
+import wyil.transform.MoveAnalysis;
+import wyil.transform.RecursiveTypeAnalysis;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
-import wyc.check.AmbiguousCoercionCheck;
-import wyc.check.DefiniteAssignmentCheck;
-import wyc.check.DefiniteUnassignmentCheck;
-import wyc.check.FlowTypeCheck;
-import wyc.check.FunctionalCheck;
-import wyc.check.StaticVariableCheck;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wyc.util.WhileyFileResolver;
 import wycc.cfg.Configuration;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
@@ -99,13 +98,6 @@ public final class CompileTask implements Build.Task {
 	private final Build.Project project;
 
 	/**
-	 * Provides mechanism for operating on types. For example, expanding them
-	 * and performing subtype tests, etc. This object may cache results to
-	 * improve performance of some operations.
-	 */
-	private final NameResolver resolver;
-
-	/**
 	 * The logger used for logging system events
 	 */
 	private Logger logger;
@@ -113,7 +105,6 @@ public final class CompileTask implements Build.Task {
 	public CompileTask(Build.Project project) {
 		this.logger = Logger.NULL;
 		this.project = project;
-		this.resolver = new WhileyFileResolver(project);
 	}
 
 	public String id() {
@@ -123,15 +114,6 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Build.Project project() {
 		return project;
-	}
-
-	/**
-	 * Access the type system object this compile task is using.
-	 *
-	 * @return
-	 */
-	public NameResolver getNameResolver() {
-		return resolver;
 	}
 
 	public void setLogger(Logger logger) {

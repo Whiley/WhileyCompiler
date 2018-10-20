@@ -18,8 +18,6 @@ import static wyc.util.ErrorMessages.errorMessage;
 import java.util.ArrayList;
 import java.util.Set;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
@@ -36,8 +34,8 @@ import wyil.type.subtyping.SubtypeOperator;
 
 public class TypeSubtractor extends AbstractTypeCombinator {
 
-	public TypeSubtractor(NameResolver resolver, SubtypeOperator subtyping) {
-		super(resolver, subtyping);
+	public TypeSubtractor(SubtypeOperator subtyping) {
+		super(subtyping);
 	}
 
 	@Override
@@ -83,14 +81,10 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	@Override
 	protected Type apply(Reference lhs, Reference rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		//
-		try {
-			if (subtyping.isSubtype(lhs, rhs, lifetimes)) {
-				return lhs;
-			} else {
-				return Type.Void;
-			}
-		} catch (ResolutionError e) {
-			throw new IllegalArgumentException(e);
+		if (subtyping.isSubtype(lhs, rhs, lifetimes)) {
+			return lhs;
+		} else {
+			return Type.Void;
 		}
 	}
 
@@ -252,16 +246,12 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(rhs.getName(), Decl.Type.class);
-			if (decl.getInvariant().size() > 0) {
-				// rhs is a constrained type, meaning we cannot subtract anything.
-				return lhs;
-			} else {
-				return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
-			}
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, rhs.getName().toString()), lhs);
+		Decl.Type decl = rhs.getDeclaration();
+		if (decl.getInvariant().size() > 0) {
+			// rhs is a constrained type, meaning we cannot subtract anything.
+			return lhs;
+		} else {
+			return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
 		}
 	}
 

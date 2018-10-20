@@ -1,10 +1,9 @@
-package wyil.stage;
+package wyil.transform;
 
 import java.math.BigInteger;
 
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -14,8 +13,8 @@ import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
-import wyil.stage.VerificationConditionGenerator.Context;
-import wyil.stage.VerificationConditionGenerator.VerificationCondition;
+import wyil.transform.VerificationConditionGenerator.Context;
+import wyil.transform.VerificationConditionGenerator.VerificationCondition;
 
 /**
  * <p>
@@ -152,38 +151,32 @@ public class PreconditionGenerator {
 	}
 
 	private void checkInvokePreconditions(WyilFile.Expr.Invoke expr, Context context) {
-		try {
-			WyilFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
-			//
-			WyilFile.Decl.Callable fmp = vcg.lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(),
-					expr);
-			if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
-				WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
-				int numPreconditions = fm.getRequires().size();
-				// There is at least one precondition for the function/method being
-				// called. Therefore, we need to generate a verification condition
-				// which will check that the precondition holds.
-				Pair<Expr[],Context> r = vcg.translateExpressionsWithChecks(expr.getOperands(), context);
-				Expr[] arguments = r.first();
-				context = r.second();
-				String prefix = fm.getName() + "_requires_";
-				// Finally, generate an appropriate verification condition to check
-				// each precondition clause
-				for (int i = 0; i != numPreconditions; ++i) {
-					// FIXME: name needs proper path information
-					WyalFile.Name name = vcg.convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
-					Expr clause = new Expr.Invoke(null, name, null, arguments);
-					context.emit(new VerificationCondition("precondition not satisfied", context.getAssumptions(),
-							clause, expr.getParent(WyilFile.Attribute.Span.class)));
-				}
-				// Perform parameter checks
-				for (int i = 0; i != parameterTypes.size(); ++i) {
-					vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
-				}
+		WyilFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
+		WyilFile.Decl.Callable fmp = expr.getDeclaration();
+		//
+		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
+			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
+			int numPreconditions = fm.getRequires().size();
+			// There is at least one precondition for the function/method being
+			// called. Therefore, we need to generate a verification condition
+			// which will check that the precondition holds.
+			Pair<Expr[],Context> r = vcg.translateExpressionsWithChecks(expr.getOperands(), context);
+			Expr[] arguments = r.first();
+			context = r.second();
+			String prefix = fm.getName() + "_requires_";
+			// Finally, generate an appropriate verification condition to check
+			// each precondition clause
+			for (int i = 0; i != numPreconditions; ++i) {
+				// FIXME: name needs proper path information
+				WyalFile.Name name = vcg.convert(fm.getQualifiedName().toNameID().module(), prefix + i, expr);
+				Expr clause = new Expr.Invoke(null, name, null, arguments);
+				context.emit(new VerificationCondition("precondition not satisfied", context.getAssumptions(),
+						clause, expr.getParent(WyilFile.Attribute.Span.class)));
 			}
-		} catch (NameResolver.ResolutionError e) {
-			// FIXME: this should eventually be unnecessary
-			throw new InternalFailure(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
+			// Perform parameter checks
+			for (int i = 0; i != parameterTypes.size(); ++i) {
+				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
+			}
 		}
 	}
 

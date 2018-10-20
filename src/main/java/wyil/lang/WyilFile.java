@@ -17,7 +17,6 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
@@ -1874,6 +1873,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(1);
 			}
 
+			public Decl.StaticVariable getDeclaration() {
+				throw new IllegalArgumentException("implement me!");
+			}
+
 			@Override
 			public StaticVariableAccess clone(SyntacticItem[] operands) {
 				return new StaticVariableAccess((Type) operands[0], (Name) operands[1]);
@@ -1993,6 +1996,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Name getName() {
 				return (Name) get(0);
+			}
+
+			public Decl.FunctionOrMethod getDeclaration() {
+				throw new IllegalArgumentException("implement me!");
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3285,6 +3292,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(0);
 			}
 
+			public Decl.FunctionOrMethod getDeclaration() {
+				throw new IllegalArgumentException("implement me!");
+			}
+
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameterTypes() {
 				return (Tuple<Type>) get(1);
@@ -4189,6 +4200,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public void setName(Name name) {
 				operands[1] = name;
+			}
+
+			public Decl.Type getDeclaration() {
+				throw new IllegalArgumentException("implement me");
 			}
 
 			@Override

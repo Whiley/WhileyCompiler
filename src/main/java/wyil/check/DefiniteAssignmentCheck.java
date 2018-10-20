@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
 import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyc.util.ErrorMessages.errorMessage;

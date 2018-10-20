@@ -15,7 +15,6 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Stmt;
@@ -123,7 +122,7 @@ public interface AbstractSemantics {
 		 * @param type
 		 * @return
 		 */
-		public Bool is(Type type, Interpreter instance) throws ResolutionError;
+		public Bool is(Type type, Interpreter instance);
 
 		/**
 		 * Convert this value into a given representation. In the case that this

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.stage;
+package wyil.transform;
 
 import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
@@ -21,8 +21,6 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -111,11 +109,9 @@ import wyc.util.AbstractConsumer;
  *
  */
 public class VerificationConditionGenerator {
-	private final NameResolver resolver;
 	private final WyalFile wyalFile;
 
-	public VerificationConditionGenerator(WyalFile wyalFile, NameResolver resolver) {
-		this.resolver = resolver;
+	public VerificationConditionGenerator(WyalFile wyalFile) {
 		this.wyalFile = wyalFile;
 	}
 
@@ -509,7 +505,7 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 * @throws ResolutionError
 	 */
-	private Context translateAssign(WyilFile.Stmt.Assign stmt, Context context) throws ResolutionError {
+	private Context translateAssign(WyilFile.Stmt.Assign stmt, Context context) {
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		Tuple<WyilFile.Expr> rhs = stmt.getRightHandSide();
 		WyilFile.LVal[][] lvals = new LVal[rhs.size()][];
@@ -580,7 +576,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Context translateAssign(WyilFile.LVal[] lval, Expr[] rval, Context context) throws ResolutionError {
+	private Context translateAssign(WyilFile.LVal[] lval, Expr[] rval, Context context) {
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
 			WyilFile.LVal lhs = lval[i];
@@ -1294,9 +1290,8 @@ public class VerificationConditionGenerator {
 	}
 
 	private Context assumeInvokePostconditions(WyilFile.Expr.Invoke expr, Context context) throws Exception {
-		//WhileyFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();
 		//
-		WyilFile.Decl.Callable fmp = lookupFunctionOrMethodOrProperty(expr.getName(), expr.getSignature(), expr);
+		WyilFile.Decl.Callable fmp = expr.getDeclaration();
 		if(fmp instanceof WyilFile.Decl.FunctionOrMethod) {
 			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
 			int numPostconditions = fm.getEnsures().size();
@@ -1732,14 +1727,10 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateStaticVariableAccess(WyilFile.Expr.StaticVariableAccess expr, LocalEnvironment environment) {
-		try {
-			// FIXME: yes, this is a hack to temporarily handle the transition from
-			// constants to static variables.
-			WyilFile.Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), WyilFile.Decl.StaticVariable.class);
-			return translateExpression(decl.getInitialiser(), null, environment);
-		} catch (ResolutionError e) {
-			throw new RuntimeException(e);
-		}
+		// FIXME: yes, this is a hack to temporarily handle the transition from
+		// constants to static variables.
+		WyilFile.Decl.StaticVariable decl = expr.getDeclaration();;
+		return translateExpression(decl.getInitialiser(), null, environment);
 	}
 
 	// =========================================================================
@@ -2534,33 +2525,6 @@ public class VerificationConditionGenerator {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Lookup a given function or method. This maybe contained in the same file,
-	 * or in a different file. This may require loading that file in memory to
-	 * access this information.
-	 *
-	 * @param name
-	 *            --- Fully qualified name of function
-	 * @param fun
-	 *            --- Type of fucntion.
-	 * @param block
-	 *            --- Enclosing block (for debugging purposes).
-	 * @param branch
-	 *            --- Enclosing branch (for debugging purposes).
-	 * @return
-	 * @throws Exception
-	 */
-	public WyilFile.Decl.Callable lookupFunctionOrMethodOrProperty(WyilFile.Name name, Type.Callable signature,
-			WyilFile.Stmt stmt) throws NameResolver.ResolutionError {
-		//
-		for (WyilFile.Decl.Callable decl : resolver.resolveAll(name, WyilFile.Decl.Callable.class)) {
-			if (decl.getType().equals(signature)) {
-				return decl;
-			}
-		}
-		return null;
 	}
 
 	/**

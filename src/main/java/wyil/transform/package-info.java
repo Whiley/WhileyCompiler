@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 /**
- * Provides core classes implementing various checks of the Abstract Syntax Tree
- * (AST) used to represent Whiley files. For example, that variables are
- * defintely assigned, that functions do not have side-effects, etc.
+ * Provides classes which implement additional pipeline stages within the
+ * compiler. These are usually related to optimisation in some fashion.
  *
  * @author David J. Pearce
  */
-package wyc.check;
+package wyil.transform;

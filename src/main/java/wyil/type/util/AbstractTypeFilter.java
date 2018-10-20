@@ -22,10 +22,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
-import wybs.lang.NameResolver.ResolutionError;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
@@ -64,37 +62,26 @@ public class AbstractTypeFilter<T extends Type> {
 		this.any = any;
 	}
 
-	public T[] apply(Type type, NameResolver resolver) {
+	public T[] apply(Type type) {
 		ArrayList<T> results = new ArrayList<>();
-		filter(type, results, resolver);
+		filter(type, results);
 		return ArrayUtils.toArray(kind, results);
 	}
 
-	public void filter(Type type, List<T> results, NameResolver resolver) {
+	public void filter(Type type, List<T> results) {
 		if (kind.isInstance(type)) {
 			results.add((T) type);
 		} else if(type instanceof Type.Any) {
 			results.add(any);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) type;
-			try {
-				Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
-				filter(decl.getType(), results, resolver);
-			} catch (ResolutionError e) {
-				syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, t.getName().toString()), t);
-				return;
-			}
+			Decl.Type decl = t.getDeclaration();
+			filter(decl.getType(), results);
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
 			for (int i = 0; i != t.size(); ++i) {
-				filter(t.get(i), results, resolver);
+				filter(t.get(i), results);
 			}
 		}
-	}
-
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 }

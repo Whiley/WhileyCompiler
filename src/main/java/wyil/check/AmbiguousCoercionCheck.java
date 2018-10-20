@@ -11,14 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -84,8 +82,7 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 
 	public AmbiguousCoercionCheck(CompileTask builder) {
-		super(builder.getNameResolver(),
-				new SubtypeOperator(builder.getNameResolver(), new StrictTypeEmptinessTest(builder.getNameResolver())));
+		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 
 	public void check(WyilFile file) {
@@ -142,34 +139,30 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 			assumptions.set(target, source, true);
 		}
 		// Display on the target type in question
-		try {
-			boolean r;
-			if (target instanceof Type.Atom) {
-				// Have reached an atom, and we need to decompose this more.
-				r = checkCoercion((Type.Atom) target, source, environment, assumptions, item);
-			} else if (target instanceof Type.Nominal) {
-				// Have reached a nominal so we just expand this as is.
-				r = checkCoercion((Type.Nominal) target, source, environment, assumptions, item);
-			} else {
-				// Have reached a decision point. Therefore, need to try and make the decision.
-				r = checkCoercion((Type.Union) target, source, environment, assumptions, item);
-			}
-			// Unset the assumption to avoid interference.
-			assumptions.set(target, source, false);
-			// Done
-			return r;
-		} catch (ResolutionError e) {
-			return internalFailure("problematic coercion (" + source + " to " + target + ")", item);
+		boolean r;
+		if (target instanceof Type.Atom) {
+			// Have reached an atom, and we need to decompose this more.
+			r = checkCoercion((Type.Atom) target, source, environment, assumptions, item);
+		} else if (target instanceof Type.Nominal) {
+			// Have reached a nominal so we just expand this as is.
+			r = checkCoercion((Type.Nominal) target, source, environment, assumptions, item);
+		} else {
+			// Have reached a decision point. Therefore, need to try and make the decision.
+			r = checkCoercion((Type.Union) target, source, environment, assumptions, item);
 		}
+		// Unset the assumption to avoid interference.
+		assumptions.set(target, source, false);
+		// Done
+		return r;
 	}
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item) throws ResolutionError {
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		if (target instanceof Type.Primitive) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
+			Decl.Type decl = s.getDeclaration();
 			return checkCoercion(target,decl.getType(),environment, assumptions, item);
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
@@ -193,18 +186,18 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	private boolean checkCoercion(Type.Array target, Type.Array source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item) throws ResolutionError {
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		return checkCoercion(target.getElement(), source.getElement(), environment, assumptions, item);
 	}
 
 	private boolean checkCoercion(Type.Reference target, Type.Reference source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item) throws ResolutionError {
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		return checkCoercion(target.getElement(), source.getElement(), environment, assumptions, item);
 	}
 
 	private boolean checkCoercion(Type.Record target, Type.Record source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item)
-			throws ResolutionError {
+			{
 		Tuple<Type.Field> fields = target.getFields();
 		for (int i = 0; i != fields.size(); ++i) {
 			Type.Field field = fields.get(i);
@@ -217,21 +210,20 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	private boolean checkCoercion(Type.Callable target, Type.Callable source, Environment environment,
-			SyntacticItem item) throws ResolutionError {
+			SyntacticItem item) {
 		// FIXME: this is considered safe at this point only because the subtype
 		// operator currently does not allow any kind of subtyping between parameters.
 		return true;
 	}
 
 	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item) throws ResolutionError {
-		Type.Nominal t = target;
-		Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
+		Decl.Type decl = target.getDeclaration();
 		return checkCoercion(decl.getType(), source, environment, assumptions, item);
 	}
 
 	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item) throws ResolutionError {
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		Type.Union ut = target;
 		Type candidate = selectCoercionCandidate(ut.getAll(), source, environment);
 		if (candidate != null) {
@@ -240,7 +232,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		} else if (source instanceof Type.Nominal) {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = resolver.resolveExactly(s.getName(), Decl.Type.class);
+			Decl.Type decl = s.getDeclaration();
 			return checkCoercion(target,decl.getType(),environment, assumptions, item);
 		} else if (source instanceof Type.Union) {
 			// Proceed by expanding source

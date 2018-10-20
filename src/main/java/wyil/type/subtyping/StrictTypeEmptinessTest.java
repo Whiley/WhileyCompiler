@@ -18,8 +18,6 @@ import java.util.Arrays;
 
 import wyil.type.util.BinaryRelation;
 import wyil.type.util.HashSetBinaryRelation;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 
 import static wyil.lang.WyilFile.Name;
 import static wyil.lang.WyilFile.*;
@@ -175,15 +173,10 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
-	protected final NameResolver resolver;
-
-	public StrictTypeEmptinessTest(NameResolver resolver) {
-		this.resolver = resolver;
-	}
 
 	@Override
-	public boolean isVoid(SemanticType lhs, EmptinessTest.State lhsState, SemanticType rhs, EmptinessTest.State rhsState,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	public boolean isVoid(SemanticType lhs, EmptinessTest.State lhsState, SemanticType rhs,
+			EmptinessTest.State rhsState, LifetimeRelation lifetimes) {
 		// FIXME: this is really temporary for now.
 		Term<?> lhsTerm = new Term<>(lhsState.sign, lhs, lhsState.maximise);
 		Term<?> rhsTerm = new Term<>(rhsState.sign, rhs, rhsState.maximise);
@@ -191,8 +184,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
 	}
 
-	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+	protected boolean isVoidTerm(Term<?> lhs, Term<?> rhs, BinaryRelation<Term<?>> assumptions,
+			LifetimeRelation lifetimes) {
 		//
 		if (assumptions.get(lhs, rhs)) {
 			// This represents the "coinductive" case. That is, we have
@@ -228,11 +221,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            The set of types currently being expanded
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
-	 * @return
-	 * @throws ResolutionError
+	 * @return @
 	 */
 	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+			LifetimeRelation lifetimes) {
 		// FIXME: there is a bug in the following case which needs to be
 		// addressed:
 		//
@@ -283,8 +275,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 				if (conjunct) {
 					worklist.push(item.sign, ut.getAll(), item.maximise);
 				} else {
-					return isVoidDisjunction(ut, item.sign, item.maximise, truths, worklist, assumptions,
-							lifetimes);
+					return isVoidDisjunction(ut, item.sign, item.maximise, truths, worklist, assumptions, lifetimes);
 				}
 				break;
 			}
@@ -296,7 +287,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			}
 			case TYPE_nominal: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Decl.Type decl = resolver.resolveExactly(nom.getName(), Decl.Type.class);
+				Decl.Type decl = nom.getDeclaration();
 				if (item.maximise || decl.getInvariant().size() == 0) {
 					worklist.push(item.sign, decl.getType(), item.maximise);
 				} else if (item.sign) {
@@ -317,8 +308,9 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
-	protected boolean isVoidDisjunction(Type.Combinator combinator, boolean sign, boolean maximise, ArrayList<Atom<?>> truths,
-			Worklist worklist, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidDisjunction(Type.Combinator combinator, boolean sign, boolean maximise,
+			ArrayList<Atom<?>> truths, Worklist worklist, BinaryRelation<Term<?>> assumptions,
+			LifetimeRelation lifetimes) {
 		SemanticType[] operands = combinator.getAll();
 		for (int i = 0; i != operands.length; ++i) {
 			Worklist tmp = worklist.clone();
@@ -351,12 +343,11 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 * @param b
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
-	 * @return
-	 * @throws ResolutionError
+	 * @return @
 	 */
 	@SuppressWarnings("unchecked")
-	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+	protected boolean isVoidAtom(Atom<?> a, Atom<?> b, BinaryRelation<Term<?>> assumptions,
+			LifetimeRelation lifetimes) {
 		// At this point, we have several cases left to consider.
 		boolean aSign = a.sign;
 		boolean bSign = b.sign;
@@ -387,9 +378,11 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			case SEMTYPE_array:
 				return isVoidArray((Atom<SemanticType.Array>) a, (Atom<SemanticType.Array>) b, assumptions, lifetimes);
 			case SEMTYPE_record:
-				return isVoidRecord((Atom<SemanticType.Record>) a, (Atom<SemanticType.Record>) b, assumptions, lifetimes);
+				return isVoidRecord((Atom<SemanticType.Record>) a, (Atom<SemanticType.Record>) b, assumptions,
+						lifetimes);
 			case SEMTYPE_reference:
-				return isVoidReference((Atom<SemanticType.Reference>) a, (Atom<SemanticType.Reference>) b, assumptions, lifetimes);
+				return isVoidReference((Atom<SemanticType.Reference>) a, (Atom<SemanticType.Reference>) b, assumptions,
+						lifetimes);
 			case TYPE_function:
 			case TYPE_method:
 			case TYPE_property:
@@ -463,11 +456,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
-	 * @return
-	 * @throws ResolutionError
+	 * @return @
 	 */
-	protected boolean isVoidArray(Atom<SemanticType.Array> lhs, Atom<SemanticType.Array> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidArray(Atom<SemanticType.Array> lhs, Atom<SemanticType.Array> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
 		Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
 		if (lhs.sign && rhs.sign) {
@@ -480,9 +472,9 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)
 					&& !isVoidTerm(lhsTerm, lhsTerm, assumptions, lifetimes)
 					&& !isVoidTerm(rhsTerm, rhsTerm, assumptions, lifetimes);
-		} else if(lhs.sign || rhs.sign) {
+		} else if (lhs.sign || rhs.sign) {
 			// int[] & !bool[] != 0, as int & !bool != 0
-			// int[] & !int[]  == 0, as int & !int == 0
+			// int[] & !int[] == 0, as int & !int == 0
 			// void[] & !int[] == 0, as void && !int == 0
 			// int[] & !void[] != 0, as int && !void != 0
 			return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
@@ -517,11 +509,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
-	 * @return
-	 * @throws ResolutionError
+	 * @return @
 	 */
-	protected boolean isVoidRecord(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidRecord(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
 		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//
@@ -545,8 +536,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
-	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
 		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//
@@ -680,10 +671,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
 	 * @return
-	 * @throws ResolutionError
+	 * @
 	 */
-	protected boolean isVoidReference(Atom<SemanticType.Reference> lhs, Atom<SemanticType.Reference> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidReference(Atom<SemanticType.Reference> lhs, Atom<SemanticType.Reference> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		String lhsLifetime = extractLifetime(lhs.type);
 		String rhsLifetime = extractLifetime(rhs.type);
 		// FIXME: need to look at lifetime parameters
@@ -752,10 +743,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships private boolean
-	 * @throws ResolutionError
+	 * @
 	 */
-	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		boolean lhsMeth = (lhs.type instanceof Type.Method);
 		boolean rhsMeth = (rhs.type instanceof Type.Method);
 		//
@@ -803,8 +794,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	}
 
 	protected boolean isVoidParameters(boolean lhsSign, boolean lhsMax, Tuple<Type> lhs, boolean rhsSign,
-			boolean rhsMax, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes)
-			throws ResolutionError {
+			boolean rhsMax, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		boolean sign = lhsSign == rhsSign;
 		//
 		if (lhs.size() != rhs.size()) {

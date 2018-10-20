@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
 import static wyc.util.ErrorMessages.PARAMETER_REASSIGNED;
 import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
@@ -24,8 +24,6 @@ import wyil.lang.WyilFile;
 
 import java.util.BitSet;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntaxError;
 
 /**
@@ -70,10 +68,7 @@ import wybs.lang.SyntaxError;
 public class DefiniteUnassignmentCheck
 		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
 
-	private final NameResolver resolver;
-
 	public DefiniteUnassignmentCheck(CompileTask builder) {
-		this.resolver = builder.getNameResolver();
 	}
 
 	/**
@@ -233,15 +228,10 @@ public class DefiniteUnassignmentCheck
 	}
 
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
-		try {
-			// FIXME: we shouldn't have to perform resolution here.
-			Decl.StaticVariable var = resolver.resolveExactly(lval.getName(), Decl.StaticVariable.class);
-			if (isFinal(var)) {
-				WyilFile file = ((WyilFile) lval.getHeap());
-				throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
-			}
-		} catch (ResolutionError e) {
-			throw new RuntimeException(e);
+		Decl.StaticVariable var = lval.getDeclaration();
+		if (isFinal(var)) {
+			WyilFile file = ((WyilFile) lval.getHeap());
+			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
 		}
 	}
 

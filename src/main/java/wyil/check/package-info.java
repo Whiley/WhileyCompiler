@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 /**
- * Provides classes which implement additional pipeline stages within the
- * compiler. These are usually related to optimisation in some fashion.
+ * Provides core classes implementing various checks of the Abstract Syntax Tree
+ * (AST) used to represent Whiley files. For example, that variables are
+ * defintely assigned, that functions do not have side-effects, etc.
  *
  * @author David J. Pearce
  */
-package wyil.stage;
+package wyil.check;

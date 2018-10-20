@@ -13,9 +13,6 @@
 // limitations under the License.
 package wyil.type.subtyping;
 
-
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.SemanticType;
 import wyil.type.util.BinaryRelation;
@@ -49,13 +46,9 @@ import wyil.type.util.BinaryRelation;
  */
 public class RelaxedTypeEmptinessTest extends StrictTypeEmptinessTest {
 
-	public RelaxedTypeEmptinessTest(NameResolver resolver) {
-		super(resolver);
-	}
-
 	@Override
 	protected int matchRecordFields(Atom<SemanticType.Record> lhs, Atom<SemanticType.Record> rhs, BinaryRelation<Term<?>> assumptions,
-			LifetimeRelation lifetimes) throws ResolutionError {
+			LifetimeRelation lifetimes) {
 		Tuple<? extends SemanticType.Field> lhsFields = lhs.type.getFields();
 		Tuple<? extends SemanticType.Field> rhsFields = rhs.type.getFields();
 		//

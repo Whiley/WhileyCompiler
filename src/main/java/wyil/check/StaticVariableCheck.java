@@ -1,10 +1,9 @@
-package wyc.check;
+package wyil.check;
 
 import java.util.HashSet;
 import java.util.Set;
 
 import wybs.lang.NameID;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
 import wyc.util.AbstractConsumer;
@@ -15,10 +14,8 @@ import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
-	private final NameResolver resolver;
 
 	public StaticVariableCheck(CompileTask builder) {
-		this.resolver = builder.getNameResolver();
 	}
 
 	public void check(WyilFile wf) {
@@ -58,15 +55,11 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Set<NameID> accessed) {
-		try {
-			Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), Decl.StaticVariable.class);
-			NameID name = decl.getQualifiedName().toNameID();
-			if (decl.hasInitialiser() && !accessed.contains(name)) {
-				accessed.add(name);
-				visitExpression(decl.getInitialiser(), accessed);
-			}
-		} catch (NameResolver.ResolutionError e) {
-			throw new IllegalArgumentException(e);
+		Decl.StaticVariable decl = expr.getDeclaration();
+		NameID name = decl.getQualifiedName().toNameID();
+		if (decl.hasInitialiser() && !accessed.contains(name)) {
+			accessed.add(name);
+			visitExpression(decl.getInitialiser(), accessed);
 		}
 	}
 

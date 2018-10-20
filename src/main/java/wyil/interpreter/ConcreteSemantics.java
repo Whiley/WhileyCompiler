@@ -19,8 +19,6 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
@@ -91,14 +89,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @throws ResolutionError
 		 */
 		@Override
-		public Bool is(Type type, Interpreter instance) throws ResolutionError {
+		public Bool is(Type type, Interpreter instance) {
 			// Handle generic cases here
 			if (type instanceof Type.Void) {
 				return False;
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal nom = (Type.Nominal) type;
-				NameResolver resolver = instance.getNameResolver();
-				Decl.Type decl = resolver.resolveExactly(nom.getName(), Decl.Type.class);
+				Decl.Type decl = nom.getDeclaration();
 				Decl.Variable var = decl.getVariableDeclaration();
 				if(is(var.getType(), instance) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();
@@ -180,7 +177,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			private Null() {
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Null) {
 					return True;
 				} else {
@@ -220,7 +217,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Bool) {
 					return True;
 				} else {
@@ -271,7 +268,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public RValue.Bool is(Type type, Interpreter instance) {
 				if (type instanceof Type.Byte) {
 					return True;
 				} else {
@@ -346,7 +343,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.value = value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Int) {
 					return True;
 				} else {
@@ -437,7 +434,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.elements = elements;
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public RValue.Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Array) {
 					Type.Array t = (Type.Array) type;
 					for (int i = 0; i != elements.length; ++i) {
@@ -574,7 +571,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public RValue.Bool is(Type type, Interpreter instance) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
 					Tuple<Type.Field> tFields = t.getFields();
@@ -695,7 +692,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public RValue.Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Callable) {
 					Type.Callable tc = (Type.Callable) type;
 					// FIXME: this is really a hack, since we need to perform a full
@@ -739,7 +736,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
+			public RValue.Bool is(Type type, Interpreter instance) {
 				if(type instanceof Type.Reference) {
 					Type.Reference ref = (Type.Reference) type;
 					return referent.value.is(ref.getElement(), instance);

@@ -11,11 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.stage;
+package wyil.transform;
 
 import wybs.lang.Build;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wyc.util.AbstractConsumer;
 import wyil.lang.WyilFile;
 import wyc.task.CompileTask;
@@ -55,10 +53,9 @@ import java.util.Set;
  *
  */
 public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WyilFile> {
-	private final NameResolver resolver;
 
 	public RecursiveTypeAnalysis(CompileTask builder) {
-	  resolver = builder.getNameResolver();
+
 	}
 
 	@Override
@@ -105,11 +102,9 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 
 	@Override
 	public void visitTypeNominal(Type.Nominal type, Set<Name> visited) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(type.getName(), WyilFile.Decl.Type.class);
-			visitType(decl, visited);
-		} catch (ResolutionError e) {
-			throw new IllegalArgumentException("invalid nominal type: " + type);
-		}
+		// Extract the declaration to which this type refers.
+		Decl.Type decl = type.getDeclaration();
+		// Recursively traverse it.
+		visitType(decl, visited);
 	}
 }

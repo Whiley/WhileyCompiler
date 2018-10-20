@@ -23,7 +23,6 @@ import static wyil.lang.WyilFile.SEMTYPE_union;
 
 import java.util.function.BiFunction;
 
-import wybs.lang.NameResolver;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Type;
@@ -67,10 +66,10 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType, LifetimeR
 	private final TypeIntersector intersector;
 	private final TypeSubtractor subtractor;
 
-	public ConcreteTypeExtractor(NameResolver resolver, EmptinessTest<SemanticType> emptiness) {
-		SubtypeOperator op = new SubtypeOperator(resolver, emptiness);
-		this.intersector = new TypeIntersector(resolver, op);
-		this.subtractor = new TypeSubtractor(resolver, op);
+	public ConcreteTypeExtractor(EmptinessTest<SemanticType> emptiness) {
+		SubtypeOperator op = new SubtypeOperator(emptiness);
+		this.intersector = new TypeIntersector(op);
+		this.subtractor = new TypeSubtractor(op);
 	}
 
 	/**
