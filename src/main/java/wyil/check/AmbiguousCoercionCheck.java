@@ -86,7 +86,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	public void check(WyilFile file) {
-		visitWhileyFile(file);
+		visitModule(file);
 	}
 
 	@Override

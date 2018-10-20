@@ -32,7 +32,7 @@ import wyil.lang.WyilFile.Type;
  */
 public abstract class AbstractFunction<P,R> {
 
-	public R visitWhileyFile(WyilFile wf, P data) {
+	public R visitModule(WyilFile wf, P data) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl, data);
 		}

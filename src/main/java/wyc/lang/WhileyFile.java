@@ -22,6 +22,7 @@ import java.util.List;
 import wyc.io.WhileyFileLexer;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
 
 public class WhileyFile {
 	// =========================================================================
@@ -42,8 +43,7 @@ public class WhileyFile {
 		 */
 		@Override
 		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream) throws IOException {
-			WhileyFileLexer wlexer = new WhileyFileLexer(e);
-			return new WhileyFile(wlexer.scan());
+			return new WhileyFile(e);
 		}
 
 		@Override
@@ -63,10 +63,22 @@ public class WhileyFile {
 		}
 	};
 
+	private final Path.Entry<WhileyFile> entry;
+
 	private final List<WhileyFileLexer.Token> tokens;
 
+	public WhileyFile(Path.Entry<WhileyFile> entry) throws IOException {
+		this.entry = entry;
+		this.tokens = new WhileyFileLexer(entry).scan();
+	}
+
 	public WhileyFile(List<WhileyFileLexer.Token> tokens) {
+		this.entry = null;
 		this.tokens = tokens;
+	}
+
+	public Path.Entry<WhileyFile> getEntry() {
+		return entry;
 	}
 
 	public List<WhileyFileLexer.Token> getTokens() {

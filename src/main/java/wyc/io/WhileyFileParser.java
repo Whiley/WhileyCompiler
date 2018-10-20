@@ -47,6 +47,7 @@ import wyil.lang.WyilFile;
  */
 public class WhileyFileParser {
 	private final WyilFile parent;
+	private final WhileyFile source;
 	private ArrayList<Token> tokens;
 	private int index;
 
@@ -57,6 +58,7 @@ public class WhileyFileParser {
 			throw new IllegalArgumentException("source cannot be null");
 		}
 		this.parent = target;
+		this.source = source;
 		this.tokens = new ArrayList<>(source.getTokens());
 	}
 
@@ -69,7 +71,7 @@ public class WhileyFileParser {
 	 */
 	public Decl.Unit read() {
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = parseModuleName(parent.getEntry());
+		Name name = parseModuleName(source.getEntry());
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -104,7 +106,7 @@ public class WhileyFileParser {
 		return parent.allocate(module);
 	}
 
-	private Name parseModuleName(Path.Entry<WyilFile> entry) {
+	private Name parseModuleName(Path.Entry<WhileyFile> entry) {
 		ArrayList<Identifier> components = new ArrayList<>();
 		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword
@@ -116,9 +118,9 @@ public class WhileyFileParser {
 
 			matchEndLine();
 		}
-		Identifier[] bits = components.toArray(new Identifier[components.size()+1]);
+		Identifier[] bits = components.toArray(new Identifier[components.size() + 1]);
 		// FIXME: this is so completely broken
-		bits[bits.length-1] = new Identifier(entry.id().last());
+		bits[bits.length - 1] = new Identifier(entry.id().last());
 		return new Name(bits);
 	}
 

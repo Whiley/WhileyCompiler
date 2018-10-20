@@ -32,7 +32,7 @@ import wyil.lang.WyilFile.Type;
  */
 public abstract class AbstractVisitor {
 
-	public void visitWhileyFile(WyilFile wf) {
+	public void visitModule(WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl);
 		}

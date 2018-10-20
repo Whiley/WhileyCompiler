@@ -32,6 +32,7 @@ import wyil.check.StaticVariableCheck;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
+import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
@@ -47,7 +48,7 @@ import wycc.util.Pair;
 /**
  * Responsible for managing the process of turning source files into binary code
  * for execution. Each source file is passed through a pipeline of stages that
- * modify it in a variety of ways. The main stages are:
+ * modify it in a variet	y of ways. The main stages are:
  * <ol>
  * <li>
  * <p>
@@ -167,6 +168,7 @@ public final class CompileTask implements Build.Task {
 			tmpTime = System.currentTimeMillis();
 			tmpMemory = runtime.freeMemory();
 
+			new NameResolution(this).apply(wf);
 			new FlowTypeCheck(this).check(wf);
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck(this).check(wf);
@@ -191,6 +193,8 @@ public final class CompileTask implements Build.Task {
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			SyntacticItem item = e.getElement();
 			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+			//
+			System.out.println("LOOKING FOR: " + unit.getName());
 			// Determine which source file this entry is contained in
 			Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
 			//
@@ -227,8 +231,8 @@ public final class CompileTask implements Build.Task {
 	private Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
 		String nameStr = name.toString();
 		//
-		for(Path.Entry<WhileyFile> e : sources) {
-			if(e.id().toString().equals(nameStr)) {
+		for (Path.Entry<WhileyFile> e : sources) {
+			if (e.id().toString().equals(nameStr)) {
 				return e;
 			}
 		}

@@ -55,13 +55,13 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	// ======================================================================
 
 	public void apply(WyilFile module) {
-		visitWhileyFile(module,0);
+		visitModule(module,0);
 	}
 
 	@Override
-	public void visitWhileyFile(WyilFile module, Integer indent) {
+	public void visitModule(WyilFile module, Integer indent) {
 		out.println();
-		super.visitWhileyFile(module, indent);
+		super.visitModule(module, indent);
 		out.flush();
 	}
 

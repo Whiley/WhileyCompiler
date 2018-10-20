@@ -72,7 +72,7 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 
 	@Override
 	public void apply(WyilFile module) {
-		visitWhileyFile(module,null);
+		visitModule(module,null);
 	}
 
 	// ===========================================================================

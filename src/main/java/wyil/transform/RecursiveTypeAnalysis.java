@@ -60,7 +60,7 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 
 	@Override
 	public void apply(WyilFile module) {
-		visitWhileyFile(module, new HashSet<>());
+		visitModule(module, new HashSet<>());
 	}
 
 	// ===========================================================================

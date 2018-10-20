@@ -50,7 +50,7 @@ import wybs.lang.SyntaxError;
 public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
 
 	public void check(WyilFile wf) {
-		visitWhileyFile(wf, null);
+		visitModule(wf, null);
 	}
 
 	/**

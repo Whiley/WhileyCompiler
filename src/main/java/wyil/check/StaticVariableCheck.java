@@ -19,7 +19,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	}
 
 	public void check(WyilFile wf) {
-		visitWhileyFile(wf, null);
+		visitModule(wf, null);
 	}
 
 	@Override

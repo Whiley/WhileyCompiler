@@ -77,7 +77,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	}
 
 	public void check(WyilFile file) {
-		visitWhileyFile(file, null);
+		visitModule(file, null);
 	}
 
 	public enum Context {

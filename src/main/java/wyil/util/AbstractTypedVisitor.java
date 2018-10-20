@@ -60,7 +60,7 @@ public abstract class AbstractTypedVisitor {
 		this.subtypeOperator = subtypeOperator;
 	}
 
-	public void visitWhileyFile(WyilFile wf) {
+	public void visitModule(WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl);
 		}

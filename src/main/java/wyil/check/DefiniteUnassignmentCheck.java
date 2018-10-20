@@ -79,7 +79,7 @@ public class DefiniteUnassignmentCheck
 	private boolean finalParameters = false;
 
 	public void check(WyilFile wf) {
-		visitWhileyFile(wf, null);
+		visitModule(wf, null);
 	}
 
 	/**
