@@ -8,13 +8,13 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyc.util.AbstractConsumer;
 import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 import wyil.transform.VerificationConditionGenerator.Context;
 import wyil.transform.VerificationConditionGenerator.VerificationCondition;
+import wyil.util.AbstractConsumer;
 
 /**
  * <p>

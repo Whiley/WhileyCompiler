@@ -36,8 +36,8 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.lang.WyilFile;
+import wyil.util.AbstractConsumer;
 import wyc.task.Wyil2WyalBuilder;
-import wyc.util.AbstractConsumer;
 
 /**
  * <p>

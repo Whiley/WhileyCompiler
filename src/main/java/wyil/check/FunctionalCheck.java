@@ -16,9 +16,9 @@ package wyil.check;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
-import wyc.util.AbstractConsumer;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.util.AbstractConsumer;
 
 import static wyc.util.ErrorMessages.*;
 import static wyil.lang.WyilFile.*;

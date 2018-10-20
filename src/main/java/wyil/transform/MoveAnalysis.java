@@ -17,10 +17,10 @@ import static wyil.lang.WyilFile.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.AbstractConsumer;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Stmt;
+import wyil.util.AbstractConsumer;
 
 /**
  * <p>

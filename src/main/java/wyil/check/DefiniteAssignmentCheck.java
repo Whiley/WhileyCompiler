@@ -17,8 +17,8 @@ import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
-import wyc.util.AbstractFunction;
 import wyil.lang.WyilFile;
+import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 

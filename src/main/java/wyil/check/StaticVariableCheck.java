@@ -6,8 +6,8 @@ import java.util.Set;
 import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
-import wyc.util.AbstractConsumer;
 import wyil.lang.WyilFile;
+import wyil.util.AbstractConsumer;
 
 import static wyc.util.ErrorMessages.CYCLIC_STATIC_INITIALISER;
 import static wyc.util.ErrorMessages.errorMessage;

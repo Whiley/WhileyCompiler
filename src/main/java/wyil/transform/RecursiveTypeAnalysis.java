@@ -14,8 +14,8 @@
 package wyil.transform;
 
 import wybs.lang.Build;
-import wyc.util.AbstractConsumer;
 import wyil.lang.WyilFile;
+import wyil.util.AbstractConsumer;
 import wyc.task.CompileTask;
 
 import static wyil.lang.WyilFile.*;

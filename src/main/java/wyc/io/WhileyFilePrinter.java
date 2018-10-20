@@ -20,9 +20,9 @@ import java.util.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.AbstractConsumer;
-import wyc.util.AbstractVisitor;
 import wyil.lang.WyilFile;
+import wyil.util.AbstractConsumer;
+import wyil.util.AbstractVisitor;
 
 /**
  * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.

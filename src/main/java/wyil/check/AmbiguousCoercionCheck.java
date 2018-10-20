@@ -22,7 +22,6 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
-import wyc.util.AbstractTypedVisitor;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -31,6 +30,7 @@ import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.BinaryRelation;
 import wyil.type.util.HashSetBinaryRelation;
+import wyil.util.AbstractTypedVisitor;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 
 /**

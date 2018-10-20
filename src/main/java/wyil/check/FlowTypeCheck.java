@@ -26,7 +26,6 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyc.util.AbstractVisitor;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
 import wyil.lang.WyilFile;
@@ -39,6 +38,7 @@ import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
+import wyil.util.AbstractVisitor;
 import wyc.task.CompileTask;
 
 import static wyc.util.ErrorMessages.*;

@@ -27,7 +27,6 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
-import wyc.util.AbstractConsumer;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -35,6 +34,7 @@ import wyfs.lang.Path.Entry;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.lang.WyilFile.Type;
+import wyil.util.AbstractConsumer;
 
 /**
  * <p>
