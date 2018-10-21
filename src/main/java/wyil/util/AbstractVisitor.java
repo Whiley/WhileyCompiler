@@ -665,6 +665,7 @@ public abstract class AbstractVisitor {
 
 	public void visitIs(Expr.Is expr) {
 		visitExpression(expr.getOperand());
+		visitType(expr.getTestType());
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr) {
@@ -783,8 +784,8 @@ public abstract class AbstractVisitor {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
@@ -874,7 +875,7 @@ public abstract class AbstractVisitor {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type) {
+	public void visitTypeUnresolved(Type.Unknown type) {
 
 	}
 

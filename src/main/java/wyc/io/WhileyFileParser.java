@@ -1467,7 +1467,7 @@ public class WhileyFileParser {
 			if(scope.isVariable(name)) {
 				var = new Expr.VariableAccess(Type.Void, scope.getVariableDeclaration(name));
 			} else {
-				var = new Expr.StaticVariableAccess(Type.Void, new Name(name));
+				var = new Expr.StaticVariableAccess(Type.Void, new Name(name), new Ref(new Decl.Unknown()));
 			}
 			return annotateSourceLocation(var, start);
 		case LeftBrace: {
@@ -2211,10 +2211,10 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// This indicates we have an direct invocation
-			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Type.Unresolved());
+			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Type.Unknown(), new Ref(new Decl.Unknown()));
 		} else {
 			// Must be a qualified constant access
-			expr = new Expr.StaticVariableAccess(Type.Void, name);
+			expr = new Expr.StaticVariableAccess(Type.Void, name, new Ref(new Decl.Unknown()));
 		}
 		return annotateSourceLocation(expr, start);
 	}
@@ -2298,7 +2298,7 @@ public class WhileyFileParser {
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				Expr var = new Expr.StaticVariableAccess(Type.Void, new Name(name));
+				Expr var = new Expr.StaticVariableAccess(Type.Void, new Name(name), new Ref(new Decl.Unknown()));
 				return annotateSourceLocation(var, start);
 			}
 		}
@@ -2825,9 +2825,9 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
-			Type.Callable type = new Type.Unresolved();
+			Type.Callable type = new Type.Unknown();
 			Name nm = annotateSourceLocation(new Name(name), start, start);
-			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, type), start);
+			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, type, new Ref(new Decl.Unknown())), start);
 		}
 	}
 
@@ -3029,7 +3029,7 @@ public class WhileyFileParser {
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
 		return annotateSourceLocation(new Decl.Lambda(new Tuple<>(), new Identifier(""), parameters, captures,
-				lifetimeParameters, body, new Type.Unresolved()), start);
+				lifetimeParameters, body, new Type.Unknown()), start);
 	}
 
 	/**
@@ -3082,7 +3082,7 @@ public class WhileyFileParser {
 			// No, parameters are not supplied.
 			parameters = new Tuple<>();
 		}
-		Type.Callable type = new Type.Unresolved();
+		Type.Callable type = new Type.Unknown();
 		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters,type), start);
 	}
 
@@ -3616,7 +3616,7 @@ public class WhileyFileParser {
 	private Type parseNominalType(EnclosingScope scope) {
 		int start = index;
 		Name name = parseName(scope);
-		return annotateSourceLocation(new Type.Nominal(name), start);
+		return annotateSourceLocation(new Type.Nominal(name, new Ref(new Decl.Unknown())), start);
 	}
 
 	/**

@@ -23,6 +23,7 @@ import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
 import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
@@ -35,6 +36,7 @@ import wybs.lang.Build.Graph;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
 import wybs.lang.NameID;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
@@ -134,10 +136,14 @@ public class Activator implements Module.Activator {
 		@Override
 		public void execute(Build.Project project, Path.ID id, String method, Value... args) {
 			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
-			NameID name = new NameID(id, method);
+			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
-			Interpreter interpreter = new Interpreter(project, System.out);
-			RValue[] returns = interpreter.execute(name, sig, interpreter.new CallStack());
+			Interpreter interpreter = new Interpreter(System.out);
+			// Create the initial stack
+			Interpreter.CallStack stack = interpreter.new CallStack();
+			// FIXME: load relevant modules
+			// Execute the requested function
+			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {
 				for (int i = 0; i != returns.length; ++i) {

@@ -32,6 +32,7 @@ import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.StdBuildGraph;
@@ -49,7 +50,9 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
 import wytp.provers.AutomatedTheoremProver;
@@ -256,27 +259,18 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
-		StdProject project = new StdProject();
-		project.getRoots().add(new DirectoryRoot(wyildir, registry));
+		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
 		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
-		NameID name = new NameID(id, "test");
-		executeFunctionOrMethod(name, sig, project);
-	}
-
-	/**
-	 * Execute a given function or method in a wyil file.
-	 *
-	 * @param id
-	 * @param signature
-	 * @param project
-	 * @throws IOException
-	 */
-	private static void executeFunctionOrMethod(NameID id, Type.Callable signature, Build.Project project)
-			throws IOException {
+		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
-		Interpreter interpreter = new Interpreter(project, System.out);
-		RValue[] returns = interpreter.execute(id, signature, interpreter.new CallStack());
+		Interpreter interpreter = new Interpreter(System.out);
+		// Create the initial stack
+		Interpreter.CallStack stack = interpreter.new CallStack();
+		// Load the relevant WyIL module
+		stack.load(root.get(id, WyilFile.ContentType).read());
+		//
+		RValue[] returns = interpreter.execute(name, sig, stack);
 		// Print out any return values produced
 		if (returns != null) {
 			for (int i = 0; i != returns.length; ++i) {

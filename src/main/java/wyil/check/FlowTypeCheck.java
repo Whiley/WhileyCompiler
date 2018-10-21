@@ -1453,8 +1453,13 @@ public class FlowTypeCheck {
 		for (int i = 0; i != arguments.size(); ++i) {
 			types[i] = checkExpression(arguments.get(i), environment);
 		}
-		// Determine the declaration being invoked
-		Binding binding = resolveAsCallable(expr.getName(), new Tuple<>(types), expr.getLifetimes(),
+		// Determine the declaration(s) being invoked
+		Decl.Callable candidate = expr.getDeclaration();
+		// FIXME: broken for overloading
+		ArrayList<Decl.Callable> candidates = new ArrayList<>();
+		candidates.add(candidate);
+		// Now attempt to bind the given candidate declarations against the concrete argument types.
+		Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
 				environment);
 		// Assign descriptor to this expression
 		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
@@ -1732,7 +1737,11 @@ public class FlowTypeCheck {
 		if (types.size() > 0) {
 			// Parameter types have been given, so use them to help resolve
 			// declaration.
-			binding = resolveAsCallable(expr.getName(), types, new Tuple<Identifier>(), environment);
+			ArrayList<Decl.Callable> candidates = new ArrayList<>();
+			// FIXME: problem with overloading
+			candidates.add(expr.getDeclaration());
+			// Now attempt to bind the given candidate declarations against the concrete argument types.
+			binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(), environment);
 		} else {
 			// No parameters we're given, therefore attempt to resolve
 			// uniquely.
@@ -1792,29 +1801,6 @@ public class FlowTypeCheck {
 			Decl.FunctionOrMethod candidate = candidates.get(0);
 			return new Binding(candidate,candidate.getType());
 		}
-	}
-
-	/**
-	 * Attempt to determine the declared function or macro to which a given
-	 * invocation refers. To resolve this requires considering the name, along with
-	 * the argument types as well.
-	 *
-	 * @param name
-	 * @param arguments
-	 *            Inferred Argument Types
-	 * @param lifetimeArguments
-	 *            Explicit lifetime arguments (if provided)
-	 * @param lifetimes
-	 *            Within relationship beteween declared lifetimes
-	 *
-	 * @return
-	 */
-	private Binding resolveAsCallable(Name name, Tuple<? extends SemanticType> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
-		// Identify all function or macro declarations which should be
-		// considered
-		List<Decl.Callable> candidates = resolver.resolveAll(name, Decl.Callable.class);
-		// Now attempt to bind the given candidate declarations against the concrete argument types.
-		return generateCallableBinding(name,candidates,arguments,lifetimeArguments,lifetimes);
 	}
 
 	/**

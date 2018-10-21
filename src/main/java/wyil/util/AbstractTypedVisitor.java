@@ -773,6 +773,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitIs(Expr.Is expr, Environment environment) {
 		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
+		visitType(expr.getTestType());
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, Environment environment) {
@@ -917,8 +918,8 @@ public abstract class AbstractTypedVisitor {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
@@ -1007,7 +1008,7 @@ public abstract class AbstractTypedVisitor {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type) {
+	public void visitTypeUnresolved(Type.Unknown type) {
 
 	}
 

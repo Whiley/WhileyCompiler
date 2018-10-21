@@ -45,10 +45,6 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class Interpreter {
-	/**
-	 * The build project provides access to compiled WyIL files.
-	 */
-	private final Build.Project project;
 
 	/**
 	 * Determines the underlying semantics used for this interpreter.
@@ -61,8 +57,7 @@ public class Interpreter {
 	 */
 	private final PrintStream debug;
 
-	public Interpreter(Build.Project project, PrintStream debug) {
-		this.project = project;
+	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
 		this.semantics = new ConcreteSemantics();
 	}
@@ -88,59 +83,45 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public RValue[] execute(NameID nid, Type.Callable sig, CallStack frame, RValue... args) {
-		System.out.println("EXECUTING: " + nid);
-		// First, find the enclosing WyilFile
-		try {
-			// FIXME: NameID needs to be deprecated
-			Identifier name = new Identifier(nid.name());
-			// NOTE: need to read WyilFile here as, otherwose, it forces a
-			// rereading of the Whiley source file and a loss of all generation
-			// information.
-			Path.Entry<WyilFile> entry = resolver.load(nid.module());
-			if (entry == null) {
-				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
-			}
-			// Second, find the given function or method
-			WyilFile wyilFile = entry.read();
-			Decl.Callable fmp = wyilFile.getDeclaration(name, sig,
-					Decl.Callable.class);
-			if (fmp == null) {
-				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
-			} else if (sig.getParameters().size() != args.length) {
-				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
-			}
-			// Fourth, construct the stack frame for execution
-			frame = frame.enter(fmp);
-			extractParameters(frame,args,fmp);
-			// Check the precondition
-			if(fmp instanceof Decl.FunctionOrMethod) {
-				Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) fmp;
-				checkInvariants(frame,fm.getRequires());
-				// check function or method body exists
-				if (fm.getBody() == null) {
-					// FIXME: Add support for native functions or methods. That is,
-					// allow native functions to be implemented and called from the
-					// interpreter.
-					throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
-				}
-				// Execute the method or function body
-				executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
-				// Extra the return values
-				RValue[] returns = packReturns(frame,fmp);
-				// Restore original parameter values
-				extractParameters(frame,args,fmp);
-				// Check the postcondition holds
-				checkInvariants(frame, fm.getEnsures());
-				return returns;
-			} else {
-				// Properties always return true (provided their preconditions hold)
-				return new RValue[]{RValue.True};
-			}
-			//
-		} catch (IOException e) {
-			throw new RuntimeException(e.getMessage(), e);
+	public RValue[] execute(QualifiedName name, Type.Callable sig, CallStack frame, RValue... args) {
+		//
+		System.out.println("EXECUTING: " + name);
+		// Find the corresponding callable entity
+		Decl.Callable fmp = frame.getCallable(name,sig);
+		//
+		if (fmp == null) {
+			throw new IllegalArgumentException("no function or method found: " + name + ", " + sig);
+		} else if (sig.getParameters().size() != args.length) {
+			throw new IllegalArgumentException("incorrect number of arguments: " + name + ", " + sig);
 		}
+		// Fourth, construct the stack frame for execution
+		frame = frame.enter(fmp);
+		extractParameters(frame,args,fmp);
+		// Check the precondition
+		if(fmp instanceof Decl.FunctionOrMethod) {
+			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) fmp;
+			checkInvariants(frame,fm.getRequires());
+			// check function or method body exists
+			if (fm.getBody() == null) {
+				// FIXME: Add support for native functions or methods. That is,
+				// allow native functions to be implemented and called from the
+				// interpreter.
+				throw new IllegalArgumentException("no function or method body found: " + name + ", " + sig);
+			}
+			// Execute the method or function body
+			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
+			// Extra the return values
+			RValue[] returns = packReturns(frame,fmp);
+			// Restore original parameter values
+			extractParameters(frame,args,fmp);
+			// Check the postcondition holds
+			checkInvariants(frame, fm.getEnsures());
+			return returns;
+		} else {
+			// Properties always return true (provided their preconditions hold)
+			return new RValue[]{RValue.True};
+		}
+		//
 	}
 
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
@@ -843,8 +824,7 @@ public class Interpreter {
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) {
 		Decl.StaticVariable decl = expr.getDeclaration();
-		NameID nid = decl.getQualifiedName().toNameID();
-		return frame.getStatic(nid);
+		return frame.getStatic(decl.getQualifiedName());
 	}
 
 	private RValue executeIs(Expr.Is expr, CallStack frame) {
@@ -1194,7 +1174,7 @@ public class Interpreter {
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
-		return execute(decl.getQualifiedName().toNameID(), decl.getType(), frame, arguments);
+		return execute(decl.getQualifiedName(), decl.getType(), frame, arguments);
 	}
 
 	// =============================================================
@@ -1343,15 +1323,15 @@ public class Interpreter {
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 
 	public final class CallStack {
-		private final Set<Path.ID> modules;
-		private final Decl.Callable context;
+		private final HashMap<QualifiedName, Decl.Callable> callables;
+		private final Map<QualifiedName, RValue> globals;
 		private final Map<Identifier, RValue> locals;
-		private final Map<NameID, RValue> globals;
+		private final Decl.Callable context;
 
 		public CallStack() {
-			this.locals = new HashMap<>();
+			this.callables = new HashMap<>();
 			this.globals = new HashMap<>();
-			this.modules = new HashSet<>();
+			this.locals = new HashMap<>();
 			this.context = null;
 		}
 
@@ -1359,7 +1339,7 @@ public class Interpreter {
 			this.context = context;
 			this.locals = new HashMap<>();
 			this.globals = parent.globals;
-			this.modules = parent.modules;
+			this.callables = parent.callables;
 		}
 
 		public RValue getLocal(Identifier name) {
@@ -1370,22 +1350,20 @@ public class Interpreter {
 			locals.put(name, value);
 		}
 
-		public RValue getStatic(NameID name) {
-			RValue v = globals.get(name);
-			if(v == null) {
-				load(name.module());
-				v  = globals.get(name);
-			}
-			return v;
+		public RValue getStatic(QualifiedName name) {
+			return globals.get(name);
 		}
 
-		public void putStatic(NameID name, RValue value) {
-			load(name.module());
+		public void putStatic(QualifiedName name, RValue value) {
 			globals.put(name, value);
 		}
 
+		public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
+			// FIXME: problem with method overloading.
+			return callables.get(name);
+		}
+
 		public CallStack enter(Decl.Callable context) {
-			load(context.getQualifiedName().toNameID().module());
 			return new CallStack(this, context);
 		}
 
@@ -1397,30 +1375,43 @@ public class Interpreter {
 		}
 
 		/**
+		 * Load one or more modules into this CallStack.
+		 *
+		 * @param modules
+		 * @return
+		 */
+		public CallStack load(WyilFile... modules) {
+			for (int i = 0; i != modules.length; ++i) {
+				load(modules[i]);
+			}
+			return this;
+		}
+
+		/**
 		 * Load a given module and make sure that all static variables are
 		 * properly initialised.
 		 *
 		 * @param mid
 		 * @param frame
 		 */
-		private void load(Path.ID mid) {
-			if (!modules.contains(mid)) {
-				// NOTE: must add module before attempting to load it.
-				// Otherwise, static initialisers it contains will force itself
-				// to be loaded.
-				modules.add(mid);
-				try {
-					WyilFile module = resolver.load(mid).read();
-					for (WyilFile.Decl d : module.getUnit().getDeclarations()) {
-						if (d instanceof Decl.StaticVariable) {
-							Decl.StaticVariable decl = (Decl.StaticVariable) d;
-							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
-							globals.put(new NameID(mid, decl.getName().toString()), value);
-						}
+		private void load(WyilFile module) {
+			System.out.println("ATTEMPTING TO LOAD: " + module.getModule(	).getName());
+			for (Decl.Unit unit : module.getModule().getUnits()) {
+				for (Decl d : unit.getDeclarations()) {
+					switch (d.getOpcode()) {
+					case DECL_staticvar: {
+						Decl.StaticVariable decl = (Decl.StaticVariable) d;
+						RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+						globals.put(decl.getQualifiedName(), value);
+						break;
 					}
-					//
-				} catch (IOException e) {
-					throw new RuntimeException(e.getMessage(), e);
+					case DECL_function:
+					case DECL_method:
+					case DECL_property:
+						Decl.Callable decl = (Decl.Callable) d;
+						callables.put(decl.getQualifiedName(), decl);
+						break;
+					}
 				}
 			}
 		}

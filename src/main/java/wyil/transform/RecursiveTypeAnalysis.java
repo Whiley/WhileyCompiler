@@ -52,7 +52,7 @@ import java.util.Set;
  * @author David J. Pearce
  *
  */
-public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WyilFile> {
+public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Build.Stage<WyilFile> {
 
 	public RecursiveTypeAnalysis(CompileTask builder) {
 
@@ -68,8 +68,8 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	// ===========================================================================
 
 	@Override
-	public void visitType(Decl.Type decl, Set<Name> visited) {
-		Name name = decl.getQualifiedName();
+	public void visitType(Decl.Type decl, Set<QualifiedName> visited) {
+		QualifiedName name = decl.getQualifiedName();
 		if (visited.contains(name)) {
 			// recursive type detected!!!
 			decl.setRecursive();
@@ -101,7 +101,7 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	// ===========================================================================
 
 	@Override
-	public void visitTypeNominal(Type.Nominal type, Set<Name> visited) {
+	public void visitTypeNominal(Type.Nominal type, Set<QualifiedName> visited) {
 		// Extract the declaration to which this type refers.
 		Decl.Type decl = type.getDeclaration();
 		// Recursively traverse it.

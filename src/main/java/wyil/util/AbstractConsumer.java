@@ -664,6 +664,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitIs(Expr.Is expr, T data) {
 		visitExpression(expr.getOperand(), data);
+		visitType(expr.getTestType(),data);
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, T data) {
@@ -782,8 +783,8 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type, data);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type, data);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type, data);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type, data);
@@ -872,7 +873,7 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type, T data) {
+	public void visitTypeUnresolved(Type.Unknown type, T data) {
 
 	}
 

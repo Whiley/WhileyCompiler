@@ -17,6 +17,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
+import wybs.lang.NameID;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
@@ -24,6 +25,7 @@ import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
@@ -31,6 +33,7 @@ import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
+import wyfs.util.Trie;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.lang.WyilFile.Type;
@@ -121,46 +124,47 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	// DECLARATIONS: 00010000 (16) -- 00011111 (31)
 	public static final int DECL_mask = 0b00010000;
-	public static final int DECL_module = DECL_mask + 0;
-	public static final int DECL_unit = DECL_mask + 1;
-	public static final int DECL_import = DECL_mask + 2;
-	public static final int DECL_importfrom = DECL_mask + 3;
-	public static final int DECL_staticvar = DECL_mask + 4;
-	public static final int DECL_type = DECL_mask + 5;
-	public static final int DECL_rectype = DECL_mask + 6;
-	public static final int DECL_function = DECL_mask + 7;
-	public static final int DECL_method = DECL_mask + 8;
-	public static final int DECL_property = DECL_mask + 9;
-	public static final int DECL_lambda = DECL_mask + 10;
-	public static final int DECL_variable = DECL_mask + 11;
-	public static final int DECL_variableinitialiser = DECL_mask + 12;
+	public static final int DECL_unknown = DECL_mask + 0;
+	public static final int DECL_module = DECL_mask + 1;
+	public static final int DECL_unit = DECL_mask + 2;
+	public static final int DECL_import = DECL_mask + 3;
+	public static final int DECL_importfrom = DECL_mask + 4;
+	public static final int DECL_staticvar = DECL_mask + 5;
+	public static final int DECL_type = DECL_mask + 6;
+	public static final int DECL_rectype = DECL_mask + 7;
+	public static final int DECL_function = DECL_mask + 8;
+	public static final int DECL_method = DECL_mask + 9;
+	public static final int DECL_property = DECL_mask + 10;
+	public static final int DECL_lambda = DECL_mask + 11;
+	public static final int DECL_variable = DECL_mask + 12;
+	public static final int DECL_variableinitialiser = DECL_mask + 13;
 
-	public static final int MOD_native = DECL_mask + 13;
-	public static final int MOD_export = DECL_mask + 14;
-	public static final int MOD_final = DECL_mask + 15;
-	public static final int MOD_protected = DECL_mask + 16;
-	public static final int MOD_private = DECL_mask + 17;
-	public static final int MOD_public = DECL_mask + 18;
+	public static final int MOD_native = DECL_mask + 14;
+	public static final int MOD_export = DECL_mask + 15;
+	public static final int MOD_final = DECL_mask + 16;
+	public static final int MOD_protected = DECL_mask + 17;
+	public static final int MOD_private = DECL_mask + 18;
+	public static final int MOD_public = DECL_mask + 19;
 	// TYPES: 00100000 (32) -- 00111111 (63)
 	public static final int TYPE_mask = 0b000100000;
-	public static final int TYPE_void = TYPE_mask + 0;
-	public static final int TYPE_any = TYPE_mask + 1;
-	public static final int TYPE_null = TYPE_mask + 2;
-	public static final int TYPE_bool = TYPE_mask + 3;
-	public static final int TYPE_int = TYPE_mask + 4;
-	public static final int TYPE_nominal = TYPE_mask + 5;
-	public static final int TYPE_reference = TYPE_mask + 6;
-	public static final int TYPE_staticreference = TYPE_mask + 7;
-	public static final int TYPE_array = TYPE_mask + 8;
-	public static final int TYPE_record = TYPE_mask + 9;
-	public static final int TYPE_field = TYPE_mask + 10;
-	public static final int TYPE_function = TYPE_mask + 11;
-	public static final int TYPE_method = TYPE_mask + 12;
-	public static final int TYPE_property = TYPE_mask + 13;
-	public static final int TYPE_invariant = TYPE_mask + 14;
-	public static final int TYPE_union = TYPE_mask + 15;
-	public static final int TYPE_byte = TYPE_mask + 16;
-	public static final int TYPE_unresolved = TYPE_mask + 17;
+	public static final int TYPE_unknown = TYPE_mask + 0;
+	public static final int TYPE_void = TYPE_mask + 1;
+	public static final int TYPE_any = TYPE_mask + 2;
+	public static final int TYPE_null = TYPE_mask + 3;
+	public static final int TYPE_bool = TYPE_mask + 4;
+	public static final int TYPE_int = TYPE_mask + 5;
+	public static final int TYPE_nominal = TYPE_mask + 6;
+	public static final int TYPE_reference = TYPE_mask + 7;
+	public static final int TYPE_staticreference = TYPE_mask + 8;
+	public static final int TYPE_array = TYPE_mask + 9;
+	public static final int TYPE_record = TYPE_mask + 10;
+	public static final int TYPE_field = TYPE_mask + 11;
+	public static final int TYPE_function = TYPE_mask + 12;
+	public static final int TYPE_method = TYPE_mask + 13;
+	public static final int TYPE_property = TYPE_mask + 14;
+	public static final int TYPE_invariant = TYPE_mask + 15;
+	public static final int TYPE_union = TYPE_mask + 16;
+	public static final int TYPE_byte = TYPE_mask + 17;
 	public static final int SEMTYPE_reference = TYPE_mask + 18;
 	public static final int SEMTYPE_staticreference = TYPE_mask + 19;
 	public static final int SEMTYPE_array = TYPE_mask + 20;
@@ -300,6 +304,60 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
 	}
 
+	/**
+	 * A qualified name represents a <i>fully-qualified</i> name within a
+	 * compilation unit. That is, a full-qualified unit identifier and corresponding
+	 * name.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class QualifiedName {
+		private final Name unit;
+		private final Identifier name;
+
+		public QualifiedName(Name unit, Identifier name) {
+			this.unit = unit;
+			this.name = name;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof QualifiedName) {
+				QualifiedName n = (QualifiedName) o;
+				return unit.equals(n.unit) && name.equals(n.name);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return unit.hashCode() ^ name.hashCode();
+		}
+
+		public Name getUnit() {
+			return unit;
+		}
+
+		public Identifier getName() {
+			return name;
+		}
+
+		public NameID toNameID() {
+			Trie pkg = Trie.ROOT;
+			for (int i = 0; i < unit.size() - 1; ++i) {
+				pkg = pkg.append(unit.get(i).get());
+			}
+			return new NameID(pkg, name.get());
+		}
+
+		@Override
+		public String toString() {
+			return unit + ":" + name;
+		}
+	}
+
+
 	// ============================================================
 	// Declarations
 	// ============================================================
@@ -319,6 +377,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 *
 	 */
 	public static interface Decl extends CompilationUnit.Declaration {
+
+		public static class Unknown extends AbstractSyntacticItem implements Decl {
+			public Unknown() {
+				super(DECL_unknown);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Decl.Unknown();
+			}
+		}
+
 		/**
 		 * A WyilFile contains exactly one active module which represents the root of
 		 * all items in the module.
@@ -507,13 +577,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Identifier) super.get(1);
 			}
 
-			public Name getQualifiedName() {
+			public QualifiedName getQualifiedName() {
 				Unit module = getAncestor(Decl.Unit.class);
-				Name name = module.getName();
-				Identifier[] idents = name.getAll();
-				idents = Arrays.copyOf(idents, idents.length + 1);
-				idents[name.size()] = getName();
-				return new Name(idents);
+				return new QualifiedName(module.getName(),getName());
 			}
 
 			public abstract WyilFile.Type getType();
@@ -1865,8 +1931,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 */
 		public static class StaticVariableAccess extends AbstractExpr implements LVal, Expr {
-			public StaticVariableAccess(Type type, Name name) {
-				super(EXPR_staticvariable, type, name);
+			public StaticVariableAccess(Type type, Name name, Ref<Decl.StaticVariable> declaration) {
+				super(EXPR_staticvariable, type, name, declaration);
 			}
 
 			public Name getName() {
@@ -1874,12 +1940,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Decl.StaticVariable getDeclaration() {
-				throw new IllegalArgumentException("implement me!");
+				Ref<Decl.StaticVariable> ref = (Ref<Decl.StaticVariable>) get(2);
+				return ref.get();
+			}
+
+			public void setDeclaration(Decl.StaticVariable decl) {
+				operands[2] = getHeap().allocate(new Ref<>(decl));
 			}
 
 			@Override
 			public StaticVariableAccess clone(SyntacticItem[] operands) {
-				return new StaticVariableAccess((Type) operands[0], (Name) operands[1]);
+				return new StaticVariableAccess((Type) operands[0], (Name) operands[1],
+						(Ref<Decl.StaticVariable>) operands[2]);
 			}
 
 			@Override
@@ -1947,8 +2019,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator {
 
-			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable signature) {
-				super(EXPR_invoke, name, lifetimes, arguments, signature);
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable signature,
+					Ref<Decl.Callable> declaration) {
+				super(EXPR_invoke, name, lifetimes, arguments, signature, declaration);
 			}
 
 			@Override
@@ -1998,10 +2071,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(0);
 			}
 
-			public Decl.FunctionOrMethod getDeclaration() {
-				throw new IllegalArgumentException("implement me!");
-			}
-
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
 				return (Tuple<Identifier>) get(1);
@@ -2025,11 +2094,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				operands[3] = declaration;
 			}
 
+			public Decl.Callable getDeclaration() {
+				Ref<Decl.Callable> ref = (Ref<Decl.Callable>) operands[4];
+				return ref.get();
+			}
+
+			public void setDeclaration(Decl.Callable decl) {
+				operands[4] = getHeap().allocate(new Ref<>(decl));
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Invoke clone(SyntacticItem[] operands) {
 				return new Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
-						(Type.Callable) operands[3]);
+						(Type.Callable) operands[3], (Ref<Decl.Callable>) operands[4]);
 			}
 
 			@Override
@@ -4190,20 +4268,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class Nominal extends AbstractSemanticType implements Type {
 
-			public Nominal(Name name) {
-				super(TYPE_nominal, name);
+			public Nominal(Name name, Ref<Decl.Type> declaration) {
+				super(TYPE_nominal, name, declaration);
 			}
 
 			public Name getName() {
 				return (Name) get(0);
 			}
 
-			public void setName(Name name) {
-				operands[1] = name;
+			public void setDeclaration(Decl.Type declaration) {
+				operands[1] = getHeap().allocate(new Ref<>(declaration));
 			}
 
 			public Decl.Type getDeclaration() {
-				throw new IllegalArgumentException("implement me");
+				Ref<Decl.Type> ref = (Ref<Decl.Type>) get(1);
+				return ref.get();
 			}
 
 			@Override
@@ -4213,7 +4292,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Nominal clone(SyntacticItem[] operands) {
-				return new Nominal((Name) operands[0]);
+				return new Nominal((Name) operands[0], (Ref<Decl.Type>) operands[1]);
 			}
 
 			@Override
@@ -4523,9 +4602,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		}
 
-		public static class Unresolved extends AbstractType implements Callable {
-			public Unresolved() {
-				super(TYPE_unresolved);
+		public static class Unknown extends AbstractType implements Callable {
+			public Unknown() {
+				super(TYPE_unknown);
 			}
 
 			@Override
@@ -4539,13 +4618,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Unresolved substitute(Map<Identifier,Identifier> binding) {
+			public Type.Unknown substitute(Map<Identifier,Identifier> binding) {
 				throw new UnsupportedOperationException();
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Unresolved();
+				return new Unknown();
 			}
 
 			@Override
@@ -5078,6 +5157,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		SyntacticItem.Schema[] schema = AbstractCompilationUnit.getSchema();
 		schema = Arrays.copyOf(schema, 256);
 		// ==========================================================================
+		schema[DECL_unknown] = new Schema(Operands.ZERO, Data.ZERO, "DECL_unknown") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Decl.Unknown();
+			}
+		};
 		schema[DECL_module] = new Schema(Operands.THREE, Data.ZERO, "DECL_module") {
 			@SuppressWarnings("unchecked")
 			@Override
@@ -5245,10 +5331,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Int();
 			}
 		};
-		schema[TYPE_nominal] = new Schema(Operands.ONE, Data.ZERO, "TYPE_nominal") {
+		schema[TYPE_nominal] = new Schema(Operands.TWO, Data.ZERO, "TYPE_nominal") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Nominal((Name) operands[0]);
+				return new Type.Nominal((Name) operands[0], (Ref<Decl.Type>) operands[1]);
 			}
 		};
 		schema[TYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
@@ -5317,10 +5403,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Byte();
 			}
 		};
-		schema[TYPE_unresolved] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_unresolved") {
+		schema[TYPE_unknown] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_unresolved") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Unresolved();
+				return new Type.Unknown();
 			}
 		};
 		schema[TYPE_recursive] = new Schema(Operands.ONE, Data.ZERO, "TYPE_recursive") {
@@ -5456,10 +5542,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return v;
 			}
 		};
-		schema[EXPR_staticvariable] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvariable") {
+		schema[EXPR_staticvariable] = new Schema(Operands.THREE, Data.ZERO, "EXPR_staticvariable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1]);
+				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1], (Ref<Decl.StaticVariable>) operands[2]);
 			}
 		};
 		schema[EXPR_constant] = new Schema(Operands.TWO, Data.ZERO, "EXPR_constant") {
@@ -5474,12 +5560,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Expr.Cast((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_invoke] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_invoke") {
+		schema[EXPR_invoke] = new Schema(Operands.FIVE, Data.ZERO, "EXPR_invoke") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
-						(Type.Callable) operands[3]);
+						(Type.Callable) operands[3], (Ref<Decl.Callable>) operands[4]);
 			}
 		};
 		schema[EXPR_indirectinvoke] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {

@@ -131,7 +131,7 @@ public abstract class AbstractTypeCombinator {
 		Linkage linkage = stack.find(lhs, rhs);
 		if (linkage != null) {
 			// Yes, seen before. Therefore, create recursive type to represent this.
-			Type.Recursive r = new Type.Recursive(new Ref<Type>(new Type.Unresolved()));
+			Type.Recursive r = new Type.Recursive(new Ref<Type>(new Type.Unknown()));
 			linkage.links.add(r);
 			return r;
 		} else {

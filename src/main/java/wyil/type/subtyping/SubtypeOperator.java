@@ -184,7 +184,7 @@ public class SubtypeOperator {
 		case TYPE_property:
 		case TYPE_invariant:
 		case TYPE_byte:
-		case TYPE_unresolved:
+		case TYPE_unknown:
 			return true;
 		case TYPE_union: {
 			Type.Union c = (Type.Union) type;

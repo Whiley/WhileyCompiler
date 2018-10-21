@@ -641,6 +641,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitIs(Expr.Is expr, P data) {
 		visitExpression(expr.getOperand(), data);
+		visitType(expr.getTestType(), data);
 		return null;
 	}
 
@@ -768,8 +769,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitTypeCallable((Type.Callable) type, data);
 		case TYPE_union:
 			return visitTypeUnion((Type.Union) type, data);
-		case TYPE_unresolved:
-			return visitTypeUnresolved((Type.Unresolved) type, data);
+		case TYPE_unknown:
+			return visitTypeUnresolved((Type.Unknown) type, data);
 		case TYPE_void:
 			return visitTypeVoid((Type.Void) type, data);
 		default:
@@ -862,7 +863,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitTypeUnresolved(Type.Unresolved type, P data) {
+	public R visitTypeUnresolved(Type.Unknown type, P data) {
 		return null;
 	}
 

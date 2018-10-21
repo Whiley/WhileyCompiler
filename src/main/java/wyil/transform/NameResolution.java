@@ -16,7 +16,6 @@ package wyil.transform;
 import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.lang.SyntaxError;
@@ -25,24 +24,16 @@ import wyc.util.ErrorMessages;
 import static wyc.util.ErrorMessages.*;
 import wyil.lang.WyilFile;
 
-import static wyil.lang.WyilFile.DECL_function;
-import static wyil.lang.WyilFile.DECL_method;
-import static wyil.lang.WyilFile.DECL_property;
-import static wyil.lang.WyilFile.DECL_rectype;
-import static wyil.lang.WyilFile.DECL_staticvar;
-import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.Tuple;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
-import wyil.util.AbstractVisitor;
 
 /**
  * Responsible for resolving a name which occurs at some position in a
@@ -68,10 +59,15 @@ import wyil.util.AbstractVisitor;
  *
  */
 public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
-	private final HashSet<String> names;
+	/**
+	 * The master list of names and their corresponding records. For each name, this
+	 * records whether we have a local declaration, a non-local declaration (which
+	 * may or may not have been imported), etc.
+	 */
+	private final HashMap<Name,Decl> names;
 
 	public NameResolution(Build.Task builder) {
-		this.names = new HashSet<>();
+		this.names = new HashMap<>();
 	}
 
 	public void apply(WyilFile module) {
@@ -95,33 +91,39 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 
 	@Override
 	public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
-		super.visitExpression(expr, imports);
+		super.visitLambdaAccess(expr, imports);
 		System.out.println("VISIT LAMBDA ACCESS: " + expr);
 	}
 
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
-		super.visitExpression(expr, imports);
-		System.out.println("VISIT STATIC VARIABLE ACCESS: " + expr);
+		super.visitStaticVariableAccess(expr, imports);
+		Decl.StaticVariable resolved = resolveAs(expr.getName(), Decl.StaticVariable.class, imports);
+		System.out.println("VISIT STATIC VARIABLE ACCESS: " + expr + ", " + resolved.getQualifiedName());
+		expr.setDeclaration(resolved);
 	}
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
-		super.visitExpression(expr, imports);
-		System.out.println("VISIT INVOCATION: " + expr);
+		super.visitInvoke(expr, imports);
+		Decl.Callable resolved = resolveAs(expr.getName(), Decl.Callable.class, imports);
+		expr.setDeclaration(resolved);
+		System.out.println("VISIT INVOCATION: " + expr + ", " + resolved.getQualifiedName());
 	}
 
 	@Override
 	public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
-		Name resolved = resolve(type.getName(), imports);
+		Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
 		System.out.println("VISIT NOMINAL: " + type + ", resolved as " + resolved);
+		type.setDeclaration(resolved);
 	}
 
 	/**
-	 * Resolve a given name in a given compilation Unit. If the name is already
-	 * fully qualified then this amounts to checking that the name exists;
-	 * otherwise, we have to process the list of important statements for this
-	 * compilation unit in an effort to qualify the name.
+	 * Resolve a given name in a given compilation Unit to its corresponding
+	 * declaration. If the name is already fully qualified then this amounts to
+	 * checking that the name exists and finding its declaration; otherwise, we have
+	 * to process the list of important statements for this compilation unit in an
+	 * effort to qualify the name.
 	 *
 	 * @param name
 	 *            The name to be resolved
@@ -129,74 +131,99 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 *            The enclosing declaration in which this name is contained.
 	 * @return
 	 */
-	private Name resolve(Name name, List<Decl.Import> imports) {
-		Name resolved = name;
-		if (!isQualified(name)) {
-			// Name is not qualified, therefore attempt to qualify it.
-			Decl.Unit unit = name.getAncestor(Decl.Unit.class);
-			// Check whether local to enclosing compilation unit
-			Name local = createQualifiedName(unit.getName().getPath(), name.get(0));
-			if(exists(local)) {
-				return local;
-			}
-			// Second, iterate each visible import statement (in reverse order)
-			for (int i = imports.size() - 1; i >= 0; --i) {
-				resolved = matchImport(imports.get(i), name.get(0));
-				if (resolved != null && exists(resolved)) {
-					return resolved;
+	private <T extends Decl> T resolveAs(Name name, Class<T> kind, List<Decl.Import> imports) {
+		switch(name.size()) {
+		case 1:
+			name = unqualifiedResolveAs(name.get(0),imports);
+			break;
+		case 2:
+			name = partialResolveAs(name.get(0),name.get(1),imports);
+			break;
+		}
+		return select(name,kind);
+	}
+
+	/**
+	 * Resolve a name which is completely unqualified (e.g. <code>to_string</code>).
+	 * That is, it's just an identifier. This could be a name in the current unit,
+	 * or an explicitly imported name/
+	 *
+	 * @param name
+	 * @param imports
+	 * @return
+	 */
+	private Name unqualifiedResolveAs(Identifier name, List<Decl.Import> imports) {
+		// Attempt to local resolve
+		Decl.Unit unit = name.getAncestor(Decl.Unit.class);
+		Name localName = createQualifiedName(unit.getName().getAll(), name);
+		if (names.containsKey(localName)) {
+			// Yes, matching local name
+			return localName;
+		} else {
+			// No, attempt to non-local resolve
+			for (int i = imports.size() - 1; i >= 0; ++i) {
+				Decl.Import imp = imports.get(i);
+				if (imp.hasFrom()) {
+					// Resolving unqualified names requires "import from".
+					Identifier from = imp.getFrom();
+					if (from.get().equals("*") || name.equals(from)) {
+						return createQualifiedName(imp.getPath(), name);
+					}
 				}
 			}
-		} else if (exists(resolved)) {
-			// Name is qualified and exists.
-			return resolved;
+			// No dice.
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 		}
-		// Resolution error
+	}
+
+	/**
+	 * Resolve a name which is partially qualified (e.g.
+	 * <code>ascii::to_string</code>). This consists of an unqualified unit and a
+	 * name.
+	 *
+	 * @param unit
+	 * @param name
+	 * @param kind
+	 * @param imports
+	 * @return
+	 */
+	private Name partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
+		for (int i = imports.size() - 1; i >= 0; ++i) {
+			Decl.Import imp = imports.get(i);
+			Tuple<Identifier> path = imp.getPath();
+			Identifier last = path.get(path.size() - 1);
+			//
+			if (!imp.hasFrom() && last.equals(unit)) {
+				// Resolving partially qualified names requires no "from".
+				Name qualified = createQualifiedName(path, name);
+				if (names.containsKey(qualified)) {
+					return qualified;
+				}
+			}
+		}
+		// No dice.
 		return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 	}
 
 	/**
-	 * Check whether a fully qualified name exists or not.
-	 *
-	 * @param name
-	 * @return
-	 */
-	public boolean exists(Name name) {
-		return names.contains(name.toString());
-	}
-
-	/**
-	 * Determine whether a name is fully qualified or not. That is, whether or not
-	 * the name is a partial name which must be completed, or is already a complete
+	 * Resolve a name which is fully qualified (e.g.
+	 * <code>std::ascii::to_string</code>). This consists of a qualified unit and a
 	 * name.
 	 *
 	 * @param name
+	 *            Fully qualified name
+	 * @param kind
+	 *            Declaration kind we are resolving.
 	 * @return
 	 */
-	private boolean isQualified(Name name) {
-		return name.size() > 1;
-	}
-
-	/**
-	 * Match a given import against a given partially or fully quantified name. For
-	 * example, we might match <code>import wyal.lang.*</code> against the name
-	 * <code>Test.f</code>. This would succeed if the package <code>wyal.lang</code>
-	 * contained a module <code>Test</code> which in turn contained a named
-	 * declaration <code>f</code>.
-	 *
-	 * @param imp
-	 * @param name
-	 * @return
-	 */
-	private Name matchImport(Decl.Import imp, Identifier name) {
-		if (imp.hasFrom()) {
-			Identifier from = imp.getFrom();
-			if (from.get().equals("*") || name.equals(from)) {
-				System.out.println("MATCHED IMPORT: " + imp);
-				return createQualifiedName(imp.getPath(), name);
-			}
+	private <T extends Decl> T select(Name name, Class<T> kind) {
+		Decl d = names.get(name);
+		if (kind.isInstance(d)) {
+			return (T) d;
+		} else {
+			// Resolution error
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 		}
-		// FIXME: we'll need more stuff here I think
-		return null;
 	}
 
 	/**
@@ -210,8 +237,11 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 			for (Decl d : unit.getDeclarations()) {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
-					Name resolved = createQualifiedName(uid.getPath(), n.getName());
-					names.add(resolved.toString());
+					Name resolved = createQualifiedName(uid.getAll(), n.getName());
+					if(names.containsKey(resolved)) {
+						throw new RuntimeException("Implement support for multiple names of different kinds");
+					}
+					names.put(resolved, n);
 				}
 			}
 		}

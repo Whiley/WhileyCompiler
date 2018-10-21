@@ -186,6 +186,9 @@ public final class CompileTask implements Build.Task {
 			// Done
 			// ========================================================================
 
+			// Flush any changes to disk
+			target.flush();
+
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
@@ -222,8 +225,6 @@ public final class CompileTask implements Build.Task {
 			// be replaced a module, for example.
 			wyil.getModule().putUnit(wyp.read());
 		}
-		//
-		target.flush();
 		//
 		return wyil;
 	}
