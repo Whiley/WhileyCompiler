@@ -560,6 +560,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitCast(Expr.Cast expr, P data) {
+		visitType(expr.getType(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}

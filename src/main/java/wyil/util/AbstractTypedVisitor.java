@@ -706,6 +706,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitCast(Expr.Cast expr, Type target, Environment environment) {
+		visitType(expr.getType());
 		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
 	}
 

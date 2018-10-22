@@ -598,6 +598,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitCast(Expr.Cast expr) {
+		visitType(expr.getType());
 		visitExpression(expr.getOperand());
 	}
 

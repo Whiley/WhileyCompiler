@@ -28,6 +28,7 @@ import static wyil.lang.WyilFile.Tuple;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import wyil.lang.WyilFile.Decl;
@@ -64,7 +65,7 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * records whether we have a local declaration, a non-local declaration (which
 	 * may or may not have been imported), etc.
 	 */
-	private final HashMap<Name,Decl> names;
+	private final HashMap<Name,Record> names;
 
 	public NameResolution(Build.Task builder) {
 		this.names = new HashMap<>();
@@ -217,13 +218,16 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * @return
 	 */
 	private <T extends Decl> T select(Name name, Class<T> kind) {
-		Decl d = names.get(name);
-		if (kind.isInstance(d)) {
-			return (T) d;
-		} else {
-			// Resolution error
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+		Record r = names.get(name);
+		for (int i = 0; i != r.declarations.size(); ++i) {
+			Decl.Named d = r.declarations.get(i);
+			// FIXME: need to handle overloading property
+			if (kind.isInstance(d)) {
+				return (T) d;
+			}
 		}
+		// Resolution error
+		return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 	}
 
 	/**
@@ -238,10 +242,7 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
 					Name resolved = createQualifiedName(uid.getAll(), n.getName());
-					if(names.containsKey(resolved)) {
-						throw new RuntimeException("Implement support for multiple names of different kinds");
-					}
-					names.put(resolved, n);
+					register(resolved,n);
 				}
 			}
 		}
@@ -266,6 +267,50 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	}
 
 	/**
+	 * Register a new declaration with a given name.
+	 *
+	 * @param name
+	 * @param declaration
+	 */
+	private void register(Name name, Decl.Named declaration) {
+		Record r = names.get(name);
+		if(r == null) {
+			r = new Record();
+			names.put(name, r);
+		}
+		// Sanity check whether overloading is valid
+		checkValidOverloading(r.declarations,declaration);
+		// Add the declaration
+		r.declarations.add(declaration);
+	}
+
+	/**
+	 * Sanity check that there overloading is used correctly. More specifically, we
+	 * cannot overload on types or static variables. Furthermore, overloading of
+	 * methods or functions is permitted in some situations (i.e. when signatures
+	 * vary).
+	 *
+	 * @param declarations
+	 * @param kind
+	 */
+	private void checkValidOverloading(List<Decl.Named> declarations, Decl.Named declaration) {
+		if (declaration instanceof Decl.Type && contains(declarations, Decl.Type.class)) {
+			syntaxError("duplicate type declaration", declaration.getName());
+		} else if (declaration instanceof Decl.StaticVariable && contains(declarations, Decl.StaticVariable.class)) {
+			syntaxError("duplicate type declaration", declaration.getName());
+		}
+	}
+
+	private <T extends Decl> boolean contains(List<Decl.Named> declarations, Class<T> kind) {
+		for (int i = 0; i != declarations.size(); ++i) {
+			if (kind.isInstance(declarations.get(i))) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Throw an syntax error.
 	 *
 	 * @param msg
@@ -278,4 +323,17 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 
+	/**
+	 * Records information associated with a given name.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class Record {
+		public final ArrayList<Decl.Named> declarations;
+
+		public Record() {
+			this.declarations = new ArrayList<>();
+		}
+	}
 }

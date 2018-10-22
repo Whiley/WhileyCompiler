@@ -3529,7 +3529,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
-				return Arrays.toString(toArray(Expr.class));
+				return Arrays.toString(toArray(SyntacticItem.class));
 			}
 		}
 

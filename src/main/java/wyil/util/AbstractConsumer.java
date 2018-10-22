@@ -597,6 +597,7 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitCast(Expr.Cast expr, T data) {
+		visitType(expr.getType(),data);
 		visitExpression(expr.getOperand(), data);
 	}
 
