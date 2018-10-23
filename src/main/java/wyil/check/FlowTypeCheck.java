@@ -1453,16 +1453,13 @@ public class FlowTypeCheck {
 		for (int i = 0; i != arguments.size(); ++i) {
 			types[i] = checkExpression(arguments.get(i), environment);
 		}
-		// Determine the declaration(s) being invoked
-		Decl.Callable candidate = expr.getDeclaration();
-		// FIXME: broken for overloading
-		ArrayList<Decl.Callable> candidates = new ArrayList<>();
-		candidates.add(candidate);
+		// Extract candidates from name resolution phase
+		Tuple<Decl.Callable> candidates = expr.getDeclarations();
 		// Now attempt to bind the given candidate declarations against the concrete argument types.
 		Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
 				environment);
 		// Assign descriptor to this expression
-		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
+		expr.select(binding.getCandidiateDeclaration());
 		// Set inferred lifetime parameters as well
 		expr.setLifetimes(expr.getHeap().allocate(binding.getLifetimeArguments()));
 		// Finally, return the declared returns/
@@ -1729,28 +1726,22 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
-		Binding binding;
 		Tuple<Type> types = expr.getParameterTypes();
+		Tuple<Decl.Callable> candidates = expr.getDeclarations();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
 		// exactly zero arguments were supplied.
-		if (types.size() > 0) {
-			// Parameter types have been given, so use them to help resolve
-			// declaration.
-			ArrayList<Decl.Callable> candidates = new ArrayList<>();
-			// FIXME: problem with overloading
-			candidates.add(expr.getDeclaration());
+		if(expr.getParameterTypes().size() > 0) {
 			// Now attempt to bind the given candidate declarations against the concrete argument types.
-			binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(), environment);
+			Binding binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(), environment);
+			expr.select(binding.getCandidiateDeclaration());
+			return binding.getConcreteType();
+		} else if(candidates.size() == 1) {
+			expr.select(candidates.get(0));
+			return candidates.get(0).getType();
 		} else {
-			// No parameters we're given, therefore attempt to resolve
-			// uniquely.
-			binding = resolveAsCallable(expr.getName(), expr);
+			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), expr.getName());
 		}
-		// Set descriptor for this expression
-		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
-		//
-		return binding.getConcreteType();
 	}
 
 	private SemanticType checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
@@ -1781,29 +1772,6 @@ public class FlowTypeCheck {
 	// ===========================================================================================
 
 	/**
-	 * Attempt to determine the declared function or macro to which a given
-	 * invocation refers, without any additional type information. For this to
-	 * succeed, there can be only one candidate for consideration.
-	 *
-	 * @param name
-	 * @param args
-	 * @return
-	 */
-	private Binding resolveAsCallable(Name name, SyntacticItem context) {
-		// Identify all function or macro declarations which should be
-		// considered
-		List<Decl.FunctionOrMethod> candidates = resolver.resolveAll(name, Decl.FunctionOrMethod.class);
-		if (candidates.isEmpty()) {
-			return syntaxError(errorMessage(RESOLUTION_ERROR, name.toString()), context);
-		} else if (candidates.size() > 1) {
-			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), context);
-		} else {
-			Decl.FunctionOrMethod candidate = candidates.get(0);
-			return new Binding(candidate,candidate.getType());
-		}
-	}
-
-	/**
 	 * Determine appropriate lifetime bindings for a given set of candidate function
 	 * or method declarations and concrete argument types. For example:
 	 *
@@ -1829,7 +1797,7 @@ public class FlowTypeCheck {
 	 * @param lifetimes
 	 * @return
 	 */
-	private Binding generateCallableBinding(Name name, List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
+	private Binding generateCallableBinding(Name name, Tuple<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		// Bind candidate types to given argument types which, in particular, will
 		// produce bindings for lifetime variables
@@ -1924,7 +1892,7 @@ public class FlowTypeCheck {
 	 *            Within relationship beteween declared lifetimes
 	 * @return
 	 */
-	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
+	private List<Binding> bindCallableCandidates(Tuple<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
@@ -2270,7 +2238,7 @@ public class FlowTypeCheck {
 		return paramStr + ")";
 	}
 
-	private String foundCandidatesString(Collection<? extends Decl.Callable> candidates) {
+	private String foundCandidatesString(Tuple<? extends Decl.Callable> candidates) {
 		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (Decl.Callable c : candidates) {
 			candidateStrings.add(candidateString(c,null));

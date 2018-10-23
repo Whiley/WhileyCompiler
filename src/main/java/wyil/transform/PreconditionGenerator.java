@@ -151,7 +151,7 @@ public class PreconditionGenerator {
 	}
 
 	private void checkInvokePreconditions(WyilFile.Expr.Invoke expr, Context context) {
-		WyilFile.Tuple<Type> parameterTypes = expr.getSignature().getParameters();
+		WyilFile.Tuple<Type> parameterTypes = expr.getDeclaration().getType().getParameters();
 		WyilFile.Decl.Callable fmp = expr.getDeclaration();
 		//
 		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {

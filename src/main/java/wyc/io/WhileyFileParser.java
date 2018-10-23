@@ -2211,7 +2211,7 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// This indicates we have an direct invocation
-			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Type.Unknown(), new Ref(new Decl.Unknown()));
+			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Tuple<>());
 		} else {
 			// Must be a qualified constant access
 			expr = new Expr.StaticVariableAccess(Type.Void, name, new Ref(new Decl.Unknown()));
@@ -2825,9 +2825,8 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
-			Type.Callable type = new Type.Unknown();
 			Name nm = annotateSourceLocation(new Name(name), start, start);
-			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, type, new Ref(new Decl.Unknown())), start);
+			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, new Tuple<>()), start);
 		}
 	}
 
@@ -3082,8 +3081,7 @@ public class WhileyFileParser {
 			// No, parameters are not supplied.
 			parameters = new Tuple<>();
 		}
-		Type.Callable type = new Type.Unknown();
-		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters,type), start);
+		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters,new Tuple<>()), start);
 	}
 
 	/**

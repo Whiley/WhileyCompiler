@@ -21,15 +21,20 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.lang.SyntaxError;
 
 import wyc.util.ErrorMessages;
+import wycc.util.ArrayUtils;
+
 import static wyc.util.ErrorMessages.*;
 import wyil.lang.WyilFile;
 
 import static wyil.lang.WyilFile.Tuple;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -65,7 +70,7 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * records whether we have a local declaration, a non-local declaration (which
 	 * may or may not have been imported), etc.
 	 */
-	private final HashMap<Name,Record> names;
+	private final HashMap<Name, Record> names;
 
 	public NameResolution(Build.Task builder) {
 		this.names = new HashMap<>();
@@ -84,7 +89,6 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 
 	@Override
 	public void visitImport(Decl.Import decl, List<Decl.Import> imports) {
-		System.out.println("GOT IMPORT: " + decl);
 		super.visitImport(decl, imports);
 		// Add this import statements to list of visible imports
 		imports.add(decl);
@@ -93,29 +97,48 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	@Override
 	public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
 		super.visitLambdaAccess(expr, imports);
-		System.out.println("VISIT LAMBDA ACCESS: " + expr);
+		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
+		int parameters = expr.getParameterTypes().size();
+		// Remove any with incorrect number of parameters
+		for(int i=0;i!=resolved.length;++i) {
+			Decl.Callable c = resolved[i];
+			if(parameters > 0 && c.getParameters().size() != parameters) {
+				resolved[i] = null;
+			}
+		}
+		resolved = ArrayUtils.removeAll(resolved, null);
+		// Bind the resolved declarations
+		expr.setDeclarations(resolved);
 	}
 
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
 		super.visitStaticVariableAccess(expr, imports);
 		Decl.StaticVariable resolved = resolveAs(expr.getName(), Decl.StaticVariable.class, imports);
-		System.out.println("VISIT STATIC VARIABLE ACCESS: " + expr + ", " + resolved.getQualifiedName());
+		// Bind the resolved declaration
 		expr.setDeclaration(resolved);
 	}
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
 		super.visitInvoke(expr, imports);
-		Decl.Callable resolved = resolveAs(expr.getName(), Decl.Callable.class, imports);
-		expr.setDeclaration(resolved);
-		System.out.println("VISIT INVOCATION: " + expr + ", " + resolved.getQualifiedName());
+		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
+		// Remove any with incorrect number of parameters
+		for(int i=0;i!=resolved.length;++i) {
+			Decl.Callable c = resolved[i];
+			if(c.getParameters().size() != expr.getOperands().size()) {
+				resolved[i] = null;
+			}
+		}
+		resolved = ArrayUtils.removeAll(resolved, null);
+		// Bind the resolved declarations
+		expr.setDeclarations(resolved);
 	}
 
 	@Override
 	public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
 		Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
-		System.out.println("VISIT NOMINAL: " + type + ", resolved as " + resolved);
+		// Bind the resolved declaration
 		type.setDeclaration(resolved);
 	}
 
@@ -133,15 +156,40 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * @return
 	 */
 	private <T extends Decl> T resolveAs(Name name, Class<T> kind, List<Decl.Import> imports) {
-		switch(name.size()) {
+		switch (name.size()) {
 		case 1:
-			name = unqualifiedResolveAs(name.get(0),imports);
+			name = unqualifiedResolveAs(name.get(0), imports);
 			break;
 		case 2:
-			name = partialResolveAs(name.get(0),name.get(1),imports);
+			name = partialResolveAs(name.get(0), name.get(1), imports);
 			break;
 		}
-		return select(name,kind);
+		return select(name, kind);
+	}
+
+	/**
+	 * Resolve a given name in a given compilation Unit to all corresponding
+	 * (callable) declarations. If the name is already fully qualified then this
+	 * amounts to checking that the name exists and finding its declaration(s);
+	 * otherwise, we have to process the list of important statements for this
+	 * compilation unit in an effort to qualify the name.
+	 *
+	 * @param name
+	 *            The name to be resolved
+	 * @param enclosing
+	 *            The enclosing declaration in which this name is contained.
+	 * @return
+	 */
+	private <T extends Decl> T[] resolveAll(Name name, Class<T> kind, List<Decl.Import> imports) {
+		switch (name.size()) {
+		case 1:
+			name = unqualifiedResolveAs(name.get(0), imports);
+			break;
+		case 2:
+			name = partialResolveAs(name.get(0), name.get(1), imports);
+			break;
+		}
+		return selectAll(name, kind);
 	}
 
 	/**
@@ -208,8 +256,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 
 	/**
 	 * Resolve a name which is fully qualified (e.g.
-	 * <code>std::ascii::to_string</code>). This consists of a qualified unit and a
-	 * name.
+	 * <code>std::ascii::to_string</code>) to a single declaration. This consists of
+	 * a qualified unit and a name.
 	 *
 	 * @param name
 	 *            Fully qualified name
@@ -221,13 +269,51 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 		Record r = names.get(name);
 		for (int i = 0; i != r.declarations.size(); ++i) {
 			Decl.Named d = r.declarations.get(i);
-			// FIXME: need to handle overloading property
 			if (kind.isInstance(d)) {
 				return (T) d;
 			}
 		}
 		// Resolution error
 		return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+	}
+
+	/**
+	 * Resolve a name which is fully qualified (e.g.
+	 * <code>std::ascii::to_string</code>) to all matching declarations. This
+	 * consists of a qualified unit and a name.
+	 *
+	 * @param name
+	 *            Fully qualified name
+	 * @param kind
+	 *            Declaration kind we are resolving.
+	 * @return
+	 */
+	private <T extends Decl> T[] selectAll(Name name, Class<T> kind) {
+		Record r = names.get(name);
+		// Determine how many matches
+		int count = 0;
+		for (int i = 0; i != r.declarations.size(); ++i) {
+			Decl.Named d = r.declarations.get(i);
+			if (kind.isInstance(d)) {
+				count++;
+			}
+		}
+		// Create the array
+		@SuppressWarnings("unchecked")
+		T[] matches = (T[]) Array.newInstance(kind, count);
+		// Populate the array
+		for (int i = 0, j = 0; i != r.declarations.size(); ++i) {
+			Decl.Named d = r.declarations.get(i);
+			if (kind.isInstance(d)) {
+				matches[j++] = (T) d;
+			}
+		}
+		// Check for resolution error
+		if (matches.length == 0) {
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+		} else {
+			return matches;
+		}
 	}
 
 	/**
@@ -242,7 +328,7 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
 					Name resolved = createQualifiedName(uid.getAll(), n.getName());
-					register(resolved,n);
+					register(resolved, n);
 				}
 			}
 		}
@@ -274,12 +360,12 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 */
 	private void register(Name name, Decl.Named declaration) {
 		Record r = names.get(name);
-		if(r == null) {
+		if (r == null) {
 			r = new Record();
 			names.put(name, r);
 		}
 		// Sanity check whether overloading is valid
-		checkValidOverloading(r.declarations,declaration);
+		checkValidOverloading(r.declarations, declaration);
 		// Add the declaration
 		r.declarations.add(declaration);
 	}

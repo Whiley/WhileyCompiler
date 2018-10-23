@@ -155,7 +155,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && expr.getSignature() instanceof Type.Method) {
+		if (context != Context.IMPURE && expr.getDeclaration() instanceof Decl.Method) {
 			invalidMethodCall(expr, context);
 		}
 		super.visitInvoke(expr, context);

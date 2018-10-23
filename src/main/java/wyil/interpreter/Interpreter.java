@@ -1050,9 +1050,14 @@ public class Interpreter {
 
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
 		// Locate the function or method body in order to execute it
-		Decl.FunctionOrMethod decl = expr.getDeclaration();
-		// Clone frame to ensure it executes in this exact environment.
-		return semantics.Lambda(decl, frame.clone(), decl.getBody());
+		Decl.Callable decl = expr.getDeclaration();
+		if(decl instanceof Decl.FunctionOrMethod) {
+			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
+			// Clone frame to ensure it executes in this exact environment.
+			return semantics.Lambda(decl, frame.clone(), fm.getBody());
+		} else {
+			return (RValue) error("cannot take address of property",expr);
+		}
 	}
 
 	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame) {

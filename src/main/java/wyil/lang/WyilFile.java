@@ -14,6 +14,7 @@
 package wyil.lang;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
@@ -2019,14 +2020,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator {
 
-			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable signature,
-					Ref<Decl.Callable> declaration) {
-				super(EXPR_invoke, name, lifetimes, arguments, signature, declaration);
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
+					Tuple<Ref<Decl.Callable>> declarations) {
+				super(EXPR_invoke, new byte[0], name, lifetimes, arguments, declarations);
+			}
+
+			public Invoke(Name name, byte[] data, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
+					Tuple<Ref<Decl.Callable>> declarations) {
+				super(EXPR_invoke, data, name, lifetimes, arguments, declarations);
 			}
 
 			@Override
 			public Type getType() {
-				Type.Callable signature = getSignature();
+				Type.Callable signature = getDeclaration().getType();
 				Tuple<Type> returns = signature.getReturns();
 				// NOTE: if this method is called then it is assumed to be in a position which
 				// requires exactly one return type. Anything else is an error which should have
@@ -2057,7 +2063,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Type> getTypes() {
-				Tuple<Type> types = getSignature().getReturns();
+				Tuple<Type> types = getDeclaration().getType().getReturns();
 				if (types.size() > 1) {
 					return types;
 				} else {
@@ -2086,28 +2092,52 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Expr>) get(2);
 			}
 
-			public Type.Callable getSignature() {
-				return (Type.Callable) get(3);
-			}
-
-			public void setSignature(Type.Callable declaration) {
-				operands[3] = declaration;
+			/**
+			 * Specify which declaration applies to this invocation.
+			 *
+			 * @param selector
+			 */
+			public void select(Decl.Callable decl) {
+				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
+				//
+				for(int i=0;i!=decls.size();++i) {
+					if(decls.get(i).get().equals(decl)) {
+						this.data = BigInteger.valueOf(i).toByteArray();
+						return;
+					}
+				}
+				throw new IllegalArgumentException();
 			}
 
 			public Decl.Callable getDeclaration() {
-				Ref<Decl.Callable> ref = (Ref<Decl.Callable>) operands[4];
-				return ref.get();
+				int selector = new BigInteger(data).intValue();
+				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
+				return decls.get(selector).get();
 			}
 
-			public void setDeclaration(Decl.Callable decl) {
-				operands[4] = getHeap().allocate(new Ref<>(decl));
+			public Tuple<Decl.Callable> getDeclarations() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[3];
+				Decl.Callable[] decls = new Decl.Callable[refs.size()];
+				for(int i=0;i!=decls.length;++i) {
+					decls[i] = refs.get(i).get();
+				}
+				return new Tuple<>(decls);
+			}
+
+			public void setDeclarations(Decl.Callable... decls) {
+				Ref<Decl.Callable>[] refs = new Ref[decls.length];
+				for(int i=0;i!=refs.length;++i) {
+					refs[i] = new Ref<>(decls[i]);
+				}
+				operands[3] = getHeap().allocate(new Tuple<>(refs));
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Invoke clone(SyntacticItem[] operands) {
-				return new Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
-						(Type.Callable) operands[3], (Ref<Decl.Callable>) operands[4]);
+				byte[] data = Arrays.copyOf(this.data,this.data.length);
+				return new Invoke((Name) operands[0], data, (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
+						(Tuple<Ref<Decl.Callable>>) operands[3]);
 			}
 
 			@Override
@@ -3347,13 +3377,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		public static class LambdaAccess extends AbstractSyntacticItem implements Expr {
 
-			public LambdaAccess(Name name, Tuple<Type> parameters, Type.Callable signature) {
-				super(EXPR_lambdaaccess, name, parameters, signature);
+			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations) {
+				super(EXPR_lambdaaccess, new byte[0], name, parameters, declarations);
+			}
+
+			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations, byte[] data) {
+				super(EXPR_lambdaaccess, data, name, parameters, declarations);
 			}
 
 			@Override
 			public Type getType() {
-				return getSignature();
+				return getDeclaration().getType();
 			}
 
 			@Override
@@ -3370,27 +3404,55 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(0);
 			}
 
-			public Decl.FunctionOrMethod getDeclaration() {
-				throw new IllegalArgumentException("implement me!");
+			/**
+			 * Specify which declaration applies to this invocation.
+			 *
+			 * @param selector
+			 */
+			public void select(Decl.Callable decl) {
+				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
+				//
+				for(int i=0;i!=decls.size();++i) {
+					if(decls.get(i).get().equals(decl)) {
+						this.data = BigInteger.valueOf(i).toByteArray();
+						return;
+					}
+				}
+				throw new IllegalArgumentException();
 			}
 
+			public Decl.Callable getDeclaration() {
+				int selector = new BigInteger(data).intValue();
+				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
+				return decls.get(selector).get();
+			}
+
+			public Tuple<Decl.Callable> getDeclarations() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[2];
+				Decl.Callable[] decls = new Decl.Callable[refs.size()];
+				for(int i=0;i!=decls.length;++i) {
+					decls[i] = refs.get(i).get();
+				}
+				return new Tuple<>(decls);
+			}
+
+			public void setDeclarations(Decl.Callable... decls) {
+				Ref<Decl.Callable>[] refs = new Ref[decls.length];
+				for(int i=0;i!=refs.length;++i) {
+					refs[i] = new Ref<>(decls[i]);
+				}
+				operands[2] = getHeap().allocate(new Tuple<>(refs));
+			}
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameterTypes() {
 				return (Tuple<Type>) get(1);
 			}
 
-			public Type.Callable getSignature() {
-				return (Type.Callable) get(2);
-			}
-
-			public void setSignature(Type.Callable descriptor) {
-				operands[2] = descriptor;
-			}
-
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1], (Type.Callable) operands[2]);
+				byte[] data = Arrays.copyOf(this.data, this.data.length);
+				return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1], (Tuple<Ref<Decl.Callable>>) operands[2], data);
 			}
 		}
 
@@ -5560,12 +5622,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Expr.Cast((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_invoke] = new Schema(Operands.FIVE, Data.ZERO, "EXPR_invoke") {
+		schema[EXPR_invoke] = new Schema(Operands.FOUR, Data.MANY, "EXPR_invoke") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
-						(Type.Callable) operands[3], (Ref<Decl.Callable>) operands[4]);
+				return new Expr.Invoke((Name) operands[0], data, (Tuple<Identifier>) operands[1],
+						(Tuple<Expr>) operands[2], (Tuple<Ref<Decl.Callable>>) operands[3]);
 			}
 		};
 		schema[EXPR_indirectinvoke] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {
@@ -5757,12 +5819,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Expr.New((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_lambdaaccess] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambdaaccess") {
+		schema[EXPR_lambdaaccess] = new Schema(Operands.THREE, Data.MANY, "EXPR_lambdaaccess") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1],
-						(Type.Callable) operands[2]);
+						(Tuple<Ref<Decl.Callable>>) operands[2], data);
 			}
 		};
 		// RECORDS

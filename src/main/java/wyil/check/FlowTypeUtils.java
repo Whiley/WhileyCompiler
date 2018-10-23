@@ -276,7 +276,7 @@ public class FlowTypeUtils {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getSignature() instanceof Decl.Method) {
+			if (e.getDeclaration() instanceof Decl.Method) {
 				// This expression is definitely not pure
 				return false;
 			}

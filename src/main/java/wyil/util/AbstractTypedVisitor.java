@@ -818,7 +818,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
-		Type.Callable signature = expr.getSignature();
+		Type.Callable signature = expr.getDeclaration().getType();
 		Tuple<Type> parameters = signature.getParameters();
 		if(signature instanceof Type.Method) {
 			// Must bind lifetime arguments
