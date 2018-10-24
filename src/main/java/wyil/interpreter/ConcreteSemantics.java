@@ -89,7 +89,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @throws ResolutionError
 		 */
 		@Override
-		public Bool is(Type type, Interpreter instance) {
+		public Bool is(Type type, Interpreter.CallStack frame) {
 			// Handle generic cases here
 			if (type instanceof Type.Void) {
 				return False;
@@ -97,16 +97,16 @@ public class ConcreteSemantics implements AbstractSemantics {
 				Type.Nominal nom = (Type.Nominal) type;
 				Decl.Type decl = nom.getDeclaration();
 				Decl.Variable var = decl.getVariableDeclaration();
-				if(is(var.getType(), instance) == True) {
+				if(is(var.getType(), frame) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();
-					return checkInvariant(var,invariant,instance);
+					return checkInvariant(var,invariant,frame);
 				}
 				return False;
 			} else if (type instanceof Type.Union) {
 				Type.Union t = (Type.Union) type;
 				for (int i=0;i!=t.size();++i) {
 					Type element = t.get(i);
-					if (this.is(element, instance) == True) {
+					if (this.is(element, frame) == True) {
 						return True;
 					}
 				}
@@ -154,15 +154,15 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @param instance
 		 * @return
 		 */
-		public Bool checkInvariant(Decl.Variable var, Tuple<Expr> invariant, Interpreter instance) {
+		public Bool checkInvariant(Decl.Variable var, Tuple<Expr> invariant, Interpreter.CallStack frame) {
 			if (invariant.size() > 0) {
 				// One or more type invariants to check. Therefore, we need
 				// to execute the invariant and determine whether or not it
 				// returns true.
-				Interpreter.CallStack frame = instance.new CallStack();
+				frame = frame.enter(var);
 				frame.putLocal(var.getName(), this);
 				for (int i = 0; i != invariant.size(); ++i) {
-					RValue.Bool b = instance.executeExpression(Bool.class, invariant.get(i), frame);
+					RValue.Bool b = frame.execute(Bool.class, invariant.get(i), frame);
 					if (b == False) {
 						return b;
 					}
@@ -177,11 +177,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			private Null() {
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) {
+			public Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Null) {
 					return True;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 			@Override
@@ -217,11 +217,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) {
+			public Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Bool) {
 					return True;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 			@Override
@@ -268,11 +268,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if (type instanceof Type.Byte) {
 					return True;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 
@@ -343,11 +343,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.value = value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter instance) {
+			public Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Int) {
 					return True;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 			@Override
@@ -434,17 +434,17 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.elements = elements;
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Array) {
 					Type.Array t = (Type.Array) type;
 					for (int i = 0; i != elements.length; ++i) {
-						if (elements[i].is(t.getElement(), instance) == False) {
+						if (elements[i].is(t.getElement(), frame) == False) {
 							return False;
 						}
 					}
 					return True;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 
@@ -571,7 +571,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
 					Tuple<Type.Field> tFields = t.getFields();
@@ -580,7 +580,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						if (hasField(f.getName())) {
 							RValue val = read(f.getName());
 							// Matching field
-							if (val.is(f.getType(), instance) == False) {
+							if (val.is(f.getType(), frame) == False) {
 								// Field not member of type
 								return False;
 							}
@@ -591,7 +591,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					}
 					return (t.isOpen() || fields.length == tFields.size()) ? True : False;
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 
@@ -692,7 +692,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Callable) {
 					Type.Callable tc = (Type.Callable) type;
 					// FIXME: this is really a hack, since we need to perform a full
@@ -704,7 +704,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						return False;
 					}
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 
@@ -736,12 +736,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter instance) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Reference) {
 					Type.Reference ref = (Type.Reference) type;
-					return referent.value.is(ref.getElement(), instance);
+					return referent.value.is(ref.getElement(), frame);
 				} else {
-					return super.is(type, instance);
+					return super.is(type, frame);
 				}
 			}
 

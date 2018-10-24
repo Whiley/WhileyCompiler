@@ -137,6 +137,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 
 	@Override
 	public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
+		super.visitTypeNominal(type, imports);
+		//
 		Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
 		// Bind the resolved declaration
 		type.setDeclaration(resolved);

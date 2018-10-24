@@ -122,7 +122,7 @@ public interface AbstractSemantics {
 		 * @param type
 		 * @return
 		 */
-		public Bool is(Type type, Interpreter instance);
+		public Bool is(Type type, Interpreter.CallStack frame);
 
 		/**
 		 * Convert this value into a given representation. In the case that this
