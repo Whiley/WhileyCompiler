@@ -354,7 +354,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		@Override
 		public String toString() {
-			return unit + ":" + name;
+			return unit + "::" + name;
 		}
 	}
 
