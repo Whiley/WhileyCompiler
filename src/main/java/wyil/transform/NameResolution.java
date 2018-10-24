@@ -100,9 +100,9 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
 		int parameters = expr.getParameterTypes().size();
 		// Remove any with incorrect number of parameters
-		for(int i=0;i!=resolved.length;++i) {
+		for (int i = 0; i != resolved.length; ++i) {
 			Decl.Callable c = resolved[i];
-			if(parameters > 0 && c.getParameters().size() != parameters) {
+			if (parameters > 0 && c.getParameters().size() != parameters) {
 				resolved[i] = null;
 			}
 		}
@@ -124,9 +124,9 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 		super.visitInvoke(expr, imports);
 		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
 		// Remove any with incorrect number of parameters
-		for(int i=0;i!=resolved.length;++i) {
+		for (int i = 0; i != resolved.length; ++i) {
 			Decl.Callable c = resolved[i];
-			if(c.getParameters().size() != expr.getOperands().size()) {
+			if (c.getParameters().size() != expr.getOperands().size()) {
 				resolved[i] = null;
 			}
 		}
@@ -151,10 +151,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * to process the list of important statements for this compilation unit in an
 	 * effort to qualify the name.
 	 *
-	 * @param name
-	 *            The name to be resolved
-	 * @param enclosing
-	 *            The enclosing declaration in which this name is contained.
+	 * @param name      The name to be resolved
+	 * @param enclosing The enclosing declaration in which this name is contained.
 	 * @return
 	 */
 	private <T extends Decl> T resolveAs(Name name, Class<T> kind, List<Decl.Import> imports) {
@@ -176,10 +174,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * otherwise, we have to process the list of important statements for this
 	 * compilation unit in an effort to qualify the name.
 	 *
-	 * @param name
-	 *            The name to be resolved
-	 * @param enclosing
-	 *            The enclosing declaration in which this name is contained.
+	 * @param name      The name to be resolved
+	 * @param enclosing The enclosing declaration in which this name is contained.
 	 * @return
 	 */
 	private <T extends Decl> T[] resolveAll(Name name, Class<T> kind, List<Decl.Import> imports) {
@@ -239,21 +235,27 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * @return
 	 */
 	private Name partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
-		for (int i = imports.size() - 1; i >= 0; ++i) {
-			Decl.Import imp = imports.get(i);
-			Tuple<Identifier> path = imp.getPath();
-			Identifier last = path.get(path.size() - 1);
-			//
-			if (!imp.hasFrom() && last.equals(unit)) {
-				// Resolving partially qualified names requires no "from".
-				Name qualified = createQualifiedName(path, name);
-				if (names.containsKey(qualified)) {
-					return qualified;
+		Decl.Unit enclosing = name.getAncestor(Decl.Unit.class);
+		if (unit.equals(enclosing.getName().getLast())) {
+			// A local lookup on the enclosing compilation unit.
+			return unqualifiedResolveAs(name, imports);
+		} else {
+			for (int i = imports.size() - 1; i >= 0; ++i) {
+				Decl.Import imp = imports.get(i);
+				Tuple<Identifier> path = imp.getPath();
+				Identifier last = path.get(path.size() - 1);
+				//
+				if (!imp.hasFrom() && last.equals(unit)) {
+					// Resolving partially qualified names requires no "from".
+					Name qualified = createQualifiedName(path, name);
+					if (names.containsKey(qualified)) {
+						return qualified;
+					}
 				}
 			}
+			// No dice.
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 		}
-		// No dice.
-		return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 	}
 
 	/**
@@ -261,10 +263,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * <code>std::ascii::to_string</code>) to a single declaration. This consists of
 	 * a qualified unit and a name.
 	 *
-	 * @param name
-	 *            Fully qualified name
-	 * @param kind
-	 *            Declaration kind we are resolving.
+	 * @param name Fully qualified name
+	 * @param kind Declaration kind we are resolving.
 	 * @return
 	 */
 	private <T extends Decl> T select(Name name, Class<T> kind) {
@@ -284,10 +284,8 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * <code>std::ascii::to_string</code>) to all matching declarations. This
 	 * consists of a qualified unit and a name.
 	 *
-	 * @param name
-	 *            Fully qualified name
-	 * @param kind
-	 *            Declaration kind we are resolving.
+	 * @param name Fully qualified name
+	 * @param kind Declaration kind we are resolving.
 	 * @return
 	 */
 	private <T extends Decl> T[] selectAll(Name name, Class<T> kind) {
