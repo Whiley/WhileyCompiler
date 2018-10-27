@@ -20,7 +20,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.Attribute;
-import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -1315,7 +1314,7 @@ public class VerificationConditionGenerator {
 				// each precondition clause
 				for (int i = 0; i != numPostconditions; ++i) {
 					// FIXME: name needs proper path information
-					WyalFile.Name name = convert(fmp.getQualifiedName().toNameID().module(),prefix + i,expr);
+					WyalFile.Name name = convert(fmp.getQualifiedName().getUnit(), prefix + i, expr);
 					Expr clause = new Expr.Invoke(null, name, null, arguments);
 					context = context.assume(clause);
 				}
@@ -2325,27 +2324,21 @@ public class VerificationConditionGenerator {
 	 * @param id
 	 * @return
 	 */
-	public WyalFile.Name convert(NameID id, SyntacticItem context) {
-		return convert(id.module(), id.name(), context);
+	public WyalFile.Name convert(QualifiedName id, SyntacticItem context) {
+		return convert(id.getUnit(), id.getName().get(), context);
 	}
 
-	public WyalFile.Name convert(Path.ID module, String name, SyntacticItem context) {
-		if(module.equals(wyalFile.getEntry().id())) {
-			// This is a local name. Therefore, it does not need to be fully
-			// qualified.
-			module = Trie.ROOT;
-		}
-		WyalFile.Identifier[] components = new WyalFile.Identifier[module.size()+1];
-		for(int i=0;i!=module.size();++i) {
-			WyalFile.Identifier id = new WyalFile.Identifier(module.get(i));
+	public WyalFile.Name convert(Name module, String name, SyntacticItem context) {
+		WyalFile.Identifier[] components = new WyalFile.Identifier[module.size() + 1];
+		for (int i = 0; i != module.size(); ++i) {
+			WyalFile.Identifier id = new WyalFile.Identifier(module.get(i).get());
 			components[i] = id;
 		}
 		WyalFile.Identifier id = new WyalFile.Identifier(name);
 		components[module.size()] = id;
 		WyalFile.Name n = new WyalFile.Name(components);
-		return allocate(n,context.getParent(WyilFile.Attribute.Span.class));
+		return allocate(n, context.getParent(WyilFile.Attribute.Span.class));
 	}
-
 
 	/**
 	 * Convert a WyIL type into its equivalent WyCS type. In some cases, this is
@@ -2415,7 +2408,7 @@ public class VerificationConditionGenerator {
 			return new WyalFile.Type.Function(parameters,returns);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			NameID nid = nt.getName().toNameID();
+			QualifiedName nid = nt.getDeclaration().getQualifiedName();
 			result = new WyalFile.Type.Nominal(convert(nid,type));
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
@@ -2482,7 +2475,6 @@ public class VerificationConditionGenerator {
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			NameID nid = nt.getName().toNameID();
 			// HACK
 			return true;
 		} else {

@@ -17,7 +17,6 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
 
-import wybs.lang.NameID;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
@@ -163,12 +162,12 @@ public class SubtypeOperator {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public boolean isContractive(NameID nid, Type type) {
-		HashSet<NameID> visited = new HashSet<>();
+	public boolean isContractive(QualifiedName nid, Type type) {
+		HashSet<QualifiedName> visited = new HashSet<>();
 		return isContractive(nid, type, visited);
 	}
 
-	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) {
+	private boolean isContractive(QualifiedName name, Type type, HashSet<QualifiedName> visited) {
 		switch (type.getOpcode()) {
 		case TYPE_void:
 		case TYPE_any:
@@ -199,7 +198,7 @@ public class SubtypeOperator {
 		case TYPE_nominal: {
 			Type.Nominal n = (Type.Nominal) type;
 			Decl.Type decl = n.getDeclaration();
-			NameID nid = decl.getQualifiedName().toNameID();
+			QualifiedName nid = decl.getQualifiedName();
 			if (nid.equals(name)) {
 				// We have identified a non-contract type.
 				return false;

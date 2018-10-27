@@ -30,7 +30,6 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;

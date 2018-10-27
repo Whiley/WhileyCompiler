@@ -2352,7 +2352,7 @@ public class FlowTypeCheck {
 	}
 
 	private void checkContractive(Decl.Type d) {
-		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName().toNameID(), d.getType())) {
+		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName(), d.getType())) {
 			syntaxError("empty type encountered", d.getName());
 		}
 	}

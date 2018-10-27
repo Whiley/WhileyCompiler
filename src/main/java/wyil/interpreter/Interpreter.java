@@ -13,15 +13,11 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Build;
-import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
-import wyfs.lang.Path;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 

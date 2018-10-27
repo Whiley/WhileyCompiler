@@ -18,7 +18,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameID;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
@@ -342,14 +341,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		public Identifier getName() {
 			return name;
-		}
-
-		public NameID toNameID() {
-			Trie pkg = Trie.ROOT;
-			for (int i = 0; i < unit.size() - 1; ++i) {
-				pkg = pkg.append(unit.get(i).get());
-			}
-			return new NameID(pkg, name.get());
 		}
 
 		@Override

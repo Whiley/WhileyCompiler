@@ -3,17 +3,17 @@ package wyil.check;
 import java.util.HashSet;
 import java.util.Set;
 
-import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
 import wyil.util.AbstractConsumer;
 
 import static wyc.util.ErrorMessages.CYCLIC_STATIC_INITIALISER;
 import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
-public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
+public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
 
 	public StaticVariableCheck(CompileTask builder) {
 	}
@@ -23,10 +23,10 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	}
 
 	@Override
-	public void visitStaticVariable(Decl.StaticVariable decl, Set<NameID> accessed) {
+	public void visitStaticVariable(Decl.StaticVariable decl, Set<QualifiedName> accessed) {
 		if (decl.hasInitialiser()) {
 			Expr initialiser = decl.getInitialiser();
-			NameID name = decl.getQualifiedName().toNameID();
+			QualifiedName name = decl.getQualifiedName();
 			accessed = new HashSet<>();
 			visitExpression(initialiser, accessed);
 			if (accessed.contains(name)) {
@@ -39,24 +39,24 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	}
 
 	@Override
-	public void visitType(Decl.Type decl, Set<NameID> accessed) {
+	public void visitType(Decl.Type decl, Set<QualifiedName> accessed) {
 		// Don't need to visit other declarations
 	}
 
 	@Override
-	public void visitCallable(Decl.Callable decl, Set<NameID> accessed) {
+	public void visitCallable(Decl.Callable decl, Set<QualifiedName> accessed) {
 		// Don't need to visit other declarations
 	}
 
 	@Override
-	public void visitStatement(Stmt stmt, Set<NameID> accessed) {
+	public void visitStatement(Stmt stmt, Set<QualifiedName> accessed) {
 		// Don't need to visit statements at all
 	}
 
 	@Override
-	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Set<NameID> accessed) {
+	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Set<QualifiedName> accessed) {
 		Decl.StaticVariable decl = expr.getDeclaration();
-		NameID name = decl.getQualifiedName().toNameID();
+		QualifiedName name = decl.getQualifiedName();
 		if (decl.hasInitialiser() && !accessed.contains(name)) {
 			accessed.add(name);
 			visitExpression(decl.getInitialiser(), accessed);
@@ -64,7 +64,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<NameID>> {
 	}
 
 	@Override
-	public void visitType(Type type, Set<NameID> accessed) {
+	public void visitType(Type type, Set<QualifiedName> accessed) {
 		// Don't need to visit types at all
 	}
 }
