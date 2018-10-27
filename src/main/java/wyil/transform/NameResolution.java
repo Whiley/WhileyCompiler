@@ -15,22 +15,31 @@ package wyil.transform;
 
 import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
+import wybs.lang.SyntacticHeap.Allocator;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.AbstractSyntacticHeap;
 import wybs.lang.SyntaxError;
 
 import wyc.util.ErrorMessages;
+import wycc.cfg.Configuration;
 import wycc.util.ArrayUtils;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 import static wyc.util.ErrorMessages.*;
 import wyil.lang.WyilFile;
 
 import static wyil.lang.WyilFile.Tuple;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +49,7 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
+import wyil.util.AbstractFunction;
 
 /**
  * Responsible for resolving a name which occurs at some position in a
@@ -64,7 +74,7 @@ import wyil.util.AbstractConsumer;
  * @author David J. Pearce
  *
  */
-public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
+public class NameResolution  {
 	/**
 	 * The master list of names and their corresponding records. For each name, this
 	 * records whether we have a local declaration, a non-local declaration (which
@@ -72,76 +82,105 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 */
 	private final HashMap<Name, Record> names;
 
+	private final Build.Project project;
+
 	public NameResolution(Build.Task builder) {
 		this.names = new HashMap<>();
+		project = builder.project();
 	}
 
 	public void apply(WyilFile module) {
-		updateUniversalNames(module.getModule());
-		super.visitModule(module, null);
-	}
-
-	@Override
-	public void visitUnit(Decl.Unit unit, List<Decl.Import> unused) {
-		// Create an initially empty list of import statements.
-		super.visitUnit(unit, new ArrayList<>());
-	}
-
-	@Override
-	public void visitImport(Decl.Import decl, List<Decl.Import> imports) {
-		super.visitImport(decl, imports);
-		// Add this import statements to list of visible imports
-		imports.add(decl);
-	}
-
-	@Override
-	public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
-		super.visitLambdaAccess(expr, imports);
-		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
-		int parameters = expr.getParameterTypes().size();
-		// Remove any with incorrect number of parameters
-		for (int i = 0; i != resolved.length; ++i) {
-			Decl.Callable c = resolved[i];
-			if (parameters > 0 && c.getParameters().size() != parameters) {
-				resolved[i] = null;
+		try {
+			// Import local names
+			importNames(module.getModule());
+			// Import non-local names
+			for(WyilFile external : getExternals()) {
+				importNames(external.getModule());
 			}
+			//
+			new Resolver().apply(module);
+		} catch (IOException e) {
+			// FIXME: need better error handling within pipeline stages.
+			throw new RuntimeException(e);
 		}
-		resolved = ArrayUtils.removeAll(resolved, null);
-		// Bind the resolved declarations
-		expr.setDeclarations(resolved);
+
 	}
 
-	@Override
-	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
-		super.visitStaticVariableAccess(expr, imports);
-		Decl.StaticVariable resolved = resolveAs(expr.getName(), Decl.StaticVariable.class, imports);
-		// Bind the resolved declaration
-		expr.setDeclaration(resolved);
-	}
+	/**
+	 * Responsible for identifying unresolved names which remain to be resolved to
+	 * their corresponding declarations. This is achieved by traversing from a given
+	 * declaration and identifying all static variables and callables which are
+	 * referred to.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private class Resolver extends AbstractConsumer<List<Decl.Import>> {
 
-	@Override
-	public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
-		super.visitInvoke(expr, imports);
-		Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
-		// Remove any with incorrect number of parameters
-		for (int i = 0; i != resolved.length; ++i) {
-			Decl.Callable c = resolved[i];
-			if (c.getParameters().size() != expr.getOperands().size()) {
-				resolved[i] = null;
-			}
+		public void apply(WyilFile module) {
+			super.visitModule(module, null);
 		}
-		resolved = ArrayUtils.removeAll(resolved, null);
-		// Bind the resolved declarations
-		expr.setDeclarations(resolved);
+
+		@Override
+		public void visitUnit(Decl.Unit unit, List<Decl.Import> unused) {
+			// Create an initially empty list of import statements.
+			super.visitUnit(unit, new ArrayList<>());
+		}
+
+		@Override
+		public void visitImport(Decl.Import decl, List<Decl.Import> imports) {
+			super.visitImport(decl, imports);
+			// Add this import statements to list of visible imports
+			imports.add(decl);
+		}
+
+		@Override
+		public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
+			super.visitLambdaAccess(expr, imports);
+			Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
+			// Filter Parameters and bind
+			expr.setDeclarations(filterParameters(expr.getParameterTypes().size(),resolved));
+		}
+
+		@Override
+		public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
+			super.visitStaticVariableAccess(expr, imports);
+			Decl.StaticVariable resolved = resolveAs(expr.getName(), Decl.StaticVariable.class, imports);
+			// Bind the resolved declaration
+			expr.setDeclaration(resolved);
+		}
+
+		@Override
+		public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
+			super.visitInvoke(expr, imports);
+			Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
+			// Filter Parameters and bind
+			expr.setDeclarations(filterParameters(expr.getOperands().size(), resolved));
+		}
+
+		@Override
+		public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
+			super.visitTypeNominal(type, imports);
+			//
+			Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
+			// Bind the resolved declaration
+			type.setDeclaration(resolved);
+		}
 	}
 
-	@Override
-	public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
-		super.visitTypeNominal(type, imports);
-		//
-		Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
-		// Bind the resolved declaration
-		type.setDeclaration(resolved);
+	/**
+	 * Import a given external item (e.g. declaration) into a given target module.
+	 * The key is that qualified references are left unresolved for later.
+	 *
+	 * @param item
+	 *            The item to be imported.
+	 * @param target
+	 *            The target WyilFile.
+	 * @return
+	 */
+	private <T extends SyntacticItem> T importExternal(T item, WyilFile target) {
+		// What to do here? We need some kind of extensible allocator strategy perhaps
+		// for AbstractSyntacticHeap?
 	}
 
 	/**
@@ -151,8 +190,10 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * to process the list of important statements for this compilation unit in an
 	 * effort to qualify the name.
 	 *
-	 * @param name      The name to be resolved
-	 * @param enclosing The enclosing declaration in which this name is contained.
+	 * @param name
+	 *            The name to be resolved
+	 * @param enclosing
+	 *            The enclosing declaration in which this name is contained.
 	 * @return
 	 */
 	private <T extends Decl> T resolveAs(Name name, Class<T> kind, List<Decl.Import> imports) {
@@ -174,8 +215,10 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * otherwise, we have to process the list of important statements for this
 	 * compilation unit in an effort to qualify the name.
 	 *
-	 * @param name      The name to be resolved
-	 * @param enclosing The enclosing declaration in which this name is contained.
+	 * @param name
+	 *            The name to be resolved
+	 * @param enclosing
+	 *            The enclosing declaration in which this name is contained.
 	 * @return
 	 */
 	private <T extends Decl> T[] resolveAll(Name name, Class<T> kind, List<Decl.Import> imports) {
@@ -240,7 +283,7 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 			// A local lookup on the enclosing compilation unit.
 			return unqualifiedResolveAs(name, imports);
 		} else {
-			for (int i = imports.size() - 1; i >= 0; ++i) {
+			for (int i = imports.size() - 1; i >= 0; --i) {
 				Decl.Import imp = imports.get(i);
 				Tuple<Identifier> path = imp.getPath();
 				Identifier last = path.get(path.size() - 1);
@@ -263,8 +306,10 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * <code>std::ascii::to_string</code>) to a single declaration. This consists of
 	 * a qualified unit and a name.
 	 *
-	 * @param name Fully qualified name
-	 * @param kind Declaration kind we are resolving.
+	 * @param name
+	 *            Fully qualified name
+	 * @param kind
+	 *            Declaration kind we are resolving.
 	 * @return
 	 */
 	private <T extends Decl> T select(Name name, Class<T> kind) {
@@ -284,8 +329,10 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	 * <code>std::ascii::to_string</code>) to all matching declarations. This
 	 * consists of a qualified unit and a name.
 	 *
-	 * @param name Fully qualified name
-	 * @param kind Declaration kind we are resolving.
+	 * @param name
+	 *            Fully qualified name
+	 * @param kind
+	 *            Declaration kind we are resolving.
 	 * @return
 	 */
 	private <T extends Decl> T[] selectAll(Name name, Class<T> kind) {
@@ -317,10 +364,28 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 	}
 
 	/**
+	 * Filter the given callable declarations based on their parameter count.
+	 *
+	 * @param parameters
+	 * @param resolved
+	 * @return
+	 */
+	private Decl.Callable[] filterParameters(int parameters, Decl.Callable[] resolved) {
+		// Remove any with incorrect number of parameters
+		for (int i = 0; i != resolved.length; ++i) {
+			Decl.Callable c = resolved[i];
+			if (parameters > 0 && c.getParameters().size() != parameters) {
+				resolved[i] = null;
+			}
+		}
+		return ArrayUtils.removeAll(resolved, null);
+	}
+
+	/**
 	 * Update the universal list of names. This is used to determine whether a name
 	 * is valid or not.
 	 */
-	private void updateUniversalNames(Decl.Module module) {
+	private void importNames(Decl.Module module) {
 		// FIXME: this method is completely broken for so many reasons.
 		for (Decl.Unit unit : module.getUnits()) {
 			Name uid = unit.getName();
@@ -387,6 +452,27 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 		}
 	}
 
+	/**
+	 * Read in all external packages so they can be used for name resolution. This
+	 * amounts to loading in every WyilFile contained within an external package
+	 * dependency.
+	 */
+	private List<WyilFile> getExternals() throws IOException {
+		ArrayList<WyilFile> externals = new ArrayList<>();
+		List<Build.Package> pkgs = project.getPackages();
+		// Consider each package in turn and identify all contained WyilFiles
+		for (int i = 0; i != pkgs.size(); ++i) {
+			Build.Package p = pkgs.get(i);
+			// FIXME: This is kind broken me thinks. Potentially, we should be able to
+			// figure out what modules are supplied via the configuration.
+			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+			for (int j = 0; j != entries.size(); ++j) {
+				externals.add(entries.get(j).read());
+			}
+		}
+		return externals;
+	}
+
 	private <T extends Decl> boolean contains(List<Decl.Named> declarations, Class<T> kind) {
 		for (int i = 0; i != declarations.size(); ++i) {
 			if (kind.isInstance(declarations.get(i))) {
@@ -420,6 +506,18 @@ public class NameResolution extends AbstractConsumer<List<Decl.Import>> {
 
 		public Record() {
 			this.declarations = new ArrayList<>();
+		}
+	}
+
+	private static class ImportAllocator extends AbstractSyntacticHeap.Allocator {
+
+		public ImportAllocator(AbstractSyntacticHeap heap) {
+			super(heap);
+		}
+
+		@Override
+		public SyntacticItem allocate(SyntacticItem item) {
+			return super.allocate(item);
 		}
 	}
 }
