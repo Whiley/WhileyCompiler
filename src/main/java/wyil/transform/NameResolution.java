@@ -19,6 +19,7 @@ import wybs.lang.SyntacticHeap.Allocator;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Ref;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractSyntacticHeap;
 import wybs.lang.SyntaxError;
@@ -32,6 +33,7 @@ import wyfs.util.Trie;
 
 import static wyc.util.ErrorMessages.*;
 import wyil.lang.WyilFile;
+import static wyil.lang.WyilFile.*;
 
 import static wyil.lang.WyilFile.Tuple;
 
@@ -43,13 +45,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
-import wyil.util.AbstractFunction;
 
 /**
  * Responsible for resolving a name which occurs at some position in a
@@ -74,31 +76,35 @@ import wyil.util.AbstractFunction;
  * @author David J. Pearce
  *
  */
-public class NameResolution  {
+public class NameResolution {
 	/**
 	 * The master list of names and their corresponding records. For each name, this
 	 * records whether we have a local declaration, a non-local declaration (which
 	 * may or may not have been imported), etc.
 	 */
-	private final HashMap<Name, Record> names;
+	private final HashMap<QualifiedName, SymbolTableEntry> symbols;
 
 	private final Build.Project project;
 
 	public NameResolution(Build.Task builder) {
-		this.names = new HashMap<>();
+		this.symbols = new HashMap<>();
 		project = builder.project();
 	}
 
 	public void apply(WyilFile module) {
 		try {
 			// Import local names
-			importNames(module.getModule());
+			importLocalNames(module.getModule());
 			// Import non-local names
-			for(WyilFile external : getExternals()) {
-				importNames(external.getModule());
+			for (WyilFile external : getExternals()) {
+				importExternalNames(external.getModule());
 			}
-			//
-			new Resolver().apply(module);
+			// Create initial set of patches.
+			List<Patch> patches = new Resolver().apply(module);
+			// Now continue importing until patches all resolved.
+			for (int i = 0; i != patches.size(); ++i) {
+				resolve(patches.get(i));
+			}
 		} catch (IOException e) {
 			// FIXME: need better error handling within pipeline stages.
 			throw new RuntimeException(e);
@@ -110,15 +116,21 @@ public class NameResolution  {
 	 * Responsible for identifying unresolved names which remain to be resolved to
 	 * their corresponding declarations. This is achieved by traversing from a given
 	 * declaration and identifying all static variables and callables which are
-	 * referred to.
+	 * referred to. In each case, a "patch" is created which identifies a location
+	 * within the module which needs to be resolved. Whilst in some cases we could
+	 * resolve immediately, for external symbols we cannot. Therefore, patches can
+	 * be thought of as "lazy" resolution which works for both local and non-local
+	 * names.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	private class Resolver extends AbstractConsumer<List<Decl.Import>> {
+		private ArrayList<Patch> patches = new ArrayList<>();
 
-		public void apply(WyilFile module) {
+		public List<Patch> apply(WyilFile module) {
 			super.visitModule(module, null);
+			return patches;
 		}
 
 		@Override
@@ -137,75 +149,38 @@ public class NameResolution  {
 		@Override
 		public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
 			super.visitLambdaAccess(expr, imports);
-			Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
-			// Filter Parameters and bind
-			expr.setDeclarations(filterParameters(expr.getParameterTypes().size(),resolved));
+			// Resolve to qualified name
+			QualifiedName name = resolveAs(expr.getName(), imports);
+			// Create patch
+			patches.add(new Patch(name, expr));
 		}
 
 		@Override
 		public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
 			super.visitStaticVariableAccess(expr, imports);
-			Decl.StaticVariable resolved = resolveAs(expr.getName(), Decl.StaticVariable.class, imports);
-			// Bind the resolved declaration
-			expr.setDeclaration(resolved);
+			// Resolve to qualified name
+			QualifiedName name = resolveAs(expr.getName(), imports);
+			// Create patch
+			patches.add(new Patch(name, expr));
 		}
 
 		@Override
 		public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
 			super.visitInvoke(expr, imports);
-			Decl.Callable[] resolved = resolveAll(expr.getName(), Decl.Callable.class, imports);
-			// Filter Parameters and bind
-			expr.setDeclarations(filterParameters(expr.getOperands().size(), resolved));
+			// Resolve to qualified name
+			QualifiedName name = resolveAs(expr.getName(), imports);
+			// Create patch
+			patches.add(new Patch(name, expr));
 		}
 
 		@Override
 		public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
 			super.visitTypeNominal(type, imports);
-			//
-			Decl.Type resolved = resolveAs(type.getName(), Decl.Type.class, imports);
-			// Bind the resolved declaration
-			type.setDeclaration(resolved);
+			// Resolve to qualified name
+			QualifiedName name = resolveAs(type.getName(), imports);
+			// Create patch
+			patches.add(new Patch(name, type));
 		}
-	}
-
-	/**
-	 * Import a given external item (e.g. declaration) into a given target module.
-	 * The key is that qualified references are left unresolved for later.
-	 *
-	 * @param item
-	 *            The item to be imported.
-	 * @param target
-	 *            The target WyilFile.
-	 * @return
-	 */
-	private <T extends SyntacticItem> T importExternal(T item, WyilFile target) {
-		// What to do here? We need some kind of extensible allocator strategy perhaps
-		// for AbstractSyntacticHeap?
-	}
-
-	/**
-	 * Resolve a given name in a given compilation Unit to its corresponding
-	 * declaration. If the name is already fully qualified then this amounts to
-	 * checking that the name exists and finding its declaration; otherwise, we have
-	 * to process the list of important statements for this compilation unit in an
-	 * effort to qualify the name.
-	 *
-	 * @param name
-	 *            The name to be resolved
-	 * @param enclosing
-	 *            The enclosing declaration in which this name is contained.
-	 * @return
-	 */
-	private <T extends Decl> T resolveAs(Name name, Class<T> kind, List<Decl.Import> imports) {
-		switch (name.size()) {
-		case 1:
-			name = unqualifiedResolveAs(name.get(0), imports);
-			break;
-		case 2:
-			name = partialResolveAs(name.get(0), name.get(1), imports);
-			break;
-		}
-		return select(name, kind);
 	}
 
 	/**
@@ -221,16 +196,16 @@ public class NameResolution  {
 	 *            The enclosing declaration in which this name is contained.
 	 * @return
 	 */
-	private <T extends Decl> T[] resolveAll(Name name, Class<T> kind, List<Decl.Import> imports) {
+	private QualifiedName resolveAs(Name name, List<Decl.Import> imports) {
+		// Resolve unqualified name to qualified name
 		switch (name.size()) {
 		case 1:
-			name = unqualifiedResolveAs(name.get(0), imports);
-			break;
+			return unqualifiedResolveAs(name.get(0), imports);
 		case 2:
-			name = partialResolveAs(name.get(0), name.get(1), imports);
-			break;
+			return partialResolveAs(name.get(0), name.get(1), imports);
+		default:
+			return new QualifiedName(name.getPath(), name.getLast());
 		}
-		return selectAll(name, kind);
 	}
 
 	/**
@@ -242,11 +217,11 @@ public class NameResolution  {
 	 * @param imports
 	 * @return
 	 */
-	private Name unqualifiedResolveAs(Identifier name, List<Decl.Import> imports) {
+	private QualifiedName unqualifiedResolveAs(Identifier name, List<Decl.Import> imports) {
 		// Attempt to local resolve
 		Decl.Unit unit = name.getAncestor(Decl.Unit.class);
-		Name localName = createQualifiedName(unit.getName().getAll(), name);
-		if (names.containsKey(localName)) {
+		QualifiedName localName = new QualifiedName(unit.getName(), name);
+		if (symbols.containsKey(localName)) {
 			// Yes, matching local name
 			return localName;
 		} else {
@@ -257,7 +232,7 @@ public class NameResolution  {
 					// Resolving unqualified names requires "import from".
 					Identifier from = imp.getFrom();
 					if (from.get().equals("*") || name.equals(from)) {
-						return createQualifiedName(imp.getPath(), name);
+						return new QualifiedName(imp.getPath(), name);
 					}
 				}
 			}
@@ -277,7 +252,7 @@ public class NameResolution  {
 	 * @param imports
 	 * @return
 	 */
-	private Name partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
+	private QualifiedName partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
 		Decl.Unit enclosing = name.getAncestor(Decl.Unit.class);
 		if (unit.equals(enclosing.getName().getLast())) {
 			// A local lookup on the enclosing compilation unit.
@@ -290,8 +265,8 @@ public class NameResolution  {
 				//
 				if (!imp.hasFrom() && last.equals(unit)) {
 					// Resolving partially qualified names requires no "from".
-					Name qualified = createQualifiedName(path, name);
-					if (names.containsKey(qualified)) {
+					QualifiedName qualified = new QualifiedName(path, name);
+					if (symbols.containsKey(qualified)) {
 						return qualified;
 					}
 				}
@@ -302,119 +277,48 @@ public class NameResolution  {
 	}
 
 	/**
-	 * Resolve a name which is fully qualified (e.g.
-	 * <code>std::ascii::to_string</code>) to a single declaration. This consists of
-	 * a qualified unit and a name.
+	 * Resolve a given patch by finding (and potentially importing) the appropriate
+	 * declaration and then assigning this to the target expression.
 	 *
-	 * @param name
-	 *            Fully qualified name
-	 * @param kind
-	 *            Declaration kind we are resolving.
-	 * @return
+	 * @param p
 	 */
-	private <T extends Decl> T select(Name name, Class<T> kind) {
-		Record r = names.get(name);
-		for (int i = 0; i != r.declarations.size(); ++i) {
-			Decl.Named d = r.declarations.get(i);
-			if (kind.isInstance(d)) {
-				return (T) d;
-			}
+	private void resolve(Patch p) {
+		// Import external declarations as necessary
+		SymbolTableEntry symbol = symbols.get(p.name);
+		if(symbol.external) {
+			System.out.println("NEED TO RESOLVE EXTERNAL SYMBOL");
 		}
-		// Resolution error
-		return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+		// Apply the patch
+		p.apply(symbols);
 	}
 
 	/**
-	 * Resolve a name which is fully qualified (e.g.
-	 * <code>std::ascii::to_string</code>) to all matching declarations. This
-	 * consists of a qualified unit and a name.
-	 *
-	 * @param name
-	 *            Fully qualified name
-	 * @param kind
-	 *            Declaration kind we are resolving.
-	 * @return
+	 * Import all names defined in the local module into the global namespace
 	 */
-	private <T extends Decl> T[] selectAll(Name name, Class<T> kind) {
-		Record r = names.get(name);
-		// Determine how many matches
-		int count = 0;
-		for (int i = 0; i != r.declarations.size(); ++i) {
-			Decl.Named d = r.declarations.get(i);
-			if (kind.isInstance(d)) {
-				count++;
-			}
-		}
-		// Create the array
-		@SuppressWarnings("unchecked")
-		T[] matches = (T[]) Array.newInstance(kind, count);
-		// Populate the array
-		for (int i = 0, j = 0; i != r.declarations.size(); ++i) {
-			Decl.Named d = r.declarations.get(i);
-			if (kind.isInstance(d)) {
-				matches[j++] = (T) d;
-			}
-		}
-		// Check for resolution error
-		if (matches.length == 0) {
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
-		} else {
-			return matches;
-		}
-	}
-
-	/**
-	 * Filter the given callable declarations based on their parameter count.
-	 *
-	 * @param parameters
-	 * @param resolved
-	 * @return
-	 */
-	private Decl.Callable[] filterParameters(int parameters, Decl.Callable[] resolved) {
-		// Remove any with incorrect number of parameters
-		for (int i = 0; i != resolved.length; ++i) {
-			Decl.Callable c = resolved[i];
-			if (parameters > 0 && c.getParameters().size() != parameters) {
-				resolved[i] = null;
-			}
-		}
-		return ArrayUtils.removeAll(resolved, null);
-	}
-
-	/**
-	 * Update the universal list of names. This is used to determine whether a name
-	 * is valid or not.
-	 */
-	private void importNames(Decl.Module module) {
+	private void importLocalNames(Decl.Module module) {
 		// FIXME: this method is completely broken for so many reasons.
 		for (Decl.Unit unit : module.getUnits()) {
-			Name uid = unit.getName();
 			for (Decl d : unit.getDeclarations()) {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
-					Name resolved = createQualifiedName(uid.getAll(), n.getName());
-					register(resolved, n);
+					register(n, false);
 				}
 			}
 		}
 	}
 
-	private Name createQualifiedName(Tuple<Identifier> path, Identifier name) {
-		Identifier[] ids = new Identifier[path.size() + 1];
-		for (int i = 0; i != path.size(); ++i) {
-			ids[i] = path.get(i);
+	/**
+	 * Import all names defined in an external module into the global namespace
+	 */
+	private void importExternalNames(Decl.Module module) {
+		for (Decl.Unit unit : module.getUnits()) {
+			for (Decl d : unit.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					register(n, true);
+				}
+			}
 		}
-		ids[path.size()] = name;
-		return new Name(ids);
-	}
-
-	private Name createQualifiedName(Identifier[] path, Identifier name) {
-		Identifier[] ids = new Identifier[path.length + 1];
-		for (int i = 0; i != path.length; ++i) {
-			ids[i] = path[i];
-		}
-		ids[path.length] = name;
-		return new Name(ids);
 	}
 
 	/**
@@ -423,11 +327,12 @@ public class NameResolution  {
 	 * @param name
 	 * @param declaration
 	 */
-	private void register(Name name, Decl.Named declaration) {
-		Record r = names.get(name);
+	private void register(Decl.Named declaration, boolean external) {
+		QualifiedName name = declaration.getQualifiedName();
+		SymbolTableEntry r = symbols.get(name);
 		if (r == null) {
-			r = new Record();
-			names.put(name, r);
+			r = new SymbolTableEntry(external);
+			symbols.put(name, r);
 		}
 		// Sanity check whether overloading is valid
 		checkValidOverloading(r.declarations, declaration);
@@ -483,31 +388,161 @@ public class NameResolution  {
 	}
 
 	/**
-	 * Throw an syntax error.
-	 *
-	 * @param msg
-	 * @param e
-	 * @return
-	 */
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
-	}
-
-	/**
-	 * Records information associated with a given name.
+	 * Records information about a name which needs to be "patched" with its
+	 * corresponding declaration in a given expression.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class Record {
-		public final ArrayList<Decl.Named> declarations;
+	private static class Patch {
+		public final QualifiedName name;
+		private final SyntacticItem target;
 
-		public Record() {
+		public Patch(QualifiedName name, SyntacticItem target) {
+			this.name = name;
+			this.target = target;
+		}
+
+		public void apply(Map<QualifiedName, SymbolTableEntry> symbols) {
+			// Apply patch to target expression
+			switch (target.getOpcode()) {
+			case EXPR_staticvariable: {
+				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
+				e.setDeclaration(select(name, Decl.StaticVariable.class, symbols));
+				break;
+			}
+			case EXPR_invoke: {
+				Expr.Invoke e = (Expr.Invoke) target;
+				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class, symbols);
+				e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
+				break;
+			}
+			case EXPR_lambdaaccess: {
+				Expr.LambdaAccess e = (Expr.LambdaAccess) target;
+				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class, symbols);
+				e.setDeclarations(filterParameters(e.getParameterTypes().size(), resolved));
+				break;
+			}
+			default:
+			case TYPE_nominal: {
+				Type.Nominal e = (Type.Nominal) target;
+				e.setDeclaration(select(name, Decl.Type.class, symbols));
+				break;
+			}
+			}
+		}
+
+		/**
+		 * Resolve a name which is fully qualified (e.g.
+		 * <code>std::ascii::to_string</code>) to first matching declaration. This
+		 * consists of a qualified unit and a name.
+		 *
+		 * @param name
+		 *            Fully qualified name
+		 * @param kind
+		 *            Declaration kind we are resolving.
+		 * @return
+		 */
+		private <T extends Decl> T select(QualifiedName name, Class<T> kind,
+				Map<QualifiedName, SymbolTableEntry> symbols) {
+			SymbolTableEntry r = symbols.get(name);
+			Identifier id = name.getName();
+			for (int i = 0; i != r.declarations.size(); ++i) {
+				Decl.Named d = r.declarations.get(i);
+				if (kind.isInstance(d)) {
+					return (T) d;
+				}
+			}
+			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
+		}
+
+		/**
+		 * Resolve a name which is fully qualified (e.g.
+		 * <code>std::ascii::to_string</code>) to all matching declarations. This
+		 * consists of a qualified unit and a name.
+		 *
+		 * @param name
+		 *            Fully qualified name
+		 * @param kind
+		 *            Declaration kind we are resolving.
+		 * @return
+		 */
+		private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind,
+				Map<QualifiedName, SymbolTableEntry> symbols) {
+			SymbolTableEntry r = symbols.get(name);
+			Identifier id = name.getName();
+			// Determine how many matches
+			int count = 0;
+			for (int i = 0; i != r.declarations.size(); ++i) {
+				Decl.Named d = r.declarations.get(i);
+				if (kind.isInstance(d)) {
+					count++;
+				}
+			}
+			// Create the array
+			@SuppressWarnings("unchecked")
+			T[] matches = (T[]) Array.newInstance(kind, count);
+			// Populate the array
+			for (int i = 0, j = 0; i != r.declarations.size(); ++i) {
+				Decl.Named d = r.declarations.get(i);
+				if (kind.isInstance(d)) {
+					matches[j++] = (T) d;
+				}
+			}
+			// Check for resolution error
+			if (matches.length == 0) {
+				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
+			} else {
+				return matches;
+			}
+		}
+
+		/**
+		 * Filter the given callable declarations based on their parameter count.
+		 *
+		 * @param parameters
+		 * @param resolved
+		 * @return
+		 */
+		private Decl.Callable[] filterParameters(int parameters, Decl.Callable[] resolved) {
+			// Remove any with incorrect number of parameters
+			for (int i = 0; i != resolved.length; ++i) {
+				Decl.Callable c = resolved[i];
+				if (parameters > 0 && c.getParameters().size() != parameters) {
+					resolved[i] = null;
+				}
+			}
+			return ArrayUtils.removeAll(resolved, null);
+		}
+
+	}
+
+	/**
+	 * Records information associated with a given symbol, such as whether it is
+	 * defined within the current module or externally.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class SymbolTableEntry {
+		/**
+		 * Identifies the complete set of declarations associated with this symbol.
+		 */
+		public final ArrayList<Decl.Named> declarations;
+		/**
+		 * Indicates whether or not this entry is externally defined in a dependency, or
+		 * defined within the current module. Observe that externally defined symbols
+		 * become internally defined once they are imported.
+		 */
+		public boolean external;
+
+		public SymbolTableEntry(boolean external) {
+			this.external = external;
 			this.declarations = new ArrayList<>();
 		}
 	}
+
+	private static Ref<Decl> REF_UNKNOWN_DECL = new Ref(new Decl.Unknown());
 
 	private static class ImportAllocator extends AbstractSyntacticHeap.Allocator {
 
@@ -517,7 +552,30 @@ public class NameResolution  {
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
+			if (item instanceof Ref) {
+				Ref ref = (Ref) item;
+				SyntacticItem referent = ref.get();
+				if (referent.getHeap() != heap && referent instanceof Decl.Named) {
+					Decl.Named named = (Decl.Named) referent;
+					// FIXME: could avoid allocating multiple unknown references here.
+					// FIXME: could potentially allocate referent in some cases.
+					return super.allocate(REF_UNKNOWN_DECL);
+				}
+			}
 			return super.allocate(item);
 		}
+	}
+
+	/**
+	 * Throw an syntax error.
+	 *
+	 * @param msg
+	 * @param e
+	 * @return
+	 */
+	private static <T> T syntaxError(String msg, SyntacticItem e) {
+		// FIXME: this is a kludge
+		CompilationUnit cu = (CompilationUnit) e.getHeap();
+		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 }

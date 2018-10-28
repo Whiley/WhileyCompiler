@@ -316,6 +316,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		private final Name unit;
 		private final Identifier name;
 
+		public QualifiedName(Tuple<Identifier> path, Identifier name) {
+			this(path.toArray(Identifier.class), name);
+		}
+
+		public QualifiedName(Identifier[] path, Identifier name) {
+			this(new Name(path), name);
+		}
+
 		public QualifiedName(Name unit, Identifier name) {
 			this.unit = unit;
 			this.name = name;
