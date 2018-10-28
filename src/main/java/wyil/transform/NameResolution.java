@@ -78,16 +78,16 @@ import wyil.util.AbstractConsumer;
  */
 public class NameResolution {
 	/**
-	 * The master list of names and their corresponding records. For each name, this
-	 * records whether we have a local declaration, a non-local declaration (which
-	 * may or may not have been imported), etc.
+	 * The master list of symbols and their corresponding entriess. For each name,
+	 * this records whether we have a local declaration, a non-local declaration
+	 * (which may or may not have been imported), etc.
 	 */
-	private final HashMap<QualifiedName, SymbolTableEntry> symbols;
+	private final SymbolTable symbolTable;
 
 	private final Build.Project project;
 
 	public NameResolution(Build.Task builder) {
-		this.symbols = new HashMap<>();
+		this.symbolTable = new SymbolTable();
 		project = builder.project();
 	}
 
@@ -100,7 +100,7 @@ public class NameResolution {
 				importExternalNames(external.getModule());
 			}
 			// Create initial set of patches.
-			List<Patch> patches = new Resolver().apply(module);
+			List<SymbolTable.Patch> patches = new Resolver().apply(module);
 			// Now continue importing until patches all resolved.
 			for (int i = 0; i != patches.size(); ++i) {
 				resolve(patches.get(i));
@@ -126,9 +126,9 @@ public class NameResolution {
 	 *
 	 */
 	private class Resolver extends AbstractConsumer<List<Decl.Import>> {
-		private ArrayList<Patch> patches = new ArrayList<>();
+		private ArrayList<SymbolTable.Patch> patches = new ArrayList<>();
 
-		public List<Patch> apply(WyilFile module) {
+		public List<SymbolTable.Patch> apply(WyilFile module) {
 			super.visitModule(module, null);
 			return patches;
 		}
@@ -152,7 +152,7 @@ public class NameResolution {
 			// Resolve to qualified name
 			QualifiedName name = resolveAs(expr.getName(), imports);
 			// Create patch
-			patches.add(new Patch(name, expr));
+			patches.add(symbolTable.new Patch(name, expr));
 		}
 
 		@Override
@@ -161,7 +161,7 @@ public class NameResolution {
 			// Resolve to qualified name
 			QualifiedName name = resolveAs(expr.getName(), imports);
 			// Create patch
-			patches.add(new Patch(name, expr));
+			patches.add(symbolTable.new Patch(name, expr));
 		}
 
 		@Override
@@ -170,7 +170,7 @@ public class NameResolution {
 			// Resolve to qualified name
 			QualifiedName name = resolveAs(expr.getName(), imports);
 			// Create patch
-			patches.add(new Patch(name, expr));
+			patches.add(symbolTable.new Patch(name, expr));
 		}
 
 		@Override
@@ -179,7 +179,7 @@ public class NameResolution {
 			// Resolve to qualified name
 			QualifiedName name = resolveAs(type.getName(), imports);
 			// Create patch
-			patches.add(new Patch(name, type));
+			patches.add(symbolTable.new Patch(name, type));
 		}
 	}
 
@@ -221,7 +221,7 @@ public class NameResolution {
 		// Attempt to local resolve
 		Decl.Unit unit = name.getAncestor(Decl.Unit.class);
 		QualifiedName localName = new QualifiedName(unit.getName(), name);
-		if (symbols.containsKey(localName)) {
+		if (symbolTable.contains(localName)) {
 			// Yes, matching local name
 			return localName;
 		} else {
@@ -266,7 +266,7 @@ public class NameResolution {
 				if (!imp.hasFrom() && last.equals(unit)) {
 					// Resolving partially qualified names requires no "from".
 					QualifiedName qualified = new QualifiedName(path, name);
-					if (symbols.containsKey(qualified)) {
+					if (symbolTable.contains(qualified)) {
 						return qualified;
 					}
 				}
@@ -282,14 +282,14 @@ public class NameResolution {
 	 *
 	 * @param p
 	 */
-	private void resolve(Patch p) {
+	private void resolve(SymbolTable.Patch p) {
 		// Import external declarations as necessary
-		SymbolTableEntry symbol = symbols.get(p.name);
-		if(symbol.external) {
+		SymbolTable.Entry symbol = symbolTable.get(p.name);
+		if (symbol.external) {
 			System.out.println("NEED TO RESOLVE EXTERNAL SYMBOL");
 		}
 		// Apply the patch
-		p.apply(symbols);
+		p.apply();
 	}
 
 	/**
@@ -301,7 +301,8 @@ public class NameResolution {
 			for (Decl d : unit.getDeclarations()) {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
-					register(n, false);
+					// FIXME: need to check somewhere that overloading is done properly.
+					symbolTable.register(n, false);
 				}
 			}
 		}
@@ -315,29 +316,10 @@ public class NameResolution {
 			for (Decl d : unit.getDeclarations()) {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
-					register(n, true);
+					symbolTable.register(n, true);
 				}
 			}
 		}
-	}
-
-	/**
-	 * Register a new declaration with a given name.
-	 *
-	 * @param name
-	 * @param declaration
-	 */
-	private void register(Decl.Named declaration, boolean external) {
-		QualifiedName name = declaration.getQualifiedName();
-		SymbolTableEntry r = symbols.get(name);
-		if (r == null) {
-			r = new SymbolTableEntry(external);
-			symbols.put(name, r);
-		}
-		// Sanity check whether overloading is valid
-		checkValidOverloading(r.declarations, declaration);
-		// Add the declaration
-		r.declarations.add(declaration);
 	}
 
 	/**
@@ -388,157 +370,191 @@ public class NameResolution {
 	}
 
 	/**
-	 * Records information about a name which needs to be "patched" with its
-	 * corresponding declaration in a given expression.
+	 * Represents the cumulative knowledge of all symbols used in resolving names
+	 * for the given module. This is determined by the module itself, along with any
+	 * dependencies.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class Patch {
-		public final QualifiedName name;
-		private final SyntacticItem target;
+	private static class SymbolTable {
+		private HashMap<QualifiedName, Entry> symbolTable = new HashMap<>();
 
-		public Patch(QualifiedName name, SyntacticItem target) {
-			this.name = name;
-			this.target = target;
+		public boolean contains(QualifiedName name) {
+			return symbolTable.containsKey(name);
 		}
 
-		public void apply(Map<QualifiedName, SymbolTableEntry> symbols) {
-			// Apply patch to target expression
-			switch (target.getOpcode()) {
-			case EXPR_staticvariable: {
-				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
-				e.setDeclaration(select(name, Decl.StaticVariable.class, symbols));
-				break;
+		public Entry get(QualifiedName name) {
+			return symbolTable.get(name);
+		}
+
+		/**
+		 * Register a new declaration with a given name.
+		 *
+		 * @param name
+		 * @param declaration
+		 */
+		public void register(Decl.Named declaration, boolean external) {
+			QualifiedName name = declaration.getQualifiedName();
+			SymbolTable.Entry r = symbolTable.get(name);
+			if (r == null) {
+				r = new SymbolTable.Entry(external);
+				symbolTable.put(name, r);
 			}
-			case EXPR_invoke: {
-				Expr.Invoke e = (Expr.Invoke) target;
-				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class, symbols);
-				e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
-				break;
-			}
-			case EXPR_lambdaaccess: {
-				Expr.LambdaAccess e = (Expr.LambdaAccess) target;
-				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class, symbols);
-				e.setDeclarations(filterParameters(e.getParameterTypes().size(), resolved));
-				break;
-			}
-			default:
-			case TYPE_nominal: {
-				Type.Nominal e = (Type.Nominal) target;
-				e.setDeclaration(select(name, Decl.Type.class, symbols));
-				break;
-			}
+			// Add the declaration
+			r.declarations.add(declaration);
+		}
+
+		/**
+		 * Records information associated with a given symbol, such as whether it is
+		 * defined within the current module or externally.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		private static class Entry {
+			/**
+			 * Identifies the complete set of declarations associated with this symbol.
+			 */
+			public final ArrayList<Decl.Named> declarations;
+			/**
+			 * Indicates whether or not this entry is externally defined in a dependency, or
+			 * defined within the current module. Observe that externally defined symbols
+			 * become internally defined once they are imported.
+			 */
+			public boolean external;
+
+			public Entry(boolean external) {
+				this.external = external;
+				this.declarations = new ArrayList<>();
 			}
 		}
 
 		/**
-		 * Resolve a name which is fully qualified (e.g.
-		 * <code>std::ascii::to_string</code>) to first matching declaration. This
-		 * consists of a qualified unit and a name.
+		 * Records information about a name which needs to be "patched" with its
+		 * corresponding declaration in a given expression.
 		 *
-		 * @param name
-		 *            Fully qualified name
-		 * @param kind
-		 *            Declaration kind we are resolving.
-		 * @return
+		 * @author David J. Pearce
+		 *
 		 */
-		private <T extends Decl> T select(QualifiedName name, Class<T> kind,
-				Map<QualifiedName, SymbolTableEntry> symbols) {
-			SymbolTableEntry r = symbols.get(name);
-			Identifier id = name.getName();
-			for (int i = 0; i != r.declarations.size(); ++i) {
-				Decl.Named d = r.declarations.get(i);
-				if (kind.isInstance(d)) {
-					return (T) d;
-				}
-			}
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
-		}
+		public class Patch {
+			public final QualifiedName name;
+			private final SyntacticItem target;
 
-		/**
-		 * Resolve a name which is fully qualified (e.g.
-		 * <code>std::ascii::to_string</code>) to all matching declarations. This
-		 * consists of a qualified unit and a name.
-		 *
-		 * @param name
-		 *            Fully qualified name
-		 * @param kind
-		 *            Declaration kind we are resolving.
-		 * @return
-		 */
-		private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind,
-				Map<QualifiedName, SymbolTableEntry> symbols) {
-			SymbolTableEntry r = symbols.get(name);
-			Identifier id = name.getName();
-			// Determine how many matches
-			int count = 0;
-			for (int i = 0; i != r.declarations.size(); ++i) {
-				Decl.Named d = r.declarations.get(i);
-				if (kind.isInstance(d)) {
-					count++;
+			public Patch(QualifiedName name, SyntacticItem target) {
+				this.name = name;
+				this.target = target;
+			}
+
+			public void apply() {
+				// Apply patch to target expression
+				switch (target.getOpcode()) {
+				case EXPR_staticvariable: {
+					Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
+					e.setDeclaration(select(name, Decl.StaticVariable.class));
+					break;
+				}
+				case EXPR_invoke: {
+					Expr.Invoke e = (Expr.Invoke) target;
+					Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
+					e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
+					break;
+				}
+				case EXPR_lambdaaccess: {
+					Expr.LambdaAccess e = (Expr.LambdaAccess) target;
+					Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
+					e.setDeclarations(filterParameters(e.getParameterTypes().size(), resolved));
+					break;
+				}
+				default:
+				case TYPE_nominal: {
+					Type.Nominal e = (Type.Nominal) target;
+					e.setDeclaration(select(name, Decl.Type.class));
+					break;
+				}
 				}
 			}
-			// Create the array
-			@SuppressWarnings("unchecked")
-			T[] matches = (T[]) Array.newInstance(kind, count);
-			// Populate the array
-			for (int i = 0, j = 0; i != r.declarations.size(); ++i) {
-				Decl.Named d = r.declarations.get(i);
-				if (kind.isInstance(d)) {
-					matches[j++] = (T) d;
+
+			/**
+			 * Resolve a name which is fully qualified (e.g.
+			 * <code>std::ascii::to_string</code>) to first matching declaration. This
+			 * consists of a qualified unit and a name.
+			 *
+			 * @param name
+			 *            Fully qualified name
+			 * @param kind
+			 *            Declaration kind we are resolving.
+			 * @return
+			 */
+			private <T extends Decl> T select(QualifiedName name, Class<T> kind) {
+				SymbolTable.Entry r = symbolTable.get(name);
+				Identifier id = name.getName();
+				for (int i = 0; i != r.declarations.size(); ++i) {
+					Decl.Named d = r.declarations.get(i);
+					if (kind.isInstance(d)) {
+						return (T) d;
+					}
 				}
-			}
-			// Check for resolution error
-			if (matches.length == 0) {
 				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
-			} else {
-				return matches;
 			}
-		}
 
-		/**
-		 * Filter the given callable declarations based on their parameter count.
-		 *
-		 * @param parameters
-		 * @param resolved
-		 * @return
-		 */
-		private Decl.Callable[] filterParameters(int parameters, Decl.Callable[] resolved) {
-			// Remove any with incorrect number of parameters
-			for (int i = 0; i != resolved.length; ++i) {
-				Decl.Callable c = resolved[i];
-				if (parameters > 0 && c.getParameters().size() != parameters) {
-					resolved[i] = null;
+			/**
+			 * Resolve a name which is fully qualified (e.g.
+			 * <code>std::ascii::to_string</code>) to all matching declarations. This
+			 * consists of a qualified unit and a name.
+			 *
+			 * @param name
+			 *            Fully qualified name
+			 * @param kind
+			 *            Declaration kind we are resolving.
+			 * @return
+			 */
+			private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind) {
+				SymbolTable.Entry r = symbolTable.get(name);
+				Identifier id = name.getName();
+				// Determine how many matches
+				int count = 0;
+				for (int i = 0; i != r.declarations.size(); ++i) {
+					Decl.Named d = r.declarations.get(i);
+					if (kind.isInstance(d)) {
+						count++;
+					}
+				}
+				// Create the array
+				@SuppressWarnings("unchecked")
+				T[] matches = (T[]) Array.newInstance(kind, count);
+				// Populate the array
+				for (int i = 0, j = 0; i != r.declarations.size(); ++i) {
+					Decl.Named d = r.declarations.get(i);
+					if (kind.isInstance(d)) {
+						matches[j++] = (T) d;
+					}
+				}
+				// Check for resolution error
+				if (matches.length == 0) {
+					return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
+				} else {
+					return matches;
 				}
 			}
-			return ArrayUtils.removeAll(resolved, null);
-		}
 
-	}
-
-	/**
-	 * Records information associated with a given symbol, such as whether it is
-	 * defined within the current module or externally.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	private static class SymbolTableEntry {
-		/**
-		 * Identifies the complete set of declarations associated with this symbol.
-		 */
-		public final ArrayList<Decl.Named> declarations;
-		/**
-		 * Indicates whether or not this entry is externally defined in a dependency, or
-		 * defined within the current module. Observe that externally defined symbols
-		 * become internally defined once they are imported.
-		 */
-		public boolean external;
-
-		public SymbolTableEntry(boolean external) {
-			this.external = external;
-			this.declarations = new ArrayList<>();
+			/**
+			 * Filter the given callable declarations based on their parameter count.
+			 *
+			 * @param parameters
+			 * @param resolved
+			 * @return
+			 */
+			private Decl.Callable[] filterParameters(int parameters, Decl.Callable[] resolved) {
+				// Remove any with incorrect number of parameters
+				for (int i = 0; i != resolved.length; ++i) {
+					Decl.Callable c = resolved[i];
+					if (parameters > 0 && c.getParameters().size() != parameters) {
+						resolved[i] = null;
+					}
+				}
+				return ArrayUtils.removeAll(resolved, null);
+			}
 		}
 	}
 
