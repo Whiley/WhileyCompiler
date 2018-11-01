@@ -109,8 +109,77 @@ public class NameResolution {
 			// FIXME: need better error handling within pipeline stages.
 			throw new RuntimeException(e);
 		}
-
 	}
+
+
+	/**
+	 * Import all names defined in the local module into the global namespace
+	 */
+	private void importLocalNames(Decl.Module module) {
+		// FIXME: this method is completely broken for so many reasons.
+		for (Decl.Unit unit : module.getUnits()) {
+			for (Decl d : unit.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					// FIXME: need to check somewhere that overloading is done properly.
+					symbolTable.register(n, false);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Import all names defined in an external module into the global namespace
+	 */
+	private void importExternalNames(Decl.Module module) {
+		for (Decl.Unit unit : module.getUnits()) {
+			for (Decl d : unit.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					symbolTable.register(n, true);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Read in all external packages so they can be used for name resolution. This
+	 * amounts to loading in every WyilFile contained within an external package
+	 * dependency.
+	 */
+	private List<WyilFile> getExternals() throws IOException {
+		ArrayList<WyilFile> externals = new ArrayList<>();
+		List<Build.Package> pkgs = project.getPackages();
+		// Consider each package in turn and identify all contained WyilFiles
+		for (int i = 0; i != pkgs.size(); ++i) {
+			Build.Package p = pkgs.get(i);
+			// FIXME: This is kind broken me thinks. Potentially, we should be able to
+			// figure out what modules are supplied via the configuration.
+			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+			for (int j = 0; j != entries.size(); ++j) {
+				externals.add(entries.get(j).read());
+			}
+		}
+		return externals;
+	}
+
+	/**
+	 * Resolve a given patch by finding (and potentially importing) the appropriate
+	 * declaration and then assigning this to the target expression.
+	 *
+	 * @param p
+	 */
+	private void resolve(SymbolTable.Patch p) {
+		// Import external declarations as necessary
+		SymbolTable.Entry symbol = symbolTable.get(p.name);
+		if (symbol.external) {
+			System.out.println("NEED TO RESOLVE EXTERNAL SYMBOL");
+		}
+		// Apply the patch
+		p.apply();
+	}
+
 
 	/**
 	 * Responsible for identifying unresolved names which remain to be resolved to
@@ -181,192 +250,100 @@ public class NameResolution {
 			// Create patch
 			patches.add(symbolTable.new Patch(name, type));
 		}
-	}
 
-	/**
-	 * Resolve a given name in a given compilation Unit to all corresponding
-	 * (callable) declarations. If the name is already fully qualified then this
-	 * amounts to checking that the name exists and finding its declaration(s);
-	 * otherwise, we have to process the list of important statements for this
-	 * compilation unit in an effort to qualify the name.
-	 *
-	 * @param name
-	 *            The name to be resolved
-	 * @param enclosing
-	 *            The enclosing declaration in which this name is contained.
-	 * @return
-	 */
-	private QualifiedName resolveAs(Name name, List<Decl.Import> imports) {
-		// Resolve unqualified name to qualified name
-		switch (name.size()) {
-		case 1:
-			return unqualifiedResolveAs(name.get(0), imports);
-		case 2:
-			return partialResolveAs(name.get(0), name.get(1), imports);
-		default:
-			return new QualifiedName(name.getPath(), name.getLast());
+		/**
+		 * Resolve a given name in a given compilation Unit to all corresponding
+		 * (callable) declarations. If the name is already fully qualified then this
+		 * amounts to checking that the name exists and finding its declaration(s);
+		 * otherwise, we have to process the list of important statements for this
+		 * compilation unit in an effort to qualify the name.
+		 *
+		 * @param name
+		 *            The name to be resolved
+		 * @param enclosing
+		 *            The enclosing declaration in which this name is contained.
+		 * @return
+		 */
+		private QualifiedName resolveAs(Name name, List<Decl.Import> imports) {
+			// Resolve unqualified name to qualified name
+			switch (name.size()) {
+			case 1:
+				return unqualifiedResolveAs(name.get(0), imports);
+			case 2:
+				return partialResolveAs(name.get(0), name.get(1), imports);
+			default:
+				return new QualifiedName(name.getPath(), name.getLast());
+			}
 		}
-	}
 
-	/**
-	 * Resolve a name which is completely unqualified (e.g. <code>to_string</code>).
-	 * That is, it's just an identifier. This could be a name in the current unit,
-	 * or an explicitly imported name/
-	 *
-	 * @param name
-	 * @param imports
-	 * @return
-	 */
-	private QualifiedName unqualifiedResolveAs(Identifier name, List<Decl.Import> imports) {
-		// Attempt to local resolve
-		Decl.Unit unit = name.getAncestor(Decl.Unit.class);
-		QualifiedName localName = new QualifiedName(unit.getName(), name);
-		if (symbolTable.contains(localName)) {
-			// Yes, matching local name
-			return localName;
-		} else {
-			// No, attempt to non-local resolve
-			for (int i = imports.size() - 1; i >= 0; ++i) {
-				Decl.Import imp = imports.get(i);
-				if (imp.hasFrom()) {
-					// Resolving unqualified names requires "import from".
-					Identifier from = imp.getFrom();
-					if (from.get().equals("*") || name.equals(from)) {
-						return new QualifiedName(imp.getPath(), name);
+		/**
+		 * Resolve a name which is completely unqualified (e.g. <code>to_string</code>).
+		 * That is, it's just an identifier. This could be a name in the current unit,
+		 * or an explicitly imported name/
+		 *
+		 * @param name
+		 * @param imports
+		 * @return
+		 */
+		private QualifiedName unqualifiedResolveAs(Identifier name, List<Decl.Import> imports) {
+			// Attempt to local resolve
+			Decl.Unit unit = name.getAncestor(Decl.Unit.class);
+			QualifiedName localName = new QualifiedName(unit.getName(), name);
+			if (symbolTable.contains(localName)) {
+				// Yes, matching local name
+				return localName;
+			} else {
+				// No, attempt to non-local resolve
+				for (int i = imports.size() - 1; i >= 0; ++i) {
+					Decl.Import imp = imports.get(i);
+					if (imp.hasFrom()) {
+						// Resolving unqualified names requires "import from".
+						Identifier from = imp.getFrom();
+						if (from.get().equals("*") || name.equals(from)) {
+							return new QualifiedName(imp.getPath(), name);
+						}
 					}
 				}
+				// No dice.
+				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 			}
-			// No dice.
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 		}
-	}
 
-	/**
-	 * Resolve a name which is partially qualified (e.g.
-	 * <code>ascii::to_string</code>). This consists of an unqualified unit and a
-	 * name.
-	 *
-	 * @param unit
-	 * @param name
-	 * @param kind
-	 * @param imports
-	 * @return
-	 */
-	private QualifiedName partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
-		Decl.Unit enclosing = name.getAncestor(Decl.Unit.class);
-		if (unit.equals(enclosing.getName().getLast())) {
-			// A local lookup on the enclosing compilation unit.
-			return unqualifiedResolveAs(name, imports);
-		} else {
-			for (int i = imports.size() - 1; i >= 0; --i) {
-				Decl.Import imp = imports.get(i);
-				Tuple<Identifier> path = imp.getPath();
-				Identifier last = path.get(path.size() - 1);
-				//
-				if (!imp.hasFrom() && last.equals(unit)) {
-					// Resolving partially qualified names requires no "from".
-					QualifiedName qualified = new QualifiedName(path, name);
-					if (symbolTable.contains(qualified)) {
-						return qualified;
+		/**
+		 * Resolve a name which is partially qualified (e.g.
+		 * <code>ascii::to_string</code>). This consists of an unqualified unit and a
+		 * name.
+		 *
+		 * @param unit
+		 * @param name
+		 * @param kind
+		 * @param imports
+		 * @return
+		 */
+		private QualifiedName partialResolveAs(Identifier unit, Identifier name, List<Decl.Import> imports) {
+			Decl.Unit enclosing = name.getAncestor(Decl.Unit.class);
+			if (unit.equals(enclosing.getName().getLast())) {
+				// A local lookup on the enclosing compilation unit.
+				return unqualifiedResolveAs(name, imports);
+			} else {
+				for (int i = imports.size() - 1; i >= 0; --i) {
+					Decl.Import imp = imports.get(i);
+					Tuple<Identifier> path = imp.getPath();
+					Identifier last = path.get(path.size() - 1);
+					//
+					if (!imp.hasFrom() && last.equals(unit)) {
+						// Resolving partially qualified names requires no "from".
+						QualifiedName qualified = new QualifiedName(path, name);
+						if (symbolTable.contains(qualified)) {
+							return qualified;
+						}
 					}
 				}
-			}
-			// No dice.
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
-		}
-	}
-
-	/**
-	 * Resolve a given patch by finding (and potentially importing) the appropriate
-	 * declaration and then assigning this to the target expression.
-	 *
-	 * @param p
-	 */
-	private void resolve(SymbolTable.Patch p) {
-		// Import external declarations as necessary
-		SymbolTable.Entry symbol = symbolTable.get(p.name);
-		if (symbol.external) {
-			System.out.println("NEED TO RESOLVE EXTERNAL SYMBOL");
-		}
-		// Apply the patch
-		p.apply();
-	}
-
-	/**
-	 * Import all names defined in the local module into the global namespace
-	 */
-	private void importLocalNames(Decl.Module module) {
-		// FIXME: this method is completely broken for so many reasons.
-		for (Decl.Unit unit : module.getUnits()) {
-			for (Decl d : unit.getDeclarations()) {
-				if (d instanceof Decl.Named) {
-					Decl.Named n = (Decl.Named) d;
-					// FIXME: need to check somewhere that overloading is done properly.
-					symbolTable.register(n, false);
-				}
+				// No dice.
+				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
 			}
 		}
-	}
 
-	/**
-	 * Import all names defined in an external module into the global namespace
-	 */
-	private void importExternalNames(Decl.Module module) {
-		for (Decl.Unit unit : module.getUnits()) {
-			for (Decl d : unit.getDeclarations()) {
-				if (d instanceof Decl.Named) {
-					Decl.Named n = (Decl.Named) d;
-					symbolTable.register(n, true);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Sanity check that there overloading is used correctly. More specifically, we
-	 * cannot overload on types or static variables. Furthermore, overloading of
-	 * methods or functions is permitted in some situations (i.e. when signatures
-	 * vary).
-	 *
-	 * @param declarations
-	 * @param kind
-	 */
-	private void checkValidOverloading(List<Decl.Named> declarations, Decl.Named declaration) {
-		if (declaration instanceof Decl.Type && contains(declarations, Decl.Type.class)) {
-			syntaxError("duplicate type declaration", declaration.getName());
-		} else if (declaration instanceof Decl.StaticVariable && contains(declarations, Decl.StaticVariable.class)) {
-			syntaxError("duplicate type declaration", declaration.getName());
-		}
-	}
-
-	/**
-	 * Read in all external packages so they can be used for name resolution. This
-	 * amounts to loading in every WyilFile contained within an external package
-	 * dependency.
-	 */
-	private List<WyilFile> getExternals() throws IOException {
-		ArrayList<WyilFile> externals = new ArrayList<>();
-		List<Build.Package> pkgs = project.getPackages();
-		// Consider each package in turn and identify all contained WyilFiles
-		for (int i = 0; i != pkgs.size(); ++i) {
-			Build.Package p = pkgs.get(i);
-			// FIXME: This is kind broken me thinks. Potentially, we should be able to
-			// figure out what modules are supplied via the configuration.
-			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
-			for (int j = 0; j != entries.size(); ++j) {
-				externals.add(entries.get(j).read());
-			}
-		}
-		return externals;
-	}
-
-	private <T extends Decl> boolean contains(List<Decl.Named> declarations, Class<T> kind) {
-		for (int i = 0; i != declarations.size(); ++i) {
-			if (kind.isInstance(declarations.get(i))) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
