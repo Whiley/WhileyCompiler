@@ -77,7 +77,7 @@ import wyil.util.AbstractConsumer;
  * </p>
  *
  * <p>
- * An import challenge faced is the linking of external declarations. In
+ * An important challenge faced is the linking of external declarations. In
  * particular, such external declarations must be brought into the current
  * WyilFile. Such external declarations may themselves require additional
  * external declarations be imported and we must transitively import them all.
@@ -94,6 +94,11 @@ public class NameResolution {
 	 */
 	private final SymbolTable symbolTable;
 
+	/**
+	 * The resolver identifies unresolved names and produces patches based on them.
+	 */
+	private final Resolver resolver = new Resolver();
+
 	private final Build.Project project;
 
 	public NameResolution(Build.Task builder) {
@@ -108,18 +113,27 @@ public class NameResolution {
 	 */
 	public void apply(WyilFile module) {
 		try {
-			// Import local names
+			// Import all local names
 			importNames(module.getModule(), false);
-			// Import non-local names
+			// Import all non-local names
 			for (WyilFile external : getExternals()) {
-				importNames(external.getModule(), false);
+				importNames(external.getModule(), true);
 			}
 			// Create initial set of patches.
-			List<Patch> patches = new Resolver().apply(module);
-			// Now continue importing until patches all resolved.
-			for (int i = 0; i != patches.size(); ++i) {
-				resolve(module, patches.get(i));
+			List<Patch> patches = resolver.apply(module);
+			// Keep iterating until all patches are resolved
+			while (patches.size() > 0) {
+				// Create importer
+				Importer importer = new Importer(module, true);
+				// Now continue importing until patches all resolved.
+				for (int i = 0; i != patches.size(); ++i) {
+					// Import and link the given patch
+					patches.get(i).apply(importer);
+				}
+				// Switch over to the next set of patches
+				patches = importer.getPatches();
 			}
+			// Done
 		} catch (IOException e) {
 			// FIXME: need better error handling within pipeline stages.
 			throw new RuntimeException(e);
@@ -164,32 +178,6 @@ public class NameResolution {
 	}
 
 	/**
-	 * Resolve a given patch by finding (and potentially importing) the appropriate
-	 * declaration and then assigning this to the target expression.
-	 *
-	 * @param p
-	 */
-	private void resolve(WyilFile module, Patch p) {
-		// Import external declarations as necessary
-		SymbolTable.Entry symbol = symbolTable.get(p.name);
-		if (symbol.isExternal()) {
-			// FIXME: need to handle secondary patches
-			// FIXME: need to import entire module, otherwise it won't construct the correct
-			// QualifiedName.
-			// FIXME: want to optimise so don't bring in the whole type unless we are doing
-			// link-time analysis or generating a single binary.
-			ArrayList<Decl.Named> imported = new ArrayList<>();
-			for (Decl.Named d : symbol.getDeclarations()) {
-				imported.add((Decl.Named) new Importer(module).allocate(d));
-			}
-			symbol.setExternal(false);
-			symbol.setDeclarations(imported);
-		}
-		// Apply the patch
-		p.apply();
-	}
-
-	/**
 	 * Responsible for identifying unresolved names which remain to be resolved to
 	 * their corresponding declarations. This is achieved by traversing from a given
 	 * declaration and identifying all static variables and callables which are
@@ -203,6 +191,9 @@ public class NameResolution {
 	 *
 	 */
 	private class Resolver extends AbstractConsumer<List<Decl.Import>> {
+		/**
+		 * The list of
+		 */
 		private ArrayList<Patch> patches = new ArrayList<>();
 
 		public List<Patch> apply(WyilFile module) {
@@ -369,7 +360,41 @@ public class NameResolution {
 			this.target = target;
 		}
 
-		public void apply() {
+		/**
+		 * Import and link a given patch. The import process is only necessary for
+		 * external symbols. For these, their declarations must be imported lazily as
+		 * stubs from the relevant declaration.
+		 *
+		 * @param importer
+		 *            --- The importer to use for importing.
+		 */
+		public void apply(Importer importer) {
+			// Import
+			imPort(importer);
+			// And, link.
+			link();
+		}
+
+		private void imPort(Importer importer) {
+			// Import external declarations as necessary
+			SymbolTable.Entry symbol = symbolTable.get(name);
+			if (symbol.isExternal()) {
+				// FIXME: want to optimise so don't bring in the whole type unless we are doing
+				// link-time analysis or generating a single binary.
+				ArrayList<Decl.Named> imported = new ArrayList<>();
+				for (Decl.Named d : symbol.getDeclarations()) {
+					imported.add((Decl.Named) importer.allocate(d));
+				}
+				symbol.setExternal(false);
+				symbol.setDeclarations(imported);
+			}
+		}
+
+		/**
+		 * Connect the given syntactic item with its target declaration (which may have
+		 * just been imported).
+		 */
+		private void link() {
 			// Apply patch to target expression
 			switch (target.getOpcode()) {
 			case EXPR_staticvariable: {
@@ -478,29 +503,97 @@ public class NameResolution {
 			}
 			return ArrayUtils.removeAll(resolved, null);
 		}
+
+		@Override
+		public String toString() {
+			return "<" + name + "," + target + ">";
+		}
 	}
 
 	private static Ref<Decl> REF_UNKNOWN_DECL = new Ref(new Decl.Unknown());
 
-	private static class Importer extends AbstractSyntacticHeap.Allocator {
+	/**
+	 * Responsible for importing an item from one syntactic heap into another. This
+	 * relies on all items externally referenced by the imported item having been
+	 * already resolved.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private class Importer extends AbstractSyntacticHeap.Allocator {
+		/**
+		 * Signals whether or not to only import stubs.
+		 */
+		private final boolean stubsOnly;
+		/**
+		 * List of patches generated during imports by this importer.
+		 */
+		private final ArrayList<Patch> patches = new ArrayList<>();
 
-		public Importer(AbstractSyntacticHeap heap) {
+		private final SyntacticItem REF_UNKNOWN;
+
+		public Importer(AbstractSyntacticHeap heap, boolean stubsOnly) {
 			super(heap);
+			this.stubsOnly = stubsOnly;
+			this.REF_UNKNOWN = super.allocate(REF_UNKNOWN_DECL);
 		}
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
-			if (item instanceof Ref) {
-				Ref ref = (Ref) item;
+			switch(item.getOpcode()) {
+			case ITEM_ref:
+				Ref<?> ref = (Ref<?>) item;
 				SyntacticItem referent = ref.get();
 				if (referent.getHeap() != heap && referent instanceof Decl.Named) {
-					Decl.Named named = (Decl.Named) referent;
-					// FIXME: could avoid allocating multiple unknown references here.
-					// FIXME: could potentially allocate referent in some cases.
-					return super.allocate(REF_UNKNOWN_DECL);
+					// This is a deference to a named declaration in a different module. This will
+					// need to be patched.
+					return REF_UNKNOWN;
 				}
+				break;
+			case EXPR_staticvariable: {
+				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) item;
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				break;
+			}
+			case EXPR_invoke: {
+				Expr.Invoke e = (Expr.Invoke) item;
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				break;
+			}
+			case EXPR_lambdaaccess: {
+				Expr.LambdaAccess e = (Expr.LambdaAccess) item;
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				break;
+			}
+			case TYPE_nominal: {
+				Type.Nominal t = (Type.Nominal) item;
+				patches.add(new Patch(t.getDeclaration().getQualifiedName(),t));
+				break;
+			}
+			case DECL_function: {
+				Decl.Function f = (Decl.Function) item;
+				if(stubsOnly) {
+					// drop the body from the function, making it a stub
+					System.out.println("PULLING IN STUB");
+					item = new Decl.Function(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(), f.getRequires(), f.getEnsures(), new Stmt.Block());
+				}
+				break;
+			}
+			case DECL_method: {
+				Decl.Method f = (Decl.Method) item;
+				if (stubsOnly) {
+					// drop the body from the function, making it a stub
+					item = new Decl.Method(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(),
+							f.getRequires(), f.getEnsures(), new Stmt.Block(), f.getLifetimes());
+				}
+				break;
+			}
 			}
 			return super.allocate(item);
+		}
+
+		public List<Patch> getPatches() {
+			return patches;
 		}
 	}
 

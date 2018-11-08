@@ -578,6 +578,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public QualifiedName getQualifiedName() {
+				// FIXME: this is completely broken.
 				Unit module = getAncestor(Decl.Unit.class);
 				return new QualifiedName(module.getName(),getName());
 			}
