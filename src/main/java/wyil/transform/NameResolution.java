@@ -293,7 +293,7 @@ public class NameResolution {
 				return localName;
 			} else {
 				// No, attempt to non-local resolve
-				for (int i = imports.size() - 1; i >= 0; ++i) {
+				for (int i = imports.size() - 1; i >= 0; --i) {
 					Decl.Import imp = imports.get(i);
 					if (imp.hasFrom()) {
 						// Resolving unqualified names requires "import from".
@@ -540,7 +540,7 @@ public class NameResolution {
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
-			switch(item.getOpcode()) {
+			switch (item.getOpcode()) {
 			case ITEM_ref:
 				Ref<?> ref = (Ref<?>) item;
 				SyntacticItem referent = ref.get();
@@ -552,48 +552,68 @@ public class NameResolution {
 				break;
 			case EXPR_staticvariable: {
 				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
 				break;
 			}
 			case EXPR_invoke: {
 				Expr.Invoke e = (Expr.Invoke) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
 				break;
 			}
 			case EXPR_lambdaaccess: {
 				Expr.LambdaAccess e = (Expr.LambdaAccess) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(),e));
+				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
 				break;
 			}
 			case TYPE_nominal: {
 				Type.Nominal t = (Type.Nominal) item;
-				patches.add(new Patch(t.getDeclaration().getQualifiedName(),t));
+				patches.add(new Patch(t.getDeclaration().getQualifiedName(), t));
 				break;
 			}
-			case DECL_function: {
-				Decl.Function f = (Decl.Function) item;
-				if(stubsOnly) {
-					// drop the body from the function, making it a stub
-					System.out.println("PULLING IN STUB");
-					item = new Decl.Function(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(), f.getRequires(), f.getEnsures(), new Stmt.Block());
-				}
-				break;
-			}
-			case DECL_method: {
-				Decl.Method f = (Decl.Method) item;
+			case DECL_function:
+			case DECL_method:
 				if (stubsOnly) {
 					// drop the body from the function, making it a stub
-					item = new Decl.Method(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(),
-							f.getRequires(), f.getEnsures(), new Stmt.Block(), f.getLifetimes());
+					return allocateStub((Decl.FunctionOrMethod) item);
 				}
 				break;
-			}
 			}
 			return super.allocate(item);
 		}
 
 		public List<Patch> getPatches() {
 			return patches;
+		}
+
+		/**
+		 * Allocate a stub into the underlying heap.
+		 *
+		 * @param fm
+		 * @return
+		 */
+		private SyntacticItem allocateStub(Decl.FunctionOrMethod fm) {
+			SyntacticItem item = map.get(fm);
+			if (item != null) {
+				// item is already allocated as a stub, there must return that.
+				return item;
+			} else if (fm instanceof Decl.Function) {
+				// Create function stub
+				Decl.Function f = (Decl.Function) fm;
+				item = new Decl.Function(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(),
+						f.getRequires(), f.getEnsures(), new Stmt.Block());
+			} else {
+				// Create method stub
+				Decl.Method m = (Decl.Method) fm;
+				item = new Decl.Method(m.getModifiers(), m.getName(), m.getParameters(), m.getReturns(),
+						m.getRequires(), m.getEnsures(), new Stmt.Block(), m.getLifetimes());
+			}
+			// Allocate new item using underlying allocator. This will recursively allocate
+			// child nodes.
+			item = super.allocate(item);
+			// Store item in map to ensure we don't allocate it more than once.
+			map.put(fm, item);
+			// Done
+			return item;
 		}
 	}
 

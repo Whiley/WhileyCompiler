@@ -122,7 +122,8 @@ public class SymbolTable {
 
 
 		public void setDeclarations(List<Decl.Named> declarations) {
-			declarations = new ArrayList<>(declarations);
+			this.declarations.clear();
+			this.declarations.addAll(declarations);
 		}
 	}
 }
