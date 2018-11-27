@@ -196,12 +196,10 @@ public final class CompileTask implements Build.Task {
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			SyntacticItem item = e.getElement();
 			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-			//
-			System.out.println("LOOKING FOR: " + unit.getName());
 			// Determine which source file this entry is contained in
 			Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
 			//
-			throw new SyntaxError(e.getMessage(),sf,item);
+			throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
 		}
 	}
 
