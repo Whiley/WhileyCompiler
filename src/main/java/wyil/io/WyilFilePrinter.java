@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.io;
+package wyil.io;
 
 import static wyil.lang.WyilFile.*;
 
@@ -30,15 +30,15 @@ import wyil.util.AbstractVisitor;
  * @author David J. Pearce
  *
  */
-public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
+public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private final PrintWriter out;
 	private boolean verbose = false;
 
-	public WhileyFilePrinter(PrintWriter visitr) {
+	public WyilFilePrinter(PrintWriter visitr) {
 		this.out = visitr;
 	}
 
-	public WhileyFilePrinter(OutputStream stream) {
+	public WyilFilePrinter(OutputStream stream) {
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 

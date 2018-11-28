@@ -19,11 +19,11 @@ import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
-import wyc.io.WhileyFilePrinter;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Root;
+import wyil.io.WyilFilePrinter;
 import wyil.lang.WyilFile;
 
 /**
@@ -58,7 +58,7 @@ public final class DecompileTask implements Build.Task {
 			if (src.contentType() == WyilFile.ContentType) {
 				Path.Entry<WyilFile> e = (Path.Entry<WyilFile>) src;
 				WyilFile wf = e.read(); // force file to be parsed
-				new WhileyFilePrinter(System.out).apply(wf);
+				new WyilFilePrinter(System.out).apply(wf);
 			}
 		}
 
