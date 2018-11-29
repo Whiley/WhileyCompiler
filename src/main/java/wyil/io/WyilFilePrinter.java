@@ -60,7 +60,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitModule(WyilFile module, Integer indent) {
-		out.println();
 		super.visitModule(module, indent);
 		out.flush();
 	}
@@ -68,6 +67,32 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitDeclaration(Decl decl, Integer indent) {
 		super.visitDeclaration(decl, indent);
+		out.println();
+	}
+
+
+	@Override
+	public void visitUnit(Decl.Unit decl, Integer indent) {
+		println('=',80);
+		out.println(decl.getName() + ".whiley");
+		println('=',80);
+		super.visitUnit(decl, indent);
+	}
+
+	@Override
+	public void visitImport(Decl.Import decl, Integer indent) {
+		out.print("import ");
+		if(decl.hasFrom()) {
+			out.print(decl.getFrom());
+			out.print(" from ");
+		}
+		Tuple<Identifier> path= decl.getPath();
+		for(int i=0;i!=path.size();++i) {
+			if(i != 0) {
+				out.print("::");
+			}
+			out.print(path.get(i));
+		}
 		out.println();
 	}
 
@@ -90,7 +115,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			visitExpression(invariant, indent);
 			out.println();
 		}
-		out.println();
 	}
 
 	@Override
@@ -103,6 +127,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl, Integer indent) {
 		//
+		tabIndent(indent);
 		visitModifiers(decl.getModifiers());
 		if (decl instanceof Decl.Function) {
 			out.print("function ");
@@ -110,10 +135,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			out.print("method ");
 		}
 		out.print(decl.getName());
-		visitVariables(decl.getParameters(), indent);
+		visitVariables(decl.getParameters(), 0);
 		if (decl.getReturns().size() != 0) {
 			out.print(" -> ");
-			visitVariables(decl.getReturns(), indent);
+			visitVariables(decl.getReturns(), 0);
 		}
 		//
 		for (Expr precondition : decl.getRequires()) {
@@ -146,6 +171,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitVariable(Decl.Variable decl, Integer indent) {
+		tabIndent(indent);
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
@@ -395,8 +421,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_bitwiseor:
 		case EXPR_bitwisexor:
 		case EXPR_bitwiseand:
-		case EXPR_is:
 			visitInfixLocations((Expr.NaryOperator) expr, indent);
+			break;
+		case EXPR_is:
+			visitInfixLocations((Expr.Is) expr, indent);
 			break;
 		default:
 			super.visitExpression(expr, indent);
@@ -543,6 +571,12 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		// Prefix operators
 		out.print(opcode(expr.getOpcode()));
 		visitBracketedExpression(expr.getOperand(), indent);
+	}
+
+	public void visitInfixLocations(Expr.Is expr, Integer indent) {
+		visitBracketedExpression(expr.getOperand(), indent);
+		out.print(" is ");
+		out.print(expr.getTestType());
 	}
 
 	public void visitInfixLocations(Expr.BinaryOperator expr, Integer indent) {
@@ -700,9 +734,16 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	private void tabIndent(int indent) {
-		indent = indent * 4;
-		for(int i=0;i<indent;++i) {
-			out.print(" ");
+		print(' ',indent*4);
+	}
+
+	private void println(char c, int repeat) {
+		print(c,repeat);
+		out.println();
+	}
+	private void print(char c, int repeat) {
+		for(int i=0;i<repeat;++i) {
+			out.print(c);
 		}
 	}
 }
