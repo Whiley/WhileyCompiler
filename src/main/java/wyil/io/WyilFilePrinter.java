@@ -21,6 +21,7 @@ import java.util.*;
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
 import wyil.util.AbstractVisitor;
 
@@ -59,8 +60,15 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	@Override
-	public void visitModule(WyilFile module, Integer indent) {
-		super.visitModule(module, indent);
+	public void visitModule(WyilFile wf, Integer indent) {
+		Decl.Module module = wf.getModule();
+		for (Decl.Unit decl : module.getUnits()) {
+			visitDeclaration(decl, indent);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExtern(decl, indent);
+		}
+		//
 		out.flush();
 	}
 
@@ -75,6 +83,13 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	public void visitUnit(Decl.Unit decl, Integer indent) {
 		println('=',80);
 		out.println(decl.getName() + ".whiley");
+		println('=',80);
+		super.visitUnit(decl, indent);
+	}
+
+	public void visitExtern(Decl.Unit decl, Integer indent) {
+		println('=',80);
+		out.println(decl.getName() + " (external)");
 		println('=',80);
 		super.visitUnit(decl, indent);
 	}

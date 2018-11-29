@@ -435,6 +435,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				setOperand(1, getHeap().allocate(units.append(unit)));
 			}
 
+			public void putExtern(Decl.Unit unit) {
+				Tuple<Decl.Unit> externs = getExterns();
+				// Check whether replacing unit or adding new
+				for (int i = 0; i != externs.size(); ++i) {
+					Decl.Unit ith = externs.get(i);
+					if (ith.getName().equals(unit.getName())) {
+						// We're replacing an existing unit
+						externs.setOperand(i, unit);
+						return;
+					}
+				}
+				// We're adding a new unit
+				setOperand(1, getHeap().allocate(externs.append(unit)));
+			}
+
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2]);
@@ -5237,7 +5252,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
-						(Tuple<Decl.Unit>) operands[1]);
+						(Tuple<Decl.Unit>) operands[2]);
 			}
 		};
 		schema[DECL_unit] = new Schema(Operands.TWO, Data.ZERO, "DECL_unit") {

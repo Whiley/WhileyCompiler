@@ -109,22 +109,22 @@ public class NameResolution {
 	/**
 	 * Apply this name resolver to a given WyilFile.
 	 *
-	 * @param module
+	 * @param wf
 	 */
-	public void apply(WyilFile module) {
+	public void apply(WyilFile wf) {
 		try {
 			// Import all local names
-			importNames(module.getModule(), false);
+			importNames(wf.getModule(), false);
 			// Import all non-local names
 			for (WyilFile external : getExternals()) {
 				importNames(external.getModule(), true);
 			}
 			// Create initial set of patches.
-			List<Patch> patches = resolver.apply(module);
+			List<Patch> patches = resolver.apply(wf);
 			// Keep iterating until all patches are resolved
 			while (patches.size() > 0) {
 				// Create importer
-				Importer importer = new Importer(module, true);
+				Importer importer = new Importer(wf, true);
 				// Now continue importing until patches all resolved.
 				for (int i = 0; i != patches.size(); ++i) {
 					// Import and link the given patch
@@ -133,6 +133,8 @@ public class NameResolution {
 				// Switch over to the next set of patches
 				patches = importer.getPatches();
 			}
+			// Import external units
+			importUnits(wf.getModule(), importer.getExterns());
 			// Done
 		} catch (IOException e) {
 			// FIXME: need better error handling within pipeline stages.
@@ -154,6 +156,10 @@ public class NameResolution {
 				}
 			}
 		}
+	}
+
+	private void importExterns(Decl.Module module, List<Decl.Unit> externs) {
+
 	}
 
 	/**

@@ -31,7 +31,11 @@ import wyil.lang.WyilFile.SemanticType;
 public abstract class AbstractConsumer<T> {
 
 	public void visitModule(WyilFile wf, T data) {
-		for (Decl.Unit decl : wf.getModule().getUnits()) {
+		Decl.Module module = wf.getModule();
+		for (Decl.Unit decl : module.getUnits()) {
+			visitDeclaration(decl, data);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
 			visitDeclaration(decl, data);
 		}
 	}
