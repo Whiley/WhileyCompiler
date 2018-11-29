@@ -24,24 +24,17 @@
  */
 package wyil.transform;
 
-import static wyil.lang.WyilFile.EXPR_invoke;
-import static wyil.lang.WyilFile.EXPR_lambdaaccess;
-import static wyil.lang.WyilFile.EXPR_staticvariable;
-import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.Modifier;
+import static wyil.lang.WyilFile.Name;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
+import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.Type;
 
 /**
  * Represents the cumulative knowledge of all symbols used in resolving names
@@ -52,14 +45,85 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class SymbolTable {
-	private final HashMap<QualifiedName, Entry> symbolTable = new HashMap<>();
+	/**
+	 * The enclosing WyilFile this symbol table is operating on.
+	 */
+	private final WyilFile target;
+
+	/**
+	 * Cached information about symbols available in the given WyilFile and external
+	 * dependencies.
+	 */
+	private final HashMap<Name, Group> symbolTable = new HashMap<>();
+
+	/**
+	 * Construct a symbol table containing meta-data on a given target file and its
+	 * dependencies.
+	 *
+	 * @param target
+	 * @param deps
+	 */
+	public SymbolTable(WyilFile target, List<WyilFile> deps) {
+		this.target = target;
+		// Register all internal symbols
+		register(target.getModule(),false);
+		// Register all external symbols
+		for(int i=0;i!=deps.size();++i) {
+			register(deps.get(i).getModule(),true);
+		}
+	}
 
 	public boolean contains(QualifiedName name) {
 		return symbolTable.containsKey(name);
 	}
 
-	public Entry get(QualifiedName name) {
-		return symbolTable.get(name);
+	/**
+	 * Check whether a given symbol is currently external to the enclosing WyilFile.
+	 * Specifically, this indicates whether or not a stub is available for it.
+	 *
+	 * @param name
+	 * @return
+	 */
+	public boolean isExternal(QualifiedName name) {
+		// FIXME: need to think this through
+	}
+
+	public List<Decl.Named> getDeclarations(QualifiedName name) {
+		return symbolTable.get(name.getUnit()).entries.get(name.getName()).declarations;
+	}
+
+	/**
+	 * Register all symbols in all compilation units contained within a given
+	 * module. For those which are externally defined, only public members are
+	 * registered.
+	 *
+	 * @param unit
+	 * @param external
+	 */
+	public void register(Decl.Module module, boolean external) {
+		for (Decl.Unit unit : module.getUnits()) {
+			register(unit, external);
+		}
+	}
+
+	/**
+	 * Register all symbols in a given compilation unit with this symbol table. For
+	 * those which are externally defined, only public members are registered.
+	 *
+	 * @param unit
+	 * @param external
+	 */
+	public void register(Decl.Unit unit, boolean external) {
+		// Go through each named declaration in this unit
+		for (Decl d : unit.getDeclarations()) {
+			if (d instanceof Decl.Named) {
+				Decl.Named n = (Decl.Named) d;
+				// External declarations must be public
+				if(!external || isPublic(n)) {
+					register(n, external);
+				}
+			}
+		}
 	}
 
 	/**
@@ -70,13 +134,49 @@ public class SymbolTable {
 	 */
 	public void register(Decl.Named declaration, boolean external) {
 		QualifiedName name = declaration.getQualifiedName();
-		SymbolTable.Entry r = symbolTable.get(name);
-		if (r == null) {
-			r = new SymbolTable.Entry(external);
-			symbolTable.put(name, r);
+		Name unit = name.getUnit();
+		// Get information associated with this unit
+		SymbolTable.Group group = symbolTable.get(unit);
+		if(group == null) {
+			// Create fresh group information
+			group = new SymbolTable.Group();
+			symbolTable.put(unit,group);
 		}
-		// Add the declaration
-		r.getDeclarations().add(declaration);
+		// Register this declaration with the group
+		group.register(declaration,external);
+	}
+
+	/**
+	 * Check whether named declaration is public or not.
+	 *
+	 * @param decl
+	 * @return
+	 */
+	private boolean isPublic(Decl.Named decl) {
+		return decl.getModifiers().match(Modifier.Public.class) != null;
+	}
+
+	/**
+	 * Record information associated with a given group of symbols (i.e. as located
+	 * in same compilation unit).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Group {
+		private HashMap<Identifier, Entry> entries;
+
+		public void register(Decl.Named declaration, boolean external) {
+			Identifier name = declaration.getName();
+			SymbolTable.Entry r = entries.get(name);
+			//
+			if (r == null) {
+				r = new SymbolTable.Entry(external);
+				entries.put(name, r);
+			}
+			// Add the declaration
+			r.declarations.add(declaration);
+		}
 	}
 
 	/**
@@ -93,37 +193,13 @@ public class SymbolTable {
 		private final ArrayList<Decl.Named> declarations;
 		/**
 		 * Indicates whether or not this entry is externally defined in a dependency, or
-		 * defined within the current module. Observe that externally defined symbols
-		 * become internally defined once they are imported.
+		 * defined within the current module.
 		 */
-		private boolean external;
+		private final boolean external;
 
 		public Entry(boolean external) {
-			this.setExternal(external);
-			this.declarations = new ArrayList<>();
-		}
-
-		/**
-		 * Check whether this entry is defined externally to the current module.
-		 *
-		 * @return
-		 */
-		public boolean isExternal() {
-			return external;
-		}
-
-		public void setExternal(boolean external) {
 			this.external = external;
-		}
-
-		public List<Decl.Named> getDeclarations() {
-			return declarations;
-		}
-
-
-		public void setDeclarations(List<Decl.Named> declarations) {
-			this.declarations.clear();
-			this.declarations.addAll(declarations);
+			this.declarations = new ArrayList<>();
 		}
 	}
 }

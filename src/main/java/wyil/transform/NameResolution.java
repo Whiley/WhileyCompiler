@@ -87,23 +87,21 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class NameResolution {
-	/**
-	 * The master list of symbols and their corresponding entriess. For each name,
-	 * this records whether we have a local declaration, a non-local declaration
-	 * (which may or may not have been imported), etc.
-	 */
-	private final SymbolTable symbolTable;
-
+	private final WyilFile target;
 	/**
 	 * The resolver identifies unresolved names and produces patches based on them.
 	 */
-	private final Resolver resolver = new Resolver();
+	private final Resolver resolver;
+
+	private final SymbolTable symbolTable;
 
 	private final Build.Project project;
 
-	public NameResolution(Build.Task builder) {
-		this.symbolTable = new SymbolTable();
+	public NameResolution(WyilFile target, Build.Task builder) throws IOException {
 		project = builder.project();
+		this.target = target;
+		this.symbolTable = new SymbolTable(target,getExternals());
+		this.resolver = new Resolver();
 	}
 
 	/**
@@ -111,55 +109,23 @@ public class NameResolution {
 	 *
 	 * @param wf
 	 */
-	public void apply(WyilFile wf) {
-		try {
-			// Import all local names
-			importNames(wf.getModule(), false);
-			// Import all non-local names
-			for (WyilFile external : getExternals()) {
-				importNames(external.getModule(), true);
+	public void apply() {
+		// FIXME: need to make this incremental
+		// Create initial set of patches.
+		List<Patch> patches = resolver.apply(target);
+		// Keep iterating until all patches are resolved
+		while (patches.size() > 0) {
+			// Create importer
+			Importer importer = new Importer(target, true);
+			// Now continue importing until patches all resolved.
+			for (int i = 0; i != patches.size(); ++i) {
+				// Import and link the given patch
+				patches.get(i).apply(importer);
 			}
-			// Create initial set of patches.
-			List<Patch> patches = resolver.apply(wf);
-			// Keep iterating until all patches are resolved
-			while (patches.size() > 0) {
-				// Create importer
-				Importer importer = new Importer(wf, true);
-				// Now continue importing until patches all resolved.
-				for (int i = 0; i != patches.size(); ++i) {
-					// Import and link the given patch
-					patches.get(i).apply(importer);
-				}
-				// Switch over to the next set of patches
-				patches = importer.getPatches();
-			}
-			// Import external units
-			importUnits(wf.getModule(), importer.getExterns());
-			// Done
-		} catch (IOException e) {
-			// FIXME: need better error handling within pipeline stages.
-			throw new RuntimeException(e);
+			// Switch over to the next set of patches
+			patches = importer.getPatches();
 		}
-	}
-
-	/**
-	 * Import all names defined in a given module into the global namespace
-	 */
-	private void importNames(Decl.Module module, boolean external) {
-		// FIXME: this method is completely broken for so many reasons.
-		for (Decl.Unit unit : module.getUnits()) {
-			for (Decl d : unit.getDeclarations()) {
-				if (d instanceof Decl.Named) {
-					Decl.Named n = (Decl.Named) d;
-					// FIXME: need to check somewhere that overloading is done properly.
-					symbolTable.register(n, external);
-				}
-			}
-		}
-	}
-
-	private void importExterns(Decl.Module module, List<Decl.Unit> externs) {
-
+		// Done
 	}
 
 	/**
@@ -198,7 +164,7 @@ public class NameResolution {
 	 */
 	private class Resolver extends AbstractConsumer<List<Decl.Import>> {
 		/**
-		 * The list of
+		 * The list of patches being constructed
 		 */
 		private ArrayList<Patch> patches = new ArrayList<>();
 
@@ -383,12 +349,11 @@ public class NameResolution {
 
 		private void imPort(Importer importer) {
 			// Import external declarations as necessary
-			SymbolTable.Entry symbol = symbolTable.get(name);
-			if (symbol.isExternal()) {
+			if (symbolTable.isExternal(name)) {
 				// FIXME: want to optimise so don't bring in the whole type unless we are doing
 				// link-time analysis or generating a single binary.
 				ArrayList<Decl.Named> imported = new ArrayList<>();
-				for (Decl.Named d : symbol.getDeclarations()) {
+				for (Decl.Named d : symbolTable.getDeclarations(name)) {
 					imported.add((Decl.Named) importer.allocate(d));
 				}
 				symbol.setExternal(false);
@@ -441,10 +406,10 @@ public class NameResolution {
 		 * @return
 		 */
 		private <T extends Decl> T select(QualifiedName name, Class<T> kind) {
-			SymbolTable.Entry r = symbolTable.get(name);
+			List<Decl.Named> declarations = symbolTable.getDeclarations(name);
 			Identifier id = name.getName();
-			for (int i = 0; i != r.getDeclarations().size(); ++i) {
-				Decl.Named d = r.getDeclarations().get(i);
+			for (int i = 0; i != declarations.size(); ++i) {
+				Decl.Named d = declarations.get(i);
 				if (kind.isInstance(d)) {
 					return (T) d;
 				}
@@ -464,12 +429,12 @@ public class NameResolution {
 		 * @return
 		 */
 		private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind) {
-			SymbolTable.Entry r = symbolTable.get(name);
+			List<Decl.Named> declarations = symbolTable.getDeclarations(name);
 			Identifier id = name.getName();
 			// Determine how many matches
 			int count = 0;
-			for (int i = 0; i != r.getDeclarations().size(); ++i) {
-				Decl.Named d = r.getDeclarations().get(i);
+			for (int i = 0; i != declarations.size(); ++i) {
+				Decl.Named d = declarations.get(i);
 				if (kind.isInstance(d)) {
 					count++;
 				}
@@ -478,8 +443,8 @@ public class NameResolution {
 			@SuppressWarnings("unchecked")
 			T[] matches = (T[]) Array.newInstance(kind, count);
 			// Populate the array
-			for (int i = 0, j = 0; i != r.getDeclarations().size(); ++i) {
-				Decl.Named d = r.getDeclarations().get(i);
+			for (int i = 0, j = 0; i != declarations.size(); ++i) {
+				Decl.Named d = declarations.get(i);
 				if (kind.isInstance(d)) {
 					matches[j++] = (T) d;
 				}
