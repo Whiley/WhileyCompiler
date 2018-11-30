@@ -34,6 +34,7 @@ import java.util.List;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Decl.Named;
 import wyil.lang.WyilFile.QualifiedName;
 
 /**
@@ -65,16 +66,36 @@ public class SymbolTable {
 	 */
 	public SymbolTable(WyilFile target, List<WyilFile> deps) {
 		this.target = target;
+		Decl.Module module = target.getModule();
 		// Register all internal symbols
-		register(target.getModule(),false);
+		for (Decl.Unit unit : module.getUnits()) {
+			symbolTable.put(unit.getName(), new LocalGroup(unit));
+		}
 		// Register all external symbols
 		for(int i=0;i!=deps.size();++i) {
-			register(deps.get(i).getModule(),true);
+			Decl.Module dep = deps.get(i).getModule();
+			for (Decl.Unit unit : dep.getUnits()) {
+				symbolTable.put(unit.getName(), new ExternalGroup(unit));
+			}
+		}
+		// Register any available (i.e. imported) external symbols
+		for (Decl.Unit unit : module.getExterns()) {
+			throw new RuntimeException("implement me");
 		}
 	}
 
+	/**
+	 * Check whether a given name is registered. That is, whether or not there is a
+	 * corresponding name or not.
+	 *
+	 * @param name
+	 * @return
+	 */
 	public boolean contains(QualifiedName name) {
-		return symbolTable.containsKey(name);
+		Name unit = name.getUnit();
+		// Get information associated with this unit
+		SymbolTable.Group group = symbolTable.get(unit);
+		return group != null && group.isValid(name.getName());
 	}
 
 	/**
@@ -84,76 +105,104 @@ public class SymbolTable {
 	 * @param name
 	 * @return
 	 */
-	public boolean isExternal(QualifiedName name) {
-		// FIXME: need to think this through
-	}
-
-	public List<Decl.Named> getDeclarations(QualifiedName name) {
-		return symbolTable.get(name.getUnit()).entries.get(name.getName()).declarations;
+	public boolean isAvailable(QualifiedName name) {
+		SymbolTable.Group group = symbolTable.get(name.getUnit());
+		return group != null && group.isAvailable(name.getName());
 	}
 
 	/**
-	 * Register all symbols in all compilation units contained within a given
-	 * module. For those which are externally defined, only public members are
-	 * registered.
-	 *
-	 * @param unit
-	 * @param external
-	 */
-	public void register(Decl.Module module, boolean external) {
-		for (Decl.Unit unit : module.getUnits()) {
-			register(unit, external);
-		}
-	}
-
-	/**
-	 * Register all symbols in a given compilation unit with this symbol table. For
-	 * those which are externally defined, only public members are registered.
-	 *
-	 * @param unit
-	 * @param external
-	 */
-	public void register(Decl.Unit unit, boolean external) {
-		// Go through each named declaration in this unit
-		for (Decl d : unit.getDeclarations()) {
-			if (d instanceof Decl.Named) {
-				Decl.Named n = (Decl.Named) d;
-				// External declarations must be public
-				if(!external || isPublic(n)) {
-					register(n, external);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Register a new declaration with a given name.
+	 * Get the actual declarations associated with a given symbol.
 	 *
 	 * @param name
-	 * @param declaration
+	 * @return
 	 */
-	public void register(Decl.Named declaration, boolean external) {
-		QualifiedName name = declaration.getQualifiedName();
-		Name unit = name.getUnit();
-		// Get information associated with this unit
-		SymbolTable.Group group = symbolTable.get(unit);
-		if(group == null) {
-			// Create fresh group information
-			group = new SymbolTable.Group();
-			symbolTable.put(unit,group);
-		}
-		// Register this declaration with the group
-		group.register(declaration,external);
+	public List<Decl.Named> getDeclarations(QualifiedName name) {
+		return symbolTable.get(name.getUnit()).getDeclarations(name.getName());
 	}
 
 	/**
-	 * Check whether named declaration is public or not.
+	 * Make available declarations for an external symbol. This makes those
+	 * declarations available within the target for linking.
 	 *
-	 * @param decl
+	 * @param name      Fully qualified name of symbol being consolidated.
+	 * @param available List of declaration stubs which have now been imported into
+	 *                  the target.
+	 */
+	public void addAvailable(QualifiedName name, List<Decl.Named> available) {
+		ExternalGroup group = (ExternalGroup) symbolTable.get(name.getUnit());
+		//
+		for (int i = 0; i != available.size(); ++i) {
+			group.addAvailable(available.get(i));
+		}
+	}
+
+	/**
+	 * Consolidate the status of external symbols. For example, this will ensure all
+	 * external units which have imported symbols are made available. Likewise, it
+	 * may garbage collect available symbols and units which are no longer required.
+	 *
 	 * @return
 	 */
-	private boolean isPublic(Decl.Named decl) {
-		return decl.getModifiers().match(Modifier.Public.class) != null;
+	public boolean consolidate() {
+		// FIXME: no return required, just forcing an error message.
+	}
+
+	/**
+	 * Represents a group of symbols which are related through their enclosing
+	 * compilation unit.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Group {
+		/**
+		 * Check whether a given symbol existing within this group or not.
+		 *
+		 * @param name
+		 * @return
+		 */
+		public boolean isValid(Identifier name);
+
+		/**
+		 * Check whether a given symbol as a declaration available within the target.
+		 * Local symbols are always available. Non-local symbols may be available if
+		 * they have been imported.
+		 *
+		 * @param name
+		 * @return
+		 */
+		public boolean isAvailable(Identifier name);
+
+		/**
+		 * Get the concrete declarations associated with a given symbol
+		 *
+		 * @param name
+		 * @return
+		 */
+		public List<Decl.Named> getDeclarations(Identifier name);
+	}
+
+	private static abstract class AbstractGroup<T extends Entry> implements Group {
+
+		/**
+		 * The list of known symbols associated with this group.
+		 */
+		protected final HashMap<Identifier, T> entries = new HashMap<>();
+
+		@Override
+		public boolean isAvailable(Identifier name) {
+			return entries.get(name).isAvailable();
+		}
+
+		@Override
+		public boolean isValid(Identifier name) {
+			return entries.containsKey(name);
+		}
+
+		@Override
+		public List<Named> getDeclarations(Identifier name) {
+			return entries.get(name).getDeclarations();
+		}
 	}
 
 	/**
@@ -163,43 +212,232 @@ public class SymbolTable {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Group {
-		private HashMap<Identifier, Entry> entries;
+	public static class LocalGroup extends AbstractGroup<LocalEntry> {
 
-		public void register(Decl.Named declaration, boolean external) {
-			Identifier name = declaration.getName();
-			SymbolTable.Entry r = entries.get(name);
+		/**
+		 * Construct a local group to represent a given unit in the target.
+		 *
+		 * @param unit
+		 */
+		public LocalGroup(Decl.Unit unit) {
+			for(Decl d : unit.getDeclarations()) {
+				if(d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					get(n.getName()).addAvailable(n);
+				}
+			}
+		}
+
+		// FIXME: we will need some methods for handling adding / removing declarations
+		// as a result of incremental updates to the target.
+
+		private LocalEntry get(Identifier name) {
+			SymbolTable.LocalEntry r = entries.get(name);
 			//
 			if (r == null) {
-				r = new SymbolTable.Entry(external);
+				r = new SymbolTable.LocalEntry();
 				entries.put(name, r);
 			}
-			// Add the declaration
-			r.declarations.add(declaration);
+			return r;
 		}
 	}
 
+	public static class ExternalGroup extends AbstractGroup<ExternalEntry> {
+		/**
+		 * The available declaration representing this group in the target. This may be
+		 * null if the unit has not yet been imported.
+		 */
+		private Decl.Unit available;
+
+		/**
+		 * Construct a non-local group to represent a given unit in the target.
+		 *
+		 * @param unit
+		 */
+		public ExternalGroup(Decl.Unit unit) {
+			for(Decl d : unit.getDeclarations()) {
+				if(d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					// Add public members only
+					if(isPublic(n)) {
+						get(n.getName()).addExternal(n);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Register an available unit declared within the target and all symbols
+		 * contained therein.
+		 *
+		 * @param declaration
+		 */
+		public void register(Decl.Unit available) {
+			this.available = available;
+			// Register as available all internal symbols
+			for (Decl d : available.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					addAvailable((Decl.Named) d);
+				}
+			}
+		}
+
+		public void addAvailable(Decl.Named available) {
+			get(available.getName()).addAvailable(available);
+		}
+
+		private Entry get(Identifier name) {
+			SymbolTable.ExternalEntry r = entries.get(name);
+			//
+			if (r == null) {
+				r = new SymbolTable.ExternalEntry();
+				entries.put(name, r);
+			}
+			return r;
+		}
+
+		/**
+		 * Check whether named declaration is public or not.
+		 *
+		 * @param decl
+		 * @return
+		 */
+		private boolean isPublic(Decl.Named decl) {
+			return decl.getModifiers().match(Modifier.Public.class) != null;
+		}
+	}
+
+
 	/**
-	 * Records information associated with a given symbol, such as whether it is
-	 * defined within the current module or externally.
+	 * A generic interface for describing symbols.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Entry {
+	public interface Entry {
+
+		/**
+		 * Check whether this entry is currently available in the target. Local symbols
+		 * are always available. Non-local symbols may be available if they have been
+		 * imported at some point.
+		 *
+		 * @return
+		 */
+		public boolean isAvailable();
+
+		/**
+		 * Get the available declarations for this symbol which in the target.
+		 *
+		 * @return
+		 */
+		public List<Decl.Named> getAvailable();
+
+		/**
+		 * Get the actual declarations for this symbol.
+		 *
+		 * @return
+		 */
+		public List<Decl.Named> getDeclarations();
+
+		/**
+		 * Add an available declaration for this symbol.
+		 *
+		 * @param decl
+		 */
+		public void addAvailable(Decl.Named decl);
+
+		/**
+		 * Add an external declaration for this symbol.
+		 *
+		 * @param decl
+		 */
+		public void addExternal(Decl.Named decl);
+	}
+
+	/**
+	 * Represents an entry which is declared in the target file. This is the easy
+	 * case as we never need to import local entries.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class LocalEntry implements Entry {
 		/**
 		 * Identifies the complete set of declarations associated with this symbol.
 		 */
 		private final ArrayList<Decl.Named> declarations;
-		/**
-		 * Indicates whether or not this entry is externally defined in a dependency, or
-		 * defined within the current module.
-		 */
-		private final boolean external;
 
-		public Entry(boolean external) {
-			this.external = external;
+		public LocalEntry() {
 			this.declarations = new ArrayList<>();
+		}
+
+		@Override
+		public boolean isAvailable() {
+			return true;
+		}
+
+		@Override
+		public List<Decl.Named> getAvailable() {
+			return declarations;
+		}
+
+		@Override
+		public List<Decl.Named> getDeclarations() {
+			return declarations;
+		}
+
+		@Override
+		public void addAvailable(Named decl) {
+			declarations.add(decl);
+		}
+
+		@Override
+		public void addExternal(Named decl) {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	/**
+	 * Represents a symbol external to the given target. Such a symbol may have
+	 * already been imported into the target as a stub.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class ExternalEntry implements Entry {
+		/**
+		 * Identifies available declarations for this symbol
+		 */
+		private final ArrayList<Decl.Named> availables = new ArrayList<>();
+
+		/**
+		 * Identifies external declarations for this symbol
+		 */
+		private final ArrayList<Decl.Named> externals = new ArrayList<>();
+
+		@Override
+		public boolean isAvailable() {
+			return availables.size() > 0;
+		}
+
+		@Override
+		public List<Named> getAvailable() {
+			return availables;
+		}
+
+		@Override
+		public List<Decl.Named> getDeclarations() {
+			return externals;
+		}
+
+		@Override
+		public void addAvailable(Named decl) {
+			availables.add(decl);
+		}
+
+		@Override
+		public void addExternal(Named decl) {
+			externals.add(decl);
 		}
 	}
 }

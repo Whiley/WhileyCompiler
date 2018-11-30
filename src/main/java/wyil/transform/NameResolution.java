@@ -97,7 +97,7 @@ public class NameResolution {
 
 	private final Build.Project project;
 
-	public NameResolution(WyilFile target, Build.Task builder) throws IOException {
+	public NameResolution(Build.Task builder, WyilFile target) throws IOException {
 		project = builder.project();
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
@@ -349,15 +349,14 @@ public class NameResolution {
 
 		private void imPort(Importer importer) {
 			// Import external declarations as necessary
-			if (symbolTable.isExternal(name)) {
+			if (!symbolTable.isAvailable(name)) {
 				// FIXME: want to optimise so don't bring in the whole type unless we are doing
 				// link-time analysis or generating a single binary.
 				ArrayList<Decl.Named> imported = new ArrayList<>();
 				for (Decl.Named d : symbolTable.getDeclarations(name)) {
 					imported.add((Decl.Named) importer.allocate(d));
 				}
-				symbol.setExternal(false);
-				symbol.setDeclarations(imported);
+				symbolTable.addAvailable(name, imported);
 			}
 		}
 

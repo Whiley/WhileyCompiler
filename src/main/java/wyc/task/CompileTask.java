@@ -168,7 +168,7 @@ public final class CompileTask implements Build.Task {
 			tmpTime = System.currentTimeMillis();
 			tmpMemory = runtime.freeMemory();
 
-			new NameResolution(this).apply(wf);
+			new NameResolution(this,wf).apply();
 			new FlowTypeCheck(this).check(wf);
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck(this).check(wf);
