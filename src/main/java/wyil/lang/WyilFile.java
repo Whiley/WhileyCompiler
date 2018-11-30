@@ -128,7 +128,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	};
 
-	// DECLARATIONS: 00010000 (16) -- 00011111 (31)
+	// DECLARATIONS:
 	public static final int DECL_mask = 0b00010000;
 	public static final int DECL_unknown = DECL_mask + 0;
 	public static final int DECL_module = DECL_mask + 1;
@@ -144,15 +144,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_lambda = DECL_mask + 11;
 	public static final int DECL_variable = DECL_mask + 12;
 	public static final int DECL_variableinitialiser = DECL_mask + 13;
-
-	public static final int MOD_native = DECL_mask + 14;
-	public static final int MOD_export = DECL_mask + 15;
-	public static final int MOD_final = DECL_mask + 16;
-	public static final int MOD_protected = DECL_mask + 17;
-	public static final int MOD_private = DECL_mask + 18;
-	public static final int MOD_public = DECL_mask + 19;
-	// TYPES: 00100000 (32) -- 00111111 (63)
-	public static final int TYPE_mask = 0b000100000;
+	// MODIFIERS
+	public static final int MOD_mask = DECL_mask + 32;
+	public static final int MOD_native = MOD_mask + 0;
+	public static final int MOD_export = MOD_mask + 1;
+	public static final int MOD_final = MOD_mask + 2;
+	public static final int MOD_protected = MOD_mask + 3;
+	public static final int MOD_private = MOD_mask + 4;
+	public static final int MOD_public = MOD_mask + 5;
+	// TYPES:
+	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
 	public static final int TYPE_void = TYPE_mask + 1;
 	public static final int TYPE_any = TYPE_mask + 2;
@@ -180,8 +181,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int SEMTYPE_intersection = TYPE_mask + 24;
 	public static final int SEMTYPE_difference = TYPE_mask + 25;
 	public static final int TYPE_recursive = TYPE_mask + 26;
-	// STATEMENTS: 01000000 (64) -- 001011111 (95)
-	public static final int STMT_mask = 0b01000000;
+	// STATEMENTS:
+	public static final int STMT_mask = TYPE_mask+64;
 	public static final int STMT_block = STMT_mask + 0;
 	public static final int STMT_namedblock = STMT_mask + 1;
 	public static final int STMT_caseblock = STMT_mask + 2;
@@ -201,8 +202,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int STMT_return = STMT_mask + 16;
 	public static final int STMT_switch = STMT_mask + 17;
 	public static final int STMT_while = STMT_mask + 18;
-	// EXPRESSIONS: 01100000 (96) -- 10011111 (159)
-	public static final int EXPR_mask = 0b01100000;
+	// EXPRESSIONS:
+	public static final int EXPR_mask = STMT_mask + 32;
 	public static final int EXPR_variablecopy = EXPR_mask + 0;
 	public static final int EXPR_variablemove = EXPR_mask + 1;
 	public static final int EXPR_staticvariable = EXPR_mask + 3;

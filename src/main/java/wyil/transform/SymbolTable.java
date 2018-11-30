@@ -29,9 +29,12 @@ import static wyil.lang.WyilFile.Name;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.Named;
@@ -58,6 +61,11 @@ public class SymbolTable {
 	private final HashMap<Name, Group> symbolTable = new HashMap<>();
 
 	/**
+	 * The consolidation list identifies those which need to be consolidated
+	 */
+	private final HashSet<ExternalGroup> consolidations = new HashSet<>();
+
+	/**
 	 * Construct a symbol table containing meta-data on a given target file and its
 	 * dependencies.
 	 *
@@ -66,6 +74,7 @@ public class SymbolTable {
 	 */
 	public SymbolTable(WyilFile target, List<WyilFile> deps) {
 		this.target = target;
+		//
 		Decl.Module module = target.getModule();
 		// Register all internal symbols
 		for (Decl.Unit unit : module.getUnits()) {
@@ -80,7 +89,8 @@ public class SymbolTable {
 		}
 		// Register any available (i.e. imported) external symbols
 		for (Decl.Unit unit : module.getExterns()) {
-			throw new RuntimeException("implement me");
+			ExternalGroup group = (ExternalGroup) symbolTable.get(unit.getName());
+			group.register(unit);
 		}
 	}
 
@@ -143,8 +153,14 @@ public class SymbolTable {
 	 *
 	 * @return
 	 */
-	public boolean consolidate() {
-		// FIXME: no return required, just forcing an error message.
+	public void consolidate() {
+		Decl.Module module = target.getModule();
+		for(ExternalGroup group : consolidations) {
+			// TODO: this could be made way more efficient by collecting all consolidate
+			// units into one batch
+			module.putExtern(group.consolidate());
+		}
+		consolidations.clear();
 	}
 
 	/**
@@ -242,7 +258,11 @@ public class SymbolTable {
 		}
 	}
 
-	public static class ExternalGroup extends AbstractGroup<ExternalEntry> {
+	public class ExternalGroup extends AbstractGroup<ExternalEntry> {
+		/**
+		 * The external declaration that this group is associated with.
+		 */
+		private final Decl.Unit external;
 		/**
 		 * The available declaration representing this group in the target. This may be
 		 * null if the unit has not yet been imported.
@@ -255,6 +275,8 @@ public class SymbolTable {
 		 * @param unit
 		 */
 		public ExternalGroup(Decl.Unit unit) {
+			this.external = unit;
+			//
 			for(Decl d : unit.getDeclarations()) {
 				if(d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
@@ -284,6 +306,27 @@ public class SymbolTable {
 
 		public void addAvailable(Decl.Named available) {
 			get(available.getName()).addAvailable(available);
+			if(this.available == null) {
+				consolidations.add(this);
+			}
+		}
+
+		/**
+		 * Called when this group has available symbols but there is no enclosing unit
+		 * is available in the target.
+		 */
+		public Decl.Unit consolidate() {
+			Tuple<Decl> declarations = new Tuple<>(getAllAvailable());
+			available = new Decl.Unit(external.getName(), declarations);
+			return available;
+		}
+
+		private List<Decl> getAllAvailable() {
+			ArrayList<Decl> available = new ArrayList<>();
+			for(Map.Entry<Identifier, ExternalEntry> e : entries.entrySet()) {
+				available.addAll(e.getValue().getAvailable());
+			}
+			return available;
 		}
 
 		private Entry get(Identifier name) {

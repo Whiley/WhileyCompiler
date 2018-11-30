@@ -125,7 +125,8 @@ public class NameResolution {
 			// Switch over to the next set of patches
 			patches = importer.getPatches();
 		}
-		// Done
+		// Consolidate any imported declarations as externals.
+		symbolTable.consolidate();
 	}
 
 	/**
