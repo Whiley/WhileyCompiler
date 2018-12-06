@@ -448,7 +448,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					}
 				}
 				// We're adding a new unit
-				setOperand(1, getHeap().allocate(externs.append(unit)));
+				setOperand(2, getHeap().allocate(externs.append(unit)));
 			}
 
 			@Override

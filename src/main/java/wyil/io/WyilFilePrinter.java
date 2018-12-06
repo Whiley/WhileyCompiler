@@ -19,6 +19,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Build;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -166,9 +167,11 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			out.print("ensures ");
 			visitExpression(postcondition, indent);
 		}
-		if (decl.getBody() != null) {
+		if (decl.getBody().size() > 0) {
 			out.println(": ");
 			visitBlock(decl.getBody(), indent);
+		} else {
+			out.println();
 		}
 	}
 
