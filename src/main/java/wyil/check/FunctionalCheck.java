@@ -11,19 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
-import wyc.util.AbstractConsumer;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.util.AbstractConsumer;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -74,14 +72,12 @@ import static wyc.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
-	public NameResolver resolver;
 
 	public FunctionalCheck(CompileTask builder) {
-		this.resolver = builder.getNameResolver();
 	}
 
-	public void check(WhileyFile file) {
-		visitWhileyFile(file, null);
+	public void check(WyilFile file) {
+		visitModule(file, null);
 	}
 
 	public enum Context {
@@ -159,7 +155,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && expr.getSignature() instanceof Type.Method) {
+		if (context != Context.IMPURE && expr.getDeclaration() instanceof Decl.Method) {
 			invalidMethodCall(expr, context);
 		}
 		super.visitInvoke(expr, context);
@@ -198,19 +194,13 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	}
 
 	public boolean isMethodType(Type type) {
-		try {
-			if (type instanceof Type.Method) {
-				return true;
-			} else if (type instanceof Type.Nominal) {
-				Type.Nominal n = (Type.Nominal) type;
-				Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
-				return isMethodType(decl.getType());
-			} else {
-				return false;
-			}
-		} catch (ResolutionError e) {
-			// This really should be dead code
-			throw new RuntimeException(e);
+		if (type instanceof Type.Method) {
+			return true;
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal n = (Type.Nominal) type;
+			return isMethodType(n.getDeclaration().getType());
+		} else {
+			return false;
 		}
 	}
 
@@ -232,19 +222,19 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 
 	public void invalidObjectAllocation(SyntacticItem expression, Context context) {
 		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	public void invalidMethodCall(SyntacticItem expression, Context context) {
 		String msg = errorMessage(METHODCALL_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	public void invalidReferenceAccess(SyntacticItem expression, Context context) {
 		String msg = errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
-		WhileyFile file = ((WhileyFile) expression.getHeap());
+		WyilFile file = ((WyilFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 }

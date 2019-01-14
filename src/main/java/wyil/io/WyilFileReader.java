@@ -18,9 +18,10 @@ import java.io.IOException;
 import wybs.io.SyntacticHeapReader;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
-import wyc.lang.WhileyFile;
+import wyil.lang.WyilFile;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -32,17 +33,17 @@ import wyc.lang.WhileyFile;
 public final class WyilFileReader extends SyntacticHeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
 
-	private Path.Entry<WhileyFile> entry;
+	private Path.Entry<WyilFile> entry;
 
-	public WyilFileReader(Path.Entry<WhileyFile> entry) throws IOException {
-		super(entry.inputStream(), WhileyFile.getSchema());
+	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
+		super(entry.inputStream(), WyilFile.getSchema());
 		this.entry = entry;
 	}
 
 	@Override
-	public WhileyFile read() throws IOException {
-		SyntacticItem[] items = readItems();
-		return new WhileyFile(entry,items);
+	public WyilFile read() throws IOException {
+		Pair<Integer,SyntacticItem[]> p = readItems();
+		return new WyilFile(entry,p.first(),p.second());
 	}
 
 	@Override

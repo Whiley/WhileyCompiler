@@ -30,15 +30,16 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.NameID;
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.StdBuildGraph;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 import wyc.task.Wyil2WyalBuilder;
 import wycc.util.Logger;
@@ -48,6 +49,10 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter.CallStack;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
 import wytp.provers.AutomatedTheoremProver;
 
@@ -68,8 +73,8 @@ public class TestUtils {
 	 */
 	public static Type fromString(String from) {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
-		WhileyFile wf = new WhileyFile(null);
-		WhileyFileParser parser = new WhileyFileParser(wf, tokens);
+		WyilFile wf = new WyilFile(null);
+		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
 	}
@@ -129,7 +134,7 @@ public class TestUtils {
 	 * Identifies which WyIL source files should be considered for verification. By
 	 * default, all files reachable from srcdir are considered.
 	 */
-	private static Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
+	private static Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 	/**
 	 * Identifies which WyAL source files should be considered for verification. By
 	 * default, all files reachable from srcdir are considered.
@@ -159,8 +164,10 @@ public class TestUtils {
 			StdProject project = new StdProject(Arrays.asList(root));
 			// Add build rules
 			addCompilationRules(project,root,verify);
+			// Create empty build graph
+			Build.Graph graph = new StdBuildGraph();
 			// Identify source files and build project
-			project.build(findSourceFiles(root,args));
+			project.build(findSourceFiles(root,graph,args), graph);
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 		} catch (SyntaxError e) {
@@ -215,14 +222,28 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, String... args) throws IOException {
+	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, Build.Graph graph, String... args)
+			throws IOException {
 		List<Path.Entry<WhileyFile>> sources = new ArrayList<>();
 		for (String arg : args) {
-			Path.Entry<WhileyFile> e = root.get(Trie.fromString(arg), WhileyFile.ContentType);
+			Path.ID id = Trie.fromString(arg);
+			Path.Entry<WhileyFile> e = root.get(id, WhileyFile.ContentType);
 			if (e == null) {
 				throw new IllegalArgumentException("file not found: " + arg);
 			}
 			sources.add(e);
+			// Construct target
+			Path.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
+			// Check whether target binary exists or not
+			if (target == null) {
+				// Doesn't exist, so create with default value
+				target = root.create(id, WyilFile.ContentType);
+				WyilFile wf = new WyilFile(target);
+				target.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>()));
+			}
+			graph.connect(e, target);
 		}
 		return sources;
 	}
@@ -237,27 +258,18 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
-		StdProject project = new StdProject();
-		project.getRoots().add(new DirectoryRoot(wyildir, registry));
+		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
 		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
-		NameID name = new NameID(id, "test");
-		executeFunctionOrMethod(name, sig, project);
-	}
-
-	/**
-	 * Execute a given function or method in a wyil file.
-	 *
-	 * @param id
-	 * @param signature
-	 * @param project
-	 * @throws IOException
-	 */
-	private static void executeFunctionOrMethod(NameID id, Type.Callable signature, Build.Project project)
-			throws IOException {
+		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
-		Interpreter interpreter = new Interpreter(project, System.out);
-		RValue[] returns = interpreter.execute(id, signature, interpreter.new CallStack());
+		Interpreter interpreter = new Interpreter(System.out);
+		// Create the initial stack
+		Interpreter.CallStack stack = interpreter.new CallStack();
+		// Load the relevant WyIL module
+		stack.load(root.get(id, WyilFile.ContentType).read());
+		//
+		RValue[] returns = interpreter.execute(name, sig, stack);
 		// Print out any return values produced
 		if (returns != null) {
 			for (int i = 0; i != returns.length; ++i) {

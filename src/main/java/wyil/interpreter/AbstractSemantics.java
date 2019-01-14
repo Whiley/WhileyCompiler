@@ -15,11 +15,10 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Stmt;
-import wyc.lang.WhileyFile.Type;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 
 /**
  * Provides a generic notion of data types for use within the interpreter. Each
@@ -123,7 +122,7 @@ public interface AbstractSemantics {
 		 * @param type
 		 * @return
 		 */
-		public Bool is(Type type, Interpreter instance) throws ResolutionError;
+		public Bool is(Type type, Interpreter.CallStack frame);
 
 		/**
 		 * Convert this value into a given representation. In the case that this

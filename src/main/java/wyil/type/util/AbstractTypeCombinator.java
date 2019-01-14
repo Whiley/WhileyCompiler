@@ -13,44 +13,33 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyc.lang.WhileyFile.TYPE_array;
-import static wyc.lang.WhileyFile.TYPE_bool;
-import static wyc.lang.WhileyFile.TYPE_byte;
-import static wyc.lang.WhileyFile.TYPE_function;
-import static wyc.lang.WhileyFile.TYPE_int;
-import static wyc.lang.WhileyFile.TYPE_method;
-import static wyc.lang.WhileyFile.TYPE_nominal;
-import static wyc.lang.WhileyFile.TYPE_null;
-import static wyc.lang.WhileyFile.TYPE_record;
-import static wyc.lang.WhileyFile.TYPE_reference;
-import static wyc.lang.WhileyFile.TYPE_staticreference;
-import static wyc.lang.WhileyFile.TYPE_union;
-import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import wyc.lang.WhileyFile.Type;
-import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+
 import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.SubtypeOperator;
 
 public abstract class AbstractTypeCombinator {
-	protected final NameResolver resolver;
 	protected final SubtypeOperator subtyping;
 
-	public AbstractTypeCombinator(NameResolver resolver, SubtypeOperator subtyping) {
-		this.resolver = resolver;
+	public AbstractTypeCombinator(SubtypeOperator subtyping) {
 		this.subtyping = subtyping;
 	}
 
@@ -142,40 +131,28 @@ public abstract class AbstractTypeCombinator {
 		Linkage linkage = stack.find(lhs, rhs);
 		if (linkage != null) {
 			// Yes, seen before. Therefore, create recursive type to represent this.
-			Type.Recursive r = new Type.Recursive(new Ref<Type>(new Type.Unresolved()));
+			Type.Recursive r = new Type.Recursive(new Ref<Type>(new Type.Unknown()));
 			linkage.links.add(r);
 			return r;
 		} else {
 			// Not see before, so record and continue.
 			stack.push(lhs, rhs);
-			try {
-				// Expand the lhs and continue
-				Decl.Type decl = resolver.resolveExactly(lhs.getName(), Decl.Type.class);
-				Type t = apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
-				stack.popAndLink(t);
-				return t;
-			} catch (ResolutionError e) {
-				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, lhs.getName().toString()), lhs);
-			}
+			// Expand the lhs and continue
+			Decl.Type decl = lhs.getDeclaration();;
+			Type t = apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
+			stack.popAndLink(t);
+			return t;
 		}
 	}
 
 	protected Type apply(Type.Nominal lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(lhs.getName(), Decl.Type.class);
-			return apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, lhs.getName().toString()), lhs);
-		}
+		Decl.Type decl = lhs.getDeclaration();
+		return apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
 	}
 
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(rhs.getName(), Decl.Type.class);
-			return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, rhs.getName().toString()), lhs);
-		}
+		Decl.Type decl = rhs.getDeclaration();
+		return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
 	}
 
 	// ===================================================================================
@@ -248,11 +225,5 @@ public abstract class AbstractTypeCombinator {
 		default:
 			return new Type.Union(types);
 		}
-	}
-
-	protected <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 }

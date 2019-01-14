@@ -13,15 +13,12 @@
 // limitations under the License.
 package wyil.type.subtyping;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
 
-import wybs.lang.NameID;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 
 /**
@@ -38,15 +35,13 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  *
  */
 public class SubtypeOperator {
-	private final NameResolver resolver;
 	private final EmptinessTest<SemanticType> emptinessTest;
 
 	enum Result {
 		True, False, Unknown
 	}
 
-	public SubtypeOperator(NameResolver resolver, EmptinessTest<SemanticType> emptinessTest) {
-		this.resolver = resolver;
+	public SubtypeOperator(EmptinessTest<SemanticType> emptinessTest) {
 		this.emptinessTest = emptinessTest;
 	}
 
@@ -95,7 +90,7 @@ public class SubtypeOperator {
 	 *             possible matching declaration, or it cannot be resolved to a
 	 *             corresponding type declaration.
 	 */
-	public boolean isSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes) throws ResolutionError {
+	public boolean isSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes) {
 		boolean max = emptinessTest.isVoid(lhs, EmptinessTest.NegativeMax, rhs, EmptinessTest.PositiveMax, lifetimes);
 		//
 		// FIXME: I don't think this logic is correct yet for some reason.
@@ -144,7 +139,7 @@ public class SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) throws ResolutionError {
+	public boolean isVoid(SemanticType type, LifetimeRelation lifetimes) {
 		return emptinessTest.isVoid(type, EmptinessTest.PositiveMax, type, EmptinessTest.PositiveMax, lifetimes);
 	}
 
@@ -167,12 +162,12 @@ public class SubtypeOperator {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public boolean isContractive(NameID nid, Type type) throws ResolutionError {
-		HashSet<NameID> visited = new HashSet<>();
+	public boolean isContractive(QualifiedName nid, Type type) {
+		HashSet<QualifiedName> visited = new HashSet<>();
 		return isContractive(nid, type, visited);
 	}
 
-	private boolean isContractive(NameID name, Type type, HashSet<NameID> visited) throws ResolutionError {
+	private boolean isContractive(QualifiedName name, Type type, HashSet<QualifiedName> visited) {
 		switch (type.getOpcode()) {
 		case TYPE_void:
 		case TYPE_any:
@@ -188,7 +183,7 @@ public class SubtypeOperator {
 		case TYPE_property:
 		case TYPE_invariant:
 		case TYPE_byte:
-		case TYPE_unresolved:
+		case TYPE_unknown:
 			return true;
 		case TYPE_union: {
 			Type.Union c = (Type.Union) type;
@@ -202,8 +197,8 @@ public class SubtypeOperator {
 		default:
 		case TYPE_nominal: {
 			Type.Nominal n = (Type.Nominal) type;
-			Decl.Type decl = resolver.resolveExactly(n.getName(), Decl.Type.class);
-			NameID nid = decl.getQualifiedName().toNameID();
+			Decl.Type decl = n.getDeclaration();
+			QualifiedName nid = decl.getQualifiedName();
 			if (nid.equals(name)) {
 				// We have identified a non-contract type.
 				return false;

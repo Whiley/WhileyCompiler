@@ -9,7 +9,8 @@ function swap2(int x, int y) -> (int r, int s)
     return x, y
 
 public export method test():
-    int a, b
+    int a
+    int b
     //
     a,b = swap2(10,11)
     //

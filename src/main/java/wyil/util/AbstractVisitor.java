@@ -11,16 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.util;
+package wyil.util;
 
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.Type;
-
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Type;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -33,14 +32,17 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  */
 public abstract class AbstractVisitor {
 
-	public void visitWhileyFile(WhileyFile wf) {
-		for (Decl decl : wf.getDeclarations()) {
+	public void visitModule(WyilFile wf) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl);
 		}
 	}
 
 	public void visitDeclaration(Decl decl) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			visitUnit((Decl.Unit) decl);
+			break;
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
@@ -59,6 +61,12 @@ public abstract class AbstractVisitor {
 			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
+		}
+	}
+
+	public void visitUnit(Decl.Unit unit) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl);
 		}
 	}
 
@@ -590,6 +598,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitCast(Expr.Cast expr) {
+		visitType(expr.getType());
 		visitExpression(expr.getOperand());
 	}
 
@@ -657,6 +666,7 @@ public abstract class AbstractVisitor {
 
 	public void visitIs(Expr.Is expr) {
 		visitExpression(expr.getOperand());
+		visitType(expr.getTestType());
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr) {
@@ -775,8 +785,8 @@ public abstract class AbstractVisitor {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
@@ -866,7 +876,7 @@ public abstract class AbstractVisitor {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type) {
+	public void visitTypeUnresolved(Type.Unknown type) {
 
 	}
 

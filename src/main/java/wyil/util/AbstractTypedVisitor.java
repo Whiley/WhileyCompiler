@@ -11,21 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.util;
+package wyil.util;
 
-import wyc.check.FlowTypeUtils.Environment;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Stmt;
-import wyc.lang.WhileyFile.Type;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.AbstractTypeFilter;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,8 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -56,22 +54,23 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  *
  */
 public abstract class AbstractTypedVisitor {
-	protected final NameResolver resolver;
 	protected final SubtypeOperator subtypeOperator;
 
-	public AbstractTypedVisitor(NameResolver resolver, SubtypeOperator subtypeOperator) {
-		this.resolver = resolver;
+	public AbstractTypedVisitor(SubtypeOperator subtypeOperator) {
 		this.subtypeOperator = subtypeOperator;
 	}
 
-	public void visitWhileyFile(WhileyFile wf) {
-		for (Decl decl : wf.getDeclarations()) {
+	public void visitModule(WyilFile wf) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl);
 		}
 	}
 
 	public void visitDeclaration(Decl decl) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			visitUnit((Decl.Unit) decl);
+			break;
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
@@ -89,6 +88,12 @@ public abstract class AbstractTypedVisitor {
 			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
+		}
+	}
+
+	public void visitUnit(Decl.Unit unit) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl);
 		}
 	}
 
@@ -701,6 +706,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitCast(Expr.Cast expr, Type target, Environment environment) {
+		visitType(expr.getType());
 		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
 	}
 
@@ -768,6 +774,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitIs(Expr.Is expr, Environment environment) {
 		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
+		visitType(expr.getTestType());
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, Environment environment) {
@@ -811,11 +818,11 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
-		Type.Callable signature = expr.getSignature();
+		Type.Callable signature = expr.getDeclaration().getType();
 		Tuple<Type> parameters = signature.getParameters();
 		if(signature instanceof Type.Method) {
 			// Must bind lifetime arguments
-			Decl.Method decl = resolveMethod(expr.getName(), (Type.Method) expr.getSignature());
+			Decl.Method decl = (Decl.Method) expr.getDeclaration();
 			parameters = bind(decl,expr.getLifetimes());
 		}
 		visitExpressions(expr.getOperands(), parameters, environment);
@@ -912,8 +919,8 @@ public abstract class AbstractTypedVisitor {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
@@ -1002,7 +1009,7 @@ public abstract class AbstractTypedVisitor {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type) {
+	public void visitTypeUnresolved(Type.Unknown type) {
 
 	}
 
@@ -1070,7 +1077,7 @@ public abstract class AbstractTypedVisitor {
 
 	public Type.Int selectInt(Type target, Expr expr, Environment environment) {
 		Type.Int type = asType(expr.getType(), Type.Int.class);
-		Type.Int[] ints = TYPE_INT_FILTER.apply(target, resolver);
+		Type.Int[] ints = TYPE_INT_FILTER.apply(target);
 		return selectCandidate(ints, type, environment);
 	}
 
@@ -1100,23 +1107,7 @@ public abstract class AbstractTypedVisitor {
 		for (int i = 0; i != declared.size(); ++i) {
 			binding.put(declared.get(i), actual.get(i));
 		}
-		return WhileyFile.substitute(type.getParameters(),binding);
-	}
-
-	public Decl.Method resolveMethod(Name name, Type.Method signature) {
-		// NOTE: this method should be deprecated when resolution is done away with
-		// finally.
-		try {
-			List<Decl.Method> methods = resolver.resolveAll(name, Decl.Method.class);
-			for (int i = 0; i != methods.size(); ++i) {
-				Decl.Method method = methods.get(i);
-				if (method.getType().equals(signature)) {
-					return method;
-				}
-			}
-		} catch (ResolutionError e) {
-		}
-		throw new IllegalArgumentException("invalid method signature (" + name + ":" + signature + ")");
+		return WyilFile.substitute(type.getParameters(),binding);
 	}
 
 	/**
@@ -1147,7 +1138,7 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Array selectArray(Type target, Expr expr, Environment environment) {
 		Type.Array type = asType(expr.getType(), Type.Array.class);
-		Type.Array[] records = TYPE_ARRAY_FILTER.apply(target, resolver);
+		Type.Array[] records = TYPE_ARRAY_FILTER.apply(target);
 		return selectCandidate(records, type, environment);
 	}
 
@@ -1180,7 +1171,7 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Record selectRecord(Type target, Expr expr, Environment environment) {
 		Type.Record type = asType(expr.getType(), Type.Record.class);
-		Type.Record[] records = TYPE_RECORD_FILTER.apply(target, resolver);
+		Type.Record[] records = TYPE_RECORD_FILTER.apply(target);
 		return selectCandidate(records, type, environment);
 	}
 
@@ -1213,7 +1204,7 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Reference selectReference(Type target, Expr expr, Environment environment) {
 		Type.Reference type = asType(expr.getType(), Type.Reference.class);
-		Type.Reference[] references = TYPE_REFERENCE_FILTER.apply(target, resolver);
+		Type.Reference[] references = TYPE_REFERENCE_FILTER.apply(target);
 		return selectCandidate(references, type, environment);
 	}
 
@@ -1253,7 +1244,7 @@ public abstract class AbstractTypedVisitor {
 		// Create the filter itself
 		AbstractTypeFilter<Type.Callable> filter = new AbstractTypeFilter<>(Type.Callable.class, anyType);
 		//
-		return selectCandidate(filter.apply(target, resolver), type, environment);
+		return selectCandidate(filter.apply(target), type, environment);
 	}
 
 	private static Tuple<Type> TUPLE_ANY = new Tuple<>(Type.Any);
@@ -1269,23 +1260,19 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public <T extends Type> T selectCandidate(T[] candidates, T actual, Environment environment) {
 		//
-		try {
-			T candidate = null;
-			for (int i = 0; i != candidates.length; ++i) {
-				T next = candidates[i];
-				if (subtypeOperator.isSubtype(next, actual, environment)) {
-					if (candidate == null) {
-						candidate = next;
-					} else {
-						candidate = selectCandidate(candidate, next, actual, environment);
-					}
+		T candidate = null;
+		for (int i = 0; i != candidates.length; ++i) {
+			T next = candidates[i];
+			if (subtypeOperator.isSubtype(next, actual, environment)) {
+				if (candidate == null) {
+					candidate = next;
+				} else {
+					candidate = selectCandidate(candidate, next, actual, environment);
 				}
 			}
-			//
-			return candidate;
-		} catch (ResolutionError e) {
-			throw new IllegalArgumentException(e);
 		}
+		//
+		return candidate;
 	}
 
 	/**
@@ -1300,8 +1287,7 @@ public abstract class AbstractTypedVisitor {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public <T extends Type> T selectCandidate(T candidate, T next, T actual, Environment environment)
-			throws ResolutionError {
+	public <T extends Type> T selectCandidate(T candidate, T next, T actual, Environment environment) {
 		// Found a viable candidate
 		boolean left = subtypeOperator.isSubtype(candidate, next, environment);
 		boolean right = subtypeOperator.isSubtype(next, candidate, environment);
@@ -1344,13 +1330,9 @@ public abstract class AbstractTypedVisitor {
 		if (child.equals(parent)) {
 			return true;
 		} else if (child instanceof Type.Nominal) {
-			try {
-				Type.Nominal t = (Type.Nominal) child;
-				Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
-				return isDerivation(parent, decl.getType());
-			} catch (NameResolver.ResolutionError e) {
-				throw new IllegalArgumentException("invalid type: " + child);
-			}
+			Type.Nominal t = (Type.Nominal) child;
+			Decl.Type decl = t.getDeclaration();
+			return isDerivation(parent, decl.getType());
 		} else {
 			return false;
 		}
@@ -1377,13 +1359,9 @@ public abstract class AbstractTypedVisitor {
 		if (kind.isInstance(type)) {
 			return (T) type;
 		} else if (type instanceof Type.Nominal) {
-			try {
-				Type.Nominal t = (Type.Nominal) type;
-				Decl.Type decl = resolver.resolveExactly(t.getName(), Decl.Type.class);
-				return asType(decl.getType(), kind);
-			} catch (NameResolver.ResolutionError e) {
-				throw new IllegalArgumentException("invalid type: " + type);
-			}
+			Type.Nominal t = (Type.Nominal) type;
+			Decl.Type decl = t.getDeclaration();
+			return asType(decl.getType(), kind);
 		} else {
 			throw new IllegalArgumentException("invalid type: " + type);
 		}

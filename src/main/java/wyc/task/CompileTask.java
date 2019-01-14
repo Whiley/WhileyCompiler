@@ -23,19 +23,23 @@ import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import wyil.stage.MoveAnalysis;
-import wyil.stage.RecursiveTypeAnalysis;
+import wyil.check.AmbiguousCoercionCheck;
+import wyil.check.DefiniteAssignmentCheck;
+import wyil.check.DefiniteUnassignmentCheck;
+import wyil.check.FlowTypeCheck;
+import wyil.check.FunctionalCheck;
+import wyil.check.StaticVariableCheck;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.transform.MoveAnalysis;
+import wyil.transform.NameResolution;
+import wyil.transform.RecursiveTypeAnalysis;
 import wybs.lang.*;
+import wybs.lang.CompilationUnit.Name;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
-import wyc.check.AmbiguousCoercionCheck;
-import wyc.check.DefiniteAssignmentCheck;
-import wyc.check.DefiniteUnassignmentCheck;
-import wyc.check.FlowTypeCheck;
-import wyc.check.FunctionalCheck;
-import wyc.check.StaticVariableCheck;
+import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wyc.util.WhileyFileResolver;
 import wycc.cfg.Configuration;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
@@ -44,7 +48,7 @@ import wycc.util.Pair;
 /**
  * Responsible for managing the process of turning source files into binary code
  * for execution. Each source file is passed through a pipeline of stages that
- * modify it in a variety of ways. The main stages are:
+ * modify it in a variet	y of ways. The main stages are:
  * <ol>
  * <li>
  * <p>
@@ -95,34 +99,13 @@ public final class CompileTask implements Build.Task {
 	private final Build.Project project;
 
 	/**
-	 * Provides mechanism for operating on types. For example, expanding them
-	 * and performing subtype tests, etc. This object may cache results to
-	 * improve performance of some operations.
-	 */
-	private final NameResolver resolver;
-
-	/**
 	 * The logger used for logging system events
 	 */
 	private Logger logger;
 
-	/**
-	 * A map of the source files currently being compiled.
-	 */
-	private final HashMap<Path.ID, Path.Entry<WhileyFile>> srcFiles = new HashMap<>();
-
-	/**
-	 * The import cache caches specific import queries to their result sets.
-	 * This is extremely important to avoid recomputing these result sets every
-	 * time. For example, the statement <code>import whiley.lang.*</code>
-	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
-	 */
-	private final HashMap<Trie, ArrayList<Path.ID>> importCache = new HashMap<>();
-
 	public CompileTask(Build.Project project) {
 		this.logger = Logger.NULL;
 		this.project = project;
-		this.resolver = new WhileyFileResolver(project);
 	}
 
 	public String id() {
@@ -134,15 +117,6 @@ public final class CompileTask implements Build.Task {
 		return project;
 	}
 
-	/**
-	 * Access the type system object this compile task is using.
-	 *
-	 * @return
-	 */
-	public NameResolver getNameResolver() {
-		return resolver;
-	}
-
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
@@ -151,66 +125,51 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
-		Runtime runtime = Runtime.getRuntime();
-		long startTime = System.currentTimeMillis();
-		long startMemory = runtime.freeMemory();
-		long tmpTime = startTime;
-		long tmpMemory = startMemory;
-
-		// ========================================================================
-		// Parse source files
-		// ========================================================================
-
-		int count = 0;
-
-		ArrayList<WhileyFile> binaryFiles = new ArrayList<>();
-		Set<Path.Entry<?>> generatedFiles = new HashSet<>();
+		// Identify the source compilation groups
+		HashSet<Path.Entry<?>> targets = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
 			if (entry.contentType() == WhileyFile.ContentType) {
-				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) entry;
-				Path.Root bindir = p.second();
-				// Parse Whiley source file. This may produce errors at this
-				// stage, which means compilation of this file cannot proceed
-				WhileyFile wf = source.read();
-				Path.Entry<WhileyFile> target = bindir.create(entry.id(), WhileyFile.BinaryContentType);
-				target.write(wf);
-				binaryFiles.add(wf);
-				generatedFiles.add(target);
-				// Register the derivation in the build graph. This is important
-				// to understand what a particular intermediate file was
-				// derived from.
-				graph.registerDerivation(source, target);
-				count++;
+				targets.addAll(graph.getChildren(entry));
 			}
 		}
+		// Compile each one in turn
+		for (Path.Entry<?> target : targets) {
+			// FIXME: there is a problem here. That's because not every parent will be in
+			// the delta. Therefore, this is forcing every file to be recompiled.
+			List sources = graph.getParents(target);
+			build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+		}
+		// Done
+		return targets;
+	}
 
-		logger.logTimedMessage("Parsed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
+		try {
+			Runtime runtime = Runtime.getRuntime();
+			long startTime = System.currentTimeMillis();
+			long startMemory = runtime.freeMemory();
+			long tmpTime = startTime;
+			long tmpMemory = startMemory;
 
-		// ========================================================================
-		// Flow Type source files
-		// ========================================================================
+			// ========================================================================
+			// Parse source files
+			// ========================================================================
+			WyilFile wf = compile(sources, target);
 
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
+			logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
+					tmpMemory - runtime.freeMemory());
 
-		FlowTypeCheck flowChecker = new FlowTypeCheck(this);
-		flowChecker.check(binaryFiles);
+			// ========================================================================
+			// Type Checking & Code Generation
+			// ========================================================================
 
-		logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+			runtime = Runtime.getRuntime();
+			tmpTime = System.currentTimeMillis();
+			tmpMemory = runtime.freeMemory();
 
-		// ========================================================================
-		// Code Generation
-		// ========================================================================
-
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
-
-		for (WhileyFile wf : binaryFiles) {
+			new NameResolution(this,wf).apply();
+			new FlowTypeCheck(this).check(wf);
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck(this).check(wf);
 			new FunctionalCheck(this).check(wf);
@@ -219,19 +178,63 @@ public final class CompileTask implements Build.Task {
 			new MoveAnalysis(this).apply(wf);
 			new RecursiveTypeAnalysis(this).apply(wf);
 			// new CoercionCheck(this);
+
+			logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
+					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
+
+			// ========================================================================
+			// Done
+			// ========================================================================
+
+			// Flush any changes to disk
+			target.flush();
+
+			long endTime = System.currentTimeMillis();
+			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
+					startMemory - runtime.freeMemory());
+		} catch(SyntaxError e) {
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			SyntacticItem item = e.getElement();
+			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+			// Determine which source file this entry is contained in
+			Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+			//
+			throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
 		}
+	}
 
-		logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+	/**
+	 * Compile one or more WhileyFiles into a given WyilFile
+	 *
+	 * @param source The source file being compiled.
+	 * @param target The target file being generated.
+	 * @return
+	 * @throws IOException
+	 */
+	private WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
+		// Read target WyilFile. This may have already been compiled in a previous run
+		// and, in such case, we are invalidating some or all of the existing file.
+		WyilFile wyil = target.read();
+		// Parse all modules
+		for(int i=0;i!=sources.size();++i) {
+			Path.Entry<WhileyFile> source = sources.get(i);
+			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
+			// FIXME: what to do with module added to heap? The problem is that this might
+			// be replaced a module, for example.
+			wyil.getModule().putUnit(wyp.read());
+		}
+		//
+		return wyil;
+	}
 
-		// ========================================================================
-		// Done
-		// ========================================================================
-
-		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)", endTime - startTime,
-				startMemory - runtime.freeMemory());
-
-		return generatedFiles;
+	private Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
+		String nameStr = name.toString();
+		//
+		for (Path.Entry<WhileyFile> e : sources) {
+			if (e.id().toString().equals(nameStr)) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("unknown unit");
 	}
 }

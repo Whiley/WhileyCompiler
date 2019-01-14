@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.util;
+package wyil.util;
 
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
+import static wyil.lang.WyilFile.*;
 
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -30,14 +30,21 @@ import static wyc.lang.WhileyFile.*;
  */
 public abstract class AbstractConsumer<T> {
 
-	public void visitWhileyFile(WhileyFile wf, T data) {
-		for (Decl decl : wf.getDeclarations()) {
+	public void visitModule(WyilFile wf, T data) {
+		Decl.Module module = wf.getModule();
+		for (Decl.Unit decl : module.getUnits()) {
+			visitDeclaration(decl, data);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
 			visitDeclaration(decl, data);
 		}
 	}
 
 	public void visitDeclaration(Decl decl, T data) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			visitUnit((Decl.Unit) decl, data);
+			break;
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl, data);
@@ -59,6 +66,11 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
+	public void visitUnit(Decl.Unit unit, T data) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl, data);
+		}
+	}
 	public void visitImport(Decl.Import decl, T data) {
 
 	}
@@ -589,6 +601,7 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitCast(Expr.Cast expr, T data) {
+		visitType(expr.getType(),data);
 		visitExpression(expr.getOperand(), data);
 	}
 
@@ -656,6 +669,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitIs(Expr.Is expr, T data) {
 		visitExpression(expr.getOperand(), data);
+		visitType(expr.getTestType(),data);
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, T data) {
@@ -774,8 +788,8 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type, data);
 			break;
-		case TYPE_unresolved:
-			visitTypeUnresolved((Type.Unresolved) type, data);
+		case TYPE_unknown:
+			visitTypeUnresolved((Type.Unknown) type, data);
 			break;
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type, data);
@@ -864,7 +878,7 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
-	public void visitTypeUnresolved(Type.Unresolved type, T data) {
+	public void visitTypeUnresolved(Type.Unknown type, T data) {
 
 	}
 

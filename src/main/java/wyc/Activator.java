@@ -22,29 +22,36 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Type;
+import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Graph;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
-import wybs.lang.NameID;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 
 public class Activator implements Module.Activator {
 
+	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
 	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
 	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
 	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+		private Trie pkg;
+		//
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
@@ -64,6 +71,7 @@ public class Activator implements Module.Activator {
 		@Override
 		public void apply(Configuration configuration) {
 			// Extract source path
+			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 		}
@@ -80,7 +88,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Type<?> getTargetType() {
-			return WhileyFile.BinaryContentType;
+			return WyilFile.ContentType;
 		}
 
 		@Override
@@ -90,7 +98,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Filter<?> getTargetFilter() {
-			return Content.filter("**", WhileyFile.BinaryContentType);
+			return Content.filter("**", WyilFile.ContentType);
 		}
 
 		@Override
@@ -104,12 +112,37 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
+		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
+			//
+			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+			// Check whether target binary exists or not
+			if (binary == null) {
+				// Doesn't exist, so create with default value
+				binary = bin.create(pkg, WyilFile.ContentType);
+				WyilFile wf = new WyilFile(binary);
+				binary.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>()));
+			}
+			//
+			for (Path.Entry<?> source : src.get(getSourceFilter())) {
+				// Register this derivation
+				graph.connect(source, binary);
+			}
+			//
+		}
+
+		@Override
 		public void execute(Build.Project project, Path.ID id, String method, Value... args) {
 			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
-			NameID name = new NameID(id, method);
+			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
-			Interpreter interpreter = new Interpreter(project, System.out);
-			RValue[] returns = interpreter.execute(name, sig, interpreter.new CallStack());
+			Interpreter interpreter = new Interpreter(System.out);
+			// Create the initial stack
+			Interpreter.CallStack stack = interpreter.new CallStack();
+			// FIXME: load relevant modules
+			// Execute the requested function
+			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {
 				for (int i = 0; i != returns.length; ++i) {
@@ -137,7 +170,7 @@ public class Activator implements Module.Activator {
 			if (suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
 			} else if (suffix.equals("wyil")) {
-				e.associate(WhileyFile.BinaryContentType, null);
+				e.associate(WyilFile.ContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
 			}
@@ -169,7 +202,7 @@ public class Activator implements Module.Activator {
 		context.register(Build.Platform.class, WHILEY_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
-		context.register(Content.Type.class, WhileyFile.BinaryContentType);
+		context.register(Content.Type.class, WyilFile.ContentType);
 		// Done
 		return new Module() {
 			// what goes here?

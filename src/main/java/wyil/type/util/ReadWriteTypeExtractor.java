@@ -13,32 +13,30 @@
 // limitations under the License.
 package wyil.type.util;
 
-import wyc.lang.WhileyFile.Type;
-import wyc.lang.WhileyFile.SemanticType.Array;
-import wyc.lang.WhileyFile.SemanticType.Atom;
-import wyc.lang.WhileyFile.SemanticType.Record;
-import wyc.lang.WhileyFile.SemanticType.Reference;
 import wyc.util.ErrorMessages;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.util.AbstractTypeCombinator.LinkageStack;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.SemanticType.Array;
+import wyil.lang.WyilFile.SemanticType.Atom;
+import wyil.lang.WyilFile.SemanticType.Record;
+import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
 
 /**
  * <p>
@@ -98,11 +96,9 @@ public class ReadWriteTypeExtractor {
 	public static final Combinator<SemanticType.Record> READABLE_RECORD = new ReadableRecordCombinator();
 	public static final Combinator<SemanticType.Record> WRITEABLE_RECORD = new WriteableRecordCombinator();
 	//
-	private final NameResolver resolver;
 	private final SubtypeOperator subtypeOperator;
 
-	public ReadWriteTypeExtractor(NameResolver resolver, SubtypeOperator subtypeOperator) {
-		this.resolver = resolver;
+	public ReadWriteTypeExtractor(SubtypeOperator subtypeOperator) {
 		this.subtypeOperator = subtypeOperator;
 	}
 
@@ -178,12 +174,8 @@ public class ReadWriteTypeExtractor {
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Nominal nominal) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(nominal.getName(), Decl.Type.class);
-			return toDisjunctiveNormalForm(decl.getVariableDeclaration().getType());
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, nominal.getName().toString()), nominal);
-		}
+		Decl.Type decl = nominal.getDeclaration();
+		return toDisjunctiveNormalForm(decl.getVariableDeclaration().getType());
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(SemanticType.Record type) {
@@ -280,13 +272,7 @@ public class ReadWriteTypeExtractor {
 		SemanticType.Atom[] negatives = Arrays.copyOf(type.negatives, type.negatives.length);
 		SemanticType.Intersection lhs = new SemanticType.Intersection(positives);
 		SemanticType.Union rhs = new SemanticType.Union(negatives);
-		try {
-			//
-			return subtypeOperator.isVoid(new SemanticType.Difference(lhs, rhs), lifetimes);
-		} catch (ResolutionError e) {
-			// FIXME: not quite sure what the best way to handle this is.
-			throw new RuntimeException(e);
-		}
+		return subtypeOperator.isVoid(new SemanticType.Difference(lhs, rhs), lifetimes);
 	}
 
 	protected <T extends SemanticType.Atom> T construct(Conjunct type, LifetimeRelation lifetimes, Combinator<T> kind) {
@@ -605,33 +591,27 @@ public class ReadWriteTypeExtractor {
 		 */
 		private SemanticType.Field[] determinePivotFields(Tuple<? extends SemanticType.Field> lhsFields,
 				Tuple<? extends SemanticType.Field> rhsFields, LifetimeRelation lifetimes, SubtypeOperator subtyping) {
-			try {
-				SemanticType.Field[] pivots = new SemanticType.Field[lhsFields.size()];
-				//
-				for (int i = 0; i != lhsFields.size(); ++i) {
-					SemanticType.Field lhsField = lhsFields.get(i);
-					Identifier lhsFieldName = lhsField.getName();
-					for (int j = 0; j != rhsFields.size(); ++j) {
-						SemanticType.Field rhsField = rhsFields.get(j);
-						Identifier rhsFieldName = rhsField.getName();
-						if (lhsFieldName.equals(rhsFieldName)) {
-							// Matched field, now compute its type.
-							SemanticType type = new SemanticType.Difference(lhsField.getType(), rhsField.getType());
-							// Check whether is a pivot or not
-							if (!subtyping.isVoid(type, lifetimes)) {
-								// Yes, is a pivot
-								pivots[i] = new SemanticType.Field(lhsFieldName, type);
-							}
-							break;
+			SemanticType.Field[] pivots = new SemanticType.Field[lhsFields.size()];
+			//
+			for (int i = 0; i != lhsFields.size(); ++i) {
+				SemanticType.Field lhsField = lhsFields.get(i);
+				Identifier lhsFieldName = lhsField.getName();
+				for (int j = 0; j != rhsFields.size(); ++j) {
+					SemanticType.Field rhsField = rhsFields.get(j);
+					Identifier rhsFieldName = rhsField.getName();
+					if (lhsFieldName.equals(rhsFieldName)) {
+						// Matched field, now compute its type.
+						SemanticType type = new SemanticType.Difference(lhsField.getType(), rhsField.getType());
+						// Check whether is a pivot or not
+						if (!subtyping.isVoid(type, lifetimes)) {
+							// Yes, is a pivot
+							pivots[i] = new SemanticType.Field(lhsFieldName, type);
 						}
+						break;
 					}
 				}
-				return pivots;
-			} catch (NameResolver.ResolutionError e) {
-				// FIXME: this is a kludge for now. Fortunately, this exception should go away
-				// when resolution is finally fixed 8)
-				throw new RuntimeException(e);
 			}
+			return pivots;
 		}
 
 		/**

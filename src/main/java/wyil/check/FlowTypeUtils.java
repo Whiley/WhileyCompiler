@@ -11,40 +11,40 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
-import static wyc.lang.WhileyFile.SEMTYPE_array;
-import static wyc.lang.WhileyFile.SEMTYPE_record;
-import static wyc.lang.WhileyFile.SEMTYPE_reference;
-import static wyc.lang.WhileyFile.SEMTYPE_staticreference;
-import static wyc.lang.WhileyFile.SEMTYPE_union;
-import static wyc.lang.WhileyFile.SEMTYPE_intersection;
-import static wyc.lang.WhileyFile.SEMTYPE_difference;
-import static wyc.lang.WhileyFile.TYPE_void;
-import static wyc.lang.WhileyFile.TYPE_null;
-import static wyc.lang.WhileyFile.TYPE_bool;
-import static wyc.lang.WhileyFile.TYPE_byte;
-import static wyc.lang.WhileyFile.TYPE_int;
-import static wyc.lang.WhileyFile.TYPE_nominal;
-import static wyc.lang.WhileyFile.TYPE_array;
-import static wyc.lang.WhileyFile.TYPE_record;
-import static wyc.lang.WhileyFile.TYPE_reference;
-import static wyc.lang.WhileyFile.TYPE_staticreference;
-import static wyc.lang.WhileyFile.TYPE_union;
-import static wyc.lang.WhileyFile.TYPE_function;
-import static wyc.lang.WhileyFile.TYPE_method;
-import static wyc.lang.WhileyFile.STMT_assign;
-import static wyc.lang.WhileyFile.STMT_dowhile;
-import static wyc.lang.WhileyFile.STMT_if;
-import static wyc.lang.WhileyFile.STMT_ifelse;
-import static wyc.lang.WhileyFile.STMT_namedblock;
-import static wyc.lang.WhileyFile.STMT_switch;
-import static wyc.lang.WhileyFile.STMT_while;
 import static wyc.util.ErrorMessages.INVALID_LVAL_EXPRESSION;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.SEMTYPE_array;
+import static wyil.lang.WyilFile.SEMTYPE_difference;
+import static wyil.lang.WyilFile.SEMTYPE_intersection;
+import static wyil.lang.WyilFile.SEMTYPE_record;
+import static wyil.lang.WyilFile.SEMTYPE_reference;
+import static wyil.lang.WyilFile.SEMTYPE_staticreference;
+import static wyil.lang.WyilFile.SEMTYPE_union;
+import static wyil.lang.WyilFile.STMT_assign;
+import static wyil.lang.WyilFile.STMT_dowhile;
+import static wyil.lang.WyilFile.STMT_if;
+import static wyil.lang.WyilFile.STMT_ifelse;
+import static wyil.lang.WyilFile.STMT_namedblock;
+import static wyil.lang.WyilFile.STMT_switch;
+import static wyil.lang.WyilFile.STMT_while;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
+import static wyil.lang.WyilFile.TYPE_void;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,20 +53,19 @@ import java.util.Map;
 import java.util.Set;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameResolver;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyc.check.FlowTypeUtils.Environment;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.LVal;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Stmt;
-import wyc.lang.WhileyFile.Type;
-import wyc.lang.WhileyFile.SemanticType.Record;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.LVal;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.SemanticType.Record;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.*;
 
@@ -277,7 +276,7 @@ public class FlowTypeUtils {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getSignature() instanceof Decl.Method) {
+			if (e.getDeclaration() instanceof Decl.Method) {
 				// This expression is definitely not pure
 				return false;
 			}
