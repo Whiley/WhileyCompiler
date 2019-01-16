@@ -228,7 +228,7 @@ public final class CompileTask implements Build.Task {
 	}
 
 	private Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
-		String nameStr = name.toString();
+		String nameStr = name.toString().replace("::", "/");
 		//
 		for (Path.Entry<WhileyFile> e : sources) {
 			if (e.id().toString().equals(nameStr)) {
