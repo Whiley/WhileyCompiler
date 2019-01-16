@@ -193,13 +193,18 @@ public final class CompileTask implements Build.Task {
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
 		} catch(SyntaxError e) {
-			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			SyntacticItem item = e.getElement();
-			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-			// Determine which source file this entry is contained in
-			Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
 			//
-			throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+			SyntacticItem item = e.getElement();
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			if(e.getEntry().contentType() == WyilFile.ContentType) {
+				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+				// Determine which source file this entry is contained in
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+				//
+				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+			} else {
+				throw e;
+			}
 		}
 	}
 
