@@ -4166,7 +4166,7 @@ public class WhileyFileParser {
 			} else {
 				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", parent.getEntry(), null);
+				throw new SyntaxError("unexpected end-of-file", source.getEntry(), null);
 			}
 		}
 	}
@@ -4438,11 +4438,11 @@ public class WhileyFileParser {
 	}
 
 	private void syntaxError(String msg, SyntacticItem e) {
-		throw new SyntaxError(msg, parent.getEntry(), e);
+		throw new SyntaxError(msg, source.getEntry(), e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, parent.getEntry(), new Attribute.Span(null,t.start,t.end()));
+		throw new SyntaxError(msg, source.getEntry(), new Attribute.Span(null,t.start,t.end()));
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
