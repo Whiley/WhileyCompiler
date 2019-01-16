@@ -44,11 +44,7 @@ There are several ways to get started with Whiley:
 
 1) You can run it directly in your web browser.
 
-2) Or, you can download and run the executable Jar.
-
-3) Or, you can download and setup the Whiley Development Kit.
-
-4) You can install the Eclipse Plugin.
+2) Or, you can download and setup the Whiley Development Kit.
 
 The Eclipse plugin is the easiest way to get started with Whiley (see
 instructions below).  If you don't use Eclipse, another simple option
@@ -57,32 +53,12 @@ like to download the Whiley Development Kit (WDK), which includes the
 source code for the compiler/runtime and various scripts to simplify
 compiling and running Whiley programs from the command-line.
 
-2.1 Whiley Play
+2.1 Whiley Labs
 ----------------------------------------------------------------------
 
-To run Whiley in your web-browser, goto http://whiley.org/play/
+To run Whiley in your web-browser, goto http://whileylabs.com
 
-2.2 Whiley Executable Jar
-----------------------------------------------------------------------
-If you're running on a Windows system without cygwin, or you're having
-trouble getting the wycc scripts to work, then a useful alternative is
-to run the executable jar file directly.  First, download the
-wycc-all-vX.Y.Z.jar file from http://whiley.org/downloads.  Then, you
-can compile Whiley files as follows:
-
-% cd examples
-% java -jar wycc-all-vX.Y.Z.jar compile hello-world.whiley
-
-(here, vX.Y.Z is the version number of the distribution)
-
-Then, to run the program you would do this:
-
-% java -jar wycc-all-vX.Y.Z.jar run hello-world
-Hello World
-
-(note: under Mac OS and UNIX you will want to replace the ';' with a ':')
-
-2.3 Whiley Development Kit (WDK)
+2.2 Whiley Development Kit (WDK)
 ----------------------------------------------------------------------
 To install the Whiley Development Kit, first download it from
 http://whiley.org/downloads.  Then, unpack the tarball into an
