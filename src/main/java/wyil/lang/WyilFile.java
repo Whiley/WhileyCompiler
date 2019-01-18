@@ -1953,7 +1953,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class StaticVariableAccess extends AbstractExpr implements LVal, Expr {
+		public static class StaticVariableAccess extends AbstractExpr implements LVal, Expr, Linkable {
 			public StaticVariableAccess(Type type, Name name, Ref<Decl.StaticVariable> declaration) {
 				super(EXPR_staticvariable, type, name, declaration);
 			}
@@ -1962,6 +1962,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) get(1);
 			}
 
+			@Override
 			public Decl.StaticVariable getDeclaration() {
 				Ref<Decl.StaticVariable> ref = (Ref<Decl.StaticVariable>) get(2);
 				return ref.get();
@@ -2040,7 +2041,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator {
+		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Linkable {
 
 			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
 					Tuple<Ref<Decl.Callable>> declarations) {
@@ -2131,6 +2132,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				throw new IllegalArgumentException();
 			}
 
+			@Override
 			public Decl.Callable getDeclaration() {
 				int selector = new BigInteger(data).intValue();
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
@@ -3397,7 +3399,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 
-		public static class LambdaAccess extends AbstractSyntacticItem implements Expr {
+		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Linkable {
 
 			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations) {
 				super(EXPR_lambdaaccess, new byte[0], name, parameters, declarations);
@@ -3443,6 +3445,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				throw new IllegalArgumentException();
 			}
 
+			@Override
 			public Decl.Callable getDeclaration() {
 				int selector = new BigInteger(data).intValue();
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
@@ -4350,7 +4353,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Nominal extends AbstractSemanticType implements Type {
+		public static class Nominal extends AbstractSemanticType implements Linkable, Type {
 
 			public Nominal(Name name, Ref<Decl.Type> declaration) {
 				super(TYPE_nominal, name, declaration);
@@ -4364,6 +4367,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				operands[1] = getHeap().allocate(new Ref<>(declaration));
 			}
 
+			@Override
 			public Decl.Type getDeclaration() {
 				Ref<Decl.Type> ref = (Ref<Decl.Type>) get(1);
 				return ref.get();
@@ -5075,6 +5079,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
 			}
 		}
+	}
+
+	// ============================================================
+	// Linkable
+	// ============================================================
+
+	public interface Linkable extends SyntacticItem {
+		/**
+		 * Get the declaration to which this linable item refers.
+		 *
+		 * @return
+		 */
+		Decl.Named getDeclaration();
 	}
 
 	// ============================================================
