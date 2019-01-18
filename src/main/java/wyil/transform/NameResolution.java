@@ -511,6 +511,7 @@ public class NameResolution {
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
+
 			switch (item.getOpcode()) {
 			case ITEM_ref:
 				Ref<?> ref = (Ref<?>) item;
@@ -519,37 +520,35 @@ public class NameResolution {
 					// This is a deference to a named declaration in a different module. This will
 					// need to be patched.
 					return REF_UNKNOWN;
+				} else {
+					return super.allocate(item);
 				}
-				break;
-			case EXPR_staticvariable: {
-				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
-				break;
-			}
-			case EXPR_invoke: {
-				Expr.Invoke e = (Expr.Invoke) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
-				break;
-			}
-			case EXPR_lambdaaccess: {
-				Expr.LambdaAccess e = (Expr.LambdaAccess) item;
-				patches.add(new Patch(e.getDeclaration().getQualifiedName(), e));
-				break;
-			}
-			case TYPE_nominal: {
-				Type.Nominal t = (Type.Nominal) item;
-				patches.add(new Patch(t.getDeclaration().getQualifiedName(), t));
-				break;
-			}
 			case DECL_function:
-			case DECL_method:
+			case DECL_method: {
 				if (stubsOnly) {
 					// drop the body from the function, making it a stub
 					return allocateStub((Decl.FunctionOrMethod) item);
+				} else {
+					return super.allocate(item);
 				}
-				break;
 			}
-			return super.allocate(item);
+			// The linkable items require patching
+			case EXPR_staticvariable:
+			case EXPR_invoke:
+			case EXPR_lambdaaccess:
+			case TYPE_nominal: {
+				Linkable l = (Linkable) item;
+				item = super.allocate(item);
+				// Register patch
+				patches.add(new Patch(l.getDeclaration().getQualifiedName(), item));
+				// Done
+				return item;
+			}
+			default:
+				return super.allocate(item);
+			}
+			//
+
 		}
 
 		public List<Patch> getPatches() {
@@ -565,7 +564,7 @@ public class NameResolution {
 		private SyntacticItem allocateStub(Decl.FunctionOrMethod fm) {
 			SyntacticItem item = map.get(fm);
 			if (item != null) {
-				// item is already allocated as a stub, there must return that.
+				// item is already allocated as a stub, therefore must return that.
 				return item;
 			} else if (fm instanceof Decl.Function) {
 				// Create function stub
