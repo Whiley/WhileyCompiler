@@ -161,7 +161,7 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			StdProject project = new StdProject(Arrays.asList(root));
+			StdProject project = new StdProject(root);
 			// Add build rules
 			addCompilationRules(project,root,verify);
 			// Create empty build graph

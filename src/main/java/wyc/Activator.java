@@ -29,6 +29,7 @@ import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
+import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
@@ -133,14 +134,14 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
-		public void execute(Build.Project project, Path.ID id, String method, Value... args) {
+		public void execute(Build.Project project, Path.ID id, String method, Value... args) throws IOException {
+			// Construct method's qualified name and signature
 			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
 			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
 			Interpreter interpreter = new Interpreter(System.out);
 			// Create the initial stack
-			Interpreter.CallStack stack = interpreter.new CallStack();
-			// FIXME: load relevant modules
+			Interpreter.CallStack stack = initialise(project,interpreter);;
 			// Execute the requested function
 			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
@@ -152,6 +153,28 @@ public class Activator implements Module.Activator {
 					System.out.println(returns[i]);
 				}
 			}
+		}
+
+		private Interpreter.CallStack initialise(Build.Project project, Interpreter interpreter) throws IOException {
+			// Determine target root where compiled WyIL files live
+			Path.Root bin = getTargetRoot(project.getRoot());
+			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+			//
+			Interpreter.CallStack stack = interpreter.new CallStack();
+			// Load the relevant WyIL module
+			stack.load(binary.read());
+			// Load all package dependencies
+			for(Build.Package p : project.getPackages()) {
+				// FIXME: is this the right way to determine the binary file from a given
+				// package?
+				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+				//
+				for(Path.Entry<WyilFile> e : entries) {
+					stack.load(e.read());
+				}
+			}
+			//
+			return stack;
 		}
 	};
 
