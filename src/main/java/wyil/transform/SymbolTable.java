@@ -126,8 +126,18 @@ public class SymbolTable {
 	 * @param name
 	 * @return
 	 */
-	public List<Decl.Named> getDeclarations(QualifiedName name) {
-		return symbolTable.get(name.getUnit()).getDeclarations(name.getName());
+	public List<Decl.Named> getRegisteredDeclarations(QualifiedName name) {
+		return symbolTable.get(name.getUnit()).getRegisteredDeclarations(name.getName());
+	}
+
+	/**
+	 * Get the available declarations associated with a given symbol.
+	 *
+	 * @param name
+	 * @return
+	 */
+	public List<Decl.Named> getAvailableDeclarations(QualifiedName name) {
+		return symbolTable.get(name.getUnit()).getAvailableDeclarations(name.getName());
 	}
 
 	/**
@@ -195,7 +205,15 @@ public class SymbolTable {
 		 * @param name
 		 * @return
 		 */
-		public List<Decl.Named> getDeclarations(Identifier name);
+		public List<Decl.Named> getRegisteredDeclarations(Identifier name);
+
+		/**
+		 * Get the available declarations associated with a given symbol
+		 *
+		 * @param name
+		 * @return
+		 */
+		public List<Decl.Named> getAvailableDeclarations(Identifier name);
 	}
 
 	private static abstract class AbstractGroup<T extends Entry> implements Group {
@@ -216,8 +234,13 @@ public class SymbolTable {
 		}
 
 		@Override
-		public List<Named> getDeclarations(Identifier name) {
+		public List<Named> getRegisteredDeclarations(Identifier name) {
 			return entries.get(name).getDeclarations();
+		}
+
+		@Override
+		public List<Named> getAvailableDeclarations(Identifier name) {
+			return entries.get(name).getAvailable();
 		}
 	}
 

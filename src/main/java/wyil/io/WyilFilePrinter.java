@@ -34,6 +34,12 @@ import wyil.util.AbstractVisitor;
  */
 public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private final PrintWriter out;
+	/**
+	 * Show qualified names at all places where names are resolved (e.g. at
+	 * invocations).
+	 */
+	private boolean showQualifiedNames = true;
+
 	private boolean verbose = false;
 
 	public WyilFilePrinter(PrintWriter visitr) {
@@ -520,7 +526,11 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Integer indent) {
-		out.print(expr.getName() + "(");
+		if(showQualifiedNames) {
+			out.print(expr.getDeclaration().getQualifiedName() + "(");
+		} else {
+			out.print(expr.getName() + "(");
+		}
 		Tuple<Expr> args = expr.getOperands();
 		for (int i = 0; i != args.size(); ++i) {
 			if (i != 0) {

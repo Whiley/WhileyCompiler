@@ -354,7 +354,7 @@ public class NameResolution {
 				// FIXME: want to optimise so don't bring in the whole type unless we are doing
 				// link-time analysis or generating a single binary.
 				ArrayList<Decl.Named> imported = new ArrayList<>();
-				for (Decl.Named d : symbolTable.getDeclarations(name)) {
+				for (Decl.Named d : symbolTable.getRegisteredDeclarations(name)) {
 					imported.add((Decl.Named) importer.allocate(d));
 				}
 				symbolTable.addAvailable(name, imported);
@@ -406,7 +406,7 @@ public class NameResolution {
 		 * @return
 		 */
 		private <T extends Decl> T select(QualifiedName name, Class<T> kind) {
-			List<Decl.Named> declarations = symbolTable.getDeclarations(name);
+			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
 			Identifier id = name.getName();
 			for (int i = 0; i != declarations.size(); ++i) {
 				Decl.Named d = declarations.get(i);
@@ -429,7 +429,7 @@ public class NameResolution {
 		 * @return
 		 */
 		private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind) {
-			List<Decl.Named> declarations = symbolTable.getDeclarations(name);
+			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
 			Identifier id = name.getName();
 			// Determine how many matches
 			int count = 0;
