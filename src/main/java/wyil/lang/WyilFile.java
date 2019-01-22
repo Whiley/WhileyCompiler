@@ -3905,6 +3905,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public Type substitute(Map<Identifier,Identifier> binding);
 
+		/**
+		 * Return a canonical string which embodies this type.
+		 *
+		 * @return
+		 */
+		public String toCanonicalString();
+
 		public interface Atom extends Type, SemanticType.Atom {
 		}
 
@@ -3952,6 +3959,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
+				return "any";
+			}
+
+			@Override
+			public String toCanonicalString() {
 				return "any";
 			}
 		}
@@ -4003,6 +4015,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "void";
 			}
+
+			@Override
+			public String toCanonicalString() {
+				return "void";
+			}
 		}
 
 		/**
@@ -4037,6 +4054,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "null";
 			}
+
+			@Override
+			public String toCanonicalString() {
+				return "null";
+			}
 		}
 
 		/**
@@ -4062,6 +4084,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
+				return "bool";
+			}
+
+			@Override
+			public String toCanonicalString() {
 				return "bool";
 			}
 		}
@@ -4095,6 +4122,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "byte";
 			}
+
+			@Override
+			public String toCanonicalString() {
+				return "byte";
+			}
 		}
 
 		/**
@@ -4122,6 +4154,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
+				return "int";
+			}
+
+			@Override
+			public String toCanonicalString() {
 				return "int";
 			}
 		}
@@ -4163,6 +4200,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public Type.Array clone(SyntacticItem[] operands) {
 				return new Type.Array((Type) operands[0]);
+			}
+
+			@Override
+			public String toString() {
+				return getElement().toString() + "[]";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return canonicalBraceAsNecessary(getElement()) + "[]";
 			}
 		}
 
@@ -4226,6 +4273,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return new Type.Reference((Type) operands[0]);
 				} else {
 					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
+				}
+			}
+
+
+			@Override
+			public String toString() {
+				if(hasLifetime()) {
+					return "&" + getLifetime() + ":" + getElement().toString();
+				} else {
+					return "&" + getElement().toString();
+				}
+			}
+
+			@Override
+			public String toCanonicalString() {
+				if(hasLifetime()) {
+					return "&" + getLifetime() + ":" + canonicalBraceAsNecessary(getElement());
+				} else {
+					return "&" + canonicalBraceAsNecessary(getElement());
 				}
 			}
 		}
@@ -4316,6 +4382,39 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				//
 				return fields;
 			}
+
+			@Override
+			public String toString() {
+				Tuple<Type.Field> fields = getFields();
+				String r = "";
+				//
+				for (int i = 0; i != fields.size(); ++i) {
+					Type.Field field = fields.get(i);
+					if(i!=0) {
+						r += ",";
+					}
+					field.toString();
+				}
+				//
+				return "{" + r + "}";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				Tuple<Type.Field> fields = getFields();
+				String r = "";
+				// FIXME: should I sort this?
+				//
+				for (int i = 0; i != fields.size(); ++i) {
+					Type.Field field = fields.get(i);
+					if(i!=0) {
+						r += ",";
+					}
+					r += field.toCanonicalString();
+				}
+				//
+				return "{" + r + "}";
+			}
 		}
 
 		public static class Field extends SemanticType.Field {
@@ -4337,6 +4436,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Type.Field((Identifier) operands[0], (Type) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return getType().toString() + " " + getName();
+			}
+
+			public String toCanonicalString() {
+				return getType().toString() + " " + getName();
 			}
 		}
 
@@ -4387,6 +4495,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getName().toString();
 			}
+
+			@Override
+			public String toCanonicalString() {
+				return getDeclaration().getQualifiedName().toString();
+			}
 		}
 
 
@@ -4430,6 +4543,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				} else {
 					return "?";
 				}
+			}
+
+			@Override
+			public String toCanonicalString() {
+				throw new UnsupportedOperationException();
 			}
 		}
 
@@ -4494,6 +4612,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				return r;
 			}
+
+			@Override
+			public String toCanonicalString() {
+				String r = "";
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += "|";
+					}
+					r += "(" + get(i).toCanonicalString() + ")";
+				}
+				return r;
+			}
 		}
 
 		/**
@@ -4544,6 +4674,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public String toString() {
 				return "function" + getParameters().toString() + "->" + getReturns();
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return "function" + WyilFile.toCanonicalString(getParameters()) + "->"
+						+ WyilFile.toCanonicalString(getReturns());
 			}
 		}
 
@@ -4627,6 +4763,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return r + getParameters().toString() + "->" + getReturns();
 			}
 
+			@Override
+			public String toCanonicalString() {
+				Tuple<Identifier> captured = getCapturedLifetimes();
+				Tuple<Identifier> lifetimes = getLifetimeParameters();
+				String r = "method";
+				if (captured.size() != 0) {
+					r += "[" + captured.toBareString() + "]";
+				}
+				if (lifetimes.size() != 0) {
+					r += "<" + lifetimes.toBareString() + ">";
+				}
+				return r + WyilFile.toCanonicalString(getParameters()) + "->"
+						+ WyilFile.toCanonicalString(getReturns());
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Method clone(SyntacticItem[] operands) {
@@ -4688,6 +4839,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "property" + getParameters().toString() + "->" + getReturns();
 			}
 
+			@Override
+			public String toCanonicalString() {
+				return "property" + WyilFile.toCanonicalString(getParameters()) + "->"
+						+ WyilFile.toCanonicalString(getReturns());
+			}
 		}
 
 		public static class Unknown extends AbstractType implements Callable {
@@ -4718,6 +4874,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public String toString() {
 				return "(???)->(???)";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				throw new UnsupportedOperationException();
 			}
 		}
 	}
@@ -4754,6 +4915,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 		//
 		return types;
+	}
+
+	private static String toCanonicalString(Tuple<Type> types) {
+		String r = "(";
+		for (int i = 0; i != types.size(); ++i) {
+			if (i != 0) {
+				r += ",";
+			}
+			r += types.get(i).toCanonicalString();
+		}
+		return r + ")";
 	}
 
 	// ============================================================
@@ -5215,6 +5387,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// ==============================================================================
 	//
 	// ==============================================================================
+
+	private static String canonicalBraceAsNecessary(Type type) {
+		String str = type.toCanonicalString();
+		if (needsBraces(type)) {
+			return "(" + str + ")";
+		} else {
+			return str;
+		}
+	}
 
 	private static String braceAsNecessary(Type type) {
 		String str = type.toString();

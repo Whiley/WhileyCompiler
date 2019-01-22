@@ -1330,7 +1330,7 @@ public class Interpreter {
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 
 	public final class CallStack {
-		private final HashMap<QualifiedName, Map<Type.Callable,Decl.Callable>> callables;
+		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
 		private final HashMap<QualifiedName, RValue> statics;
 		private final HashMap<Identifier, RValue> locals;
 		private final Decl.Named context;
@@ -1366,7 +1366,9 @@ public class Interpreter {
 		}
 
 		public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
-			return callables.get(name).get(signature);
+			// NOTE: must use toCanonicalString() here in order to guarantee that we get the
+			// same string as at the declaration site.
+			return callables.get(name).get(signature.toCanonicalString());
 		}
 
 		public CallStack enter(Decl.Named context) {
@@ -1423,12 +1425,13 @@ public class Interpreter {
 					case DECL_method:
 					case DECL_property:
 						Decl.Callable decl = (Decl.Callable) d;
-						Map<Type.Callable,Decl.Callable> map = callables.get(decl.getQualifiedName());
+						Map<String,Decl.Callable> map = callables.get(decl.getQualifiedName());
 						if(map == null) {
 							map = new HashMap<>();
 							callables.put(decl.getQualifiedName(),map);
 						}
-						map.put(decl.getType(), decl);
+						// NOTE: must use canonical string here to ensure unique signature for lookup.
+						map.put(decl.getType().toCanonicalString(), decl);
 						break;
 					}
 				}
