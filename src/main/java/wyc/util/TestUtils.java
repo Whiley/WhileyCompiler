@@ -66,6 +66,33 @@ import wytp.provers.AutomatedTheoremProver;
 public class TestUtils {
 
 	/**
+	 * Default implementation of a content registry. This associates whiley and
+	 * wyil files with their respective content types.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Registry implements Content.Registry {
+		@Override
+		public void associate(Path.Entry e) {
+			String suffix = e.suffix();
+
+			if (suffix.equals("whiley")) {
+				e.associate(WhileyFile.ContentType, null);
+			} else if (suffix.equals("wyil")) {
+				e.associate(WyilFile.ContentType, null);
+			} else if (suffix.equals("wyal")) {
+				e.associate(WyalFile.ContentType, null);
+			}
+		}
+
+		@Override
+		public String suffix(Content.Type<?> t) {
+			return t.getSuffix();
+		}
+	}
+
+	/**
 	 * Parse a Whiley type from a string.
 	 *
 	 * @param from
@@ -143,7 +170,7 @@ public class TestUtils {
 	/**
 	 * A simple default registry which knows about whiley files and wyil files.
 	 */
-	private static final Content.Registry registry = new wyc.Activator.Registry();
+	private static final Content.Registry registry = new Registry();
 
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.

@@ -66,9 +66,6 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WyilFile> {
-	public MoveAnalysis(Build.Task builder) {
-
-	}
 
 	@Override
 	public void apply(WyilFile module) {

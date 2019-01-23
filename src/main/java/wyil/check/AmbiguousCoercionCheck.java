@@ -16,6 +16,7 @@ package wyil.check;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.SyntacticItem;
@@ -81,7 +82,7 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  */
 public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 
-	public AmbiguousCoercionCheck(CompileTask builder) {
+	public AmbiguousCoercionCheck() {
 		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 

@@ -3,6 +3,7 @@ package wyil.check;
 import java.util.HashSet;
 import java.util.Set;
 
+import wybs.lang.Build;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
 import wyil.lang.WyilFile;
@@ -14,9 +15,6 @@ import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
-
-	public StaticVariableCheck(CompileTask builder) {
-	}
 
 	public void check(WyilFile wf) {
 		visitModule(wf, null);

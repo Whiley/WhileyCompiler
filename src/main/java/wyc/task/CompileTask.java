@@ -145,6 +145,11 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
+		build(logger, project, target, sources);
+	}
+
+	public static void build(Logger logger, Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+			throws IOException {
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			long startTime = System.currentTimeMillis();
@@ -168,15 +173,15 @@ public final class CompileTask implements Build.Task {
 			tmpTime = System.currentTimeMillis();
 			tmpMemory = runtime.freeMemory();
 
-			new NameResolution(this,wf).apply();
-			new FlowTypeCheck(this).check(wf);
+			new NameResolution(project,wf).apply();
+			new FlowTypeCheck().check(wf);
 			new DefiniteAssignmentCheck().check(wf);
-			new DefiniteUnassignmentCheck(this).check(wf);
-			new FunctionalCheck(this).check(wf);
-			new StaticVariableCheck(this).check(wf);
-			new AmbiguousCoercionCheck(this).check(wf);
-			new MoveAnalysis(this).apply(wf);
-			new RecursiveTypeAnalysis(this).apply(wf);
+			new DefiniteUnassignmentCheck().check(wf);
+			new FunctionalCheck().check(wf);
+			new StaticVariableCheck().check(wf);
+			new AmbiguousCoercionCheck().check(wf);
+			new MoveAnalysis().apply(wf);
+			new RecursiveTypeAnalysis().apply(wf);
 			// new CoercionCheck(this);
 
 			logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
@@ -216,7 +221,7 @@ public final class CompileTask implements Build.Task {
 	 * @return
 	 * @throws IOException
 	 */
-	private WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
+	private static WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
 		// Read target WyilFile. This may have already been compiled in a previous run
 		// and, in such case, we are invalidating some or all of the existing file.
 		WyilFile wyil = target.read();
@@ -232,7 +237,7 @@ public final class CompileTask implements Build.Task {
 		return wyil;
 	}
 
-	private Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
+	private static Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
 		String nameStr = name.toString().replace("::", "/");
 		//
 		for (Path.Entry<WhileyFile> e : sources) {

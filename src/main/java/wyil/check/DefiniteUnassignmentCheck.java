@@ -24,6 +24,7 @@ import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import wybs.lang.Build;
 import wybs.lang.SyntaxError;
 
 /**
@@ -67,9 +68,6 @@ import wybs.lang.SyntaxError;
  */
 public class DefiniteUnassignmentCheck
 		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
-
-	public DefiniteUnassignmentCheck(CompileTask builder) {
-	}
 
 	/**
 	 * NOTE: the following is left in place to facilitate testing for the final

@@ -178,41 +178,6 @@ public class Activator implements Module.Activator {
 		}
 	};
 
-	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Registry implements Content.Registry {
-		@Override
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-
-			if (suffix.equals("whiley")) {
-				e.associate(WhileyFile.ContentType, null);
-			} else if (suffix.equals("wyil")) {
-				e.associate(WyilFile.ContentType, null);
-			} else if (suffix.equals("wyal")) {
-				e.associate(WyalFile.ContentType, null);
-			}
-		}
-
-		@Override
-		public String suffix(Content.Type<?> t) {
-			return t.getSuffix();
-		}
-	}
-
-	/**
-	 * The master project content type registry. This is needed for the build
-	 * system to determine the content type of files it finds on the file
-	 * system.
-	 */
-	public final Content.Registry registry = new Registry();
-
-
 	// =======================================================================
 	// Start
 	// =======================================================================

@@ -97,8 +97,8 @@ public class NameResolution {
 
 	private final Build.Project project;
 
-	public NameResolution(Build.Task builder, WyilFile target) throws IOException {
-		project = builder.project();
+	public NameResolution(Build.Project project, WyilFile target) throws IOException {
+		this.project = project;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
 		this.resolver = new Resolver();

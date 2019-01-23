@@ -13,6 +13,7 @@
 // limitations under the License.
 package wyil.check;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyc.task.CompileTask;
@@ -72,9 +73,6 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
-
-	public FunctionalCheck(CompileTask builder) {
-	}
 
 	public void check(WyilFile file) {
 		visitModule(file, null);

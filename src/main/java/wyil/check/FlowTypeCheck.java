@@ -98,14 +98,12 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class FlowTypeCheck {
-	private final CompileTask builder;
 	private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final ConcreteTypeExtractor concreteTypeExtractor;
 	private final ReadWriteTypeExtractor rwTypeExtractor;
 
-	public FlowTypeCheck(CompileTask builder) {
-		this.builder = builder;
+	public FlowTypeCheck() {
 		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest();
 		this.concreteTypeExtractor = new ConcreteTypeExtractor(strictEmptiness);
 		this.relaxedSubtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());

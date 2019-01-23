@@ -54,10 +54,6 @@ import java.util.Set;
  */
 public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Build.Stage<WyilFile> {
 
-	public RecursiveTypeAnalysis(CompileTask builder) {
-
-	}
-
 	@Override
 	public void apply(WyilFile module) {
 		visitModule(module, new HashSet<>());
