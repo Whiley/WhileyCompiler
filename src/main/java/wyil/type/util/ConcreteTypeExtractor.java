@@ -13,19 +13,19 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyc.lang.WhileyFile.SEMTYPE_array;
-import static wyc.lang.WhileyFile.SEMTYPE_difference;
-import static wyc.lang.WhileyFile.SEMTYPE_intersection;
-import static wyc.lang.WhileyFile.SEMTYPE_record;
-import static wyc.lang.WhileyFile.SEMTYPE_reference;
-import static wyc.lang.WhileyFile.SEMTYPE_staticreference;
-import static wyc.lang.WhileyFile.SEMTYPE_union;
+import static wyil.lang.WyilFile.SEMTYPE_array;
+import static wyil.lang.WyilFile.SEMTYPE_difference;
+import static wyil.lang.WyilFile.SEMTYPE_intersection;
+import static wyil.lang.WyilFile.SEMTYPE_record;
+import static wyil.lang.WyilFile.SEMTYPE_reference;
+import static wyil.lang.WyilFile.SEMTYPE_staticreference;
+import static wyil.lang.WyilFile.SEMTYPE_union;
+
 import java.util.function.BiFunction;
 
-import wybs.lang.NameResolver;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Type;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.SubtypeOperator;
@@ -66,10 +66,10 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType, LifetimeR
 	private final TypeIntersector intersector;
 	private final TypeSubtractor subtractor;
 
-	public ConcreteTypeExtractor(NameResolver resolver, EmptinessTest<SemanticType> emptiness) {
-		SubtypeOperator op = new SubtypeOperator(resolver, emptiness);
-		this.intersector = new TypeIntersector(resolver, op);
-		this.subtractor = new TypeSubtractor(resolver, op);
+	public ConcreteTypeExtractor(EmptinessTest<SemanticType> emptiness) {
+		SubtypeOperator op = new SubtypeOperator(emptiness);
+		this.intersector = new TypeIntersector(op);
+		this.subtractor = new TypeSubtractor(op);
 	}
 
 	/**

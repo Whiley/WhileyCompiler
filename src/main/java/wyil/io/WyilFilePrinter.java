@@ -11,18 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.io;
+package wyil.io;
+
+import static wyil.lang.WyilFile.*;
 
 import java.io.*;
 import java.util.*;
 
 import wybs.lang.Build;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile;
-import wyc.util.AbstractConsumer;
-import wyc.util.AbstractVisitor;
-
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.util.AbstractConsumer;
+import wyil.util.AbstractVisitor;
 
 /**
  * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.
@@ -30,15 +32,21 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
+public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private final PrintWriter out;
+	/**
+	 * Show qualified names at all places where names are resolved (e.g. at
+	 * invocations).
+	 */
+	private boolean showQualifiedNames = true;
+
 	private boolean verbose = false;
 
-	public WhileyFilePrinter(PrintWriter visitr) {
+	public WyilFilePrinter(PrintWriter visitr) {
 		this.out = visitr;
 	}
 
-	public WhileyFilePrinter(OutputStream stream) {
+	public WyilFilePrinter(OutputStream stream) {
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 
@@ -54,20 +62,59 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	// Apply Method
 	// ======================================================================
 
-	public void apply(WhileyFile module) {
-		visitWhileyFile(module,0);
+	public void apply(WyilFile module) {
+		visitModule(module,0);
 	}
 
 	@Override
-	public void visitWhileyFile(WhileyFile module, Integer indent) {
-		out.println();
-		super.visitWhileyFile(module, indent);
+	public void visitModule(WyilFile wf, Integer indent) {
+		Decl.Module module = wf.getModule();
+		for (Decl.Unit decl : module.getUnits()) {
+			visitDeclaration(decl, indent);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExtern(decl, indent);
+		}
+		//
 		out.flush();
 	}
 
 	@Override
 	public void visitDeclaration(Decl decl, Integer indent) {
 		super.visitDeclaration(decl, indent);
+		out.println();
+	}
+
+
+	@Override
+	public void visitUnit(Decl.Unit decl, Integer indent) {
+		println('=',80);
+		out.println(decl.getName() + ".whiley");
+		println('=',80);
+		super.visitUnit(decl, indent);
+	}
+
+	public void visitExtern(Decl.Unit decl, Integer indent) {
+		println('=',80);
+		out.println(decl.getName() + " (external)");
+		println('=',80);
+		super.visitUnit(decl, indent);
+	}
+
+	@Override
+	public void visitImport(Decl.Import decl, Integer indent) {
+		out.print("import ");
+		if(decl.hasFrom()) {
+			out.print(decl.getFrom());
+			out.print(" from ");
+		}
+		Tuple<Identifier> path= decl.getPath();
+		for(int i=0;i!=path.size();++i) {
+			if(i != 0) {
+				out.print("::");
+			}
+			out.print(path.get(i));
+		}
 		out.println();
 	}
 
@@ -90,7 +137,6 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 			visitExpression(invariant, indent);
 			out.println();
 		}
-		out.println();
 	}
 
 	@Override
@@ -103,6 +149,7 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl, Integer indent) {
 		//
+		tabIndent(indent);
 		visitModifiers(decl.getModifiers());
 		if (decl instanceof Decl.Function) {
 			out.print("function ");
@@ -110,10 +157,10 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 			out.print("method ");
 		}
 		out.print(decl.getName());
-		visitVariables(decl.getParameters(), indent);
+		visitVariables(decl.getParameters(), 0);
 		if (decl.getReturns().size() != 0) {
 			out.print(" -> ");
-			visitVariables(decl.getReturns(), indent);
+			visitVariables(decl.getReturns(), 0);
 		}
 		//
 		for (Expr precondition : decl.getRequires()) {
@@ -126,9 +173,11 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 			out.print("ensures ");
 			visitExpression(postcondition, indent);
 		}
-		if (decl.getBody() != null) {
+		if (decl.getBody().size() > 0) {
 			out.println(": ");
 			visitBlock(decl.getBody(), indent);
+		} else {
+			out.println();
 		}
 	}
 
@@ -146,6 +195,7 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitVariable(Decl.Variable decl, Integer indent) {
+		tabIndent(indent);
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
@@ -395,8 +445,10 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_bitwiseor:
 		case EXPR_bitwisexor:
 		case EXPR_bitwiseand:
-		case EXPR_is:
 			visitInfixLocations((Expr.NaryOperator) expr, indent);
+			break;
+		case EXPR_is:
+			visitInfixLocations((Expr.Is) expr, indent);
 			break;
 		default:
 			super.visitExpression(expr, indent);
@@ -474,7 +526,11 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Integer indent) {
-		out.print(expr.getName() + "(");
+		if(showQualifiedNames) {
+			out.print(expr.getDeclaration().getQualifiedName() + "(");
+		} else {
+			out.print(expr.getName() + "(");
+		}
 		Tuple<Expr> args = expr.getOperands();
 		for (int i = 0; i != args.size(); ++i) {
 			if (i != 0) {
@@ -518,8 +574,8 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitRecordInitialiser(Expr.RecordInitialiser expr, Integer indent) {
 		out.print("{");
-		Tuple<WhileyFile.Identifier> fields = expr.getFields();
-		Tuple<WhileyFile.Expr> operands = expr.getOperands();
+		Tuple<WyilFile.Identifier> fields = expr.getFields();
+		Tuple<WyilFile.Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
 			Identifier field = fields.get(i);
 			Expr operand = operands.get(i);
@@ -543,6 +599,12 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 		// Prefix operators
 		out.print(opcode(expr.getOpcode()));
 		visitBracketedExpression(expr.getOperand(), indent);
+	}
+
+	public void visitInfixLocations(Expr.Is expr, Integer indent) {
+		visitBracketedExpression(expr.getOperand(), indent);
+		out.print(" is ");
+		out.print(expr.getTestType());
 	}
 
 	public void visitInfixLocations(Expr.BinaryOperator expr, Integer indent) {
@@ -700,9 +762,16 @@ public final class WhileyFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	private void tabIndent(int indent) {
-		indent = indent * 4;
-		for(int i=0;i<indent;++i) {
-			out.print(" ");
+		print(' ',indent*4);
+	}
+
+	private void println(char c, int repeat) {
+		print(c,repeat);
+		out.println();
+	}
+	private void print(char c, int repeat) {
+		for(int i=0;i<repeat;++i) {
+			out.print(c);
 		}
 	}
 }

@@ -16,7 +16,7 @@ package wyil.io;
 import java.io.*;
 
 import wybs.io.SyntacticHeapWriter;
-import wyc.lang.WhileyFile;
+import wyil.lang.WyilFile;
 
 
 /**
@@ -34,7 +34,7 @@ public final class WyilFileWriter extends SyntacticHeapWriter {
 	private static final int MINOR_VERSION = 1;
 
 	public WyilFileWriter(OutputStream output) {
-		super(output, WhileyFile.getSchema());
+		super(output, WyilFile.getSchema());
 	}
 
 	@Override

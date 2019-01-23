@@ -22,29 +22,37 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Type;
+import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
+import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Graph;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
-import wybs.lang.NameID;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Type;
 import wyc.task.CompileTask;
 
 public class Activator implements Module.Activator {
 
-	private static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
-	private static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
+	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
+	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
+	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
-	private static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+		private Trie pkg;
+		//
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
@@ -64,6 +72,7 @@ public class Activator implements Module.Activator {
 		@Override
 		public void apply(Configuration configuration) {
 			// Extract source path
+			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 		}
@@ -80,7 +89,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Type<?> getTargetType() {
-			return WhileyFile.BinaryContentType;
+			return WyilFile.ContentType;
 		}
 
 		@Override
@@ -90,7 +99,7 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Content.Filter<?> getTargetFilter() {
-			return Content.filter("**", WhileyFile.BinaryContentType);
+			return Content.filter("**", WyilFile.ContentType);
 		}
 
 		@Override
@@ -104,12 +113,37 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
-		public void execute(Build.Project project, Path.ID id, String method, Value... args) {
+		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
+			//
+			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+			// Check whether target binary exists or not
+			if (binary == null) {
+				// Doesn't exist, so create with default value
+				binary = bin.create(pkg, WyilFile.ContentType);
+				WyilFile wf = new WyilFile(binary);
+				binary.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>()));
+			}
+			//
+			for (Path.Entry<?> source : src.get(getSourceFilter())) {
+				// Register this derivation
+				graph.connect(source, binary);
+			}
+			//
+		}
+
+		@Override
+		public void execute(Build.Project project, Path.ID id, String method, Value... args) throws IOException {
+			// Construct method's qualified name and signature
 			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
-			NameID name = new NameID(id, method);
+			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
-			Interpreter interpreter = new Interpreter(project, System.out);
-			RValue[] returns = interpreter.execute(name, sig, interpreter.new CallStack());
+			Interpreter interpreter = new Interpreter(System.out);
+			// Create the initial stack
+			Interpreter.CallStack stack = initialise(project,interpreter);;
+			// Execute the requested function
+			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {
 				for (int i = 0; i != returns.length; ++i) {
@@ -120,42 +154,29 @@ public class Activator implements Module.Activator {
 				}
 			}
 		}
-	};
 
-	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Registry implements Content.Registry {
-		@Override
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-
-			if (suffix.equals("whiley")) {
-				e.associate(WhileyFile.ContentType, null);
-			} else if (suffix.equals("wyil")) {
-				e.associate(WhileyFile.BinaryContentType, null);
-			} else if (suffix.equals("wyal")) {
-				e.associate(WyalFile.ContentType, null);
+		private Interpreter.CallStack initialise(Build.Project project, Interpreter interpreter) throws IOException {
+			// Determine target root where compiled WyIL files live
+			Path.Root bin = getTargetRoot(project.getRoot());
+			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+			//
+			Interpreter.CallStack stack = interpreter.new CallStack();
+			// Load the relevant WyIL module
+			stack.load(binary.read());
+			// Load all package dependencies
+			for(Build.Package p : project.getPackages()) {
+				// FIXME: is this the right way to determine the binary file from a given
+				// package?
+				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+				//
+				for(Path.Entry<WyilFile> e : entries) {
+					stack.load(e.read());
+				}
 			}
+			//
+			return stack;
 		}
-
-		@Override
-		public String suffix(Content.Type<?> t) {
-			return t.getSuffix();
-		}
-	}
-
-	/**
-	 * The master project content type registry. This is needed for the build
-	 * system to determine the content type of files it finds on the file
-	 * system.
-	 */
-	public final Content.Registry registry = new Registry();
-
+	};
 
 	// =======================================================================
 	// Start
@@ -169,7 +190,7 @@ public class Activator implements Module.Activator {
 		context.register(Build.Platform.class, WHILEY_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
-		context.register(Content.Type.class, WhileyFile.BinaryContentType);
+		context.register(Content.Type.class, WyilFile.ContentType);
 		// Done
 		return new Module() {
 			// what goes here?

@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyc.util;
 
-import static wyc.lang.WhileyFile.Type;
+import static wyil.lang.WyilFile.Type;
 
 /**
  * <p>

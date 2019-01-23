@@ -1,7 +1,5 @@
 package wyil.type.subtyping;
 
-import wybs.lang.NameResolver.ResolutionError;
-
 public interface EmptinessTest<T> {
 	/**
 	 * <p>
@@ -29,7 +27,7 @@ public interface EmptinessTest<T> {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public boolean isVoid(T lhs, State lhsState, T rhs, State rhsState, LifetimeRelation lifetimes) throws ResolutionError;
+	public boolean isVoid(T lhs, State lhsState, T rhs, State rhsState, LifetimeRelation lifetimes);
 
 	public static State PositiveMax = new State(true,true);
 	public static State PositiveMin = new State(true,true);

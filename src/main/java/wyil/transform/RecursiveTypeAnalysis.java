@@ -11,16 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.stage;
+package wyil.transform;
 
 import wybs.lang.Build;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
-import wyc.util.AbstractConsumer;
-import wyc.lang.WhileyFile;
+import wyil.lang.WyilFile;
+import wyil.util.AbstractConsumer;
 import wyc.task.CompileTask;
 
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -54,16 +52,11 @@ import java.util.Set;
  * @author David J. Pearce
  *
  */
-public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implements Build.Stage<WhileyFile> {
-	private final NameResolver resolver;
-
-	public RecursiveTypeAnalysis(CompileTask builder) {
-	  resolver = builder.getNameResolver();
-	}
+public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Build.Stage<WyilFile> {
 
 	@Override
-	public void apply(WhileyFile module) {
-		visitWhileyFile(module, new HashSet<>());
+	public void apply(WyilFile module) {
+		visitModule(module, new HashSet<>());
 	}
 
 	// ===========================================================================
@@ -71,8 +64,8 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	// ===========================================================================
 
 	@Override
-	public void visitType(Decl.Type decl, Set<Name> visited) {
-		Name name = decl.getQualifiedName();
+	public void visitType(Decl.Type decl, Set<QualifiedName> visited) {
+		QualifiedName name = decl.getQualifiedName();
 		if (visited.contains(name)) {
 			// recursive type detected!!!
 			decl.setRecursive();
@@ -104,12 +97,10 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<Name>> implement
 	// ===========================================================================
 
 	@Override
-	public void visitTypeNominal(Type.Nominal type, Set<Name> visited) {
-		try {
-			Decl.Type decl = resolver.resolveExactly(type.getName(), WhileyFile.Decl.Type.class);
-			visitType(decl, visited);
-		} catch (ResolutionError e) {
-			throw new IllegalArgumentException("invalid nominal type: " + type);
-		}
+	public void visitTypeNominal(Type.Nominal type, Set<QualifiedName> visited) {
+		// Extract the declaration to which this type refers.
+		Decl.Type decl = type.getDeclaration();
+		// Recursively traverse it.
+		visitType(decl, visited);
 	}
 }

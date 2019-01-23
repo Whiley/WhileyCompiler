@@ -27,12 +27,14 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.io.WhileyFileLexer.Token;
+import wyc.lang.WhileyFile;
+
 import static wybs.lang.SyntaxError.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
+import static wyil.lang.WyilFile.*;
 
-import wyc.lang.WhileyFile;
-import static wyc.lang.WhileyFile.*;
 import wyfs.lang.Path;
+import wyil.lang.WyilFile;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -44,13 +46,20 @@ import wyfs.lang.Path;
  *
  */
 public class WhileyFileParser {
-	private final WhileyFile file;
+	private final WyilFile parent;
+	private final WhileyFile source;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WhileyFileParser(WhileyFile wf, List<Token> tokens) {
-		this.file = wf;
-		this.tokens = new ArrayList<>(tokens);
+	public WhileyFileParser(WyilFile target, WhileyFile source) {
+		if(target == null) {
+			throw new IllegalArgumentException("target cannot be null");
+		} else if(source == null) {
+			throw new IllegalArgumentException("source cannot be null");
+		}
+		this.parent = target;
+		this.source = source;
+		this.tokens = new ArrayList<>(source.getTokens());
 	}
 
 	/**
@@ -60,9 +69,9 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public WhileyFile read() {
+	public Decl.Unit read() {
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = parseModuleName(file.getEntry());
+		Name name = parseModuleName(source.getEntry());
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -90,12 +99,11 @@ public class WhileyFileParser {
 			declarations.add(declaration);
 			skipWhiteSpace();
 		}
-
 		// Finally, construct the new file.
 		Tuple<Decl> decls = new Tuple<>(declarations);
-		Decl.Module module = new Decl.Module(name,decls);
-		file.allocate(module);
-		return file;
+		Decl.Unit module = new Decl.Unit(name,decls);
+		// FIXME: update module list?
+		return parent.allocate(module);
 	}
 
 	private Name parseModuleName(Path.Entry<WhileyFile> entry) {
@@ -110,9 +118,9 @@ public class WhileyFileParser {
 
 			matchEndLine();
 		}
-		Identifier[] bits = components.toArray(new Identifier[components.size()+1]);
+		Identifier[] bits = components.toArray(new Identifier[components.size() + 1]);
 		// FIXME: this is so completely broken
-		bits[bits.length-1] = new Identifier(entry.id().last());
+		bits[bits.length - 1] = new Identifier(entry.id().last());
 		return new Name(bits);
 	}
 
@@ -316,7 +324,7 @@ public class WhileyFileParser {
 			body = new Stmt.Block();
 		}
 		//
-		WhileyFile.Decl declaration;
+		WyilFile.Decl declaration;
 		if (isFunction) {
 			declaration = new Decl.Function(modifiers, name, parameters, returns, requires, ensures, body);
 		} else {
@@ -434,7 +442,7 @@ public class WhileyFileParser {
 	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 *
-	 * @see wyc.lang.WhileyFile.Type
+	 * @see wyil.lang.WyilFile.Type
 	 *
 	 * @param modifiers
 	 *            --- The list of modifiers for this declaration (which were
@@ -1459,7 +1467,7 @@ public class WhileyFileParser {
 			if(scope.isVariable(name)) {
 				var = new Expr.VariableAccess(Type.Void, scope.getVariableDeclaration(name));
 			} else {
-				var = new Expr.StaticVariableAccess(Type.Void, new Name(name));
+				var = new Expr.StaticVariableAccess(Type.Void, new Name(name), new Ref(new Decl.Unknown()));
 			}
 			return annotateSourceLocation(var, start);
 		case LeftBrace: {
@@ -2203,10 +2211,10 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// This indicates we have an direct invocation
-			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Type.Unresolved());
+			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Tuple<>());
 		} else {
 			// Must be a qualified constant access
-			expr = new Expr.StaticVariableAccess(Type.Void, name);
+			expr = new Expr.StaticVariableAccess(Type.Void, name, new Ref(new Decl.Unknown()));
 		}
 		return annotateSourceLocation(expr, start);
 	}
@@ -2290,7 +2298,7 @@ public class WhileyFileParser {
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				Expr var = new Expr.StaticVariableAccess(Type.Void, new Name(name));
+				Expr var = new Expr.StaticVariableAccess(Type.Void, new Name(name), new Ref(new Decl.Unknown()));
 				return annotateSourceLocation(var, start);
 			}
 		}
@@ -2817,9 +2825,8 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
-			Type.Callable type = new Type.Unresolved();
 			Name nm = annotateSourceLocation(new Name(name), start, start);
-			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, type), start);
+			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, new Tuple<>()), start);
 		}
 	}
 
@@ -3021,7 +3028,7 @@ public class WhileyFileParser {
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
 		return annotateSourceLocation(new Decl.Lambda(new Tuple<>(), new Identifier(""), parameters, captures,
-				lifetimeParameters, body, new Type.Unresolved()), start);
+				lifetimeParameters, body, new Type.Unknown()), start);
 	}
 
 	/**
@@ -3074,8 +3081,7 @@ public class WhileyFileParser {
 			// No, parameters are not supplied.
 			parameters = new Tuple<>();
 		}
-		Type.Callable type = new Type.Unresolved();
-		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters,type), start);
+		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters,new Tuple<>()), start);
 	}
 
 	/**
@@ -3192,7 +3198,7 @@ public class WhileyFileParser {
 			return result;
 		} else {
 			// Error!
-			throw new InternalFailure("unknown syntactic type encountered", file.getEntry(), type);
+			throw new InternalFailure("unknown syntactic type encountered", parent.getEntry(), type);
 		}
 	}
 
@@ -3608,7 +3614,7 @@ public class WhileyFileParser {
 	private Type parseNominalType(EnclosingScope scope) {
 		int start = index;
 		Name name = parseName(scope);
-		return annotateSourceLocation(new Type.Nominal(name), start);
+		return annotateSourceLocation(new Type.Nominal(name, new Ref(new Decl.Unknown())), start);
 	}
 
 	/**
@@ -4160,7 +4166,7 @@ public class WhileyFileParser {
 			} else {
 				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", file.getEntry(), null);
+				throw new SyntaxError("unexpected end-of-file", source.getEntry(), null);
 			}
 		}
 	}
@@ -4432,11 +4438,11 @@ public class WhileyFileParser {
 	}
 
 	private void syntaxError(String msg, SyntacticItem e) {
-		throw new SyntaxError(msg, file.getEntry(), e);
+		throw new SyntaxError(msg, source.getEntry(), e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, file.getEntry(), new Attribute.Span(null,t.start,t.end()));
+		throw new SyntaxError(msg, source.getEntry(), new Attribute.Span(null,t.start,t.end()));
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
@@ -4446,11 +4452,11 @@ public class WhileyFileParser {
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start, int end) {
 		// Allocate item to enclosing WhileyFile. This is necessary so that the
 		// annotations can then be correctly allocated as well.
-		item = file.allocate(item);
+		item = parent.allocate(item);
 		// Determine the first and last token representing this span.
 		Token first = tokens.get(start);
 		Token last = tokens.get(end);
-		file.allocate(new Attribute.Span(item,first.start,last.end()));
+		parent.allocate(new Attribute.Span(item,first.start,last.end()));
 		return item;
 	}
 

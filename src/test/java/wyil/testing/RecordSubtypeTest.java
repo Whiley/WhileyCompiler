@@ -16,15 +16,14 @@
 package wyil.testing;
 import org.junit.*;
 
-import wybs.lang.NameResolver;
-import wyc.lang.WhileyFile.Type;
 import wyc.util.TestUtils;
 import wyil.type.subtyping.SubtypeOperator;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.RelaxedTypeEmptinessTest;
 import wyil.type.subtyping.StrictTypeEmptinessTest;
 
 import static org.junit.Assert.*;
-import static wyc.lang.WhileyFile.Type;
+import static wyil.lang.WyilFile.Type;
 
 public class RecordSubtypeTest {
 	@Test public void test_78() { checkIsSubtype("null","null"); }
@@ -1792,29 +1791,18 @@ public class RecordSubtypeTest {
 	@Test public void test_5775() { checkNotSubtype("{int f2}|int","{int f1}|int"); }
 	@Test public void test_5776() { checkIsSubtype("{int f2}|int","{int f2}|int"); }
 
+
 	private void checkIsSubtype(String from, String to) {
-		NameResolver resolver = null;
-		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
-				new StrictTypeEmptinessTest(resolver));
+		SubtypeOperator subtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		try {
-			assertTrue(subtypeOperator.isSubtype(ft,tt,null));
-		} catch(NameResolver.ResolutionError e) {
-			throw new RuntimeException(e);
-		}
+		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		NameResolver resolver = null;
-		SubtypeOperator subtypeOperator = new SubtypeOperator(resolver,
-				new StrictTypeEmptinessTest(resolver));
+		SubtypeOperator subtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		try {
-			assertFalse(subtypeOperator.isSubtype(ft,tt,null));
-		} catch(NameResolver.ResolutionError e) {
-			throw new RuntimeException(e);
-		}
+		assertFalse(subtypeOperator.isSubtype(ft, tt, null));
 	}
 }

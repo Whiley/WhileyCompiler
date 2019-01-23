@@ -11,21 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.PARAMETER_REASSIGNED;
 import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
 import static wyc.util.ErrorMessages.errorMessage;
+import static wyil.lang.WyilFile.*;
 
-import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyc.util.AbstractFunction;
+import wyil.lang.WyilFile;
+import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
+import wybs.lang.Build;
 import wybs.lang.SyntaxError;
 
 /**
@@ -70,12 +69,6 @@ import wybs.lang.SyntaxError;
 public class DefiniteUnassignmentCheck
 		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
 
-	private final NameResolver resolver;
-
-	public DefiniteUnassignmentCheck(CompileTask builder) {
-		this.resolver = builder.getNameResolver();
-	}
-
 	/**
 	 * NOTE: the following is left in place to facilitate testing for the final
 	 * parameters RFC. This RFC may not be accepted, in which case this feature
@@ -83,8 +76,8 @@ public class DefiniteUnassignmentCheck
 	 */
 	private boolean finalParameters = false;
 
-	public void check(WhileyFile wf) {
-		visitWhileyFile(wf, null);
+	public void check(WyilFile wf) {
+		visitModule(wf, null);
 	}
 
 	/**
@@ -224,24 +217,19 @@ public class DefiniteUnassignmentCheck
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
 		if (finalParameters && isParameter(var)) {
-			WhileyFile file = ((WhileyFile) lval.getHeap());
+			WyilFile file = ((WyilFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
 		} else if (isFinal(var) && environment.contains(var)) {
-			WhileyFile file = ((WhileyFile) lval.getHeap());
+			WyilFile file = ((WyilFile) lval.getHeap());
 			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
 		}
 	}
 
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
-		try {
-			// FIXME: we shouldn't have to perform resolution here.
-			Decl.StaticVariable var = resolver.resolveExactly(lval.getName(), Decl.StaticVariable.class);
-			if (isFinal(var)) {
-				WhileyFile file = ((WhileyFile) lval.getHeap());
-				throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
-			}
-		} catch (ResolutionError e) {
-			throw new RuntimeException(e);
+		Decl.StaticVariable var = lval.getDeclaration();
+		if (isFinal(var)) {
+			WyilFile file = ((WyilFile) lval.getHeap());
+			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
 		}
 	}
 

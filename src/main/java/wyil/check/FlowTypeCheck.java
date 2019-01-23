@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.check;
+package wyil.check;
 
 import static wybs.lang.SyntaxError.InternalFailure;
 import static wybs.util.AbstractCompilationUnit.ITEM_bool;
@@ -22,14 +22,15 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.*;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyc.check.FlowTypeUtils.Environment;
-import wyc.util.AbstractVisitor;
 import wycc.util.ArrayUtils;
+import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.EmptinessTest;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.RelaxedTypeEmptinessTest;
@@ -37,13 +38,11 @@ import wyil.type.subtyping.StrictTypeEmptinessTest;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.Type;
+import wyil.util.AbstractVisitor;
 import wyc.task.CompileTask;
 
-import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -99,38 +98,32 @@ import static wyc.util.ErrorMessages.*;
  *
  */
 public class FlowTypeCheck {
-	private final CompileTask builder;
-	private final NameResolver resolver;
 	private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final ConcreteTypeExtractor concreteTypeExtractor;
 	private final ReadWriteTypeExtractor rwTypeExtractor;
 
-	public FlowTypeCheck(CompileTask builder) {
-		this.builder = builder;
-		this.resolver = builder.getNameResolver();
-		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest(resolver);
-		this.concreteTypeExtractor = new ConcreteTypeExtractor(resolver,strictEmptiness);
-		this.relaxedSubtypeOperator = new SubtypeOperator(resolver,
-				new RelaxedTypeEmptinessTest(resolver));
-		this.strictSubtypeOperator = new SubtypeOperator(resolver,
-				strictEmptiness);
-		this.rwTypeExtractor = new ReadWriteTypeExtractor(resolver, strictSubtypeOperator);
+	public FlowTypeCheck() {
+		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest();
+		this.concreteTypeExtractor = new ConcreteTypeExtractor(strictEmptiness);
+		this.relaxedSubtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
+		this.strictSubtypeOperator = new SubtypeOperator(strictEmptiness);
+		this.rwTypeExtractor = new ReadWriteTypeExtractor(strictSubtypeOperator);
 	}
 
 	// =========================================================================
 	// WhileyFile(s)
 	// =========================================================================
 
-	public void check(List<WhileyFile> files) {
+	public void check(List<WyilFile> files) {
 		// Perform necessary type checking of Whiley files
-		for (WhileyFile wf : files) {
+		for (WyilFile wf : files) {
 			check(wf);
 		}
 	}
 
-	public void check(WhileyFile wf) {
-		for (Decl decl : wf.getDeclarations()) {
+	public void check(WyilFile wf) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			check(decl);
 		}
 	}
@@ -140,7 +133,9 @@ public class FlowTypeCheck {
 	// =========================================================================
 
 	public void check(Decl decl) {
-		if (decl instanceof Decl.Import) {
+		if (decl instanceof Decl.Unit) {
+			checkUnit((Decl.Unit)decl);
+		} else if (decl instanceof Decl.Import) {
 			// Can ignore
 		} else if (decl instanceof Decl.StaticVariable) {
 			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
@@ -150,6 +145,12 @@ public class FlowTypeCheck {
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
 		} else {
 			checkPropertyDeclaration((Decl.Property) decl);
+		}
+	}
+
+	public void checkUnit(Decl.Unit unit) {
+		for (Decl decl : unit.getDeclarations()) {
+			check(decl);
 		}
 	}
 
@@ -1039,43 +1040,39 @@ public class FlowTypeCheck {
 	}
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
-		try {
-			Expr lhs = expr.getOperand();
-			SemanticType lhsT = checkExpression(expr.getOperand(), environment);
-			SemanticType rhsT = expr.getTestType();
-			// Sanity check operands for this type test
-			SemanticType trueBranchRefinementT = new SemanticType.Intersection(lhsT, rhsT);
-			SemanticType falseBranchRefinementT = new SemanticType.Difference(lhsT, rhsT);
-			//
-			// NOTE: it's a little unclear to me whether use the strict subtype operator
-			// here makes sense in the long run. However, using the relaxed subtype operator
-			// definitely results in problems!  See #845
-			if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
-				// DEFINITE TRUE CASE
-			  syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
-			} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
-				// DEFINITE FALSE CASE
-			  syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
-			}
-			//
-			Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
-			if (extraction != null) {
-				Decl.Variable var = extraction.getFirst();
-				SemanticType varT = environment.getType(var);
-				SemanticType refinementT = extraction.getSecond();
-				if (sign) {
-					refinementT = new Type.Intersection(varT, refinementT);
-				} else {
-					refinementT = new SemanticType.Difference(varT, refinementT);
-				}
-				// Update the typing environment accordingly.
-				environment = environment.refineType(var, refinementT);
-			}
-			//
-			return environment;
-		} catch (ResolutionError e) {
-			return syntaxError(e.getMessage(), expr);
+		Expr lhs = expr.getOperand();
+		SemanticType lhsT = checkExpression(expr.getOperand(), environment);
+		SemanticType rhsT = expr.getTestType();
+		// Sanity check operands for this type test
+		SemanticType trueBranchRefinementT = new SemanticType.Intersection(lhsT, rhsT);
+		SemanticType falseBranchRefinementT = new SemanticType.Difference(lhsT, rhsT);
+		//
+		// NOTE: it's a little unclear to me whether use the strict subtype operator
+		// here makes sense in the long run. However, using the relaxed subtype operator
+		// definitely results in problems!  See #845
+		if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
+			// DEFINITE TRUE CASE
+			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
+		} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
+			// DEFINITE FALSE CASE
+			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
 		}
+		//
+		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
+		if (extraction != null) {
+			Decl.Variable var = extraction.getFirst();
+			SemanticType varT = environment.getType(var);
+			SemanticType refinementT = extraction.getSecond();
+			if (sign) {
+				refinementT = new Type.Intersection(varT, refinementT);
+			} else {
+				refinementT = new SemanticType.Difference(varT, refinementT);
+			}
+			// Update the typing environment accordingly.
+			environment = environment.refineType(var, refinementT);
+		}
+		//
+		return environment;
 	}
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
@@ -1141,13 +1138,7 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkStaticVariableLVal(Expr.StaticVariableAccess lval, Environment environment) {
-		try {
-			// Resolve variable declaration being accessed
-			Decl.StaticVariable decl = resolver.resolveExactly(lval.getName(), Decl.StaticVariable.class);
-			return decl.getType();
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(RESOLUTION_ERROR, lval.getName().toString()), lval, e);
-		}
+		return lval.getDeclaration().getType();
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
@@ -1444,14 +1435,8 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
-		try {
-			// Resolve variable declaration being accessed
-			Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), Decl.StaticVariable.class);
-			//
-			return decl.getType();
-		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr, e);
-		}
+		//
+		return expr.getDeclaration().getType();
 	}
 
 	private SemanticType checkCast(Expr.Cast expr, Environment environment) {
@@ -1466,11 +1451,13 @@ public class FlowTypeCheck {
 		for (int i = 0; i != arguments.size(); ++i) {
 			types[i] = checkExpression(arguments.get(i), environment);
 		}
-		// Determine the declaration being invoked
-		Binding binding = resolveAsCallable(expr.getName(), new Tuple<>(types), expr.getLifetimes(),
+		// Extract candidates from name resolution phase
+		Tuple<Decl.Callable> candidates = expr.getDeclarations();
+		// Now attempt to bind the given candidate declarations against the concrete argument types.
+		Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
 				environment);
 		// Assign descriptor to this expression
-		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
+		expr.select(binding.getCandidiateDeclaration());
 		// Set inferred lifetime parameters as well
 		expr.setLifetimes(expr.getHeap().allocate(binding.getLifetimeArguments()));
 		// Finally, return the declared returns/
@@ -1519,19 +1506,15 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
-		try {
-			SemanticType lhs = checkExpression(expr.getFirstOperand(), environment);
-			SemanticType rhs = checkExpression(expr.getSecondOperand(), environment);
-			// Sanity check that the types of operands are actually comparable.
-			SemanticType glb = new SemanticType.Intersection(lhs,rhs);
-			if (strictSubtypeOperator.isVoid(glb, environment)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
-				return null;
-			}
-			return Type.Bool;
-		} catch (ResolutionError e) {
-			return syntaxError(e.getMessage(), expr);
+		SemanticType lhs = checkExpression(expr.getFirstOperand(), environment);
+		SemanticType rhs = checkExpression(expr.getSecondOperand(), environment);
+		// Sanity check that the types of operands are actually comparable.
+		SemanticType glb = new SemanticType.Intersection(lhs,rhs);
+		if (strictSubtypeOperator.isVoid(glb, environment)) {
+			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
+			return null;
 		}
+		return Type.Bool;
 	}
 
 	private SemanticType checkIntegerComparator(Expr.BinaryOperator expr, Environment environment) {
@@ -1741,24 +1724,22 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
-		Binding binding;
 		Tuple<Type> types = expr.getParameterTypes();
+		Tuple<Decl.Callable> candidates = expr.getDeclarations();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
 		// exactly zero arguments were supplied.
-		if (types.size() > 0) {
-			// Parameter types have been given, so use them to help resolve
-			// declaration.
-			binding = resolveAsCallable(expr.getName(), types, new Tuple<Identifier>(), environment);
+		if(expr.getParameterTypes().size() > 0) {
+			// Now attempt to bind the given candidate declarations against the concrete argument types.
+			Binding binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(), environment);
+			expr.select(binding.getCandidiateDeclaration());
+			return binding.getConcreteType();
+		} else if(candidates.size() == 1) {
+			expr.select(candidates.get(0));
+			return candidates.get(0).getType();
 		} else {
-			// No parameters we're given, therefore attempt to resolve
-			// uniquely.
-			binding = resolveAsCallable(expr.getName(), expr);
+			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), expr.getName());
 		}
-		// Set descriptor for this expression
-		expr.setSignature(expr.getHeap().allocate(binding.getCandidiateDeclaration().getType()));
-		//
-		return binding.getConcreteType();
 	}
 
 	private SemanticType checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
@@ -1789,60 +1770,6 @@ public class FlowTypeCheck {
 	// ===========================================================================================
 
 	/**
-	 * Attempt to determine the declared function or macro to which a given
-	 * invocation refers, without any additional type information. For this to
-	 * succeed, there can be only one candidate for consideration.
-	 *
-	 * @param name
-	 * @param args
-	 * @return
-	 */
-	private Binding resolveAsCallable(Name name, SyntacticItem context) {
-		try {
-			// Identify all function or macro declarations which should be
-			// considered
-			List<Decl.FunctionOrMethod> candidates = resolver.resolveAll(name, Decl.FunctionOrMethod.class);
-			if (candidates.isEmpty()) {
-				return syntaxError(errorMessage(RESOLUTION_ERROR, name.toString()), context);
-			} else if (candidates.size() > 1) {
-				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), context);
-			} else {
-				Decl.FunctionOrMethod candidate = candidates.get(0);
-				return new Binding(candidate,candidate.getType());
-			}
-		} catch (ResolutionError e) {
-			return syntaxError(e.getMessage(), context);
-		}
-	}
-
-	/**
-	 * Attempt to determine the declared function or macro to which a given
-	 * invocation refers. To resolve this requires considering the name, along with
-	 * the argument types as well.
-	 *
-	 * @param name
-	 * @param arguments
-	 *            Inferred Argument Types
-	 * @param lifetimeArguments
-	 *            Explicit lifetime arguments (if provided)
-	 * @param lifetimes
-	 *            Within relationship beteween declared lifetimes
-	 *
-	 * @return
-	 */
-	private Binding resolveAsCallable(Name name, Tuple<? extends SemanticType> arguments, Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
-		try {
-			// Identify all function or macro declarations which should be
-			// considered
-			List<Decl.Callable> candidates = resolver.resolveAll(name, Decl.Callable.class);
-			// Now attempt to bind the given candidate declarations against the concrete argument types.
-			return generateCallableBinding(name,candidates,arguments,lifetimeArguments,lifetimes);
-		} catch (ResolutionError e) {
-			return syntaxError(e.getMessage(), name);
-		}
-	}
-
-	/**
 	 * Determine appropriate lifetime bindings for a given set of candidate function
 	 * or method declarations and concrete argument types. For example:
 	 *
@@ -1868,7 +1795,7 @@ public class FlowTypeCheck {
 	 * @param lifetimes
 	 * @return
 	 */
-	private Binding generateCallableBinding(Name name, List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
+	private Binding generateCallableBinding(Name name, Tuple<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		// Bind candidate types to given argument types which, in particular, will
 		// produce bindings for lifetime variables
@@ -1963,7 +1890,7 @@ public class FlowTypeCheck {
 	 *            Within relationship beteween declared lifetimes
 	 * @return
 	 */
-	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
+	private List<Binding> bindCallableCandidates(Tuple<Decl.Callable> candidates, Tuple<? extends SemanticType> arguments,
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
@@ -2047,8 +1974,8 @@ public class FlowTypeCheck {
 	 */
 	private Type.Method substitute(Type.Method method, Map<Identifier,Identifier> binding) {
 		// Proceed with the potentially updated binding
-		Tuple<Type> parameters = WhileyFile.substitute(method.getParameters(), binding);
-		Tuple<Type> returns = WhileyFile.substitute(method.getReturns(), binding);
+		Tuple<Type> parameters = WyilFile.substitute(method.getParameters(), binding);
+		Tuple<Type> returns = WyilFile.substitute(method.getReturns(), binding);
 		return new Type.Method(parameters, returns, method.getCapturedLifetimes(), new Tuple<>());
 	}
 
@@ -2223,20 +2150,16 @@ public class FlowTypeCheck {
 			// more to consider.
 			return false;
 		} else {
-			try {
-				// Number of parameters matches number of arguments. Now, check that
-				// each argument is a subtype of its corresponding parameter.
-				for (int i = 0; i != args.size(); ++i) {
-					SemanticType param = parameters.get(i);
-					if (!relaxedSubtypeOperator.isSubtype(param, args.get(i), lifetimes)) {
-						return false;
-					}
+			// Number of parameters matches number of arguments. Now, check that
+			// each argument is a subtype of its corresponding parameter.
+			for (int i = 0; i != args.size(); ++i) {
+				SemanticType param = parameters.get(i);
+				if (!relaxedSubtypeOperator.isSubtype(param, args.get(i), lifetimes)) {
+					return false;
 				}
-				//
-				return true;
-			} catch (NameResolver.ResolutionError e) {
-				return syntaxError(e.getMessage(), e.getName(), e);
 			}
+			//
+			return true;
 		}
 	}
 
@@ -2313,7 +2236,7 @@ public class FlowTypeCheck {
 		return paramStr + ")";
 	}
 
-	private String foundCandidatesString(Collection<? extends Decl.Callable> candidates) {
+	private String foundCandidatesString(Tuple<? extends Decl.Callable> candidates) {
 		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (Decl.Callable c : candidates) {
 			candidateStrings.add(candidateString(c,null));
@@ -2392,21 +2315,17 @@ public class FlowTypeCheck {
 			// more to consider.
 			return false;
 		}
-		try {
-			// Number of parameters matches number of arguments. Now, check that
-			// each argument is a subtype of its corresponding parameter.
-			for (int i = 0; i != parentParams.size(); ++i) {
-				SemanticType parentParam = parentParams.get(i);
-				SemanticType childParam = childParams.get(i);
-				if (!relaxedSubtypeOperator.isSubtype(parentParam, childParam, lifetimes)) {
-					return false;
-				}
+		// Number of parameters matches number of arguments. Now, check that
+		// each argument is a subtype of its corresponding parameter.
+		for (int i = 0; i != parentParams.size(); ++i) {
+			SemanticType parentParam = parentParams.get(i);
+			SemanticType childParam = childParams.get(i);
+			if (!relaxedSubtypeOperator.isSubtype(parentParam, childParam, lifetimes)) {
+				return false;
 			}
-			//
-			return true;
-		} catch (NameResolver.ResolutionError e) {
-			return syntaxError(e.getMessage(), e.getName(), e);
 		}
+		//
+		return true;
 	}
 
 	// ==========================================================================
@@ -2425,22 +2344,14 @@ public class FlowTypeCheck {
 	}
 
 	private void checkIsSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		try {
-			if (!relaxedSubtypeOperator.isSubtype(lhs,rhs, lifetimes)) {
-				syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
-			}
-		} catch (NameResolver.ResolutionError e) {
-			syntaxError(e.getMessage(), e.getName(), e);
+		if (!relaxedSubtypeOperator.isSubtype(lhs,rhs, lifetimes)) {
+			syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
 		}
 	}
 
 	private void checkContractive(Decl.Type d) {
-		try {
-			if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName().toNameID(), d.getType())) {
-				syntaxError("empty type encountered", d.getName());
-			}
-		} catch (NameResolver.ResolutionError e) {
-			syntaxError(e.getMessage(), e.getName(), e);
+		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName(), d.getType())) {
+			syntaxError("empty type encountered", d.getName());
 		}
 	}
 
@@ -2463,13 +2374,8 @@ public class FlowTypeCheck {
 	 * @param d
 	 */
 	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
-		try {
-			// FIXME: conversion to semantic type seems unnecessary here?
-			if (relaxedSubtypeOperator.isVoid(d.getType(), lifetimes)) {
-				syntaxError("empty type encountered", d.getType());
-			}
-		} catch (NameResolver.ResolutionError e) {
-			syntaxError(e.getMessage(), e.getName(), e);
+		if (relaxedSubtypeOperator.isVoid(d.getType(), lifetimes)) {
+			syntaxError("empty type encountered", d.getType());
 		}
 	}
 

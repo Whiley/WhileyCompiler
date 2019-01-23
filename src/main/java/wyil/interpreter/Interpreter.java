@@ -13,25 +13,17 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Build;
-import wybs.lang.NameID;
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
-import wyfs.lang.Path;
-import wyc.util.WhileyFileResolver;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 
-import static wyc.lang.WhileyFile.*;
 import static wyil.interpreter.ConcreteSemantics.LValue;
 import static wyil.interpreter.ConcreteSemantics.RValue;
-
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
+import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -49,15 +41,6 @@ import wyc.lang.WhileyFile.Decl;
  *
  */
 public class Interpreter {
-	/**
-	 * The build project provides access to compiled WyIL files.
-	 */
-	private final Build.Project project;
-
-	/**
-	 * Provides mechanism for resolving names.
-	 */
-	private final NameResolver resolver;
 
 	/**
 	 * Determines the underlying semantics used for this interpreter.
@@ -70,10 +53,8 @@ public class Interpreter {
 	 */
 	private final PrintStream debug;
 
-	public Interpreter(Build.Project project, PrintStream debug) {
-		this.project = project;
+	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
-		this.resolver = new WhileyFileResolver(project);
 		this.semantics = new ConcreteSemantics();
 	}
 
@@ -84,10 +65,6 @@ public class Interpreter {
 		NEXT
 	}
 
-	public NameResolver getNameResolver() {
-		return resolver;
-	}
-
 	/**
 	 * Execute a function or method identified by a name and type signature with
 	 * the given arguments, producing a return value or null (if none). If the
@@ -96,64 +73,48 @@ public class Interpreter {
 	 *
 	 * @param nid
 	 *            The fully qualified identifier of the function or method
-	 * @param sig
+	 * @param signature
 	 *            The exact type signature identifying the method.
 	 * @param args
 	 *            The supplied arguments
 	 * @return
 	 */
-	public RValue[] execute(NameID nid, Type.Callable sig, CallStack frame, RValue... args) {
-		// First, find the enclosing WyilFile
-		try {
-			// FIXME: NameID needs to be deprecated
-			Identifier name = new Identifier(nid.name());
-			// NOTE: need to read WyilFile here as, otherwose, it forces a
-			// rereading of the Whiley source file and a loss of all generation
-			// information.
-			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
-			if (entry == null) {
-				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
-			}
-			// Second, find the given function or method
-			WhileyFile wyilFile = entry.read();
-			Decl.Callable fmp = wyilFile.getDeclaration(name, sig,
-					Decl.Callable.class);
-			if (fmp == null) {
-				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
-			} else if (sig.getParameters().size() != args.length) {
-				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
-			}
-			// Fourth, construct the stack frame for execution
-			frame = frame.enter(fmp);
-			extractParameters(frame,args,fmp);
-			// Check the precondition
-			if(fmp instanceof Decl.FunctionOrMethod) {
-				Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) fmp;
-				checkInvariants(frame,fm.getRequires());
-				// check function or method body exists
-				if (fm.getBody() == null) {
-					// FIXME: Add support for native functions or methods. That is,
-					// allow native functions to be implemented and called from the
-					// interpreter.
-					throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
-				}
-				// Execute the method or function body
-				executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
-				// Extra the return values
-				RValue[] returns = packReturns(frame,fmp);
-				// Restore original parameter values
-				extractParameters(frame,args,fmp);
-				// Check the postcondition holds
-				checkInvariants(frame, fm.getEnsures());
-				return returns;
-			} else {
-				// Properties always return true (provided their preconditions hold)
-				return new RValue[]{RValue.True};
-			}
-			//
-		} catch (IOException e) {
-			throw new RuntimeException(e.getMessage(), e);
+	public RValue[] execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
+		Decl.Callable lambda = frame.getCallable(name, signature);
+		if (lambda == null) {
+			throw new IllegalArgumentException("no function or method found: " + name + ", " + signature);
+		} else if (lambda.getParameters().size() != args.length) {
+			throw new IllegalArgumentException(
+					"incorrect number of arguments: " + lambda.getName() + ", " + lambda.getType());
 		}
+		// Fourth, construct the stack frame for execution
+		frame = frame.enter(lambda);
+		extractParameters(frame,args,lambda);
+		// Check the precondition
+		if(lambda instanceof Decl.FunctionOrMethod) {
+			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
+			checkInvariants(frame,fm.getRequires());
+			// check function or method body exists
+			if (fm.getBody() == null) {
+				// FIXME: Add support for native functions or methods. That is,
+				// allow native functions to be implemented and called from the
+				// interpreter.
+				throw new IllegalArgumentException("no function or method body found: " + name + ", " + signature);
+			}
+			// Execute the method or function body
+			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
+			// Extra the return values
+			RValue[] returns = packReturns(frame,lambda);
+			// Restore original parameter values
+			extractParameters(frame,args,lambda);
+			// Check the postcondition holds
+			checkInvariants(frame, fm.getEnsures());
+			return returns;
+		} else {
+			// Properties always return true (provided their preconditions hold)
+			return new RValue[]{RValue.True};
+		}
+		//
 	}
 
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
@@ -220,51 +181,45 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
-		try {
-			switch (stmt.getOpcode()) {
-			case WhileyFile.STMT_assert:
-				return executeAssert((Stmt.Assert) stmt, frame, scope);
-			case WhileyFile.STMT_assume:
-				return executeAssume((Stmt.Assume) stmt, frame, scope);
-			case WhileyFile.STMT_assign:
-				return executeAssign((Stmt.Assign) stmt, frame, scope);
-			case WhileyFile.STMT_break:
-				return executeBreak((Stmt.Break) stmt, frame, scope);
-			case WhileyFile.STMT_continue:
-				return executeContinue((Stmt.Continue) stmt, frame, scope);
-			case WhileyFile.STMT_debug:
-				return executeDebug((Stmt.Debug) stmt, frame, scope);
-			case WhileyFile.STMT_dowhile:
-				return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
-			case WhileyFile.STMT_fail:
-				return executeFail((Stmt.Fail) stmt, frame, scope);
-			case WhileyFile.STMT_if:
-			case WhileyFile.STMT_ifelse:
-				return executeIf((Stmt.IfElse) stmt, frame, scope);
-			case WhileyFile.EXPR_indirectinvoke:
-				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
-				return Status.NEXT;
-			case WhileyFile.EXPR_invoke:
-				executeInvoke((Expr.Invoke) stmt, frame);
-				return Status.NEXT;
-			case WhileyFile.STMT_namedblock:
-				return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
-			case WhileyFile.STMT_while:
-				return executeWhile((Stmt.While) stmt, frame, scope);
-			case WhileyFile.STMT_return:
-				return executeReturn((Stmt.Return) stmt, frame, scope);
-			case WhileyFile.STMT_skip:
-				return executeSkip((Stmt.Skip) stmt, frame, scope);
-			case WhileyFile.STMT_switch:
-				return executeSwitch((Stmt.Switch) stmt, frame, scope);
-			case WhileyFile.DECL_variableinitialiser:
-			case WhileyFile.DECL_variable:
-				return executeVariableDeclaration((Decl.Variable) stmt, frame);
-			}
-		}
-		catch (ResolutionError e) {
-			error(e.getMessage(), stmt);
-			return null;
+		switch (stmt.getOpcode()) {
+		case WyilFile.STMT_assert:
+			return executeAssert((Stmt.Assert) stmt, frame, scope);
+		case WyilFile.STMT_assume:
+			return executeAssume((Stmt.Assume) stmt, frame, scope);
+		case WyilFile.STMT_assign:
+			return executeAssign((Stmt.Assign) stmt, frame, scope);
+		case WyilFile.STMT_break:
+			return executeBreak((Stmt.Break) stmt, frame, scope);
+		case WyilFile.STMT_continue:
+			return executeContinue((Stmt.Continue) stmt, frame, scope);
+		case WyilFile.STMT_debug:
+			return executeDebug((Stmt.Debug) stmt, frame, scope);
+		case WyilFile.STMT_dowhile:
+			return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
+		case WyilFile.STMT_fail:
+			return executeFail((Stmt.Fail) stmt, frame, scope);
+		case WyilFile.STMT_if:
+		case WyilFile.STMT_ifelse:
+			return executeIf((Stmt.IfElse) stmt, frame, scope);
+		case WyilFile.EXPR_indirectinvoke:
+			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
+			return Status.NEXT;
+		case WyilFile.EXPR_invoke:
+			executeInvoke((Expr.Invoke) stmt, frame);
+			return Status.NEXT;
+		case WyilFile.STMT_namedblock:
+			return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
+		case WyilFile.STMT_while:
+			return executeWhile((Stmt.While) stmt, frame, scope);
+		case WyilFile.STMT_return:
+			return executeReturn((Stmt.Return) stmt, frame, scope);
+		case WyilFile.STMT_skip:
+			return executeSkip((Stmt.Skip) stmt, frame, scope);
+		case WyilFile.STMT_switch:
+			return executeSwitch((Stmt.Switch) stmt, frame, scope);
+		case WyilFile.DECL_variableinitialiser:
+		case WyilFile.DECL_variable:
+			return executeVariableDeclaration((Decl.Variable) stmt, frame);
 		}
 
 		deadCode(stmt);
@@ -273,7 +228,7 @@ public class Interpreter {
 
 	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
 		// FIXME: handle multi-assignments properly
-		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
+		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
 			LValue lval = constructLVal(lhs.get(i), frame);
@@ -586,147 +541,142 @@ public class Interpreter {
 	 * @return
 	 */
 	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
-		try {
-			RValue val;
-			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_constant:
-				val = executeConst((Expr.Constant) expr, frame);
-				break;
-			case WhileyFile.EXPR_cast:
-				val = executeConvert((Expr.Cast) expr, frame);
-				break;
-			case WhileyFile.EXPR_recordinitialiser:
-				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
-				break;
-			case WhileyFile.EXPR_recordaccess:
-			case WhileyFile.EXPR_recordborrow:
-				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
-				break;
-			case WhileyFile.EXPR_indirectinvoke:
-				val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
-				break;
-			case WhileyFile.EXPR_invoke:
-				val = executeInvoke((Expr.Invoke) expr, frame)[0];
-				break;
-			case WhileyFile.EXPR_variablemove:
-			case WhileyFile.EXPR_variablecopy:
-				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
-				break;
-			case WhileyFile.EXPR_staticvariable:
-				val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
-				break;
-			case WhileyFile.EXPR_is:
-				val = executeIs((Expr.Is) expr, frame);
-				break;
-			case WhileyFile.EXPR_logicalnot:
-				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
-				break;
-			case WhileyFile.EXPR_logicaland:
-				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
-				break;
-			case WhileyFile.EXPR_logicalor:
-				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
-				break;
-			case WhileyFile.EXPR_logiaclimplication:
-				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
-				break;
-			case WhileyFile.EXPR_logicaliff:
-				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
-				break;
-			case WhileyFile.EXPR_logicalexistential:
-			case WhileyFile.EXPR_logicaluniversal:
-				val = executeQuantifier((Expr.Quantifier) expr, frame);
-				break;
-			case WhileyFile.EXPR_equal:
-				val = executeEqual((Expr.Equal) expr, frame);
-				break;
-			case WhileyFile.EXPR_notequal:
-				val = executeNotEqual((Expr.NotEqual) expr, frame);
-				break;
-			case WhileyFile.EXPR_integernegation:
-				val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
-				break;
-			case WhileyFile.EXPR_integeraddition:
-				val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
-				break;
-			case WhileyFile.EXPR_integersubtraction:
-				val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
-				break;
-			case WhileyFile.EXPR_integermultiplication:
-				val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
-				break;
-			case WhileyFile.EXPR_integerdivision:
-				val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
-				break;
-			case WhileyFile.EXPR_integerremainder:
-				val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
-				break;
-			case WhileyFile.EXPR_integerlessthan:
-				val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
-				break;
-			case WhileyFile.EXPR_integerlessequal:
-				val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
-				break;
-			case WhileyFile.EXPR_integergreaterthan:
-				val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
-				break;
-			case WhileyFile.EXPR_integergreaterequal:
-				val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwisenot:
-				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwiseor:
-				val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwisexor:
-				val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwiseand:
-				val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwiseshl:
-				val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
-				break;
-			case WhileyFile.EXPR_bitwiseshr:
-				val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
-				break;
-			case WhileyFile.EXPR_arrayborrow:
-			case WhileyFile.EXPR_arrayaccess:
-				val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
-				break;
-			case WhileyFile.EXPR_arraygenerator:
-				val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
-				break;
-			case WhileyFile.EXPR_arraylength:
-				val = executeArrayLength((Expr.ArrayLength) expr, frame);
-				break;
-			case WhileyFile.EXPR_arrayinitialiser:
-				val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
-				break;
-			case WhileyFile.EXPR_arrayrange:
-				val = executeArrayRange((Expr.ArrayRange) expr, frame);
-				break;
-			case WhileyFile.EXPR_new:
-				val = executeNew((Expr.New) expr, frame);
-				break;
-			case WhileyFile.EXPR_dereference:
-				val = executeDereference((Expr.Dereference) expr, frame);
-				break;
-			case WhileyFile.EXPR_lambdaaccess:
-				val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
-				break;
-			case WhileyFile.DECL_lambda:
-				val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
-				break;
-			default:
-				return deadCode(expr);
-			}
-			return checkType(val, expr, expected);
-		} catch (ResolutionError e) {
-			error(e.getMessage(), expr);
-			return null;
+		RValue val;
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_constant:
+			val = executeConst((Expr.Constant) expr, frame);
+			break;
+		case WyilFile.EXPR_cast:
+			val = executeConvert((Expr.Cast) expr, frame);
+			break;
+		case WyilFile.EXPR_recordinitialiser:
+			val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
+			break;
+		case WyilFile.EXPR_recordaccess:
+		case WyilFile.EXPR_recordborrow:
+			val = executeRecordAccess((Expr.RecordAccess) expr, frame);
+			break;
+		case WyilFile.EXPR_indirectinvoke:
+			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
+			break;
+		case WyilFile.EXPR_invoke:
+			val = executeInvoke((Expr.Invoke) expr, frame)[0];
+			break;
+		case WyilFile.EXPR_variablemove:
+		case WyilFile.EXPR_variablecopy:
+			val = executeVariableAccess((Expr.VariableAccess) expr, frame);
+			break;
+		case WyilFile.EXPR_staticvariable:
+			val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
+			break;
+		case WyilFile.EXPR_is:
+			val = executeIs((Expr.Is) expr, frame);
+			break;
+		case WyilFile.EXPR_logicalnot:
+			val = executeLogicalNot((Expr.LogicalNot) expr, frame);
+			break;
+		case WyilFile.EXPR_logicaland:
+			val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
+			break;
+		case WyilFile.EXPR_logicalor:
+			val = executeLogicalOr((Expr.LogicalOr) expr, frame);
+			break;
+		case WyilFile.EXPR_logiaclimplication:
+			val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
+			break;
+		case WyilFile.EXPR_logicaliff:
+			val = executeLogicalIff((Expr.LogicalIff) expr, frame);
+			break;
+		case WyilFile.EXPR_logicalexistential:
+		case WyilFile.EXPR_logicaluniversal:
+			val = executeQuantifier((Expr.Quantifier) expr, frame);
+			break;
+		case WyilFile.EXPR_equal:
+			val = executeEqual((Expr.Equal) expr, frame);
+			break;
+		case WyilFile.EXPR_notequal:
+			val = executeNotEqual((Expr.NotEqual) expr, frame);
+			break;
+		case WyilFile.EXPR_integernegation:
+			val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
+			break;
+		case WyilFile.EXPR_integeraddition:
+			val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
+			break;
+		case WyilFile.EXPR_integersubtraction:
+			val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
+			break;
+		case WyilFile.EXPR_integermultiplication:
+			val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
+			break;
+		case WyilFile.EXPR_integerdivision:
+			val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
+			break;
+		case WyilFile.EXPR_integerremainder:
+			val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
+			break;
+		case WyilFile.EXPR_integerlessthan:
+			val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
+			break;
+		case WyilFile.EXPR_integerlessequal:
+			val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
+			break;
+		case WyilFile.EXPR_integergreaterthan:
+			val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
+			break;
+		case WyilFile.EXPR_integergreaterequal:
+			val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwisenot:
+			val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwiseor:
+			val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwisexor:
+			val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwiseand:
+			val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwiseshl:
+			val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
+			break;
+		case WyilFile.EXPR_bitwiseshr:
+			val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
+			break;
+		case WyilFile.EXPR_arrayborrow:
+		case WyilFile.EXPR_arrayaccess:
+			val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
+			break;
+		case WyilFile.EXPR_arraygenerator:
+			val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
+			break;
+		case WyilFile.EXPR_arraylength:
+			val = executeArrayLength((Expr.ArrayLength) expr, frame);
+			break;
+		case WyilFile.EXPR_arrayinitialiser:
+			val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
+			break;
+		case WyilFile.EXPR_arrayrange:
+			val = executeArrayRange((Expr.ArrayRange) expr, frame);
+			break;
+		case WyilFile.EXPR_new:
+			val = executeNew((Expr.New) expr, frame);
+			break;
+		case WyilFile.EXPR_dereference:
+			val = executeDereference((Expr.Dereference) expr, frame);
+			break;
+		case WyilFile.EXPR_lambdaaccess:
+			val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
+			break;
+		case WyilFile.DECL_lambda:
+			val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
+			break;
+		default:
+			return deadCode(expr);
 		}
+		return checkType(val, expr, expected);
 	}
 
 
@@ -865,15 +815,22 @@ public class Interpreter {
 		return frame.getLocal(decl.getName());
 	}
 
-	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) throws ResolutionError {
-		Decl.StaticVariable decl = resolver.resolveExactly(expr.getName(), Decl.StaticVariable.class);
-		NameID nid = decl.getQualifiedName().toNameID();
-		return frame.getStatic(nid);
+	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) {
+		Decl.StaticVariable decl = expr.getDeclaration();
+		RValue v = frame.getStatic(decl.getQualifiedName());
+		if (v == null) {
+			// NOTE: it's possible to get here without the static variable having been
+			// initialised in the special case that we have just loaded a module.
+			frame = frame.enter(decl);
+			v = executeExpression(ANY_T, decl.getInitialiser(), frame);
+			frame.putStatic(decl.getQualifiedName(), v);
+		}
+		return v;
 	}
 
-	private RValue executeIs(Expr.Is expr, CallStack frame) throws ResolutionError {
+	private RValue executeIs(Expr.Is expr, CallStack frame) {
 		RValue lhs = executeExpression(ANY_T, expr.getOperand(), frame);
-		return lhs.is(expr.getTestType(), this);
+		return lhs.is(expr.getTestType(), frame);
 	}
 
 	public RValue executeIntegerNegation(Expr.IntegerNegation expr, CallStack frame) {
@@ -1092,13 +1049,16 @@ public class Interpreter {
 		return ref.deref().read();
 	}
 
-	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
+	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
 		// Locate the function or method body in order to execute it
-		// FIXME: This is horrendous. Should be able to use descriptor here!!
-		Decl.FunctionOrMethod decl = resolveExactly(expr.getName(), expr.getSignature(),
-				Decl.FunctionOrMethod.class);
-		// Clone frame to ensure it executes in this exact environment.
-		return semantics.Lambda(decl, frame.clone(), decl.getBody());
+		Decl.Callable decl = expr.getDeclaration();
+		if(decl instanceof Decl.FunctionOrMethod) {
+			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
+			// Clone frame to ensure it executes in this exact environment.
+			return semantics.Lambda(decl, frame.clone(), fm.getBody());
+		} else {
+			return (RValue) error("cannot take address of property",expr);
+		}
 	}
 
 	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame) {
@@ -1148,26 +1108,21 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
-		try {
-			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_indirectinvoke:
-				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-			case WhileyFile.EXPR_invoke:
-				return executeInvoke((Expr.Invoke) expr, frame);
-			case WhileyFile.EXPR_constant:
-			case WhileyFile.EXPR_cast:
-			case WhileyFile.EXPR_recordaccess:
-			case WhileyFile.EXPR_recordborrow:
-			case WhileyFile.DECL_lambda:
-			case WhileyFile.EXPR_logicalexistential:
-			case WhileyFile.EXPR_logicaluniversal:
-			default:
-				RValue val = executeExpression(ANY_T, expr, frame);
-				return new RValue[] { val };
-			}
-		} catch (ResolutionError e) {
-			error(e.getMessage(), expr);
-			return null;
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_indirectinvoke:
+			return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
+		case WyilFile.EXPR_invoke:
+			return executeInvoke((Expr.Invoke) expr, frame);
+		case WyilFile.EXPR_constant:
+		case WyilFile.EXPR_cast:
+		case WyilFile.EXPR_recordaccess:
+		case WyilFile.EXPR_recordborrow:
+		case WyilFile.DECL_lambda:
+		case WyilFile.EXPR_logicalexistential:
+		case WyilFile.EXPR_logicaluniversal:
+		default:
+			RValue val = executeExpression(ANY_T, expr, frame);
+			return new RValue[] { val };
 		}
 	}
 
@@ -1219,14 +1174,14 @@ public class Interpreter {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) throws ResolutionError {
+	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) {
 		// Resolve function or method being invoked to a concrete declaration
-		Decl.Callable decl = resolveExactly(expr.getName(), expr.getSignature(),
-				Decl.Callable.class);
+		Decl.Callable decl = expr.getDeclaration();
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
-		return execute(decl.getQualifiedName().toNameID(), decl.getType(), frame, arguments);
+		RValue[] rs = execute(decl.getQualifiedName(), decl.getType(), frame, arguments);
+		return rs;
 	}
 
 	// =============================================================
@@ -1375,23 +1330,23 @@ public class Interpreter {
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 
 	public final class CallStack {
-		private final Set<Path.ID> modules;
-		private final Decl.Callable context;
-		private final Map<Identifier, RValue> locals;
-		private final Map<NameID, RValue> globals;
+		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
+		private final HashMap<QualifiedName, RValue> statics;
+		private final HashMap<Identifier, RValue> locals;
+		private final Decl.Named context;
 
 		public CallStack() {
+			this.callables = new HashMap<>();
+			this.statics = new HashMap<>();
 			this.locals = new HashMap<>();
-			this.globals = new HashMap<>();
-			this.modules = new HashSet<>();
 			this.context = null;
 		}
 
-		private CallStack(CallStack parent, Decl.Callable context) {
+		private CallStack(CallStack parent, Decl.Named context) {
 			this.context = context;
 			this.locals = new HashMap<>();
-			this.globals = parent.globals;
-			this.modules = parent.modules;
+			this.statics = parent.statics;
+			this.callables = parent.callables;
 		}
 
 		public RValue getLocal(Identifier name) {
@@ -1402,23 +1357,26 @@ public class Interpreter {
 			locals.put(name, value);
 		}
 
-		public RValue getStatic(NameID name) {
-			RValue v = globals.get(name);
-			if(v == null) {
-				load(name.module());
-				v  = globals.get(name);
-			}
-			return v;
+		public RValue getStatic(QualifiedName name) {
+			return statics.get(name);
 		}
 
-		public void putStatic(NameID name, RValue value) {
-			load(name.module());
-			globals.put(name, value);
+		public void putStatic(QualifiedName name, RValue value) {
+			statics.put(name, value);
 		}
 
-		public CallStack enter(Decl.Callable context) {
-			load(context.getQualifiedName().toNameID().module());
+		public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
+			// NOTE: must use toCanonicalString() here in order to guarantee that we get the
+			// same string as at the declaration site.
+			return callables.get(name).get(signature.toCanonicalString());
+		}
+
+		public CallStack enter(Decl.Named context) {
 			return new CallStack(this, context);
+		}
+
+		public <T extends RValue> T execute(Class<T> expected, Expr expr, CallStack frame) {
+			return Interpreter.this.executeExpression(expected, expr, frame);
 		}
 
 		@Override
@@ -1429,30 +1387,53 @@ public class Interpreter {
 		}
 
 		/**
+		 * Load one or more modules into this CallStack.
+		 *
+		 * @param modules
+		 * @return
+		 */
+		public CallStack load(WyilFile... modules) {
+			for (int i = 0; i != modules.length; ++i) {
+				load(modules[i]);
+			}
+			return this;
+		}
+
+		/**
 		 * Load a given module and make sure that all static variables are
 		 * properly initialised.
 		 *
 		 * @param mid
 		 * @param frame
 		 */
-		private void load(Path.ID mid) {
-			if (!modules.contains(mid)) {
-				// NOTE: must add module before attempting to load it.
-				// Otherwise, static initialisers it contains will force itself
-				// to be loaded.
-				modules.add(mid);
-				try {
-					WhileyFile module = project.get(mid, WhileyFile.BinaryContentType).read();
-					for (WhileyFile.Decl d : module.getDeclarations()) {
-						if (d instanceof Decl.StaticVariable) {
-							Decl.StaticVariable decl = (Decl.StaticVariable) d;
+		private void load(WyilFile module) {
+			//
+			for (Decl.Unit unit : module.getModule().getUnits()) {
+				for (Decl d : unit.getDeclarations()) {
+					switch (d.getOpcode()) {
+					case DECL_staticvar: {
+						Decl.StaticVariable decl = (Decl.StaticVariable) d;
+						if(!statics.containsKey(decl.getQualifiedName())) {
+							// Static variable has not been initialised yet, therefore force its
+							// initialisation.
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
-							globals.put(new NameID(mid, decl.getName().toString()), value);
+							statics.put(decl.getQualifiedName(), value);
 						}
+						break;
 					}
-					//
-				} catch (IOException e) {
-					throw new RuntimeException(e.getMessage(), e);
+					case DECL_function:
+					case DECL_method:
+					case DECL_property:
+						Decl.Callable decl = (Decl.Callable) d;
+						Map<String,Decl.Callable> map = callables.get(decl.getQualifiedName());
+						if(map == null) {
+							map = new HashMap<>();
+							callables.put(decl.getQualifiedName(),map);
+						}
+						// NOTE: must use canonical string here to ensure unique signature for lookup.
+						map.put(decl.getType().toCanonicalString(), decl);
+						break;
+					}
 				}
 			}
 		}
@@ -1512,19 +1493,5 @@ public class Interpreter {
 		public Decl.Callable getContext() {
 			return context;
 		}
-	}
-
-	public <T extends Decl.Callable> T resolveExactly(Name name, Type.Callable signature, Class<T> kind)
-			throws ResolutionError {
-		for (T decl : resolveAll(name, kind)) {
-			if (decl.getType().equals(signature)) {
-				return decl;
-			}
-		}
-		return null;
-	}
-
-	public <T extends Decl.Named> List<T> resolveAll(Name name, Class<T> kind) throws ResolutionError {
-		return resolver.resolveAll(name, kind);
 	}
 }

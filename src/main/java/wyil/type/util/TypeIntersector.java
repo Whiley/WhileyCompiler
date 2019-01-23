@@ -13,15 +13,12 @@
 // limitations under the License.
 package wyil.type.util;
 
-import wyc.lang.WhileyFile.Type;
-
 import java.util.Set;
 
-import wybs.lang.NameResolver;
-import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.lang.WhileyFile.SemanticType;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.util.AbstractTypeCombinator.Linkage;
@@ -66,8 +63,8 @@ import wyil.type.util.AbstractTypeCombinator.Linkage;
  */
 public class TypeIntersector extends AbstractTypeCombinator {
 
-	public TypeIntersector(NameResolver resolver, SubtypeOperator subtyping) {
-		super(resolver, subtyping);
+	public TypeIntersector(SubtypeOperator subtyping) {
+		super(subtyping);
 	}
 
 	@Override
@@ -133,14 +130,10 @@ public class TypeIntersector extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type.Reference lhs, Type.Reference rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		try {
-			if (subtyping.isSubtype(lhs, rhs, lifetimes) && subtyping.isSubtype(rhs, lhs, lifetimes)) {
-				return lhs;
-			} else {
-				return Type.Void;
-			}
-		} catch (ResolutionError e) {
-			throw new IllegalArgumentException(e);
+		if (subtyping.isSubtype(lhs, rhs, lifetimes) && subtyping.isSubtype(rhs, lhs, lifetimes)) {
+			return lhs;
+		} else {
+			return Type.Void;
 		}
 	}
 

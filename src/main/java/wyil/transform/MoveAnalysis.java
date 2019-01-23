@@ -11,16 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.stage;
+package wyil.transform;
+
+import static wyil.lang.WyilFile.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.AbstractConsumer;
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Expr;
-import wyc.lang.WhileyFile.Stmt;
-
-import static wyc.lang.WhileyFile.*;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Stmt;
+import wyil.util.AbstractConsumer;
 
 /**
  * <p>
@@ -65,14 +65,11 @@ import static wyc.lang.WhileyFile.*;
  * @author David J. Pearce
  *
  */
-public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WhileyFile> {
-	public MoveAnalysis(Build.Task builder) {
-
-	}
+public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WyilFile> {
 
 	@Override
-	public void apply(WhileyFile module) {
-		visitWhileyFile(module,null);
+	public void apply(WyilFile module) {
+		visitModule(module,null);
 	}
 
 	// ===========================================================================

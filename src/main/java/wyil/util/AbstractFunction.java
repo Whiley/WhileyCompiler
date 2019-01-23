@@ -11,16 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyc.util;
+package wyil.util;
 
-import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Decl;
-import wyc.lang.WhileyFile.SemanticType;
-import wyc.lang.WhileyFile.Type;
-
-import static wyc.lang.WhileyFile.*;
+import static wyil.lang.WyilFile.*;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -33,8 +32,8 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  */
 public abstract class AbstractFunction<P,R> {
 
-	public R visitWhileyFile(WhileyFile wf, P data) {
-		for (Decl decl : wf.getDeclarations()) {
+	public R visitModule(WyilFile wf, P data) {
+		for (Decl decl : wf.getModule().getUnits()) {
 			visitDeclaration(decl, data);
 		}
 		return null;
@@ -42,6 +41,8 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitDeclaration(Decl decl, P data) {
 		switch (decl.getOpcode()) {
+		case DECL_unit:
+			return visitUnit((Decl.Unit) decl, data);
 		case DECL_importfrom:
 		case DECL_import:
 			return visitImport((Decl.Import) decl, data);
@@ -59,6 +60,12 @@ public abstract class AbstractFunction<P,R> {
 		}
 	}
 
+	public R visitUnit(Decl.Unit unit, P data) {
+		for (Decl decl : unit.getDeclarations()) {
+			visitDeclaration(decl, data);
+		}
+		return null;
+	}
 	public R visitImport(Decl.Import decl, P data) {
 		return null;
 	}
@@ -553,6 +560,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitCast(Expr.Cast expr, P data) {
+		visitType(expr.getType(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}
@@ -634,6 +642,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitIs(Expr.Is expr, P data) {
 		visitExpression(expr.getOperand(), data);
+		visitType(expr.getTestType(), data);
 		return null;
 	}
 
@@ -761,8 +770,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitTypeCallable((Type.Callable) type, data);
 		case TYPE_union:
 			return visitTypeUnion((Type.Union) type, data);
-		case TYPE_unresolved:
-			return visitTypeUnresolved((Type.Unresolved) type, data);
+		case TYPE_unknown:
+			return visitTypeUnresolved((Type.Unknown) type, data);
 		case TYPE_void:
 			return visitTypeVoid((Type.Void) type, data);
 		default:
@@ -855,7 +864,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitTypeUnresolved(Type.Unresolved type, P data) {
+	public R visitTypeUnresolved(Type.Unknown type, P data) {
 		return null;
 	}
 
