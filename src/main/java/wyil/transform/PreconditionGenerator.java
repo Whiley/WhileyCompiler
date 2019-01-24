@@ -170,7 +170,7 @@ public class PreconditionGenerator {
 				// FIXME: name needs proper path information
 				WyalFile.Name name = vcg.convert(fm.getQualifiedName().getUnit(), prefix + i, expr);
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.getAssumptions(),
+				context.emit(new VerificationCondition("precondition may not be satisfied", context.getAssumptions(),
 						clause, expr.getParent(WyilFile.Attribute.Span.class)));
 			}
 			// Perform parameter checks
