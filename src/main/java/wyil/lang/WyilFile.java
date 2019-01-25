@@ -358,6 +358,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return name;
 		}
 
+		/**
+		 * Provide a simple conversion from a qualified name to a generic name
+		 *
+		 * @return
+		 */
+		public Name toName() {
+			return new Name(ArrayUtils.append(unit.getAll(), name));
+		}
+
 		@Override
 		public String toString() {
 			return unit + "::" + name;

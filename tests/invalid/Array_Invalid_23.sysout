@@ -1,3 +1,3 @@
-tests/invalid/Array_Invalid_23.whiley:14: precondition not satisfied
+tests/invalid/Array_Invalid_23.whiley:14: precondition may not be satisfied
     assume g(f([0])) == 0
            ^^^^^^^^^

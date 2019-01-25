@@ -1,3 +1,3 @@
-tests/invalid/Function_Invalid_1.whiley:2: name "asdkljkljg" not found
+tests/invalid/Function_Invalid_1.whiley:2: unable to resole name (asdkljkljg)
     asdkljkljg(x)
     ^^^^^^^^^^
