@@ -99,6 +99,11 @@ public final class CompileTask implements Build.Task {
 	private final Build.Project project;
 
 	/**
+	 * Specify whether verification enabled or not
+	 */
+	private boolean verification;
+
+	/**
 	 * The logger used for logging system events
 	 */
 	private Logger logger;
@@ -115,6 +120,11 @@ public final class CompileTask implements Build.Task {
 	@Override
 	public Build.Project project() {
 		return project;
+	}
+
+	public CompileTask setVerification(boolean flag) {
+		this.verification = flag;
+		return this;
 	}
 
 	public void setLogger(Logger logger) {

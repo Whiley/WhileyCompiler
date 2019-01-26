@@ -47,6 +47,7 @@ public class Activator implements Module.Activator {
 	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
 	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
 	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
+	public static Trie VERIFY_CONFIG_OPTION = Trie.fromString("build/whiley/verify");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -56,6 +57,8 @@ public class Activator implements Module.Activator {
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
+		// Determine whether verification enabled or not
+		private boolean verification;
 		//
 		@Override
 		public String getName() {
@@ -66,7 +69,8 @@ public class Activator implements Module.Activator {
 		public Configuration.Schema getConfigurationSchema() {
 			return Configuration.fromArray(
 					Configuration.UNBOUND_STRING(SOURCE_CONFIG_OPTION, "Specify location for whiley source files", SOURCE_DEFAULT),
-					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT));
+					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT),
+					Configuration.UNBOUND_BOOLEAN(VERIFY_CONFIG_OPTION, "Enable verification of whiley files", false));
 		}
 
 		@Override
@@ -75,11 +79,12 @@ public class Activator implements Module.Activator {
 			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			this.verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
 		}
 
 		@Override
 		public Task initialise(Build.Project project) {
-			return new CompileTask(project);
+			return new CompileTask(project).setVerification(verification);
 		}
 
 		@Override
