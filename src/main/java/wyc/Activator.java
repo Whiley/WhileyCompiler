@@ -84,7 +84,12 @@ public class Activator implements Module.Activator {
 
 		@Override
 		public Task initialise(Build.Project project) {
-			return new CompileTask(project).setVerification(verification);
+			try {
+				return new CompileTask(project,getSourceRoot(project.getRoot())).setVerification(verification);
+			} catch(IOException e) {
+				// FIXME: this is broken
+				throw new RuntimeException(e);
+			}
 		}
 
 		@Override

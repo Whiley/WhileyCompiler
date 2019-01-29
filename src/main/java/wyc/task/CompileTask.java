@@ -20,6 +20,7 @@ import java.io.*;
 import java.util.*;
 
 import wyal.lang.WyalFile;
+import wyal.util.TypeChecker;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -34,6 +35,8 @@ import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
+import wyil.transform.VerificationConditionGenerator;
+import wytp.provers.AutomatedTheoremProver;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -99,18 +102,24 @@ public final class CompileTask implements Build.Task {
 	private final Build.Project project;
 
 	/**
+	 * The source root to find Whiley files. This is far from ideal.
+	 */
+	private final Path.Root sourceRoot;
+
+	/**
 	 * Specify whether verification enabled or not
 	 */
-	private boolean verification;
+	private boolean verify;
 
 	/**
 	 * The logger used for logging system events
 	 */
 	private Logger logger;
 
-	public CompileTask(Build.Project project) {
+	public CompileTask(Build.Project project, Path.Root sourceRoot) {
 		this.logger = Logger.NULL;
 		this.project = project;
+		this.sourceRoot = sourceRoot;
 	}
 
 	public String id() {
@@ -123,7 +132,7 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public CompileTask setVerification(boolean flag) {
-		this.verification = flag;
+		this.verify = flag;
 		return this;
 	}
 
@@ -156,6 +165,9 @@ public final class CompileTask implements Build.Task {
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
 		build(logger, project, target, sources);
+		if (verify) {
+			verify(logger, project, sourceRoot, target, sources);
+		}
 	}
 
 	public static void build(Logger logger, Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
@@ -212,6 +224,54 @@ public final class CompileTask implements Build.Task {
 			SyntacticItem item = e.getElement();
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			if(e.getEntry().contentType() == WyilFile.ContentType) {
+				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+				// Determine which source file this entry is contained in
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+				//
+				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+			} else {
+				throw e;
+			}
+		}
+	}
+
+
+	public static void verify(Logger logger, Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+			throws IOException {
+		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
+		// in the near future, the VerificationConditionGenerator will operate directly
+		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
+		// work on the WyilFile directly as well and, hence, this will become more like
+		// a compilation stage (as per others above).
+		try {
+			Runtime runtime = Runtime.getRuntime();
+			long startTime = System.currentTimeMillis();
+			long startMemory = runtime.freeMemory();
+			//
+			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
+			// FIXME: this unfortunately puts it in the wrong directory.
+			Path.Entry<WyalFile> wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
+			if (wyalTarget == null) {
+				wyalTarget = project.getRoot().create(target.id(), WyalFile.ContentType);
+				wyalTarget.write(new WyalFile(wyalTarget));
+			}
+			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target.read());
+			new TypeChecker(typeSystem, contents, target).check();
+			wyalTarget.write(contents);
+			wyalTarget.flush();
+			// Now try to verfify it
+			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+			// FIXME: this is horrendous :(
+			prover.check(contents, sourceRoot);
+
+			long endTime = System.currentTimeMillis();
+			logger.logTimedMessage("verified code for 1 file(s)", endTime - startTime,
+					startMemory - runtime.freeMemory());
+		} catch(SyntaxError e) {
+			//
+			SyntacticItem item = e.getElement();
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			if(e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);

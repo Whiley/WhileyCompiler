@@ -222,7 +222,7 @@ public class TestUtils {
 	 * @param verify
 	 */
 	private static void addCompilationRules(StdProject project, Path.Root root, boolean verify) {
-		CompileTask task = new CompileTask(project);
+		CompileTask task = new CompileTask(project, root);
 		// Add compilation rule(s) (whiley => wyil)
 		project.add(new StdBuildRule(task, root, whileyIncludes, null, root));
 		// Rule for compiling WyIL to WyAL. This will force generation of WyAL files
