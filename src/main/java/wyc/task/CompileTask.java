@@ -271,7 +271,7 @@ public final class CompileTask implements Build.Task {
 			//
 			SyntacticItem item = e.getElement();
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
+			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);

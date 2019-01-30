@@ -137,21 +137,27 @@ public class VerificationConditionGenerator {
 	 */
 	public WyalFile translate(WyilFile wyilFile) {
 		for (WyilFile.Decl.Unit unit : wyilFile.getModule().getUnits()) {
-			for (WyilFile.Decl decl : unit.getDeclarations()) {
-				if (decl instanceof WyilFile.Decl.StaticVariable) {
-					translateConstantDeclaration((WyilFile.Decl.StaticVariable) decl);
-				} else if (decl instanceof WyilFile.Decl.Type) {
-					translateTypeDeclaration((WyilFile.Decl.Type) decl);
-				} else if (decl instanceof WyilFile.Decl.Property) {
-					translatePropertyDeclaration((WyilFile.Decl.Property) decl);
-				} else if (decl instanceof WyilFile.Decl.FunctionOrMethod) {
-					WyilFile.Decl.FunctionOrMethod method = (WyilFile.Decl.FunctionOrMethod) decl;
-					translateFunctionOrMethodDeclaration(method);
-				}
+			translate(unit);
+		}
+		for (WyilFile.Decl.Unit unit : wyilFile.getModule().getExterns()) {
+			translate(unit);
+		}
+		return wyalFile;
+	}
+
+	public void translate(WyilFile.Decl.Unit unit) {
+		for (WyilFile.Decl decl : unit.getDeclarations()) {
+			if (decl instanceof WyilFile.Decl.StaticVariable) {
+				translateConstantDeclaration((WyilFile.Decl.StaticVariable) decl);
+			} else if (decl instanceof WyilFile.Decl.Type) {
+				translateTypeDeclaration((WyilFile.Decl.Type) decl);
+			} else if (decl instanceof WyilFile.Decl.Property) {
+				translatePropertyDeclaration((WyilFile.Decl.Property) decl);
+			} else if (decl instanceof WyilFile.Decl.FunctionOrMethod) {
+				WyilFile.Decl.FunctionOrMethod method = (WyilFile.Decl.FunctionOrMethod) decl;
+				translateFunctionOrMethodDeclaration(method);
 			}
 		}
-
-		return wyalFile;
 	}
 
 	/**
