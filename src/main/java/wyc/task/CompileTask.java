@@ -111,13 +111,7 @@ public final class CompileTask implements Build.Task {
 	 */
 	private boolean verify;
 
-	/**
-	 * The logger used for logging system events
-	 */
-	private Logger logger;
-
 	public CompileTask(Build.Project project, Path.Root sourceRoot) {
-		this.logger = Logger.NULL;
 		this.project = project;
 		this.sourceRoot = sourceRoot;
 	}
@@ -134,10 +128,6 @@ public final class CompileTask implements Build.Task {
 	public CompileTask setVerification(boolean flag) {
 		this.verify = flag;
 		return this;
-	}
-
-	public void setLogger(Logger logger) {
-		this.logger = logger;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -164,14 +154,15 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		build(logger, project, target, sources);
+		build(project, target, sources);
 		if (verify) {
-			verify(logger, project, sourceRoot, target, sources);
+			verify(project, sourceRoot, target, sources);
 		}
 	}
 
-	public static void build(Logger logger, Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public static void build(Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
+		Logger logger = project.getLogger();
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			long startTime = System.currentTimeMillis();
@@ -236,8 +227,9 @@ public final class CompileTask implements Build.Task {
 	}
 
 
-	public static void verify(Logger logger, Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public static void verify(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
+		Logger logger = project.getLogger();
 		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
 		// in the near future, the VerificationConditionGenerator will operate directly
 		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
