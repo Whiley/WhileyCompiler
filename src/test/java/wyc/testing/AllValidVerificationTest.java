@@ -152,6 +152,13 @@ public class AllValidVerificationTest {
 		// Type Test operator?
 		IGNORED.put("TypeEquals_Valid_58", "??");
 		IGNORED.put("TypeEquals_Valid_59", "??");
+		//
+		IGNORED.put("Property_Valid_10", "??");
+		IGNORED.put("Property_Valid_11", "??");
+		IGNORED.put("Property_Valid_12", "??");
+		IGNORED.put("Property_Valid_14", "??");
+		IGNORED.put("Property_Valid_15", "??");
+		IGNORED.put("Property_Valid_16", "??");
 	}
 
 	/**
