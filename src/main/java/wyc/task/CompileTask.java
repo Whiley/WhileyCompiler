@@ -267,8 +267,9 @@ public final class CompileTask implements Build.Task {
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();
+			String message = e.getMessage();
 			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
-				findCounterexamples((WyalFile.Declaration.Assert) item);
+				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
 			}
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
@@ -276,9 +277,9 @@ public final class CompileTask implements Build.Task {
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
 				//
-				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+				throw new SyntaxError(message,sf,item,e.getCause());
 			} else {
-				throw e;
+				throw new SyntaxError(message,e.getEntry(),item,e.getCause());
 			}
 		}
 	}
@@ -307,7 +308,7 @@ public final class CompileTask implements Build.Task {
 		return wyil;
 	}
 
-	public boolean findCounterexamples(WyalFile.Declaration.Assert assertion) {
+	public String findCounterexamples(WyalFile.Declaration.Assert assertion) {
 		// FIXME: it doesn't feel right creating new instances here.
 		NameResolver resolver = new WyalFileResolver(project);
 		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
@@ -316,12 +317,12 @@ public final class CompileTask implements Build.Task {
 			Interpreter.Result result = interpreter.evaluate(assertion);
 			if (!result.holds()) {
 				// FIXME: this is broken
-				System.out.println("counterexample: " + result.getEnvironment());
+				return result.getEnvironment().toString();
 			}
 		} catch (Interpreter.UndefinedException e) {
 			// do nothing for now
 		}
-		return false;
+		return "no counterexample";
 	}
 
 	private static Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {

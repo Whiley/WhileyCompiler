@@ -4402,7 +4402,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if(i!=0) {
 						r += ",";
 					}
-					field.toString();
+					r += field.toString();
 				}
 				//
 				return "{" + r + "}";
