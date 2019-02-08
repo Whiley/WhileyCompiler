@@ -179,7 +179,8 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, String... args) throws IOException {
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String... args)
+			throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
 		//
@@ -190,7 +191,7 @@ public class TestUtils {
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
 			StdProject project = new StdProject(root);
 			// Add build rules
-			addCompilationRules(project,root,verify);
+			addCompilationRules(project,root,verify,counterexamples);
 			// Create empty build graph
 			Build.Graph graph = new StdBuildGraph();
 			// Identify source files and build project
@@ -221,7 +222,7 @@ public class TestUtils {
 	 * @param root
 	 * @param verify
 	 */
-	private static void addCompilationRules(StdProject project, Path.Root root, boolean verify) {
+	private static void addCompilationRules(StdProject project, Path.Root root, boolean verify, boolean counterexamples) {
 		CompileTask task = new CompileTask(project, root);
 		// Add compilation rule(s) (whiley => wyil)
 		project.add(new StdBuildRule(task, root, whileyIncludes, null, root));
@@ -236,6 +237,7 @@ public class TestUtils {
 			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
 			wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 			wyalBuildTask.setVerify(verify);
+			wyalBuildTask.setCounterExamples(counterexamples);
 			project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, null, root));
 		}
 	}

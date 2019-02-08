@@ -185,7 +185,8 @@ public class AllValidVerificationTest {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 
 		Pair<Boolean, String> p = TestUtils.compile(whileySrcDir, // location of source directory
-				true, // enable verification
+				true,  // enable verification
+				false, // no counterexample generation
 				name); // name of test to compile
 
 		boolean r = p.first();

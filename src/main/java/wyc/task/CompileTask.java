@@ -13,17 +13,16 @@
 // limitations under the License.
 package wyc.task;
 
-import static wyc.util.ErrorMessages.RESOLUTION_ERROR;
-import static wyc.util.ErrorMessages.errorMessage;
-
 import java.io.*;
 import java.util.*;
 
 import wyal.lang.WyalFile;
+import wyal.util.Interpreter;
+import wyal.util.NameResolver;
+import wyal.util.SmallWorldDomain;
 import wyal.util.TypeChecker;
-import wyfs.lang.Content;
+import wyal.util.WyalFileResolver;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
@@ -37,14 +36,11 @@ import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
 import wyil.transform.VerificationConditionGenerator;
 import wytp.provers.AutomatedTheoremProver;
+import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
-import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.*;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wycc.cfg.Configuration;
-import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
 
@@ -109,7 +105,11 @@ public final class CompileTask implements Build.Task {
 	/**
 	 * Specify whether verification enabled or not
 	 */
-	private boolean verify;
+	private boolean verification;
+	/**
+	 * Specify whether counterexample generation is enabled or not
+	 */
+	private boolean counterexamples;
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot) {
 		this.project = project;
@@ -126,7 +126,12 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public CompileTask setVerification(boolean flag) {
-		this.verify = flag;
+		this.verification = flag;
+		return this;
+	}
+
+	public CompileTask setCounterExamples(boolean flag) {
+		this.counterexamples = flag;
 		return this;
 	}
 
@@ -155,8 +160,8 @@ public final class CompileTask implements Build.Task {
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
 		build(project, target, sources);
-		if (verify) {
-			verify(project, sourceRoot, target, sources);
+		if (verification) {
+			verify(sourceRoot, target, sources);
 		}
 	}
 
@@ -227,7 +232,7 @@ public final class CompileTask implements Build.Task {
 	}
 
 
-	public static void verify(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public  void verify(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
 		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
@@ -262,15 +267,19 @@ public final class CompileTask implements Build.Task {
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();
+			String message = e.getMessage();
+			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
+				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
+			}
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
 				//
-				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+				throw new SyntaxError(message,sf,item,e.getCause());
 			} else {
-				throw e;
+				throw new SyntaxError(message,e.getEntry(),item,e.getCause());
 			}
 		}
 	}
@@ -297,6 +306,23 @@ public final class CompileTask implements Build.Task {
 		}
 		//
 		return wyil;
+	}
+
+	public String findCounterexamples(WyalFile.Declaration.Assert assertion) {
+		// FIXME: it doesn't feel right creating new instances here.
+		NameResolver resolver = new WyalFileResolver(project);
+		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
+		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
+		try {
+			Interpreter.Result result = interpreter.evaluate(assertion);
+			if (!result.holds()) {
+				// FIXME: this is broken
+				return result.getEnvironment().toString();
+			}
+		} catch (Interpreter.UndefinedException e) {
+			// do nothing for now
+		}
+		return "no counterexample";
 	}
 
 	private static Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
