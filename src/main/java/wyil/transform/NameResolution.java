@@ -376,7 +376,8 @@ public class NameResolution {
 			case EXPR_invoke: {
 				Expr.Invoke e = (Expr.Invoke) target;
 				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
-				e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
+				e.setDeclarations(resolved);
+				//e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
 				break;
 			}
 			case EXPR_lambdaaccess: {

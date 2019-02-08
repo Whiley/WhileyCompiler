@@ -25,8 +25,8 @@ ensures sum(l,r):
     // iterate until 
     while l is Node
     where diff(ol,l,x):
-        l = l.next
         x = x + l.data
+        l = l.next
     //
     return x
 

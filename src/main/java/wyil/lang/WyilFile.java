@@ -4289,9 +4289,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public String toString() {
 				if(hasLifetime()) {
-					return "&" + getLifetime() + ":" + getElement().toString();
+					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&" + getElement().toString();
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 

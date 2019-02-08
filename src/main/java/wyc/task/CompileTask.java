@@ -159,13 +159,13 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		build(project, target, sources);
+		build(sourceRoot, target, sources);
 		if (verification) {
 			verify(sourceRoot, target, sources);
 		}
 	}
 
-	public static void build(Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public void build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
 		try {
@@ -222,7 +222,7 @@ public final class CompileTask implements Build.Task {
 			if(e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
 				//
 				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
 			} else {
@@ -275,7 +275,7 @@ public final class CompileTask implements Build.Task {
 			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot, unit.getName(), sources);
 				//
 				throw new SyntaxError(message,sf,item,e.getCause());
 			} else {
@@ -325,11 +325,12 @@ public final class CompileTask implements Build.Task {
 		return "no counterexample";
 	}
 
-	private static Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
+	private static Path.Entry<WhileyFile> getWhileySourceFile(Path.Root root, Name name,
+			List<Path.Entry<WhileyFile>> sources) throws IOException {
 		String nameStr = name.toString().replace("::", "/");
 		//
 		for (Path.Entry<WhileyFile> e : sources) {
-			if (e.id().toString().equals(nameStr)) {
+			if (root.contains(e) && e.id().toString().endsWith(nameStr)) {
 				return e;
 			}
 		}
