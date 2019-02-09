@@ -87,11 +87,12 @@ public class AllInvalidTest {
 		// Problems with counterexample generation?
 		IGNORED.put("DoWhile_Invalid_6", "??");
 		IGNORED.put("DoWhile_Invalid_8", "??");
-		IGNORED.put("TupleAssign_Invalid_3", "??");
 		IGNORED.put("While_Invalid_20", "??");
 		IGNORED.put("While_Invalid_21", "??");
 		IGNORED.put("While_Invalid_22", "??");
 		IGNORED.put("While_Invalid_23", "??");
+		IGNORED.put("TupleAssign_Invalid_3", "??");
+		IGNORED.put("TypeEquals_Invalid_5", "??");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
