@@ -17,7 +17,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 
@@ -1276,7 +1276,7 @@ public class Interpreter {
 	 *            --- Types to be checked against
 	 */
 	@SafeVarargs
-	public static <T extends RValue> T checkType(RValue operand, SyntacticElement context, Class<T>... types) {
+	public static <T extends RValue> T checkType(RValue operand, SyntacticItem context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
 			if (types[i].isInstance(operand)) {
@@ -1303,7 +1303,7 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	public static Object error(String msg, SyntacticElement context) {
+	public static Object error(String msg, SyntacticItem context) {
 		// FIXME: do more here
 		throw new RuntimeException(msg);
 	}
@@ -1315,7 +1315,7 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	private <T> T deadCode(SyntacticElement element) {
+	private <T> T deadCode(SyntacticItem element) {
 		// FIXME: do more here
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
