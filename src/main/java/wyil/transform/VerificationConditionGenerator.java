@@ -19,13 +19,12 @@ import static wyil.lang.WyilFile.*;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Attribute;
 import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractSyntacticItem;
 import wycc.util.Pair;
 import wycc.util.ArrayUtils;
 import wyal.lang.WyalFile;
@@ -2577,12 +2576,6 @@ public class VerificationConditionGenerator {
 		if (item.getHeap() != null) {
 			span = item.getParent(WyilFile.Attribute.Span.class);
 		}
-		if (span == null) {
-			Attribute.Source source = item.attribute(Attribute.Source.class);
-			if (source != null) {
-				span = new WyilFile.Attribute.Span(null, source.start, source.end);
-			}
-		}
 		return span;
 	}
 
@@ -2591,7 +2584,7 @@ public class VerificationConditionGenerator {
 		if (span != null) {
 			int start = span.getStart().get().intValue();
 			int end = span.getEnd().get().intValue();
-			item.attributes().add(new Attribute.Source(start, end, 0));
+	//			item.attributes().add(new Attribute.Source(start, end, 0));
 		}
 		return item;
 	}
@@ -2705,7 +2698,7 @@ public class VerificationConditionGenerator {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class VerificationCondition extends SyntacticElement.Impl {
+	public static class VerificationCondition {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;

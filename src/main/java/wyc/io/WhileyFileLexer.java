@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
