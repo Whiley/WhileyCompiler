@@ -152,6 +152,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int MOD_protected = MOD_mask + 3;
 	public static final int MOD_private = MOD_mask + 4;
 	public static final int MOD_public = MOD_mask + 5;
+	// ATTRIBUTES
+	public static final int ATTR_mask = MOD_mask + 16;
+	public static final int ATTR_warning = ATTR_mask + 0;
+	public static final int ATTR_error = ATTR_mask + 1;
+	public static final int ATTR_verificationcondition = ATTR_mask + 2;
 	// TYPES:
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
@@ -5392,6 +5397,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 	}
+
+	// ============================================================
+	// Attributes
+	// ============================================================
+	public static class SyntaxError extends AbstractSyntacticItem implements SyntacticItem.Marker {
+		public SyntaxError(int errcode) {
+			super(ATTR_error, BigInteger.valueOf(errcode).toByteArray());
+			// FIXME: should provide some mechanism for adding contextual information
+		}
+
+		/**
+		 * Get the error code associated with this message
+		 *
+		 * @return
+		 */
+		public int getErrorCode() {
+			return new BigInteger(getData()).intValue();
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new SyntaxError(getErrorCode());
+		}
+
+		@Override
+		public String getMessage() {
+			return "error code: " + getErrorCode();
+		}
+	}
+
+	// Types
+	public static final int SUBTYPE_ERROR = 400;
+	public static final int EMPTY_TYPE = 401;
+	public static final int EXPECTED_ARRAY = 402;
+	public static final int EXPECTED_RECORD = 403;
+	public static final int EXPECTED_REFERENCE = 404;
+	public static final int EXPECTED_LAMBDA = 405;
+	public static final int INVALID_FIELD = 406;
+	// Statements
+	public static final int MISSING_RETURN_STATEMENT = 500;
+	public static final int UNREACHABLE_CODE = 504;
+	public static final int BRANCH_ALWAYS_TAKEN = 506;
+	public static final int TOO_MANY_RETURNS = 306;
+	public static final int INSUFFICIENT_RETURNS = 305;
+	// Expressions
+	public static final int INCOMPARABLE_OPERANDS = 602;
+	public static final int INSUFFICIENT_ARGUMENTS = 603;
+	public static final int AMBIGUOUS_CALLABLE = 604;
 
 	// ==============================================================================
 	//
