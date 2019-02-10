@@ -358,6 +358,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return name;
 		}
 
+		/**
+		 * Provide a simple conversion from a qualified name to a generic name
+		 *
+		 * @return
+		 */
+		public Name toName() {
+			return new Name(ArrayUtils.append(unit.getAll(), name));
+		}
+
 		@Override
 		public String toString() {
 			return unit + "::" + name;
@@ -4280,9 +4289,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public String toString() {
 				if(hasLifetime()) {
-					return "&" + getLifetime() + ":" + getElement().toString();
+					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&" + getElement().toString();
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 
@@ -4393,7 +4402,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if(i!=0) {
 						r += ",";
 					}
-					field.toString();
+					r += field.toString();
 				}
 				//
 				return "{" + r + "}";

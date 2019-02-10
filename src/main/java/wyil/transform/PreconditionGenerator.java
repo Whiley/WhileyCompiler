@@ -163,14 +163,13 @@ public class PreconditionGenerator {
 			Pair<Expr[],Context> r = vcg.translateExpressionsWithChecks(expr.getOperands(), context);
 			Expr[] arguments = r.first();
 			context = r.second();
-			String prefix = fm.getName() + "_requires_";
 			// Finally, generate an appropriate verification condition to check
 			// each precondition clause
 			for (int i = 0; i != numPreconditions; ++i) {
 				// FIXME: name needs proper path information
-				WyalFile.Name name = vcg.convert(fm.getQualifiedName().getUnit(), prefix + i, expr);
+				WyalFile.Name name = vcg.convert(fm.getQualifiedName(), "_requires_" + i, expr);
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.getAssumptions(),
+				context.emit(new VerificationCondition("precondition may not be satisfied", context.getAssumptions(),
 						clause, expr.getParent(WyilFile.Attribute.Span.class)));
 			}
 			// Perform parameter checks

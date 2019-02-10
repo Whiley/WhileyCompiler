@@ -13,16 +13,16 @@
 // limitations under the License.
 package wyc.task;
 
-import static wyc.util.ErrorMessages.RESOLUTION_ERROR;
-import static wyc.util.ErrorMessages.errorMessage;
-
 import java.io.*;
 import java.util.*;
 
 import wyal.lang.WyalFile;
-import wyfs.lang.Content;
+import wyal.util.Interpreter;
+import wyal.util.NameResolver;
+import wyal.util.SmallWorldDomain;
+import wyal.util.TypeChecker;
+import wyal.util.WyalFileResolver;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
@@ -34,14 +34,13 @@ import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
+import wyil.transform.VerificationConditionGenerator;
+import wytp.provers.AutomatedTheoremProver;
+import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
-import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.*;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wycc.cfg.Configuration;
-import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
 
@@ -99,13 +98,22 @@ public final class CompileTask implements Build.Task {
 	private final Build.Project project;
 
 	/**
-	 * The logger used for logging system events
+	 * The source root to find Whiley files. This is far from ideal.
 	 */
-	private Logger logger;
+	private final Path.Root sourceRoot;
 
-	public CompileTask(Build.Project project) {
-		this.logger = Logger.NULL;
+	/**
+	 * Specify whether verification enabled or not
+	 */
+	private boolean verification;
+	/**
+	 * Specify whether counterexample generation is enabled or not
+	 */
+	private boolean counterexamples;
+
+	public CompileTask(Build.Project project, Path.Root sourceRoot) {
 		this.project = project;
+		this.sourceRoot = sourceRoot;
 	}
 
 	public String id() {
@@ -117,8 +125,14 @@ public final class CompileTask implements Build.Task {
 		return project;
 	}
 
-	public void setLogger(Logger logger) {
-		this.logger = logger;
+	public CompileTask setVerification(boolean flag) {
+		this.verification = flag;
+		return this;
+	}
+
+	public CompileTask setCounterExamples(boolean flag) {
+		this.counterexamples = flag;
+		return this;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -145,11 +159,15 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		build(logger, project, target, sources);
+		build(sourceRoot, target, sources);
+		if (verification) {
+			verify(sourceRoot, target, sources);
+		}
 	}
 
-	public static void build(Logger logger, Build.Project project, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public void build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
+		Logger logger = project.getLogger();
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			long startTime = System.currentTimeMillis();
@@ -204,11 +222,64 @@ public final class CompileTask implements Build.Task {
 			if(e.getEntry().contentType() == WyilFile.ContentType) {
 				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
 				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(unit.getName(),sources);
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
 				//
 				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
 			} else {
 				throw e;
+			}
+		}
+	}
+
+
+	public  void verify(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+			throws IOException {
+		Logger logger = project.getLogger();
+		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
+		// in the near future, the VerificationConditionGenerator will operate directly
+		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
+		// work on the WyilFile directly as well and, hence, this will become more like
+		// a compilation stage (as per others above).
+		try {
+			Runtime runtime = Runtime.getRuntime();
+			long startTime = System.currentTimeMillis();
+			long startMemory = runtime.freeMemory();
+			//
+			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
+			// FIXME: this unfortunately puts it in the wrong directory.
+			Path.Entry<WyalFile> wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
+			if (wyalTarget == null) {
+				wyalTarget = project.getRoot().create(target.id(), WyalFile.ContentType);
+				wyalTarget.write(new WyalFile(wyalTarget));
+			}
+			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target.read());
+			new TypeChecker(typeSystem, contents, target).check();
+			wyalTarget.write(contents);
+			wyalTarget.flush();
+			// Now try to verfify it
+			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+			// FIXME: this is horrendous :(
+			prover.check(contents, sourceRoot);
+
+			long endTime = System.currentTimeMillis();
+			logger.logTimedMessage("verified code for 1 file(s)", endTime - startTime,
+					startMemory - runtime.freeMemory());
+		} catch(SyntaxError e) {
+			//
+			SyntacticItem item = e.getElement();
+			String message = e.getMessage();
+			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
+				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
+			}
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
+				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+				// Determine which source file this entry is contained in
+				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot, unit.getName(), sources);
+				//
+				throw new SyntaxError(message,sf,item,e.getCause());
+			} else {
+				throw new SyntaxError(message,e.getEntry(),item,e.getCause());
 			}
 		}
 	}
@@ -237,11 +308,29 @@ public final class CompileTask implements Build.Task {
 		return wyil;
 	}
 
-	private static Path.Entry<WhileyFile> getWhileySourceFile(Name name, List<Path.Entry<WhileyFile>> sources) {
+	public String findCounterexamples(WyalFile.Declaration.Assert assertion) {
+		// FIXME: it doesn't feel right creating new instances here.
+		NameResolver resolver = new WyalFileResolver(project);
+		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
+		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
+		try {
+			Interpreter.Result result = interpreter.evaluate(assertion);
+			if (!result.holds()) {
+				// FIXME: this is broken
+				return result.getEnvironment().toString();
+			}
+		} catch (Interpreter.UndefinedException e) {
+			// do nothing for now
+		}
+		return "no counterexample";
+	}
+
+	private static Path.Entry<WhileyFile> getWhileySourceFile(Path.Root root, Name name,
+			List<Path.Entry<WhileyFile>> sources) throws IOException {
 		String nameStr = name.toString().replace("::", "/");
 		//
 		for (Path.Entry<WhileyFile> e : sources) {
-			if (e.id().toString().equals(nameStr)) {
+			if (root.contains(e) && e.id().toString().endsWith(nameStr)) {
 				return e;
 			}
 		}

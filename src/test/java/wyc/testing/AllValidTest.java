@@ -131,7 +131,8 @@ public class AllValidTest {
 		//
 		Pair<Boolean,String> p = TestUtils.compile(
 				whileySrcDir,      // location of source directory
-				false,               // no verification
+				false,             // no verification
+				false,             // no counterexample generation
 				testName);     // name of test to compile
 
 		boolean r = p.first();

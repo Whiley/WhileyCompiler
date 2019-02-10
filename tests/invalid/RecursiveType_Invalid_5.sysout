@@ -1,3 +1,3 @@
-tests/invalid/RecursiveType_Invalid_5.whiley:5: name "string" not found
+tests/invalid/RecursiveType_Invalid_5.whiley:5: unable to resolve name (string)
 type Var is {string id}
              ^^^^^^

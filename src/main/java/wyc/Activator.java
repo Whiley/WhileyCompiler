@@ -47,6 +47,8 @@ public class Activator implements Module.Activator {
 	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
 	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
 	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
+	public static Trie VERIFY_CONFIG_OPTION = Trie.fromString("build/whiley/verify");
+	public static Trie COUNTEREXAMPLE_CONFIG_OPTION = Trie.fromString("build/whiley/counterexamples");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -56,6 +58,10 @@ public class Activator implements Module.Activator {
 		private Trie source;
 		// Specify directory where generated WyIL files are dumped.
 		private Trie target;
+		// Determine whether verification enabled or not
+		private boolean verification;
+		// Determine whether to try and find counterexamples or not
+		private boolean counterexamples;
 		//
 		@Override
 		public String getName() {
@@ -66,7 +72,9 @@ public class Activator implements Module.Activator {
 		public Configuration.Schema getConfigurationSchema() {
 			return Configuration.fromArray(
 					Configuration.UNBOUND_STRING(SOURCE_CONFIG_OPTION, "Specify location for whiley source files", SOURCE_DEFAULT),
-					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT));
+					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT),
+					Configuration.UNBOUND_BOOLEAN(VERIFY_CONFIG_OPTION, "Enable verification of whiley files", new Value.Bool(false)),
+					Configuration.UNBOUND_BOOLEAN(COUNTEREXAMPLE_CONFIG_OPTION, "Enable counterexample generation during verification", new Value.Bool(false)));
 		}
 
 		@Override
@@ -75,11 +83,20 @@ public class Activator implements Module.Activator {
 			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			this.verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
+			this.counterexamples = configuration.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
 		}
 
 		@Override
 		public Task initialise(Build.Project project) {
-			return new CompileTask(project);
+			try {
+				CompileTask task = new CompileTask(project, getSourceRoot(project.getRoot()))
+						.setVerification(verification).setCounterExamples(counterexamples);
+				return task;
+			} catch(IOException e) {
+				// FIXME: this is broken
+				throw new RuntimeException(e);
+			}
 		}
 
 		@Override

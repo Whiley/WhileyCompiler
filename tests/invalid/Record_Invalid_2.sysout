@@ -1,3 +1,3 @@
-tests/invalid/Record_Invalid_2.whiley:1: name "Broken" not found
+tests/invalid/Record_Invalid_2.whiley:1: unable to resolve name (Broken)
 type Global is {Broken field}
                 ^^^^^^

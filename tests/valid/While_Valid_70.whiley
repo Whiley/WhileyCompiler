@@ -1,4 +1,4 @@
-function sq(int n) -> (int r) requires n > 0
+function sq(int n) -> (int r) requires n >= 0
 ensures r == n * n:
     int i = 0
     int prod = 0
@@ -12,9 +12,6 @@ ensures r == n * n:
     return prod
 
 public export method test():
-    assert sq(-2) == 4
-    assert sq(-2) == 4
-    assert sq(-1) == 1
     assert sq(0) == 0
     assert sq(1) == 1
     assert sq(2) == 4

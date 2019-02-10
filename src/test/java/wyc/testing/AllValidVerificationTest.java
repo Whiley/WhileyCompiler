@@ -152,6 +152,14 @@ public class AllValidVerificationTest {
 		// Type Test operator?
 		IGNORED.put("TypeEquals_Valid_58", "??");
 		IGNORED.put("TypeEquals_Valid_59", "??");
+		//
+		IGNORED.put("Property_Valid_10", "??");
+		IGNORED.put("Property_Valid_11", "??");
+		IGNORED.put("Property_Valid_12", "??");
+		IGNORED.put("Property_Valid_14", "??");
+		IGNORED.put("Property_Valid_15", "??");
+		IGNORED.put("Property_Valid_16", "??");
+		IGNORED.put("Property_Valid_17", "??");
 	}
 
 	/**
@@ -178,7 +186,8 @@ public class AllValidVerificationTest {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 
 		Pair<Boolean, String> p = TestUtils.compile(whileySrcDir, // location of source directory
-				true, // enable verification
+				true,  // enable verification
+				false, // no counterexample generation
 				name); // name of test to compile
 
 		boolean r = p.first();
