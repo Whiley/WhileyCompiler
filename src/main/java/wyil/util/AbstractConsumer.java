@@ -82,7 +82,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitVariables(Tuple<Decl.Variable> vars, T data) {
 		for(int i=0;i!=vars.size();++i) {
-			Decl.Variable var = vars.get(i);
+			Decl.Variable var = vars.getOperand(i);
 			visitVariable(var, data);
 		}
 	}
@@ -231,7 +231,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitLVals(Tuple<LVal> lvals, T data) {
 		for(int i=0;i!=lvals.size();++i) {
-			visitExpression(lvals.get(i), data);
+			visitExpression(lvals.getOperand(i), data);
 		}
 	}
 
@@ -241,7 +241,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitBlock(Stmt.Block stmt, T data) {
 		for(int i=0;i!=stmt.size();++i) {
-			visitStatement(stmt.get(i), data);
+			visitStatement(stmt.getOperand(i), data);
 		}
 	}
 
@@ -291,7 +291,7 @@ public abstract class AbstractConsumer<T> {
 		visitExpression(stmt.getCondition(), data);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for(int i=0;i!=cases.size();++i) {
-			visitCase(cases.get(i), data);
+			visitCase(cases.getOperand(i), data);
 		}
 	}
 
@@ -308,7 +308,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitExpressions(Tuple<Expr> exprs, T data) {
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.get(i), data);
+			visitExpression(exprs.getOperand(i), data);
 		}
 	}
 
@@ -749,7 +749,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitTypes(Tuple<Type> type, T data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
+			visitType(type.getOperand(i), data);
 		}
 	}
 
@@ -860,7 +860,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitFields(Tuple<Type.Field> fields, T data) {
 		for(int i=0;i!=fields.size();++i) {
-			visitField(fields.get(i), data);
+			visitField(fields.getOperand(i), data);
 		}
 	}
 
@@ -874,7 +874,7 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitTypeUnion(Type.Union type, T data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
+			visitType(type.getOperand(i), data);
 		}
 	}
 
@@ -929,13 +929,13 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitSemanticTypeUnion(SemanticType.Union type, T data) {
-		for(SemanticType t : type.getAll()) {
+		for(SemanticType t : type.getOperandArray()) {
 			visitSemanticType(t, data);
 		}
 	}
 
 	public void visitSemanticTypeIntersection(SemanticType.Intersection type, T data) {
-		for(SemanticType t : type.getAll()) {
+		for(SemanticType t : type.getOperandArray()) {
 			visitSemanticType(t, data);
 		}
 	}

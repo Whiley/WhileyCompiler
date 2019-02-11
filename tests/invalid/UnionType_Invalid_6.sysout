@@ -1,4 +1,4 @@
-tests/invalid/UnionType_Invalid_6.whiley:10: unable to resolve name (no match for f(IntList))
+tests/invalid/UnionType_Invalid_6.whiley:10: unable to resolve name (is ambiguous)
 	found function UnionType_Invalid_6::f({int op})->(int)
     f(x)
     ^

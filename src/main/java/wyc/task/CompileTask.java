@@ -39,6 +39,7 @@ import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
+import wybs.lang.SyntaxError.InternalFailure;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
 import wycc.util.Logger;
@@ -193,6 +194,10 @@ public final class CompileTask implements Build.Task {
 
 			new NameResolution(project,wf).apply();
 			new FlowTypeCheck().check(wf);
+			// FIXMNE: A temporary hack is to throw an exception here. This will then go
+			// through the conversion process.
+			throwSyntaxError(wf.getModule());
+			//
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck().check(wf);
 			new FunctionalCheck().check(wf);
@@ -202,8 +207,6 @@ public final class CompileTask implements Build.Task {
 			new RecursiveTypeAnalysis().apply(wf);
 			// new CoercionCheck(this);
 
-			logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
-					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
 
 			// ========================================================================
 			// Done
@@ -215,6 +218,8 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
+		} catch(InternalFailure e) {
+			e.printStackTrace();
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();
@@ -224,7 +229,7 @@ public final class CompileTask implements Build.Task {
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
 				//
-				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+				throw new SyntaxError(e.getMessage(), sf, item, e.getCause());
 			} else {
 				throw e;
 			}
@@ -335,5 +340,31 @@ public final class CompileTask implements Build.Task {
 			}
 		}
 		throw new IllegalArgumentException("unknown unit");
+	}
+
+	private static void throwSyntaxError(SyntacticItem item) {
+		throwSyntaxError(item, new BitSet());
+	}
+
+	private static void throwSyntaxError(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		if(visited.get(index)) {
+			// Indicates we've already traversed this item and, hence, we are in some kind
+			// of loop.
+			return;
+		} else {
+			visited.set(index);
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				throwSyntaxError(item.getOperand(i),visited);
+			}
+			SyntacticItem.Marker marker = item.getAttribute(SyntacticItem.Marker.class);
+			// Check whether this item has a marker associated with it.
+			if (marker != null) {
+				// At least one marked assocaited with item.
+				CompilationUnit cu = (CompilationUnit) item.getHeap();
+				throw new SyntaxError(marker.getMessage(),cu.getEntry(),item);
+			}
+		}
 	}
 }

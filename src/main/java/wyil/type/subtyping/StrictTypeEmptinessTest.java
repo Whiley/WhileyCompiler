@@ -273,7 +273,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			case SEMTYPE_intersection: {
 				Type.Combinator ut = (Type.Combinator) t;
 				if (conjunct) {
-					worklist.push(item.sign, ut.getAll(), item.maximise);
+					worklist.push(item.sign, ut.getOperandArray(), item.maximise);
 				} else {
 					return isVoidDisjunction(ut, item.sign, item.maximise, truths, worklist, assumptions, lifetimes);
 				}
@@ -311,7 +311,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	protected boolean isVoidDisjunction(Type.Combinator combinator, boolean sign, boolean maximise,
 			ArrayList<Atom<?>> truths, Worklist worklist, BinaryRelation<Term<?>> assumptions,
 			LifetimeRelation lifetimes) {
-		SemanticType[] operands = combinator.getAll();
+		SemanticType[] operands = combinator.getOperandArray();
 		for (int i = 0; i != operands.length; ++i) {
 			Worklist tmp = worklist.clone();
 			tmp.push(sign, operands[i], maximise);
@@ -545,10 +545,10 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		int matches = 0;
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			SemanticType.Field lhsField = lhsFields.get(i);
+			SemanticType.Field lhsField = lhsFields.getOperand(i);
 			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
@@ -804,8 +804,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		} else {
 			//
 			for (int i = 0; i != lhs.size(); ++i) {
-				Type lhsParameter = lhs.get(i);
-				Type rhsParameter = rhs.get(i);
+				Type lhsParameter = lhs.getOperand(i);
+				Type rhsParameter = rhs.getOperand(i);
 				Term<?> lhsTerm = new Term<>(lhsSign, lhsParameter, lhsMax);
 				Term<?> rhsTerm = new Term<>(rhsSign, rhsParameter, rhsMax);
 				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {

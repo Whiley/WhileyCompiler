@@ -1,4 +1,4 @@
-tests/invalid/UnionType_Invalid_2.whiley:10: unable to resolve name (no match for f(IntBool))
+tests/invalid/UnionType_Invalid_2.whiley:10: unable to resolve name (is ambiguous)
 	found function UnionType_Invalid_2::f(int)->(int)
     f(x)
     ^

@@ -56,10 +56,10 @@ public class RelaxedTypeEmptinessTest extends StrictTypeEmptinessTest {
 		int matches = 0;
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			SemanticType.Field lhsField = lhsFields.get(i);
+			SemanticType.Field lhsField = lhsFields.getOperand(i);
 			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {

@@ -1275,7 +1275,7 @@ public class WhileyFileParser {
 			Tuple<Expr> conditions = c.getConditions();
 			// Check whether any of these conditions already seen.
 			for(int j=0;j!=conditions.size();++j) {
-				Expr condition = conditions.get(j);
+				Expr condition = conditions.getOperand(j);
 				if(seen.contains(condition)) {
 					syntaxError("duplicate case label", condition);
 				} else {
@@ -3193,7 +3193,7 @@ public class WhileyFileParser {
 			Type.Union tt = (Type.Union) type;
 			boolean result = false;
 			for(int i=0;i!=tt.size();++i) {
-				result |= mustParseAsType(tt.get(i));
+				result |= mustParseAsType(tt.getOperand(i));
 			}
 			return result;
 		} else {
@@ -4432,7 +4432,7 @@ public class WhileyFileParser {
 	private String[] toStringArray(Tuple<Identifier> identifiers) {
 		String[] strings = new String[identifiers.size()];
 		for (int i = 0; i != strings.length; ++i) {
-			strings[i] = identifiers.get(i).get();
+			strings[i] = identifiers.getOperand(i).get();
 		}
 		return strings;
 	}
@@ -4768,7 +4768,7 @@ public class WhileyFileParser {
 		public EnclosingScope newEnclosingScope(Tuple<Identifier> lifetimes) {
 			HashSet<Identifier> tmp = new HashSet<>();
 			for (int i = 0; i != lifetimes.size(); ++i) {
-				tmp.add(lifetimes.get(i));
+				tmp.add(lifetimes.getOperand(i));
 			}
 			return new EnclosingScope(indent, environment, fieldAliases, tmp, false);
 		}

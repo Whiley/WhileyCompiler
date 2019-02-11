@@ -200,7 +200,7 @@ public class ReadWriteTypeExtractor {
 		Disjunct result = null;
 		//
 		for (int i = 0; i != type.size(); ++i) {
-			Disjunct child = toDisjunctiveNormalForm(type.get(i));
+			Disjunct child = toDisjunctiveNormalForm(type.getOperand(i));
 			if (result == null) {
 				result = child;
 			} else {
@@ -215,7 +215,7 @@ public class ReadWriteTypeExtractor {
 		Disjunct result = null;
 		//
 		for (int i = 0; i != type.size(); ++i) {
-			Disjunct child = toDisjunctiveNormalForm(type.get(i));
+			Disjunct child = toDisjunctiveNormalForm(type.getOperand(i));
 			if (result == null) {
 				result = child;
 			} else {
@@ -542,7 +542,7 @@ public class ReadWriteTypeExtractor {
 				// Exactly one pivot found. This is something we can work with!
 				for(int i=0;i!=pivots.length;++i) {
 					if(pivots[i] == null) {
-						pivots[i] = lhsFields.get(i);
+						pivots[i] = lhsFields.getOperand(i);
 					}
 				}
 				return new SemanticType.Record(lhs.isOpen(), new Tuple<>(pivots));
@@ -566,10 +566,10 @@ public class ReadWriteTypeExtractor {
 		private int countFieldMatches(Tuple<? extends SemanticType.Field> lhsFields, Tuple<? extends SemanticType.Field> rhsFields) {
 			int matches = 0;
 			for (int i = 0; i != lhsFields.size(); ++i) {
-				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
 				Identifier lhsFieldName = lhsField.getName();
 				for (int j = 0; j != rhsFields.size(); ++j) {
-					SemanticType.Field rhsField = rhsFields.get(j);
+					SemanticType.Field rhsField = rhsFields.getOperand(j);
 					Identifier rhsFieldName = rhsField.getName();
 					if (lhsFieldName.equals(rhsFieldName)) {
 						matches++;
@@ -594,10 +594,10 @@ public class ReadWriteTypeExtractor {
 			SemanticType.Field[] pivots = new SemanticType.Field[lhsFields.size()];
 			//
 			for (int i = 0; i != lhsFields.size(); ++i) {
-				SemanticType.Field lhsField = lhsFields.get(i);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
 				Identifier lhsFieldName = lhsField.getName();
 				for (int j = 0; j != rhsFields.size(); ++j) {
-					SemanticType.Field rhsField = rhsFields.get(j);
+					SemanticType.Field rhsField = rhsFields.getOperand(j);
 					Identifier rhsFieldName = rhsField.getName();
 					if (lhsFieldName.equals(rhsFieldName)) {
 						// Matched field, now compute its type.
@@ -748,8 +748,8 @@ public class ReadWriteTypeExtractor {
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field lhsField = lhsFields.get(i);
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -774,8 +774,8 @@ public class ReadWriteTypeExtractor {
 		int count = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field lhsField = lhsFields.get(i);
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -801,8 +801,8 @@ public class ReadWriteTypeExtractor {
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field lhsField = lhsFields.get(i);
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -829,8 +829,8 @@ public class ReadWriteTypeExtractor {
 			Tuple<? extends SemanticType.Field> rhsFields, SemanticType.Field[] result, int index) {
 		outer: for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field lhsField = lhsFields.get(i);
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -839,7 +839,7 @@ public class ReadWriteTypeExtractor {
 					continue outer;
 				}
 			}
-			result[index++] = lhsFields.get(i);
+			result[index++] = lhsFields.getOperand(i);
 		}
 		return index;
 	}

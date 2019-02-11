@@ -144,7 +144,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		DefinitelyAssignedSet nextEnvironment = environment;
 		DefinitelyAssignedSet breakEnvironment = null;
 		for(int i=0;i!=block.size();++i) {
-			Stmt s = block.get(i);
+			Stmt s = block.getOperand(i);
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
@@ -317,7 +317,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitUniversalQuantifier(Expr.UniversalQuantifier expression, DefinitelyAssignedSet environment) {
 		Tuple<Decl.Variable> parameters = expression.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable var = parameters.get(i);
+			Decl.Variable var = parameters.getOperand(i);
 			if(var.hasInitialiser()) {
 				visitExpression(var.getInitialiser(), environment);
 			}
@@ -331,7 +331,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitExistentialQuantifier(Expr.ExistentialQuantifier expression, DefinitelyAssignedSet environment) {
 		Tuple<Decl.Variable> parameters = expression.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable var = parameters.get(i);
+			Decl.Variable var = parameters.getOperand(i);
 			if(var.hasInitialiser()) {
 				visitExpression(var.getInitialiser(), environment);
 			}
@@ -452,7 +452,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		public DefinitelyAssignedSet addAll(Tuple<Decl.Variable> vars) {
 			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
 			for(int i=0;i!=vars.size();++i) {
-				Decl.Variable var = vars.get(i);
+				Decl.Variable var = vars.getOperand(i);
 				r.variables.set(var.getIndex());
 			}
 			return r;

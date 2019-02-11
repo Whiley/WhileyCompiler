@@ -120,7 +120,7 @@ public class Interpreter {
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
 		Tuple<Decl.Variable> parameters = decl.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable parameter = parameters.get(i);
+			Decl.Variable parameter = parameters.getOperand(i);
 			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
@@ -141,7 +141,7 @@ public class Interpreter {
 			Tuple<Decl.Variable> returns = decl.getReturns();
 			RValue[] values = new RValue[returns.size()];
 			for (int i = 0; i != values.length; ++i) {
-				values[i] = frame.getLocal(returns.get(i).getName());
+				values[i] = frame.getLocal(returns.getOperand(i).getName());
 			}
 			return values;
 		}
@@ -161,7 +161,7 @@ public class Interpreter {
 	 */
 	private Status executeBlock(Stmt.Block block, CallStack frame, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
+			Stmt stmt = block.getOperand(i);
 			Status r = executeStatement(stmt, frame, scope);
 			// Now, see whether we are continuing or not
 			if (r != Status.NEXT) {
@@ -231,7 +231,7 @@ public class Interpreter {
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
-			LValue lval = constructLVal(lhs.get(i), frame);
+			LValue lval = constructLVal(lhs.getOperand(i), frame);
 			lval.write(frame, rhs[i]);
 		}
 		return Status.NEXT;
@@ -451,7 +451,7 @@ public class Interpreter {
 		Tuple<Decl.Variable> returns = context.getReturns();
 		RValue[] values = executeExpressions(stmt.getReturns(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
-			frame.putLocal(returns.get(i).getName(), values[i]);
+			frame.putLocal(returns.getOperand(i).getName(), values[i]);
 		}
 		return Status.RETURN;
 	}
@@ -486,7 +486,7 @@ public class Interpreter {
 		//
 		Object value = executeExpression(ANY_T, stmt.getCondition(), frame);
 		for (int i = 0; i != cases.size(); ++i) {
-			Stmt.Case c = cases.get(i);
+			Stmt.Case c = cases.getOperand(i);
 			Stmt.Block body = c.getBlock();
 			if (c.isDefault()) {
 				return executeBlock(body, frame, scope);
@@ -751,8 +751,8 @@ public class Interpreter {
 		Tuple<Expr> operands = expr.getOperands();
 		RValue.Field[] values = new RValue.Field[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.get(i);
-			Expr operand = operands.get(i);
+			Identifier field = fields.getOperand(i);
+			Expr operand = operands.getOperand(i);
 			RValue value = executeExpression(ANY_T, operand, frame);
 			values[i] = semantics.Field(field, value);
 		}
@@ -784,7 +784,7 @@ public class Interpreter {
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Decl.Variable var = vars.get(index);
+			Decl.Variable var = vars.getOperand(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
@@ -914,7 +914,7 @@ public class Interpreter {
 		// argument fails.
 		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.getOperand(i), frame);
 			if(b == RValue.False) {
 				return b;
 			}
@@ -927,7 +927,7 @@ public class Interpreter {
 		// argument succeeds.
 		Tuple<Expr> operands = expr.getOperands();
 		for(int i=0;i!=operands.size();++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.getOperand(i), frame);
 			if(b == RValue.True) {
 				return b;
 			}
@@ -958,27 +958,27 @@ public class Interpreter {
 
 	public RValue executeBitwiseAnd(Expr.BitwiseAnd expr, CallStack frame) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.and(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.and(executeExpression(BYTE_T, operands.getOperand(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeBitwiseOr(Expr.BitwiseOr expr, CallStack frame) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.or(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.or(executeExpression(BYTE_T, operands.getOperand(i), frame));
 		}
 		return val;
 	}
 
 	public RValue executeBitwiseXor(Expr.BitwiseXor expr, CallStack frame) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.getOperand(0), frame);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.xor(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.xor(executeExpression(BYTE_T, operands.getOperand(i), frame));
 		}
 		return val;
 	}
@@ -1023,7 +1023,7 @@ public class Interpreter {
 		Tuple<Expr> operands = expr.getOperands();
 		RValue[] elements = new RValue[operands.size()];
 		for (int i = 0; i != elements.length; ++i) {
-			elements[i] = executeExpression(ANY_T, operands.get(i), frame);
+			elements[i] = executeExpression(ANY_T, operands.getOperand(i), frame);
 		}
 		return semantics.Array(elements);
 	}
@@ -1085,7 +1085,7 @@ public class Interpreter {
 		RValue[][] results = new RValue[expressions.size()][];
 		int count = 0;
 		for(int i=0;i!=expressions.size();++i) {
-			results[i] = executeMultiReturnExpression(expressions.get(i),frame);
+			results[i] = executeMultiReturnExpression(expressions.getOperand(i),frame);
 			count += results[i].length;
 		}
 		RValue[] rs = new RValue[count];
@@ -1239,7 +1239,7 @@ public class Interpreter {
 	 */
 	public void checkInvariants(CallStack frame, Tuple<Expr> invariants) {
 		for (int i = 0; i != invariants.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, invariants.get(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariants.getOperand(i), frame);
 			if (b == RValue.False) {
 				// FIXME: need to do more here
 				throw new AssertionError();

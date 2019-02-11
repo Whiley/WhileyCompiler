@@ -153,7 +153,7 @@ public class DefiniteUnassignmentCheck
 		MaybeAssignedSet nextEnvironment = environment;
 		MaybeAssignedSet breakEnvironment = null;
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt s = block.get(i);
+			Stmt s = block.getOperand(i);
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment, nf.breakEnvironment);
@@ -238,7 +238,7 @@ public class DefiniteUnassignmentCheck
 		Decl.FunctionOrMethod parent = var.getAncestor(Decl.FunctionOrMethod.class);
 		Tuple<Decl.Variable> parameters = parent.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			if (parameters.get(i) == var) {
+			if (parameters.getOperand(i) == var) {
 				return true;
 			}
 		}
@@ -453,7 +453,7 @@ public class DefiniteUnassignmentCheck
 		public MaybeAssignedSet addAll(Tuple<Decl.Variable> vars) {
 			MaybeAssignedSet r = new MaybeAssignedSet(this);
 			for (int i = 0; i != vars.size(); ++i) {
-				Decl.Variable var = vars.get(i);
+				Decl.Variable var = vars.getOperand(i);
 				r.variables.set(var.getIndex());
 			}
 			return r;

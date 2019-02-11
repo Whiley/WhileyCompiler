@@ -1,3 +1,3 @@
-tests/invalid/Parsing_Invalid_31.whiley:5: no return value
+tests/invalid/Parsing_Invalid_31.whiley:5: insufficient return values
     int a = m()
             ^^^

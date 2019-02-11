@@ -75,6 +75,12 @@ public class ErrorMessages {
 	public static final MsgWithNoParams INVALID_UNARY_EXPRESSION = new MsgWithNoParams("invalid unary expression");
 	public static final MsgWithNoParams INVALID_BINARY_EXPRESSION = new MsgWithNoParams("invalid binary expression");
 	public static final MsgWithNoParams INVALID_ARRAY_EXPRESSION  = new MsgWithNoParams("invalid array expression");
+	public static final MsgWithNoParams EMPTY_TYPE  = new MsgWithNoParams("empty type encountered");
+	public static final MsgWithNoParams EXPECTED_ARRAY  = new MsgWithNoParams("expected array type");
+	public static final MsgWithNoParams EXPECTED_RECORD  = new MsgWithNoParams("expected record type");
+	public static final MsgWithNoParams EXPECTED_REFERENCE  = new MsgWithNoParams("expected record type");
+	public static final MsgWithNoParams EXPECTED_LAMBDA  = new MsgWithNoParams("expected lambda");
+	public static final MsgWithNoParams INVALID_FIELD  = new MsgWithNoParams("invalid field access");
 	public static final MsgWithNoParams INVALID_LVAL_EXPRESSION = new MsgWithNoParams("invalid assignment expression");
 	public static final MsgWithNoParams INVALID_TUPLE_LVAL = new MsgWithNoParams("invalid tuple lval");
 	public static final MsgWithNoParams INVALID_FILE_ACCESS = new MsgWithNoParams("invalid file access");
@@ -105,6 +111,10 @@ public class ErrorMessages {
 	public static final MsgWithStringParam RECORD_MISSING_FIELD = new MsgWithStringParam("record has no field named $0");
 	public static final MsgWithNoParams RETURN_FROM_VOID = new MsgWithNoParams("cannot return value from method with void return type");
 	public static final MsgWithNoParams MISSING_RETURN_VALUE = new MsgWithNoParams("missing return value");
+	public static final MsgWithNoParams MISSING_RETURN_STATEMENT = new MsgWithNoParams("missing return statement");
+	public static final MsgWithNoParams INSUFFICIENT_RETURNS = new MsgWithNoParams("insufficient return values");
+	public static final MsgWithNoParams INSUFFICIENT_ARGUMENTS = new MsgWithNoParams("insufficient arguments for function or method invocation");
+	public static final MsgWithNoParams TOO_MANY_RETURNS = new MsgWithNoParams("too many return values");
 	public static final MsgWithNoParams BRANCH_ALWAYS_TAKEN = new MsgWithNoParams("branch always taken");
 	public static final MsgWithTypeParams AMBIGUOUS_COERCION = new MsgWithTypeParams("ambiguous coercion (from $0 to $1)");
 
@@ -150,5 +160,57 @@ public class ErrorMessages {
 	 */
 	public static String errorMessage(MsgWithTypeParams msg, Object t1, Object t2) {
 		return msg.msg.replaceAll("\\$0",t1.toString()).replaceAll("\\$1",t2.toString());
+	}
+
+	private static final Msg[][] ERROR_MESSAGES = {
+		null, // 00
+		null, // 01
+		null, // 02
+		null, // 03
+		{
+			SUBTYPE_ERROR,     // 400
+			EMPTY_TYPE,        // 401
+			EXPECTED_ARRAY,    // 402
+			EXPECTED_RECORD,   // 403
+			EXPECTED_REFERENCE,// 404
+			EXPECTED_LAMBDA,   //405
+			INVALID_FIELD,     // 406
+		},
+		{
+			MISSING_RETURN_STATEMENT, // 500;
+			null,
+			null,
+			null,
+			UNREACHABLE_CODE,        // 504;
+			null,
+			BRANCH_ALWAYS_TAKEN,     // 506;
+			TOO_MANY_RETURNS,        // 507;
+			INSUFFICIENT_RETURNS,    // 508;
+		},
+		{
+			// Expressions
+			null,
+			null,
+			INCOMPARABLE_OPERANDS,  // 602;
+			INSUFFICIENT_ARGUMENTS, // 603;
+			AMBIGUOUS_RESOLUTION,     // 604;
+		}
+	};
+
+	//
+	public static String getErrorMessage(int code, String... params) {
+		int base = code / 100;
+		int offset = code % 100;
+		Msg m = ERROR_MESSAGES[base][offset];
+		//
+		if(m instanceof MsgWithStringParam) {
+			return errorMessage((MsgWithStringParam) m, params[0]);
+		} else if(m instanceof MsgWithTypeParam) {
+			return errorMessage((MsgWithTypeParam) m, params[0]);
+		} else if(m instanceof MsgWithTypeParams) {
+			return errorMessage((MsgWithTypeParams) m, params[0], params[1]);
+		} else {
+			return m.msg;
+		}
 	}
 }
