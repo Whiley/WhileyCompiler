@@ -199,6 +199,8 @@ public final class CompileTask implements Build.Task {
 			throwSyntaxError(wf.getModule());
 			//
 			new DefiniteAssignmentCheck().check(wf);
+			// FIXME: temporary hack also
+			throwSyntaxError(wf.getModule());
 			new DefiniteUnassignmentCheck().check(wf);
 			new FunctionalCheck().check(wf);
 			new StaticVariableCheck().check(wf);

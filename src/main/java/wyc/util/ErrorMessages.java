@@ -190,7 +190,7 @@ public class ErrorMessages {
 		{
 			// Expressions
 			null,
-			null,
+			VARIABLE_POSSIBLY_UNITIALISED, // 601
 			INCOMPARABLE_OPERANDS,  // 602;
 			INSUFFICIENT_ARGUMENTS, // 603;
 			AMBIGUOUS_RESOLUTION,     // 604;

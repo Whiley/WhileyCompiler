@@ -5448,6 +5448,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TOO_MANY_RETURNS = 507;
 	public static final int INSUFFICIENT_RETURNS = 508;
 	// Expressions
+	public static final int VARIABLE_POSSIBLY_UNITIALISED = 601;
 	public static final int INCOMPARABLE_OPERANDS = 602;
 	public static final int INSUFFICIENT_ARGUMENTS = 603;
 	public static final int AMBIGUOUS_CALLABLE = 604;

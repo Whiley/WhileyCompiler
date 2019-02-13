@@ -13,8 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 import wyil.lang.WyilFile;
@@ -22,6 +20,7 @@ import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 
 /**
@@ -346,7 +345,8 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd)) {
 			WyilFile file = ((WyilFile) expression.getHeap());
-			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
+			syntaxError(VARIABLE_POSSIBLY_UNITIALISED, expression);
+			// throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 		return null;
 	}
@@ -356,6 +356,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		// No need to visit types, as these cannot cause definite assignment errors.
 		return null;
 	}
+
 
 	public class ControlFlow {
 		/**
@@ -478,5 +479,9 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		public String toString() {
 			return variables.toString();
 		}
+	}
+
+	private void syntaxError(int code, SyntacticItem e, String... params) {
+		e.getAttributes().add(new WyilFile.SyntaxError(code, params));
 	}
 }
