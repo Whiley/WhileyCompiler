@@ -1993,6 +1993,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isResolved() {
+				return !(getOperand(2) instanceof Decl.Unknown);
+			}
+
+			@Override
 			public Decl.StaticVariable getDeclaration() {
 				Ref<Decl.StaticVariable> ref = (Ref<Decl.StaticVariable>) getOperand(2);
 				return ref.get();
@@ -2081,6 +2086,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Invoke(Name name, byte[] data, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
 					Tuple<Ref<Decl.Callable>> declarations) {
 				super(EXPR_invoke, data, name, lifetimes, arguments, declarations);
+			}
+
+			@Override
+			public boolean isResolved() {
+				return data.length != 0;
 			}
 
 			@Override
@@ -3441,6 +3451,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isResolved() {
+				return this.data.length > 0;
+			}
+
+			@Override
 			public Type getType() {
 				return getDeclaration().getType();
 			}
@@ -4502,6 +4517,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Name) getOperand(0);
 			}
 
+			@Override
+			public boolean isResolved() {
+				return !(getOperand(1) instanceof Decl.Unknown);
+			}
+
 			public void setDeclaration(Decl.Type declaration) {
 				operands[1] = getHeap().allocate(new Ref<>(declaration));
 			}
@@ -5293,6 +5313,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		Decl.Named getDeclaration();
+
+		/**
+		 * Check whether or not this linkable item has been resolved.
+		 *
+		 * @return
+		 */
+		boolean isResolved();
 	}
 
 	// ============================================================

@@ -160,15 +160,17 @@ public final class CompileTask implements Build.Task {
 	}
 
 	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		build(sourceRoot, target, sources);
-		if (verification) {
+		boolean b = build(sourceRoot, target, sources);
+		if (b && verification) {
 			verify(sourceRoot, target, sources);
 		}
 	}
 
-	public void build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
+		boolean success = false;
+
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			long startTime = System.currentTimeMillis();
@@ -197,13 +199,15 @@ public final class CompileTask implements Build.Task {
 			//
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck().check(wf);
-			new FunctionalCheck().check(wf);
-			new StaticVariableCheck().check(wf);
-			new AmbiguousCoercionCheck().check(wf);
-			new MoveAnalysis().apply(wf);
-			new RecursiveTypeAnalysis().apply(wf);
-			// new CoercionCheck(this);
-
+			if(wf.getModule().getAttributes().size() == 0) {
+				// Only proceed if we haven't found any errors yet
+				new FunctionalCheck().check(wf);
+				new StaticVariableCheck().check(wf);
+				new AmbiguousCoercionCheck().check(wf);
+				new MoveAnalysis().apply(wf);
+				new RecursiveTypeAnalysis().apply(wf);
+				success = true;
+			}
 
 			// ========================================================================
 			// Done
@@ -215,8 +219,11 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
+			//
+			return success;
 		} catch(InternalFailure e) {
 			e.printStackTrace();
+			return false;
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();

@@ -106,6 +106,14 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	private void checkCoercion(Expr expr, Type target, Environment environment) {
+		if(expr instanceof WyilFile.Linkable) {
+			WyilFile.Linkable l = (WyilFile.Linkable) expr;
+			if(!l.isResolved()) {
+				// Abort early because cannot trust the type determined for this expression.
+				// This can arise because the flow type checker encountered a typing problem.
+				return;
+			}
+		}
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Type source = expr.getType();
 		if (!checkCoercion(target, source, environment, assumptions, expr)) {
