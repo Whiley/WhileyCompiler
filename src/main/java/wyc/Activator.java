@@ -140,7 +140,7 @@ public class Activator implements Module.Activator {
 				WyilFile wf = new WyilFile(binary);
 				binary.write(wf);
 				// Create initially empty WyIL module.
-				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>()));
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>(), new Tuple<>()));
 			}
 			//
 			for (Path.Entry<?> source : src.get(getSourceFilter())) {

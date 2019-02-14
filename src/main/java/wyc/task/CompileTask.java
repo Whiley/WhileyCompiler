@@ -194,13 +194,8 @@ public final class CompileTask implements Build.Task {
 
 			new NameResolution(project,wf).apply();
 			new FlowTypeCheck().check(wf);
-			// FIXMNE: A temporary hack is to throw an exception here. This will then go
-			// through the conversion process.
-			throwSyntaxError(wf.getModule());
 			//
 			new DefiniteAssignmentCheck().check(wf);
-			// FIXME: temporary hack also
-			throwSyntaxError(wf.getModule());
 			new DefiniteUnassignmentCheck().check(wf);
 			new FunctionalCheck().check(wf);
 			new StaticVariableCheck().check(wf);
@@ -360,7 +355,7 @@ public final class CompileTask implements Build.Task {
 			for (int i = 0; i != item.size(); ++i) {
 				throwSyntaxError(item.getOperand(i),visited);
 			}
-			SyntacticItem.Marker marker = item.getAttribute(SyntacticItem.Marker.class);
+			SyntacticItem.Marker marker = item.getParent(SyntacticItem.Marker.class);
 			// Check whether this item has a marker associated with it.
 			if (marker != null) {
 				// At least one marked assocaited with item.

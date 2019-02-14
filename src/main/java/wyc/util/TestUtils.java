@@ -270,7 +270,7 @@ public class TestUtils {
 				WyilFile wf = new WyilFile(target);
 				target.write(wf);
 				// Create initially empty WyIL module.
-				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>()));
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
 			}
 			graph.connect(e, target);
 		}

@@ -482,6 +482,10 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	}
 
 	private void syntaxError(int code, SyntacticItem e, String... params) {
-		e.getAttributes().add(new WyilFile.SyntaxError(code, params));
+		WyilFile wf = (WyilFile) e.getHeap();
+		// Allocate syntax error in the heap
+		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e));
+		// Record marker to ensure it gets written to disk
+		wf.getModule().addAttribute(m);
 	}
 }

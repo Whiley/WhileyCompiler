@@ -1051,7 +1051,7 @@ public class FlowTypeCheck {
 		// definitely results in problems!  See #845
 		if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
 			// DEFINITE TRUE CASE
-			syntaxError(INCOMPARABLE_OPERANDS, expr, lhsT.toString(), rhsT.toString());
+			syntaxError(INCOMPARABLE_OPERANDS, expr, lhsT, rhsT);
 		} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
 			// DEFINITE FALSE CASE
 			syntaxError(BRANCH_ALWAYS_TAKEN, expr);
@@ -1548,7 +1548,7 @@ public class FlowTypeCheck {
 		// Sanity check that the types of operands are actually comparable.
 		SemanticType glb = new SemanticType.Intersection(lhs,rhs);
 		if (strictSubtypeOperator.isVoid(glb, environment)) {
-			syntaxError(INCOMPARABLE_OPERANDS, expr, lhs.toString(), rhs.toString());
+			syntaxError(INCOMPARABLE_OPERANDS, expr, lhs, rhs);
 		}
 		return Type.Bool;
 	}
@@ -1755,7 +1755,7 @@ public class FlowTypeCheck {
 			return candidates.getOperand(0).getType();
 		} else {
 			//
-			syntaxError(AMBIGUOUS_CALLABLE, expr.getName(), foundCandidatesString(candidates));
+			syntaxError(AMBIGUOUS_CALLABLE, expr.getName(), candidates);
 			return null;
 		}
 	}
@@ -1820,14 +1820,15 @@ public class FlowTypeCheck {
 		List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
 		// Sanity check bindings generated
 		if (bindings.isEmpty()) {
-			syntaxError(AMBIGUOUS_CALLABLE, name, foundCandidatesString(candidates));
+			syntaxError(AMBIGUOUS_CALLABLE, name, candidates);
 			return null;
 		}
 		// Select the most precise signature from the candidate bindings
 		Binding selected = selectCallableCandidate(name, bindings, lifetimes);
 		// Sanity check result
 		if (selected == null) {
-			syntaxError(AMBIGUOUS_CALLABLE, name, foundBindingsString(bindings));
+			// foundBindingString(bindings)
+			syntaxError(AMBIGUOUS_CALLABLE, name);
 		}
 		return selected;
 	}
@@ -2367,7 +2368,7 @@ public class FlowTypeCheck {
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
 		} else if (!relaxedSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-			syntaxError(SUBTYPE_ERROR, element, lhs.toString(), rhs.toString());
+			syntaxError(SUBTYPE_ERROR, element, lhs, rhs);
 		}
 	}
 
@@ -2538,9 +2539,12 @@ public class FlowTypeCheck {
 		return null;
 	}
 
-
-	private void syntaxError(int code, SyntacticItem e, String... params) {
-		e.getAttributes().add(new WyilFile.SyntaxError(code, params));
+	private void syntaxError(int code, SyntacticItem e, SyntacticItem... context) {
+		WyilFile wf = (WyilFile) e.getHeap();
+		// Allocate syntax error in the heap
+		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e, new Tuple<>(context)));
+		// Record marker to ensure it gets written to disk
+		wf.getModule().addAttribute(m);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {
