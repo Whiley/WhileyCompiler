@@ -49,7 +49,10 @@ import wybs.lang.SyntaxError;
 public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
 
 	public void check(WyilFile wf) {
-		visitModule(wf, null);
+		//
+		if(wf.getModule().getAttributes().size() == 0) {
+			visitModule(wf, null);
+		}
 	}
 
 	/**

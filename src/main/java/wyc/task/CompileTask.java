@@ -148,22 +148,30 @@ public final class CompileTask implements Build.Task {
 				targets.addAll(graph.getChildren(entry));
 			}
 		}
+		// Determine which were successfully built
+		HashSet<Path.Entry<?>> built = new HashSet<>();
 		// Compile each one in turn
 		for (Path.Entry<?> target : targets) {
 			// FIXME: there is a problem here. That's because not every parent will be in
 			// the delta. Therefore, this is forcing every file to be recompiled.
 			List sources = graph.getParents(target);
-			build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+			boolean ok = build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+			// Record whether target built successfully or not
+			if(ok) {
+				built.add(target);
+			}
 		}
 		// Done
-		return targets;
+		return built;
 	}
 
-	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		boolean b = build(sourceRoot, target, sources);
-		if (b && verification) {
+	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
+		if(!build(sourceRoot, target, sources)) {
+			return false;
+		} else if (verification) {
 			verify(sourceRoot, target, sources);
 		}
+		return true;
 	}
 
 	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)

@@ -131,33 +131,21 @@ public class AllInvalidTest {
 
 		boolean r = p.first();
 		String output = p.second();
+		// Now, let's check the expected output against the file which
+		// contains the sample output for this test
+		String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
+				+ ".sysout";
 
-		if (r) {
-			// This indicates the problem is some form of assertion error.
-			// Therefore, execute the code whilst expecting an assertion failure
-			//try {
-				//TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
-				fail("Test compiled when it shouldn't have!");
-//			} catch(AssertionError e) {
-//				// OK
-//			}
-		} else {
-			// Now, let's check the expected output against the file which
-			// contains the sample output for this test
-			String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
-					+ ".sysout";
+		//			Following used when sample output changed.
+		//			try {
+		//				FileWriter fw = new FileWriter(sampleOutputFile);
+		//				fw.write(output);
+		//				fw.close();
+		//			} catch(Exception e) {}
 
-//			Following used when sample output changed.
-//			try {
-//				FileWriter fw = new FileWriter(sampleOutputFile);
-//				fw.write(output);
-//				fw.close();
-//			} catch(Exception e) {}
-
-	 		// Third, compare the output!
-			if(!TestUtils.compare(output,sampleOutputFile)) {
-				fail("Output does not match reference");
-			}
+		// Third, compare the output!
+		if(!TestUtils.compare(output,sampleOutputFile)) {
+			fail("Output does not match reference");
 		}
 	}
 
