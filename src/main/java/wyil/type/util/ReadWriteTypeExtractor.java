@@ -13,14 +13,10 @@
 // limitations under the License.
 package wyil.type.util;
 
-import wyc.util.ErrorMessages;
-
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Type;
@@ -30,7 +26,6 @@ import wyil.lang.WyilFile.SemanticType.Record;
 import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;

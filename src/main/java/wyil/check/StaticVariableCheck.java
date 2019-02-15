@@ -4,14 +4,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 import wybs.lang.Build;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.util.AbstractConsumer;
-
-import static wyc.util.ErrorMessages.CYCLIC_STATIC_INITIALISER;
-import static wyc.util.ErrorMessages.errorMessage;
+import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
@@ -29,9 +29,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
 			visitExpression(initialiser, accessed);
 			if (accessed.contains(name)) {
 				// Indicates a cyclic static initialiser has been detected
-				String msg = errorMessage(CYCLIC_STATIC_INITIALISER);
-				WyilFile file = ((WyilFile) initialiser.getHeap());
-				throw new SyntaxError(msg, file.getEntry(), initialiser);
+				syntaxError(CYCLIC_STATIC_INITIALISER, initialiser);
 			}
 		}
 	}
@@ -65,4 +63,5 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
 	public void visitType(Type type, Set<QualifiedName> accessed) {
 		// Don't need to visit types at all
 	}
+
 }

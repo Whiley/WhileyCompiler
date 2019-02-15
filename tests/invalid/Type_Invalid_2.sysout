@@ -1,3 +1,6 @@
 tests/invalid/Type_Invalid_2.whiley:1: expected type bool, found int
 type nat is (int x) where g(x)
                           ^^^^
+tests/invalid/Type_Invalid_2.whiley:1: method invocation not permitted
+type nat is (int x) where g(x)
+                          ^^^^

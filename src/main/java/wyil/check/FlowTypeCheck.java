@@ -39,7 +39,7 @@ import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
 import wyil.util.AbstractVisitor;
-import wyc.task.CompileTask;
+import static wyc.util.ErrorMessages.syntaxError;
 
 import static wyil.lang.WyilFile.*;
 
@@ -1140,7 +1140,14 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkStaticVariableLVal(Expr.StaticVariableAccess lval, Environment environment) {
-		return lval.getDeclaration().getType();
+		// Check whether this access was successfully resolved or not.
+		if(lval.isResolved()) {
+			// Yes, it was resolved so proceed as normal
+			return lval.getDeclaration().getType();
+		} else {
+			// No, it wasn't resolved so proceed with dummy
+			return null;
+		}
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
@@ -1463,7 +1470,13 @@ public class FlowTypeCheck {
 
 	private SemanticType checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
 		//
-		return expr.getDeclaration().getType();
+		if(expr.isResolved()) {
+			return expr.getDeclaration().getType();
+		} else {
+			// Static variable access was not resolved during name resolution. Therefore,
+			// there's nothing we can at this stage.
+			return null;
+		}
 	}
 
 	private SemanticType checkCast(Expr.Cast expr, Environment environment) {
@@ -1480,7 +1493,7 @@ public class FlowTypeCheck {
 		}
 		// Extract candidates from name resolution phase
 		Tuple<Decl.Callable> candidates = expr.getDeclarations();
-		if(ArrayUtils.firstIndexOf(types, null) < 0) {
+		if(expr.isSelectable() && ArrayUtils.firstIndexOf(types, null) < 0) {
 			// Now attempt to bind the given candidate declarations against the concrete argument types.
 			Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
 					environment);
@@ -1828,7 +1841,7 @@ public class FlowTypeCheck {
 		// Sanity check result
 		if (selected == null) {
 			// foundBindingString(bindings)
-			syntaxError(AMBIGUOUS_CALLABLE, name);
+			syntaxError(AMBIGUOUS_CALLABLE, name, candidates);
 		}
 		return selected;
 	}
@@ -2238,84 +2251,6 @@ public class FlowTypeCheck {
 		return bestValidWinner ? best : null;
 	}
 
-	private String parameterString(Tuple<? extends SemanticType> paramTypes) {
-		String paramStr = "(";
-		boolean firstTime = true;
-		if (paramTypes == null) {
-			paramStr += "...";
-		} else {
-			for (SemanticType t : paramTypes) {
-				if (!firstTime) {
-					paramStr += ",";
-				}
-				firstTime = false;
-				paramStr += t;
-			}
-		}
-		return paramStr + ")";
-	}
-
-	private String foundCandidatesString(Tuple<? extends Decl.Callable> candidates) {
-		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Decl.Callable c : candidates) {
-			candidateStrings.add(candidateString(c,null));
-		}
-		Collections.sort(candidateStrings); // make error message deterministic!
-		StringBuilder msg = new StringBuilder();
-		for (String s : candidateStrings) {
-			msg.append("\n\tfound ");
-			msg.append(s);
-		}
-		return msg.toString();
-	}
-
-	private String foundBindingsString(Collection<? extends Binding> candidates) {
-		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Binding b : candidates) {
-			Decl.Callable c = b.getCandidiateDeclaration();
-			candidateStrings.add(candidateString(c,b.getBinding()));
-		}
-		Collections.sort(candidateStrings); // make error message deterministic!
-		StringBuilder msg = new StringBuilder();
-		for (String s : candidateStrings) {
-			msg.append("\n\tfound ");
-			msg.append(s);
-		}
-		return msg.toString();
-	}
-
-	private String candidateString(Decl.Callable decl, Map<Identifier, Identifier> binding) {
-		String r;
-		if (decl instanceof Decl.Method) {
-			r = "method ";
-		} else if (decl instanceof Decl.Function) {
-			r = "function ";
-		} else {
-			r = "property ";
-		}
-		Type.Callable type = decl.getType();
-		return r + decl.getQualifiedName() + bindingString(decl,binding) + type.getParameters() + "->" + type.getReturns();
-	}
-
-	private String bindingString(Decl.Callable decl, Map<Identifier,Identifier> binding) {
-		if(binding != null && decl instanceof Decl.Method) {
-			Decl.Method method = (Decl.Method) decl;
-			String r = "<";
-
-			Tuple<Identifier> lifetimes = method.getLifetimes();
-			for(int i=0;i!=lifetimes.size();++i) {
-				Identifier lifetime = lifetimes.getOperand(i);
-				if(i != 0) {
-					r += ",";
-				}
-				r = r + lifetime + "=" + binding.get(lifetime);
-			}
-			return r + ">";
-		} else {
-			return "";
-		}
-	}
-
 
 	/**
 	 * Check whether the type signature for a given function or method declaration
@@ -2537,14 +2472,6 @@ public class FlowTypeCheck {
 			}
 		}
 		return null;
-	}
-
-	private void syntaxError(int code, SyntacticItem e, SyntacticItem... context) {
-		WyilFile wf = (WyilFile) e.getHeap();
-		// Allocate syntax error in the heap
-		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e, new Tuple<>(context)));
-		// Record marker to ensure it gets written to disk
-		wf.getModule().addAttribute(m);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {

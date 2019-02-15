@@ -14,14 +14,11 @@
 package wyil.check;
 
 import static wyil.lang.WyilFile.*;
-
+import static wyc.util.ErrorMessages.syntaxError;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
-
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
 
 /**
  * <p>
@@ -50,9 +47,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 
 	public void check(WyilFile wf) {
 		//
-		if(wf.getModule().getAttributes().size() == 0) {
-			visitModule(wf, null);
-		}
+		visitModule(wf, null);
 	}
 
 	/**
@@ -150,6 +145,10 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
+			// NOTE: following can arise when block contains unreachable code.
+			if(nextEnvironment == null) {
+				break;
+			}
 		}
 		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
@@ -347,9 +346,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd)) {
-			WyilFile file = ((WyilFile) expression.getHeap());
 			syntaxError(VARIABLE_POSSIBLY_UNITIALISED, expression);
-			// throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 		return null;
 	}
@@ -482,13 +479,5 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		public String toString() {
 			return variables.toString();
 		}
-	}
-
-	private void syntaxError(int code, SyntacticItem e, String... params) {
-		WyilFile wf = (WyilFile) e.getHeap();
-		// Allocate syntax error in the heap
-		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e));
-		// Record marker to ensure it gets written to disk
-		wf.getModule().addAttribute(m);
 	}
 }

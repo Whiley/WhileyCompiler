@@ -98,9 +98,12 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> 
 
 	@Override
 	public void visitTypeNominal(Type.Nominal type, Set<QualifiedName> visited) {
-		// Extract the declaration to which this type refers.
-		Decl.Type decl = type.getDeclaration();
-		// Recursively traverse it.
-		visitType(decl, visited);
+		// Sanity check the type makes sense
+		if(type.isResolved()) {
+			// Extract the declaration to which this type refers.
+			Decl.Type decl = type.getDeclaration();
+			// Recursively traverse it.
+			visitType(decl, visited);
+		}
 	}
 }

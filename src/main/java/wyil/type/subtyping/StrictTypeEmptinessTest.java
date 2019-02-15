@@ -287,12 +287,18 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			}
 			case TYPE_nominal: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Decl.Type decl = nom.getDeclaration();
-				if (item.maximise || decl.getInvariant().size() == 0) {
-					worklist.push(item.sign, decl.getType(), item.maximise);
-				} else if (item.sign) {
-					// Corresponds to void, so we're done on this path.
-					return true;
+				if(nom.isResolved()) {
+					Decl.Type decl = nom.getDeclaration();
+					if (item.maximise || decl.getInvariant().size() == 0) {
+						worklist.push(item.sign, decl.getType(), item.maximise);
+					} else if (item.sign) {
+						// Corresponds to void, so we're done on this path.
+						return true;
+					}
+				} else {
+					// Error recovery case. Basically return a conservative result since we don't
+					// know what the type in question is.
+					return false;
 				}
 				break;
 			}

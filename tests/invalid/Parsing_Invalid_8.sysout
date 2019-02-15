@@ -1,3 +1,6 @@
-tests/invalid/Parsing_Invalid_8.whiley:2: unable to resolve name (x)
+tests/invalid/Parsing_Invalid_8.whiley:2: unable to resolve name
      x = 1
      ^
+tests/invalid/Parsing_Invalid_8.whiley:1: missing return statement
+function f() -> (int r):
+^^^^^^^^^^^^^^^^^^^^^^^^

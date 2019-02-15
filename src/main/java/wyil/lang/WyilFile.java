@@ -1994,7 +1994,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public boolean isResolved() {
-				return !(getOperand(2) instanceof Decl.Unknown);
+				Ref<?> ref = (Ref<?>) getOperand(2);
+				return !(ref.get() instanceof Decl.Unknown);
 			}
 
 			@Override
@@ -2076,7 +2077,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Linkable {
+		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Selectable<Decl.Callable> {
 
 			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
 					Tuple<Ref<Decl.Callable>> declarations) {
@@ -2091,6 +2092,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public boolean isResolved() {
 				return data.length != 0;
+			}
+
+			@Override
+			public boolean isSelectable() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[3];
+				return refs.size() > 0;
 			}
 
 			@Override
@@ -2160,6 +2167,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 *
 			 * @param selector
 			 */
+			@Override
 			public void select(Decl.Callable decl) {
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
 				//
@@ -2179,6 +2187,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return decls.getOperand(selector).get();
 			}
 
+			@Override
 			public Tuple<Decl.Callable> getDeclarations() {
 				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[3];
 				Decl.Callable[] decls = new Decl.Callable[refs.size()];
@@ -3439,7 +3448,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 
-		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Linkable {
+		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Selectable<Decl.Callable> {
 
 			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations) {
 				super(EXPR_lambdaaccess, new byte[0], name, parameters, declarations);
@@ -3453,6 +3462,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public boolean isResolved() {
 				return this.data.length > 0;
+			}
+
+			@Override
+			public boolean isSelectable() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[2];
+				return refs.size() > 0;
 			}
 
 			@Override
@@ -3479,6 +3494,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 *
 			 * @param selector
 			 */
+			@Override
 			public void select(Decl.Callable decl) {
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
 				//
@@ -3498,6 +3514,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return decls.getOperand(selector).get();
 			}
 
+			@Override
 			public Tuple<Decl.Callable> getDeclarations() {
 				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[2];
 				Decl.Callable[] decls = new Decl.Callable[refs.size()];
@@ -4519,7 +4536,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public boolean isResolved() {
-				return !(getOperand(1) instanceof Decl.Unknown);
+				Ref<?> ref = (Ref<?>) getOperand(1);
+				return !(ref.get() instanceof Decl.Unknown);
 			}
 
 			public void setDeclaration(Decl.Type declaration) {
@@ -5145,6 +5163,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(SEMTYPE_record, new Value.Bool(isOpen), fields);
 			}
 
+			public Record(Value.Bool isOpen, Tuple<Field> fields) {
+				super(SEMTYPE_record, isOpen, fields);
+			}
+
 			protected Record(int opcode, Value.Bool isOpen, Tuple<Type.Field> fields) {
 				// NOTE: this is specifically to handle Type.Record
 				super(opcode, isOpen, fields);
@@ -5176,8 +5198,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				boolean isOpen = ((Value.Bool) operands[0]).get();
-				return new Record(isOpen, (Tuple<Field>) operands[1]);
+				return new Record(((Value.Bool) operands[0]), (Tuple<Field>) operands[1]);
 			}
 
 			@Override
@@ -5322,6 +5343,28 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		boolean isResolved();
 	}
 
+	public interface Selectable<T extends Decl.Named> extends Linkable {
+		/**
+		 * Get the declarations to which this selectable item refers.
+		 *
+		 * @return
+		 */
+		Tuple<T> getDeclarations();
+
+		/**
+		 * Check whether or not this selectable item can be resolved.
+		 *
+		 * @return
+		 */
+		boolean isSelectable();
+
+		/**
+		 * Select the appropriate declaration which will fully resolve this linkable.
+		 *
+		 * @param declaration
+		 */
+		void select(T declaration);
+	}
 	// ============================================================
 	// Modifiers
 	// ============================================================
@@ -5478,15 +5521,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		@Override
 		public String getMessage() {
-			Tuple<SyntacticItem> context = getContext();
-			// FIXME: convert context into string parameters. This is really a giant hack
-			// for now.
-			String[] params = new String[context.size()];
-			for (int i = 0; i != params.length; ++i) {
-				params[i] = context.getOperand(i).toString();
-			}
 			// Done
-			return ErrorMessages.getErrorMessage(getErrorCode(), params);
+			return ErrorMessages.getErrorMessage(getErrorCode(), getContext());
 		}
 
 		@Override
@@ -5506,17 +5542,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPECTED_REFERENCE = 404;
 	public static final int EXPECTED_LAMBDA = 405;
 	public static final int INVALID_FIELD = 406;
+	public static final int RESOLUTION_ERROR = 407;
 	// Statements
 	public static final int MISSING_RETURN_STATEMENT = 500;
 	public static final int UNREACHABLE_CODE = 504;
 	public static final int BRANCH_ALWAYS_TAKEN = 506;
 	public static final int TOO_MANY_RETURNS = 507;
 	public static final int INSUFFICIENT_RETURNS = 508;
+	public static final int CYCLIC_STATIC_INITIALISER = 509;
 	// Expressions
 	public static final int VARIABLE_POSSIBLY_UNITIALISED = 601;
 	public static final int INCOMPARABLE_OPERANDS = 602;
 	public static final int INSUFFICIENT_ARGUMENTS = 603;
 	public static final int AMBIGUOUS_CALLABLE = 604;
+	public static final int PARAMETER_REASSIGNED = 605;
+	public static final int FINAL_VARIABLE_REASSIGNED = 606;
+	public static final int ALLOCATION_NOT_PERMITTED = 607;
+	public static final int METHODCALL_NOT_PERMITTED = 608;
+	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
+	public static final int INVALID_LVAL_EXPRESSION = 610;
+	//
+
 
 	// ==============================================================================
 	//
@@ -5839,6 +5885,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Recursive((Ref<Type>) operands[0]);
 			}
 		};
+		schema[SEMTYPE_reference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_reference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0]);
+			}
+		};
+		schema[SEMTYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_staticreference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0], (Identifier) operands[1]);
+			}
+		};
+		schema[SEMTYPE_array] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_array") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0]);
+			}
+		};
+		schema[SEMTYPE_record] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_record") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Record(((Value.Bool) operands[0]).get(), (Tuple<SemanticType.Field>) operands[1]);
+			}
+		};
+		schema[SEMTYPE_field] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_field") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Field((Identifier) operands[0], (SemanticType) operands[1]);
+			}
+		};
+		schema[SEMTYPE_union] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_union") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Union(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+		};
+		schema[SEMTYPE_intersection] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_intersection") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Intersection(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+		};
+		schema[SEMTYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_difference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Difference((SemanticType) operands[0], (SemanticType) operands[1]);
+			}
+		};;
 
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
 		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {

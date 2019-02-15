@@ -13,21 +13,15 @@
 // limitations under the License.
 package wyil.transform;
 
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
-import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractSyntacticItem;
 import wycc.util.Pair;
-import wycc.util.ArrayUtils;
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Declaration;
 import wyal.lang.WyalFile.Expr;
@@ -35,14 +29,11 @@ import wyal.lang.WyalFile.Expr;
 import static wyal.lang.WyalFile.Value;
 import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
-import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
-import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
-import wyc.task.Wyil2WyalBuilder;
 
 /**
  * <p>

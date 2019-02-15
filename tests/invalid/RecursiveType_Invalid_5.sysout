@@ -1,3 +1,18 @@
-tests/invalid/RecursiveType_Invalid_5.whiley:5: unable to resolve name (string)
+tests/invalid/RecursiveType_Invalid_5.whiley:5: unable to resolve name
 type Var is {string id}
              ^^^^^^
+tests/invalid/RecursiveType_Invalid_5.whiley:7: unable to resolve name
+type SyntaxError is {string err}
+                     ^^^^^^
+tests/invalid/RecursiveType_Invalid_5.whiley:13: expected type SExpr, found {int[] id}
+        return {id: "var"}
+               ^^^^^^^^^^^
+tests/invalid/RecursiveType_Invalid_5.whiley:18: expected type SExpr, found {SExpr rhs,SExpr lhs}
+            return {rhs: sbuild(i + 1), lhs: sbuild(i + 10)}
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/invalid/RecursiveType_Invalid_5.whiley:22: expected type SExpr, found {int[] err}
+        return {err: "error"}
+               ^^^^^^^^^^^^^^
+tests/invalid/RecursiveType_Invalid_5.whiley:24: expected type SExpr, found SExpr
+        return build(i)
+               ^^^^^^^^

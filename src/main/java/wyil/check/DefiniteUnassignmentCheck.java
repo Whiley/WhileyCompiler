@@ -13,19 +13,14 @@
 // limitations under the License.
 package wyil.check;
 
-import static wyc.util.ErrorMessages.PARAMETER_REASSIGNED;
-import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 import wyc.task.CompileTask;
+import static wyc.util.ErrorMessages.syntaxError;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
-
-import wybs.lang.Build;
-import wybs.lang.SyntaxError;
 
 /**
  * <p>
@@ -77,6 +72,7 @@ public class DefiniteUnassignmentCheck
 	private boolean finalParameters = false;
 
 	public void check(WyilFile wf) {
+		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
 	}
 
@@ -157,6 +153,10 @@ public class DefiniteUnassignmentCheck
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment, nf.breakEnvironment);
+			// NOTE: following can arise when block contains unreachable code.
+			if(nextEnvironment == null) {
+				break;
+			}
 		}
 		return new ControlFlow(nextEnvironment, breakEnvironment);
 	}
@@ -217,19 +217,19 @@ public class DefiniteUnassignmentCheck
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
 		if (finalParameters && isParameter(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
+			syntaxError(PARAMETER_REASSIGNED,lval);
 		} else if (isFinal(var) && environment.contains(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+			syntaxError(FINAL_VARIABLE_REASSIGNED, lval);
 		}
 	}
 
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
-		Decl.StaticVariable var = lval.getDeclaration();
-		if (isFinal(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+		// Check whether this declaration was resolved or not.
+		if(lval.isResolved()) {
+			Decl.StaticVariable var = lval.getDeclaration();
+			if (isFinal(var)) {
+				syntaxError(FINAL_VARIABLE_REASSIGNED, lval);
+			}
 		}
 	}
 

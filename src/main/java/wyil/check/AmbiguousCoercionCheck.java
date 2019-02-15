@@ -87,7 +87,10 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	}
 
 	public void check(WyilFile file) {
-		visitModule(file);
+		// Only proceed if no errors in earlier stages
+		if(file.getModule().getAttributes().size() == 0) {
+			visitModule(file);
+		}
 	}
 
 	@Override

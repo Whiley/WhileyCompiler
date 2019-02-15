@@ -204,18 +204,13 @@ public final class CompileTask implements Build.Task {
 
 			new NameResolution(project,wf).apply();
 			new FlowTypeCheck().check(wf);
-			//
 			new DefiniteAssignmentCheck().check(wf);
 			new DefiniteUnassignmentCheck().check(wf);
-			if(wf.getModule().getAttributes().size() == 0) {
-				// Only proceed if we haven't found any errors yet
-				new FunctionalCheck().check(wf);
-				new StaticVariableCheck().check(wf);
-				new AmbiguousCoercionCheck().check(wf);
-				new MoveAnalysis().apply(wf);
-				new RecursiveTypeAnalysis().apply(wf);
-				success = true;
-			}
+			new FunctionalCheck().check(wf);
+			new StaticVariableCheck().check(wf);
+			new AmbiguousCoercionCheck().check(wf);
+			new MoveAnalysis().apply(wf);
+			new RecursiveTypeAnalysis().apply(wf);
 
 			// ========================================================================
 			// Done
@@ -227,8 +222,10 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
-			//
-			return success;
+
+			// FIXME: this is horrendously broken as it assumes all markers are errors,
+			// which they may not be.
+			return wf.getModule().getAttributes().size() == 0;
 		} catch(InternalFailure e) {
 			e.printStackTrace();
 			return false;

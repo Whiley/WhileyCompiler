@@ -95,6 +95,13 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 		}
 	}
 
+	@Override
+	public void visitStaticVariable(Decl.StaticVariable stmt, Boolean consumed) {
+		if (stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), true);
+		}
+	}
+
 	// ===========================================================================
 	// STATEMENTS
 	// ===========================================================================
