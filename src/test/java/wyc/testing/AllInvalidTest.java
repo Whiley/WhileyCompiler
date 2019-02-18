@@ -93,6 +93,10 @@ public class AllInvalidTest {
 		IGNORED.put("While_Invalid_23", "??");
 		IGNORED.put("TupleAssign_Invalid_3", "??");
 		IGNORED.put("TypeEquals_Invalid_5", "??");
+		// #885 --- Contractive Types and isVoid()
+		IGNORED.put("Type_Invalid_5", "885");
+		IGNORED.put("Type_Invalid_7", "885");
+		IGNORED.put("Type_Invalid_8", "885");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
