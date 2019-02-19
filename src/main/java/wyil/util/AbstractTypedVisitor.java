@@ -366,7 +366,7 @@ public abstract class AbstractTypedVisitor {
 				j = j + len;
 			} else {
 				// Default to single expression
-				visitExpression(exprs.getOperand(i), targets.getOperand(j), environment);
+				visitExpression(e, targets.getOperand(j), environment);
 				j = j + 1;
 			}
 		}

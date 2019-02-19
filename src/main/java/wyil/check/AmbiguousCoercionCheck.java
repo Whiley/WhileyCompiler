@@ -99,36 +99,23 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	@Override
 	public void visitExpression(Expr expr, Type target, Environment environment) {
-		checkCoercion(expr, target, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitExpression(expr, target, environment);
+		if(checkCoercion(expr, target, environment)) {
+			// Continue recursively exploring this expression
+			super.visitExpression(expr, target, environment);
+		}
 	}
 
 
 	@Override
 	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
-		checkCoercion(expr, targets, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitMultiExpression(expr, targets, environment);
-	}
-
-	private void checkCoercion(Expr expr, Type target, Environment environment) {
-		if(expr instanceof WyilFile.Linkable) {
-			WyilFile.Linkable l = (WyilFile.Linkable) expr;
-			if(!l.isResolved()) {
-				// Abort early because cannot trust the type determined for this expression.
-				// This can arise because the flow type checker encountered a typing problem.
-				return;
-			}
-		}
-		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
-		Type source = expr.getType();
-		if (!checkCoercion(target, source, environment, assumptions, expr)) {
-			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+		if(checkCoercion(expr, targets, environment)) {
+			// Continue recursively exploring this expression
+			super.visitMultiExpression(expr, targets, environment);
 		}
 	}
 
-	private void checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+		boolean status = true;
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
@@ -136,7 +123,29 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			Type source = types.getOperand(j);
 			if (!checkCoercion(target, source, environment, assumptions, expr)) {
 				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+				status = false;
 			}
+		}
+		//
+		return status;
+	}
+
+	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
+		if(expr instanceof WyilFile.Linkable) {
+			WyilFile.Linkable l = (WyilFile.Linkable) expr;
+			if(!l.isResolved()) {
+				// Abort early because cannot trust the type determined for this expression.
+				// This can arise because the flow type checker encountered a typing problem.
+				return false;
+			}
+		}
+		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
+		Type source = expr.getType();
+		if (!checkCoercion(target, source, environment, assumptions, expr)) {
+			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+			return false;
+		} else {
+			return true;
 		}
 	}
 
