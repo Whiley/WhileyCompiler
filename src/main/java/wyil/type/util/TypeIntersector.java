@@ -229,8 +229,8 @@ public class TypeIntersector extends AbstractTypeCombinator {
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Type.Field lhsField = lhsFields.get(i);
-				Type.Field rhsField = rhsFields.get(j);
+				Type.Field lhsField = lhsFields.getOperand(i);
+				Type.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -257,8 +257,8 @@ public class TypeIntersector extends AbstractTypeCombinator {
 			Type.Field[] result, int index) {
 		outer: for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Type.Field lhsField = lhsFields.get(i);
-				Type.Field rhsField = rhsFields.get(j);
+				Type.Field lhsField = lhsFields.getOperand(i);
+				Type.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -267,7 +267,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 					continue outer;
 				}
 			}
-			result[index++] = lhsFields.get(i);
+			result[index++] = lhsFields.getOperand(i);
 		}
 		return index;
 	}
@@ -284,8 +284,8 @@ public class TypeIntersector extends AbstractTypeCombinator {
 		int count = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				SemanticType.Field lhsField = lhsFields.get(i);
-				SemanticType.Field rhsField = rhsFields.get(j);
+				SemanticType.Field lhsField = lhsFields.getOperand(i);
+				SemanticType.Field rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {

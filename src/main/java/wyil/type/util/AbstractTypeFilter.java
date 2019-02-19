@@ -13,22 +13,12 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyc.util.ErrorMessages.errorMessage;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
-import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.Type.Array;
 
 /**
  * <p>
@@ -80,7 +70,7 @@ public class AbstractTypeFilter<T extends Type> {
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
 			for (int i = 0; i != t.size(); ++i) {
-				filter(t.get(i), results);
+				filter(t.getOperand(i), results);
 			}
 		}
 	}

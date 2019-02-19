@@ -3,3 +3,8 @@ tests/invalid/ConstrainedInt_Invalid_11.whiley:11: unable to resolve name (is am
 	found function ConstrainedInt_Invalid_11::f(int)->()
     f(-1)
     ^
+tests/invalid/ConstrainedInt_Invalid_11.whiley:12: unable to resolve name (is ambiguous)
+	found function ConstrainedInt_Invalid_11::f(frf1nat)->()
+	found function ConstrainedInt_Invalid_11::f(int)->()
+    f(1)
+    ^

@@ -74,8 +74,8 @@ public class PreconditionGenerator {
 				// to hold.
 				Tuple<WyilFile.Expr> operands = expr.getOperands();
 				for (int i = 0; i != operands.size(); ++i) {
-					super.visitExpression(operands.get(i), context);
-					Expr e = vcg.translateExpression(operands.get(i), null, context.getEnvironment());
+					super.visitExpression(operands.getOperand(i), context);
+					Expr e = vcg.translateExpression(operands.getOperand(i), null, context.getEnvironment());
 					context = context.assume(e);
 				}
 			}
@@ -92,7 +92,7 @@ public class PreconditionGenerator {
 			public void visitQuantifier(WyilFile.Expr.Quantifier expr, Context context) {
 				Tuple<WyilFile.Decl.Variable> parameters = expr.getParameters();
 				for(int i=0;i!=parameters.size();++i) {
-					Decl.Variable parameter = parameters.get(i);
+					Decl.Variable parameter = parameters.getOperand(i);
 					WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) parameter.getInitialiser();
 					super.visitExpression(range, context);
 					// Now generate appropriate bounds for parameter to ensure any subsequently
@@ -174,7 +174,7 @@ public class PreconditionGenerator {
 			}
 			// Perform parameter checks
 			for (int i = 0; i != parameterTypes.size(); ++i) {
-				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
+				vcg.generateTypeInvariantCheck(parameterTypes.getOperand(i), arguments[i], context);
 			}
 		}
 	}

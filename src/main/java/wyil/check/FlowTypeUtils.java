@@ -16,15 +16,6 @@ package wyil.check;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
-import static wyc.util.ErrorMessages.INVALID_LVAL_EXPRESSION;
-import static wyc.util.ErrorMessages.errorMessage;
-import static wyil.lang.WyilFile.SEMTYPE_array;
-import static wyil.lang.WyilFile.SEMTYPE_difference;
-import static wyil.lang.WyilFile.SEMTYPE_intersection;
-import static wyil.lang.WyilFile.SEMTYPE_record;
-import static wyil.lang.WyilFile.SEMTYPE_reference;
-import static wyil.lang.WyilFile.SEMTYPE_staticreference;
-import static wyil.lang.WyilFile.SEMTYPE_union;
 import static wyil.lang.WyilFile.STMT_assign;
 import static wyil.lang.WyilFile.STMT_dowhile;
 import static wyil.lang.WyilFile.STMT_if;
@@ -32,21 +23,8 @@ import static wyil.lang.WyilFile.STMT_ifelse;
 import static wyil.lang.WyilFile.STMT_namedblock;
 import static wyil.lang.WyilFile.STMT_switch;
 import static wyil.lang.WyilFile.STMT_while;
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
-import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_void;
+import static wyc.util.ErrorMessages.syntaxError;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -58,7 +36,7 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
@@ -179,7 +157,7 @@ public class FlowTypeUtils {
 
 	public static void determineModifiedVariables(Stmt.Block block, Set<Decl.Variable> modified) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
+			Stmt stmt = block.getOperand(i);
 			switch (stmt.getOpcode()) {
 			case STMT_assign: {
 				Stmt.Assign s = (Stmt.Assign) stmt;
@@ -252,7 +230,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.Dereference) {
 			return null;
 		} else {
-			internalFailure(errorMessage(INVALID_LVAL_EXPRESSION), lval);
+			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
 			return null; // dead code
 		}
 	}
@@ -290,7 +268,7 @@ public class FlowTypeUtils {
 		boolean result = true;
 		//
 		for (int i = 0; i != item.size(); ++i) {
-			result &= isPure(item.get(i));
+			result &= isPure(item.getOperand(i));
 		}
 		return result;
 	}
@@ -376,7 +354,7 @@ public class FlowTypeUtils {
 		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers.get(i).get();
+				outs[i] = outers.getOperand(i).get();
 			}
 			return declareWithin(inner, outs);
 		}
@@ -555,7 +533,7 @@ public class FlowTypeUtils {
 			// NOTE: this is an implicit assumption that typeLambdaFilter() only ever
 			// returns
 			// lambda types with exactly one return type.
-			returnTypes[i] = types[i].getReturns().get(0);
+			returnTypes[i] = types[i].getReturns().getOperand(0);
 		}
 		return returnTypes;
 	}
@@ -605,10 +583,10 @@ public class FlowTypeUtils {
 			return false;
 		} else {
 			for (int i = 0; i != ith_fields.size(); ++i) {
-				Identifier ith_field = ith_fields.get(i).getName();
+				Identifier ith_field = ith_fields.getOperand(i).getName();
 				boolean matched = false;
 				for (int j = 0; j != fields.size(); ++j) {
-					Identifier field = fields.get(j);
+					Identifier field = fields.getOperand(j);
 					if (ith_field.equals(field)) {
 						matched = true;
 						break;

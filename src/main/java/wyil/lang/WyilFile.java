@@ -29,6 +29,7 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
+import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -82,7 +83,6 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class WyilFile extends AbstractCompilationUnit<WyilFile> {
-
 
 	// =========================================================================
 	// Binary Content Type
@@ -152,6 +152,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int MOD_protected = MOD_mask + 3;
 	public static final int MOD_private = MOD_mask + 4;
 	public static final int MOD_public = MOD_mask + 5;
+	// ATTRIBUTES
+	public static final int ATTR_mask = MOD_mask + 16;
+	public static final int ATTR_warning = ATTR_mask + 0;
+	public static final int ATTR_error = ATTR_mask + 1;
+	public static final int ATTR_verificationcondition = ATTR_mask + 2;
 	// TYPES:
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
@@ -182,7 +187,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int SEMTYPE_difference = TYPE_mask + 25;
 	public static final int TYPE_recursive = TYPE_mask + 26;
 	// STATEMENTS:
-	public static final int STMT_mask = TYPE_mask+64;
+	public static final int STMT_mask = TYPE_mask + 64;
 	public static final int STMT_block = STMT_mask + 0;
 	public static final int STMT_namedblock = STMT_mask + 1;
 	public static final int STMT_caseblock = STMT_mask + 2;
@@ -338,7 +343,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		@Override
 		public boolean equals(Object o) {
-			if(o instanceof QualifiedName) {
+			if (o instanceof QualifiedName) {
 				QualifiedName n = (QualifiedName) o;
 				return unit.equals(n.unit) && name.equals(n.name);
 			}
@@ -364,7 +369,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public Name toName() {
-			return new Name(ArrayUtils.append(unit.getAll(), name));
+			return new Name(ArrayUtils.append(unit.getOperandArray(), name));
 		}
 
 		@Override
@@ -372,7 +377,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return unit + "::" + name;
 		}
 	}
-
 
 	// ============================================================
 	// Declarations
@@ -414,28 +418,33 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class Module extends AbstractSyntacticItem {
 
-			public Module(Name name, Tuple<Decl.Unit> modules, Tuple<Decl.Unit> externs) {
-				super(DECL_module, name, modules, externs);
+			public Module(Name name, Tuple<Decl.Unit> modules, Tuple<Decl.Unit> externs,
+					Tuple<SyntacticItem.Marker> attributes) {
+				super(DECL_module, name, modules, externs, attributes);
 			}
 
 			public Name getName() {
-				return (Name) get(0);
+				return (Name) getOperand(0);
 			}
 
 			public Tuple<Decl.Unit> getUnits() {
-				return (Tuple<Decl.Unit>) get(1);
+				return (Tuple<Decl.Unit>) getOperand(1);
 			}
 
 			public Tuple<Decl.Unit> getExterns() {
-				return (Tuple<Decl.Unit>) get(2);
+				return (Tuple<Decl.Unit>) getOperand(2);
+			}
+
+			public Tuple<SyntacticItem.Marker> getAttributes() {
+				return (Tuple<SyntacticItem.Marker>) getOperand(3);
 			}
 
 			public void putUnit(Decl.Unit unit) {
 				Tuple<Decl.Unit> units = getUnits();
 				// Check whether replacing unit or adding new
-				for(int i=0;i!=units.size();++i) {
-					Decl.Unit ith = units.get(i);
-					if(ith.getName().equals(unit.getName())) {
+				for (int i = 0; i != units.size(); ++i) {
+					Decl.Unit ith = units.getOperand(i);
+					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						units.setOperand(i, unit);
 						return;
@@ -449,7 +458,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Tuple<Decl.Unit> externs = getExterns();
 				// Check whether replacing unit or adding new
 				for (int i = 0; i != externs.size(); ++i) {
-					Decl.Unit ith = externs.get(i);
+					Decl.Unit ith = externs.getOperand(i);
 					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						externs.setOperand(i, unit);
@@ -460,9 +469,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				setOperand(2, getHeap().allocate(externs.append(unit)));
 			}
 
+			public void addAttribute(SyntacticItem.Marker attribute) {
+				setOperand(3, getHeap().allocate(getAttributes().append(attribute)));
+			}
+
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2]);
+				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2],
+						(Tuple<SyntacticItem.Marker>) operands[3]);
 			}
 		}
 
@@ -480,12 +494,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getName() {
-				return (Name) get(0);
+				return (Name) getOperand(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl> getDeclarations() {
-				return (Tuple<Decl>) get(1);
+				return (Tuple<Decl>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -530,7 +544,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getPath() {
-				return (Tuple<Identifier>) super.get(0);
+				return (Tuple<Identifier>) super.getOperand(0);
 			}
 
 			/**
@@ -551,7 +565,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * @return
 			 */
 			public Identifier getFrom() {
-				return (Identifier) super.get(1);
+				return (Identifier) super.getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -576,7 +590,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += ".";
 					}
-					Identifier component = path.get(i);
+					Identifier component = path.getOperand(i);
 					if (component == null) {
 						r += "*";
 					} else {
@@ -601,17 +615,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Modifier> getModifiers() {
-				return (Tuple<Modifier>) super.get(0);
+				return (Tuple<Modifier>) super.getOperand(0);
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.get(1);
+				return (Identifier) super.getOperand(1);
 			}
 
 			public QualifiedName getQualifiedName() {
 				// FIXME: this is completely broken.
 				Unit module = getAncestor(Decl.Unit.class);
-				return new QualifiedName(module.getName(),getName());
+				return new QualifiedName(module.getName(), getName());
 			}
 
 			public abstract WyilFile.Type getType();
@@ -630,12 +644,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) get(2);
+				return (Tuple<Decl.Variable>) getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getReturns() {
-				return (Tuple<Decl.Variable>) get(3);
+				return (Tuple<Decl.Variable>) getOperand(3);
 			}
 
 			@Override
@@ -679,6 +693,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * convention is to specify the requires clause(s) after the others.</li>
 		 * </ul>
 		 * </p>
+		 *
 		 * @see Callable
 		 */
 		public static abstract class FunctionOrMethod extends Callable {
@@ -692,16 +707,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRequires() {
-				return (Tuple<Expr>) get(4);
+				return (Tuple<Expr>) getOperand(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getEnsures() {
-				return (Tuple<Expr>) get(5);
+				return (Tuple<Expr>) getOperand(5);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) get(6);
+				return (Stmt.Block) getOperand(6);
 			}
 		}
 
@@ -748,7 +763,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public WyilFile.Type.Function getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WyilFile.Type> projectedParameters = getParameters().map((WyilFile.Decl.Variable d) -> d.getType());
+				Tuple<WyilFile.Type> projectedParameters = getParameters()
+						.map((WyilFile.Decl.Variable d) -> d.getType());
 				Tuple<WyilFile.Type> projectedReturns = getReturns().map((WyilFile.Decl.Variable d) -> d.getType());
 				return new WyilFile.Type.Function(projectedParameters, projectedReturns);
 			}
@@ -804,15 +820,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) get(7);
+				return (Tuple<Identifier>) getOperand(7);
 			}
 
 			@Override
 			public WyilFile.Type.Method getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-			  Tuple<WyilFile.Type> projectedParameters = getParameters().map((WyilFile.Decl.Variable d) -> d.getType());
-        Tuple<WyilFile.Type> projectedReturns = getReturns().map((WyilFile.Decl.Variable d) -> d.getType());
+				Tuple<WyilFile.Type> projectedParameters = getParameters()
+						.map((WyilFile.Decl.Variable d) -> d.getType());
+				Tuple<WyilFile.Type> projectedReturns = getReturns().map((WyilFile.Decl.Variable d) -> d.getType());
 				return new WyilFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(), getLifetimes());
 			}
 
@@ -847,8 +864,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * </p>
 		 *
 		 * <p>
-		 * Property declarations may also have modifiers, such as <code>public</code> and
-		 * <code>private</code>.
+		 * Property declarations may also have modifiers, such as <code>public</code>
+		 * and <code>private</code>.
 		 * </p>
 		 *
 		 * @See FunctionOrMethod
@@ -872,14 +889,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public WyilFile.Type.Property getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-			  Tuple<WyilFile.Type> projectedParameters = getParameters().map((WyilFile.Decl.Variable d) -> d.getType());
+				Tuple<WyilFile.Type> projectedParameters = getParameters()
+						.map((WyilFile.Decl.Variable d) -> d.getType());
 				Tuple<WyilFile.Type> projectedReturns = new Tuple<>(WyilFile.Type.Bool);
 				return new WyilFile.Type.Property(projectedParameters, projectedReturns);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) get(4);
+				return (Tuple<Expr>) getOperand(4);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -915,12 +933,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Lambda extends Callable implements Expr {
 
 			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WyilFile.Type.Callable signature) {
+					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body,
+					WyilFile.Type.Callable signature) {
 				this(modifiers, name, parameters, new Tuple<Decl.Variable>(), captures, lifetimes, body, signature);
 			}
 
-			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,Tuple<Decl.Variable> returns,
-					Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body, WyilFile.Type.Callable signature) {
+			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body,
+					WyilFile.Type.Callable signature) {
 				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body, signature);
 			}
 
@@ -928,40 +948,39 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				HashSet<Decl.Variable> captured = new HashSet<>();
 				usedVariableExtractor.visitExpression(getBody(), captured);
 				Tuple<Decl.Variable> parameters = getParameters();
-				for(int i=0;i!=parameters.size();++i) {
-					captured.remove(parameters.get(i));
+				for (int i = 0; i != parameters.size(); ++i) {
+					captured.remove(parameters.getOperand(i));
 				}
 				return captured;
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCapturedLifetimes() {
-				return (Tuple<Identifier>) get(4);
+				return (Tuple<Identifier>) getOperand(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) get(5);
+				return (Tuple<Identifier>) getOperand(5);
 			}
 
 			public Expr getBody() {
-				return (Expr) get(6);
+				return (Expr) getOperand(6);
 			}
 
 			@Override
 			public WyilFile.Type.Callable getType() {
-				return (WyilFile.Type.Callable) super.get(7);
+				return (WyilFile.Type.Callable) super.getOperand(7);
 			}
 
 			@Override
 			public void setType(WyilFile.Type type) {
-				if(type instanceof WyilFile.Type.Callable) {
+				if (type instanceof WyilFile.Type.Callable) {
 					operands[7] = type;
 				} else {
 					throw new IllegalArgumentException();
 				}
 			}
-
 
 			@Override
 			public Tuple<WyilFile.Type> getTypes() {
@@ -1010,7 +1029,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) get(2);
+				return (Decl.Variable) getOperand(2);
 			}
 
 			public boolean isRecursive() {
@@ -1023,7 +1042,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) get(3);
+				return (Tuple<Expr>) getOperand(3);
 			}
 
 			@Override
@@ -1080,11 +1099,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public WyilFile.Type getType() {
-				return (WyilFile.Type) get(2);
+				return (WyilFile.Type) getOperand(2);
 			}
 
 			public Expr getInitialiser() {
-				return (Expr) get(3);
+				return (Expr) getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1156,8 +1175,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	/**
 	 * Provides classes for representing statements in Whiley's source language.
 	 * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
-	 * etc. Each class is an instance of <code>SyntacticItem</code> and, hence,
-	 * can be adorned with certain information (such as source location, etc).
+	 * etc. Each class is an instance of <code>SyntacticItem</code> and, hence, can
+	 * be adorned with certain information (such as source location, etc).
 	 *
 	 * @author David J. Pearce
 	 *
@@ -1209,8 +1228,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Stmt get(int i) {
-				return (Stmt) super.get(i);
+			public Stmt getOperand(int i) {
+				return (Stmt) super.getOperand(i);
 			}
 
 			@Override
@@ -1241,11 +1260,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.get(0);
+				return (Identifier) super.getOperand(0);
 			}
 
 			public Block getBlock() {
-				return (Block) super.get(1);
+				return (Block) super.getOperand(1);
 			}
 
 			@Override
@@ -1282,7 +1301,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
@@ -1323,12 +1342,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<LVal> getLeftHandSide() {
-				return (Tuple<LVal>) super.get(0);
+				return (Tuple<LVal>) super.getOperand(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRightHandSide() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1366,7 +1385,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
@@ -1389,7 +1408,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
@@ -1488,19 +1507,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getCondition() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getModified() {
-				return (Tuple<Decl.Variable>) super.get(2);
+				return (Tuple<Decl.Variable>) super.getOperand(2);
 			}
 
 			public void setModified(Tuple<Decl.Variable> modified) {
@@ -1509,7 +1528,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.get(3);
+				return (Stmt.Block) super.getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1569,15 +1588,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			public Stmt.Block getTrueBranch() {
-				return (Stmt.Block) super.get(1);
+				return (Stmt.Block) super.getOperand(1);
 			}
 
 			public Stmt.Block getFalseBranch() {
-				return (Stmt.Block) super.get(2);
+				return (Stmt.Block) super.getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1619,7 +1638,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getReturns() {
-				return (Tuple<Expr>) super.get(0);
+				return (Tuple<Expr>) super.getOperand(0);
 			}
 
 			@Override
@@ -1634,6 +1653,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * more case blocks. Each case consists of zero or more constant expressions.
 		 * The following illustrates:
 		 * </p>
+		 *
 		 * <pre>
 		 * switch x:
 		 *   case 1:
@@ -1643,6 +1663,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *   default:
 		 *     y = 0
 		 * </pre>
+		 *
 		 * @author David J. Pearce
 		 *
 		 */
@@ -1652,12 +1673,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) get(0);
+				return (Expr) getOperand(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Case> getCases() {
-				return (Tuple<Case>) get(1);
+				return (Tuple<Case>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1679,11 +1700,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getConditions() {
-				return (Tuple<Expr>) get(0);
+				return (Tuple<Expr>) getOperand(0);
 			}
 
 			public Stmt.Block getBlock() {
-				return (Stmt.Block) get(1);
+				return (Stmt.Block) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1726,19 +1747,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getCondition() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getModified() {
-				return (Tuple<Decl.Variable>) super.get(2);
+				return (Tuple<Decl.Variable>) super.getOperand(2);
 			}
 
 			public void setModified(Tuple<Decl.Variable> modified) {
@@ -1747,7 +1768,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.get(3);
+				return (Stmt.Block) super.getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1884,7 +1905,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) super.get(0);
+				return (Type) super.getOperand(0);
 			}
 
 			@Override
@@ -1913,7 +1934,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -1940,7 +1961,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Value getValue() {
-				return (Value) get(1);
+				return (Value) getOperand(1);
 			}
 
 			@Override
@@ -1968,12 +1989,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getName() {
-				return (Name) get(1);
+				return (Name) getOperand(1);
+			}
+
+			@Override
+			public boolean isResolved() {
+				Ref<?> ref = (Ref<?>) getOperand(2);
+				return !(ref.get() instanceof Decl.Unknown);
 			}
 
 			@Override
 			public Decl.StaticVariable getDeclaration() {
-				Ref<Decl.StaticVariable> ref = (Ref<Decl.StaticVariable>) get(2);
+				Ref<Decl.StaticVariable> ref = (Ref<Decl.StaticVariable>) getOperand(2);
 				return ref.get();
 			}
 
@@ -2023,11 +2050,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(0);
+				return (Expr) getOperand(0);
 			}
 
 			public Type getTestType() {
-				return (Type) get(1);
+				return (Type) getOperand(1);
 			}
 
 			@Override
@@ -2050,7 +2077,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Linkable {
+		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Selectable<Decl.Callable> {
 
 			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
 					Tuple<Ref<Decl.Callable>> declarations) {
@@ -2063,6 +2090,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isResolved() {
+				return data.length != 0;
+			}
+
+			@Override
+			public boolean isSelectable() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[3];
+				return refs.size() > 0;
+			}
+
+			@Override
 			public Type getType() {
 				Type.Callable signature = getDeclaration().getType();
 				Tuple<Type> returns = signature.getReturns();
@@ -2072,15 +2110,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (returns.size() != 1) {
 					throw new IllegalArgumentException();
 				}
-				Type type = returns.get(0);
-				if(signature instanceof Type.Method) {
+				Type type = returns.getOperand(0);
+				if (signature instanceof Type.Method) {
 					// Need to substitute return type here
 					Type.Method m = (Type.Method) signature;
 					Tuple<Identifier> declared = m.getLifetimeParameters();
 					Tuple<Identifier> actual = getLifetimes();
 					HashMap<Identifier, Identifier> binding = new HashMap<>();
 					for (int i = 0; i != declared.size(); ++i) {
-						binding.put(declared.get(i), actual.get(i));
+						binding.put(declared.getOperand(i), actual.getOperand(i));
 					}
 					return type.substitute(binding);
 				} else {
@@ -2106,12 +2144,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getName() {
-				return (Name) get(0);
+				return (Name) getOperand(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) get(1);
+				return (Tuple<Identifier>) getOperand(1);
 			}
 
 			public void setLifetimes(Tuple<Identifier> lifetimes) {
@@ -2121,7 +2159,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) get(2);
+				return (Tuple<Expr>) getOperand(2);
 			}
 
 			/**
@@ -2129,11 +2167,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 *
 			 * @param selector
 			 */
+			@Override
 			public void select(Decl.Callable decl) {
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
 				//
-				for(int i=0;i!=decls.size();++i) {
-					if(decls.get(i).get().equals(decl)) {
+				for (int i = 0; i != decls.size(); ++i) {
+					if (decls.getOperand(i).get().equals(decl)) {
 						this.data = BigInteger.valueOf(i).toByteArray();
 						return;
 					}
@@ -2145,21 +2184,22 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Decl.Callable getDeclaration() {
 				int selector = new BigInteger(data).intValue();
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[3];
-				return decls.get(selector).get();
+				return decls.getOperand(selector).get();
 			}
 
+			@Override
 			public Tuple<Decl.Callable> getDeclarations() {
 				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[3];
 				Decl.Callable[] decls = new Decl.Callable[refs.size()];
-				for(int i=0;i!=decls.length;++i) {
-					decls[i] = refs.get(i).get();
+				for (int i = 0; i != decls.length; ++i) {
+					decls[i] = refs.getOperand(i).get();
 				}
 				return new Tuple<>(decls);
 			}
 
 			public void setDeclarations(Decl.Callable... decls) {
 				Ref<Decl.Callable>[] refs = new Ref[decls.length];
-				for(int i=0;i!=refs.length;++i) {
+				for (int i = 0; i != refs.length; ++i) {
 					refs[i] = new Ref<>(decls[i]);
 				}
 				operands[3] = getHeap().allocate(new Tuple<>(refs));
@@ -2168,7 +2208,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public Invoke clone(SyntacticItem[] operands) {
-				byte[] data = Arrays.copyOf(this.data,this.data.length);
+				byte[] data = Arrays.copyOf(this.data, this.data.length);
 				return new Invoke((Name) operands[0], data, (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
 						(Tuple<Ref<Decl.Callable>>) operands[3]);
 			}
@@ -2177,7 +2217,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				String r = getName().toString();
 				Tuple<Identifier> lifetimes = getLifetimes();
-				if(lifetimes.size() > 0) {
+				if (lifetimes.size() > 0) {
 					r += "<" + lifetimes.toBareString() + ">";
 				}
 				r += getOperands();
@@ -2201,7 +2241,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type getType() {
-				return (Type) get(0);
+				return (Type) getOperand(0);
 			}
 
 			@Override
@@ -2216,17 +2256,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Expr getSource() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) get(2);
+				return (Tuple<Identifier>) getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) get(3);
+				return (Tuple<Expr>) getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2280,12 +2320,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) get(0);
+				return (Tuple<Decl.Variable>) getOperand(0);
 			}
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			@Override
@@ -2375,7 +2415,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) get(1);
+				return (Decl.Variable) getOperand(1);
 			}
 
 			/**
@@ -2433,7 +2473,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(0);
+				return (Tuple<Expr>) super.getOperand(0);
 			}
 
 			@Override
@@ -2477,7 +2517,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(0);
+				return (Tuple<Expr>) super.getOperand(0);
 			}
 
 			@Override
@@ -2520,12 +2560,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2569,12 +2609,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2617,7 +2657,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(0);
+				return (Expr) getOperand(0);
 			}
 
 			@Override
@@ -2659,12 +2699,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2707,12 +2747,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2756,12 +2796,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2805,12 +2845,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2854,12 +2894,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2903,12 +2943,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(0);
+				return (Expr) super.getOperand(0);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -2941,12 +2981,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -2975,12 +3015,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3009,12 +3049,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3043,12 +3083,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3077,12 +3117,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3110,7 +3150,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			@Override
@@ -3147,7 +3187,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			/**
@@ -3156,7 +3196,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3189,7 +3229,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			/**
@@ -3198,7 +3238,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3226,7 +3266,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
@@ -3254,7 +3294,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
@@ -3282,7 +3322,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
@@ -3314,7 +3354,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -3328,8 +3368,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// =========================================================================
 
 		/**
-		 * Represents an object dereference expression of the form "<code>*e</code>" where
-		 * <code>e</code> is the <i>operand expression</i>.
+		 * Represents an object dereference expression of the form "<code>*e</code>"
+		 * where <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3345,7 +3385,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -3382,7 +3422,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			public boolean hasLifetime() {
@@ -3390,7 +3430,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) super.get(2);
+				return (Identifier) super.getOperand(2);
 			}
 
 			@Override
@@ -3401,21 +3441,33 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public String toString() {
 				String r = "new ";
-				if(hasLifetime()) {
+				if (hasLifetime()) {
 					r = getLifetime() + ":" + r;
 				}
 				return r + getOperand();
 			}
 		}
 
-		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Linkable {
+		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Selectable<Decl.Callable> {
 
 			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations) {
 				super(EXPR_lambdaaccess, new byte[0], name, parameters, declarations);
 			}
 
-			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations, byte[] data) {
+			public LambdaAccess(Name name, Tuple<Type> parameters, Tuple<Ref<Decl.Callable>> declarations,
+					byte[] data) {
 				super(EXPR_lambdaaccess, data, name, parameters, declarations);
+			}
+
+			@Override
+			public boolean isResolved() {
+				return this.data.length > 0;
+			}
+
+			@Override
+			public boolean isSelectable() {
+				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[2];
+				return refs.size() > 0;
 			}
 
 			@Override
@@ -3434,7 +3486,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getName() {
-				return (Name) get(0);
+				return (Name) getOperand(0);
 			}
 
 			/**
@@ -3442,11 +3494,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 *
 			 * @param selector
 			 */
+			@Override
 			public void select(Decl.Callable decl) {
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
 				//
-				for(int i=0;i!=decls.size();++i) {
-					if(decls.get(i).get().equals(decl)) {
+				for (int i = 0; i != decls.size(); ++i) {
+					if (decls.getOperand(i).get().equals(decl)) {
 						this.data = BigInteger.valueOf(i).toByteArray();
 						return;
 					}
@@ -3458,35 +3511,38 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Decl.Callable getDeclaration() {
 				int selector = new BigInteger(data).intValue();
 				Tuple<Ref<Decl.Callable>> decls = (Tuple<Ref<Decl.Callable>>) operands[2];
-				return decls.get(selector).get();
+				return decls.getOperand(selector).get();
 			}
 
+			@Override
 			public Tuple<Decl.Callable> getDeclarations() {
 				Tuple<Ref<Decl.Callable>> refs = (Tuple<Ref<Decl.Callable>>) operands[2];
 				Decl.Callable[] decls = new Decl.Callable[refs.size()];
-				for(int i=0;i!=decls.length;++i) {
-					decls[i] = refs.get(i).get();
+				for (int i = 0; i != decls.length; ++i) {
+					decls[i] = refs.getOperand(i).get();
 				}
 				return new Tuple<>(decls);
 			}
 
 			public void setDeclarations(Decl.Callable... decls) {
 				Ref<Decl.Callable>[] refs = new Ref[decls.length];
-				for(int i=0;i!=refs.length;++i) {
+				for (int i = 0; i != refs.length; ++i) {
 					refs[i] = new Ref<>(decls[i]);
 				}
 				operands[2] = getHeap().allocate(new Tuple<>(refs));
 			}
+
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameterTypes() {
-				return (Tuple<Type>) get(1);
+				return (Tuple<Type>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				byte[] data = Arrays.copyOf(this.data, this.data.length);
-				return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1], (Tuple<Ref<Decl.Callable>>) operands[2], data);
+				return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1],
+						(Tuple<Ref<Decl.Callable>>) operands[2], data);
 			}
 		}
 
@@ -3514,7 +3570,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			/**
@@ -3523,7 +3579,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) get(2);
+				return (Expr) getOperand(2);
 			}
 
 			public void setMove() {
@@ -3533,6 +3589,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public boolean isMove() {
 				return opcode == EXPR_arrayborrow;
 			}
+
 			@Override
 			public ArrayAccess clone(SyntacticItem[] operands) {
 				return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
@@ -3567,7 +3624,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			/**
@@ -3576,7 +3633,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) get(2);
+				return (Expr) getOperand(2);
 			}
 
 			/**
@@ -3585,7 +3642,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getThirdOperand() {
-				return (Expr) get(3);
+				return (Expr) getOperand(3);
 			}
 
 			@Override
@@ -3615,7 +3672,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(1);
+				return (Tuple<Expr>) super.getOperand(1);
 			}
 
 			@Override
@@ -3650,7 +3707,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			/**
@@ -3659,7 +3716,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) get(2);
+				return (Expr) getOperand(2);
 			}
 
 			@Override
@@ -3688,7 +3745,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			/**
@@ -3697,7 +3754,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) super.get(2);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -3721,7 +3778,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) super.get(1);
+				return (Expr) super.getOperand(1);
 			}
 
 			@Override
@@ -3758,7 +3815,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			/**
@@ -3766,7 +3823,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * <code>e.f/code>.
 			 */
 			public Identifier getField() {
-				return (Identifier) get(2);
+				return (Identifier) getOperand(2);
 			}
 
 			public void setMove() {
@@ -3791,9 +3848,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		/**
 		 * Represents a <i>record initialiser</i> expression of the form
 		 * "<code>{ f1:e1, ..., fn:en }</code>" where <code>f1:e1</code> ...
-		 * <code>fn:en</code> are <i>field initialisers</i>. This returns a new
-		 * record where each field holds the value resulting from its corresponding
-		 * expression.
+		 * <code>fn:en</code> are <i>field initialisers</i>. This returns a new record
+		 * where each field holds the value resulting from its corresponding expression.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3803,7 +3859,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public RecordInitialiser(Type type, Tuple<Identifier> fields, Tuple<Expr> operands) {
 				// FIXME: it would be nice for the constructor to require a record type;
 				// however, the parser constructs multiple initialisers during parsing (even
-				// when only one is present).  This causes subsequent problems down the track.
+				// when only one is present). This causes subsequent problems down the track.
 				super(EXPR_recordinitialiser, type, fields, operands);
 			}
 
@@ -3822,12 +3878,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Tuple<Identifier> getFields() {
-				return (Tuple<Identifier>) super.get(1);
+				return (Tuple<Identifier>) super.getOperand(1);
 			}
 
 			@Override
 			public Tuple<Expr> getOperands() {
-				return (Tuple<Expr>) super.get(2);
+				return (Tuple<Expr>) super.getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3860,7 +3916,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getFirstOperand() {
-				return (Expr) get(1);
+				return (Expr) getOperand(1);
 			}
 
 			/**
@@ -3868,7 +3924,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * <code>e[f:=v]/code>.
 			 */
 			public Identifier getField() {
-				return (Identifier) get(2);
+				return (Identifier) getOperand(2);
 			}
 
 			/**
@@ -3877,7 +3933,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			@Override
 			public Expr getSecondOperand() {
-				return (Expr) get(3);
+				return (Expr) getOperand(3);
 			}
 
 			@Override
@@ -3912,7 +3968,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @param binding
 		 * @return
 		 */
-		public Type substitute(Map<Identifier,Identifier> binding);
+		public Type substitute(Map<Identifier, Identifier> binding);
 
 		/**
 		 * Return a canonical string which embodies this type.
@@ -3992,7 +4048,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Tuple<Type> getReturns();
 
 			@Override
-			public Type.Callable substitute(Map<Identifier,Identifier> binding);
+			public Type.Callable substitute(Map<Identifier, Identifier> binding);
 		}
 
 		/**
@@ -4050,7 +4106,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
+			public Type substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4082,7 +4138,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
+			public Type substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4118,7 +4174,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
+			public Type substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4152,7 +4208,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(Map<Identifier,Identifier> binding) {
+			public Type substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4192,14 +4248,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type getElement() {
-				return (Type) get(0);
+				return (Type) getOperand(0);
 			}
 
 			@Override
-			public Type.Array substitute(Map<Identifier,Identifier> binding) {
+			public Type.Array substitute(Map<Identifier, Identifier> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
-				if(before == after) {
+				if (before == after) {
 					return this;
 				} else {
 					return new Type.Array(after);
@@ -4251,23 +4307,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type getElement() {
-				return (Type) get(0);
+				return (Type) getOperand(0);
 			}
 
 			@Override
 			public Identifier getLifetime() {
-				return (Identifier) get(1);
+				return (Identifier) getOperand(1);
 			}
 
 			@Override
-			public Type.Reference substitute(Map<Identifier,Identifier> binding) {
+			public Type.Reference substitute(Map<Identifier, Identifier> binding) {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
-				if(elementBefore != elementAfter || (hasLifetime() && binding.containsKey(getLifetime()))) {
-					if(hasLifetime()) {
+				if (elementBefore != elementAfter || (hasLifetime() && binding.containsKey(getLifetime()))) {
+					if (hasLifetime()) {
 						Identifier lifetime = binding.get(getLifetime());
 						lifetime = (lifetime == null) ? getLifetime() : lifetime;
-						return new Type.Reference(elementAfter,lifetime);
+						return new Type.Reference(elementAfter, lifetime);
 					} else {
 						return new Type.Reference(elementAfter);
 					}
@@ -4285,10 +4341,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			}
 
-
 			@Override
 			public String toString() {
-				if(hasLifetime()) {
+				if (hasLifetime()) {
 					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
 					return "&" + braceAsNecessary(getElement());
@@ -4297,7 +4352,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toCanonicalString() {
-				if(hasLifetime()) {
+				if (hasLifetime()) {
 					return "&" + getLifetime() + ":" + canonicalBraceAsNecessary(getElement());
 				} else {
 					return "&" + canonicalBraceAsNecessary(getElement());
@@ -4329,7 +4384,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public boolean isOpen() {
-				Value.Bool flag = (Value.Bool) get(0);
+				Value.Bool flag = (Value.Bool) getOperand(0);
 				return flag.get();
 			}
 
@@ -4341,17 +4396,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type.Field> getFields() {
-				return (Tuple<Type.Field>) get(1);
+				return (Tuple<Type.Field>) getOperand(1);
 			}
 
 			@Override
-			public Type.Record substitute(Map<Identifier,Identifier> binding) {
+			public Type.Record substitute(Map<Identifier, Identifier> binding) {
 				Tuple<Type.Field> before = getFields();
-				Tuple<Type.Field> after = substitute(before,binding);
-				if(before == after) {
+				Tuple<Type.Field> after = substitute(before, binding);
+				if (before == after) {
 					return this;
 				} else {
-					return new Type.Record(isOpen(),after);
+					return new Type.Record(isOpen(), after);
 				}
 			}
 
@@ -4367,10 +4422,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * @param binding
 			 * @return
 			 */
-			private static Tuple<Type.Field> substitute(Tuple<Type.Field> fields,
-					Map<Identifier, Identifier> binding) {
+			private static Tuple<Type.Field> substitute(Tuple<Type.Field> fields, Map<Identifier, Identifier> binding) {
 				for (int i = 0; i != fields.size(); ++i) {
-					Type.Field field = fields.get(i);
+					Type.Field field = fields.getOperand(i);
 					Type before = field.getType();
 					Type after = before.substitute(binding);
 					if (before != after) {
@@ -4378,7 +4432,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						Type.Field[] nFields = fields.toArray(Type.Field.class);
 						nFields[i] = new Type.Field(field.getName(), after);
 						for (int j = i + 1; j < fields.size(); ++j) {
-							field = fields.get(j);
+							field = fields.getOperand(j);
 							before = field.getType();
 							after = before.substitute(binding);
 							if (before != after) {
@@ -4398,8 +4452,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				String r = "";
 				//
 				for (int i = 0; i != fields.size(); ++i) {
-					Type.Field field = fields.get(i);
-					if(i!=0) {
+					Type.Field field = fields.getOperand(i);
+					if (i != 0) {
 						r += ",";
 					}
 					r += field.toString();
@@ -4415,8 +4469,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// FIXME: should I sort this?
 				//
 				for (int i = 0; i != fields.size(); ++i) {
-					Type.Field field = fields.get(i);
-					if(i!=0) {
+					Type.Field field = fields.getOperand(i);
+					if (i != 0) {
 						r += ",";
 					}
 					r += field.toCanonicalString();
@@ -4429,17 +4483,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Field extends SemanticType.Field {
 
 			public Field(Identifier name, Type type) {
-				super(TYPE_field,name,type);
+				super(TYPE_field, name, type);
 			}
 
 			@Override
 			public Identifier getName() {
-				return (Identifier) get(0);
+				return (Identifier) getOperand(0);
 			}
 
 			@Override
 			public Type getType() {
-				return (Type) get(1);
+				return (Type) getOperand(1);
 			}
 
 			@Override
@@ -4477,7 +4531,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Name getName() {
-				return (Name) get(0);
+				return (Name) getOperand(0);
+			}
+
+			@Override
+			public boolean isResolved() {
+				Ref<?> ref = (Ref<?>) getOperand(1);
+				return !(ref.get() instanceof Decl.Unknown);
 			}
 
 			public void setDeclaration(Decl.Type declaration) {
@@ -4486,12 +4546,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Decl.Type getDeclaration() {
-				Ref<Decl.Type> ref = (Ref<Decl.Type>) get(1);
+				Ref<Decl.Type> ref = (Ref<Decl.Type>) getOperand(1);
 				return ref.get();
 			}
 
 			@Override
-			public Type.Nominal substitute(Map<Identifier,Identifier> binding) {
+			public Type.Nominal substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4511,7 +4571,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 
-
 		/**
 		 * Represents a recursive link. That is a backlink into the type itself.
 		 *
@@ -4524,7 +4583,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Type getHead() {
-				Ref<Type> r = (Ref<Type>) get(0);
+				Ref<Type> r = (Ref<Type>) getOperand(0);
 				return r.get();
 			}
 
@@ -4533,7 +4592,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Recursive substitute(Map<Identifier,Identifier> binding) {
+			public Recursive substitute(Map<Identifier, Identifier> binding) {
 				return this;
 			}
 
@@ -4547,7 +4606,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type head = getHead();
 				if (head instanceof Type.Atom || head instanceof Type.Nominal) {
 					return "?" + head;
-				} else if(head.getHeap() != null) {
+				} else if (head.getHeap() != null) {
 					return "?" + head.getIndex();
 				} else {
 					return "?";
@@ -4585,20 +4644,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type get(int i) {
-				return (Type) super.get(i);
+			public Type getOperand(int i) {
+				return (Type) super.getOperand(i);
 			}
 
 			@Override
-			public Type[] getAll() {
-				return (Type[]) super.getAll();
+			public Type[] getOperandArray() {
+				return (Type[]) super.getOperandArray();
 			}
 
 			@Override
-			public Type.Union substitute(Map<Identifier,Identifier> binding) {
-				Type[] before = getAll();
-				Type[] after = WyilFile.substitute(before,binding);
-				if(before == after) {
+			public Type.Union substitute(Map<Identifier, Identifier> binding) {
+				Type[] before = getOperandArray();
+				Type[] after = WyilFile.substitute(before, binding);
+				if (before == after) {
 					return this;
 				} else {
 					return new Type.Union(after);
@@ -4617,7 +4676,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += braceAsNecessary(get(i));
+					r += braceAsNecessary(getOperand(i));
 				}
 				return r;
 			}
@@ -4629,7 +4688,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += "(" + get(i).toCanonicalString() + ")";
+					r += "(" + getOperand(i).toCanonicalString() + ")";
 				}
 				return r;
 			}
@@ -4652,13 +4711,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) get(0);
+				return (Tuple<Type>) getOperand(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) get(1);
+				return (Tuple<Type>) getOperand(1);
 			}
 
 			@Override
@@ -4712,23 +4771,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) get(0);
+				return (Tuple<Type>) getOperand(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) get(1);
+				return (Tuple<Type>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCapturedLifetimes() {
-				return (Tuple<Identifier>) get(2);
+				return (Tuple<Identifier>) getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimeParameters() {
-				return (Tuple<Identifier>) get(3);
+				return (Tuple<Identifier>) getOperand(3);
 			}
 
 			@Override
@@ -4736,12 +4795,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// Sanity check the binding being used here. Specifically, any binding which is
 				// declared in this method cannot be subsitituted.
 				Tuple<Identifier> lifetimes = getLifetimeParameters();
-				for(int i=0;i!=lifetimes.size();++i) {
-					Identifier lifetime = lifetimes.get(i);
-					if(binding.containsKey(lifetime)) {
+				for (int i = 0; i != lifetimes.size(); ++i) {
+					Identifier lifetime = lifetimes.getOperand(i);
+					if (binding.containsKey(lifetime)) {
 						binding = new HashMap<>(binding);
-						for(int j=i;j!=lifetimes.size();++j) {
-							binding.remove(lifetimes.get(i));
+						for (int j = i; j != lifetimes.size(); ++j) {
+							binding.remove(lifetimes.getOperand(i));
 						}
 						break;
 					}
@@ -4754,7 +4813,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
 					return this;
 				} else {
-					return new Type.Method(parametersAfter, returnsAfter, getCapturedLifetimes(), getLifetimeParameters());
+					return new Type.Method(parametersAfter, returnsAfter, getCapturedLifetimes(),
+							getLifetimeParameters());
 				}
 			}
 
@@ -4815,13 +4875,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) get(0);
+				return (Tuple<Type>) getOperand(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) get(1);
+				return (Tuple<Type>) getOperand(1);
 			}
 
 			@Override
@@ -4871,7 +4931,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Unknown substitute(Map<Identifier,Identifier> binding) {
+			public Type.Unknown substitute(Map<Identifier, Identifier> binding) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -4892,14 +4952,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
-	private static Type[] substitute(Type[] types, Map<Identifier,Identifier> binding) {
+	private static Type[] substitute(Type[] types, Map<Identifier, Identifier> binding) {
 		Type[] nTypes = types;
-		for(int i=0;i!=nTypes.length;++i) {
+		for (int i = 0; i != nTypes.length; ++i) {
 			Type before = types[i];
 			Type after = before.substitute(binding);
-			if(before != after) {
-				if(nTypes == types) {
-					nTypes = Arrays.copyOf(types,types.length);
+			if (before != after) {
+				if (nTypes == types) {
+					nTypes = Arrays.copyOf(types, types.length);
 				}
 				nTypes[i] = after;
 			}
@@ -4908,16 +4968,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return nTypes;
 	}
 
-	public static Tuple<Type> substitute(Tuple<Type> types, Map<Identifier,Identifier> binding) {
-		for(int i=0;i!=types.size();++i) {
-			Type before = types.get(i);
+	public static Tuple<Type> substitute(Tuple<Type> types, Map<Identifier, Identifier> binding) {
+		for (int i = 0; i != types.size(); ++i) {
+			Type before = types.getOperand(i);
 			Type after = before.substitute(binding);
-			if(before != after) {
+			if (before != after) {
 				// Now committed to a change
 				Type[] nTypes = types.toArray(Type.class);
 				nTypes[i] = after;
-				for(int j=i+1;j<types.size();++j) {
-					nTypes[j] = types.get(j).substitute(binding);
+				for (int j = i + 1; j < types.size(); ++j) {
+					nTypes[j] = types.getOperand(j).substitute(binding);
 				}
 				return new Tuple<>(nTypes);
 			}
@@ -4932,7 +4992,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			if (i != 0) {
 				r += ",";
 			}
-			r += types.get(i).toCanonicalString();
+			r += types.getOperand(i).toCanonicalString();
 		}
 		return r + ")";
 	}
@@ -4946,7 +5006,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static abstract class AbstractSemanticType extends AbstractSyntacticItem implements SemanticType {
 
 			public AbstractSemanticType(int opcode, SyntacticItem... operands) {
-				super(opcode,operands);
+				super(opcode, operands);
 			}
 
 		}
@@ -4956,7 +5016,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		public static interface Leaf extends SemanticType {
 		}
-
 
 		/**
 		 * A semantic type combinator represents either the intersection or union of
@@ -4976,36 +5035,36 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * Get the ith component type in this combinator
 			 */
 			@Override
-			public SemanticType get(int i);
+			public SemanticType getOperand(int i);
 
 			/**
 			 * Get all component types in this combinator
 			 */
 			@Override
-			public SemanticType[] getAll();
+			public SemanticType[] getOperandArray();
 		}
 
 		public static class Reference extends AbstractSemanticType implements SemanticType.Atom {
 			public Reference(SemanticType element) {
-				super(SEMTYPE_staticreference,element);
+				super(SEMTYPE_staticreference, element);
 			}
 
 			public Reference(SemanticType element, Identifier lifetime) {
-				super(SEMTYPE_reference,element,lifetime);
+				super(SEMTYPE_reference, element, lifetime);
 			}
 
 			protected Reference(int opcode, SemanticType element) {
 				// NOTE: this is specifically to handle Type.Reference
-				super(opcode,element);
-				if(opcode != TYPE_reference && opcode != TYPE_staticreference) {
+				super(opcode, element);
+				if (opcode != TYPE_reference && opcode != TYPE_staticreference) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
 
 			protected Reference(int opcode, SemanticType element, Identifier lifetime) {
 				// NOTE: this is specifically to handle Type.Reference
-				super(opcode,element,lifetime);
-				if(opcode != TYPE_reference) {
+				super(opcode, element, lifetime);
+				if (opcode != TYPE_reference) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
@@ -5015,16 +5074,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public SemanticType getElement() {
-				return (SemanticType) get(0);
+				return (SemanticType) getOperand(0);
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(1);
+				return (Identifier) getOperand(1);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Reference((SemanticType) operands[0]);
 				} else {
 					return new Reference((SemanticType) operands[0], (Identifier) operands[1]);
@@ -5045,19 +5104,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Array extends AbstractSemanticType implements SemanticType.Atom {
 
 			public Array(SemanticType element) {
-				super(SEMTYPE_array,element);
+				super(SEMTYPE_array, element);
 			}
 
 			protected Array(int opcode, SemanticType element) {
 				// NOTE: this is specifically to handle Type.Array
-				super(opcode,element);
-				if(opcode != TYPE_array) {
+				super(opcode, element);
+				if (opcode != TYPE_array) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
 
 			public SemanticType getElement() {
-				return (SemanticType) get(0);
+				return (SemanticType) getOperand(0);
 			}
 
 			@Override
@@ -5074,23 +5133,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Field extends AbstractSyntacticItem {
 
 			public Field(Identifier name, SemanticType type) {
-				super(SEMTYPE_field,name,type);
+				super(SEMTYPE_field, name, type);
 			}
 
 			protected Field(int opcode, Identifier name, SemanticType type) {
 				// NOTE: specifically to handle Type.Field
-				super(opcode,name,type);
-				if(opcode != TYPE_field) {
+				super(opcode, name, type);
+				if (opcode != TYPE_field) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
 
 			public Identifier getName() {
-				return (Identifier) get(0);
+				return (Identifier) getOperand(0);
 			}
 
 			public SemanticType getType() {
-				return (SemanticType) get(1);
+				return (SemanticType) getOperand(1);
 			}
 
 			@Override
@@ -5104,27 +5163,31 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(SEMTYPE_record, new Value.Bool(isOpen), fields);
 			}
 
+			public Record(Value.Bool isOpen, Tuple<Field> fields) {
+				super(SEMTYPE_record, isOpen, fields);
+			}
+
 			protected Record(int opcode, Value.Bool isOpen, Tuple<Type.Field> fields) {
 				// NOTE: this is specifically to handle Type.Record
 				super(opcode, isOpen, fields);
-				if(opcode != TYPE_record) {
+				if (opcode != TYPE_record) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
 
 			public boolean isOpen() {
-				Value.Bool flag = (Value.Bool) get(0);
+				Value.Bool flag = (Value.Bool) getOperand(0);
 				return flag.get();
 			}
 
 			public Tuple<? extends Field> getFields() {
-				return (Tuple<Field>) get(1);
+				return (Tuple<Field>) getOperand(1);
 			}
 
 			public SemanticType getField(Identifier fieldName) {
 				Tuple<? extends Field> fields = getFields();
 				for (int i = 0; i != fields.size(); ++i) {
-					Field vd = fields.get(i);
+					Field vd = fields.getOperand(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(fieldName)) {
 						return vd.getType();
@@ -5135,8 +5198,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				boolean isOpen = ((Value.Bool)operands[0]).get();
-				return new Record(isOpen,(Tuple<Field>) operands[1]);
+				return new Record(((Value.Bool) operands[0]), (Tuple<Field>) operands[1]);
 			}
 
 			@Override
@@ -5147,7 +5209,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += ",";
 					}
-					Field field = fields.get(i);
+					Field field = fields.getOperand(i);
 					r += field.getType() + " " + field.getName();
 				}
 				if (isOpen()) {
@@ -5169,19 +5231,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			protected Union(int opcode, SemanticType... types) {
 				// NOTE: this is specifically to handle Type.Union
 				super(opcode, types);
-				if(opcode != TYPE_union) {
+				if (opcode != TYPE_union) {
 					throw new IllegalArgumentException("invalid opcode");
 				}
 			}
 
 			@Override
-			public SemanticType get(int i)  {
-				return (SemanticType) super.get(i);
+			public SemanticType getOperand(int i) {
+				return (SemanticType) super.getOperand(i);
 			}
 
 			@Override
-			public SemanticType[] getAll() {
-				return (SemanticType[]) super.getAll();
+			public SemanticType[] getOperandArray() {
+				return (SemanticType[]) super.getOperandArray();
 			}
 
 			@Override
@@ -5196,7 +5258,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += braceAsNecessary(get(i));
+					r += braceAsNecessary(getOperand(i));
 				}
 				return r;
 			}
@@ -5208,20 +5270,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public SemanticType get(int i)  {
-				return (SemanticType) super.get(i);
+			public SemanticType getOperand(int i) {
+				return (SemanticType) super.getOperand(i);
 			}
 
 			@Override
-			public SemanticType[] getAll() {
-				return (SemanticType[]) super.getAll();
+			public SemanticType[] getOperandArray() {
+				return (SemanticType[]) super.getOperandArray();
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Intersection(ArrayUtils.toArray(SemanticType.class, operands));
 			}
-
 
 			@Override
 			public String toString() {
@@ -5230,7 +5291,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (i != 0) {
 						r += "&";
 					}
-					r += braceAsNecessary(get(i));
+					r += braceAsNecessary(getOperand(i));
 				}
 				return r;
 			}
@@ -5239,20 +5300,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Difference extends AbstractSemanticType {
 
 			public Difference(SemanticType lhs, SemanticType rhs) {
-				super(SEMTYPE_difference,lhs,rhs);
+				super(SEMTYPE_difference, lhs, rhs);
 			}
 
-			public SemanticType getLeftHandSide()  {
-				return (SemanticType) get(0);
+			public SemanticType getLeftHandSide() {
+				return (SemanticType) getOperand(0);
 			}
 
-			public SemanticType getRightHandSide()  {
-				return (SemanticType) get(1);
+			public SemanticType getRightHandSide() {
+				return (SemanticType) getOperand(1);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Difference((SemanticType) operands[0],(SemanticType) operands[1]);
+				return new Difference((SemanticType) operands[0], (SemanticType) operands[1]);
 			}
 
 			@Override
@@ -5273,8 +5334,37 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		Decl.Named getDeclaration();
+
+		/**
+		 * Check whether or not this linkable item has been resolved.
+		 *
+		 * @return
+		 */
+		boolean isResolved();
 	}
 
+	public interface Selectable<T extends Decl.Named> extends Linkable {
+		/**
+		 * Get the declarations to which this selectable item refers.
+		 *
+		 * @return
+		 */
+		Tuple<T> getDeclarations();
+
+		/**
+		 * Check whether or not this selectable item can be resolved.
+		 *
+		 * @return
+		 */
+		boolean isSelectable();
+
+		/**
+		 * Select the appropriate declaration which will fully resolve this linkable.
+		 *
+		 * @param declaration
+		 */
+		void select(T declaration);
+	}
 	// ============================================================
 	// Modifiers
 	// ============================================================
@@ -5393,6 +5483,88 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
+	// ============================================================
+	// Attributes
+	// ============================================================
+	public static class SyntaxError extends AbstractSyntacticItem implements SyntacticItem.Marker {
+
+		public SyntaxError(int errcode, SyntacticItem target) {
+			super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, new Tuple<>());
+		}
+
+		public SyntaxError(int errcode, SyntacticItem target, Tuple<SyntacticItem> context) {
+			super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, context);
+		}
+
+		@Override
+		public SyntacticItem getTarget() {
+			return operands[0];
+		}
+
+		public Tuple<SyntacticItem> getContext() {
+			return (Tuple<SyntacticItem>) operands[1];
+		}
+
+		/**
+		 * Get the error code associated with this message
+		 *
+		 * @return
+		 */
+		public int getErrorCode() {
+			return new BigInteger(getData()).intValue();
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new SyntaxError(getErrorCode(), operands[0], (Tuple<SyntacticItem>) operands[1]);
+		}
+
+		@Override
+		public String getMessage() {
+			// Done
+			return ErrorMessages.getErrorMessage(getErrorCode(), getContext());
+		}
+
+		@Override
+		public Path.ID getSource() {
+			Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
+			// FIXME: this is realy a temporary hack
+			String nameStr = unit.getName().toString().replace("::", "/");
+			return Trie.fromString(nameStr);
+		}
+	}
+
+	// Types
+	public static final int SUBTYPE_ERROR = 400;
+	public static final int EMPTY_TYPE = 401;
+	public static final int EXPECTED_ARRAY = 402;
+	public static final int EXPECTED_RECORD = 403;
+	public static final int EXPECTED_REFERENCE = 404;
+	public static final int EXPECTED_LAMBDA = 405;
+	public static final int INVALID_FIELD = 406;
+	public static final int RESOLUTION_ERROR = 407;
+	public static final int AMBIGUOUS_COERCION = 408;
+	// Statements
+	public static final int MISSING_RETURN_STATEMENT = 500;
+	public static final int UNREACHABLE_CODE = 504;
+	public static final int BRANCH_ALWAYS_TAKEN = 506;
+	public static final int TOO_MANY_RETURNS = 507;
+	public static final int INSUFFICIENT_RETURNS = 508;
+	public static final int CYCLIC_STATIC_INITIALISER = 509;
+	// Expressions
+	public static final int VARIABLE_POSSIBLY_UNITIALISED = 601;
+	public static final int INCOMPARABLE_OPERANDS = 602;
+	public static final int INSUFFICIENT_ARGUMENTS = 603;
+	public static final int AMBIGUOUS_CALLABLE = 604;
+	public static final int PARAMETER_REASSIGNED = 605;
+	public static final int FINAL_VARIABLE_REASSIGNED = 606;
+	public static final int ALLOCATION_NOT_PERMITTED = 607;
+	public static final int METHODCALL_NOT_PERMITTED = 608;
+	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
+	public static final int INVALID_LVAL_EXPRESSION = 610;
+	//
+
+
 	// ==============================================================================
 	//
 	// ==============================================================================
@@ -5455,12 +5627,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Decl.Unknown();
 			}
 		};
-		schema[DECL_module] = new Schema(Operands.THREE, Data.ZERO, "DECL_module") {
+		schema[DECL_module] = new Schema(Operands.FOUR, Data.ZERO, "DECL_module") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
-						(Tuple<Decl.Unit>) operands[2]);
+						(Tuple<Decl.Unit>) operands[2], (Tuple<SyntacticItem.Marker>) operands[3]);
 			}
 		};
 		schema[DECL_unit] = new Schema(Operands.TWO, Data.ZERO, "DECL_unit") {
@@ -5591,6 +5763,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Modifier.Public();
 			}
 		};
+		schema[ATTR_error] = new Schema(Operands.MANY, Data.TWO, "ATTR_error") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				int errcode = new BigInteger(data).intValue();
+				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+			}
+		};
 		// TYPES: 00100000 (32) -- 00111111 (63)
 		schema[TYPE_void] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_void") {
 			@Override
@@ -5706,6 +5886,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Recursive((Ref<Type>) operands[0]);
 			}
 		};
+		schema[SEMTYPE_reference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_reference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0]);
+			}
+		};
+		schema[SEMTYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_staticreference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0], (Identifier) operands[1]);
+			}
+		};
+		schema[SEMTYPE_array] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_array") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Reference((SemanticType) operands[0]);
+			}
+		};
+		schema[SEMTYPE_record] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_record") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Record(((Value.Bool) operands[0]).get(), (Tuple<SemanticType.Field>) operands[1]);
+			}
+		};
+		schema[SEMTYPE_field] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_field") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Field((Identifier) operands[0], (SemanticType) operands[1]);
+			}
+		};
+		schema[SEMTYPE_union] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_union") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Union(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+		};
+		schema[SEMTYPE_intersection] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_intersection") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Intersection(ArrayUtils.toArray(SemanticType.class, operands));
+			}
+		};
+		schema[SEMTYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_difference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new SemanticType.Difference((SemanticType) operands[0], (SemanticType) operands[1]);
+			}
+		};;
 
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
 		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
@@ -5836,7 +6064,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		schema[EXPR_staticvariable] = new Schema(Operands.THREE, Data.ZERO, "EXPR_staticvariable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1], (Ref<Decl.StaticVariable>) operands[2]);
+				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1],
+						(Ref<Decl.StaticVariable>) operands[2]);
 			}
 		};
 		schema[EXPR_constant] = new Schema(Operands.TWO, Data.ZERO, "EXPR_constant") {
@@ -6066,7 +6295,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		schema[EXPR_recordborrow] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordborrow") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				Expr.RecordAccess r = new Expr.RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				Expr.RecordAccess r = new Expr.RecordAccess((Type) operands[0], (Expr) operands[1],
+						(Identifier) operands[2]);
 				r.setMove();
 				return r;
 			}
@@ -6136,33 +6366,34 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
-	    @Override
-	    public void visitVariableAccess(WyilFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
-	        used.add(expr.getVariableDeclaration());
-	    }
-	    @Override
-	    public void visitUniversalQuantifier(WyilFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
-	        visitVariables(expr.getParameters(), used);
-	        visitExpression(expr.getOperand(), used);
-	        removeAllDeclared(expr.getParameters(),used);
-	    }
+		@Override
+		public void visitVariableAccess(WyilFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
+			used.add(expr.getVariableDeclaration());
+		}
 
-	    @Override
-	    public void visitExistentialQuantifier(WyilFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
-	        visitVariables(expr.getParameters(), used);
-	        visitExpression(expr.getOperand(), used);
-	        removeAllDeclared(expr.getParameters(),used);
-	    }
+		@Override
+		public void visitUniversalQuantifier(WyilFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(), used);
+		}
 
-	    @Override
-	    public void visitType(WyilFile.Type type, HashSet<Decl.Variable> used) {
-	        // No need to visit types
-	    }
+		@Override
+		public void visitExistentialQuantifier(WyilFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
+			visitVariables(expr.getParameters(), used);
+			visitExpression(expr.getOperand(), used);
+			removeAllDeclared(expr.getParameters(), used);
+		}
 
-	    private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
-	        for (int i = 0; i != parameters.size(); ++i) {
-	            used.remove(parameters.get(i));
-	        }
-	    }
+		@Override
+		public void visitType(WyilFile.Type type, HashSet<Decl.Variable> used) {
+			// No need to visit types
+		}
+
+		private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+			for (int i = 0; i != parameters.size(); ++i) {
+				used.remove(parameters.getOperand(i));
+			}
+		}
 	};
 }

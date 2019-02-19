@@ -13,19 +13,16 @@
 // limitations under the License.
 package wyil.check;
 
-import static wyc.util.ErrorMessages.PARAMETER_REASSIGNED;
-import static wyc.util.ErrorMessages.FINAL_VARIABLE_REASSIGNED;
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
-import wyc.task.CompileTask;
+import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
+import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import wybs.lang.Build;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticItem;
 
 /**
  * <p>
@@ -67,7 +64,7 @@ import wybs.lang.SyntaxError;
  *
  */
 public class DefiniteUnassignmentCheck
-		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
+		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> implements Compiler.Check {
 
 	/**
 	 * NOTE: the following is left in place to facilitate testing for the final
@@ -76,8 +73,14 @@ public class DefiniteUnassignmentCheck
 	 */
 	private boolean finalParameters = false;
 
-	public void check(WyilFile wf) {
+	private boolean status = true;
+
+	@Override
+	public boolean check(WyilFile wf) {
+		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
+		//
+		return status;
 	}
 
 	/**
@@ -153,10 +156,14 @@ public class DefiniteUnassignmentCheck
 		MaybeAssignedSet nextEnvironment = environment;
 		MaybeAssignedSet breakEnvironment = null;
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt s = block.get(i);
+			Stmt s = block.getOperand(i);
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment, nf.breakEnvironment);
+			// NOTE: following can arise when block contains unreachable code.
+			if(nextEnvironment == null) {
+				break;
+			}
 		}
 		return new ControlFlow(nextEnvironment, breakEnvironment);
 	}
@@ -217,19 +224,19 @@ public class DefiniteUnassignmentCheck
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
 		if (finalParameters && isParameter(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(PARAMETER_REASSIGNED), file.getEntry(), lval);
+			syntaxError(lval,PARAMETER_REASSIGNED);
 		} else if (isFinal(var) && environment.contains(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+			syntaxError(lval, FINAL_VARIABLE_REASSIGNED);
 		}
 	}
 
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
-		Decl.StaticVariable var = lval.getDeclaration();
-		if (isFinal(var)) {
-			WyilFile file = ((WyilFile) lval.getHeap());
-			throw new SyntaxError(errorMessage(FINAL_VARIABLE_REASSIGNED), file.getEntry(), lval);
+		// Check whether this declaration was resolved or not.
+		if(lval.isResolved()) {
+			Decl.StaticVariable var = lval.getDeclaration();
+			if (isFinal(var)) {
+				syntaxError(lval, FINAL_VARIABLE_REASSIGNED);
+			}
 		}
 	}
 
@@ -238,7 +245,7 @@ public class DefiniteUnassignmentCheck
 		Decl.FunctionOrMethod parent = var.getAncestor(Decl.FunctionOrMethod.class);
 		Tuple<Decl.Variable> parameters = parent.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			if (parameters.get(i) == var) {
+			if (parameters.getOperand(i) == var) {
 				return true;
 			}
 		}
@@ -453,7 +460,7 @@ public class DefiniteUnassignmentCheck
 		public MaybeAssignedSet addAll(Tuple<Decl.Variable> vars) {
 			MaybeAssignedSet r = new MaybeAssignedSet(this);
 			for (int i = 0; i != vars.size(); ++i) {
-				Decl.Variable var = vars.get(i);
+				Decl.Variable var = vars.getOperand(i);
 				r.variables.set(var.getIndex());
 			}
 			return r;
@@ -479,5 +486,10 @@ public class DefiniteUnassignmentCheck
 		public String toString() {
 			return variables.toString();
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

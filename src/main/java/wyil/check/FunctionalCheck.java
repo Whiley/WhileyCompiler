@@ -15,13 +15,12 @@ package wyil.check;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
-import wyc.task.CompileTask;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
-
-import static wyc.util.ErrorMessages.*;
+import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
 /**
@@ -72,10 +71,13 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
+public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> implements Compiler.Check {
+	private boolean status = true;
 
-	public void check(WyilFile file) {
+	@Override
+	public boolean check(WyilFile file) {
 		visitModule(file, null);
+		return status;
 	}
 
 	public enum Context {
@@ -131,7 +133,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitDereference(Expr.Dereference expr, Context context) {
 		if (context == Context.PURE) {
-			invalidReferenceAccess(expr, context);
+			syntaxError(expr, REFERENCE_ACCESS_NOT_PERMITTED);
 		}
 		super.visitDereference(expr, context);
 	}
@@ -153,8 +155,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && expr.getDeclaration() instanceof Decl.Method) {
-			invalidMethodCall(expr, context);
+		if (context != Context.IMPURE && expr.isResolved() && expr.getDeclaration() instanceof Decl.Method) {
+			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr, context);
 	}
@@ -163,7 +165,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
 		if (context != Context.IMPURE && isMethodType(expr.getSource().getType())) {
-			invalidMethodCall(expr, context);
+			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitIndirectInvoke(expr, context);
 	}
@@ -171,7 +173,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitNew(Expr.New expr, Context context) {
 		if (context != Context.IMPURE) {
-			invalidObjectAllocation(expr, context);
+			syntaxError(expr, ALLOCATION_NOT_PERMITTED);
 		}
 		super.visitNew(expr, context);
 	}
@@ -196,7 +198,13 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 			return true;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal n = (Type.Nominal) type;
-			return isMethodType(n.getDeclaration().getType());
+			if(n.isResolved()) {
+				return isMethodType(n.getDeclaration().getType());
+			} else {
+				// NOTE: this is handle error recovery for situations where name resolution
+				// failed on the nominal type.
+				return false;
+			}
 		} else {
 			return false;
 		}
@@ -218,21 +226,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		}
 	}
 
-	public void invalidObjectAllocation(SyntacticItem expression, Context context) {
-		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
-		WyilFile file = ((WyilFile) expression.getHeap());
-		throw new SyntaxError(msg, file.getEntry(), expression);
-	}
-
-	public void invalidMethodCall(SyntacticItem expression, Context context) {
-		String msg = errorMessage(METHODCALL_NOT_PERMITTED);
-		WyilFile file = ((WyilFile) expression.getHeap());
-		throw new SyntaxError(msg, file.getEntry(), expression);
-	}
-
-	public void invalidReferenceAccess(SyntacticItem expression, Context context) {
-		String msg = errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
-		WyilFile file = ((WyilFile) expression.getHeap());
-		throw new SyntaxError(msg, file.getEntry(), expression);
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

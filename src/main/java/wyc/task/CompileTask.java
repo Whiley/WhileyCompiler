@@ -39,6 +39,7 @@ import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
+import wybs.lang.SyntaxError.InternalFailure;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
 import wycc.util.Logger;
@@ -147,27 +148,36 @@ public final class CompileTask implements Build.Task {
 				targets.addAll(graph.getChildren(entry));
 			}
 		}
+		// Determine which were successfully built
+		HashSet<Path.Entry<?>> built = new HashSet<>();
 		// Compile each one in turn
 		for (Path.Entry<?> target : targets) {
 			// FIXME: there is a problem here. That's because not every parent will be in
 			// the delta. Therefore, this is forcing every file to be recompiled.
 			List sources = graph.getParents(target);
-			build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+			boolean ok = build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
+			// Record whether target built successfully or not
+			if(ok) {
+				built.add(target);
+			}
 		}
 		// Done
-		return targets;
+		return built;
 	}
 
-	public void build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		build(sourceRoot, target, sources);
-		if (verification) {
+	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
+		if(!build(sourceRoot, target, sources)) {
+			return false;
+		} else if (verification) {
 			verify(sourceRoot, target, sources);
 		}
+		return true;
 	}
 
-	public void build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
+
 		try {
 			Runtime runtime = Runtime.getRuntime();
 			long startTime = System.currentTimeMillis();
@@ -191,19 +201,20 @@ public final class CompileTask implements Build.Task {
 			tmpTime = System.currentTimeMillis();
 			tmpMemory = runtime.freeMemory();
 
-			new NameResolution(project,wf).apply();
-			new FlowTypeCheck().check(wf);
-			new DefiniteAssignmentCheck().check(wf);
-			new DefiniteUnassignmentCheck().check(wf);
-			new FunctionalCheck().check(wf);
-			new StaticVariableCheck().check(wf);
-			new AmbiguousCoercionCheck().check(wf);
-			new MoveAnalysis().apply(wf);
-			new RecursiveTypeAnalysis().apply(wf);
-			// new CoercionCheck(this);
-
-			logger.logTimedMessage("Generated code for " + sources.size() + " source file(s).",
-					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
+			boolean r = new NameResolution(project,wf).apply();
+			// Compiler checks
+			r = r && new FlowTypeCheck().check(wf);
+			r = r && new DefiniteAssignmentCheck().check(wf);
+			r = r && new DefiniteUnassignmentCheck().check(wf);
+			r = r && new FunctionalCheck().check(wf);
+			r = r && new StaticVariableCheck().check(wf);
+			r = r && new AmbiguousCoercionCheck().check(wf);
+			// Transforms
+			if(r) {
+				// Only apply if previous stages have all passed.
+				new MoveAnalysis().apply(wf);
+				new RecursiveTypeAnalysis().apply(wf);
+			}
 
 			// ========================================================================
 			// Done
@@ -215,6 +226,11 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
+
+			return r;
+		} catch(InternalFailure e) {
+			e.printStackTrace();
+			return false;
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();
@@ -224,7 +240,7 @@ public final class CompileTask implements Build.Task {
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
 				//
-				throw new SyntaxError(e.getMessage(),sf,item,e.getCause());
+				throw new SyntaxError(e.getMessage(), sf, item, e.getCause());
 			} else {
 				throw e;
 			}
@@ -335,5 +351,31 @@ public final class CompileTask implements Build.Task {
 			}
 		}
 		throw new IllegalArgumentException("unknown unit");
+	}
+
+	private static void throwSyntaxError(SyntacticItem item) {
+		throwSyntaxError(item, new BitSet());
+	}
+
+	private static void throwSyntaxError(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		if(visited.get(index)) {
+			// Indicates we've already traversed this item and, hence, we are in some kind
+			// of loop.
+			return;
+		} else {
+			visited.set(index);
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				throwSyntaxError(item.getOperand(i),visited);
+			}
+			SyntacticItem.Marker marker = item.getParent(SyntacticItem.Marker.class);
+			// Check whether this item has a marker associated with it.
+			if (marker != null) {
+				// At least one marked assocaited with item.
+				CompilationUnit cu = (CompilationUnit) item.getHeap();
+				throw new SyntaxError(marker.getMessage(),cu.getEntry(),item);
+			}
+		}
 	}
 }

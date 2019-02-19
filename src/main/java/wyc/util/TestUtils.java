@@ -179,10 +179,11 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String... args)
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String arg)
 			throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
+		PrintStream psyserr = new PrintStream(syserr);
 		//
 		boolean result = true;
 		//
@@ -194,19 +195,29 @@ public class TestUtils {
 			addCompilationRules(project,root,verify,counterexamples);
 			// Create empty build graph
 			Build.Graph graph = new StdBuildGraph();
-			// Identify source files and build project
-			project.build(findSourceFiles(root,graph,args), graph);
+			// Identify source files
+			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,graph,arg);
+			Path.Entry<WhileyFile> source = p.first();
+			Path.Entry<?> target = p.second();
+			// Build the project
+			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
+			sources.add(source);
+			project.build(sources, graph);
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
+			// Print out any error messages
+			wycc.commands.Build.printSyntacticMarkers(psyserr, sources, target);
 		} catch (SyntaxError e) {
 			// Print out the syntax error
-			e.outputSourceError(new PrintStream(syserr),false);
+			e.outputSourceError(psyserr,false);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error
-			e.printStackTrace(new PrintStream(syserr));
+			e.printStackTrace(psyserr);
 			result = false;
 		}
+		//
+		psyserr.flush();
 		// Convert bytes produced into resulting string.
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
@@ -251,30 +262,26 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static List<Path.Entry<WhileyFile>> findSourceFiles(Path.Root root, Build.Graph graph, String... args)
+	public static Pair<Path.Entry<WhileyFile>, Path.Entry<WyilFile>> findSourceFiles(Path.Root root, Build.Graph graph,
+			String arg)
 			throws IOException {
-		List<Path.Entry<WhileyFile>> sources = new ArrayList<>();
-		for (String arg : args) {
-			Path.ID id = Trie.fromString(arg);
-			Path.Entry<WhileyFile> e = root.get(id, WhileyFile.ContentType);
-			if (e == null) {
-				throw new IllegalArgumentException("file not found: " + arg);
-			}
-			sources.add(e);
-			// Construct target
-			Path.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
-			// Check whether target binary exists or not
-			if (target == null) {
-				// Doesn't exist, so create with default value
-				target = root.create(id, WyilFile.ContentType);
-				WyilFile wf = new WyilFile(target);
-				target.write(wf);
-				// Create initially empty WyIL module.
-				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>()));
-			}
-			graph.connect(e, target);
+		Path.ID id = Trie.fromString(arg);
+		Path.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
+		if (source == null) {
+			throw new IllegalArgumentException("file not found: " + arg);
 		}
-		return sources;
+		// Construct target
+		Path.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
+		// Doesn't exist, so create with default value
+		target = root.create(id, WyilFile.ContentType);
+		WyilFile wf = new WyilFile(target);
+		target.write(wf);
+		// Create initially empty WyIL module.
+		wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
+		//
+		graph.connect(source, target);
+		// Done
+		return new Pair<>(source,target);
 	}
 
 	/**

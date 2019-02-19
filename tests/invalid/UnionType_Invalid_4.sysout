@@ -1,3 +1,7 @@
 tests/invalid/UnionType_Invalid_4.whiley:8: expected type void, found bool
     x[0] = false
            ^^^^^
+tests/invalid/UnionType_Invalid_4.whiley:9: unable to resolve name (is ambiguous)
+	found function UnionType_Invalid_4::f(int[])->(int[])
+    return f(x)
+           ^

@@ -23,6 +23,8 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
+import wyc.util.ErrorMessages;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -80,48 +82,70 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  * @author David J. Pearce
  *
  */
-public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
+public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Compiler.Check {
+	private boolean status = true;
 
 	public AmbiguousCoercionCheck() {
 		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 
-	public void check(WyilFile file) {
+	@Override
+	public boolean check(WyilFile file) {
+		// Only proceed if no errors in earlier stages
 		visitModule(file);
+		//
+		return status;
 	}
 
 	@Override
 	public void visitExpression(Expr expr, Type target, Environment environment) {
-		checkCoercion(expr, target, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitExpression(expr, target, environment);
+		if(checkCoercion(expr, target, environment)) {
+			// Continue recursively exploring this expression
+			super.visitExpression(expr, target, environment);
+		}
 	}
 
 
 	@Override
 	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
-		checkCoercion(expr, targets, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitMultiExpression(expr, targets, environment);
-	}
-
-	private void checkCoercion(Expr expr, Type target, Environment environment) {
-		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
-		Type source = expr.getType();
-		if (!checkCoercion(target, source, environment, assumptions, expr)) {
-			syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+		if(checkCoercion(expr, targets, environment)) {
+			// Continue recursively exploring this expression
+			super.visitMultiExpression(expr, targets, environment);
 		}
 	}
 
-	private void checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+		boolean status = true;
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
-			Type target = targets.get(j);
-			Type source = types.get(j);
+			Type target = targets.getOperand(j);
+			Type source = types.getOperand(j);
 			if (!checkCoercion(target, source, environment, assumptions, expr)) {
-				syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+				status = false;
 			}
+		}
+		//
+		return status;
+	}
+
+	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
+		if(expr instanceof WyilFile.Linkable) {
+			WyilFile.Linkable l = (WyilFile.Linkable) expr;
+			if(!l.isResolved()) {
+				// Abort early because cannot trust the type determined for this expression.
+				// This can arise because the flow type checker encountered a typing problem.
+				return false;
+			}
+		}
+		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
+		Type source = expr.getType();
+		if (!checkCoercion(target, source, environment, assumptions, expr)) {
+			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+			return false;
+		} else {
+			return true;
 		}
 	}
 
@@ -168,7 +192,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
 			for (int i = 0; i != s.size(); ++i) {
-				if (!checkCoercion(target, s.get(i), environment, assumptions, item)) {
+				if (!checkCoercion(target, s.getOperand(i), environment, assumptions, item)) {
 					return false;
 				}
 			}
@@ -201,7 +225,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 			{
 		Tuple<Type.Field> fields = target.getFields();
 		for (int i = 0; i != fields.size(); ++i) {
-			Type.Field field = fields.get(i);
+			Type.Field field = fields.getOperand(i);
 			Type type = source.getField(field.getName());
 			if (!checkCoercion(field.getType(), type, environment, assumptions, item)) {
 				return false;
@@ -226,7 +250,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		Type.Union ut = target;
-		Type candidate = selectCoercionCandidate(ut.getAll(), source, environment);
+		Type candidate = selectCoercionCandidate(ut.getOperandArray(), source, environment);
 		if (candidate != null) {
 			// Indicates decision made easily enough. Continue traversal down the type.
 			return checkCoercion(candidate, source, environment, assumptions, item);
@@ -239,7 +263,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
 			for (int i = 0; i != su.size(); ++i) {
-				if (!checkCoercion(target, su.get(i), environment, assumptions, item)) {
+				if (!checkCoercion(target, su.getOperand(i), environment, assumptions, item)) {
 					return false;
 				}
 			}
@@ -259,16 +283,15 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		return super.selectCandidate(candidates, type, environment);
 	}
 
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
+	}
+
 	private <T> T internalFailure(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new InternalFailure(msg, cu.getEntry(), e);
-	}
-
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 
 	protected interface Assumptions {

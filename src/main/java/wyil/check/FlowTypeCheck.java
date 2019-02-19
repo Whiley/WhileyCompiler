@@ -26,8 +26,10 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
@@ -39,9 +41,7 @@ import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
 import wyil.util.AbstractVisitor;
-import wyc.task.CompileTask;
 
-import static wyc.util.ErrorMessages.*;
 import static wyil.lang.WyilFile.*;
 
 /**
@@ -97,11 +97,12 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class FlowTypeCheck {
+public class FlowTypeCheck implements Compiler.Check {
 	private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final ConcreteTypeExtractor concreteTypeExtractor;
 	private final ReadWriteTypeExtractor rwTypeExtractor;
+	private boolean status = true;
 
 	public FlowTypeCheck() {
 		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest();
@@ -115,17 +116,11 @@ public class FlowTypeCheck {
 	// WhileyFile(s)
 	// =========================================================================
 
-	public void check(List<WyilFile> files) {
-		// Perform necessary type checking of Whiley files
-		for (WyilFile wf : files) {
-			check(wf);
-		}
-	}
-
-	public void check(WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			check(decl);
 		}
+		return status;
 	}
 
 	// =========================================================================
@@ -234,7 +229,7 @@ public class FlowTypeCheck {
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
 			// execution path.
-			syntaxError("missing return statement", d);
+			syntaxError(d, MISSING_RETURN_STATEMENT);
 		}
 	}
 
@@ -266,7 +261,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkBlock(Stmt.Block block, Environment environment, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.get(i);
+			Stmt stmt = block.getOperand(i);
 			environment = checkStatement(stmt, environment, scope);
 		}
 		return environment;
@@ -288,9 +283,11 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
 		try {
+			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
-				return syntaxError(errorMessage(UNREACHABLE_CODE), stmt);
+				syntaxError(stmt, UNREACHABLE_CODE);
+				return environment;
 			} else if (stmt instanceof Decl.Variable) {
 				return checkVariableDeclaration((Decl.Variable) stmt, environment);
 			} else if (stmt instanceof Stmt.Assign) {
@@ -330,8 +327,6 @@ public class FlowTypeCheck {
 			} else {
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
-		} catch (SyntaxError e) {
-			throw e;
 		} catch (Throwable e) {
 			return internalFailure(e.getMessage(), stmt, e);
 		}
@@ -400,7 +395,7 @@ public class FlowTypeCheck {
 	 */
 	private Environment checkVariableDeclarations(Tuple<Decl.Variable> decls, Environment environment) {
 		for(int i=0;i!=decls.size();++i) {
-			environment = checkVariableDeclaration(decls.get(i),environment);
+			environment = checkVariableDeclaration(decls.getOperand(i),environment);
 		}
 		return environment;
 	}
@@ -444,7 +439,7 @@ public class FlowTypeCheck {
 		Tuple<LVal> lvals = stmt.getLeftHandSide();
 		Type[] types = new Type[lvals.size()];
 		for (int i = 0; i != lvals.size(); ++i) {
-			types[i] = checkLVal(lvals.get(i), environment);
+			types[i] = checkLVal(lvals.getOperand(i), environment);
 		}
 		checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
 		return environment;
@@ -961,15 +956,15 @@ public class FlowTypeCheck {
 		if (sign) {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.get(i), sign, environment);
+				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.get(i), !sign, environment);
+				environment = checkCondition(operands.getOperand(i), !sign, environment);
 			}
 			// Done.
 			return FlowTypeUtils.union(refinements);
 		} else {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.get(i), sign, environment);
+				environment = checkCondition(operands.getOperand(i), sign, environment);
 			}
 			return environment;
 		}
@@ -999,15 +994,15 @@ public class FlowTypeCheck {
 		Tuple<Expr> operands = expr.getOperands();
 		if (sign) {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.get(i), sign, environment);
+				environment = checkCondition(operands.getOperand(i), sign, environment);
 			}
 			return environment;
 		} else {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.get(i), sign, environment);
+				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.get(i), !sign, environment);
+				environment = checkCondition(operands.getOperand(i), !sign, environment);
 			}
 			// Done.
 			return FlowTypeUtils.union(refinements);
@@ -1052,10 +1047,10 @@ public class FlowTypeCheck {
 		// definitely results in problems!  See #845
 		if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
 			// DEFINITE TRUE CASE
-			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsT, rhsT), expr);
+			syntaxError(expr, INCOMPARABLE_OPERANDS, lhsT, rhsT);
 		} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
 			// DEFINITE FALSE CASE
-			syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), expr);
+			syntaxError(expr, BRANCH_ALWAYS_TAKEN);
 		}
 		//
 		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
@@ -1125,7 +1120,10 @@ public class FlowTypeCheck {
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
 		}
-		lval.setType(lval.getHeap().allocate(type));
+		// Sanity check type. This can be non-sensical in the case of an upsteam type error
+		if(type != null) {
+			lval.setType(lval.getHeap().allocate(type));
+		}
 		return type;
 	}
 
@@ -1138,43 +1136,48 @@ public class FlowTypeCheck {
 	}
 
 	public Type checkStaticVariableLVal(Expr.StaticVariableAccess lval, Environment environment) {
-		return lval.getDeclaration().getType();
+		// Check whether this access was successfully resolved or not.
+		if(lval.isResolved()) {
+			// Yes, it was resolved so proceed as normal
+			return lval.getDeclaration().getType();
+		} else {
+			// No, it wasn't resolved so proceed with dummy
+			return null;
+		}
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
 		SemanticType src = checkExpression(lval.getFirstOperand(), environment);
-		SemanticType.Array arrT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY);
-		if (arrT == null) {
-			return syntaxError("expected array type", lval.getFirstOperand());
-		} else {
-			SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
-			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
-			//
-			return concreteTypeExtractor.apply(arrT.getElement(), environment);
-		}
+		// Extract the determined array type
+		SemanticType.Array arrT = extractArrayType(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY,
+				lval.getFirstOperand());
+		// Check for integer subscript
+		SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
+		checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
+		// Extract element type
+		SemanticType elementT = extractElementType(arrT, lval.getFirstOperand());
+		// Convert to concrete type
+		return concreteTypeExtractor.apply(arrT.getElement(), environment);
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
 		SemanticType src = checkExpression(lval.getOperand(), environment);
-		//
-		SemanticType.Record recT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.WRITEABLE_RECORD);
-		if (recT == null) {
-			return syntaxError("expected record type", lval.getOperand());
-		} else {
-			return concreteTypeExtractor.apply(recT.getField(lval.getField()),environment);
-		}
+		// Extract writeable record type
+		SemanticType.Record recT = extractRecordType(src, environment, ReadWriteTypeExtractor.WRITEABLE_RECORD,
+				lval.getOperand());
+		// Extract the field type
+		return extractConcreteFieldType(recT, lval.getField(), environment);
 	}
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
 		SemanticType src = checkExpression(lval.getOperand(), environment);
+		// Extract writeable reference type
+		SemanticType.Reference refT = extractReferenceType(src, environment, ReadWriteTypeExtractor.WRITEABLE_REFERENCE,
+				lval.getOperand());
+		// Extract element type
+		SemanticType elementT = extractElementType(refT, lval.getOperand());
 		//
-		SemanticType.Reference refT = rwTypeExtractor.apply(src, environment,
-				ReadWriteTypeExtractor.WRITEABLE_REFERENCE);
-		if (refT == null) {
-			return syntaxError("expected reference type", lval.getOperand());
-		} else {
-			return concreteTypeExtractor.apply(refT.getElement(),environment);
-		}
+		return concreteTypeExtractor.apply(elementT,environment);
 	}
 
 	// =========================================================================
@@ -1194,34 +1197,46 @@ public class FlowTypeCheck {
 	 */
 	public final void checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
 		for (int i = 0, j = 0; i != expressions.size(); ++i) {
-			Expr expression = expressions.get(i);
+			Expr expression = expressions.getOperand(i);
 			switch (expression.getOpcode()) {
 			case EXPR_invoke: {
 				Tuple<Type> results = checkInvoke((Expr.Invoke) expression, environment);
-				// FIXME: THIS LOOP IS UGLY
-				for (int k = 0; k != results.size(); ++k) {
-					checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+				if(results == null) {
+					// Some type error occurred upstream, therefore make conservative assumption
+					j = j + 1;
+				} else {
+					// FIXME: THIS LOOP IS UGLY
+					for (int k = 0; k != results.size(); ++k) {
+						checkIsSubtype(expected.getOperand(j + k), results.getOperand(k), environment, expression);
+					}
+					j = j + results.size();
 				}
-				j = j + results.size();
 				break;
 			}
 			case EXPR_indirectinvoke: {
 				Tuple<Type> results = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
-				// FIXME: THIS LOOP IS UGLY
-				for (int k = 0; k != results.size(); ++k) {
-					checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+				if(results == null) {
+					// Some type error occurred upstream, therefore make conservative assumption
+					j = j + 1;
+				} else {
+					// FIXME: THIS LOOP IS UGLY
+					for (int k = 0; k != results.size(); ++k) {
+						checkIsSubtype(expected.getOperand(j + k), results.getOperand(k), environment, expression);
+					}
+					j = j + results.size();
 				}
-				j = j + results.size();
 				break;
 			}
 			default:
-				if ((expected.size() - j) < 1) {
-					syntaxError("too many return values", expression);
-				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
-					syntaxError("too few return values", expression);
-				}
 				SemanticType type = checkExpression(expression, environment);
-				checkIsSubtype(expected.get(j), type, environment, expression);
+				//
+				if ((expected.size() - j) < 1) {
+					syntaxError(expression, TOO_MANY_RETURNS);
+				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
+					syntaxError(expression, INSUFFICIENT_RETURNS);
+				} else {
+					checkIsSubtype(expected.getOperand(j), type, environment, expression);
+				}
 				j = j + 1;
 			}
 		}
@@ -1258,30 +1273,41 @@ public class FlowTypeCheck {
 		case EXPR_invoke: {
 			Tuple<Type> types = checkInvoke((Expr.Invoke) expression, environment);
 			// Sanity check
-			switch(types.size()) {
-			case 0:
-				syntaxError("no return value", expression);
-			case 1:
-				break;
-			default:
-				syntaxError("too many return values", expression);
+			if (types == null) {
+				// Type error occurred upstream, therefore propagate up.
+				return null;
+			} else {
+				switch (types.size()) {
+				case 0:
+					syntaxError(expression, INSUFFICIENT_RETURNS);
+					return null;
+				case 1:
+					break;
+				default:
+					syntaxError(expression, TOO_MANY_RETURNS);
+				}
+				return types.getOperand(0);
 			}
-			return types.get(0);
 		}
 		case EXPR_indirectinvoke: {
 			Tuple<Type> types = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
 			// Sanity check
-			switch(types.size()) {
-			case 0:
-				syntaxError("too many return values", expression);
-			case 1:
-				break;
-			default:
-				syntaxError("too few return values", expression);
+			if(types == null) {
+				// Type error occurred upstream, therefore propagate up.
+				return null;
+			} else {
+				switch(types.size()) {
+				case 0:
+					syntaxError(expression, TOO_MANY_RETURNS);
+				case 1:
+					break;
+				default:
+					syntaxError(expression, INSUFFICIENT_RETURNS);
+				}
+				// NOTE: can return directly here as checkIndirectInvoke must already set the
+				// return types.
+				return types.getOperand(0);
 			}
-			// NOTE: can return directly here as checkIndirectInvoke must already set the
-			// return types.
-			return types.get(0);
 		}
 		// Conditions
 		case EXPR_logicalnot:
@@ -1372,14 +1398,18 @@ public class FlowTypeCheck {
 			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
 					expression);
 		}
-		// Allocate and set type for expression
-		Type concreteType = concreteTypeExtractor.apply(type, environment);
-		// Sanity check output
-		if(concreteType instanceof Type.Void) {
-			// Something has definitely gone wrong in the type extraction process.
-			internalFailure("extracted empty type (" + type + "=>" + concreteType + ")", expression);
-		} else {
-			expression.setType(expression.getHeap().allocate(concreteType));
+		// Sanity check sensible type generated from expression. Something non-sensical
+		// can be generated when there is a type error upsteam.
+		if(type != null) {
+			// Allocate and set type for expression
+			Type concreteType = concreteTypeExtractor.apply(type, environment);
+			// Sanity check output
+			if(concreteType instanceof Type.Void) {
+				// Something has definitely gone wrong in the type extraction process.
+				syntaxError(expression,EMPTY_TYPE);
+			} else {
+				expression.setType(expression.getHeap().allocate(concreteType));
+			}
 		}
 		// Done
 		return type;
@@ -1436,7 +1466,13 @@ public class FlowTypeCheck {
 
 	private SemanticType checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
 		//
-		return expr.getDeclaration().getType();
+		if(expr.isResolved()) {
+			return expr.getDeclaration().getType();
+		} else {
+			// Static variable access was not resolved during name resolution. Therefore,
+			// there's nothing we can at this stage.
+			return null;
+		}
 	}
 
 	private SemanticType checkCast(Expr.Cast expr, Environment environment) {
@@ -1449,50 +1485,60 @@ public class FlowTypeCheck {
 		Tuple<Expr> arguments = expr.getOperands();
 		SemanticType[] types = new SemanticType[arguments.size()];
 		for (int i = 0; i != arguments.size(); ++i) {
-			types[i] = checkExpression(arguments.get(i), environment);
+			types[i] = checkExpression(arguments.getOperand(i), environment);
 		}
 		// Extract candidates from name resolution phase
 		Tuple<Decl.Callable> candidates = expr.getDeclarations();
-		// Now attempt to bind the given candidate declarations against the concrete argument types.
-		Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
-				environment);
-		// Assign descriptor to this expression
-		expr.select(binding.getCandidiateDeclaration());
-		// Set inferred lifetime parameters as well
-		expr.setLifetimes(expr.getHeap().allocate(binding.getLifetimeArguments()));
-		// Finally, return the declared returns/
-		return binding.getConcreteType().getReturns();
+		if(expr.isSelectable() && ArrayUtils.firstIndexOf(types, null) < 0) {
+			// Now attempt to bind the given candidate declarations against the concrete argument types.
+			Binding binding = generateCallableBinding(expr.getName(), candidates, new Tuple<>(types), expr.getLifetimes(),
+					environment);
+			// Sanity check we found something
+			if(binding != null) {
+				// Assign descriptor to this expression
+				expr.select(binding.getCandidiateDeclaration());
+				// Set inferred lifetime parameters as well
+				expr.setLifetimes(expr.getHeap().allocate(binding.getLifetimeArguments()));
+				// Finally, return the declared returns/
+				return binding.getConcreteType().getReturns();
+			}
+		}
+		// One or more expressions has unknown type because of some type error upstream.
+		// Therefore, we cannot select the right binding and must return null.
+		return null;
 	}
 
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
 		// Determine signature type from source
 		SemanticType type = checkExpression(expr.getSource(), environment);
-		Type.Callable sig = rwTypeExtractor.apply(type, environment, ReadWriteTypeExtractor.READABLE_CALLABLE);
-		//checkIsCallableType(type, environment, expr.getSource());
-		if (sig == null) {
-			return syntaxError("expected lambda type", expr.getSource());
-		}
+		// Extract readable callable type
+		Type.Callable sig = extractLambdaType(type, environment, ReadWriteTypeExtractor.READABLE_CALLABLE, expr.getSource());
 		// Determine the argument types
-		Tuple<Expr> arguments = expr.getArguments();
-		Tuple<Type> parameters = sig.getParameters();
-		// Sanity check number of arguments provided
-		if (parameters.size() != arguments.size()) {
-			syntaxError("insufficient arguments for function or method invocation", expr);
+		if(sig == null) {
+			// Some kind of type error occurred upstream, therefore we're aborting.
+			return null;
+		} else {
+			Tuple<Expr> arguments = expr.getArguments();
+			Tuple<Type> parameters = sig.getParameters();
+			// Sanity check number of arguments provided
+			if (parameters.size() != arguments.size()) {
+				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
+			}
+			// Sanity check types of arguments provided
+			for (int i = 0; i != arguments.size(); ++i) {
+				// Determine argument type
+				SemanticType arg = checkExpression(arguments.getOperand(i), environment);
+				// Check argument is subtype of parameter
+				checkIsSubtype(parameters.getOperand(i), arg, environment, arguments.getOperand(i));
+			}
+			//
+			if(sig.getReturns().size() > 1) {
+				internalFailure("need support for multiple returns and indirect invocation", expr);
+			}
+			expr.setType(sig.getReturns().getOperand(0));
+			//
+			return sig.getReturns();
 		}
-		// Sanity check types of arguments provided
-		for (int i = 0; i != arguments.size(); ++i) {
-			// Determine argument type
-			SemanticType arg = checkExpression(arguments.get(i), environment);
-			// Check argument is subtype of parameter
-			checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
-		}
-		//
-		if(sig.getReturns().size() > 1) {
-			internalFailure("need support for multiple returns and indirect invocation", expr);
-		}
-		expr.setType(sig.getReturns().get(0));
-		//
-		return sig.getReturns();
 	}
 
 	private SemanticType checkComparisonOperator(Expr.BinaryOperator expr, Environment environment) {
@@ -1511,8 +1557,7 @@ public class FlowTypeCheck {
 		// Sanity check that the types of operands are actually comparable.
 		SemanticType glb = new SemanticType.Intersection(lhs,rhs);
 		if (strictSubtypeOperator.isVoid(glb, environment)) {
-			syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhs, rhs), expr);
-			return null;
+			syntaxError(expr, INCOMPARABLE_OPERANDS, lhs, rhs);
 		}
 		return Type.Bool;
 	}
@@ -1561,39 +1606,24 @@ public class FlowTypeCheck {
 		// Check expression against expected record types
 		SemanticType src = checkExpression(expr.getOperand(), environment);
 		// Following may produce null if field not present
-		SemanticType.Record type = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_RECORD);
-		// Check whether field present or not.
-		if (type == null) {
-			return syntaxError("expected record type", expr.getOperand());
-		} else {
-			SemanticType fieldType = type.getField(expr.getField());
-			if (fieldType == null) {
-				return syntaxError("invalid field access", expr.getField());
-			} else {
-				return fieldType;
-			}
-		}
+		SemanticType.Record type = extractRecordType(src, environment, ReadWriteTypeExtractor.READABLE_RECORD,
+				expr.getOperand());
+		// Return extracted field type
+		return extractFieldType(type,expr.getField());
 	}
 
 	private SemanticType checkRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
 		// Check src and value expressions
 		SemanticType src = checkExpression(expr.getFirstOperand(), environment);
 		SemanticType val = checkExpression(expr.getSecondOperand(), environment);
-		SemanticType.Record readableRecordT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_RECORD);
-		//
-		String actualFieldName = expr.getField().get();
-		Tuple<? extends SemanticType.Field> fields = readableRecordT.getFields();
-		for (int i = 0; i != fields.size(); ++i) {
-			SemanticType.Field vd = fields.get(i);
-			String declaredFieldName = vd.getName().get();
-			if (declaredFieldName.equals(actualFieldName)) {
-				// Matched the field type
-				checkIsSubtype(vd.getType(), val, environment, expr.getSecondOperand());
-				return src;
-			}
-		}
-		//
-		return syntaxError("invalid field update", expr.getField());
+		// Extract readable record type
+		SemanticType.Record readableRecordT = extractRecordType(src, environment,
+				ReadWriteTypeExtractor.READABLE_RECORD, expr.getFirstOperand());
+		// Extract corresponding field type
+		SemanticType fieldType = extractFieldType(readableRecordT,expr.getField());
+		// Matched the field type
+		checkIsSubtype(fieldType, val, environment, expr.getSecondOperand());
+		return src;
 	}
 
 	private SemanticType checkRecordInitialiser(Expr.RecordInitialiser expr, Environment environment) {
@@ -1603,8 +1633,8 @@ public class FlowTypeCheck {
 		SemanticType.Field[] decls = new SemanticType.Field[operands.size()];
 		// Check field initialiser expressions one by one
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.get(i);
-			SemanticType fieldType = checkExpression(operands.get(i), environment);
+			Identifier field = fields.getOperand(i);
+			SemanticType fieldType = checkExpression(operands.getOperand(i), environment);
 			decls[i] = new SemanticType.Field(field, fieldType);
 		}
 		//
@@ -1612,14 +1642,11 @@ public class FlowTypeCheck {
 	}
 
 	private SemanticType checkArrayLength(Expr.ArrayLength expr, Environment environment) {
-		SemanticType src = checkExpression(expr.getOperand(), environment);
+		SemanticType sourceT = checkExpression(expr.getOperand(), environment);
 		// Check whether the source returns an array type or not.
-		SemanticType.Array arrT = rwTypeExtractor.apply(src, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
-		if (arrT == null) {
-			return syntaxError("expected array type", expr.getOperand());
-		} else {
-			return Type.Int;
-		}
+		extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY, expr.getOperand());
+		//
+		return Type.Int;
 	}
 
 	private SemanticType checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
@@ -1627,7 +1654,7 @@ public class FlowTypeCheck {
 		Tuple<Expr> operands = expr.getOperands();
 		SemanticType[] ts = new SemanticType[operands.size()];
 		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.get(i), environment);
+			ts[i] = checkExpression(operands.getOperand(i), environment);
 		}
 		ts = ArrayUtils.removeDuplicates(ts);
 		SemanticType element;
@@ -1662,13 +1689,12 @@ public class FlowTypeCheck {
 		SemanticType sourceT = checkExpression(source, environment);
 		SemanticType subscriptT = checkExpression(subscript, environment);
 		// Check whether source operand yielded an array type
-		SemanticType.Array sourceArrayT = rwTypeExtractor.apply(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
-		if (sourceArrayT == null) {
-			return syntaxError("expected array type", source);
-		} else {
-			checkIsSubtype(Type.Int, subscriptT, environment, subscript);
-			return sourceArrayT.getElement();
-		}
+		SemanticType.Array sourceArrayT = extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY,
+				source);
+		// Check subscript has int type
+		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
+		// Return extracted array element type
+		return extractElementType(sourceArrayT, expr.getFirstOperand());
 	}
 
 	private SemanticType checkArrayRange(Expr.ArrayRange expr, Environment environment) {
@@ -1690,26 +1716,23 @@ public class FlowTypeCheck {
 		SemanticType subscriptT = checkExpression(subscript, environment);
 		SemanticType valueT = checkExpression(value, environment);
 		// Extract the determined array type
-		SemanticType.Array sourceArrayT = rwTypeExtractor.apply(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY);
-		if (sourceArrayT == null) {
-			return syntaxError("expected array type", source);
-		} else {
-			checkIsSubtype(Type.Int, subscriptT, environment, subscript);
-			checkIsSubtype(sourceArrayT.getElement(), valueT, environment, value);
-			return sourceArrayT;
-		}
+		SemanticType.Array sourceArrayT = extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY,
+				source);
+		// Extract the array element type
+		SemanticType elementT = extractElementType(sourceArrayT, expr.getFirstOperand());
+		// Check for integer subscript
+		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
+		checkIsSubtype(elementT, valueT, environment, value);
+		return sourceArrayT;
 	}
 
 	private SemanticType checkDereference(Expr.Dereference expr, Environment environment) {
 		SemanticType operandT = checkExpression(expr.getOperand(), environment);
 		// Extract an appropriate reference type form the source.
-		SemanticType.Reference readableReferenceT = rwTypeExtractor.apply(operandT, environment, ReadWriteTypeExtractor.READABLE_REFERENCE);
-		// Check successfully extracted a reference type.
-		if(readableReferenceT == null) {
-			return syntaxError("expected reference type", expr);
-		}
+		SemanticType.Reference readableReferenceT = extractReferenceType(operandT, environment,
+				ReadWriteTypeExtractor.READABLE_REFERENCE, expr.getOperand());
 		//
-		return readableReferenceT.getElement();
+		return extractElementType(readableReferenceT,expr.getOperand());
 	}
 
 	private SemanticType checkNew(Expr.New expr, Environment environment) {
@@ -1729,16 +1752,20 @@ public class FlowTypeCheck {
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
 		// exactly zero arguments were supplied.
-		if(expr.getParameterTypes().size() > 0) {
-			// Now attempt to bind the given candidate declarations against the concrete argument types.
-			Binding binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(), environment);
+		if (expr.getParameterTypes().size() > 0) {
+			// Now attempt to bind the given candidate declarations against the concrete
+			// argument types.
+			Binding binding = generateCallableBinding(expr.getName(), candidates, types, new Tuple<Identifier>(),
+					environment);
 			expr.select(binding.getCandidiateDeclaration());
 			return binding.getConcreteType();
-		} else if(candidates.size() == 1) {
-			expr.select(candidates.get(0));
-			return candidates.get(0).getType();
+		} else if (candidates.size() == 1) {
+			expr.select(candidates.getOperand(0));
+			return candidates.getOperand(0).getType();
 		} else {
-			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundCandidatesString(candidates)), expr.getName());
+			//
+			syntaxError(expr.getName(), AMBIGUOUS_CALLABLE, candidates);
+			return null;
 		}
 	}
 
@@ -1802,14 +1829,15 @@ public class FlowTypeCheck {
 		List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
 		// Sanity check bindings generated
 		if (bindings.isEmpty()) {
-			return syntaxError("unable to resolve name (no match for " + name + parameterString(arguments) + ")"
-					+ foundCandidatesString(candidates), name);
+			syntaxError(name, AMBIGUOUS_CALLABLE, candidates);
+			return null;
 		}
 		// Select the most precise signature from the candidate bindings
 		Binding selected = selectCallableCandidate(name, bindings, lifetimes);
 		// Sanity check result
 		if (selected == null) {
-			return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION, foundBindingsString(bindings)), name);
+			// foundBindingString(bindings)
+			syntaxError(name, AMBIGUOUS_CALLABLE, candidates);
 		}
 		return selected;
 	}
@@ -1894,7 +1922,7 @@ public class FlowTypeCheck {
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
-			Decl.Callable candidate = candidates.get(i);
+			Decl.Callable candidate = candidates.getOperand(i);
 			Type.Callable type = candidate.getType();
 			// Generate all potential bindings based on arguments
 			if(candidate instanceof Decl.Method) {
@@ -1955,8 +1983,8 @@ public class FlowTypeCheck {
 		HashMap<Identifier, Identifier> binding = new HashMap<>();
 		//
 		for (int i = 0; i != lifetimeArguments.size(); ++i) {
-			Identifier parameter = lifetimeParameters.get(i);
-			Identifier argument = lifetimeArguments.get(i);
+			Identifier parameter = lifetimeParameters.getOperand(i);
+			Identifier argument = lifetimeArguments.getOperand(i);
 			binding.put(parameter, argument);
 		}
 		//
@@ -2021,7 +2049,7 @@ public class FlowTypeCheck {
 					public Map<Identifier, Identifier> next() {
 						// First, assign current state to binding
 						for (int i = 0; i != counters.length; ++i) {
-							Identifier lifetimeParameter = lifetimeParameters.get(i);
+							Identifier lifetimeParameter = lifetimeParameters.getOperand(i);
 							binding.put(lifetimeParameter, lifetimes[counters[i]]);
 						}
 						// Increment counts;
@@ -2069,7 +2097,7 @@ public class FlowTypeCheck {
 		};
 		// Apply visitor to each argument
 		for (int i = 0; i != args.size(); ++i) {
-			visitor.visitSemanticType(args.get(i));
+			visitor.visitSemanticType(args.getOperand(i));
 		}
 		// Done
 		return lifetimes.toArray(new Identifier[lifetimes.size()]);
@@ -2116,7 +2144,7 @@ public class FlowTypeCheck {
 				Decl.Method decl = (Decl.Method) candidate;
 				Tuple<Identifier> lifetimes = decl.getType().getLifetimeParameters();
 				for (int i = 0; i != lifetimes.size(); ++i) {
-					binding.put(lifetimes.get(i), lifetimeArguments.get(i));
+					binding.put(lifetimes.getOperand(i), lifetimeArguments.getOperand(i));
 				}
 			}
 			return binding;
@@ -2126,7 +2154,7 @@ public class FlowTypeCheck {
 			Tuple<Identifier> lifetimes = candidate.getType().getLifetimeParameters();
 			Identifier[] result = new Identifier[lifetimes.size()];
 			for(int i=0;i!=result.length;++i) {
-				result[i] = binding.get(lifetimes.get(i));
+				result[i] = binding.get(lifetimes.getOperand(i));
 			}
 			return new Tuple<>(result);
 		}
@@ -2153,8 +2181,8 @@ public class FlowTypeCheck {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.size(); ++i) {
-				SemanticType param = parameters.get(i);
-				if (!relaxedSubtypeOperator.isSubtype(param, args.get(i), lifetimes)) {
+				SemanticType param = parameters.getOperand(i);
+				if (!relaxedSubtypeOperator.isSubtype(param, args.getOperand(i), lifetimes)) {
 					return false;
 				}
 			}
@@ -2219,84 +2247,6 @@ public class FlowTypeCheck {
 		return bestValidWinner ? best : null;
 	}
 
-	private String parameterString(Tuple<? extends SemanticType> paramTypes) {
-		String paramStr = "(";
-		boolean firstTime = true;
-		if (paramTypes == null) {
-			paramStr += "...";
-		} else {
-			for (SemanticType t : paramTypes) {
-				if (!firstTime) {
-					paramStr += ",";
-				}
-				firstTime = false;
-				paramStr += t;
-			}
-		}
-		return paramStr + ")";
-	}
-
-	private String foundCandidatesString(Tuple<? extends Decl.Callable> candidates) {
-		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Decl.Callable c : candidates) {
-			candidateStrings.add(candidateString(c,null));
-		}
-		Collections.sort(candidateStrings); // make error message deterministic!
-		StringBuilder msg = new StringBuilder();
-		for (String s : candidateStrings) {
-			msg.append("\n\tfound ");
-			msg.append(s);
-		}
-		return msg.toString();
-	}
-
-	private String foundBindingsString(Collection<? extends Binding> candidates) {
-		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Binding b : candidates) {
-			Decl.Callable c = b.getCandidiateDeclaration();
-			candidateStrings.add(candidateString(c,b.getBinding()));
-		}
-		Collections.sort(candidateStrings); // make error message deterministic!
-		StringBuilder msg = new StringBuilder();
-		for (String s : candidateStrings) {
-			msg.append("\n\tfound ");
-			msg.append(s);
-		}
-		return msg.toString();
-	}
-
-	private String candidateString(Decl.Callable decl, Map<Identifier, Identifier> binding) {
-		String r;
-		if (decl instanceof Decl.Method) {
-			r = "method ";
-		} else if (decl instanceof Decl.Function) {
-			r = "function ";
-		} else {
-			r = "property ";
-		}
-		Type.Callable type = decl.getType();
-		return r + decl.getQualifiedName() + bindingString(decl,binding) + type.getParameters() + "->" + type.getReturns();
-	}
-
-	private String bindingString(Decl.Callable decl, Map<Identifier,Identifier> binding) {
-		if(binding != null && decl instanceof Decl.Method) {
-			Decl.Method method = (Decl.Method) decl;
-			String r = "<";
-
-			Tuple<Identifier> lifetimes = method.getLifetimes();
-			for(int i=0;i!=lifetimes.size();++i) {
-				Identifier lifetime = lifetimes.get(i);
-				if(i != 0) {
-					r += ",";
-				}
-				r = r + lifetime + "=" + binding.get(lifetime);
-			}
-			return r + ">";
-		} else {
-			return "";
-		}
-	}
-
 
 	/**
 	 * Check whether the type signature for a given function or method declaration
@@ -2318,8 +2268,8 @@ public class FlowTypeCheck {
 		// Number of parameters matches number of arguments. Now, check that
 		// each argument is a subtype of its corresponding parameter.
 		for (int i = 0; i != parentParams.size(); ++i) {
-			SemanticType parentParam = parentParams.get(i);
-			SemanticType childParam = childParams.get(i);
+			SemanticType parentParam = parentParams.getOperand(i);
+			SemanticType childParam = childParams.getOperand(i);
 			if (!relaxedSubtypeOperator.isSubtype(parentParam, childParam, lifetimes)) {
 				return false;
 			}
@@ -2338,20 +2288,24 @@ public class FlowTypeCheck {
 
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
 		for (int i = 0; i != operands.size(); ++i) {
-			Expr operand = operands.get(i);
+			Expr operand = operands.getOperand(i);
 			checkOperand(type, operand, environment);
 		}
 	}
 
 	private void checkIsSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (!relaxedSubtypeOperator.isSubtype(lhs,rhs, lifetimes)) {
-			syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
+		if(lhs == null || rhs == null) {
+			// A type error of some kind has occurred which has produced null instead of a
+			// type. At this point, we proceed assuming everything is hunky dory untill we
+			// can categorically find another problem.
+		} else if (!relaxedSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}
 
 	private void checkContractive(Decl.Type d) {
 		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName(), d.getType())) {
-			syntaxError("empty type encountered", d.getName());
+			syntaxError(d.getName(), EMPTY_TYPE);
 		}
 	}
 
@@ -2363,7 +2317,7 @@ public class FlowTypeCheck {
 	 */
 	private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
 		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.get(i), lifetimes);
+			checkNonEmpty(decls.getOperand(i), lifetimes);
 		}
 	}
 
@@ -2375,20 +2329,150 @@ public class FlowTypeCheck {
 	 */
 	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
 		if (relaxedSubtypeOperator.isVoid(d.getType(), lifetimes)) {
-			syntaxError("empty type encountered", d.getType());
+			syntaxError(d.getType(), EMPTY_TYPE);
 		}
 	}
 
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
+	/**
+	 * From an arbitrary type, extract the array type it represents which is either
+	 * readable or writeable depending on the context.
+	 */
+	public SemanticType.Array extractArrayType(SemanticType type, Environment environment,
+			ReadWriteTypeExtractor.Combinator<SemanticType.Array> combinator, SyntacticItem item) {
+		//
+		if (type != null) {
+			SemanticType.Array sourceArrayT = rwTypeExtractor.apply(type, environment, combinator);
+			//
+			if (sourceArrayT == null) {
+				syntaxError(item, EXPECTED_ARRAY);
+			} else {
+				return sourceArrayT;
+			}
+		}
+		return null;
 	}
 
-	private <T> T syntaxError(String msg, SyntacticItem e, Throwable ex) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e, ex);
+	/**
+	 * Extract the element type from an array. The array type can be null if some
+	 * earlier part of type checking generated an error message and we are just
+	 * continuing after that.
+	 *
+	 * @param type
+	 * @param item
+	 * @return
+	 */
+	public SemanticType extractElementType(SemanticType.Array type, SyntacticItem item) {
+		if(type == null) {
+			return null;
+		} else {
+			return type.getElement();
+		}
+	}
+
+	/**
+	 * From an arbitrary type, extract the record type it represents which is either
+	 * readable or writeable depending on the context.
+	 */
+	public SemanticType.Record extractRecordType(SemanticType type, Environment environment,
+			ReadWriteTypeExtractor.Combinator<SemanticType.Record> combinator, SyntacticItem item) {
+		//
+		if(type != null) {
+			SemanticType.Record recordT = rwTypeExtractor.apply(type, environment, combinator);
+			//
+			if (recordT == null) {
+				syntaxError(item, EXPECTED_RECORD);
+			} else {
+				return recordT;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * From a given record type, extract type for a given field.
+	 */
+	public SemanticType extractFieldType(SemanticType.Record type, Identifier field) {
+		if(type == null) {
+			return null;
+		} else {
+			SemanticType fieldType = type.getField(field);
+			if (fieldType == null) {
+				// Indicates an invalid field selection
+				syntaxError(field, INVALID_FIELD);
+			}
+			return fieldType;
+		}
+	}
+
+	private Type extractConcreteFieldType(SemanticType.Record type, Identifier field, Environment environment) {
+		SemanticType ft = extractFieldType(type, field);
+		if (ft != null) {
+			// Convert to concrete type
+			return concreteTypeExtractor.apply(ft, environment);
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * From an arbitrary type, extract the reference type it represents which is
+	 * either readable or writeable depending on the context.
+	 */
+	public SemanticType.Reference extractReferenceType(SemanticType type, Environment environment,
+			ReadWriteTypeExtractor.Combinator<SemanticType.Reference> combinator, SyntacticItem item) {
+		//
+		if(type != null) {
+			SemanticType.Reference refT = rwTypeExtractor.apply(type, environment, combinator);
+			//
+			if (refT == null) {
+				syntaxError(item, EXPECTED_REFERENCE);
+			} else {
+				return refT;
+			}
+		}
+		//
+		return null;
+	}
+
+	/**
+	 * Extract the element type from a reference. The array type can be null if some
+	 * earlier part of type checking generated an error message and we are just
+	 * continuing after that.
+	 *
+	 * @param type
+	 * @param item
+	 * @return
+	 */
+	public SemanticType extractElementType(SemanticType.Reference type, SyntacticItem item) {
+		if(type == null) {
+			return null;
+		} else {
+			return type.getElement();
+		}
+	}
+
+	/**
+	 * From an arbitrary type, extract the lambda type it represents which is
+	 * either readable or writeable depending on the context.
+	 */
+	public Type.Callable extractLambdaType(SemanticType type, Environment environment,
+			ReadWriteTypeExtractor.Combinator<Type.Callable> combinator, SyntacticItem item) {
+		//
+		if(type != null) {
+			Type.Callable refT = rwTypeExtractor.apply(type, environment, combinator);
+			//
+			if (refT == null) {
+				syntaxError(item, EXPECTED_LAMBDA);
+			} else {
+				return refT;
+			}
+		}
+		return null;
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {
@@ -2478,7 +2562,7 @@ public class FlowTypeCheck {
 				Tuple<Identifier> lifetimes = meth.getLifetimes();
 				String[] arr = new String[lifetimes.size() + 1];
 				for (int i = 0; i != lifetimes.size(); ++i) {
-					arr[i] = lifetimes.get(i).get();
+					arr[i] = lifetimes.getOperand(i).get();
 				}
 				arr[arr.length - 1] = "this";
 				return arr;
