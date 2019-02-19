@@ -18,7 +18,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
-import static wyc.util.ErrorMessages.syntaxError;
+import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
 /**
@@ -70,9 +70,11 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
+	private boolean status = true;
 
-	public void check(WyilFile file) {
+	public boolean check(WyilFile file) {
 		visitModule(file, null);
+		return status;
 	}
 
 	public enum Context {
@@ -128,7 +130,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitDereference(Expr.Dereference expr, Context context) {
 		if (context == Context.PURE) {
-			syntaxError(REFERENCE_ACCESS_NOT_PERMITTED, expr);
+			syntaxError(expr, REFERENCE_ACCESS_NOT_PERMITTED);
 		}
 		super.visitDereference(expr, context);
 	}
@@ -151,7 +153,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
 		if (context != Context.IMPURE && expr.isResolved() && expr.getDeclaration() instanceof Decl.Method) {
-			syntaxError(METHODCALL_NOT_PERMITTED, expr);
+			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr, context);
 	}
@@ -160,7 +162,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
 		if (context != Context.IMPURE && isMethodType(expr.getSource().getType())) {
-			syntaxError(METHODCALL_NOT_PERMITTED, expr);
+			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitIndirectInvoke(expr, context);
 	}
@@ -168,7 +170,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 	@Override
 	public void visitNew(Expr.New expr, Context context) {
 		if (context != Context.IMPURE) {
-			syntaxError(ALLOCATION_NOT_PERMITTED, expr);
+			syntaxError(expr, ALLOCATION_NOT_PERMITTED);
 		}
 		super.visitNew(expr, context);
 	}
@@ -219,5 +221,10 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
 		} else {
 			return Context.FUNCTIONAL;
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

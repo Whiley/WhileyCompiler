@@ -23,6 +23,7 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
+import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -81,16 +82,17 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  *
  */
 public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
+	private boolean status = true;
 
 	public AmbiguousCoercionCheck() {
 		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 
-	public void check(WyilFile file) {
+	public boolean check(WyilFile file) {
 		// Only proceed if no errors in earlier stages
-		if(file.getModule().getAttributes().size() == 0) {
-			visitModule(file);
-		}
+		visitModule(file);
+		//
+		return status;
 	}
 
 	@Override
@@ -120,7 +122,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Type source = expr.getType();
 		if (!checkCoercion(target, source, environment, assumptions, expr)) {
-			syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
 		}
 	}
 
@@ -131,7 +133,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 			Type target = targets.getOperand(j);
 			Type source = types.getOperand(j);
 			if (!checkCoercion(target, source, environment, assumptions, expr)) {
-				syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
 			}
 		}
 	}
@@ -270,16 +272,15 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		return super.selectCandidate(candidates, type, environment);
 	}
 
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
+	}
+
 	private <T> T internalFailure(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new InternalFailure(msg, cu.getEntry(), e);
-	}
-
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 
 	protected interface Assumptions {

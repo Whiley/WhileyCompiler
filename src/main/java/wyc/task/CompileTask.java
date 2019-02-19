@@ -202,15 +202,15 @@ public final class CompileTask implements Build.Task {
 			tmpTime = System.currentTimeMillis();
 			tmpMemory = runtime.freeMemory();
 
-			new NameResolution(project,wf).apply();
-			new FlowTypeCheck().check(wf);
-			new DefiniteAssignmentCheck().check(wf);
-			new DefiniteUnassignmentCheck().check(wf);
-			new FunctionalCheck().check(wf);
-			new StaticVariableCheck().check(wf);
-			new AmbiguousCoercionCheck().check(wf);
-			new MoveAnalysis().apply(wf);
-			new RecursiveTypeAnalysis().apply(wf);
+			boolean r = new NameResolution(project,wf).apply();
+			r = r & new FlowTypeCheck().check(wf);
+			r = r & new DefiniteAssignmentCheck().check(wf);
+			r = r & new DefiniteUnassignmentCheck().check(wf);
+			r = r & new FunctionalCheck().check(wf);
+			r = r & new StaticVariableCheck().check(wf);
+			r = r & new AmbiguousCoercionCheck().check(wf);
+			r = r & new MoveAnalysis().apply(wf);
+			r = r & new RecursiveTypeAnalysis().apply(wf);
 
 			// ========================================================================
 			// Done

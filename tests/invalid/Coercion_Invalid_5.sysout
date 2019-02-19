@@ -1,3 +1,6 @@
 tests/invalid/Coercion_Invalid_5.whiley:7: ambiguous coercion required ({int f} to R1)
     return {f:0}
            ^^^^^
+tests/invalid/Coercion_Invalid_5.whiley:7: ambiguous coercion required (int to pos|neg)
+    return {f:0}
+              ^

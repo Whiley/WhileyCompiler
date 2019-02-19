@@ -15,12 +15,13 @@ package wyil.check;
 
 import static wyil.lang.WyilFile.*;
 
-import wyc.task.CompileTask;
-import static wyc.util.ErrorMessages.syntaxError;
+import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
+
+import wybs.lang.SyntacticItem;
 
 /**
  * <p>
@@ -71,9 +72,13 @@ public class DefiniteUnassignmentCheck
 	 */
 	private boolean finalParameters = false;
 
-	public void check(WyilFile wf) {
+	private boolean status = true;
+
+	public boolean check(WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
+		//
+		return status;
 	}
 
 	/**
@@ -217,9 +222,9 @@ public class DefiniteUnassignmentCheck
 	public void visitVariableAssignment(Expr.VariableAccess lval, MaybeAssignedSet environment) {
 		Decl.Variable var = lval.getVariableDeclaration();
 		if (finalParameters && isParameter(var)) {
-			syntaxError(PARAMETER_REASSIGNED,lval);
+			syntaxError(lval,PARAMETER_REASSIGNED);
 		} else if (isFinal(var) && environment.contains(var)) {
-			syntaxError(FINAL_VARIABLE_REASSIGNED, lval);
+			syntaxError(lval, FINAL_VARIABLE_REASSIGNED);
 		}
 	}
 
@@ -228,7 +233,7 @@ public class DefiniteUnassignmentCheck
 		if(lval.isResolved()) {
 			Decl.StaticVariable var = lval.getDeclaration();
 			if (isFinal(var)) {
-				syntaxError(FINAL_VARIABLE_REASSIGNED, lval);
+				syntaxError(lval, FINAL_VARIABLE_REASSIGNED);
 			}
 		}
 	}
@@ -479,5 +484,10 @@ public class DefiniteUnassignmentCheck
 		public String toString() {
 			return variables.toString();
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

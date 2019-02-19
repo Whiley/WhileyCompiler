@@ -107,6 +107,10 @@ public class ErrorMessages {
 			return msg + foundCandidatesString((Tuple<Decl.Callable>) context.getOperand(0));
 		}
 	};
+	// ========================================================================
+	// Name Resolution
+	// ========================================================================
+	public static final StaticMessage RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
 
 	// ========================================================================
 	// Type Checking
@@ -123,59 +127,65 @@ public class ErrorMessages {
 	public static final StaticMessage BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
 	public static final MultiPartMessage INCOMPARABLE_OPERANDS = new MultiPartMessage("incomparable operands: "," and ");
     public static final StaticMessage INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
+	public static final StaticMessage TOO_MANY_RETURNS = new StaticMessage("too many return values");
+	public static final StaticMessage INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
+	public static final StaticMessage INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
 
 	// ========================================================================
 	// Definite (Un)Assignment
 	// ========================================================================
-
 	public static final StaticMessage VARIABLE_POSSIBLY_UNITIALISED = new StaticMessage("variable may be uninitialised");
 	public static final StaticMessage PARAMETER_REASSIGNED = new StaticMessage("cannot assign parameter");
 	public static final StaticMessage FINAL_VARIABLE_REASSIGNED = new StaticMessage("cannot reassign final variable");
 
 	// ========================================================================
+	// Static Variable Check
+	// ========================================================================
+	public static final StaticMessage CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
+
+	// ========================================================================
+	// Functional Check
+	// ========================================================================
+	public static final StaticMessage ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
+	public static final StaticMessage REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
+	public static final StaticMessage METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
+	public static final StaticMessage REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+
+	// ========================================================================
+	// Ambiguous Coercion Check
+	// ========================================================================
+	public static final MultiPartMessage AMBIGUOUS_COERCION = new MultiPartMessage("ambiguous coercion required ("," to ",")");
+
+	// ========================================================================
 	// Misc
 	// ========================================================================
-
-	public static final StaticMessage CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
 	public static final StaticMessage INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
 	public static final StaticMessage INVALID_BOOLEAN_EXPRESSION = new StaticMessage("invalid boolean expression");
 	public static final StaticMessage INVALID_NUMERIC_EXPRESSION = new StaticMessage("invalid numeric expression");
 	public static final StaticMessage INVALID_UNARY_EXPRESSION = new StaticMessage("invalid unary expression");
 	public static final StaticMessage INVALID_BINARY_EXPRESSION = new StaticMessage("invalid binary expression");
 	public static final StaticMessage INVALID_ARRAY_EXPRESSION  = new StaticMessage("invalid array expression");
-	public static final StaticMessage TOO_MANY_RETURNS = new StaticMessage("too many return values");
-	public static final StaticMessage INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
 
-	public static final StaticMessage INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
-	public static final StaticMessage INVALID_TUPLE_LVAL = new StaticMessage("invalid tuple lval");
-	public static final StaticMessage INVALID_FILE_ACCESS = new StaticMessage("invalid file access");
-	public static final StaticMessage INVALID_PACKAGE_ACCESS = new StaticMessage("invalid package access");
-	public static final StaticMessage BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
-	public static final StaticMessage CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
-	public static final StaticMessage RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
-	public static final StaticMessage UNKNOWN_VARIABLE = new StaticMessage("unknown variable");
-	public static final StaticMessage UNKNOWN_FUNCTION_OR_METHOD = new StaticMessage("unknown function or method");
+//	public static final StaticMessage INVALID_TUPLE_LVAL = new StaticMessage("invalid tuple lval");
+//	public static final StaticMessage INVALID_FILE_ACCESS = new StaticMessage("invalid file access");
+//	public static final StaticMessage INVALID_PACKAGE_ACCESS = new StaticMessage("invalid package access");
+//	public static final StaticMessage BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
+//	public static final StaticMessage CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
 
-	public static final MultiPartMessage VARIABLE_ALREADY_DEFINED = new MultiPartMessage("variable ", " already defined");
-	public static final StaticMessage DUPLICATE_DEFAULT_LABEL = new StaticMessage("duplicate default label");
-	public static final StaticMessage DUPLICATE_CASE_LABEL = new StaticMessage("duplicate case label");
-	public static final StaticMessage DEAD_CODE = new StaticMessage("dead-code encountered (i.e. this statement has no effect)");
+//	public static final StaticMessage UNKNOWN_VARIABLE = new StaticMessage("unknown variable");
+//	public static final StaticMessage UNKNOWN_FUNCTION_OR_METHOD = new StaticMessage("unknown function or method");
 
-	public static final StaticMessage ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
-	public static final StaticMessage REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
-	public static final StaticMessage METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
-	public static final StaticMessage REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+//	public static final MultiPartMessage VARIABLE_ALREADY_DEFINED = new MultiPartMessage("variable ", " already defined");
+//	public static final StaticMessage DUPLICATE_DEFAULT_LABEL = new StaticMessage("duplicate default label");
+//	public static final StaticMessage DUPLICATE_CASE_LABEL = new StaticMessage("duplicate case label");
+//	public static final StaticMessage DEAD_CODE = new StaticMessage("dead-code encountered (i.e. this statement has no effect)");
 
-
-	public static final MultiPartMessage RECORD_TYPE_REQUIRED = new MultiPartMessage("record required, got: ");
-	public static final MultiPartMessage REFERENCE_TYPE_REQUIRED = new MultiPartMessage("reference required, got: ");
-	public static final MultiPartMessage FUNCTION_OR_METHOD_TYPE_REQUIRED = new MultiPartMessage("function or method required, got: ");
-	public static final MultiPartMessage RECORD_MISSING_FIELD = new MultiPartMessage("record has no field named ");
-	public static final StaticMessage RETURN_FROM_VOID = new StaticMessage("cannot return value from method with void return type");
-	public static final StaticMessage MISSING_RETURN_VALUE = new StaticMessage("missing return value");
-
-
-	public static final MultiPartMessage AMBIGUOUS_COERCION = new MultiPartMessage("ambiguous coercion (from "," to ",")");
+//	public static final MultiPartMessage RECORD_TYPE_REQUIRED = new MultiPartMessage("record required, got: ");
+//	public static final MultiPartMessage REFERENCE_TYPE_REQUIRED = new MultiPartMessage("reference required, got: ");
+//	public static final MultiPartMessage FUNCTION_OR_METHOD_TYPE_REQUIRED = new MultiPartMessage("function or method required, got: ");
+//	public static final MultiPartMessage RECORD_MISSING_FIELD = new MultiPartMessage("record has no field named ");
+//	public static final StaticMessage RETURN_FROM_VOID = new StaticMessage("cannot return value from method with void return type");
+//	public static final StaticMessage MISSING_RETURN_VALUE = new StaticMessage("missing return value");
 
 	private static final Message[][] ERROR_MESSAGES = {
 		null, // 00
@@ -190,7 +200,8 @@ public class ErrorMessages {
 			EXPECTED_REFERENCE,// 404
 			EXPECTED_LAMBDA,   //405
 			INVALID_FIELD,     // 406
-			RESOLUTION_ERROR   // 407
+			RESOLUTION_ERROR,   // 407
+			AMBIGUOUS_COERCION,   // 408
 		},
 		{
 			MISSING_RETURN_STATEMENT, // 500;
@@ -233,12 +244,11 @@ public class ErrorMessages {
 	/**
 	 * Report an error message. This may additionally sanity check the supplied
 	 * context.
-	 *
-	 * @param code
 	 * @param e
+	 * @param code
 	 * @param context
 	 */
-	public static void syntaxError(int code, SyntacticItem e, SyntacticItem... context) {
+	public static void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
 		WyilFile wf = (WyilFile) e.getHeap();
 		// Allocate syntax error in the heap));
 		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e, new Tuple<>(context)));

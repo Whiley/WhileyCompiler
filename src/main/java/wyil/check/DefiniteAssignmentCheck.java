@@ -14,11 +14,13 @@
 package wyil.check;
 
 import static wyil.lang.WyilFile.*;
-import static wyc.util.ErrorMessages.syntaxError;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
+
+import wybs.lang.SyntacticItem;
+import wyc.util.ErrorMessages;
 
 /**
  * <p>
@@ -44,10 +46,13 @@ import java.util.BitSet;
  *
  */
 public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
+	private boolean status = true;
 
-	public void check(WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		//
 		visitModule(wf, null);
+		//
+		return status;
 	}
 
 	/**
@@ -346,7 +351,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd)) {
-			syntaxError(VARIABLE_POSSIBLY_UNITIALISED, expression);
+			syntaxError(expression, VARIABLE_POSSIBLY_UNITIALISED);
 		}
 		return null;
 	}
@@ -479,5 +484,10 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		public String toString() {
 			return variables.toString();
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

@@ -5543,6 +5543,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPECTED_LAMBDA = 405;
 	public static final int INVALID_FIELD = 406;
 	public static final int RESOLUTION_ERROR = 407;
+	public static final int AMBIGUOUS_COERCION = 408;
 	// Statements
 	public static final int MISSING_RETURN_STATEMENT = 500;
 	public static final int UNREACHABLE_CODE = 504;

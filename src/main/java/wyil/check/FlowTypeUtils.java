@@ -230,7 +230,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.Dereference) {
 			return null;
 		} else {
-			syntaxError(WyilFile.INVALID_LVAL_EXPRESSION, lval);
+			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
 			return null; // dead code
 		}
 	}

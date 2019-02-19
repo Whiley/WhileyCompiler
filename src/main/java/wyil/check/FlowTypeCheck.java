@@ -26,6 +26,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
 import wyil.lang.WyilFile;
@@ -39,7 +40,6 @@ import wyil.type.subtyping.SubtypeOperator;
 import wyil.type.util.ConcreteTypeExtractor;
 import wyil.type.util.ReadWriteTypeExtractor;
 import wyil.util.AbstractVisitor;
-import static wyc.util.ErrorMessages.syntaxError;
 
 import static wyil.lang.WyilFile.*;
 
@@ -101,6 +101,7 @@ public class FlowTypeCheck {
 	private final SubtypeOperator strictSubtypeOperator;
 	private final ConcreteTypeExtractor concreteTypeExtractor;
 	private final ReadWriteTypeExtractor rwTypeExtractor;
+	private boolean status = true;
 
 	public FlowTypeCheck() {
 		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest();
@@ -114,11 +115,13 @@ public class FlowTypeCheck {
 	// WhileyFile(s)
 	// =========================================================================
 
-	public void check(List<WyilFile> files) {
+	public boolean check(List<WyilFile> files) {
 		// Perform necessary type checking of Whiley files
 		for (WyilFile wf : files) {
 			check(wf);
 		}
+		//
+		return status;
 	}
 
 	public void check(WyilFile wf) {
@@ -233,7 +236,7 @@ public class FlowTypeCheck {
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
 			// execution path.
-			syntaxError(MISSING_RETURN_STATEMENT, d);
+			syntaxError(d, MISSING_RETURN_STATEMENT);
 		}
 	}
 
@@ -290,7 +293,7 @@ public class FlowTypeCheck {
 			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
-				syntaxError(UNREACHABLE_CODE, stmt);
+				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
 			} else if (stmt instanceof Decl.Variable) {
 				return checkVariableDeclaration((Decl.Variable) stmt, environment);
@@ -1051,10 +1054,10 @@ public class FlowTypeCheck {
 		// definitely results in problems!  See #845
 		if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
 			// DEFINITE TRUE CASE
-			syntaxError(INCOMPARABLE_OPERANDS, expr, lhsT, rhsT);
+			syntaxError(expr, INCOMPARABLE_OPERANDS, lhsT, rhsT);
 		} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
 			// DEFINITE FALSE CASE
-			syntaxError(BRANCH_ALWAYS_TAKEN, expr);
+			syntaxError(expr, BRANCH_ALWAYS_TAKEN);
 		}
 		//
 		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
@@ -1235,9 +1238,9 @@ public class FlowTypeCheck {
 				SemanticType type = checkExpression(expression, environment);
 				//
 				if ((expected.size() - j) < 1) {
-					syntaxError(TOO_MANY_RETURNS, expression);
+					syntaxError(expression, TOO_MANY_RETURNS);
 				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
-					syntaxError(INSUFFICIENT_RETURNS, expression);
+					syntaxError(expression, INSUFFICIENT_RETURNS);
 				} else {
 					checkIsSubtype(expected.getOperand(j), type, environment, expression);
 				}
@@ -1283,12 +1286,12 @@ public class FlowTypeCheck {
 			} else {
 				switch (types.size()) {
 				case 0:
-					syntaxError(INSUFFICIENT_RETURNS, expression);
+					syntaxError(expression, INSUFFICIENT_RETURNS);
 					return null;
 				case 1:
 					break;
 				default:
-					syntaxError(TOO_MANY_RETURNS, expression);
+					syntaxError(expression, TOO_MANY_RETURNS);
 				}
 				return types.getOperand(0);
 			}
@@ -1302,11 +1305,11 @@ public class FlowTypeCheck {
 			} else {
 				switch(types.size()) {
 				case 0:
-					syntaxError(TOO_MANY_RETURNS, expression);
+					syntaxError(expression, TOO_MANY_RETURNS);
 				case 1:
 					break;
 				default:
-					syntaxError(INSUFFICIENT_RETURNS, expression);
+					syntaxError(expression, INSUFFICIENT_RETURNS);
 				}
 				// NOTE: can return directly here as checkIndirectInvoke must already set the
 				// return types.
@@ -1410,7 +1413,7 @@ public class FlowTypeCheck {
 			// Sanity check output
 			if(concreteType instanceof Type.Void) {
 				// Something has definitely gone wrong in the type extraction process.
-				syntaxError(EMPTY_TYPE,expression);
+				syntaxError(expression,EMPTY_TYPE);
 			} else {
 				expression.setType(expression.getHeap().allocate(concreteType));
 			}
@@ -1526,7 +1529,7 @@ public class FlowTypeCheck {
 			Tuple<Type> parameters = sig.getParameters();
 			// Sanity check number of arguments provided
 			if (parameters.size() != arguments.size()) {
-				syntaxError(INSUFFICIENT_ARGUMENTS, expr);
+				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
 			}
 			// Sanity check types of arguments provided
 			for (int i = 0; i != arguments.size(); ++i) {
@@ -1561,7 +1564,7 @@ public class FlowTypeCheck {
 		// Sanity check that the types of operands are actually comparable.
 		SemanticType glb = new SemanticType.Intersection(lhs,rhs);
 		if (strictSubtypeOperator.isVoid(glb, environment)) {
-			syntaxError(INCOMPARABLE_OPERANDS, expr, lhs, rhs);
+			syntaxError(expr, INCOMPARABLE_OPERANDS, lhs, rhs);
 		}
 		return Type.Bool;
 	}
@@ -1768,7 +1771,7 @@ public class FlowTypeCheck {
 			return candidates.getOperand(0).getType();
 		} else {
 			//
-			syntaxError(AMBIGUOUS_CALLABLE, expr.getName(), candidates);
+			syntaxError(expr.getName(), AMBIGUOUS_CALLABLE, candidates);
 			return null;
 		}
 	}
@@ -1833,7 +1836,7 @@ public class FlowTypeCheck {
 		List<Binding> bindings = bindCallableCandidates(candidates, arguments, lifetimeArguments, lifetimes);
 		// Sanity check bindings generated
 		if (bindings.isEmpty()) {
-			syntaxError(AMBIGUOUS_CALLABLE, name, candidates);
+			syntaxError(name, AMBIGUOUS_CALLABLE, candidates);
 			return null;
 		}
 		// Select the most precise signature from the candidate bindings
@@ -1841,7 +1844,7 @@ public class FlowTypeCheck {
 		// Sanity check result
 		if (selected == null) {
 			// foundBindingString(bindings)
-			syntaxError(AMBIGUOUS_CALLABLE, name, candidates);
+			syntaxError(name, AMBIGUOUS_CALLABLE, candidates);
 		}
 		return selected;
 	}
@@ -2303,13 +2306,13 @@ public class FlowTypeCheck {
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
 		} else if (!relaxedSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-			syntaxError(SUBTYPE_ERROR, element, lhs, rhs);
+			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}
 
 	private void checkContractive(Decl.Type d) {
 		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName(), d.getType())) {
-			syntaxError(EMPTY_TYPE, d.getName());
+			syntaxError(d.getName(), EMPTY_TYPE);
 		}
 	}
 
@@ -2333,7 +2336,7 @@ public class FlowTypeCheck {
 	 */
 	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
 		if (relaxedSubtypeOperator.isVoid(d.getType(), lifetimes)) {
-			syntaxError(EMPTY_TYPE, d.getType());
+			syntaxError(d.getType(), EMPTY_TYPE);
 		}
 	}
 
@@ -2348,7 +2351,7 @@ public class FlowTypeCheck {
 			SemanticType.Array sourceArrayT = rwTypeExtractor.apply(type, environment, combinator);
 			//
 			if (sourceArrayT == null) {
-				syntaxError(EXPECTED_ARRAY, item);
+				syntaxError(item, EXPECTED_ARRAY);
 			} else {
 				return sourceArrayT;
 			}
@@ -2384,7 +2387,7 @@ public class FlowTypeCheck {
 			SemanticType.Record recordT = rwTypeExtractor.apply(type, environment, combinator);
 			//
 			if (recordT == null) {
-				syntaxError(EXPECTED_RECORD, item);
+				syntaxError(item, EXPECTED_RECORD);
 			} else {
 				return recordT;
 			}
@@ -2402,7 +2405,7 @@ public class FlowTypeCheck {
 			SemanticType fieldType = type.getField(field);
 			if (fieldType == null) {
 				// Indicates an invalid field selection
-				syntaxError(INVALID_FIELD, field);
+				syntaxError(field, INVALID_FIELD);
 			}
 			return fieldType;
 		}
@@ -2429,7 +2432,7 @@ public class FlowTypeCheck {
 			SemanticType.Reference refT = rwTypeExtractor.apply(type, environment, combinator);
 			//
 			if (refT == null) {
-				syntaxError(EXPECTED_REFERENCE, item);
+				syntaxError(item, EXPECTED_REFERENCE);
 			} else {
 				return refT;
 			}
@@ -2466,12 +2469,17 @@ public class FlowTypeCheck {
 			Type.Callable refT = rwTypeExtractor.apply(type, environment, combinator);
 			//
 			if (refT == null) {
-				syntaxError(EXPECTED_LAMBDA, item);
+				syntaxError(item, EXPECTED_LAMBDA);
 			} else {
 				return refT;
 			}
 		}
 		return null;
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {

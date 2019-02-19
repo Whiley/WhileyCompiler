@@ -11,13 +11,15 @@ import wyc.task.CompileTask;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.util.AbstractConsumer;
-import static wyc.util.ErrorMessages.syntaxError;
+import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
+	private boolean status = true;
 
-	public void check(WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		visitModule(wf, null);
+		return status;
 	}
 
 	@Override
@@ -29,7 +31,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
 			visitExpression(initialiser, accessed);
 			if (accessed.contains(name)) {
 				// Indicates a cyclic static initialiser has been detected
-				syntaxError(CYCLIC_STATIC_INITIALISER, initialiser);
+				syntaxError(initialiser, CYCLIC_STATIC_INITIALISER);
 			}
 		}
 	}
@@ -64,4 +66,8 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> {
 		// Don't need to visit types at all
 	}
 
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
+	}
 }

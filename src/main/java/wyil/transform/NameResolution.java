@@ -20,7 +20,7 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Ref;
 import wybs.util.AbstractSyntacticHeap;
 
-import static wyc.util.ErrorMessages.syntaxError;
+import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -84,6 +84,8 @@ public class NameResolution {
 
 	private final Build.Project project;
 
+	private boolean status = true;
+
 	public NameResolution(Build.Project project, WyilFile target) throws IOException {
 		this.project = project;
 		this.target = target;
@@ -96,7 +98,7 @@ public class NameResolution {
 	 *
 	 * @param wf
 	 */
-	public void apply() {
+	public boolean apply() {
 		// FIXME: need to make this incremental
 		// Create initial set of patches.
 		List<Patch> patches = resolver.apply(target);
@@ -114,6 +116,8 @@ public class NameResolution {
 		}
 		// Consolidate any imported declarations as externals.
 		symbolTable.consolidate();
+		//
+		return status;
 	}
 
 	/**
@@ -276,7 +280,7 @@ public class NameResolution {
 					}
 				}
 				// No dice.
-				syntaxError(RESOLUTION_ERROR, name);
+				syntaxError(name, RESOLUTION_ERROR);
 				return null;
 			}
 		}
@@ -312,7 +316,7 @@ public class NameResolution {
 					}
 				}
 				// No dice.
-				syntaxError(RESOLUTION_ERROR, name);
+				syntaxError(name, RESOLUTION_ERROR);
 				return null;
 			}
 		}
@@ -428,7 +432,7 @@ public class NameResolution {
 					return (T) d;
 				}
 			}
-			syntaxError(RESOLUTION_ERROR, id);
+			syntaxError(id, RESOLUTION_ERROR);
 			return null;
 		}
 
@@ -466,7 +470,7 @@ public class NameResolution {
 			}
 			// Check for resolution error
 			if (matches.length == 0) {
-				syntaxError(RESOLUTION_ERROR, id);
+				syntaxError(id, RESOLUTION_ERROR);
 				return null;
 			} else {
 				return matches;
@@ -601,5 +605,10 @@ public class NameResolution {
 			// Done
 			return item;
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }
