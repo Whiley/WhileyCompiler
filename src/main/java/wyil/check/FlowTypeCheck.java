@@ -29,6 +29,7 @@ import wybs.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
@@ -96,7 +97,7 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class FlowTypeCheck {
+public class FlowTypeCheck implements Compiler.Check {
 	private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private final ConcreteTypeExtractor concreteTypeExtractor;
@@ -115,19 +116,11 @@ public class FlowTypeCheck {
 	// WhileyFile(s)
 	// =========================================================================
 
-	public boolean check(List<WyilFile> files) {
-		// Perform necessary type checking of Whiley files
-		for (WyilFile wf : files) {
-			check(wf);
-		}
-		//
-		return status;
-	}
-
-	public void check(WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			check(decl);
 		}
+		return status;
 	}
 
 	// =========================================================================

@@ -13,8 +13,10 @@
 // limitations under the License.
 package wyil.check;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
@@ -69,9 +71,10 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> {
+public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> implements Compiler.Check {
 	private boolean status = true;
 
+	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file, null);
 		return status;

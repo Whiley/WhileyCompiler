@@ -177,7 +177,6 @@ public final class CompileTask implements Build.Task {
 	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
-		boolean success = false;
 
 		try {
 			Runtime runtime = Runtime.getRuntime();
@@ -203,14 +202,19 @@ public final class CompileTask implements Build.Task {
 			tmpMemory = runtime.freeMemory();
 
 			boolean r = new NameResolution(project,wf).apply();
-			r = r & new FlowTypeCheck().check(wf);
-			r = r & new DefiniteAssignmentCheck().check(wf);
-			r = r & new DefiniteUnassignmentCheck().check(wf);
-			r = r & new FunctionalCheck().check(wf);
-			r = r & new StaticVariableCheck().check(wf);
-			r = r & new AmbiguousCoercionCheck().check(wf);
-			r = r & new MoveAnalysis().apply(wf);
-			r = r & new RecursiveTypeAnalysis().apply(wf);
+			// Compiler checks
+			r = r && new FlowTypeCheck().check(wf);
+			r = r && new DefiniteAssignmentCheck().check(wf);
+			r = r && new DefiniteUnassignmentCheck().check(wf);
+			r = r && new FunctionalCheck().check(wf);
+			r = r && new StaticVariableCheck().check(wf);
+			r = r && new AmbiguousCoercionCheck().check(wf);
+			// Transforms
+			if(r) {
+				// Only apply if previous stages have all passed.
+				new MoveAnalysis().apply(wf);
+				new RecursiveTypeAnalysis().apply(wf);
+			}
 
 			// ========================================================================
 			// Done
@@ -223,9 +227,7 @@ public final class CompileTask implements Build.Task {
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
 
-			// FIXME: this is horrendously broken as it assumes all markers are errors,
-			// which they may not be.
-			return wf.getModule().getAttributes().size() == 0;
+			return r;
 		} catch(InternalFailure e) {
 			e.printStackTrace();
 			return false;

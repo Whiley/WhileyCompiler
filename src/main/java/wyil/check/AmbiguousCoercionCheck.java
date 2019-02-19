@@ -24,6 +24,7 @@ import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyc.util.ErrorMessages;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -81,13 +82,14 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  * @author David J. Pearce
  *
  */
-public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
+public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Compiler.Check {
 	private boolean status = true;
 
 	public AmbiguousCoercionCheck() {
 		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 
+	@Override
 	public boolean check(WyilFile file) {
 		// Only proceed if no errors in earlier stages
 		visitModule(file);

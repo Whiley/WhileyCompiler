@@ -17,6 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
+import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
@@ -63,7 +64,7 @@ import wybs.lang.SyntacticItem;
  *
  */
 public class DefiniteUnassignmentCheck
-		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> {
+		extends AbstractFunction<DefiniteUnassignmentCheck.MaybeAssignedSet, DefiniteUnassignmentCheck.ControlFlow> implements Compiler.Check {
 
 	/**
 	 * NOTE: the following is left in place to facilitate testing for the final
@@ -74,6 +75,7 @@ public class DefiniteUnassignmentCheck
 
 	private boolean status = true;
 
+	@Override
 	public boolean check(WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);

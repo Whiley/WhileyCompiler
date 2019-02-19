@@ -14,6 +14,8 @@
 package wyil.check;
 
 import static wyil.lang.WyilFile.*;
+
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
@@ -45,9 +47,12 @@ import wyc.util.ErrorMessages;
  * @author David J. Pearce
  *
  */
-public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
+public class DefiniteAssignmentCheck
+		extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet, DefiniteAssignmentCheck.ControlFlow>
+		implements Compiler.Check {
 	private boolean status = true;
 
+	@Override
 	public boolean check(WyilFile wf) {
 		//
 		visitModule(wf, null);
