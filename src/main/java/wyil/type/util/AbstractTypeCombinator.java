@@ -113,7 +113,7 @@ public abstract class AbstractTypeCombinator {
 	protected Type apply(Type.Union lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		Type[] types = new Type[lhs.size()];
 		for (int i = 0; i != lhs.size(); ++i) {
-			types[i] = apply(lhs.getOperand(i), rhs, lifetimes, stack);
+			types[i] = apply(lhs.get(i), rhs, lifetimes, stack);
 		}
 		return union(types);
 	}
@@ -121,7 +121,7 @@ public abstract class AbstractTypeCombinator {
 	protected Type apply(Type lhs, Type.Union rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		Type[] types = new Type[rhs.size()];
 		for (int i = 0; i != types.length; ++i) {
-			types[i] = apply(lhs, rhs.getOperand(i), lifetimes, stack);
+			types[i] = apply(lhs, rhs.get(i), lifetimes, stack);
 		}
 		return union(types);
 	}

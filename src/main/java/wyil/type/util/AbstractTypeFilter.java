@@ -70,7 +70,7 @@ public class AbstractTypeFilter<T extends Type> {
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
 			for (int i = 0; i != t.size(); ++i) {
-				filter(t.getOperand(i), results);
+				filter(t.get(i), results);
 			}
 		}
 	}

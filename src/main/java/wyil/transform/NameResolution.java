@@ -243,9 +243,9 @@ public class NameResolution {
 			// Resolve unqualified name to qualified name
 			switch (name.size()) {
 			case 1:
-				return unqualifiedResolveAs(name.getOperand(0), imports);
+				return unqualifiedResolveAs(name.get(0), imports);
 			case 2:
-				return partialResolveAs(name.getOperand(0), name.getOperand(1), imports);
+				return partialResolveAs(name.get(0), name.get(1), imports);
 			default:
 				return new QualifiedName(name.getPath(), name.getLast());
 			}
@@ -305,7 +305,7 @@ public class NameResolution {
 				for (int i = imports.size() - 1; i >= 0; --i) {
 					Decl.Import imp = imports.get(i);
 					Tuple<Identifier> path = imp.getPath();
-					Identifier last = path.getOperand(path.size() - 1);
+					Identifier last = path.get(path.size() - 1);
 					//
 					if (!imp.hasFrom() && last.equals(unit)) {
 						// Resolving partially qualified names requires no "from".

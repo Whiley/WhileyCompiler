@@ -367,7 +367,7 @@ public final class CompileTask implements Build.Task {
 			visited.set(index);
 			// Recursive children looking for other syntactic markers
 			for (int i = 0; i != item.size(); ++i) {
-				throwSyntaxError(item.getOperand(i),visited);
+				throwSyntaxError(item.get(i),visited);
 			}
 			SyntacticItem.Marker marker = item.getParent(SyntacticItem.Marker.class);
 			// Check whether this item has a marker associated with it.

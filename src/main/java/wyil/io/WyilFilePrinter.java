@@ -113,7 +113,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if(i != 0) {
 				out.print("::");
 			}
-			out.print(path.getOperand(i));
+			out.print(path.get(i));
 		}
 		out.println();
 	}
@@ -188,7 +188,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if (i != 0) {
 				out.print(", ");
 			}
-			visitVariable(parameters.getOperand(i), indent);
+			visitVariable(parameters.get(i), indent);
 		}
 		out.print(")");
 	}
@@ -245,7 +245,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		if(lhs.size() > 0) {
 			for(int i=0;i!=lhs.size();++i) {
 				if(i!=0) { out.print(", "); }
-				visitExpression(lhs.getOperand(i), indent);
+				visitExpression(lhs.get(i), indent);
 			}
 			out.print(" = ");
 		}
@@ -378,7 +378,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 					if (j != 0) {
 						out.print(", ");
 					}
-					visitExpression(values.getOperand(j), indent);
+					visitExpression(values.get(j), indent);
 				}
 				out.println(":");
 			}
@@ -411,7 +411,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if (i != 0) {
 				out.print(", ");
 			}
-			visitExpression(exprs.getOperand(i), indent);
+			visitExpression(exprs.get(i), indent);
 		}
 	}
 
@@ -479,7 +479,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if(i != 0) {
 				out.print(", ");
 			}
-			visitExpression(operands.getOperand(i), indent);
+			visitExpression(operands.get(i), indent);
 		}
 		out.print("]");
 	}
@@ -519,7 +519,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if (i != 0) {
 				out.print(", ");
 			}
-			visitExpression(args.getOperand(i), indent);
+			visitExpression(args.get(i), indent);
 		}
 		out.print(")");
 	}
@@ -536,7 +536,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			if (i != 0) {
 				out.print(", ");
 			}
-			visitExpression(args.getOperand(i), indent);
+			visitExpression(args.get(i), indent);
 		}
 		out.print(")");
 	}
@@ -577,8 +577,8 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		Tuple<WyilFile.Identifier> fields = expr.getFields();
 		Tuple<WyilFile.Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.getOperand(i);
-			Expr operand = operands.getOperand(i);
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}
@@ -623,7 +623,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 				out.print(opcode(expr.getOpcode()));
 				out.print(" ");
 			}
-			visitBracketedExpression(operands.getOperand(i), indent);
+			visitBracketedExpression(operands.get(i), indent);
 		}
 	}
 
@@ -643,7 +643,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(" { ");
 		Tuple<Decl.Variable> params = expr.getParameters();
 		for (int i = 0; i != params.size(); ++i) {
-			Decl.Variable v = params.getOperand(i);
+			Decl.Variable v = params.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}

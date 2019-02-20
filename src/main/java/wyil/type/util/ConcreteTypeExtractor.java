@@ -129,7 +129,7 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType, LifetimeR
 		Tuple<? extends SemanticType.Field> t_fields = type.getFields();
 		Type.Field[] fields = new Type.Field[t_fields.size()];
 		for (int i = 0; i != fields.length; ++i) {
-			SemanticType.Field tField = t_fields.getOperand(i);
+			SemanticType.Field tField = t_fields.get(i);
 			Type fieldT = apply(tField.getType(), lifetimes);
 			fields[i] = new Type.Field(tField.getName(), fieldT);
 		}
@@ -139,15 +139,15 @@ public class ConcreteTypeExtractor implements BiFunction<SemanticType, LifetimeR
 	private Type apply(SemanticType.Union type, LifetimeRelation lifetimes) {
 		Type[] bounds = new Type[type.size()];
 		for (int i = 0; i != bounds.length; ++i) {
-			bounds[i] = apply(type.getOperand(i), lifetimes);
+			bounds[i] = apply(type.get(i), lifetimes);
 		}
 		return new Type.Union(bounds);
 	}
 
 	private Type apply(SemanticType.Intersection type, LifetimeRelation lifetimes) {
-		Type result = apply(type.getOperand(0), lifetimes);
+		Type result = apply(type.get(0), lifetimes);
 		for (int i = 1; i != type.size(); ++i) {
-			Type ith = apply(type.getOperand(i), lifetimes);
+			Type ith = apply(type.get(i), lifetimes);
 			result = intersector.apply(result, ith, lifetimes);
 		}
 		return result;

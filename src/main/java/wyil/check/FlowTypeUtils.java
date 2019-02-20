@@ -157,7 +157,7 @@ public class FlowTypeUtils {
 
 	public static void determineModifiedVariables(Stmt.Block block, Set<Decl.Variable> modified) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.getOperand(i);
+			Stmt stmt = block.get(i);
 			switch (stmt.getOpcode()) {
 			case STMT_assign: {
 				Stmt.Assign s = (Stmt.Assign) stmt;
@@ -268,7 +268,7 @@ public class FlowTypeUtils {
 		boolean result = true;
 		//
 		for (int i = 0; i != item.size(); ++i) {
-			result &= isPure(item.getOperand(i));
+			result &= isPure(item.get(i));
 		}
 		return result;
 	}
@@ -354,7 +354,7 @@ public class FlowTypeUtils {
 		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers.getOperand(i).get();
+				outs[i] = outers.get(i).get();
 			}
 			return declareWithin(inner, outs);
 		}
@@ -533,7 +533,7 @@ public class FlowTypeUtils {
 			// NOTE: this is an implicit assumption that typeLambdaFilter() only ever
 			// returns
 			// lambda types with exactly one return type.
-			returnTypes[i] = types[i].getReturns().getOperand(0);
+			returnTypes[i] = types[i].getReturns().get(0);
 		}
 		return returnTypes;
 	}
@@ -583,10 +583,10 @@ public class FlowTypeUtils {
 			return false;
 		} else {
 			for (int i = 0; i != ith_fields.size(); ++i) {
-				Identifier ith_field = ith_fields.getOperand(i).getName();
+				Identifier ith_field = ith_fields.get(i).getName();
 				boolean matched = false;
 				for (int j = 0; j != fields.size(); ++j) {
-					Identifier field = fields.getOperand(j);
+					Identifier field = fields.get(j);
 					if (ith_field.equals(field)) {
 						matched = true;
 						break;

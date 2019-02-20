@@ -111,7 +111,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitVariables(Tuple<Decl.Variable> vars, Environment environment) {
 		for (int i = 0; i != vars.size(); ++i) {
-			Decl.Variable var = vars.getOperand(i);
+			Decl.Variable var = vars.get(i);
 			visitVariable(var, environment);
 		}
 	}
@@ -267,7 +267,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitLVals(Tuple<LVal> lvals, Environment environment, EnclosingScope scope) {
 		for (int i = 0; i != lvals.size(); ++i) {
-			Expr lval = lvals.getOperand(i);
+			Expr lval = lvals.get(i);
 			visitExpression(lval, lval.getType(), environment);
 		}
 	}
@@ -278,7 +278,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitBlock(Stmt.Block stmt, Environment environment, EnclosingScope scope) {
 		for (int i = 0; i != stmt.size(); ++i) {
-			visitStatement(stmt.getOperand(i), environment, scope);
+			visitStatement(stmt.get(i), environment, scope);
 		}
 	}
 
@@ -339,7 +339,7 @@ public abstract class AbstractTypedVisitor {
 		visitExpression(stmt.getCondition(), target, environment);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for (int i = 0; i != cases.size(); ++i) {
-			visitCase(cases.getOperand(i), target, environment, scope);
+			visitCase(cases.get(i), target, environment, scope);
 		}
 	}
 
@@ -357,7 +357,7 @@ public abstract class AbstractTypedVisitor {
 	public void visitExpressions(Tuple<Expr> exprs, Tuple<Type> targets, Environment environment) {
 		int j=0;
 		for (int i = 0; i != exprs.size(); ++i) {
-			Expr e = exprs.getOperand(i);
+			Expr e = exprs.get(i);
 			// Handle multi expressions
 			if(e.getTypes() != null) {
 				int len = e.getTypes().size();
@@ -366,7 +366,7 @@ public abstract class AbstractTypedVisitor {
 				j = j + len;
 			} else {
 				// Default to single expression
-				visitExpression(e, targets.getOperand(j), environment);
+				visitExpression(e, targets.get(j), environment);
 				j = j + 1;
 			}
 		}
@@ -374,7 +374,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitExpressions(Tuple<Expr> exprs, Type target, Environment environment) {
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.getOperand(i), target, environment);
+			visitExpression(exprs.get(i), target, environment);
 		}
 	}
 
@@ -802,7 +802,7 @@ public abstract class AbstractTypedVisitor {
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Environment environment) {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			Decl.Variable parameter = parameters.getOperand(i);
+			Decl.Variable parameter = parameters.get(i);
 			visitExpression(parameter.getInitialiser(), TYPE_ARRAY_INT, environment);
 		}
 		visitExpression(expr.getOperand(), Type.Bool, environment);
@@ -811,7 +811,7 @@ public abstract class AbstractTypedVisitor {
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Environment environment) {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			Decl.Variable parameter = parameters.getOperand(i);
+			Decl.Variable parameter = parameters.get(i);
 			visitExpression(parameter.getInitialiser(), TYPE_ARRAY_INT, environment);
 		}
 		visitExpression(expr.getOperand(), Type.Bool, environment);
@@ -855,8 +855,8 @@ public abstract class AbstractTypedVisitor {
 		Tuple<Identifier> fields = expr.getFields();
 		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != fields.size(); ++i) {
-			Expr operand = operands.getOperand(i);
-			Type type = target.getField(fields.getOperand(i));
+			Expr operand = operands.get(i);
+			Type type = target.getField(fields.get(i));
 			if (type == null) {
 				// NOTE: open records may not have concrete types for fields.
 				type = operand.getType();
@@ -880,7 +880,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitTypes(Tuple<Type> type) {
 		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.getOperand(i));
+			visitType(type.get(i));
 		}
 	}
 
@@ -991,7 +991,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitFields(Tuple<Type.Field> fields) {
 		for (int i = 0; i != fields.size(); ++i) {
-			visitField(fields.getOperand(i));
+			visitField(fields.get(i));
 		}
 	}
 
@@ -1005,7 +1005,7 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitTypeUnion(Type.Union type) {
 		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.getOperand(i));
+			visitType(type.get(i));
 		}
 	}
 
@@ -1059,13 +1059,13 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitSemanticTypeUnion(SemanticType.Union type) {
-		for (SemanticType t : type.getOperandArray()) {
+		for (SemanticType t : type.getAll()) {
 			visitSemanticType(t);
 		}
 	}
 
 	public void visitSemanticTypeIntersection(SemanticType.Intersection type) {
-		for (SemanticType t : type.getOperandArray()) {
+		for (SemanticType t : type.getAll()) {
 			visitSemanticType(t);
 		}
 	}
@@ -1105,7 +1105,7 @@ public abstract class AbstractTypedVisitor {
 		Tuple<Identifier> declared = type.getLifetimeParameters();
 		HashMap<Identifier, Identifier> binding = new HashMap<>();
 		for (int i = 0; i != declared.size(); ++i) {
-			binding.put(declared.getOperand(i), actual.getOperand(i));
+			binding.put(declared.get(i), actual.get(i));
 		}
 		return WyilFile.substitute(type.getParameters(),binding);
 	}
@@ -1414,7 +1414,7 @@ public abstract class AbstractTypedVisitor {
 		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers.getOperand(i).get();
+				outs[i] = outers.get(i).get();
 			}
 			return declareWithin(inner, outs);
 		}
@@ -1501,7 +1501,7 @@ public abstract class AbstractTypedVisitor {
 				Tuple<Identifier> environment = meth.getLifetimes();
 				String[] arr = new String[environment.size() + 1];
 				for (int i = 0; i != environment.size(); ++i) {
-					arr[i] = environment.getOperand(i).get();
+					arr[i] = environment.get(i).get();
 				}
 				arr[arr.length - 1] = "this";
 				return arr;

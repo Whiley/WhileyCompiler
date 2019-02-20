@@ -119,8 +119,8 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
-			Type target = targets.getOperand(j);
-			Type source = types.getOperand(j);
+			Type target = targets.get(j);
+			Type source = types.get(j);
 			if (!checkCoercion(target, source, environment, assumptions, expr)) {
 				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
 				status = false;
@@ -192,7 +192,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
 			for (int i = 0; i != s.size(); ++i) {
-				if (!checkCoercion(target, s.getOperand(i), environment, assumptions, item)) {
+				if (!checkCoercion(target, s.get(i), environment, assumptions, item)) {
 					return false;
 				}
 			}
@@ -225,7 +225,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			{
 		Tuple<Type.Field> fields = target.getFields();
 		for (int i = 0; i != fields.size(); ++i) {
-			Type.Field field = fields.getOperand(i);
+			Type.Field field = fields.get(i);
 			Type type = source.getField(field.getName());
 			if (!checkCoercion(field.getType(), type, environment, assumptions, item)) {
 				return false;
@@ -250,7 +250,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		Type.Union ut = target;
-		Type candidate = selectCoercionCandidate(ut.getOperandArray(), source, environment);
+		Type candidate = selectCoercionCandidate(ut.getAll(), source, environment);
 		if (candidate != null) {
 			// Indicates decision made easily enough. Continue traversal down the type.
 			return checkCoercion(candidate, source, environment, assumptions, item);
@@ -263,7 +263,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
 			for (int i = 0; i != su.size(); ++i) {
-				if (!checkCoercion(target, su.getOperand(i), environment, assumptions, item)) {
+				if (!checkCoercion(target, su.get(i), environment, assumptions, item)) {
 					return false;
 				}
 			}

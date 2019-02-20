@@ -81,7 +81,7 @@ public abstract class AbstractVisitor {
 
 	public void visitVariables(Tuple<Decl.Variable> vars) {
 		for (int i = 0; i != vars.size(); ++i) {
-			Decl.Variable var = vars.getOperand(i);
+			Decl.Variable var = vars.get(i);
 			visitVariable(var);
 		}
 	}
@@ -228,7 +228,7 @@ public abstract class AbstractVisitor {
 
 	public void visitLVals(Tuple<LVal> lvals) {
 		for (int i = 0; i != lvals.size(); ++i) {
-			visitExpression(lvals.getOperand(i));
+			visitExpression(lvals.get(i));
 		}
 	}
 
@@ -238,7 +238,7 @@ public abstract class AbstractVisitor {
 
 	public void visitBlock(Stmt.Block stmt) {
 		for (int i = 0; i != stmt.size(); ++i) {
-			visitStatement(stmt.getOperand(i));
+			visitStatement(stmt.get(i));
 		}
 	}
 
@@ -288,7 +288,7 @@ public abstract class AbstractVisitor {
 		visitExpression(stmt.getCondition());
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for (int i = 0; i != cases.size(); ++i) {
-			visitCase(cases.getOperand(i));
+			visitCase(cases.get(i));
 		}
 	}
 
@@ -305,7 +305,7 @@ public abstract class AbstractVisitor {
 
 	public void visitExpressions(Tuple<Expr> exprs) {
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.getOperand(i));
+			visitExpression(exprs.get(i));
 		}
 	}
 
@@ -746,7 +746,7 @@ public abstract class AbstractVisitor {
 
 	public void visitTypes(Tuple<Type> type) {
 		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.getOperand(i));
+			visitType(type.get(i));
 		}
 	}
 
@@ -857,7 +857,7 @@ public abstract class AbstractVisitor {
 
 	public void visitFields(Tuple<Type.Field> fields) {
 		for(int i=0;i!=fields.size();++i) {
-			visitField(fields.getOperand(i));
+			visitField(fields.get(i));
 		}
 	}
 
@@ -872,7 +872,7 @@ public abstract class AbstractVisitor {
 
 	public void visitTypeUnion(Type.Union type) {
 		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.getOperand(i));
+			visitType(type.get(i));
 		}
 	}
 
@@ -926,13 +926,13 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitSemanticTypeUnion(SemanticType.Union type) {
-		for(SemanticType t : type.getOperandArray()) {
+		for(SemanticType t : type.getAll()) {
 			visitSemanticType(t);
 		}
 	}
 
 	public void visitSemanticTypeIntersection(SemanticType.Intersection type) {
-		for(SemanticType t : type.getOperandArray()) {
+		for(SemanticType t : type.getAll()) {
 			visitSemanticType(t);
 		}
 	}

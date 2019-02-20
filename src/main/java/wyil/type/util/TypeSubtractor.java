@@ -132,7 +132,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 			// Exactly one pivot found. This is something we can work with!
 			for(int i=0;i!=pivots.length;++i) {
 				if(pivots[i] == null) {
-					pivots[i] = lhsFields.getOperand(i);
+					pivots[i] = lhsFields.get(i);
 				}
 			}
 			return new Type.Record(lhs.isOpen(),new Tuple<>(pivots));
@@ -155,10 +155,10 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	private int countFieldMatches(Tuple<Type.Field> lhsFields, Tuple<Type.Field> rhsFields) {
 		int matches = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			Type.Field lhsField = lhsFields.getOperand(i);
+			Type.Field lhsField = lhsFields.get(i);
 			Identifier lhsFieldName = lhsField.getName();
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Type.Field rhsField = rhsFields.getOperand(j);
+				Type.Field rhsField = rhsFields.get(j);
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					matches++;
@@ -183,10 +183,10 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 		Type.Field[] pivots = new Type.Field[lhsFields.size()];
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
-			Type.Field lhsField = lhsFields.getOperand(i);
+			Type.Field lhsField = lhsFields.get(i);
 			Identifier lhsFieldName = lhsField.getName();
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Type.Field rhsField = rhsFields.getOperand(j);
+				Type.Field rhsField = rhsFields.get(j);
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					// Matched field, now compute its type.
@@ -252,7 +252,7 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 	protected Type apply(Type lhs, Type.Union rhs, LifetimeRelation lifetimes, LinkageStack stack) {
 		Type[] types = new Type[rhs.size()];
 		for (int i = 0; i != types.length; ++i) {
-			types[i] = apply(lhs, rhs.getOperand(i), lifetimes, stack);
+			types[i] = apply(lhs, rhs.get(i), lifetimes, stack);
 			// If any element of rhs subsumes lhs, then all subsumed.
 			if (types[i] instanceof Type.Void) {
 				return Type.Void;

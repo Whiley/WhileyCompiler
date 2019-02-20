@@ -79,7 +79,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitVariables(Tuple<Decl.Variable> vars, P data) {
 		for(int i=0;i!=vars.size();++i) {
-			Decl.Variable var = vars.getOperand(i);
+			Decl.Variable var = vars.get(i);
 			visitVariable(var, data);
 		}
 		return null;
@@ -214,7 +214,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitLVals(Tuple<LVal> lvals, P data) {
 		for(int i=0;i!=lvals.size();++i) {
-			visitExpression(lvals.getOperand(i), data);
+			visitExpression(lvals.get(i), data);
 		}
 		return null;
 	}
@@ -226,7 +226,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitBlock(Stmt.Block stmt, P data) {
 		for(int i=0;i!=stmt.size();++i) {
-			visitStatement(stmt.getOperand(i), data);
+			visitStatement(stmt.get(i), data);
 		}
 		return null;
 	}
@@ -282,7 +282,7 @@ public abstract class AbstractFunction<P,R> {
 		visitExpression(stmt.getCondition(), data);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for(int i=0;i!=cases.size();++i) {
-			visitCase(cases.getOperand(i), data);
+			visitCase(cases.get(i), data);
 		}
 		return null;
 	}
@@ -302,7 +302,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitExpressions(Tuple<Expr> exprs, P data) {
 		for (int i = 0; i != exprs.size(); ++i) {
-			visitExpression(exprs.getOperand(i), data);
+			visitExpression(exprs.get(i), data);
 		}
 		return null;
 	}
@@ -740,7 +740,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitTypes(Tuple<Type> type, P data) {
 		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.getOperand(i), data);
+			visitType(type.get(i), data);
 			return null;
 		}
 		return null;
@@ -842,7 +842,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitFields(Tuple<Type.Field> fields, P data) {
 		for(int i=0;i!=fields.size();++i) {
-			visitField(fields.getOperand(i), data);
+			visitField(fields.get(i), data);
 		}
 		return null;
 	}
@@ -859,7 +859,7 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitTypeUnion(Type.Union type, P data) {
 		for(int i=0;i!=type.size();++i) {
-			visitType(type.getOperand(i), data);
+			visitType(type.get(i), data);
 		}
 		return null;
 	}
@@ -912,14 +912,14 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitSemanticTypeUnion(SemanticType.Union type, P data) {
-		for(SemanticType t : type.getOperandArray()) {
+		for(SemanticType t : type.getAll()) {
 			visitSemanticType(t, data);
 		}
 		return null;
 	}
 
 	public R visitSemanticTypeIntersection(SemanticType.Intersection type, P data) {
-		for(SemanticType t : type.getOperandArray()) {
+		for(SemanticType t : type.getAll()) {
 			visitSemanticType(t, data);
 		}
 		return null;

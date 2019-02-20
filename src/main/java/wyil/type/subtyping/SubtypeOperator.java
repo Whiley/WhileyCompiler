@@ -188,7 +188,7 @@ public class SubtypeOperator {
 		case TYPE_union: {
 			Type.Union c = (Type.Union) type;
 			for (int i = 0; i != c.size(); ++i) {
-				if (!isContractive(name, c.getOperand(i), visited)) {
+				if (!isContractive(name, c.get(i), visited)) {
 					return false;
 				}
 			}

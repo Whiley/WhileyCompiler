@@ -154,7 +154,7 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 		visitExpression(stmt.getCondition(), false);
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		for (int i = 0; i != cases.size(); ++i) {
-			visitCase(cases.getOperand(i), null);
+			visitCase(cases.get(i), null);
 		}
 	}
 

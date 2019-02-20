@@ -261,7 +261,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	private Environment checkBlock(Stmt.Block block, Environment environment, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.getOperand(i);
+			Stmt stmt = block.get(i);
 			environment = checkStatement(stmt, environment, scope);
 		}
 		return environment;
@@ -395,7 +395,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	private Environment checkVariableDeclarations(Tuple<Decl.Variable> decls, Environment environment) {
 		for(int i=0;i!=decls.size();++i) {
-			environment = checkVariableDeclaration(decls.getOperand(i),environment);
+			environment = checkVariableDeclaration(decls.get(i),environment);
 		}
 		return environment;
 	}
@@ -439,7 +439,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<LVal> lvals = stmt.getLeftHandSide();
 		Type[] types = new Type[lvals.size()];
 		for (int i = 0; i != lvals.size(); ++i) {
-			types[i] = checkLVal(lvals.getOperand(i), environment);
+			types[i] = checkLVal(lvals.get(i), environment);
 		}
 		checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
 		return environment;
@@ -956,15 +956,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (sign) {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
+				refinements[i] = checkCondition(operands.get(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.getOperand(i), !sign, environment);
+				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
 			return FlowTypeUtils.union(refinements);
 		} else {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.getOperand(i), sign, environment);
+				environment = checkCondition(operands.get(i), sign, environment);
 			}
 			return environment;
 		}
@@ -994,15 +994,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Expr> operands = expr.getOperands();
 		if (sign) {
 			for (int i = 0; i != operands.size(); ++i) {
-				environment = checkCondition(operands.getOperand(i), sign, environment);
+				environment = checkCondition(operands.get(i), sign, environment);
 			}
 			return environment;
 		} else {
 			Environment[] refinements = new Environment[operands.size()];
 			for (int i = 0; i != operands.size(); ++i) {
-				refinements[i] = checkCondition(operands.getOperand(i), sign, environment);
+				refinements[i] = checkCondition(operands.get(i), sign, environment);
 				// The clever bit. Recalculate assuming opposite sign.
-				environment = checkCondition(operands.getOperand(i), !sign, environment);
+				environment = checkCondition(operands.get(i), !sign, environment);
 			}
 			// Done.
 			return FlowTypeUtils.union(refinements);
@@ -1197,7 +1197,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	public final void checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
 		for (int i = 0, j = 0; i != expressions.size(); ++i) {
-			Expr expression = expressions.getOperand(i);
+			Expr expression = expressions.get(i);
 			switch (expression.getOpcode()) {
 			case EXPR_invoke: {
 				Tuple<Type> results = checkInvoke((Expr.Invoke) expression, environment);
@@ -1207,7 +1207,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.getOperand(j + k), results.getOperand(k), environment, expression);
+						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
 					}
 					j = j + results.size();
 				}
@@ -1221,7 +1221,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.getOperand(j + k), results.getOperand(k), environment, expression);
+						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
 					}
 					j = j + results.size();
 				}
@@ -1235,7 +1235,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
 					syntaxError(expression, INSUFFICIENT_RETURNS);
 				} else {
-					checkIsSubtype(expected.getOperand(j), type, environment, expression);
+					checkIsSubtype(expected.get(j), type, environment, expression);
 				}
 				j = j + 1;
 			}
@@ -1286,7 +1286,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				default:
 					syntaxError(expression, TOO_MANY_RETURNS);
 				}
-				return types.getOperand(0);
+				return types.get(0);
 			}
 		}
 		case EXPR_indirectinvoke: {
@@ -1306,7 +1306,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				}
 				// NOTE: can return directly here as checkIndirectInvoke must already set the
 				// return types.
-				return types.getOperand(0);
+				return types.get(0);
 			}
 		}
 		// Conditions
@@ -1485,7 +1485,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Expr> arguments = expr.getOperands();
 		SemanticType[] types = new SemanticType[arguments.size()];
 		for (int i = 0; i != arguments.size(); ++i) {
-			types[i] = checkExpression(arguments.getOperand(i), environment);
+			types[i] = checkExpression(arguments.get(i), environment);
 		}
 		// Extract candidates from name resolution phase
 		Tuple<Decl.Callable> candidates = expr.getDeclarations();
@@ -1527,15 +1527,15 @@ public class FlowTypeCheck implements Compiler.Check {
 			// Sanity check types of arguments provided
 			for (int i = 0; i != arguments.size(); ++i) {
 				// Determine argument type
-				SemanticType arg = checkExpression(arguments.getOperand(i), environment);
+				SemanticType arg = checkExpression(arguments.get(i), environment);
 				// Check argument is subtype of parameter
-				checkIsSubtype(parameters.getOperand(i), arg, environment, arguments.getOperand(i));
+				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 			}
 			//
 			if(sig.getReturns().size() > 1) {
 				internalFailure("need support for multiple returns and indirect invocation", expr);
 			}
-			expr.setType(sig.getReturns().getOperand(0));
+			expr.setType(sig.getReturns().get(0));
 			//
 			return sig.getReturns();
 		}
@@ -1633,8 +1633,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		SemanticType.Field[] decls = new SemanticType.Field[operands.size()];
 		// Check field initialiser expressions one by one
 		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.getOperand(i);
-			SemanticType fieldType = checkExpression(operands.getOperand(i), environment);
+			Identifier field = fields.get(i);
+			SemanticType fieldType = checkExpression(operands.get(i), environment);
 			decls[i] = new SemanticType.Field(field, fieldType);
 		}
 		//
@@ -1654,7 +1654,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Expr> operands = expr.getOperands();
 		SemanticType[] ts = new SemanticType[operands.size()];
 		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.getOperand(i), environment);
+			ts[i] = checkExpression(operands.get(i), environment);
 		}
 		ts = ArrayUtils.removeDuplicates(ts);
 		SemanticType element;
@@ -1760,8 +1760,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			expr.select(binding.getCandidiateDeclaration());
 			return binding.getConcreteType();
 		} else if (candidates.size() == 1) {
-			expr.select(candidates.getOperand(0));
-			return candidates.getOperand(0).getType();
+			expr.select(candidates.get(0));
+			return candidates.get(0).getType();
 		} else {
 			//
 			syntaxError(expr.getName(), AMBIGUOUS_CALLABLE, candidates);
@@ -1922,7 +1922,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Identifier> lifetimeArguments, LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		for (int i = 0; i != candidates.size(); ++i) {
-			Decl.Callable candidate = candidates.getOperand(i);
+			Decl.Callable candidate = candidates.get(i);
 			Type.Callable type = candidate.getType();
 			// Generate all potential bindings based on arguments
 			if(candidate instanceof Decl.Method) {
@@ -1983,8 +1983,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		HashMap<Identifier, Identifier> binding = new HashMap<>();
 		//
 		for (int i = 0; i != lifetimeArguments.size(); ++i) {
-			Identifier parameter = lifetimeParameters.getOperand(i);
-			Identifier argument = lifetimeArguments.getOperand(i);
+			Identifier parameter = lifetimeParameters.get(i);
+			Identifier argument = lifetimeArguments.get(i);
 			binding.put(parameter, argument);
 		}
 		//
@@ -2049,7 +2049,7 @@ public class FlowTypeCheck implements Compiler.Check {
 					public Map<Identifier, Identifier> next() {
 						// First, assign current state to binding
 						for (int i = 0; i != counters.length; ++i) {
-							Identifier lifetimeParameter = lifetimeParameters.getOperand(i);
+							Identifier lifetimeParameter = lifetimeParameters.get(i);
 							binding.put(lifetimeParameter, lifetimes[counters[i]]);
 						}
 						// Increment counts;
@@ -2097,7 +2097,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		};
 		// Apply visitor to each argument
 		for (int i = 0; i != args.size(); ++i) {
-			visitor.visitSemanticType(args.getOperand(i));
+			visitor.visitSemanticType(args.get(i));
 		}
 		// Done
 		return lifetimes.toArray(new Identifier[lifetimes.size()]);
@@ -2144,7 +2144,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				Decl.Method decl = (Decl.Method) candidate;
 				Tuple<Identifier> lifetimes = decl.getType().getLifetimeParameters();
 				for (int i = 0; i != lifetimes.size(); ++i) {
-					binding.put(lifetimes.getOperand(i), lifetimeArguments.getOperand(i));
+					binding.put(lifetimes.get(i), lifetimeArguments.get(i));
 				}
 			}
 			return binding;
@@ -2154,7 +2154,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Identifier> lifetimes = candidate.getType().getLifetimeParameters();
 			Identifier[] result = new Identifier[lifetimes.size()];
 			for(int i=0;i!=result.length;++i) {
-				result[i] = binding.get(lifetimes.getOperand(i));
+				result[i] = binding.get(lifetimes.get(i));
 			}
 			return new Tuple<>(result);
 		}
@@ -2181,8 +2181,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.size(); ++i) {
-				SemanticType param = parameters.getOperand(i);
-				if (!relaxedSubtypeOperator.isSubtype(param, args.getOperand(i), lifetimes)) {
+				SemanticType param = parameters.get(i);
+				if (!relaxedSubtypeOperator.isSubtype(param, args.get(i), lifetimes)) {
 					return false;
 				}
 			}
@@ -2268,8 +2268,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Number of parameters matches number of arguments. Now, check that
 		// each argument is a subtype of its corresponding parameter.
 		for (int i = 0; i != parentParams.size(); ++i) {
-			SemanticType parentParam = parentParams.getOperand(i);
-			SemanticType childParam = childParams.getOperand(i);
+			SemanticType parentParam = parentParams.get(i);
+			SemanticType childParam = childParams.get(i);
 			if (!relaxedSubtypeOperator.isSubtype(parentParam, childParam, lifetimes)) {
 				return false;
 			}
@@ -2288,7 +2288,7 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
 		for (int i = 0; i != operands.size(); ++i) {
-			Expr operand = operands.getOperand(i);
+			Expr operand = operands.get(i);
 			checkOperand(type, operand, environment);
 		}
 	}
@@ -2317,7 +2317,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
 		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.getOperand(i), lifetimes);
+			checkNonEmpty(decls.get(i), lifetimes);
 		}
 	}
 
@@ -2562,7 +2562,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				Tuple<Identifier> lifetimes = meth.getLifetimes();
 				String[] arr = new String[lifetimes.size() + 1];
 				for (int i = 0; i != lifetimes.size(); ++i) {
-					arr[i] = lifetimes.getOperand(i).get();
+					arr[i] = lifetimes.get(i).get();
 				}
 				arr[arr.length - 1] = "this";
 				return arr;

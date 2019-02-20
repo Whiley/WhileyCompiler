@@ -90,7 +90,7 @@ public class ErrorMessages {
 			for(int i=0;i!=parts.length;++i) {
 				output += parts[i];
 				if(i < context.size()) {
-					output += context.getOperand(i).toString();
+					output += context.get(i).toString();
 				}
 			}
 			return output;
@@ -104,7 +104,7 @@ public class ErrorMessages {
 		@Override
 		public String getMessage(Tuple<SyntacticItem> context) {
 			String msg = "unable to resolve name (is ambiguous)";
-			return msg + foundCandidatesString((Tuple<Decl.Callable>) context.getOperand(0));
+			return msg + foundCandidatesString((Tuple<Decl.Callable>) context.get(0));
 		}
 	};
 	// ========================================================================
@@ -309,7 +309,7 @@ public class ErrorMessages {
 
 			Tuple<Identifier> lifetimes = method.getLifetimes();
 			for(int i=0;i!=lifetimes.size();++i) {
-				Identifier lifetime = lifetimes.getOperand(i);
+				Identifier lifetime = lifetimes.get(i);
 				if(i != 0) {
 					r += ",";
 				}
