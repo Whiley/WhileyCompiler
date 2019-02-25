@@ -25,6 +25,7 @@ import static wyil.lang.WyilFile.STMT_switch;
 import static wyil.lang.WyilFile.STMT_while;
 import static wyc.util.ErrorMessages.syntaxError;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -254,7 +255,8 @@ public class FlowTypeUtils {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getDeclaration() instanceof Decl.Method) {
+			Decl.Link<Decl.Callable> l = e.getLink();
+			if (l.getTarget() instanceof Decl.Method) {
 				// This expression is definitely not pure
 				return false;
 			}
@@ -336,6 +338,15 @@ public class FlowTypeUtils {
 				firstTime = false;
 				r += var.getName() + "->" + getType(var);
 			}
+			r = r + "}{";
+			firstTime = true;
+			for(Map.Entry<String, String[]> w : withins.entrySet()) {
+				if(!firstTime) {
+					r += ", ";
+				}
+				firstTime=false;
+				r = r + w.getKey() + " < " + Arrays.toString(w.getValue());
+			}
 			return r + "}";
 		}
 
@@ -355,6 +366,14 @@ public class FlowTypeUtils {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
 				outs[i] = outers.get(i).get();
+			}
+			return declareWithin(inner, outs);
+		}
+
+		public Environment declareWithin(String inner, Identifier... outers) {
+			String[] outs = new String[outers.length];
+			for (int i = 0; i != outs.length; ++i) {
+				outs[i] = outers[i].get();
 			}
 			return declareWithin(inner, outs);
 		}

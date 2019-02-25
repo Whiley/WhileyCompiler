@@ -1,6 +1,6 @@
 // test subtyping (outlives) combined with lifetime parameters
 
-method <a, b> m(&a:int x, &b:int y, &*:int z):
+method m<&a,&b>(&a:int x, &b:int y, &*:int z):
     &a:int ptr1 = x
     ptr1 = a:new 1
     assume (*ptr1) == 1

@@ -816,7 +816,7 @@ public class Interpreter {
 	}
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) {
-		Decl.StaticVariable decl = expr.getDeclaration();
+		Decl.StaticVariable decl = expr.getLink().getTarget();
 		RValue v = frame.getStatic(decl.getQualifiedName());
 		if (v == null) {
 			// NOTE: it's possible to get here without the static variable having been
@@ -1051,7 +1051,7 @@ public class Interpreter {
 
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
 		// Locate the function or method body in order to execute it
-		Decl.Callable decl = expr.getDeclaration();
+		Decl.Callable decl = expr.getLink().getTarget();
 		if(decl instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
 			// Clone frame to ensure it executes in this exact environment.
@@ -1176,7 +1176,7 @@ public class Interpreter {
 	 */
 	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) {
 		// Resolve function or method being invoked to a concrete declaration
-		Decl.Callable decl = expr.getDeclaration();
+		Decl.Callable decl = expr.getLink().getTarget();
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
@@ -1371,7 +1371,7 @@ public class Interpreter {
 			return callables.get(name).get(signature.toCanonicalString());
 		}
 
-		public CallStack enter(Decl.Named context) {
+		public CallStack enter(Decl.Named<?> context) {
 			return new CallStack(this, context);
 		}
 

@@ -155,7 +155,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && expr.isResolved() && expr.getDeclaration() instanceof Decl.Method) {
+		Decl.Link<Decl.Callable> name = expr.getLink();
+		if (context != Context.IMPURE && name.isResolved() && name.getTarget() instanceof Decl.Method) {
 			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr, context);
@@ -198,8 +199,9 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 			return true;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal n = (Type.Nominal) type;
-			if(n.isResolved()) {
-				return isMethodType(n.getDeclaration().getType());
+			Decl.Link<Decl.Type> l = n.getLink();
+			if(l.isResolved()) {
+				return isMethodType(l.getTarget().getType());
 			} else {
 				// NOTE: this is handle error recovery for situations where name resolution
 				// failed on the nominal type.

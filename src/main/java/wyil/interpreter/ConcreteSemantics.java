@@ -95,7 +95,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return False;
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal nom = (Type.Nominal) type;
-				Decl.Type decl = nom.getDeclaration();
+				Decl.Type decl = nom.getLink().getTarget();
 				Decl.Variable var = decl.getVariableDeclaration();
 				if(is(var.getType(), frame) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();

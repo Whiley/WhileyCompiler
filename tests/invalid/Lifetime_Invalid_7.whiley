@@ -1,12 +1,12 @@
 // test lifetime inference with lifetime overloading and different types
 
-method <a, b> m((&a:int)|(&b:bool) x, &a:int y, bool z) -> &b:int:
+method m<&a,&b>((&a:int)|(&b:bool) x, &a:int y, bool z) -> &b:int:
     return b:new 1
 
-method <a> m(&a:bool x, &a:int y, bool z) -> &a:int:
+method m<&a>(&a:bool x, &a:int y, bool z) -> &a:int:
     return a:new 2
 
-method <a> m(&*:int x, &a:int y, int|bool z) -> &a:int:
+method m<&a>(&*:int x, &a:int y, int|bool z) -> &a:int:
     return a:new 3
 
 public export method test():

@@ -794,6 +794,9 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type, data);
 			break;
+		case TYPE_variable:
+			visitTypeVariable((Type.Variable) type, data);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -842,7 +845,7 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeNominal(Type.Nominal type, T data) {
-
+		visitTypes(type.getParameters(), data);
 	}
 
 	public void visitTypeNull(Type.Null type, T data) {
@@ -881,6 +884,11 @@ public abstract class AbstractConsumer<T> {
 	public void visitTypeUnresolved(Type.Unknown type, T data) {
 
 	}
+
+	public void visitTypeVariable(Type.Variable type, T data) {
+
+	}
+
 
 	public void visitTypeVoid(Type.Void type, T data) {
 

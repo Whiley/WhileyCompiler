@@ -1,6 +1,6 @@
 // use lifetime arguments to disambiguate (see also Lifetime_Invalid_8)
 
-method <a, b> m((&a:int)|(&b:bool) x, (&a:int)|(&b:byte) y) -> &a:int:
+method m<&a,&b>((&a:int)|(&b:bool) x, (&a:int)|(&b:byte) y) -> &a:int:
     return a:new 1
 
 public export method test():

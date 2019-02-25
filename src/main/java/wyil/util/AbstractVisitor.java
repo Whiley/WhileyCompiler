@@ -791,6 +791,9 @@ public abstract class AbstractVisitor {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
 			break;
+		case TYPE_variable:
+			visitTypeVariable((Type.Variable) type);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -839,7 +842,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeNominal(Type.Nominal type) {
-
+		visitTypes(type.getParameters());
 	}
 
 	public void visitTypeNull(Type.Null type) {
@@ -882,6 +885,9 @@ public abstract class AbstractVisitor {
 
 	public void visitTypeVoid(Type.Void type) {
 
+	}
+
+	public void visitTypeVariable(Type.Variable type) {
 	}
 
 	public void visitSemanticType(SemanticType type) {

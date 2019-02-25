@@ -17,6 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
 
@@ -232,8 +233,9 @@ public class DefiniteUnassignmentCheck
 
 	public void visitStaticVariableAssignment(Expr.StaticVariableAccess lval, MaybeAssignedSet environment) {
 		// Check whether this declaration was resolved or not.
-		if(lval.isResolved()) {
-			Decl.StaticVariable var = lval.getDeclaration();
+		Decl.Link<Decl.StaticVariable> nl = lval.getLink();
+		if (nl.isResolved()) {
+			Decl.StaticVariable var = nl.getTarget();
 			if (isFinal(var)) {
 				syntaxError(lval, FINAL_VARIABLE_REASSIGNED);
 			}

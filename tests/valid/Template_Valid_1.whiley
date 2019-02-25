@@ -1,8 +1,5 @@
-template<T>
-type Decorator is { T data }
-
-instantiate Decorator<int> as DecInt
+type Decorator<T> is { T data }
 
 public export method test():
-    DecInt di = { data: 0 }
+    Decorator<int> di = { data: 0 }
     assert di.data == 0

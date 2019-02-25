@@ -1,4 +1,4 @@
-method <a,b> f(&a:int p, &a:int q, &b:int r) -> (&b:int s):
+method f<&a,&b>(&a:int p, &a:int q, &b:int r) -> (&b:int s):
     return r
 
 method g():
@@ -9,7 +9,7 @@ method g():
     //
     assume z == w
 
-method <l> h(&l:int p) -> (&l:int r):
+method h<&l>(&l:int p) -> (&l:int r):
     &this:int q = new 1
     // this, l
     return f(p,q,p)

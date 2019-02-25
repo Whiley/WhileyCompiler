@@ -138,7 +138,6 @@ public class AllValidTest {
 		boolean r = p.first();
 
 		System.out.print(p.second());
-
 		if (!r) {
 			fail("Test failed to compile!");
 		}

@@ -226,11 +226,20 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
-
+			//
 			return r;
 		} catch(InternalFailure e) {
-			e.printStackTrace();
-			return false;
+			SyntacticItem item = e.getElement();
+			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
+			if(e.getEntry().contentType() == WyilFile.ContentType) {
+				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+				// Determine which source file this entry is contained in
+				Path.Entry sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
+				//
+				throw new InternalFailure(e.getMessage(), sf, item, e.getCause());
+			} else {
+				throw e;
+			}
 		} catch(SyntaxError e) {
 			//
 			SyntacticItem item = e.getElement();

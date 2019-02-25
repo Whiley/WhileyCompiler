@@ -84,7 +84,8 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> im
 
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Set<QualifiedName> accessed) {
-		Decl.StaticVariable decl = expr.getDeclaration();
+		Decl.Link<Decl.StaticVariable> l = expr.getLink();
+		Decl.StaticVariable decl = l.getTarget();
 		QualifiedName name = decl.getQualifiedName();
 		if (decl.hasInitialiser() && !accessed.contains(name)) {
 			accessed.add(name);

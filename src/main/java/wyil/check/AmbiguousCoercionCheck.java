@@ -131,14 +131,6 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	}
 
 	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
-		if(expr instanceof WyilFile.Linkable) {
-			WyilFile.Linkable l = (WyilFile.Linkable) expr;
-			if(!l.isResolved()) {
-				// Abort early because cannot trust the type determined for this expression.
-				// This can arise because the flow type checker encountered a typing problem.
-				return false;
-			}
-		}
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Type source = expr.getType();
 		if (!checkCoercion(target, source, environment, assumptions, expr)) {
@@ -183,12 +175,11 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		if (target instanceof Type.Primitive) {
+		if (target instanceof Type.Primitive || target instanceof Type.Variable) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = s.getDeclaration();
-			return checkCoercion(target,decl.getType(),environment, assumptions, item);
+			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
 			for (int i = 0; i != s.size(); ++i) {
@@ -243,8 +234,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		Decl.Type decl = target.getDeclaration();
-		return checkCoercion(decl.getType(), source, environment, assumptions, item);
+		return checkCoercion(target.getConcreteType(), source, environment, assumptions, item);
 	}
 
 	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
@@ -257,8 +247,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		} else if (source instanceof Type.Nominal) {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = s.getDeclaration();
-			return checkCoercion(target,decl.getType(),environment, assumptions, item);
+			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
 		} else if (source instanceof Type.Union) {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;

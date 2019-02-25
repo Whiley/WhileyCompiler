@@ -239,12 +239,12 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		Decl.Type decl = rhs.getDeclaration();
+		Decl.Type decl = rhs.getLink().getTarget();
 		if (decl.getInvariant().size() > 0) {
 			// rhs is a constrained type, meaning we cannot subtract anything.
 			return lhs;
 		} else {
-			return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
+			return apply(lhs, rhs.getConcreteType(), lifetimes, stack);
 		}
 	}
 

@@ -1,0 +1,3 @@
+tests/invalid/Template_Invalid_22.whiley:1: use of undeclared lifetime
+function f<T>(&T:int ptr, T value) -> (bool x):
+               ^
