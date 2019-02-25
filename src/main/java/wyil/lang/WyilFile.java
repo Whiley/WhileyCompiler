@@ -144,6 +144,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_lambda = DECL_mask + 11;
 	public static final int DECL_variable = DECL_mask + 12;
 	public static final int DECL_variableinitialiser = DECL_mask + 13;
+	public static final int DECL_template = DECL_mask + 14;
 	// MODIFIERS
 	public static final int MOD_mask = DECL_mask + 32;
 	public static final int MOD_native = MOD_mask + 0;
@@ -906,6 +907,32 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4]);
+			}
+		}
+
+		/**
+		 * A template declaration is simply a decorator for a named declaration.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Template extends AbstractSyntacticItem implements Decl {
+
+			public Template(Decl.Named n, Tuple<Identifier> variables) {
+				super(DECL_template, n, variables);
+			}
+
+			public Decl.Named getBody() {
+				return (Decl.Named) operands[0];
+			}
+
+			public Tuple<Identifier> getTypeVariables() {
+				return (Tuple<Identifier>) operands[1];
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Template((Decl.Named) operands[0], (Tuple<Identifier>) operands[1]);
 			}
 		}
 
@@ -5731,6 +5758,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2],
 						(Expr) operands[3]);
+			}
+		};
+		schema[DECL_template] = new Schema(Operands.ONE, Data.ZERO, "DECL_template") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Decl.Template((Decl.Named) operands[0], (Tuple<Identifier>) operands[1]);
 			}
 		};
 		schema[MOD_native] = new Schema(Operands.ZERO, Data.ZERO, "MOD_native") {

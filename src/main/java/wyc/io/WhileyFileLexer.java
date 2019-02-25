@@ -608,6 +608,7 @@ public class WhileyFileLexer {
 			put("function", Token.Kind.Function);
 			put("method", Token.Kind.Method);
 			put("property", Token.Kind.Property);
+			put("template", Token.Kind.Template);
 			// modifiers
 			put("public", Token.Kind.Public);
 			put("private", Token.Kind.Private);
@@ -682,6 +683,7 @@ public class WhileyFileLexer {
 			Function("function"),
 			Method("method"),
 			Property("property"),
+			Template("template"),
 			// Lifetimes
 			This("this"),
 			// Expressions

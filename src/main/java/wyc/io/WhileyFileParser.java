@@ -76,26 +76,9 @@ public class WhileyFileParser {
 		skipWhiteSpace();
 		while (index < tokens.size()) {
 			Decl declaration;
-			Token lookahead = tokens.get(index);
-			if (lookahead.kind == Import) {
-				declaration = parseImportDeclaration();
-			} else {
-				Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final);
-				checkNotEof();
-				lookahead = tokens.get(index);
-				if (lookahead.text.equals("type")) {
-					declaration = parseTypeDeclaration(modifiers);
-				} else if (lookahead.kind == Function) {
-					declaration = parseFunctionOrMethodDeclaration(modifiers, true);
-				} else if (lookahead.kind == Method) {
-					declaration = parseFunctionOrMethodDeclaration(modifiers, false);
-				} else if (lookahead.kind == Property) {
-					declaration = parsePropertyDeclaration(modifiers);
-				} else {
-					// Fall back
-					declaration = parseStaticVariableDeclaration(modifiers);
-				}
-			}
+
+			declaration = parseDeclaration();
+
 			declarations.add(declaration);
 			skipWhiteSpace();
 		}
@@ -122,6 +105,41 @@ public class WhileyFileParser {
 		// FIXME: this is so completely broken
 		bits[bits.length - 1] = new Identifier(entry.id().last());
 		return new Name(bits);
+	}
+
+	private Decl parseDeclaration() {
+		Token lookahead = tokens.get(index);
+		if (lookahead.kind == Import) {
+			return parseImportDeclaration();
+		} else if (lookahead.kind == Template) {
+			Token t = match(Template);
+			Tuple<Identifier> typeVariables = parseTypeVariables();
+			Decl.Named d = parseNamedDeclaration(t, typeVariables);
+			return new Decl.Template(d, typeVariables);
+		} else {
+			return parseNamedDeclaration(null, new Tuple<>());
+		}
+	}
+
+	private Decl.Named parseNamedDeclaration(Token template, Tuple<Identifier> typeVariables) {
+		Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final);
+		checkNotEof();
+		Token lookahead = tokens.get(index);
+		if (lookahead.text.equals("type")) {
+			return parseTypeDeclaration(modifiers, typeVariables);
+		} else if (lookahead.kind == Function) {
+			return parseFunctionOrMethodDeclaration(modifiers, true, typeVariables);
+		} else if (lookahead.kind == Method) {
+			return parseFunctionOrMethodDeclaration(modifiers, false, typeVariables);
+		} else if (lookahead.kind == Property) {
+			return parsePropertyDeclaration(modifiers, typeVariables);
+		} else if(typeVariables.size() == 0) {
+			// Fall back
+			return parseStaticVariableDeclaration(modifiers);
+		} else {
+			syntaxError("cannot template static variable declaration",template);
+			return null;
+		}
 	}
 
 	/**
@@ -185,6 +203,18 @@ public class WhileyFileParser {
 		} else {
 			return parseIdentifier();
 		}
+	}
+
+	private Tuple<Identifier> parseTypeVariables() {
+		ArrayList<Identifier> vars = new ArrayList<>();
+		match(LeftAngle);
+		while (eventuallyMatch(RightAngle) == null) {
+			if (!vars.isEmpty()) {
+				match(Comma);
+			}
+			vars.add(parseIdentifier());
+		}
+		return new Tuple<>(vars);
 	}
 
 	private Tuple<Modifier> parseModifiers(Token.Kind... kinds) {
@@ -275,7 +305,8 @@ public class WhileyFileParser {
 	 * any exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private Decl parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers, boolean isFunction) {
+	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers, boolean isFunction,
+			Tuple<Identifier> typeVariables) {
 		int start = index;
 
 		EnclosingScope scope = new EnclosingScope();
@@ -324,7 +355,7 @@ public class WhileyFileParser {
 			body = new Stmt.Block();
 		}
 		//
-		WyilFile.Decl declaration;
+		WyilFile.Decl.FunctionOrMethod declaration;
 		if (isFunction) {
 			declaration = new Decl.Function(modifiers, name, parameters, returns, requires, ensures, body);
 		} else {
@@ -343,7 +374,8 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 */
-	private Decl.Property parsePropertyDeclaration(Tuple<Modifier> modifiers) {
+	private Decl.Property parsePropertyDeclaration(Tuple<Modifier> modifiers,
+			Tuple<Identifier> typeVariables) {
 		EnclosingScope scope = new EnclosingScope();
 		int start = index;
 		match(Property);
@@ -448,7 +480,7 @@ public class WhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	public Decl.Type parseTypeDeclaration(Tuple<Modifier> modifiers) {
+	public Decl.Type parseTypeDeclaration(Tuple<Modifier> modifiers, Tuple<Identifier> typeVariables) {
 		int start = index;
 		match(Identifier); // type
 		EnclosingScope scope = new EnclosingScope();
@@ -525,6 +557,7 @@ public class WhileyFileParser {
 	 *            already parsed before this method was called).
 	 */
 	private Decl.StaticVariable parseStaticVariableDeclaration(Tuple<Modifier> modifiers) {
+		//
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		//
