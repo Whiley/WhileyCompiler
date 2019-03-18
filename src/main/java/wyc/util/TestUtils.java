@@ -23,6 +23,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
@@ -198,18 +200,21 @@ public class TestUtils {
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,graph,arg);
 			Path.Entry<WhileyFile> source = p.first();
-			Path.Entry<?> target = p.second();
+			Path.Entry<WyilFile> target = p.second();
 			// Build the project
 			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
 			sources.add(source);
 			project.build(sources, graph);
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
+			// Check whether any syntax error produced
+			result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// Print out any error messages
 			wycc.commands.Build.printSyntacticMarkers(psyserr, sources, target);
 		} catch (SyntaxError e) {
 			// Print out the syntax error
 			e.outputSourceError(psyserr,false);
+//			e.printStackTrace(psyserr);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error
@@ -223,6 +228,36 @@ public class TestUtils {
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
 		return new Pair<>(result, output);
+	}
+
+	/**
+	 * Following method is something of a kludge as no easy way at the moment to
+	 * tell when a build has failed.
+	 *
+	 * @param item
+	 * @param items
+	 * @param visited
+	 * @return
+	 */
+	private static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if(!visited.get(index)) {
+			visited.set(index);
+			// Check whether this item has a marker associated with it.
+			if (item instanceof WyilFile.SyntaxError) {
+				// At least one marked associated with item.
+				return true;
+			}
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				if(findSyntaxErrors(item.get(i), visited)) {
+					return true;
+				}
+			}
+		}
+		//
+		return false;
 	}
 
 	/**

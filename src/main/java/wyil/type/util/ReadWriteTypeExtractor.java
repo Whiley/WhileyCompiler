@@ -27,6 +27,8 @@ import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
 import java.util.Arrays;
+import java.util.HashMap;
+
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -98,7 +100,6 @@ public class ReadWriteTypeExtractor {
 	}
 
 	public <T extends SemanticType.Atom> T apply(SemanticType type, LifetimeRelation lifetimes, Combinator<T> kind) {
-		//
 		// First, convert type into conjunctive normal form. This allows all atom
 		// combinations to be tried and potentially reduced to void which, in turn,
 		// allows further simplifications.
@@ -169,8 +170,7 @@ public class ReadWriteTypeExtractor {
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Nominal nominal) {
-		Decl.Type decl = nominal.getDeclaration();
-		return toDisjunctiveNormalForm(decl.getVariableDeclaration().getType());
+		return toDisjunctiveNormalForm(nominal.getConcreteType());
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(SemanticType.Record type) {

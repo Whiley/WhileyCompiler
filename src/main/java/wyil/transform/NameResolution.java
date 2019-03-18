@@ -182,7 +182,7 @@ public class NameResolution {
 		public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
 			super.visitLambdaAccess(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
+			QualifiedName name = resolveAs(expr.getLink(), imports);
 			// Sanity check result
 			if(name != null) {
 				// Create patch
@@ -194,7 +194,7 @@ public class NameResolution {
 		public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
 			super.visitStaticVariableAccess(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
+			QualifiedName name = resolveAs(expr.getLink(), imports);
 			// Sanity check result
 			if(name != null) {
 				// Create patch
@@ -206,7 +206,7 @@ public class NameResolution {
 		public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
 			super.visitInvoke(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
+			QualifiedName name = resolveAs(expr.getLink(), imports);
 			// Sanity check result
 			if(name != null) {
 				// Create patch
@@ -218,7 +218,7 @@ public class NameResolution {
 		public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
 			super.visitTypeNominal(type, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(type.getName(), imports);
+			QualifiedName name = resolveAs(type.getLink(), imports);
 			// Sanity check result
 			if(name != null) {
 				// Create patch
@@ -239,7 +239,8 @@ public class NameResolution {
 		 *            The enclosing declaration in which this name is contained.
 		 * @return
 		 */
-		private QualifiedName resolveAs(Name name, List<Decl.Import> imports) {
+		private QualifiedName resolveAs(Decl.Link<?> link, List<Decl.Import> imports) {
+			Name name = link.getName();
 			// Resolve unqualified name to qualified name
 			switch (name.size()) {
 			case 1:
@@ -380,7 +381,7 @@ public class NameResolution {
 				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
 				Decl.StaticVariable d = select(name, Decl.StaticVariable.class);
 				if(d != null) {
-					e.setDeclaration(d);
+					e.getLink().resolve(d);
 				}
 				break;
 			}
@@ -388,7 +389,7 @@ public class NameResolution {
 				Expr.Invoke e = (Expr.Invoke) target;
 				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
 				if(resolved != null) {
-					e.setDeclarations(resolved);
+					e.getLink().resolve(resolved);
 				}
 				break;
 			}
@@ -396,7 +397,7 @@ public class NameResolution {
 				Expr.LambdaAccess e = (Expr.LambdaAccess) target;
 				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
 				if(resolved != null) {
-					e.setDeclarations(filterParameters(e.getParameterTypes().size(), resolved));
+					e.getLink().resolve(filterParameters(e.getParameterTypes().size(), resolved));
 				}
 				break;
 			}
@@ -404,8 +405,14 @@ public class NameResolution {
 			case TYPE_nominal: {
 				Type.Nominal e = (Type.Nominal) target;
 				Decl.Type d = select(name, Decl.Type.class);
-				if(d != null) {
-					e.setDeclaration(d);
+				if(d != null && e.getParameters().size() != d.getTemplate().size()) {
+					if(e.getParameters().size() > d.getTemplate().size()) {
+						syntaxError(e.getLink().getName(), TOOMANY_TEMPLATE_PARAMETERS);
+					} else {
+						syntaxError(e.getLink().getName(), MISSING_TEMPLATE_PARAMETERS);
+					}
+				} else if(d != null){
+					e.getLink().resolve(d);
 				}
 				break;
 			}
@@ -428,7 +435,9 @@ public class NameResolution {
 			Identifier id = name.getName();
 			for (int i = 0; i != declarations.size(); ++i) {
 				Decl.Named d = declarations.get(i);
+				//
 				if (kind.isInstance(d)) {
+					// Found direct instance
 					return (T) d;
 				}
 			}
@@ -557,10 +566,11 @@ public class NameResolution {
 			case EXPR_invoke:
 			case EXPR_lambdaaccess:
 			case TYPE_nominal: {
-				Linkable l = (Linkable) item;
+				Linkable linkable = (Linkable) item;
+				Decl.Link<? extends Decl.Named> link = linkable.getLink();
 				item = super.allocate(item);
 				// Register patch
-				patches.add(new Patch(l.getDeclaration().getQualifiedName(), item));
+				patches.add(new Patch(link.getTarget().getQualifiedName(), item));
 				// Done
 				return item;
 			}
@@ -589,13 +599,13 @@ public class NameResolution {
 			} else if (fm instanceof Decl.Function) {
 				// Create function stub
 				Decl.Function f = (Decl.Function) fm;
-				item = new Decl.Function(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(),
+				item = new Decl.Function(f.getModifiers(), f.getName(), f.getTemplate(), f.getParameters(), f.getReturns(),
 						f.getRequires(), f.getEnsures(), new Stmt.Block());
 			} else {
 				// Create method stub
 				Decl.Method m = (Decl.Method) fm;
-				item = new Decl.Method(m.getModifiers(), m.getName(), m.getParameters(), m.getReturns(),
-						m.getRequires(), m.getEnsures(), new Stmt.Block(), m.getLifetimes());
+				item = new Decl.Method(m.getModifiers(), m.getName(), m.getTemplate(), m.getParameters(),
+						m.getReturns(), m.getRequires(), m.getEnsures(), new Stmt.Block());
 			}
 			// Allocate new item using underlying allocator. This will recursively allocate
 			// child nodes.

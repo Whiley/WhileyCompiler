@@ -1,9 +1,9 @@
 // test lifetime inference without overloading
 
-method <a, b> m1(&a:int x, &a:int y, &b:int z) -> &a:int:
+method m1<&a,&b>(&a:int x, &a:int y, &b:int z) -> &a:int:
     return new 3
 
-method <a, b> m2(&a:int x, &b:int y, &b:int z) -> &b:int:
+method m2<&a,&b>(&a:int x, &b:int y, &b:int z) -> &b:int:
     return new 4
 
 public export method test():

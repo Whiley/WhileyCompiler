@@ -16,6 +16,7 @@ package wyc.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntacticItem;
@@ -23,6 +24,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -104,14 +106,15 @@ public class ErrorMessages {
 		@Override
 		public String getMessage(Tuple<SyntacticItem> context) {
 			String msg = "unable to resolve name (is ambiguous)";
-			return msg + foundCandidatesString((Tuple<Decl.Callable>) context.get(0));
+			return msg + foundCandidatesString((Tuple) context);
 		}
 	};
 	// ========================================================================
 	// Name Resolution
 	// ========================================================================
 	public static final StaticMessage RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
-
+	public static final StaticMessage MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
+	public static final StaticMessage TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
 	// ========================================================================
 	// Type Checking
 	// ========================================================================
@@ -202,6 +205,8 @@ public class ErrorMessages {
 			INVALID_FIELD,     // 406
 			RESOLUTION_ERROR,   // 407
 			AMBIGUOUS_COERCION,   // 408
+			MISSING_TEMPLATE_PARAMETERS,   // 409
+			TOOMANY_TEMPLATE_PARAMETERS,   // 409
 		},
 		{
 			MISSING_RETURN_STATEMENT, // 500;
@@ -274,7 +279,7 @@ public class ErrorMessages {
 		return msg.toString();
 	}
 
-	private static String candidateString(Decl.Callable decl, Map<Identifier, Identifier> binding) {
+	private static String candidateString(Decl.Callable decl, Map<Identifier, SyntacticItem> binding) {
 		String r;
 		if (decl instanceof Decl.Method) {
 			r = "method ";
@@ -302,15 +307,15 @@ public class ErrorMessages {
 //		return msg.toString();
 //	}
 
-	private static String bindingString(Decl.Callable decl, Map<Identifier,Identifier> binding) {
-		if(binding != null && decl instanceof Decl.Method) {
+	private static String bindingString(Decl.Callable decl, Map<Identifier, SyntacticItem> binding) {
+		if (binding != null && decl instanceof Decl.Method) {
 			Decl.Method method = (Decl.Method) decl;
 			String r = "<";
 
-			Tuple<Identifier> lifetimes = method.getLifetimes();
-			for(int i=0;i!=lifetimes.size();++i) {
-				Identifier lifetime = lifetimes.get(i);
-				if(i != 0) {
+			Tuple<Template.Variable> template = method.getTemplate();
+			for (int i = 0; i != template.size(); ++i) {
+				Identifier lifetime = template.get(i).getName();
+				if (i != 0) {
 					r += ",";
 				}
 				r = r + lifetime + "=" + binding.get(lifetime);

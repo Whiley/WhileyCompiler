@@ -2,7 +2,7 @@
 
 type mymethod is method<a>(&*:mymethod)->(&a:mymethod)
 
-method <a> m (&*:mymethod x) -> &a:mymethod:
+method m<&a>(&*:mymethod x) -> &a:mymethod:
     return a:new &m
 
 public export method test():

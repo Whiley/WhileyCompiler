@@ -197,7 +197,8 @@ public class SubtypeOperator {
 		default:
 		case TYPE_nominal: {
 			Type.Nominal n = (Type.Nominal) type;
-			Decl.Type decl = n.getDeclaration();
+			Decl.Link<Decl.Type> link = n.getLink();
+			Decl.Type decl = link.getTarget();
 			QualifiedName nid = decl.getQualifiedName();
 			if (nid.equals(name)) {
 				// We have identified a non-contract type.

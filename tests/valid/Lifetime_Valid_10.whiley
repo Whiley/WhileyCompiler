@@ -1,6 +1,6 @@
 // test that substitution does not accidentaly substitute already substituted values
 
-method <a, b> m(&a:int x, &b:int y) -> &a:int:
+method m<&a,&b>(&a:int x, &b:int y) -> &a:int:
     return x
 
 public export method test():

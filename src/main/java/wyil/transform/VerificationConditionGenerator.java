@@ -1264,7 +1264,7 @@ public class VerificationConditionGenerator {
 
 	private Context assumeInvokePostconditions(WyilFile.Expr.Invoke expr, Context context) throws Exception {
 		//
-		WyilFile.Decl.Callable fmp = expr.getDeclaration();
+		WyilFile.Decl.Callable fmp = expr.getLink().getTarget();
 		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
 			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
 			int numPostconditions = fm.getEnsures().size();
@@ -1481,8 +1481,9 @@ public class VerificationConditionGenerator {
 
 	public Expr translateInvoke(WyilFile.Expr.Invoke expr, Integer selector, LocalEnvironment environment) {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
+		Decl.Link<Decl.Callable> link = expr.getLink();
 		// FIXME: name needs proper path information
-		return new Expr.Invoke(null, expr.getDeclaration().getQualifiedName().toName(), selector, operands);
+		return new Expr.Invoke(null, link.getTarget().getQualifiedName().toName(), selector, operands);
 	}
 
 	private Expr translateLambda(WyilFile.Decl.Lambda expr, LocalEnvironment environment) {
@@ -1701,7 +1702,7 @@ public class VerificationConditionGenerator {
 	private Expr translateStaticVariableAccess(WyilFile.Expr.StaticVariableAccess expr, LocalEnvironment environment) {
 		// FIXME: yes, this is a hack to temporarily handle the transition from
 		// constants to static variables.
-		WyilFile.Decl.StaticVariable decl = expr.getDeclaration();
+		WyilFile.Decl.StaticVariable decl = expr.getLink().getTarget();
 		;
 		return translateExpression(decl.getInitialiser(), null, environment);
 	}
@@ -2401,8 +2402,10 @@ public class VerificationConditionGenerator {
 			return new WyalFile.Type.Function(parameters, returns);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			QualifiedName nid = nt.getDeclaration().getQualifiedName();
+			QualifiedName nid = nt.getLink().getTarget().getQualifiedName();
 			result = new WyalFile.Type.Nominal(convert(nid, type));
+		} else if (type instanceof Type.Variable) {
+			result = new WyalFile.Type.Any();
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
 					((WyilFile) type.getHeap()).getEntry(), context);
@@ -2470,8 +2473,11 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			// HACK
 			return true;
+		} else if (type instanceof Type.Variable) {
+			// FIXME: unsure what the right solution is here?
+			return true;
 		} else {
-			throw new RuntimeException("Unknown type encountered");
+			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
 	}
 

@@ -65,8 +65,7 @@ public class AbstractTypeFilter<T extends Type> {
 			results.add(any);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) type;
-			Decl.Type decl = t.getDeclaration();
-			filter(decl.getType(), results);
+			filter(t.getConcreteType(), results);
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
 			for (int i = 0; i != t.size(); ++i) {

@@ -87,6 +87,7 @@ public class AllInvalidTest {
 		// Problems with counterexample generation?
 		IGNORED.put("DoWhile_Invalid_6", "??");
 		IGNORED.put("DoWhile_Invalid_8", "??");
+		IGNORED.put("While_Invalid_18", "??");
 		IGNORED.put("While_Invalid_20", "??");
 		IGNORED.put("While_Invalid_21", "??");
 		IGNORED.put("While_Invalid_22", "??");
@@ -141,11 +142,11 @@ public class AllInvalidTest {
 				+ ".sysout";
 
 		//			Following used when sample output changed.
-		//			try {
-		//				FileWriter fw = new FileWriter(sampleOutputFile);
-		//				fw.write(output);
-		//				fw.close();
-		//			} catch(Exception e) {}
+//					try {
+//						FileWriter fw = new FileWriter(sampleOutputFile);
+//						fw.write(output);
+//						fw.close();
+//					} catch(Exception e) {}
 
 		// Third, compare the output!
 		if(!TestUtils.compare(output,sampleOutputFile)) {

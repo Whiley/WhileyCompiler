@@ -1,6 +1,6 @@
 // test subtyping (outlives) for method parameters and return types
 
-method <a> m(&a:int x, &a:int y) -> &*:int:
+method m<&a>(&a:int x, &a:int y) -> &*:int:
     return new 3
 
 public export method test():

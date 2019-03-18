@@ -1,4 +1,4 @@
-method <a> swap(&a:int p, &a:int q):
+method swap<&a>(&a:int p, &a:int q):
     int tmp = *p
     *p = *q
     *q = tmp
