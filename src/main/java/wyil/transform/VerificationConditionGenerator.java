@@ -13,21 +13,15 @@
 // limitations under the License.
 package wyil.transform;
 
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
-import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.Attribute;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
-import wybs.util.AbstractCompilationUnit;
+import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Name;
 import wycc.util.Pair;
-import wycc.util.ArrayUtils;
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Declaration;
 import wyal.lang.WyalFile.Expr;
@@ -35,13 +29,11 @@ import wyal.lang.WyalFile.Expr;
 import static wyal.lang.WyalFile.Value;
 import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
-import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
 import wyc.lang.WhileyFile;
-import wyc.task.Wyil2WyalBuilder;
 
 /**
  * <p>
@@ -1272,7 +1264,7 @@ public class VerificationConditionGenerator {
 
 	private Context assumeInvokePostconditions(WyilFile.Expr.Invoke expr, Context context) throws Exception {
 		//
-		WyilFile.Decl.Callable fmp = expr.getDeclaration();
+		WyilFile.Decl.Callable fmp = expr.getLink().getTarget();
 		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
 			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
 			int numPostconditions = fm.getEnsures().size();
@@ -1489,8 +1481,9 @@ public class VerificationConditionGenerator {
 
 	public Expr translateInvoke(WyilFile.Expr.Invoke expr, Integer selector, LocalEnvironment environment) {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
+		Decl.Link<Decl.Callable> link = expr.getLink();
 		// FIXME: name needs proper path information
-		return new Expr.Invoke(null, expr.getDeclaration().getQualifiedName().toName(), selector, operands);
+		return new Expr.Invoke(null, link.getTarget().getQualifiedName().toName(), selector, operands);
 	}
 
 	private Expr translateLambda(WyilFile.Decl.Lambda expr, LocalEnvironment environment) {
@@ -1709,7 +1702,7 @@ public class VerificationConditionGenerator {
 	private Expr translateStaticVariableAccess(WyilFile.Expr.StaticVariableAccess expr, LocalEnvironment environment) {
 		// FIXME: yes, this is a hack to temporarily handle the transition from
 		// constants to static variables.
-		WyilFile.Decl.StaticVariable decl = expr.getDeclaration();
+		WyilFile.Decl.StaticVariable decl = expr.getLink().getTarget();
 		;
 		return translateExpression(decl.getInitialiser(), null, environment);
 	}
@@ -2409,8 +2402,10 @@ public class VerificationConditionGenerator {
 			return new WyalFile.Type.Function(parameters, returns);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			QualifiedName nid = nt.getDeclaration().getQualifiedName();
+			QualifiedName nid = nt.getLink().getTarget().getQualifiedName();
 			result = new WyalFile.Type.Nominal(convert(nid, type));
+		} else if (type instanceof Type.Variable) {
+			result = new WyalFile.Type.Any();
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
 					((WyilFile) type.getHeap()).getEntry(), context);
@@ -2478,8 +2473,11 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			// HACK
 			return true;
+		} else if (type instanceof Type.Variable) {
+			// FIXME: unsure what the right solution is here?
+			return true;
 		} else {
-			throw new RuntimeException("Unknown type encountered");
+			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
 	}
 
@@ -2577,21 +2575,14 @@ public class VerificationConditionGenerator {
 		if (item.getHeap() != null) {
 			span = item.getParent(WyilFile.Attribute.Span.class);
 		}
-		if (span == null) {
-			Attribute.Source source = item.attribute(Attribute.Source.class);
-			if (source != null) {
-				span = new WyilFile.Attribute.Span(null, source.start, source.end);
-			}
-		}
 		return span;
 	}
 
 	private <T extends SyntacticItem> T allocate(T item, WyilFile.Attribute.Span span) {
 		item = wyalFile.allocate(item);
 		if (span != null) {
-			int start = span.getStart().get().intValue();
-			int end = span.getEnd().get().intValue();
-			item.attributes().add(new Attribute.Source(start, end, 0));
+			// Copy over any spans assocaited with this syntactic item
+			wyalFile.allocate(new Attribute.Span(item, span.getStart(), span.getEnd()));
 		}
 		return item;
 	}
@@ -2705,7 +2696,7 @@ public class VerificationConditionGenerator {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class VerificationCondition extends SyntacticElement.Impl {
+	public static class VerificationCondition {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;

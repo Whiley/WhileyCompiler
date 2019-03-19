@@ -28,6 +28,7 @@ import static wyil.lang.WyilFile.Modifier;
 import static wyil.lang.WyilFile.Name;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -127,7 +128,12 @@ public class SymbolTable {
 	 * @return
 	 */
 	public List<Decl.Named> getRegisteredDeclarations(QualifiedName name) {
-		return symbolTable.get(name.getUnit()).getRegisteredDeclarations(name.getName());
+		Group g = symbolTable.get(name.getUnit());
+		if (g != null) {
+			return g.getRegisteredDeclarations(name.getName());
+		} else {
+			return Collections.EMPTY_LIST;
+		}
 	}
 
 	/**
@@ -137,7 +143,12 @@ public class SymbolTable {
 	 * @return
 	 */
 	public List<Decl.Named> getAvailableDeclarations(QualifiedName name) {
-		return symbolTable.get(name.getUnit()).getAvailableDeclarations(name.getName());
+		Group g = symbolTable.get(name.getUnit());
+		if (g != null) {
+			return g.getAvailableDeclarations(name.getName());
+		} else {
+			return Collections.EMPTY_LIST;
+		}
 	}
 
 	/**

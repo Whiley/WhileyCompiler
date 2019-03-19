@@ -17,7 +17,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 
-import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 
@@ -816,7 +816,7 @@ public class Interpreter {
 	}
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) {
-		Decl.StaticVariable decl = expr.getDeclaration();
+		Decl.StaticVariable decl = expr.getLink().getTarget();
 		RValue v = frame.getStatic(decl.getQualifiedName());
 		if (v == null) {
 			// NOTE: it's possible to get here without the static variable having been
@@ -1051,7 +1051,7 @@ public class Interpreter {
 
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
 		// Locate the function or method body in order to execute it
-		Decl.Callable decl = expr.getDeclaration();
+		Decl.Callable decl = expr.getLink().getTarget();
 		if(decl instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
 			// Clone frame to ensure it executes in this exact environment.
@@ -1176,7 +1176,7 @@ public class Interpreter {
 	 */
 	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) {
 		// Resolve function or method being invoked to a concrete declaration
-		Decl.Callable decl = expr.getDeclaration();
+		Decl.Callable decl = expr.getLink().getTarget();
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
@@ -1276,7 +1276,7 @@ public class Interpreter {
 	 *            --- Types to be checked against
 	 */
 	@SafeVarargs
-	public static <T extends RValue> T checkType(RValue operand, SyntacticElement context, Class<T>... types) {
+	public static <T extends RValue> T checkType(RValue operand, SyntacticItem context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
 			if (types[i].isInstance(operand)) {
@@ -1303,7 +1303,7 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	public static Object error(String msg, SyntacticElement context) {
+	public static Object error(String msg, SyntacticItem context) {
 		// FIXME: do more here
 		throw new RuntimeException(msg);
 	}
@@ -1315,7 +1315,7 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	private <T> T deadCode(SyntacticElement element) {
+	private <T> T deadCode(SyntacticItem element) {
 		// FIXME: do more here
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
@@ -1371,7 +1371,7 @@ public class Interpreter {
 			return callables.get(name).get(signature.toCanonicalString());
 		}
 
-		public CallStack enter(Decl.Named context) {
+		public CallStack enter(Decl.Named<?> context) {
 			return new CallStack(this, context);
 		}
 

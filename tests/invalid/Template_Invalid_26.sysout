@@ -1,0 +1,3 @@
+tests/invalid/Template_Invalid_26.whiley:1: use of undeclared lifetime
+method equals<a>(&a:int x, &a:int y) -> bool:
+                  ^

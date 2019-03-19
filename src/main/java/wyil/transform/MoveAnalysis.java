@@ -17,6 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Stmt;
@@ -65,7 +66,7 @@ import wyil.util.AbstractConsumer;
  * @author David J. Pearce
  *
  */
-public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Stage<WyilFile> {
+public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.Transform {
 
 	@Override
 	public void apply(WyilFile module) {
@@ -90,6 +91,13 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Build.Sta
 
 	@Override
 	public void visitVariable(Decl.Variable stmt, Boolean consumed) {
+		if (stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), true);
+		}
+	}
+
+	@Override
+	public void visitStaticVariable(Decl.StaticVariable stmt, Boolean consumed) {
 		if (stmt.hasInitialiser()) {
 			visitExpression(stmt.getInitialiser(), true);
 		}

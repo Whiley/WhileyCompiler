@@ -14,37 +14,24 @@
 package wyil.transform;
 
 import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticHeap.Allocator;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractSyntacticHeap;
-import wybs.lang.SyntaxError;
 
 import wyc.util.ErrorMessages;
-import wycc.cfg.Configuration;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 
-import static wyc.util.ErrorMessages.*;
 import wyil.lang.WyilFile;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -97,6 +84,8 @@ public class NameResolution {
 
 	private final Build.Project project;
 
+	private boolean status = true;
+
 	public NameResolution(Build.Project project, WyilFile target) throws IOException {
 		this.project = project;
 		this.target = target;
@@ -109,7 +98,7 @@ public class NameResolution {
 	 *
 	 * @param wf
 	 */
-	public void apply() {
+	public boolean apply() {
 		// FIXME: need to make this incremental
 		// Create initial set of patches.
 		List<Patch> patches = resolver.apply(target);
@@ -127,6 +116,8 @@ public class NameResolution {
 		}
 		// Consolidate any imported declarations as externals.
 		symbolTable.consolidate();
+		//
+		return status;
 	}
 
 	/**
@@ -191,36 +182,48 @@ public class NameResolution {
 		public void visitLambdaAccess(Expr.LambdaAccess expr, List<Decl.Import> imports) {
 			super.visitLambdaAccess(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
-			// Create patch
-			patches.add(new Patch(name, expr));
+			QualifiedName name = resolveAs(expr.getLink(), imports);
+			// Sanity check result
+			if(name != null) {
+				// Create patch
+				patches.add(new Patch(name, expr));
+			}
 		}
 
 		@Override
 		public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, List<Decl.Import> imports) {
 			super.visitStaticVariableAccess(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
-			// Create patch
-			patches.add(new Patch(name, expr));
+			QualifiedName name = resolveAs(expr.getLink(), imports);
+			// Sanity check result
+			if(name != null) {
+				// Create patch
+				patches.add(new Patch(name, expr));
+			}
 		}
 
 		@Override
 		public void visitInvoke(Expr.Invoke expr, List<Decl.Import> imports) {
 			super.visitInvoke(expr, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(expr.getName(), imports);
-			// Create patch
-			patches.add(new Patch(name, expr));
+			QualifiedName name = resolveAs(expr.getLink(), imports);
+			// Sanity check result
+			if(name != null) {
+				// Create patch
+				patches.add(new Patch(name, expr));
+			}
 		}
 
 		@Override
 		public void visitTypeNominal(Type.Nominal type, List<Decl.Import> imports) {
 			super.visitTypeNominal(type, imports);
 			// Resolve to qualified name
-			QualifiedName name = resolveAs(type.getName(), imports);
-			// Create patch
-			patches.add(new Patch(name, type));
+			QualifiedName name = resolveAs(type.getLink(), imports);
+			// Sanity check result
+			if(name != null) {
+				// Create patch
+				patches.add(new Patch(name, type));
+			}
 		}
 
 		/**
@@ -236,7 +239,8 @@ public class NameResolution {
 		 *            The enclosing declaration in which this name is contained.
 		 * @return
 		 */
-		private QualifiedName resolveAs(Name name, List<Decl.Import> imports) {
+		private QualifiedName resolveAs(Decl.Link<?> link, List<Decl.Import> imports) {
+			Name name = link.getName();
 			// Resolve unqualified name to qualified name
 			switch (name.size()) {
 			case 1:
@@ -277,7 +281,8 @@ public class NameResolution {
 					}
 				}
 				// No dice.
-				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+				syntaxError(name, RESOLUTION_ERROR);
+				return null;
 			}
 		}
 
@@ -312,7 +317,8 @@ public class NameResolution {
 					}
 				}
 				// No dice.
-				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.toString()), name);
+				syntaxError(name, RESOLUTION_ERROR);
+				return null;
 			}
 		}
 	}
@@ -329,6 +335,9 @@ public class NameResolution {
 		private final SyntacticItem target;
 
 		public Patch(QualifiedName name, SyntacticItem target) {
+			if(name == null || target == null) {
+				throw new IllegalArgumentException("name cannot be null");
+			}
 			this.name = name;
 			this.target = target;
 		}
@@ -370,26 +379,41 @@ public class NameResolution {
 			switch (target.getOpcode()) {
 			case EXPR_staticvariable: {
 				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
-				e.setDeclaration(select(name, Decl.StaticVariable.class));
+				Decl.StaticVariable d = select(name, Decl.StaticVariable.class);
+				if(d != null) {
+					e.getLink().resolve(d);
+				}
 				break;
 			}
 			case EXPR_invoke: {
 				Expr.Invoke e = (Expr.Invoke) target;
 				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
-				e.setDeclarations(resolved);
-				//e.setDeclarations(filterParameters(e.getOperands().size(), resolved));
+				if(resolved != null) {
+					e.getLink().resolve(resolved);
+				}
 				break;
 			}
 			case EXPR_lambdaaccess: {
 				Expr.LambdaAccess e = (Expr.LambdaAccess) target;
 				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
-				e.setDeclarations(filterParameters(e.getParameterTypes().size(), resolved));
+				if(resolved != null) {
+					e.getLink().resolve(filterParameters(e.getParameterTypes().size(), resolved));
+				}
 				break;
 			}
 			default:
 			case TYPE_nominal: {
 				Type.Nominal e = (Type.Nominal) target;
-				e.setDeclaration(select(name, Decl.Type.class));
+				Decl.Type d = select(name, Decl.Type.class);
+				if(d != null && e.getParameters().size() != d.getTemplate().size()) {
+					if(e.getParameters().size() > d.getTemplate().size()) {
+						syntaxError(e.getLink().getName(), TOOMANY_TEMPLATE_PARAMETERS);
+					} else {
+						syntaxError(e.getLink().getName(), MISSING_TEMPLATE_PARAMETERS);
+					}
+				} else if(d != null){
+					e.getLink().resolve(d);
+				}
 				break;
 			}
 			}
@@ -411,11 +435,14 @@ public class NameResolution {
 			Identifier id = name.getName();
 			for (int i = 0; i != declarations.size(); ++i) {
 				Decl.Named d = declarations.get(i);
+				//
 				if (kind.isInstance(d)) {
+					// Found direct instance
 					return (T) d;
 				}
 			}
-			return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
+			syntaxError(id, RESOLUTION_ERROR);
+			return null;
 		}
 
 		/**
@@ -452,7 +479,8 @@ public class NameResolution {
 			}
 			// Check for resolution error
 			if (matches.length == 0) {
-				return syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, id.toString()), id);
+				syntaxError(id, RESOLUTION_ERROR);
+				return null;
 			} else {
 				return matches;
 			}
@@ -538,10 +566,11 @@ public class NameResolution {
 			case EXPR_invoke:
 			case EXPR_lambdaaccess:
 			case TYPE_nominal: {
-				Linkable l = (Linkable) item;
+				Linkable linkable = (Linkable) item;
+				Decl.Link<? extends Decl.Named> link = linkable.getLink();
 				item = super.allocate(item);
 				// Register patch
-				patches.add(new Patch(l.getDeclaration().getQualifiedName(), item));
+				patches.add(new Patch(link.getTarget().getQualifiedName(), item));
 				// Done
 				return item;
 			}
@@ -570,13 +599,13 @@ public class NameResolution {
 			} else if (fm instanceof Decl.Function) {
 				// Create function stub
 				Decl.Function f = (Decl.Function) fm;
-				item = new Decl.Function(f.getModifiers(), f.getName(), f.getParameters(), f.getReturns(),
+				item = new Decl.Function(f.getModifiers(), f.getName(), f.getTemplate(), f.getParameters(), f.getReturns(),
 						f.getRequires(), f.getEnsures(), new Stmt.Block());
 			} else {
 				// Create method stub
 				Decl.Method m = (Decl.Method) fm;
-				item = new Decl.Method(m.getModifiers(), m.getName(), m.getParameters(), m.getReturns(),
-						m.getRequires(), m.getEnsures(), new Stmt.Block(), m.getLifetimes());
+				item = new Decl.Method(m.getModifiers(), m.getName(), m.getTemplate(), m.getParameters(),
+						m.getReturns(), m.getRequires(), m.getEnsures(), new Stmt.Block());
 			}
 			// Allocate new item using underlying allocator. This will recursively allocate
 			// child nodes.
@@ -588,16 +617,8 @@ public class NameResolution {
 		}
 	}
 
-	/**
-	 * Throw an syntax error.
-	 *
-	 * @param msg
-	 * @param e
-	 * @return
-	 */
-	private static <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

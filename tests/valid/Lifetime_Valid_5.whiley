@@ -1,11 +1,11 @@
 // test lifetime substitution for method calls
 
-method <a, b> m1(&a:int x, &b:int y) -> &a:int:
+method m1<&a,&b>(&a:int x, &b:int y) -> &a:int:
     *x = (*x)+1
     &a:int result = a:new (*y)
     return result
 
-method <a, b> m2(&a:int x, &b:int y) -> &b:int:
+method m2<&a,&b>(&a:int x, &b:int y) -> &b:int:
     *y = (*y)+1
     &b:int result = *:new (*x)
     return result

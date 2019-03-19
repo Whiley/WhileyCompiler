@@ -16,15 +16,6 @@ package wyil.check;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
-import static wyc.util.ErrorMessages.INVALID_LVAL_EXPRESSION;
-import static wyc.util.ErrorMessages.errorMessage;
-import static wyil.lang.WyilFile.SEMTYPE_array;
-import static wyil.lang.WyilFile.SEMTYPE_difference;
-import static wyil.lang.WyilFile.SEMTYPE_intersection;
-import static wyil.lang.WyilFile.SEMTYPE_record;
-import static wyil.lang.WyilFile.SEMTYPE_reference;
-import static wyil.lang.WyilFile.SEMTYPE_staticreference;
-import static wyil.lang.WyilFile.SEMTYPE_union;
 import static wyil.lang.WyilFile.STMT_assign;
 import static wyil.lang.WyilFile.STMT_dowhile;
 import static wyil.lang.WyilFile.STMT_if;
@@ -32,21 +23,9 @@ import static wyil.lang.WyilFile.STMT_ifelse;
 import static wyil.lang.WyilFile.STMT_namedblock;
 import static wyil.lang.WyilFile.STMT_switch;
 import static wyil.lang.WyilFile.STMT_while;
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
-import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_void;
+import static wyc.util.ErrorMessages.syntaxError;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -58,7 +37,7 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.check.FlowTypeUtils.Environment;
+import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
@@ -252,7 +231,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.Dereference) {
 			return null;
 		} else {
-			internalFailure(errorMessage(INVALID_LVAL_EXPRESSION), lval);
+			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
 			return null; // dead code
 		}
 	}
@@ -276,7 +255,8 @@ public class FlowTypeUtils {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getDeclaration() instanceof Decl.Method) {
+			Decl.Link<Decl.Callable> l = e.getLink();
+			if (l.getTarget() instanceof Decl.Method) {
 				// This expression is definitely not pure
 				return false;
 			}
@@ -358,6 +338,15 @@ public class FlowTypeUtils {
 				firstTime = false;
 				r += var.getName() + "->" + getType(var);
 			}
+			r = r + "}{";
+			firstTime = true;
+			for(Map.Entry<String, String[]> w : withins.entrySet()) {
+				if(!firstTime) {
+					r += ", ";
+				}
+				firstTime=false;
+				r = r + w.getKey() + " < " + Arrays.toString(w.getValue());
+			}
 			return r + "}";
 		}
 
@@ -377,6 +366,14 @@ public class FlowTypeUtils {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
 				outs[i] = outers.get(i).get();
+			}
+			return declareWithin(inner, outs);
+		}
+
+		public Environment declareWithin(String inner, Identifier... outers) {
+			String[] outs = new String[outers.length];
+			for (int i = 0; i != outs.length; ++i) {
+				outs[i] = outers[i].get();
 			}
 			return declareWithin(inner, outs);
 		}

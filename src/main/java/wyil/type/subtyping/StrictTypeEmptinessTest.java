@@ -15,7 +15,9 @@ package wyil.type.subtyping;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wyil.type.util.BinaryRelation;
 import wyil.type.util.HashSetBinaryRelation;
 
@@ -178,8 +180,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	public boolean isVoid(SemanticType lhs, EmptinessTest.State lhsState, SemanticType rhs,
 			EmptinessTest.State rhsState, LifetimeRelation lifetimes) {
 		// FIXME: this is really temporary for now.
-		Term<?> lhsTerm = new Term<>(lhsState.sign, lhs, lhsState.maximise);
-		Term<?> rhsTerm = new Term<>(rhsState.sign, rhs, rhsState.maximise);
+		Term<?> lhsTerm = new Term<>(lhs, lhsState);
+		Term<?> rhsTerm = new Term<>(rhs, rhsState);
 		HashSetBinaryRelation<Term<?>> assumptions = new HashSetBinaryRelation<>();
 		return isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes);
 	}
@@ -273,48 +275,56 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			case SEMTYPE_intersection: {
 				Type.Combinator ut = (Type.Combinator) t;
 				if (conjunct) {
-					worklist.push(item.sign, ut.getAll(), item.maximise);
+					worklist.push(ut.getAll(), item);
 				} else {
-					return isVoidDisjunction(ut, item.sign, item.maximise, truths, worklist, assumptions, lifetimes);
+					return isVoidDisjunction(ut, item, truths, worklist, assumptions, lifetimes);
 				}
 				break;
 			}
 			case SEMTYPE_difference: {
 				SemanticType.Difference nt = (SemanticType.Difference) t;
-				worklist.push(item.sign, nt.getLeftHandSide(), item.maximise);
-				worklist.push(!item.sign, nt.getRightHandSide(), !item.maximise);
+				worklist.push(nt.getLeftHandSide(), item);
+				worklist.push(nt.getRightHandSide(), item.invert());
 				break;
 			}
 			case TYPE_nominal: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Decl.Type decl = nom.getDeclaration();
-				if (item.maximise || decl.getInvariant().size() == 0) {
-					worklist.push(item.sign, decl.getType(), item.maximise);
-				} else if (item.sign) {
-					// Corresponds to void, so we're done on this path.
-					return true;
+				Decl.Link<Decl.Type> link = nom.getLink();
+				if (link.isResolved()) {
+					Decl.Type decl = link.getTarget();
+					if (item.maximise || decl.getInvariant().size() == 0) {
+						// Push everything, including the type variables and arguments for any binding.
+						worklist.push(nom.getConcreteType(), item);
+					} else if (item.sign) {
+						// Corresponds to void, so we're done on this path.
+						return true;
+					}
+				} else {
+					// Error recovery case. Basically return a conservative result since we don't
+					// know what the type in question is.
+					return false;
 				}
 				break;
 			}
 			case TYPE_recursive: {
 				Type.Recursive rec = (Type.Recursive) t;
-				worklist.push(item.sign, rec.getHead(), item.maximise);
+				worklist.push(rec.getHead(), item);
 				break;
 			}
 			default:
-				truths.add(new Atom(item.sign, (SemanticType.Atom) item.type, item.maximise));
+				truths.add(new Atom((SemanticType.Atom) item.type, item));
 			}
 			return isVoid(truths, worklist, assumptions, lifetimes);
 		}
 	}
 
-	protected boolean isVoidDisjunction(Type.Combinator combinator, boolean sign, boolean maximise,
+	protected boolean isVoidDisjunction(Type.Combinator combinator, Context context,
 			ArrayList<Atom<?>> truths, Worklist worklist, BinaryRelation<Term<?>> assumptions,
 			LifetimeRelation lifetimes) {
 		SemanticType[] operands = combinator.getAll();
 		for (int i = 0; i != operands.length; ++i) {
 			Worklist tmp = worklist.clone();
-			tmp.push(sign, operands[i], maximise);
+			tmp.push(operands[i], context);
 			if (!isVoid((ArrayList<Atom<?>>) truths.clone(), tmp, assumptions, lifetimes)) {
 				// If a single clause of the disjunct is definitely
 				// not void, then the whole thing is not void.
@@ -387,12 +397,14 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			case TYPE_method:
 			case TYPE_property:
 				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions, lifetimes);
+			case TYPE_variable:
+				return isVoidVariable((Atom<Type.Variable>) a, (Atom<Type.Variable>) b, assumptions, lifetimes);
 			default:
 				throw new RuntimeException("invalid type encountered: " + a);
 			}
 		} else if (aSign && bSign) {
 			// We have two positive atoms of different kind. For example, int
-			// and {int f}, or int and !bool. This always reduces to void,
+			// and {int f}, or int and bool. This always reduces to void,
 			// unless one of them is any.
 			return (aOpcode != TYPE_any && bOpcode != TYPE_any) ? true : false;
 		} else if (aSign) {
@@ -460,8 +472,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 */
 	protected boolean isVoidArray(Atom<SemanticType.Array> lhs, Atom<SemanticType.Array> rhs,
 			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
-		Term<?> lhsTerm = new Term<>(lhs.sign, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsTerm = new Term<>(rhs.sign, rhs.type.getElement(), rhs.maximise);
+		Term<?> lhsTerm = new Term<>(lhs.type.getElement(), lhs);
+		Term<?> rhsTerm = new Term<>(rhs.type.getElement(), rhs);
 		if (lhs.sign && rhs.sign) {
 			// In this case, we are intersecting two array types, of which at
 			// least one is positive. This is void only if there is no
@@ -546,13 +558,13 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			SemanticType.Field lhsField = lhsFields.get(i);
-			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			Term<?> lhsTerm = new Term<>(lhsField.getType(), lhs);
 			for (int j = 0; j != rhsFields.size(); ++j) {
 				SemanticType.Field rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
-					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					Term<?> rhsTerm = new Term<>(rhsField.getType(), rhs);
 					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection
@@ -670,18 +682,17 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
-	 * @return
-	 * @
+	 * @return @
 	 */
 	protected boolean isVoidReference(Atom<SemanticType.Reference> lhs, Atom<SemanticType.Reference> rhs,
 			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		String lhsLifetime = extractLifetime(lhs.type);
 		String rhsLifetime = extractLifetime(rhs.type);
 		// FIXME: need to look at lifetime parameters
-		Term<?> lhsTrueTerm = new Term<>(true, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsTrueTerm = new Term<>(true, rhs.type.getElement(), rhs.maximise);
-		Term<?> lhsFalseTerm = new Term<>(false, lhs.type.getElement(), lhs.maximise);
-		Term<?> rhsFalseTerm = new Term<>(false, rhs.type.getElement(), rhs.maximise);
+		Term<?> lhsTrueTerm = new Term<>(lhs.type.getElement(), lhs.positify());
+		Term<?> rhsTrueTerm = new Term<>(rhs.type.getElement(), rhs.positify());
+		Term<?> lhsFalseTerm = new Term<>(lhs.type.getElement(), lhs.negatify());
+		Term<?> rhsFalseTerm = new Term<>(rhs.type.getElement(), rhs.negatify());
 		// Check whether lhs :> rhs (as (!lhs & rhs) == 0)
 		boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions, lifetimes);
 		// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
@@ -742,8 +753,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	 *            The second type being intersected, referred to as the "right-hand
 	 *            side".
 	 * @param assumptions
-	 *            The set of assumed subtype relationships private boolean
-	 * @
+	 *            The set of assumed subtype relationships private boolean @
 	 */
 	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs,
 			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
@@ -776,13 +786,12 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			// fun(int)->(int) & !fun(any)->(int) is not void. This is because, under
 			// contravariance, any is *smaller* than int. However, fun(int|null)->(int) &
 			// !fun(int)->(int) is void.
-			boolean paramsContravariantVoid = isVoidParameters(!lhs.sign, lhs.maximise, lhsParameters, !rhs.sign,
-					rhs.maximise, rhsParameters, assumptions, lifetimes);
+			boolean paramsContravariantVoid = isVoidParameters(lhs.negate(), lhsParameters, rhs.negate(), rhsParameters,
+					assumptions, lifetimes);
 			// Returns are covariant, which is the usual way of thinking about things. For
 			// example, fun(int)->(int) & !fun(int)->any is void, whilst
 			// fun(int)->(int|null) & !fun(int)->(int) is not.
-			boolean returnsCovariantVoid = isVoidParameters(lhs.sign, lhs.maximise, lhsReturns, rhs.sign, rhs.maximise,
-					rhsReturns, assumptions, lifetimes);
+			boolean returnsCovariantVoid = isVoidParameters(lhs, lhsReturns, rhs, rhsReturns, assumptions, lifetimes);
 			// If both parameters and returns are void, then the whole thing is void.
 			return paramsContravariantVoid && returnsCovariantVoid;
 		} else {
@@ -793,9 +802,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
-	protected boolean isVoidParameters(boolean lhsSign, boolean lhsMax, Tuple<Type> lhs, boolean rhsSign,
-			boolean rhsMax, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
-		boolean sign = lhsSign == rhsSign;
+	protected boolean isVoidParameters(Context lhsContext, Tuple<Type> lhs, Context rhsContext, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
+		boolean sign = lhsContext.sign == rhsContext.sign;
 		//
 		if (lhs.size() != rhs.size()) {
 			// Different number of parameters. In either pos-pos or neg-neg
@@ -806,8 +814,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			for (int i = 0; i != lhs.size(); ++i) {
 				Type lhsParameter = lhs.get(i);
 				Type rhsParameter = rhs.get(i);
-				Term<?> lhsTerm = new Term<>(lhsSign, lhsParameter, lhsMax);
-				Term<?> rhsTerm = new Term<>(rhsSign, rhsParameter, rhsMax);
+				Term<?> lhsTerm = new Term<>(lhsParameter, lhsContext);
+				Term<?> rhsTerm = new Term<>(rhsParameter, rhsContext);
 				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 					// For pos-pos / neg-neg case, there is no intersection
 					// between this parameterand, hence, no intersection
@@ -835,6 +843,36 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
+	/**
+	 * Determine whether the intersection of two type variables is void or not.
+	 * Since type variables currently do not support bounds, two variables intersect
+	 * iff they are the same variable.
+	 *
+	 * @param lhs
+	 * @param rhs
+	 * @param assumptions
+	 * @param lifetimes
+	 * @return
+	 */
+	protected boolean isVoidVariable(Atom<Type.Variable> lhs, Atom<Type.Variable> rhs,
+			BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
+		//
+		Identifier lval = lhs.type.getOperand();
+		Identifier rval = rhs.type.getOperand();
+		//
+		if (lval.equals(rval)) {
+			// T & T = T
+			// T & !T = void
+			// !T & T = void
+			// !T & !T = !T
+			return lhs.sign != rhs.sign;
+		} else {
+			// Comparing variables with different names. In this case, we can never be sure
+			// there is no overlap regardless of sign.
+			return false;
+		}
+	}
+
 	// ========================================================================
 	// Helpers
 	// ========================================================================
@@ -853,13 +891,13 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			add(item);
 		}
 
-		public void push(boolean sign, SemanticType type, boolean maximise) {
-			add(new Term(sign, type, maximise));
+		public void push(SemanticType type, Context context) {
+			add(new Term(type, context));
 		}
 
-		public void push(boolean sign, SemanticType[] types, boolean maximise) {
+		public void push(SemanticType[] types, Context context) {
 			for (int i = 0; i != types.length; ++i) {
-				add(new Term(sign, types[i], maximise));
+				add(new Term(types[i], context));
 			}
 		}
 
@@ -877,15 +915,54 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
-	public static class Term<T extends SemanticType> {
+	public static class Context {
 		public final boolean sign;
-		public final T type;
 		public final boolean maximise;
 
-		public Term(boolean sign, T type, boolean maximise) {
-			this.type = type;
+		public Context(EmptinessTest.State state) {
+			this.sign = state.sign;
+			this.maximise = state.maximise;
+		}
+
+		public Context(Context other) {
+			this.sign = other.sign;
+			this.maximise = other.maximise;
+		}
+
+		private Context(boolean sign, boolean maximise) {
 			this.sign = sign;
 			this.maximise = maximise;
+		}
+
+		public Context negate() {
+			return new Context(!sign, maximise);
+		}
+
+		public Context invert() {
+			return new Context(!sign, !maximise);
+		}
+
+		public Context positify() {
+			return new Context(true, maximise);
+		}
+
+		public Context negatify() {
+			return new Context(false, maximise);
+		}
+	}
+
+	public static class Term<T extends SemanticType> extends Context {
+		public final T type;
+
+
+		public Term(T type, EmptinessTest.State state) {
+			super(state);
+			this.type = type;
+		}
+
+		public Term(T type, Context other) {
+			super(other);
+			this.type = type;
 		}
 
 		@Override
@@ -909,8 +986,8 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 	}
 
 	protected static class Atom<T extends SemanticType.Atom> extends Term<T> {
-		public Atom(boolean sign, T type, boolean maximise) {
-			super(sign, type, maximise);
+		public Atom(T type, Context other) {
+			super(type, other);
 		}
 
 		@Override

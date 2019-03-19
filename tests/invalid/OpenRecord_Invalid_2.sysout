@@ -1,3 +1,6 @@
 tests/invalid/OpenRecord_Invalid_2.whiley:7: incomparable operands: OpenRecord-{int x} and {int z,int y}
         if r is {int z, int y}:
            ^^^^^^^^^^^^^^^^^^^
+tests/invalid/OpenRecord_Invalid_2.whiley:7: incomparable operands: OpenRecord-{int x} and {int z,int y}
+        if r is {int z, int y}:
+           ^^^^^^^^^^^^^^^^^^^

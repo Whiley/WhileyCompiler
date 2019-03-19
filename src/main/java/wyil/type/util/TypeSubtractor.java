@@ -13,16 +13,9 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyc.util.ErrorMessages.errorMessage;
-
-import java.util.ArrayList;
-import java.util.Set;
-
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.ErrorMessages;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Array;
@@ -246,12 +239,12 @@ public class TypeSubtractor extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		Decl.Type decl = rhs.getDeclaration();
+		Decl.Type decl = rhs.getLink().getTarget();
 		if (decl.getInvariant().size() > 0) {
 			// rhs is a constrained type, meaning we cannot subtract anything.
 			return lhs;
 		} else {
-			return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
+			return apply(lhs, rhs.getConcreteType(), lifetimes, stack);
 		}
 	}
 

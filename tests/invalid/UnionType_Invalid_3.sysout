@@ -1,4 +1,4 @@
-tests/invalid/UnionType_Invalid_3.whiley:7: unable to resolve name (no match for f(IntList))
+tests/invalid/UnionType_Invalid_3.whiley:7: unable to resolve name (is ambiguous)
 	found function UnionType_Invalid_3::f(int[])->(int)
     return f(xs)
            ^

@@ -1,0 +1,3 @@
+tests/invalid/Template_Invalid_13.whiley:1: expected type int, found T
+type Ref<T> is { T data } where data >= 0
+                                ^^^^

@@ -57,13 +57,13 @@ public class RelaxedTypeEmptinessTest extends StrictTypeEmptinessTest {
 		//
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			SemanticType.Field lhsField = lhsFields.get(i);
-			Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
+			Term<?> lhsTerm = new Term<>(lhsField.getType(), lhs);
 			for (int j = 0; j != rhsFields.size(); ++j) {
 				SemanticType.Field rhsField = rhsFields.get(j);
 				if (!lhsField.getName().equals(rhsField.getName())) {
 					continue;
 				} else {
-					Term<?> rhsTerm = new Term<>(rhs.sign, rhsField.getType(), rhs.maximise);
+					Term<?> rhsTerm = new Term<>(rhsField.getType(), rhs);
 					if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
 						// For pos-pos case, there is no intersection
 						// between these fields and, hence, no intersection

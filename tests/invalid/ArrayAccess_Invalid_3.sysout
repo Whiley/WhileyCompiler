@@ -1,4 +1,4 @@
-tests/invalid/ArrayAccess_Invalid_3.whiley:11: unable to resolve name (no match for f(tup[]))
+tests/invalid/ArrayAccess_Invalid_3.whiley:11: unable to resolve name (is ambiguous)
 	found function ArrayAccess_Invalid_3::f({int data,int mode}[])->({int data,int mode}[])
     return f(tups)
            ^

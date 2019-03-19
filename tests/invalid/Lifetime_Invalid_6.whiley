@@ -1,9 +1,9 @@
 // test lifetime inference with lifetime overloading but same types
 
-method <a> m(&a:int x, &a:int y) -> int:
+method m<&a>(&a:int x, &a:int y) -> int:
     return 1
 
-method <a, b> m(&a:int x, &b:int y) -> int:
+method m<&a,&b>(&a:int x, &b:int y) -> int:
     return 2
 
 public export method test():

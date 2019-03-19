@@ -1,0 +1,3 @@
+tests/invalid/Record_Invalid_7.whiley:8: expected record type
+    vec.length = 1
+    ^^^

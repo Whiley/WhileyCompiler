@@ -23,6 +23,8 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
+import wyc.util.ErrorMessages;
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -80,48 +82,62 @@ import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
  * @author David J. Pearce
  *
  */
-public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
+public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Compiler.Check {
+	private boolean status = true;
 
 	public AmbiguousCoercionCheck() {
 		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
 	}
 
-	public void check(WyilFile file) {
+	@Override
+	public boolean check(WyilFile file) {
+		// Only proceed if no errors in earlier stages
 		visitModule(file);
+		//
+		return status;
 	}
 
 	@Override
 	public void visitExpression(Expr expr, Type target, Environment environment) {
-		checkCoercion(expr, target, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitExpression(expr, target, environment);
+		if(checkCoercion(expr, target, environment)) {
+			// Continue recursively exploring this expression
+			super.visitExpression(expr, target, environment);
+		}
 	}
 
 
 	@Override
 	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
-		checkCoercion(expr, targets, environment);
-		// Finally, recursively continue exploring this expression
-		super.visitMultiExpression(expr, targets, environment);
-	}
-
-	private void checkCoercion(Expr expr, Type target, Environment environment) {
-		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
-		Type source = expr.getType();
-		if (!checkCoercion(target, source, environment, assumptions, expr)) {
-			syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+		if(checkCoercion(expr, targets, environment)) {
+			// Continue recursively exploring this expression
+			super.visitMultiExpression(expr, targets, environment);
 		}
 	}
 
-	private void checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
+		boolean status = true;
 		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
 			Type target = targets.get(j);
 			Type source = types.get(j);
 			if (!checkCoercion(target, source, environment, assumptions, expr)) {
-				syntaxError("ambiguous coercion required (" + source + " to " + target + ")", expr);
+				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+				status = false;
 			}
+		}
+		//
+		return status;
+	}
+
+	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
+		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
+		Type source = expr.getType();
+		if (!checkCoercion(target, source, environment, assumptions, expr)) {
+			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+			return false;
+		} else {
+			return true;
 		}
 	}
 
@@ -159,12 +175,11 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		if (target instanceof Type.Primitive) {
+		if (target instanceof Type.Primitive || target instanceof Type.Variable) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = s.getDeclaration();
-			return checkCoercion(target,decl.getType(),environment, assumptions, item);
+			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
 		} else if(source instanceof Type.Union) {
 			Type.Union s = (Type.Union) source;
 			for (int i = 0; i != s.size(); ++i) {
@@ -219,8 +234,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 
 	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		Decl.Type decl = target.getDeclaration();
-		return checkCoercion(decl.getType(), source, environment, assumptions, item);
+		return checkCoercion(target.getConcreteType(), source, environment, assumptions, item);
 	}
 
 	private boolean checkCoercion(Type.Union target, Type source, Environment environment,
@@ -233,8 +247,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		} else if (source instanceof Type.Nominal) {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
-			Decl.Type decl = s.getDeclaration();
-			return checkCoercion(target,decl.getType(),environment, assumptions, item);
+			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
 		} else if (source instanceof Type.Union) {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
@@ -259,16 +272,15 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor {
 		return super.selectCandidate(candidates, type, environment);
 	}
 
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
+	}
+
 	private <T> T internalFailure(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new InternalFailure(msg, cu.getEntry(), e);
-	}
-
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 
 	protected interface Assumptions {

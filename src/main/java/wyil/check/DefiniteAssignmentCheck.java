@@ -13,16 +13,16 @@
 // limitations under the License.
 package wyil.check;
 
-import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
+import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticItem;
+import wyc.util.ErrorMessages;
 
 /**
  * <p>
@@ -47,10 +47,17 @@ import wybs.lang.SyntaxError;
  * @author David J. Pearce
  *
  */
-public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet,DefiniteAssignmentCheck.ControlFlow> {
+public class DefiniteAssignmentCheck
+		extends AbstractFunction<DefiniteAssignmentCheck.DefinitelyAssignedSet, DefiniteAssignmentCheck.ControlFlow>
+		implements Compiler.Check {
+	private boolean status = true;
 
-	public void check(WyilFile wf) {
+	@Override
+	public boolean check(WyilFile wf) {
+		//
 		visitModule(wf, null);
+		//
+		return status;
 	}
 
 	/**
@@ -148,6 +155,10 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 			ControlFlow nf = visitStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
+			// NOTE: following can arise when block contains unreachable code.
+			if(nextEnvironment == null) {
+				break;
+			}
 		}
 		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
@@ -345,8 +356,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd)) {
-			WyilFile file = ((WyilFile) expression.getHeap());
-			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
+			syntaxError(expression, VARIABLE_POSSIBLY_UNITIALISED);
 		}
 		return null;
 	}
@@ -356,6 +366,7 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		// No need to visit types, as these cannot cause definite assignment errors.
 		return null;
 	}
+
 
 	public class ControlFlow {
 		/**
@@ -478,5 +489,10 @@ public class DefiniteAssignmentCheck extends AbstractFunction<DefiniteAssignment
 		public String toString() {
 			return variables.toString();
 		}
+	}
+
+	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		status = false;
+		ErrorMessages.syntaxError(e, code, context);
 	}
 }

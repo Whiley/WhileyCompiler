@@ -526,10 +526,11 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr, Integer indent) {
+		Decl.Link<Decl.Callable> link = expr.getLink();
 		if(showQualifiedNames) {
-			out.print(expr.getDeclaration().getQualifiedName() + "(");
+			out.print(link.getTarget().getQualifiedName() + "(");
 		} else {
-			out.print(expr.getName() + "(");
+			out.print(link.getName() + "(");
 		}
 		Tuple<Expr> args = expr.getOperands();
 		for (int i = 0; i != args.size(); ++i) {

@@ -203,7 +203,7 @@ public class TypeIntersector extends AbstractTypeCombinator {
 
 	@Override
 	protected Type apply(Type.Nominal lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		if (lhs.getName().equals(rhs.getName())) {
+		if (lhs.getLink().equals(rhs.getLink())) {
 			return lhs;
 		} else {
 			return super.apply(lhs, rhs, lifetimes, stack);

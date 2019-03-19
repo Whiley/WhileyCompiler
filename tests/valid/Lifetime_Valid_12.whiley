@@ -1,7 +1,7 @@
-method <a,b> f(&a:int q, &b:int r) -> (&b:int s):
+method f<&a,&b>(&a:int q, &b:int r) -> (&b:int s):
     return r
 
-method <l> h(&l:int p) -> (&l:int r):
+method h<&l>(&l:int p) -> (&l:int r):
     &this:int q = new 1
     return f(q,p)
     

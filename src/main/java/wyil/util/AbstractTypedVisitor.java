@@ -366,7 +366,7 @@ public abstract class AbstractTypedVisitor {
 				j = j + len;
 			} else {
 				// Default to single expression
-				visitExpression(exprs.get(i), targets.get(j), environment);
+				visitExpression(e, targets.get(j), environment);
 				j = j + 1;
 			}
 		}
@@ -818,13 +818,9 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
-		Type.Callable signature = expr.getDeclaration().getType();
+		Type.Callable signature = expr.getBinding().getConcreteType();
 		Tuple<Type> parameters = signature.getParameters();
-		if(signature instanceof Type.Method) {
-			// Must bind lifetime arguments
-			Decl.Method decl = (Decl.Method) expr.getDeclaration();
-			parameters = bind(decl,expr.getLifetimes());
-		}
+		// Done
 		visitExpressions(expr.getOperands(), parameters, environment);
 	}
 
@@ -925,6 +921,9 @@ public abstract class AbstractTypedVisitor {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
 			break;
+		case TYPE_variable:
+			visitTypeVariable((Type.Variable) type);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -973,7 +972,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitTypeNominal(Type.Nominal type) {
-
+		visitTypes(type.getParameters());
 	}
 
 	public void visitTypeNull(Type.Null type) {
@@ -1015,6 +1014,9 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitTypeVoid(Type.Void type) {
 
+	}
+
+	public void visitTypeVariable(Type.Variable type) {
 	}
 
 	public void visitSemanticType(SemanticType type) {
@@ -1079,35 +1081,6 @@ public abstract class AbstractTypedVisitor {
 		Type.Int type = asType(expr.getType(), Type.Int.class);
 		Type.Int[] ints = TYPE_INT_FILTER.apply(target);
 		return selectCandidate(ints, type, environment);
-	}
-
-	/**
-	 * For a give method type, substitute all declared lifetimes with the actual
-	 * lifetime arguments used. For example, consider this method:
-	 *
-	 * <pre>
-	 * method <a> m(&a:int ptr) -> int:
-	 *    return *ptr
-	 * </pre>
-	 *
-	 * Suppose we are visiting an invocation <code>m<this>(p)</code>. Then, the
-	 * (declared) method type will be <code>method<a>(&a:int)</code>, and the actual
-	 * lifetime argument will be <code>this</code>. The result from this method
-	 * would then be <code>method(&this:int)</code>.
-	 *
-	 * @param type
-	 * @param actual
-	 * @param declared
-	 * @return
-	 */
-	public Tuple<Type> bind(Decl.Method decl, Tuple<Identifier> actual) {
-		Type.Method type = decl.getType();
-		Tuple<Identifier> declared = type.getLifetimeParameters();
-		HashMap<Identifier, Identifier> binding = new HashMap<>();
-		for (int i = 0; i != declared.size(); ++i) {
-			binding.put(declared.get(i), actual.get(i));
-		}
-		return WyilFile.substitute(type.getParameters(),binding);
 	}
 
 	/**
@@ -1331,7 +1304,7 @@ public abstract class AbstractTypedVisitor {
 			return true;
 		} else if (child instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) child;
-			Decl.Type decl = t.getDeclaration();
+			Decl.Type decl = t.getLink().getTarget();
 			return isDerivation(parent, decl.getType());
 		} else {
 			return false;
@@ -1360,7 +1333,7 @@ public abstract class AbstractTypedVisitor {
 			return (T) type;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) type;
-			Decl.Type decl = t.getDeclaration();
+			Decl.Type decl = t.getLink().getTarget();
 			return asType(decl.getType(), kind);
 		} else {
 			throw new IllegalArgumentException("invalid type: " + type);
@@ -1415,6 +1388,13 @@ public abstract class AbstractTypedVisitor {
 			String[] outs = new String[outers.size()];
 			for (int i = 0; i != outs.length; ++i) {
 				outs[i] = outers.get(i).get();
+			}
+			return declareWithin(inner, outs);
+		}
+		public Environment declareWithin(String inner, Identifier... outers) {
+			String[] outs = new String[outers.length];
+			for (int i = 0; i != outs.length; ++i) {
+				outs[i] = outers[i].get();
 			}
 			return declareWithin(inner, outs);
 		}
@@ -1498,10 +1478,10 @@ public abstract class AbstractTypedVisitor {
 		public String[] getDeclaredLifetimes() {
 			if (declaration instanceof Decl.Method) {
 				Decl.Method meth = (Decl.Method) declaration;
-				Tuple<Identifier> environment = meth.getLifetimes();
-				String[] arr = new String[environment.size() + 1];
-				for (int i = 0; i != environment.size(); ++i) {
-					arr[i] = environment.get(i).get();
+				Identifier[] environment = meth.getLifetimes();
+				String[] arr = new String[environment.length + 1];
+				for (int i = 0; i != environment.length; ++i) {
+					arr[i] = environment[i].get();
 				}
 				arr[arr.length - 1] = "this";
 				return arr;

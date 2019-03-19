@@ -13,14 +13,10 @@
 // limitations under the License.
 package wyil.type.util;
 
-import wyc.util.ErrorMessages;
-
-import static wyc.util.ErrorMessages.errorMessage;
 import static wyil.lang.WyilFile.*;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.type.util.AbstractTypeCombinator.LinkageStack;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Type;
@@ -30,8 +26,9 @@ import wyil.lang.WyilFile.SemanticType.Record;
 import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -103,7 +100,6 @@ public class ReadWriteTypeExtractor {
 	}
 
 	public <T extends SemanticType.Atom> T apply(SemanticType type, LifetimeRelation lifetimes, Combinator<T> kind) {
-		//
 		// First, convert type into conjunctive normal form. This allows all atom
 		// combinations to be tried and potentially reduced to void which, in turn,
 		// allows further simplifications.
@@ -174,8 +170,7 @@ public class ReadWriteTypeExtractor {
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Nominal nominal) {
-		Decl.Type decl = nominal.getDeclaration();
-		return toDisjunctiveNormalForm(decl.getVariableDeclaration().getType());
+		return toDisjunctiveNormalForm(nominal.getConcreteType());
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(SemanticType.Record type) {

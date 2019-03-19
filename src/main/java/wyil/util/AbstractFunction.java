@@ -774,6 +774,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitTypeUnresolved((Type.Unknown) type, data);
 		case TYPE_void:
 			return visitTypeVoid((Type.Void) type, data);
+		case TYPE_variable:
+			return visitTypeVariable((Type.Variable) type, data);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -822,6 +824,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeNominal(Type.Nominal type, P data) {
+		visitTypes(type.getParameters(), data);
 		return null;
 	}
 
@@ -872,6 +875,9 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
+	public R visitTypeVariable(Type.Variable type, P data) {
+		return null;
+	}
 
 	public R visitSemanticType(SemanticType type, P data) {
 		switch (type.getOpcode()) {

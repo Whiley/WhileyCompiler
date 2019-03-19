@@ -138,21 +138,18 @@ public abstract class AbstractTypeCombinator {
 			// Not see before, so record and continue.
 			stack.push(lhs, rhs);
 			// Expand the lhs and continue
-			Decl.Type decl = lhs.getDeclaration();;
-			Type t = apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
+			Type t = apply(lhs.getConcreteType(), rhs, lifetimes, stack);
 			stack.popAndLink(t);
 			return t;
 		}
 	}
 
 	protected Type apply(Type.Nominal lhs, Type rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		Decl.Type decl = lhs.getDeclaration();
-		return apply(decl.getVariableDeclaration().getType(), rhs, lifetimes, stack);
+		return apply(lhs.getConcreteType(), rhs, lifetimes, stack);
 	}
 
 	protected Type apply(Type lhs, Type.Nominal rhs, LifetimeRelation lifetimes, LinkageStack stack) {
-		Decl.Type decl = rhs.getDeclaration();
-		return apply(lhs, decl.getVariableDeclaration().getType(), lifetimes, stack);
+		return apply(lhs, rhs.getConcreteType(), lifetimes, stack);
 	}
 
 	// ===================================================================================

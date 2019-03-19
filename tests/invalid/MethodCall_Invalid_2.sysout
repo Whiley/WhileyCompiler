@@ -1,4 +1,4 @@
-tests/invalid/MethodCall_Invalid_2.whiley:7: unable to resolve name (no match for f(&int,int))
+tests/invalid/MethodCall_Invalid_2.whiley:7: unable to resolve name (is ambiguous)
 	found method MethodCall_Invalid_2::f(dummy,int)->(int)
     f(_this, 1)
     ^

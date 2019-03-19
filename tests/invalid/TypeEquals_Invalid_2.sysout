@@ -1,3 +1,18 @@
 tests/invalid/TypeEquals_Invalid_2.whiley:2: branch always taken
     if e is bool:
        ^^^^^^^^^
+tests/invalid/TypeEquals_Invalid_2.whiley:2: branch always taken
+    if e is bool:
+       ^^^^^^^^^
+tests/invalid/TypeEquals_Invalid_2.whiley:5: empty type encountered
+        if e is int:
+           ^
+tests/invalid/TypeEquals_Invalid_2.whiley:5: incomparable operands: bool-bool and int
+        if e is int:
+           ^^^^^^^^
+tests/invalid/TypeEquals_Invalid_2.whiley:5: empty type encountered
+        if e is int:
+           ^
+tests/invalid/TypeEquals_Invalid_2.whiley:5: incomparable operands: bool-bool and int
+        if e is int:
+           ^^^^^^^^
