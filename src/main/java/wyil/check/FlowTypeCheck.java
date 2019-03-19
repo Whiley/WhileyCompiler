@@ -1158,13 +1158,19 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Extract the determined array type
 		SemanticType.Array arrT = extractArrayType(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY,
 				lval.getFirstOperand());
-		// Check for integer subscript
-		SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
-		checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
-		// Extract element type
-		SemanticType elementT = extractElementType(arrT, lval.getFirstOperand());
-		// Convert to concrete type
-		return concreteTypeExtractor.apply(arrT.getElement(), environment);
+		// Sanity check extraction
+		if(arrT != null) {
+			// Check for integer subscript
+			SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
+			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
+			// Extract element type
+			SemanticType elementT = extractElementType(arrT, lval.getFirstOperand());
+			// Convert to concrete type
+			return concreteTypeExtractor.apply(arrT.getElement(), environment);
+		} else {
+			// typing failure upstream
+			return null;
+		}
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
@@ -1181,10 +1187,16 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Extract writeable reference type
 		SemanticType.Reference refT = extractReferenceType(src, environment, ReadWriteTypeExtractor.WRITEABLE_REFERENCE,
 				lval.getOperand());
-		// Extract element type
-		SemanticType elementT = extractElementType(refT, lval.getOperand());
-		//
-		return concreteTypeExtractor.apply(elementT, environment);
+		// Sanity check extraction
+		if(refT != null) {
+			// Extract element type
+			SemanticType elementT = extractElementType(refT, lval.getOperand());
+			//
+			return concreteTypeExtractor.apply(elementT, environment);
+		} else {
+			// typing failure upstream
+			return null;
+		}
 	}
 
 	// =========================================================================

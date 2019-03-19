@@ -122,7 +122,7 @@ public class ErrorMessages {
 	public static final StaticMessage EMPTY_TYPE  = new StaticMessage("empty type encountered");
 	public static final StaticMessage EXPECTED_ARRAY  = new StaticMessage("expected array type");
 	public static final StaticMessage EXPECTED_RECORD  = new StaticMessage("expected record type");
-	public static final StaticMessage EXPECTED_REFERENCE  = new StaticMessage("expected record type");
+	public static final StaticMessage EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
 	public static final StaticMessage EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
 	public static final StaticMessage INVALID_FIELD  = new StaticMessage("invalid field access");
 	public static final StaticMessage MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");

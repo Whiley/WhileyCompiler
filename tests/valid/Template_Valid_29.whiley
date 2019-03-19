@@ -20,7 +20,7 @@ function add<T>(Vector<T> vec, T item) -> Vector<T>:
         //
         vec.items = nitems
     else:
-        vec[vec.length] = item
+        vec.items[vec.length] = item
     //
     vec.length = vec.length + 1        
     //
@@ -36,8 +36,8 @@ public export method test():
     assert vi_3 == { items: [1,2,0,4,4,4,4], length: 4 } 
     // booleans second
     Vector<bool> vb_1 = { items: [true,false,true,false], length: 3 }
-    Vector<int> vb_2 = add(vi_1,true)
-    Vector<int> vb_3 = add(vi_2,false)    
-    assert vi_1 == { items: [true,false,true,false], length: 3 } 
-    assert vi_2 == { items: [true,false,true,true], length: 4 }
-    assert vi_3 == { items: [true,false,true,true,false,false,false,false,false], length: 5 }
+    Vector<bool> vb_2 = add(vb_1,true)
+    Vector<bool> vb_3 = add(vb_2,false)
+    assert vb_1 == { items: [true,false,true,false], length: 3 } 
+    assert vb_2 == { items: [true,false,true,true], length: 4 }
+    assert vb_3 == { items: [true,false,true,true,false,false,false,false,false], length: 5 }
