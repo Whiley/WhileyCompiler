@@ -1,0 +1,15 @@
+
+function id<T>(T item) -> (T r)
+ensures r == item:
+    return item
+
+function f<T>(T z) -> (T r)
+    ensures r == z:
+    return id<T>(z)
+
+public export method test():
+    //
+    assert f(0) == 0
+    assert f(true) == true
+    assert f([1,2,3]) == [1,2,3]
+    

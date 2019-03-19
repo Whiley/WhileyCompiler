@@ -2475,6 +2475,8 @@ public class WhileyFileParser {
 		if (lifetime != null && (lifetime.kind != Identifier || scope.isLifetime(new Identifier(lifetime.text)))) {
 			return annotateSourceLocation(new Identifier(lifetime.text), start);
 		} else {
+			// Backtrack
+			index = start;
 			// Definitely not a lifetime, therefore must be type.
 			return parseType(scope);
 		}
@@ -3608,7 +3610,6 @@ public class WhileyFileParser {
 	private Type parseArrayType(EnclosingScope scope) {
 		int start = index;
 		Type element = parseBaseType(scope);
-
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
 			element = annotateSourceLocation(new Type.Array(element),start);
