@@ -2275,10 +2275,17 @@ public class WhileyFileParser {
 		// Construct link to be resolved
 		Decl.Link link = new Decl.Link<>(name);
 		// Decide what we've got
+		int mid = index;
 		Expr expr;
-		if (tryAndMatch(terminated, LeftBrace) != null) {
+		if (skipTemplate(scope) && tryAndMatch(terminated, LeftBrace) != null) {
+			// backtrack
+			index = mid;
+			// parse any optional template arguments
+			Tuple<? extends SyntacticItem> templateArguments = parseOptionalTemplateArguments(scope, terminated);
 			// Construct binding to be resolved
-			Decl.Binding<Type.Callable, Decl.Callable> binding = new Decl.Binding<>(link, new Tuple<>());
+			Decl.Binding<Type.Callable, Decl.Callable> binding = new Decl.Binding<>(link, templateArguments);
+			// Repeat this
+			match(LeftBrace);
 			// Parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// This indicates we have an direct invocation
@@ -2434,21 +2441,33 @@ public class WhileyFileParser {
 	 */
 	public boolean skipTemplate(EnclosingScope scope) {
 		int start = index;
-		match(LeftAngle);
-		boolean firstTime = true;
-		while (tryAndMatch(false, RightAngle) == null) {
-			if (!firstTime && tryAndMatch(false,Comma) == null) {
-				// Failed to match a comma.  Something is wrong
-				index = start;
-				return false;
-			} else if (!skipLifetimeIdentifier(scope) && !skipType(scope)) {
-				index = start;
-				return false;
+		if (tryAndMatch(false, LeftAngle) == null) {
+			return true;
+		} else {
+			boolean firstTime = true;
+			while (tryAndMatch(false, RightAngle) == null) {
+				if (!firstTime && tryAndMatch(false,Comma) == null) {
+					// Failed to match a comma.  Something is wrong
+					index = start;
+					return false;
+				} else if (!skipLifetimeIdentifier(scope) && !skipType(scope)) {
+					index = start;
+					return false;
+				}
+				firstTime = false;
 			}
-			firstTime = false;
 		}
 		//
 		return true;
+	}
+
+	public Tuple<? extends SyntacticItem> parseOptionalTemplateArguments(EnclosingScope scope, boolean terminated) {
+		skipWhiteSpace();
+		if(index < tokens.size() && tokens.get(index).kind == LeftAngle) {
+			return parseTemplateArguments(scope,terminated);
+		} else {
+			return new Tuple<>();
+		}
 	}
 
 	public Tuple<? extends SyntacticItem> parseTemplateArguments(EnclosingScope scope, boolean terminated) {
