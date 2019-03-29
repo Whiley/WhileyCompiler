@@ -239,7 +239,7 @@ public class TestUtils {
 	 * @param visited
 	 * @return
 	 */
-	private static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
+	public static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
 		int index = item.getIndex();
 		// Check whether already visited this item
 		if(!visited.get(index)) {
