@@ -24,12 +24,12 @@ import java.util.Map;
 import java.util.Set;
 
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
 
-import static wybs.lang.SyntaxError.*;
+import static wybs.lang.SyntacticException.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
 import static wyil.lang.WyilFile.*;
 
@@ -3292,7 +3292,7 @@ public class WhileyFileParser {
 			if (mustParseAsType(type)) {
 				return type;
 			}
-		} catch (SyntaxError e) {
+		} catch (SyntacticException e) {
 
 		}
 		index = start; // backtrack
@@ -3357,7 +3357,7 @@ public class WhileyFileParser {
 			return result;
 		} else {
 			// Error!
-			throw new InternalFailure("unknown syntactic type encountered", parent.getEntry(), type);
+			throw new SyntacticException("unknown syntactic type encountered", parent.getEntry(), type);
 		}
 	}
 
@@ -4367,7 +4367,7 @@ public class WhileyFileParser {
 			} else {
 				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", source.getEntry(), null);
+				throw new SyntacticException("unexpected end-of-file", source.getEntry(), null);
 			}
 		}
 	}
@@ -4639,17 +4639,17 @@ public class WhileyFileParser {
 	}
 
 	private void syntaxError(String msg, SyntacticItem e) {
-		throw new SyntaxError(msg, source.getEntry(), e);
+		throw new SyntacticException(msg, source.getEntry(), e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, source.getEntry(), new Attribute.Span(null,t.start,t.end()));
+		throw new SyntacticException(msg, source.getEntry(), new Attribute.Span(null,t.start,t.end()));
 	}
 
 	private void syntaxError(String msg, Token... tokens) {
 		Token s = tokens[0];
 		Token e = tokens[tokens.length-1];
-		throw new SyntaxError(msg, source.getEntry(), new Attribute.Span(null,s.start,e.end()));
+		throw new SyntacticException(msg, source.getEntry(), new Attribute.Span(null,s.start,e.end()));
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
@@ -4853,7 +4853,7 @@ public class WhileyFileParser {
 		 * Checks that the given identifier is a declared lifetime.
 		 *
 		 * @param id
-		 * @throws SyntaxError
+		 * @throws SyntacticException
 		 *             if the given identifier is not a lifetime
 		 */
 		public void mustBeLifetime(Identifier id) {
@@ -4867,7 +4867,7 @@ public class WhileyFileParser {
 		 *
 		 * @param id
 		 *            identifier that holds the name to check
-		 * @throws SyntaxError
+		 * @throws SyntacticException
 		 *             if the name is unavailable (already declared)
 		 */
 		public void checkNameAvailable(Identifier id) {
@@ -4892,7 +4892,7 @@ public class WhileyFileParser {
 		 *
 		 * @param id
 		 *            identifier that holds the name to declare
-		 * @throws SyntaxError
+		 * @throws SyntacticException
 		 *             if the name is already declared
 		 */
 		public void declareVariable(Decl.Variable decl) {
@@ -4919,7 +4919,7 @@ public class WhileyFileParser {
 		 *
 		 * @param id
 		 *            identifier that holds the name to declare
-		 * @throws SyntaxError
+		 * @throws SyntacticException
 		 *             if the name is already declared
 		 */
 		public void declareLifetime(Identifier id) {

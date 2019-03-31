@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
@@ -553,7 +553,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, new WyilFile.Attribute.Span(null,index,index));
+		throw new SyntacticException(msg, entry, new WyilFile.Attribute.Span(null,index,index));
 
 	}
 

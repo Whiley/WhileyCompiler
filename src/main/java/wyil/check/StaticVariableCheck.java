@@ -5,7 +5,7 @@ import java.util.Set;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyil.lang.Compiler;

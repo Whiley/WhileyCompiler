@@ -17,8 +17,8 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
+import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Name;
 import wycc.util.Pair;
@@ -454,13 +454,13 @@ public class VerificationConditionGenerator {
 			case WyilFile.DECL_variableinitialiser:
 				return translateVariableDeclaration((WyilFile.Decl.Variable) stmt, context);
 			default:
-				throw new InternalFailure("unknown statement encountered (" + stmt + ")",
+				throw new SyntacticException("unknown statement encountered (" + stmt + ")",
 						((WyilFile) stmt.getHeap()).getEntry(), stmt);
 			}
-		} catch (InternalFailure e) {
+		} catch (SyntacticException e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WyilFile) stmt.getHeap()).getEntry(), stmt, e);
+			throw new SyntacticException(e.getMessage(), ((WyilFile) stmt.getHeap()).getEntry(), stmt, e);
 		}
 	}
 
@@ -602,7 +602,7 @@ public class VerificationConditionGenerator {
 		case WyilFile.EXPR_variablecopy:
 			return translateVariableAssign((WyilFile.Expr.VariableAccess) lval, rval, context);
 		default:
-			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
+			throw new SyntacticException("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
 					lval);
 		}
 	}
@@ -711,7 +711,7 @@ public class VerificationConditionGenerator {
 		case WyilFile.EXPR_variablecopy:
 			return (WyilFile.Expr.VariableAccess) lval;
 		default:
-			throw new InternalFailure("unknown lval encountered (" + lval + ")", ((WyilFile) lval.getHeap()).getEntry(),
+			throw new SyntacticException("unknown lval encountered (" + lval + ")", ((WyilFile) lval.getHeap()).getEntry(),
 					lval);
 		}
 	}
@@ -1255,10 +1255,10 @@ public class VerificationConditionGenerator {
 				break;
 			}
 			return context;
-		} catch (InternalFailure e) {
+		} catch (SyntacticException e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
+			throw new SyntacticException(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
 		}
 	}
 
@@ -1431,10 +1431,10 @@ public class VerificationConditionGenerator {
 			default:
 				throw new RuntimeException("Deadcode reached (" + expr.getClass().getName() + ")");
 			}
-		} catch (InternalFailure e) {
+		} catch (SyntacticException e) {
 			throw e;
 		} catch (Throwable e) {
-			throw new InternalFailure(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
+			throw new SyntacticException(e.getMessage(), ((WyilFile) expr.getHeap()).getEntry(), expr, e);
 		}
 		return allocate(result, expr.getParent(WyilFile.Attribute.Span.class));
 	}
@@ -2407,7 +2407,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Variable) {
 			result = new WyalFile.Type.Any();
 		} else {
-			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
+			throw new SyntacticException("unknown type encountered (" + type.getClass().getName() + ")",
 					((WyilFile) type.getHeap()).getEntry(), context);
 		}
 		//

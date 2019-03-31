@@ -18,9 +18,8 @@ import java.util.Arrays;
 
 import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyc.util.ErrorMessages;
@@ -278,9 +277,8 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new InternalFailure(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu.getEntry(), e);
 	}
 
 	protected interface Assumptions {
