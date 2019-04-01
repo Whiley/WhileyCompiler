@@ -13,7 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import static wybs.lang.SyntaxError.InternalFailure;
 import static wybs.util.AbstractCompilationUnit.ITEM_bool;
 import static wybs.util.AbstractCompilationUnit.ITEM_int;
 import static wybs.util.AbstractCompilationUnit.ITEM_null;
@@ -2014,15 +2013,13 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new InternalFailure(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu.getEntry(), e);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e, Throwable ex) {
-		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new InternalFailure(msg, cu.getEntry(), e, ex);
+		throw new SyntacticException(msg, cu.getEntry(), e, ex);
 	}
 
 	// ==========================================================================

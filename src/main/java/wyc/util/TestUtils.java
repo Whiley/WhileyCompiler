@@ -32,7 +32,7 @@ import java.util.List;
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -211,7 +211,7 @@ public class TestUtils {
 			result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// Print out any error messages
 			wycc.commands.Build.printSyntacticMarkers(psyserr, sources, target);
-		} catch (SyntaxError e) {
+		} catch (SyntacticException e) {
 			// Print out the syntax error
 			e.outputSourceError(psyserr,false);
 //			e.printStackTrace(psyserr);

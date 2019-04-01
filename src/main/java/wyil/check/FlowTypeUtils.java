@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Set;
 
 import wybs.lang.CompilationUnit;
+import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
@@ -626,6 +626,6 @@ public class FlowTypeUtils {
 	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new InternalFailure(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu.getEntry(), e);
 	}
 }

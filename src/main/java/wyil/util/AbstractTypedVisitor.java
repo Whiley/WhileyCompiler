@@ -29,13 +29,8 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 

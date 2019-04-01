@@ -39,7 +39,6 @@ import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
 import wybs.lang.CompilationUnit.Name;
-import wybs.lang.SyntaxError.InternalFailure;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
 import wycc.util.Logger;
@@ -178,82 +177,55 @@ public final class CompileTask implements Build.Task {
 			throws IOException {
 		Logger logger = project.getLogger();
 
-		try {
-			Runtime runtime = Runtime.getRuntime();
-			long startTime = System.currentTimeMillis();
-			long startMemory = runtime.freeMemory();
-			long tmpTime = startTime;
-			long tmpMemory = startMemory;
+		Runtime runtime = Runtime.getRuntime();
+		long startTime = System.currentTimeMillis();
+		long startMemory = runtime.freeMemory();
+		long tmpTime = startTime;
+		long tmpMemory = startMemory;
 
-			// ========================================================================
-			// Parse source files
-			// ========================================================================
-			WyilFile wf = compile(sources, target);
+		// ========================================================================
+		// Parse source files
+		// ========================================================================
+		WyilFile wf = compile(sources, target);
 
-			logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
-					tmpMemory - runtime.freeMemory());
+		logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
+				tmpMemory - runtime.freeMemory());
 
-			// ========================================================================
-			// Type Checking & Code Generation
-			// ========================================================================
+		// ========================================================================
+		// Type Checking & Code Generation
+		// ========================================================================
 
-			runtime = Runtime.getRuntime();
-			tmpTime = System.currentTimeMillis();
-			tmpMemory = runtime.freeMemory();
+		runtime = Runtime.getRuntime();
+		tmpTime = System.currentTimeMillis();
+		tmpMemory = runtime.freeMemory();
 
-			boolean r = new NameResolution(project,wf).apply();
-			// Compiler checks
-			r = r && new FlowTypeCheck().check(wf);
-			r = r && new DefiniteAssignmentCheck().check(wf);
-			r = r && new DefiniteUnassignmentCheck().check(wf);
-			r = r && new FunctionalCheck().check(wf);
-			r = r && new StaticVariableCheck().check(wf);
-			r = r && new AmbiguousCoercionCheck().check(wf);
-			// Transforms
-			if(r) {
-				// Only apply if previous stages have all passed.
-				new MoveAnalysis().apply(wf);
-				new RecursiveTypeAnalysis().apply(wf);
-			}
-
-			// ========================================================================
-			// Done
-			// ========================================================================
-
-			// Flush any changes to disk
-			target.flush();
-
-			long endTime = System.currentTimeMillis();
-			logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
-					startMemory - runtime.freeMemory());
-			//
-			return r;
-		} catch(InternalFailure e) {
-			SyntacticItem item = e.getElement();
-			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(e.getEntry().contentType() == WyilFile.ContentType) {
-				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-				// Determine which source file this entry is contained in
-				Path.Entry sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
-				//
-				throw new InternalFailure(e.getMessage(), sf, item, e.getCause());
-			} else {
-				throw e;
-			}
-		} catch(SyntaxError e) {
-			//
-			SyntacticItem item = e.getElement();
-			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(e.getEntry().contentType() == WyilFile.ContentType) {
-				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot,unit.getName(),sources);
-				//
-				throw new SyntaxError(e.getMessage(), sf, item, e.getCause());
-			} else {
-				throw e;
-			}
+		boolean r = new NameResolution(project,wf).apply();
+		// Compiler checks
+		r = r && new FlowTypeCheck().check(wf);
+		r = r && new DefiniteAssignmentCheck().check(wf);
+		r = r && new DefiniteUnassignmentCheck().check(wf);
+		r = r && new FunctionalCheck().check(wf);
+		r = r && new StaticVariableCheck().check(wf);
+		r = r && new AmbiguousCoercionCheck().check(wf);
+		// Transforms
+		if(r) {
+			// Only apply if previous stages have all passed.
+			new MoveAnalysis().apply(wf);
+			new RecursiveTypeAnalysis().apply(wf);
 		}
+
+		// ========================================================================
+		// Done
+		// ========================================================================
+
+		// Flush any changes to disk
+		target.flush();
+
+		long endTime = System.currentTimeMillis();
+		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
+				startMemory - runtime.freeMemory());
+		//
+		return r;
 	}
 
 
@@ -289,7 +261,7 @@ public final class CompileTask implements Build.Task {
 			long endTime = System.currentTimeMillis();
 			logger.logTimedMessage("verified code for 1 file(s)", endTime - startTime,
 					startMemory - runtime.freeMemory());
-		} catch(SyntaxError e) {
+		} catch(SyntacticException e) {
 			//
 			SyntacticItem item = e.getElement();
 			String message = e.getMessage();
@@ -302,9 +274,9 @@ public final class CompileTask implements Build.Task {
 				// Determine which source file this entry is contained in
 				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot, unit.getName(), sources);
 				//
-				throw new SyntaxError(message,sf,item,e.getCause());
+				throw new SyntacticException(message,sf,item,e.getCause());
 			} else {
-				throw new SyntaxError(message,e.getEntry(),item,e.getCause());
+				throw new SyntacticException(message,e.getEntry(),item,e.getCause());
 			}
 		}
 	}
@@ -383,7 +355,7 @@ public final class CompileTask implements Build.Task {
 			if (marker != null) {
 				// At least one marked assocaited with item.
 				CompilationUnit cu = (CompilationUnit) item.getHeap();
-				throw new SyntaxError(marker.getMessage(),cu.getEntry(),item);
+				throw new SyntacticException(marker.getMessage(),cu.getEntry(),item);
 			}
 		}
 	}

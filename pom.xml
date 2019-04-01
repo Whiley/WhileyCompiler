@@ -53,12 +53,12 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wycc</artifactId>
-      <version>0.7.6</version>
+      <version>0.7.7</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wytp</artifactId>
-      <version>0.6.15</version>
+      <version>0.6.16</version>
     </dependency>
     <dependency>
       <groupId>ant</groupId>
