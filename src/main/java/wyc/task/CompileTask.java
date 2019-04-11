@@ -333,30 +333,4 @@ public final class CompileTask implements Build.Task {
 		}
 		throw new IllegalArgumentException("unknown unit");
 	}
-
-	private static void throwSyntaxError(SyntacticItem item) {
-		throwSyntaxError(item, new BitSet());
-	}
-
-	private static void throwSyntaxError(SyntacticItem item, BitSet visited) {
-		int index = item.getIndex();
-		if(visited.get(index)) {
-			// Indicates we've already traversed this item and, hence, we are in some kind
-			// of loop.
-			return;
-		} else {
-			visited.set(index);
-			// Recursive children looking for other syntactic markers
-			for (int i = 0; i != item.size(); ++i) {
-				throwSyntaxError(item.get(i),visited);
-			}
-			SyntacticItem.Marker marker = item.getParent(SyntacticItem.Marker.class);
-			// Check whether this item has a marker associated with it.
-			if (marker != null) {
-				// At least one marked assocaited with item.
-				CompilationUnit cu = (CompilationUnit) item.getHeap();
-				throw new SyntacticException(marker.getMessage(),cu.getEntry(),item);
-			}
-		}
-	}
 }
