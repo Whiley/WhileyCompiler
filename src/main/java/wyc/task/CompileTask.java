@@ -23,6 +23,7 @@ import wyal.util.SmallWorldDomain;
 import wyal.util.TypeChecker;
 import wyal.util.WyalFileResolver;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
@@ -96,12 +97,6 @@ public final class CompileTask implements Build.Task {
 	 * and/or defined in external resources (e.g. jar files).
 	 */
 	private final Build.Project project;
-
-	/**
-	 * The source root to find Whiley files. This is far from ideal.
-	 */
-	private final Path.Root sourceRoot;
-
 	/**
 	 * Specify whether verification enabled or not
 	 */
@@ -111,13 +106,22 @@ public final class CompileTask implements Build.Task {
 	 */
 	private boolean counterexamples;
 
-	public CompileTask(Build.Project project, Path.Root sourceRoot) {
-		this.project = project;
-		this.sourceRoot = sourceRoot;
-	}
+	/**
+	 * The source root to find Whiley files. This is far from ideal.
+	 */
+	private final Path.Root sourceRoot;
 
-	public String id() {
-		return "wyc.builder";
+	private final Path.Entry<WyilFile> target;
+
+	private final List<Path.Entry<WhileyFile>> sources;
+
+	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
+			Collection<Path.Entry<WhileyFile>> sources) {
+		this.project = project;
+		// FIXME: shouldn't need source root
+		this.sourceRoot = sourceRoot;
+		this.target = target;
+		this.sources = new ArrayList<>(sources);
 	}
 
 	@Override
@@ -135,45 +139,38 @@ public final class CompileTask implements Build.Task {
 		return this;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
-			throws IOException {
-		// Identify the source compilation groups
-		HashSet<Path.Entry<?>> targets = new HashSet<>();
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<?> entry = p.first();
-			if (entry.contentType() == WhileyFile.ContentType) {
-				targets.addAll(graph.getChildren(entry));
-			}
-		}
-		// Determine which were successfully built
-		HashSet<Path.Entry<?>> built = new HashSet<>();
-		// Compile each one in turn
-		for (Path.Entry<?> target : targets) {
-			// FIXME: there is a problem here. That's because not every parent will be in
-			// the delta. Therefore, this is forcing every file to be recompiled.
-			List sources = graph.getParents(target);
-			boolean ok = build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
-			// Record whether target built successfully or not
-			if(ok) {
-				built.add(target);
-			}
-		}
-		// Done
-		return built;
+	public List<Entry<?>> getSources() {
+		// FIXME: why is this needed
+		return (List) sources;
 	}
 
-	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		if(!build(sourceRoot, target, sources)) {
+	@Override
+	public Entry<WyilFile> getTarget() {
+		return target;
+	}
+
+	@Override
+	public boolean isReady() {
+		for(Path.Entry<WhileyFile> s : sources) {
+			if(s.lastModified() > target.lastModified()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public boolean apply() throws IOException {
+		if(!build(target, sources)) {
 			return false;
 		} else if (verification) {
-			verify(sourceRoot, target, sources);
+			verify(target, sources);
 		}
 		return true;
 	}
 
-	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
 
@@ -229,7 +226,7 @@ public final class CompileTask implements Build.Task {
 	}
 
 
-	public  void verify(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
+	public  void verify(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
 			throws IOException {
 		Logger logger = project.getLogger();
 		// FIXME: this is really a bit of a kludge right now. The basic issue is that,

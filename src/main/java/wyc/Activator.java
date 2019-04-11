@@ -33,7 +33,6 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.Build.Graph;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
 import wybs.util.AbstractCompilationUnit.Identifier;

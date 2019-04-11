@@ -52,9 +52,8 @@ import java.util.Set;
  * @author David J. Pearce
  *
  */
-public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Build.Stage<WyilFile> {
+public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> {
 
-	@Override
 	public void apply(WyilFile module) {
 		visitModule(module, new HashSet<>());
 	}
