@@ -170,8 +170,7 @@ public final class CompileTask implements Build.Task {
 		return true;
 	}
 
-	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
-			throws IOException {
+	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
 		Logger logger = project.getLogger();
 
 		Runtime runtime = Runtime.getRuntime();
@@ -214,9 +213,6 @@ public final class CompileTask implements Build.Task {
 		// ========================================================================
 		// Done
 		// ========================================================================
-
-		// Flush any changes to disk
-		target.flush();
 
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,

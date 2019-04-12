@@ -19,6 +19,7 @@ import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
@@ -33,11 +34,13 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Executor;
 import wybs.lang.Build.Project;
 import wybs.lang.Build.Task;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.Many2OneBuildRule;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 
@@ -52,15 +55,6 @@ public class Activator implements Module.Activator {
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
 	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
-		private Trie pkg;
-		//
-		private Trie source;
-		// Specify directory where generated WyIL files are dumped.
-		private Trie target;
-		// Determine whether verification enabled or not
-		private boolean verification;
-		// Determine whether to try and find counterexamples or not
-		private boolean counterexamples;
 		//
 		@Override
 		public String getName() {
@@ -77,25 +71,39 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
-		public void apply(Configuration configuration) {
-			// Extract source path
-			this.pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
-			this.source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
-			this.target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
-			this.verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
-			this.counterexamples = configuration.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
-		}
+		public void initialise(Configuration configuration, Build.Project project) throws IOException {
+			Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
+			//
+			Trie source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
+			// Specify directory where generated WyIL files are dumped.
+			Trie target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			// Specify set of files included
+			Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
+			// Specify set of files excluded
+			Content.Filter<WhileyFile> excludes = Content.filter("**", WhileyFile.ContentType);
+			// Determine whether verification enabled or not
+			boolean verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
+			// Determine whether to try and find counterexamples or not
+			boolean counterexamples = configuration.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
+			// Construct the source root
+			Path.Root sourceRoot = project.getRoot().createRelativeRoot(source);
+			// Construct the binary root
+			Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
+			// Add build rule to project.
+			project.getRules().add(new Many2OneBuildRule<WhileyFile, WyilFile>(pkg, WyilFile.ContentType,
+					sourceRoot, includes, excludes, binaryRoot) {
 
-		@Override
-		public Task initialise(Build.Project project) {
-			try {
-				CompileTask task = new CompileTask(project, getSourceRoot(project.getRoot()))
-						.setVerification(verification).setCounterExamples(counterexamples);
-				return task;
-			} catch(IOException e) {
-				// FIXME: this is broken
-				throw new RuntimeException(e);
-			}
+				@Override
+				protected void apply(Executor graph, Entry<WyilFile> target, List<Path.Entry<WhileyFile>> matches)
+						throws IOException {
+					// Construct a new build task
+					CompileTask task = new CompileTask(project, sourceRoot, target, matches)
+							.setVerification(verification).setCounterExamples(counterexamples);
+					// Submit the task for execution
+					graph.submit(task);
+				}
+
+			});
 		}
 
 		@Override
@@ -106,47 +114,6 @@ public class Activator implements Module.Activator {
 		@Override
 		public Content.Type<?> getTargetType() {
 			return WyilFile.ContentType;
-		}
-
-		@Override
-		public Content.Filter<?> getSourceFilter() {
-			return Content.filter("**", WhileyFile.ContentType);
-		}
-
-		@Override
-		public Content.Filter<?> getTargetFilter() {
-			return Content.filter("**", WyilFile.ContentType);
-		}
-
-		@Override
-		public Path.Root getSourceRoot(Path.Root root) throws IOException {
-			return root.createRelativeRoot(source);
-		}
-
-		@Override
-		public Path.Root getTargetRoot(Path.Root root) throws IOException {
-			return root.createRelativeRoot(target);
-		}
-
-		@Override
-		public void refresh(Graph graph, Path.Root src, Path.Root bin) throws IOException {
-			//
-			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
-			// Check whether target binary exists or not
-			if (binary == null) {
-				// Doesn't exist, so create with default value
-				binary = bin.create(pkg, WyilFile.ContentType);
-				WyilFile wf = new WyilFile(binary);
-				binary.write(wf);
-				// Create initially empty WyIL module.
-				wf.setRootItem(new WyilFile.Decl.Module(new Name(pkg), new Tuple<>(), new Tuple<>(), new Tuple<>()));
-			}
-			//
-			for (Path.Entry<?> source : src.get(getSourceFilter())) {
-				// Register this derivation
-				graph.connect(source, binary);
-			}
-			//
 		}
 
 		@Override
@@ -172,25 +139,26 @@ public class Activator implements Module.Activator {
 		}
 
 		private Interpreter.CallStack initialise(Build.Project project, Interpreter interpreter) throws IOException {
+			throw new UnsupportedOperationException("FIX ME");
 			// Determine target root where compiled WyIL files live
-			Path.Root bin = getTargetRoot(project.getRoot());
-			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
-			//
-			Interpreter.CallStack stack = interpreter.new CallStack();
-			// Load the relevant WyIL module
-			stack.load(binary.read());
-			// Load all package dependencies
-			for(Build.Package p : project.getPackages()) {
-				// FIXME: is this the right way to determine the binary file from a given
-				// package?
-				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
-				//
-				for(Path.Entry<WyilFile> e : entries) {
-					stack.load(e.read());
-				}
-			}
-			//
-			return stack;
+//			Path.Root bin = getTargetRoot(project.getRoot());
+//			Path.Entry<WyilFile> binary = bin.get(pkg, WyilFile.ContentType);
+//			//
+//			Interpreter.CallStack stack = interpreter.new CallStack();
+//			// Load the relevant WyIL module
+//			stack.load(binary.read());
+//			// Load all package dependencies
+//			for(Build.Package p : project.getPackages()) {
+//				// FIXME: is this the right way to determine the binary file from a given
+//				// package?
+//				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+//				//
+//				for(Path.Entry<WyilFile> e : entries) {
+//					stack.load(e.read());
+//				}
+//			}
+//			//
+//			return stack;
 		}
 	};
 

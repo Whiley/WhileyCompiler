@@ -18,9 +18,11 @@ import java.util.*;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wyc.lang.WhileyFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyil.lang.WyilFile;
 import wyil.transform.VerificationConditionGenerator;
 
@@ -45,8 +47,20 @@ public class Wyil2WyalBuilder implements Build.Task {
 	 */
 	protected Logger logger = Logger.NULL;
 
-	public Wyil2WyalBuilder(Build.Project project) {
+	/**
+	 * Target file being generated
+	 */
+	private final Path.Entry<WyalFile> target;
+
+	/**
+	 * Source file being compiled
+	 */
+	private final Path.Entry<WyilFile> source;
+
+	public Wyil2WyalBuilder(Build.Project project, Path.Entry<WyalFile> target, Path.Entry<WyilFile> source) {
 		this.project = project;
+		this.target = target;
+		this.source = source;
 	}
 
 	@Override
@@ -62,43 +76,39 @@ public class Wyil2WyalBuilder implements Build.Task {
 		return null;
 	}
 
+
+	@Override
+	public List<Entry<?>> getSources() {
+		return Arrays.asList(source);
+	}
+
+	@Override
+	public Entry<WyalFile> getTarget() {
+		return target;
+	}
+
+	@Override
+	public boolean isReady() {
+		// FIXME: this is broken
+		return true;
+	}
+
+
 	@Override
 	@SuppressWarnings("unchecked")
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
-			throws IOException {
+	public boolean apply() throws IOException {
 
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
-		// ========================================================================
-		// Translate files
-		// ========================================================================
-		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
-			Path.Root dst = p.second();
-			Path.Entry<WyalFile> target = dst.create(source.id(), WyalFile.ContentType);
-			graph.connect(source, target);
-			generatedFiles.add(target);
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target)).translate(source.read());
-			// Write the file into its destination
-			target.write(contents);
-
-			// Then, flush contents to disk in case we generate an assertion
-			// error later. In principle, this should be unnecessary when
-			// syntax errors are no longer implemented as exceptions.
-			target.flush();
-		}
-
-		// ========================================================================
-		// Done
-		// ========================================================================
+		WyalFile contents = new VerificationConditionGenerator(new WyalFile(target)).translate(source.read());
+		// Write the file into its destination
+		target.write(contents);
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size() + " file(s)", endTime - start,
-				memory - runtime.freeMemory());
-
-		return generatedFiles;
+		logger.logTimedMessage("Wyil => Wyal: compiled 1 file(s)", endTime - start, memory - runtime.freeMemory());
+		//
+		return true;
 	}
 }
