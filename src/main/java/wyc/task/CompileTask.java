@@ -16,12 +16,6 @@ package wyc.task;
 import java.io.*;
 import java.util.*;
 
-import wyal.lang.WyalFile;
-import wyal.util.Interpreter;
-import wyal.util.NameResolver;
-import wyal.util.SmallWorldDomain;
-import wyal.util.TypeChecker;
-import wyal.util.WyalFileResolver;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyil.check.AmbiguousCoercionCheck;
@@ -30,20 +24,14 @@ import wyil.check.DefiniteUnassignmentCheck;
 import wyil.check.FlowTypeCheck;
 import wyil.check.FunctionalCheck;
 import wyil.check.StaticVariableCheck;
+import wyil.check.VerificationCheck;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
-import wyil.transform.VerificationConditionGenerator;
-import wytp.provers.AutomatedTheoremProver;
-import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
-import wybs.lang.CompilationUnit.Name;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wycc.util.Logger;
-import wycc.util.Pair;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -90,7 +78,6 @@ import wycc.util.Pair;
  *
  */
 public final class CompileTask implements Build.Task {
-
 	/**
 	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being compiled
@@ -111,8 +98,14 @@ public final class CompileTask implements Build.Task {
 	 */
 	private final Path.Root sourceRoot;
 
+	/**
+	 * Target WyilFile being built by this compile task.
+	 */
 	private final Path.Entry<WyilFile> target;
 
+	/**
+	 * List of source files used to build the target.
+	 */
 	private final List<Path.Entry<WhileyFile>> sources;
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
@@ -162,39 +155,13 @@ public final class CompileTask implements Build.Task {
 
 	@Override
 	public boolean apply() throws IOException {
-		if(!build(target, sources)) {
-			return false;
-		} else if (verification) {
-			verify(target, sources);
-		}
-		return true;
-	}
-
-	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		Logger logger = project.getLogger();
-
-		Runtime runtime = Runtime.getRuntime();
-		long startTime = System.currentTimeMillis();
-		long startMemory = runtime.freeMemory();
-		long tmpTime = startTime;
-		long tmpMemory = startMemory;
-
 		// ========================================================================
-		// Parse source files
+		// Parsing
 		// ========================================================================
 		WyilFile wf = compile(sources, target);
-
-		logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
-
 		// ========================================================================
 		// Type Checking & Code Generation
 		// ========================================================================
-
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
-
 		boolean r = new NameResolution(project,wf).apply();
 		// Compiler checks
 		r = r && new FlowTypeCheck().check(wf);
@@ -203,75 +170,21 @@ public final class CompileTask implements Build.Task {
 		r = r && new FunctionalCheck().check(wf);
 		r = r && new StaticVariableCheck().check(wf);
 		r = r && new AmbiguousCoercionCheck().check(wf);
+		//
+		if(verification) {
+			// FIXME: this obviously doesn't fit.
+			new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
+		}
 		// Transforms
 		if(r) {
 			// Only apply if previous stages have all passed.
 			new MoveAnalysis().apply(wf);
 			new RecursiveTypeAnalysis().apply(wf);
 		}
-
 		// ========================================================================
 		// Done
 		// ========================================================================
-
-		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
-				startMemory - runtime.freeMemory());
-		//
 		return r;
-	}
-
-
-	public  void verify(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
-			throws IOException {
-		Logger logger = project.getLogger();
-		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
-		// in the near future, the VerificationConditionGenerator will operate directly
-		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
-		// work on the WyilFile directly as well and, hence, this will become more like
-		// a compilation stage (as per others above).
-		try {
-			Runtime runtime = Runtime.getRuntime();
-			long startTime = System.currentTimeMillis();
-			long startMemory = runtime.freeMemory();
-			//
-			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-			// FIXME: this unfortunately puts it in the wrong directory.
-			Path.Entry<WyalFile> wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
-			if (wyalTarget == null) {
-				wyalTarget = project.getRoot().create(target.id(), WyalFile.ContentType);
-				wyalTarget.write(new WyalFile(wyalTarget));
-			}
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target.read());
-			new TypeChecker(typeSystem, contents, target).check();
-			wyalTarget.write(contents);
-			wyalTarget.flush();
-			// Now try to verfify it
-			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-			// FIXME: this is horrendous :(
-			prover.check(contents, sourceRoot);
-
-			long endTime = System.currentTimeMillis();
-			logger.logTimedMessage("verified code for 1 file(s)", endTime - startTime,
-					startMemory - runtime.freeMemory());
-		} catch(SyntacticException e) {
-			//
-			SyntacticItem item = e.getElement();
-			String message = e.getMessage();
-			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
-				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
-			}
-			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
-				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot, unit.getName(), sources);
-				//
-				throw new SyntacticException(message,sf,item,e.getCause());
-			} else {
-				throw new SyntacticException(message,e.getEntry(),item,e.getCause());
-			}
-		}
 	}
 
 	/**
@@ -296,34 +209,5 @@ public final class CompileTask implements Build.Task {
 		}
 		//
 		return wyil;
-	}
-
-	public String findCounterexamples(WyalFile.Declaration.Assert assertion) {
-		// FIXME: it doesn't feel right creating new instances here.
-		NameResolver resolver = new WyalFileResolver(project);
-		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
-		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
-		try {
-			Interpreter.Result result = interpreter.evaluate(assertion);
-			if (!result.holds()) {
-				// FIXME: this is broken
-				return result.getEnvironment().toString();
-			}
-		} catch (Interpreter.UndefinedException e) {
-			// do nothing for now
-		}
-		return "no counterexample";
-	}
-
-	private static Path.Entry<WhileyFile> getWhileySourceFile(Path.Root root, Name name,
-			List<Path.Entry<WhileyFile>> sources) throws IOException {
-		String nameStr = name.toString().replace("::", "/");
-		//
-		for (Path.Entry<WhileyFile> e : sources) {
-			if (root.contains(e) && e.id().toString().endsWith(nameStr)) {
-				return e;
-			}
-		}
-		throw new IllegalArgumentException("unknown unit");
 	}
 }

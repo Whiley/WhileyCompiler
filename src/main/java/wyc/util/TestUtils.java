@@ -43,7 +43,6 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyc.task.Wyil2WyalBuilder;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -51,12 +50,10 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
-import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
-import wytp.provers.AutomatedTheoremProver;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
