@@ -144,6 +144,11 @@ public final class CompileTask implements Build.Task {
 	}
 
 	@Override
+	public String getIdentifier() {
+		return "wyc";
+	}
+
+	@Override
 	public boolean isReady() {
 		for(Path.Entry<WhileyFile> s : sources) {
 			if(s.lastModified() > target.lastModified()) {

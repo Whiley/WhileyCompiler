@@ -96,7 +96,6 @@ public class Activator implements Module.Activator {
 					// Submit the task for execution
 					executor.submit(task);
 				}
-
 			});
 		}
 
