@@ -14,13 +14,11 @@
 package wyc;
 
 import wycc.cfg.Configuration;
-import wycc.lang.Command;
 import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
-import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
@@ -32,15 +30,12 @@ import wyil.interpreter.Interpreter;
 import java.io.IOException;
 import java.util.List;
 
-import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.Build.Executor;
-import wybs.lang.Build.Project;
-import wybs.lang.Build.Task;
+import wybs.util.AbstractBuildRule;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wybs.util.Many2OneBuildRule;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 
@@ -79,8 +74,6 @@ public class Activator implements Module.Activator {
 			Trie target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 			// Specify set of files included
 			Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
-			// Specify set of files excluded
-			Content.Filter<WhileyFile> excludes = Content.filter("**", WhileyFile.ContentType);
 			// Determine whether verification enabled or not
 			boolean verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
 			// Determine whether to try and find counterexamples or not
@@ -89,18 +82,19 @@ public class Activator implements Module.Activator {
 			Path.Root sourceRoot = project.getRoot().createRelativeRoot(source);
 			// Construct the binary root
 			Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
+			// Initialise the target file being built
+			Path.Entry<WyilFile> binary = initialiseBinaryTarget(binaryRoot,pkg);
 			// Add build rule to project.
-			project.getRules().add(new Many2OneBuildRule<WhileyFile, WyilFile>(pkg, WyilFile.ContentType,
-					sourceRoot, includes, excludes, binaryRoot) {
-
+			project.getRules()
+					.add(new AbstractBuildRule<WhileyFile, WyilFile>(sourceRoot, includes, null) {
 				@Override
-				protected void apply(Executor graph, Entry<WyilFile> target, List<Path.Entry<WhileyFile>> matches)
+				protected void apply(Executor executor, List<Path.Entry<WhileyFile>> matches)
 						throws IOException {
 					// Construct a new build task
-					CompileTask task = new CompileTask(project, sourceRoot, target, matches)
+					CompileTask task = new CompileTask(project, sourceRoot, binary, matches)
 							.setVerification(verification).setCounterExamples(counterexamples);
 					// Submit the task for execution
-					graph.submit(task);
+					executor.submit(task);
 				}
 
 			});
@@ -159,6 +153,24 @@ public class Activator implements Module.Activator {
 //			}
 //			//
 //			return stack;
+		}
+
+		private Path.Entry<WyilFile> initialiseBinaryTarget(Path.Root binroot, Path.ID id) throws IOException {
+			if(binroot.exists(id, WyilFile.ContentType)) {
+				// Yes, it does so reuse it.
+				return binroot.get(id, WyilFile.ContentType);
+			} else {
+				// No, it doesn't so create and initialise it
+				Path.Entry<WyilFile> target = binroot.create(id, WyilFile.ContentType);
+				//
+				WyilFile wf = new WyilFile(target);
+				// Initiale with empty file
+				target.write(wf);
+				// Create initially empty WyIL module.
+				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
+				// Done
+				return target;
+			}
 		}
 	};
 
