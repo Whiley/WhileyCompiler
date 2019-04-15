@@ -144,11 +144,6 @@ public final class CompileTask implements Build.Task {
 	}
 
 	@Override
-	public String getIdentifier() {
-		return "wyc";
-	}
-
-	@Override
 	public boolean apply() throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
