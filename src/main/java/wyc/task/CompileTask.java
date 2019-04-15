@@ -149,17 +149,10 @@ public final class CompileTask implements Build.Task {
 	}
 
 	@Override
-	public boolean isReady() {
-		for(Path.Entry<WhileyFile> s : sources) {
-			if(s.lastModified() > target.lastModified()) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
 	public boolean apply() throws IOException {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
 		// ========================================================================
 		// Parsing
 		// ========================================================================
@@ -189,6 +182,10 @@ public final class CompileTask implements Build.Task {
 		// ========================================================================
 		// Done
 		// ========================================================================
+		long endTime = System.currentTimeMillis();
+		project.getLogger().logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)",
+				endTime - start, memory - runtime.freeMemory());
+		//
 		return r;
 	}
 
