@@ -17,7 +17,6 @@ import java.io.*;
 import java.util.*;
 
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
@@ -26,10 +25,12 @@ import wyil.check.FunctionalCheck;
 import wyil.check.StaticVariableCheck;
 import wyil.check.VerificationCheck;
 import wyil.lang.WyilFile;
+import wyil.lang.Compiler;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
 import wybs.lang.*;
+import wybs.util.AbstractBuildTask;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
 
@@ -77,13 +78,8 @@ import wyc.lang.*;
  * @author David J. Pearce
  *
  */
-public final class CompileTask implements Build.Task {
-	/**
-	 * The master project for identifying all resources available to the
-	 * builder. This includes all modules declared in the project being compiled
-	 * and/or defined in external resources (e.g. jar files).
-	 */
-	private final Build.Project project;
+public final class CompileTask extends AbstractBuildTask<WhileyFile,WyilFile> {
+
 	/**
 	 * Specify whether verification enabled or not
 	 */
@@ -99,27 +95,42 @@ public final class CompileTask implements Build.Task {
 	private final Path.Root sourceRoot;
 
 	/**
-	 * Target WyilFile being built by this compile task.
+	 * Type checking stage. After name resolution, this must run before any other
+	 * stage, as all other stages depend on it.
 	 */
-	private final Path.Entry<WyilFile> target;
+	private final FlowTypeCheck checker;
 
 	/**
-	 * List of source files used to build the target.
+	 * The set of compiler checks. These check the generated WyilFile is valid.
 	 */
-	private final List<Path.Entry<WhileyFile>> sources;
+	private final Compiler.Check[] stages;
+
+	/**
+	 * The set of transforms. These perform certain transformations on the generated
+	 * WyilFile.
+	 */
+	private final Compiler.Transform[] transforms;
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
 			Collection<Path.Entry<WhileyFile>> sources) {
-		this.project = project;
+		super(project,target,sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
-		this.target = target;
-		this.sources = new ArrayList<>(sources);
-	}
-
-	@Override
-	public Build.Project project() {
-		return project;
+		// Instantiate type checker
+		this.checker = new FlowTypeCheck();
+		// Instantiate other checks
+		this.stages = new Compiler.Check[]{
+				new DefiniteAssignmentCheck(),
+				new DefiniteUnassignmentCheck(),
+				new FunctionalCheck(),
+				new StaticVariableCheck(),
+				new AmbiguousCoercionCheck()
+		};
+		// Instantiate various transformations
+		this.transforms = new Compiler.Transform[] {
+				new MoveAnalysis(),
+				new RecursiveTypeAnalysis()
+		};
 	}
 
 	public CompileTask setVerification(boolean flag) {
@@ -133,53 +144,53 @@ public final class CompileTask implements Build.Task {
 	}
 
 	@Override
-	public List<Entry<?>> getSources() {
-		// FIXME: why is this needed
-		return (List) sources;
-	}
-
-	@Override
-	public Entry<WyilFile> getTarget() {
-		return target;
-	}
-
-	@Override
-	public boolean apply() throws IOException {
+	public boolean apply() {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-		// ========================================================================
-		// Parsing
-		// ========================================================================
-		WyilFile wf = compile(sources, target);
-		// ========================================================================
-		// Type Checking & Code Generation
-		// ========================================================================
-		boolean r = new NameResolution(project,wf).apply();
-		// Compiler checks
-		r = r && new FlowTypeCheck().check(wf);
-		r = r && new DefiniteAssignmentCheck().check(wf);
-		r = r && new DefiniteUnassignmentCheck().check(wf);
-		r = r && new FunctionalCheck().check(wf);
-		r = r && new StaticVariableCheck().check(wf);
-		r = r && new AmbiguousCoercionCheck().check(wf);
 		//
-		if(verification) {
-			// FIXME: this obviously doesn't fit.
-			new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
+		boolean r;
+		//
+		try {
+			// ========================================================================
+			// Parsing
+			// ========================================================================
+			WyilFile wf = compile(sources, target);
+			// ========================================================================
+			// Name Resolution
+			// ========================================================================
+			r = new NameResolution(project, wf).apply();
+			// ========================================================================
+			// Flow Type Checking
+			// ========================================================================
+			r = r && checker.check(wf);
+			// ========================================================================
+			// Compiler Checks
+			// ========================================================================
+			for (int i = 0; i != stages.length; ++i) {
+				r = r && stages[i].check(wf);
+			}
+			//
+			if (verification) {
+				// FIXME: this obviously doesn't fit.
+				new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
+			}
+			// Transforms
+			if (r) {
+				// Only apply if previous stages have all passed.
+				for (int i = 0; i != transforms.length; ++i) {
+					transforms[i].apply(wf);
+				}
+			}
+			// ========================================================================
+			// Done
+			// ========================================================================
+			long endTime = System.currentTimeMillis();
+			project.getLogger().logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)",
+					endTime - start, memory - runtime.freeMemory());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
 		}
-		// Transforms
-		if(r) {
-			// Only apply if previous stages have all passed.
-			new MoveAnalysis().apply(wf);
-			new RecursiveTypeAnalysis().apply(wf);
-		}
-		// ========================================================================
-		// Done
-		// ========================================================================
-		long endTime = System.currentTimeMillis();
-		project.getLogger().logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)",
-				endTime - start, memory - runtime.freeMemory());
 		//
 		return r;
 	}
