@@ -15,6 +15,7 @@ package wyc.task;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 import wyfs.lang.Path;
 import wyil.check.AmbiguousCoercionCheck;
@@ -37,7 +38,7 @@ import wyc.lang.*;
 /**
  * Responsible for managing the process of turning source files into binary code
  * for execution. Each source file is passed through a pipeline of stages that
- * modify it in a variet	y of ways. The main stages are:
+ * modify it in a variet y of ways. The main stages are:
  * <ol>
  * <li>
  * <p>
@@ -78,7 +79,7 @@ import wyc.lang.*;
  * @author David J. Pearce
  *
  */
-public final class CompileTask extends AbstractBuildTask<WhileyFile,WyilFile> {
+public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 
 	/**
 	 * Specify whether verification enabled or not
@@ -113,24 +114,16 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile,WyilFile> {
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
 			Collection<Path.Entry<WhileyFile>> sources) {
-		super(project,target,sources);
+		super(project, target, sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
 		// Instantiate type checker
 		this.checker = new FlowTypeCheck();
 		// Instantiate other checks
-		this.stages = new Compiler.Check[]{
-				new DefiniteAssignmentCheck(),
-				new DefiniteUnassignmentCheck(),
-				new FunctionalCheck(),
-				new StaticVariableCheck(),
-				new AmbiguousCoercionCheck()
-		};
+		this.stages = new Compiler.Check[] { new DefiniteAssignmentCheck(), new DefiniteUnassignmentCheck(),
+				new FunctionalCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
 		// Instantiate various transformations
-		this.transforms = new Compiler.Transform[] {
-				new MoveAnalysis(),
-				new RecursiveTypeAnalysis()
-		};
+		this.transforms = new Compiler.Transform[] { new MoveAnalysis(), new RecursiveTypeAnalysis() };
 	}
 
 	public CompileTask setVerification(boolean flag) {
@@ -144,78 +137,73 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile,WyilFile> {
 	}
 
 	@Override
-	public boolean apply() {
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-		//
-		boolean r;
-		//
-		try {
-			// ========================================================================
-			// Parsing
-			// ========================================================================
-			WyilFile wf = compile(sources, target);
-			// ========================================================================
-			// Name Resolution
-			// ========================================================================
-			r = new NameResolution(project, wf).apply();
-			// ========================================================================
-			// Flow Type Checking
-			// ========================================================================
-			r = r && checker.check(wf);
-			// ========================================================================
-			// Compiler Checks
-			// ========================================================================
-			for (int i = 0; i != stages.length; ++i) {
-				r = r && stages[i].check(wf);
-			}
-			//
-			if (verification) {
-				// FIXME: this obviously doesn't fit.
-				new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
-			}
-			// Transforms
-			if (r) {
-				// Only apply if previous stages have all passed.
-				for (int i = 0; i != transforms.length; ++i) {
-					transforms[i].apply(wf);
-				}
-			}
-			// ========================================================================
-			// Done
-			// ========================================================================
-			long endTime = System.currentTimeMillis();
-			project.getLogger().logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)",
-					endTime - start, memory - runtime.freeMemory());
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+	public Callable<Boolean> initialise() throws IOException {
+		// Extract target and source files for compilation. This is the component which
+		// requires I/O.
+		WyilFile wyil = target.read();
+		WhileyFile[] whileys = new WhileyFile[sources.size()];
+		for (int i = 0; i != whileys.length; ++i) {
+			whileys[i] = sources.get(i).read();
 		}
-		//
-		return r;
+		// Construct the lambda for subsequent execution. This will eventually make its
+		// way into some kind of execution pool, possibly for concurrent execution with
+		// other tasks.
+		return () -> execute(wyil, whileys);
 	}
 
 	/**
-	 * Compile one or more WhileyFiles into a given WyilFile
+	 * The business end of a compilation task. The intention is that this
+	 * computation can proceed without performing any blocking I/O. This means it
+	 * can be used in e.g. a forkjoin task safely.
 	 *
-	 * @param source The source file being compiled.
-	 * @param target The target file being generated.
+	 * @param target
+	 *            --- The WyilFile being written.
+	 * @param sources
+	 *            --- The WhileyFiles being compiled.
 	 * @return
-	 * @throws IOException
 	 */
-	private static WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
-		// Read target WyilFile. This may have already been compiled in a previous run
-		// and, in such case, we are invalidating some or all of the existing file.
-		WyilFile wyil = target.read();
-		// Parse all modules
-		for(int i=0;i!=sources.size();++i) {
-			Path.Entry<WhileyFile> source = sources.get(i);
-			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
+	public boolean execute(WyilFile target, WhileyFile... sources) {
+		// Parse source files into target
+		for (int i = 0; i != sources.length; ++i) {
+			// NOTE: this is somehow where we work out the initial deltas for incremental
+			// compilation.
+			WhileyFile source = sources[i];
+			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			// FIXME: what to do with module added to heap? The problem is that this might
 			// be replaced a module, for example.
-			wyil.getModule().putUnit(wyp.read());
+			target.getModule().putUnit(wyp.read());
+		}
+		// Perform name resolution.
+		boolean r;
+		try {
+			r = new NameResolution(project, target).apply();
+		} catch(IOException e) {
+			// FIXME: this is clearly broken.
+			throw new RuntimeException(e);
+		}
+		// ========================================================================
+		// Flow Type Checking
+		// ========================================================================
+		r = r && checker.check(target);
+		// ========================================================================
+		// Compiler Checks
+		// ========================================================================
+		for (int i = 0; i != stages.length; ++i) {
+			r = r && stages[i].check(target);
 		}
 		//
-		return wyil;
+		if (verification) {
+			// FIXME: this obviously doesn't fit.
+			//new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
+		}
+		// Transforms
+		if (r) {
+			// Only apply if previous stages have all passed.
+			for (int i = 0; i != transforms.length; ++i) {
+				transforms[i].apply(target);
+			}
+		}
+		// Done
+		return r;
 	}
 }

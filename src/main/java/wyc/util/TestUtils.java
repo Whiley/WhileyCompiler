@@ -28,17 +28,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.Build.Executor;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.SequentialBuildExecutor;
-import wybs.util.StdProject;
+import wybs.util.SequentialBuildProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
@@ -189,7 +189,7 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			StdProject project = new StdProject(root, new SequentialBuildExecutor());
+			SequentialBuildProject project = new SequentialBuildProject(root);
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
 			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
@@ -197,13 +197,16 @@ public class TestUtils {
 			// Add build rule
 			project.add(new Build.Rule() {
 				@Override
-				public void apply(Executor executor) throws IOException {
-					CompileTask task = new CompileTask(project, root, target, sources).setVerification(verify).setCounterExamples(counterexamples);
-					executor.submit(task);
+				public void apply(Collection<Build.Task> tasks) throws IOException {
+					// Construct a new build task
+					CompileTask task = new CompileTask(project, root, target, sources).setVerification(verify)
+							.setCounterExamples(counterexamples);
+					// Submit the task for execution
+					tasks.add(task);
 				}
 			});
 			// Actually force the project to build
-			project.build();
+			project.build(ForkJoinPool.commonPool());
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 			// Check whether any syntax error produced

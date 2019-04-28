@@ -28,10 +28,10 @@ import static wyil.lang.WyilFile.Name;
 import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 import wybs.lang.Build;
-import wybs.lang.Build.Executor;
 import wybs.util.AbstractBuildRule;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -85,16 +85,15 @@ public class Activator implements Module.Activator {
 			// Initialise the target file being built
 			Path.Entry<WyilFile> binary = initialiseBinaryTarget(binaryRoot,pkg);
 			// Add build rule to project.
-			project.getRules()
-					.add(new AbstractBuildRule<WhileyFile, WyilFile>(sourceRoot, includes, null) {
+			project.getRules().add(new AbstractBuildRule<WhileyFile, WyilFile>(sourceRoot, includes, null) {
 				@Override
-				protected void apply(Executor executor, List<Path.Entry<WhileyFile>> matches)
+				protected void apply(List<Path.Entry<WhileyFile>> matches, Collection<Build.Task> tasks)
 						throws IOException {
 					// Construct a new build task
 					CompileTask task = new CompileTask(project, sourceRoot, binary, matches)
 							.setVerification(verification).setCounterExamples(counterexamples);
 					// Submit the task for execution
-					executor.submit(task);
+					tasks.add(task);
 				}
 			});
 		}
