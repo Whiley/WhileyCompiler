@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
@@ -205,14 +206,30 @@ public class TestUtils {
 					tasks.add(task);
 				}
 			});
-			// Actually force the project to build
-			project.build(ForkJoinPool.commonPool());
+			// FIXME: this is annoying!
+			project.refresh();
+			// Actually force the project to build!
+			result = project.build(ForkJoinPool.commonPool()).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 			// Check whether any syntax error produced
-			result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
+			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
 			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
+		} catch(ExecutionException e) {
+			// FIXME: this is a complete kludge to handle the workaround for
+			// VerificationCheck. This currently uses the old theorem prover which forceably
+			// throws exceptions (yuk)
+			Throwable cause = e;
+			while (cause.getCause() != null) {
+				cause = cause.getCause();
+				if (cause instanceof SyntacticException) {
+					SyntacticException se = (SyntacticException) cause;
+					// Print out the syntax error
+					se.outputSourceError(psyserr, false);
+					result = false;
+				}
+			}
 		} catch (SyntacticException e) {
 			// Print out the syntax error
 			e.outputSourceError(psyserr,false);

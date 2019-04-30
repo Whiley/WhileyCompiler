@@ -73,7 +73,7 @@ public class VerificationCheck {
 			SyntacticItem item = e.getElement();
 			String message = e.getMessage();
 			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
-				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
+				message += " " + findCounterexamples((WyalFile.Declaration.Assert) item);
 			}
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
 			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
@@ -103,7 +103,7 @@ public class VerificationCheck {
 		} catch (Interpreter.UndefinedException e) {
 			// do nothing for now
 		}
-		return "no counterexample";
+		return "{no counterexample}";
 	}
 
 

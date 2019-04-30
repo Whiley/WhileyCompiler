@@ -192,9 +192,8 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			r = r && stages[i].check(target);
 		}
 		//
-		if (verification) {
-			// FIXME: this obviously doesn't fit.
-			//new VerificationCheck(project, sourceRoot, counterexamples).apply(target, sources);
+		if (r & verification) {
+			verify();
 		}
 		// Transforms
 		if (r) {
@@ -205,5 +204,14 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		}
 		// Done
 		return r;
+	}
+
+	private void verify() {
+		try {
+			// FIXME: this is seriously a kludge for now.
+			new VerificationCheck(project, sourceRoot, counterexamples).apply(this.target, this.sources);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }
