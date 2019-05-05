@@ -1,3 +1,3 @@
-tests/invalid/ConstrainedInt_Invalid_5.whiley:4: type invariant may not be satisfied {}
+tests/invalid/ConstrainedInt_Invalid_5.whiley:4: type invariant may not be satisfied {no counterexample}
     x = x + 1
         ^^^^^

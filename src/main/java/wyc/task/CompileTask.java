@@ -15,13 +15,8 @@ package wyc.task;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 
-import wyal.lang.WyalFile;
-import wyal.util.Interpreter;
-import wyal.util.NameResolver;
-import wyal.util.SmallWorldDomain;
-import wyal.util.TypeChecker;
-import wyal.util.WyalFileResolver;
 import wyfs.lang.Path;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
@@ -29,25 +24,21 @@ import wyil.check.DefiniteUnassignmentCheck;
 import wyil.check.FlowTypeCheck;
 import wyil.check.FunctionalCheck;
 import wyil.check.StaticVariableCheck;
+import wyil.check.VerificationCheck;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
+import wyil.lang.Compiler;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
-import wyil.transform.VerificationConditionGenerator;
-import wytp.provers.AutomatedTheoremProver;
-import wytp.types.extractors.TypeInvariantExtractor;
 import wybs.lang.*;
-import wybs.lang.CompilationUnit.Name;
+import wybs.util.AbstractBuildTask;
 import wyc.io.WhileyFileParser;
 import wyc.lang.*;
-import wycc.util.Logger;
-import wycc.util.Pair;
 
 /**
  * Responsible for managing the process of turning source files into binary code
  * for execution. Each source file is passed through a pipeline of stages that
- * modify it in a variet	y of ways. The main stages are:
+ * modify it in a variet y of ways. The main stages are:
  * <ol>
  * <li>
  * <p>
@@ -88,19 +79,7 @@ import wycc.util.Pair;
  * @author David J. Pearce
  *
  */
-public final class CompileTask implements Build.Task {
-
-	/**
-	 * The master project for identifying all resources available to the
-	 * builder. This includes all modules declared in the project being compiled
-	 * and/or defined in external resources (e.g. jar files).
-	 */
-	private final Build.Project project;
-
-	/**
-	 * The source root to find Whiley files. This is far from ideal.
-	 */
-	private final Path.Root sourceRoot;
+public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 
 	/**
 	 * Specify whether verification enabled or not
@@ -111,18 +90,40 @@ public final class CompileTask implements Build.Task {
 	 */
 	private boolean counterexamples;
 
-	public CompileTask(Build.Project project, Path.Root sourceRoot) {
-		this.project = project;
+	/**
+	 * The source root to find Whiley files. This is far from ideal.
+	 */
+	private final Path.Root sourceRoot;
+
+	/**
+	 * Type checking stage. After name resolution, this must run before any other
+	 * stage, as all other stages depend on it.
+	 */
+	private final FlowTypeCheck checker;
+
+	/**
+	 * The set of compiler checks. These check the generated WyilFile is valid.
+	 */
+	private final Compiler.Check[] stages;
+
+	/**
+	 * The set of transforms. These perform certain transformations on the generated
+	 * WyilFile.
+	 */
+	private final Compiler.Transform[] transforms;
+
+	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
+			Collection<Path.Entry<WhileyFile>> sources) {
+		super(project, target, sources);
+		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
-	}
-
-	public String id() {
-		return "wyc.builder";
-	}
-
-	@Override
-	public Build.Project project() {
-		return project;
+		// Instantiate type checker
+		this.checker = new FlowTypeCheck();
+		// Instantiate other checks
+		this.stages = new Compiler.Check[] { new DefiniteAssignmentCheck(), new DefiniteUnassignmentCheck(),
+				new FunctionalCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
+		// Instantiate various transformations
+		this.transforms = new Compiler.Transform[] { new MoveAnalysis(), new RecursiveTypeAnalysis() };
 	}
 
 	public CompileTask setVerification(boolean flag) {
@@ -135,202 +136,82 @@ public final class CompileTask implements Build.Task {
 		return this;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
-			throws IOException {
-		// Identify the source compilation groups
-		HashSet<Path.Entry<?>> targets = new HashSet<>();
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<?> entry = p.first();
-			if (entry.contentType() == WhileyFile.ContentType) {
-				targets.addAll(graph.getChildren(entry));
-			}
+	public Callable<Boolean> initialise() throws IOException {
+		// Extract target and source files for compilation. This is the component which
+		// requires I/O.
+		WyilFile wyil = target.read();
+		WhileyFile[] whileys = new WhileyFile[sources.size()];
+		for (int i = 0; i != whileys.length; ++i) {
+			whileys[i] = sources.get(i).read();
 		}
-		// Determine which were successfully built
-		HashSet<Path.Entry<?>> built = new HashSet<>();
-		// Compile each one in turn
-		for (Path.Entry<?> target : targets) {
-			// FIXME: there is a problem here. That's because not every parent will be in
-			// the delta. Therefore, this is forcing every file to be recompiled.
-			List sources = graph.getParents(target);
-			boolean ok = build((Path.Entry<WyilFile>) target, (List<Path.Entry<WhileyFile>>) sources);
-			// Record whether target built successfully or not
-			if(ok) {
-				built.add(target);
-			}
-		}
-		// Done
-		return built;
-	}
-
-	public boolean build(Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources) throws IOException {
-		if(!build(sourceRoot, target, sources)) {
-			return false;
-		} else if (verification) {
-			verify(sourceRoot, target, sources);
-		}
-		return true;
-	}
-
-	public boolean build(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
-			throws IOException {
-		Logger logger = project.getLogger();
-
-		Runtime runtime = Runtime.getRuntime();
-		long startTime = System.currentTimeMillis();
-		long startMemory = runtime.freeMemory();
-		long tmpTime = startTime;
-		long tmpMemory = startMemory;
-
-		// ========================================================================
-		// Parse source files
-		// ========================================================================
-		WyilFile wf = compile(sources, target);
-
-		logger.logTimedMessage("Parsed " + sources.size() + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
-
-		// ========================================================================
-		// Type Checking & Code Generation
-		// ========================================================================
-
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
-
-		boolean r = new NameResolution(project,wf).apply();
-		// Compiler checks
-		r = r && new FlowTypeCheck().check(wf);
-		r = r && new DefiniteAssignmentCheck().check(wf);
-		r = r && new DefiniteUnassignmentCheck().check(wf);
-		r = r && new FunctionalCheck().check(wf);
-		r = r && new StaticVariableCheck().check(wf);
-		r = r && new AmbiguousCoercionCheck().check(wf);
-		// Transforms
-		if(r) {
-			// Only apply if previous stages have all passed.
-			new MoveAnalysis().apply(wf);
-			new RecursiveTypeAnalysis().apply(wf);
-		}
-
-		// ========================================================================
-		// Done
-		// ========================================================================
-
-		// Flush any changes to disk
-		target.flush();
-
-		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + sources.size() + " file(s)", endTime - startTime,
-				startMemory - runtime.freeMemory());
-		//
-		return r;
-	}
-
-
-	public  void verify(Path.Root sourceRoot, Path.Entry<WyilFile> target, List<Path.Entry<WhileyFile>> sources)
-			throws IOException {
-		Logger logger = project.getLogger();
-		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
-		// in the near future, the VerificationConditionGenerator will operate directly
-		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
-		// work on the WyilFile directly as well and, hence, this will become more like
-		// a compilation stage (as per others above).
-		try {
-			Runtime runtime = Runtime.getRuntime();
-			long startTime = System.currentTimeMillis();
-			long startMemory = runtime.freeMemory();
-			//
-			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-			// FIXME: this unfortunately puts it in the wrong directory.
-			Path.Entry<WyalFile> wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
-			if (wyalTarget == null) {
-				wyalTarget = project.getRoot().create(target.id(), WyalFile.ContentType);
-				wyalTarget.write(new WyalFile(wyalTarget));
-			}
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target.read());
-			new TypeChecker(typeSystem, contents, target).check();
-			wyalTarget.write(contents);
-			wyalTarget.flush();
-			// Now try to verfify it
-			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-			// FIXME: this is horrendous :(
-			prover.check(contents, sourceRoot);
-
-			long endTime = System.currentTimeMillis();
-			logger.logTimedMessage("verified code for 1 file(s)", endTime - startTime,
-					startMemory - runtime.freeMemory());
-		} catch(SyntacticException e) {
-			//
-			SyntacticItem item = e.getElement();
-			String message = e.getMessage();
-			if(counterexamples && item instanceof WyalFile.Declaration.Assert) {
-				message += " (" + findCounterexamples((WyalFile.Declaration.Assert) item) + ")";
-			}
-			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(item != null && e.getEntry() != null && e.getEntry().contentType() == WyilFile.ContentType) {
-				Decl.Unit unit = item.getAncestor(Decl.Unit.class);
-				// Determine which source file this entry is contained in
-				Path.Entry<WhileyFile> sf = getWhileySourceFile(sourceRoot, unit.getName(), sources);
-				//
-				throw new SyntacticException(message,sf,item,e.getCause());
-			} else {
-				throw new SyntacticException(message,e.getEntry(),item,e.getCause());
-			}
-		}
+		// Construct the lambda for subsequent execution. This will eventually make its
+		// way into some kind of execution pool, possibly for concurrent execution with
+		// other tasks.
+		return () -> execute(wyil, whileys);
 	}
 
 	/**
-	 * Compile one or more WhileyFiles into a given WyilFile
+	 * The business end of a compilation task. The intention is that this
+	 * computation can proceed without performing any blocking I/O. This means it
+	 * can be used in e.g. a forkjoin task safely.
 	 *
-	 * @param source The source file being compiled.
-	 * @param target The target file being generated.
+	 * @param target
+	 *            --- The WyilFile being written.
+	 * @param sources
+	 *            --- The WhileyFiles being compiled.
 	 * @return
-	 * @throws IOException
 	 */
-	private static WyilFile compile(List<Path.Entry<WhileyFile>> sources, Path.Entry<WyilFile> target) throws IOException {
-		// Read target WyilFile. This may have already been compiled in a previous run
-		// and, in such case, we are invalidating some or all of the existing file.
-		WyilFile wyil = target.read();
-		// Parse all modules
-		for(int i=0;i!=sources.size();++i) {
-			Path.Entry<WhileyFile> source = sources.get(i);
-			WhileyFileParser wyp = new WhileyFileParser(wyil, source.read());
+	public boolean execute(WyilFile target, WhileyFile... sources) {
+		// Parse source files into target
+		for (int i = 0; i != sources.length; ++i) {
+			// NOTE: this is somehow where we work out the initial deltas for incremental
+			// compilation.
+			WhileyFile source = sources[i];
+			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			// FIXME: what to do with module added to heap? The problem is that this might
 			// be replaced a module, for example.
-			wyil.getModule().putUnit(wyp.read());
+			target.getModule().putUnit(wyp.read());
 		}
-		//
-		return wyil;
-	}
-
-	public String findCounterexamples(WyalFile.Declaration.Assert assertion) {
-		// FIXME: it doesn't feel right creating new instances here.
-		NameResolver resolver = new WyalFileResolver(project);
-		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
-		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
+		// Perform name resolution.
+		boolean r;
 		try {
-			Interpreter.Result result = interpreter.evaluate(assertion);
-			if (!result.holds()) {
-				// FIXME: this is broken
-				return result.getEnvironment().toString();
-			}
-		} catch (Interpreter.UndefinedException e) {
-			// do nothing for now
+			r = new NameResolution(project, target).apply();
+		} catch(IOException e) {
+			// FIXME: this is clearly broken.
+			throw new RuntimeException(e);
 		}
-		return "no counterexample";
+		// ========================================================================
+		// Flow Type Checking
+		// ========================================================================
+		r = r && checker.check(target);
+		// ========================================================================
+		// Compiler Checks
+		// ========================================================================
+		for (int i = 0; i != stages.length; ++i) {
+			r = r && stages[i].check(target);
+		}
+		//
+		if (r & verification) {
+			verify();
+		}
+		// Transforms
+		if (r) {
+			// Only apply if previous stages have all passed.
+			for (int i = 0; i != transforms.length; ++i) {
+				transforms[i].apply(target);
+			}
+		}
+		// Done
+		return r;
 	}
 
-	private static Path.Entry<WhileyFile> getWhileySourceFile(Path.Root root, Name name,
-			List<Path.Entry<WhileyFile>> sources) throws IOException {
-		String nameStr = name.toString().replace("::", "/");
-		//
-		for (Path.Entry<WhileyFile> e : sources) {
-			if (root.contains(e) && e.id().toString().endsWith(nameStr)) {
-				return e;
-			}
+	private void verify() {
+		try {
+			// FIXME: this is seriously a kludge for now.
+			new VerificationCheck(project, sourceRoot, counterexamples).apply(this.target, this.sources);
+		} catch(IOException e) {
+			throw new RuntimeException(e);
 		}
-		throw new IllegalArgumentException("unknown unit");
 	}
 }
