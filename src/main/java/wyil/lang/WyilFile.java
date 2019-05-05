@@ -327,6 +327,43 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
 	}
 
+	@Override
+	public <T extends SyntacticItem> void replace(T from, T to) {
+		BitSet matches = findReachable(from, new BitSet());
+		Decl.Module module = getModule();
+		// Carefully remove all markers for items within that being replaced.
+		Tuple<SyntacticItem.Marker> markers = module.getAttributes();
+		ArrayList<SyntacticItem> items = new ArrayList<>();
+		//
+		for(int i=0;i!=markers.size();++i) {
+			SyntacticItem marker = markers.get(i);
+			for(int j=0;j!=marker.size();++j) {
+				if(matches.get(marker.get(j).getIndex())) {
+					// Found a match
+					items.add(marker);
+					break;
+				}
+			}
+		}
+		// Remove all existing markers
+		module.setAttributes(markers.removeAll(items));
+		// Done
+		super.replace(from, to);
+	}
+
+	private static BitSet findReachable(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (!(item instanceof AbstractCompilationUnit.Ref) && !visited.get(index)) {
+			visited.set(index);
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				findReachable(item.get(i), visited);
+			}
+		}
+		return visited;
+	}
+
 	/**
 	 * A qualified name represents a <i>fully-qualified</i> name within a
 	 * compilation unit. That is, a full-qualified unit identifier and corresponding
@@ -450,7 +487,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<SyntacticItem.Marker>) get(3);
 			}
 
-			public void putUnit(Decl.Unit unit) {
+			public Decl.Unit putUnit(Decl.Unit unit) {
 				Tuple<Decl.Unit> units = getUnits();
 				// Check whether replacing unit or adding new
 				for (int i = 0; i != units.size(); ++i) {
@@ -458,14 +495,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						units.setOperand(i, unit);
-						return;
+						//
+						return ith;
 					}
 				}
 				// We're adding a new unit
 				setOperand(1, getHeap().allocate(units.append(unit)));
+				// Nothing was replaced
+				return null;
 			}
 
-			public void putExtern(Decl.Unit unit) {
+			public Decl.Unit putExtern(Decl.Unit unit) {
 				Tuple<Decl.Unit> externs = getExterns();
 				// Check whether replacing unit or adding new
 				for (int i = 0; i != externs.size(); ++i) {
@@ -473,15 +513,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						externs.setOperand(i, unit);
-						return;
+						return ith;
 					}
 				}
 				// We're adding a new unit
 				setOperand(2, getHeap().allocate(externs.append(unit)));
+				// Nothing was replaced
+				return null;
 			}
 
 			public void addAttribute(SyntacticItem.Marker attribute) {
 				setOperand(3, getHeap().allocate(getAttributes().append(attribute)));
+			}
+
+			public void setAttributes(Tuple<SyntacticItem.Marker> attributes) {
+				setOperand(3, getHeap().allocate(attributes));
 			}
 
 			@Override

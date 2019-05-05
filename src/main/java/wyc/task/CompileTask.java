@@ -26,6 +26,7 @@ import wyil.check.FunctionalCheck;
 import wyil.check.StaticVariableCheck;
 import wyil.check.VerificationCheck;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
@@ -169,9 +170,13 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			// compilation.
 			WhileyFile source = sources[i];
 			WhileyFileParser wyp = new WhileyFileParser(target, source);
-			// FIXME: what to do with module added to heap? The problem is that this might
-			// be replaced a module, for example.
-			target.getModule().putUnit(wyp.read());
+			//
+			Decl.Unit nunit = wyp.read();
+			Decl.Unit ounit = target.getModule().putUnit(nunit);
+			//
+			if(ounit != null) {
+				target.replace(ounit, nunit);
+			}
 		}
 		// Perform name resolution.
 		boolean r;
