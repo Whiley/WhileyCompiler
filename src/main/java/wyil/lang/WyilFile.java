@@ -351,19 +351,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		super.replace(from, to);
 	}
 
-	private static BitSet findReachable(SyntacticItem item, BitSet visited) {
-		int index = item.getIndex();
-		// Check whether already visited this item
-		if (!(item instanceof AbstractCompilationUnit.Ref) && !visited.get(index)) {
-			visited.set(index);
-			// Recursive children looking for other syntactic markers
-			for (int i = 0; i != item.size(); ++i) {
-				findReachable(item.get(i), visited);
-			}
-		}
-		return visited;
-	}
-
 	/**
 	 * A qualified name represents a <i>fully-qualified</i> name within a
 	 * compilation unit. That is, a full-qualified unit identifier and corresponding

@@ -31,6 +31,7 @@ import wyil.lang.Compiler;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
+import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.*;
 import wybs.util.AbstractBuildTask;
 import wyc.io.WhileyFileParser;
@@ -207,6 +208,8 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				transforms[i].apply(target);
 			}
 		}
+		// Collect garbage
+		target.gc();
 		// Done
 		return r;
 	}
