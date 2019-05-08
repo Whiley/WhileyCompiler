@@ -209,7 +209,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			}
 		}
 		// Collect garbage
-		target.gc();
+		//target.gc();
 		// Done
 		return r;
 	}
