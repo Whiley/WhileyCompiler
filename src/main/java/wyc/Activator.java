@@ -14,6 +14,7 @@
 package wyc;
 
 import wycc.cfg.Configuration;
+import wycc.lang.Command;
 import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
@@ -36,6 +37,7 @@ import wybs.util.AbstractBuildRule;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyc.cmd.Check;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 
@@ -178,10 +180,10 @@ public class Activator implements Module.Activator {
 
 	@Override
 	public Module start(Module.Context context) {
-		// FIXME: logger is a hack!
-		final Logger logger = new Logger.Default(System.err);
-		// List of commands to use
+		// Register platform
 		context.register(Build.Platform.class, WHILEY_PLATFORM);
+		// List of commands to register
+		context.register(Command.Descriptor.class, Check.DESCRIPTOR);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
 		context.register(Content.Type.class, WyilFile.ContentType);

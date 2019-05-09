@@ -679,7 +679,6 @@ public class Interpreter {
 		return checkType(val, expr, expected);
 	}
 
-
 	/**
 	 * Execute a Constant expression at a given point in the function or
 	 * method body
