@@ -27,22 +27,14 @@ import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.SemanticType;
-import wyil.lang.WyilFile.Template;
-import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -284,7 +276,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		super(entry);
 	}
 
-	public WyilFile(Entry<WyilFile> entry, int root, SyntacticItem[] items) {
+	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items) {
 		super(entry);
 		// Allocate every item into this heap
 		for (int i = 0; i != items.length; ++i) {
