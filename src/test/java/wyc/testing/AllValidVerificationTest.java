@@ -87,6 +87,7 @@ public class AllValidVerificationTest {
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12 "Support for Non-linear Arthmetic"
+		IGNORED.put("IntAdd_Valid_1", "WyTP#12");
 		IGNORED.put("IntMul_Valid_2", "WyTP#12");
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("While_Valid_32", "WyTP#12");
@@ -160,10 +161,26 @@ public class AllValidVerificationTest {
 		IGNORED.put("Property_Valid_15", "??");
 		IGNORED.put("Property_Valid_16", "??");
 		IGNORED.put("Property_Valid_17", "??");
-		//
+		// Issue 903.  Verification of templates
+		IGNORED.put("Template_Valid_11", "??");
+		IGNORED.put("Template_Valid_12", "??");
+		IGNORED.put("Template_Valid_13", "??");
+		IGNORED.put("Template_Valid_14", "??");
+		IGNORED.put("Template_Valid_15", "??");
 		IGNORED.put("Template_Valid_16", "??");
 		IGNORED.put("Template_Valid_17", "??");
+		IGNORED.put("Template_Valid_18", "??");
+		IGNORED.put("Template_Valid_20", "??");
+		IGNORED.put("Template_Valid_21", "??");
+		IGNORED.put("Template_Valid_22", "??");
+		IGNORED.put("Template_Valid_23", "??");
+		IGNORED.put("Template_Valid_24", "??");
+		IGNORED.put("Template_Valid_25", "??");
+		IGNORED.put("Template_Valid_26", "??");
+		IGNORED.put("Template_Valid_28", "??");
+		IGNORED.put("Template_Valid_29", "??");
 		IGNORED.put("Template_Valid_3", "??");
+		IGNORED.put("Template_Valid_5", "??");
 	}
 
 	/**
