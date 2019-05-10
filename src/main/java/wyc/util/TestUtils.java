@@ -28,22 +28,22 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.StdBuildGraph;
-import wybs.util.StdBuildRule;
-import wybs.util.StdProject;
+import wybs.util.SequentialBuildProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyc.task.Wyil2WyalBuilder;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -51,12 +51,10 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
-import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
 import wyil.interpreter.Interpreter;
-import wytp.provers.AutomatedTheoremProver;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -192,29 +190,49 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			StdProject project = new StdProject(root);
-			// Add build rules
-			addCompilationRules(project,root,verify,counterexamples);
-			// Create empty build graph
-			Build.Graph graph = new StdBuildGraph();
+			SequentialBuildProject project = new SequentialBuildProject(root);
 			// Identify source files
-			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,graph,arg);
-			Path.Entry<WhileyFile> source = p.first();
+			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
+			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
 			Path.Entry<WyilFile> target = p.second();
-			// Build the project
-			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-			sources.add(source);
-			project.build(sources, graph);
+			// Add build rule
+			project.add(new Build.Rule() {
+				@Override
+				public void apply(Collection<Build.Task> tasks) throws IOException {
+					// Construct a new build task
+					CompileTask task = new CompileTask(project, root, target, sources).setVerification(verify)
+							.setCounterExamples(counterexamples);
+					// Submit the task for execution
+					tasks.add(task);
+				}
+			});
+			// FIXME: this is annoying!
+			project.refresh();
+			// Actually force the project to build!
+			result = project.build(ForkJoinPool.commonPool()).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 			// Check whether any syntax error produced
-			result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
-			// Print out any error messages
-			wycc.commands.Build.printSyntacticMarkers(psyserr, sources, target);
-		} catch (SyntaxError e) {
+			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
+			// FIXME: this seems quite broken.
+			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
+		} catch(ExecutionException e) {
+			// FIXME: this is a complete kludge to handle the workaround for
+			// VerificationCheck. This currently uses the old theorem prover which forceably
+			// throws exceptions (yuk)
+			Throwable cause = e;
+			while (cause.getCause() != null) {
+				cause = cause.getCause();
+				if (cause instanceof SyntacticException) {
+					SyntacticException se = (SyntacticException) cause;
+					// Print out the syntax error
+					se.outputSourceError(psyserr, false);
+					result = false;
+				}
+			}
+		} catch (SyntacticException e) {
 			// Print out the syntax error
 			e.outputSourceError(psyserr,false);
-//			e.printStackTrace(psyserr);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error
@@ -239,7 +257,7 @@ public class TestUtils {
 	 * @param visited
 	 * @return
 	 */
-	private static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
+	public static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
 		int index = item.getIndex();
 		// Check whether already visited this item
 		if(!visited.get(index)) {
@@ -261,34 +279,6 @@ public class TestUtils {
 	}
 
 	/**
-	 * Add compilation rules for compiling a Whiley file into a WyIL file and, where
-	 * appropriate, for performing verification as well.
-	 *
-	 * @param project
-	 * @param root
-	 * @param verify
-	 */
-	private static void addCompilationRules(StdProject project, Path.Root root, boolean verify, boolean counterexamples) {
-		CompileTask task = new CompileTask(project, root);
-		// Add compilation rule(s) (whiley => wyil)
-		project.add(new StdBuildRule(task, root, whileyIncludes, null, root));
-		// Rule for compiling WyIL to WyAL. This will force generation of WyAL files
-		// regardless of whether verification is enabled or not.
-		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
-		project.add(new StdBuildRule(wyalBuilder, root, wyilIncludes, null, root));
-		//
-		if(verify) {
-			// Only configure verification if we're actually going to do it!
-			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-			wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
-			wyalBuildTask.setVerify(verify);
-			wyalBuildTask.setCounterExamples(counterexamples);
-			project.add(new StdBuildRule(wyalBuildTask, root, wyalIncludes, null, root));
-		}
-	}
-
-	/**
 	 * For each test, identify the corresponding Whiley file entry in the source
 	 * root.
 	 *
@@ -297,8 +287,7 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Path.Entry<WhileyFile>, Path.Entry<WyilFile>> findSourceFiles(Path.Root root, Build.Graph graph,
-			String arg)
+	public static Pair<Path.Entry<WhileyFile>, Path.Entry<WyilFile>> findSourceFiles(Path.Root root, String arg)
 			throws IOException {
 		Path.ID id = Trie.fromString(arg);
 		Path.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
@@ -313,10 +302,8 @@ public class TestUtils {
 		target.write(wf);
 		// Create initially empty WyIL module.
 		wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
-		//
-		graph.connect(source, target);
 		// Done
-		return new Pair<>(source,target);
+		return new Pair<>(source, target);
 	}
 
 	/**

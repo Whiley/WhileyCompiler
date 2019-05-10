@@ -27,22 +27,14 @@ import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.SemanticType;
-import wyil.lang.WyilFile.Template;
-import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -284,7 +276,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		super(entry);
 	}
 
-	public WyilFile(Entry<WyilFile> entry, int root, SyntacticItem[] items) {
+	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items) {
 		super(entry);
 		// Allocate every item into this heap
 		for (int i = 0; i != items.length; ++i) {
@@ -325,6 +317,30 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
+	}
+
+	@Override
+	public <T extends SyntacticItem> void replace(T from, T to) {
+		BitSet matches = findReachable(from, new BitSet());
+		Decl.Module module = getModule();
+		// Carefully remove all markers for items within that being replaced.
+		Tuple<SyntacticItem.Marker> markers = module.getAttributes();
+		ArrayList<SyntacticItem> items = new ArrayList<>();
+		//
+		for(int i=0;i!=markers.size();++i) {
+			SyntacticItem marker = markers.get(i);
+			for(int j=0;j!=marker.size();++j) {
+				if(matches.get(marker.get(j).getIndex())) {
+					// Found a match
+					items.add(marker);
+					break;
+				}
+			}
+		}
+		// Remove all existing markers
+		module.setAttributes(markers.removeAll(items));
+		// Done
+		super.replace(from, to);
 	}
 
 	/**
@@ -450,7 +466,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<SyntacticItem.Marker>) get(3);
 			}
 
-			public void putUnit(Decl.Unit unit) {
+			public Decl.Unit putUnit(Decl.Unit unit) {
 				Tuple<Decl.Unit> units = getUnits();
 				// Check whether replacing unit or adding new
 				for (int i = 0; i != units.size(); ++i) {
@@ -458,14 +474,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						units.setOperand(i, unit);
-						return;
+						//
+						return ith;
 					}
 				}
 				// We're adding a new unit
 				setOperand(1, getHeap().allocate(units.append(unit)));
+				// Nothing was replaced
+				return null;
 			}
 
-			public void putExtern(Decl.Unit unit) {
+			public Decl.Unit putExtern(Decl.Unit unit) {
 				Tuple<Decl.Unit> externs = getExterns();
 				// Check whether replacing unit or adding new
 				for (int i = 0; i != externs.size(); ++i) {
@@ -473,15 +492,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (ith.getName().equals(unit.getName())) {
 						// We're replacing an existing unit
 						externs.setOperand(i, unit);
-						return;
+						return ith;
 					}
 				}
 				// We're adding a new unit
 				setOperand(2, getHeap().allocate(externs.append(unit)));
+				// Nothing was replaced
+				return null;
 			}
 
 			public void addAttribute(SyntacticItem.Marker attribute) {
 				setOperand(3, getHeap().allocate(getAttributes().append(attribute)));
+			}
+
+			public void setAttributes(Tuple<SyntacticItem.Marker> attributes) {
+				setOperand(3, getHeap().allocate(attributes));
 			}
 
 			@Override

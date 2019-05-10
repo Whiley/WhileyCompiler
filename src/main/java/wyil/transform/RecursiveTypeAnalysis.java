@@ -13,10 +13,9 @@
 // limitations under the License.
 package wyil.transform;
 
-import wybs.lang.Build;
 import wyil.lang.WyilFile;
+import wyil.lang.Compiler;
 import wyil.util.AbstractConsumer;
-import wyc.task.CompileTask;
 
 import static wyil.lang.WyilFile.*;
 
@@ -52,7 +51,7 @@ import java.util.Set;
  * @author David J. Pearce
  *
  */
-public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Build.Stage<WyilFile> {
+public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Transform {
 
 	@Override
 	public void apply(WyilFile module) {

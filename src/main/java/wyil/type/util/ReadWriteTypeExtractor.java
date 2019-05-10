@@ -17,7 +17,6 @@ import static wyil.lang.WyilFile.*;
 
 import wycc.util.ArrayUtils;
 import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.SemanticType.Array;
@@ -27,11 +26,7 @@ import wyil.lang.WyilFile.SemanticType.Reference;
 import wyil.type.subtyping.SubtypeOperator;
 
 import java.util.Arrays;
-import java.util.HashMap;
 
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 
@@ -884,11 +879,5 @@ public class ReadWriteTypeExtractor {
 		} else {
 			return new SemanticType.Intersection(new SemanticType[] { lhs, rhs });
 		}
-	}
-
-	private <T> T syntaxError(String msg, SyntacticItem e) {
-		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 }

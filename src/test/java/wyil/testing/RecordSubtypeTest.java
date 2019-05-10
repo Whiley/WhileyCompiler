@@ -1793,14 +1793,14 @@ public class RecordSubtypeTest {
 
 
 	private void checkIsSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertFalse(subtypeOperator.isSubtype(ft, tt, null));

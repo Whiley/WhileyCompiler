@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.util.Pair;
