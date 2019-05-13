@@ -5738,7 +5738,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return Trie.fromString(nameStr);
 		}
 	}
-
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;
@@ -5769,7 +5768,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
-	//
+	// Verification Subset
+	public static final int PRECONDITION_NOT_SATISFIED = 700;
+	public static final int POSTCONDITION_NOT_SATISFIED = 701;
+	public static final int TYPEINVARAINT_NOT_SATISFIED = 702;
+	public static final int LOOPINVARIANT_NOT_ESTABLISHED = 703;
+	public static final int LOOPINVARIANT_NOT_RESTORED = 704;
+	public static final int ASSERTION_FAILED = 705;
+	public static final int ASSUMPTION_FAILED = 706;
+	public static final int INDEX_BELOW_BOUNDS = 707;
+	public static final int INDEX_ABOVE_BOUNDS = 708;
+	public static final int NEGATIVE_LENGTH = 709;
+	public static final int DIVISION_BY_ZERO = 710;
+	public static final int RUNTIME_FAULT = 711;
 
 	// ==============================================================================
 	//

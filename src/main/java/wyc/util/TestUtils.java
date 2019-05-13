@@ -327,17 +327,24 @@ public class TestUtils {
 		// Load the relevant WyIL module
 		stack.load(root.get(id, WyilFile.ContentType).read());
 		//
-		RValue[] returns = interpreter.execute(name, sig, stack);
-		// Print out any return values produced
-		if (returns != null) {
-			for (int i = 0; i != returns.length; ++i) {
-				if (i != 0) {
-					System.out.println(", ");
+		try {
+			RValue[] returns = interpreter.execute(name, sig, stack);
+			// Print out any return values produced
+			if (returns != null) {
+				for (int i = 0; i != returns.length; ++i) {
+					if (i != 0) {
+						System.out.println(", ");
+					}
+					System.out.println(returns[i]);
 				}
-				System.out.println(returns[i]);
 			}
+		} catch (Interpreter.RuntimeError e) {
+			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
+			// FIXME: this is a hack based on current available API.
+			new SyntacticException(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
+			throw e;
 		}
-}
+	}
 
 	/**
 	 * Compare the output of executing java on the test case with a reference

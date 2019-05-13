@@ -29,6 +29,7 @@ import org.junit.runners.Parameterized.Parameters;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;
+import wyil.interpreter.Interpreter;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test

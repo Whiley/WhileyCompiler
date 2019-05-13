@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
@@ -32,23 +33,25 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 	@Override
 	public RValue.Bool Bool(boolean value) {
-		return value ? RValue.True : RValue.False;
+		return RValue.Bool(value);
 	}
 
 	@Override
 	public RValue.Byte Byte(byte value) {
-		return new RValue.Byte(value);
+		return RValue.Byte(value);
 	}
+
 
 	@Override
 	public RValue.Int Int(BigInteger value) {
-		return new RValue.Int(value);
+		return RValue.Int(value);
 	}
 
 	@Override
 	public RValue.Cell Cell(AbstractSemantics.RValue value) {
 		return new RValue.Cell((RValue) value);
 	}
+
 
 	@Override
 	public RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
@@ -58,17 +61,17 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 	@Override
 	public RValue.Array Array(AbstractSemantics.RValue... elements) {
-		return new RValue.Array((RValue[]) elements);
+		return RValue.Array((RValue[]) elements);
 	}
 
 	@Override
 	public RValue.Field Field(Identifier name, AbstractSemantics.RValue value) {
-		return new RValue.Field(name,(RValue) value);
+		return RValue.Field(name,(RValue) value);
 	}
 
 	@Override
 	public RValue.Record Record(AbstractSemantics.RValue.Field... fields) {
-		return new RValue.Record((RValue.Field[]) fields);
+		return RValue.Record((RValue.Field[]) fields);
 	}
 
 	@Override
@@ -80,6 +83,31 @@ public class ConcreteSemantics implements AbstractSemantics {
 		public static final RValue.Null Null = new RValue.Null();
 		public static final RValue.Bool True = new RValue.Bool(true);
 		public static final RValue.Bool False = new RValue.Bool(false);
+
+
+		public static RValue.Bool Bool(boolean value) {
+			return value ? RValue.True : RValue.False;
+		}
+
+		public static RValue.Byte Byte(byte value) {
+			return new RValue.Byte(value);
+		}
+
+		public static RValue.Int Int(BigInteger value) {
+			return new RValue.Int(value);
+		}
+
+		public static RValue.Array Array(RValue... elements) {
+			return new RValue.Array(elements);
+		}
+
+		public static RValue.Record Record(RValue.Field... fields) {
+			return new RValue.Record(fields);
+		}
+
+		public static RValue.Field Field(Identifier name, RValue value) {
+			return new RValue.Field(name,value);
+		}
 
 		/**
 		 * Check whether a given value is an instanceof of a given type.
@@ -465,9 +493,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue read(AbstractSemantics.RValue.Int _index) {
 				RValue.Int index = (RValue.Int) _index;
 				int idx = index.value.intValue();
-				if(idx < 0 || idx >= elements.length) {
-					throw new AssertionError("out-of-bounds array access");
-				}
 				return elements[idx];
 			}
 
@@ -771,95 +796,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public void write(AbstractSemantics.RValue value) {
 				this.value = (RValue) value;
-			}
-		}
-	}
-
-	public static abstract class LValue {
-		abstract public RValue read(CallStack frame);
-		abstract public void write(CallStack frame, RValue rhs);
-
-		public static final class Variable extends LValue {
-			private final Identifier name;
-
-			public Variable(Identifier name) {
-				this.name = name;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				return frame.getLocal(name);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue rhs) {
-				frame.putLocal(name, rhs);
-			}
-		}
-
-		public static class Array extends LValue {
-			private final LValue src;
-			private final RValue.Int index;
-
-			public Array(LValue src, RValue.Int index) {
-				this.src = src;
-				this.index = index;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Array src = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
-				return src.read(index);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue value) {
-				RValue.Array arr = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
-				src.write(frame, arr.write(index, value));
-			}
-		}
-
-		public static class Record extends LValue {
-			private final LValue src;
-			private final Identifier field;
-
-			public Record(LValue src, Identifier field) {
-				this.src = src;
-				this.field = field;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Record src = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
-				return src.read(field);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue value) {
-				RValue.Record rec = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
-				src.write(frame, rec.write(field, value));
-			}
-		}
-
-		public static class Dereference extends LValue {
-			private final LValue src;
-
-			public Dereference(LValue src) {
-				this.src = src;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Reference ref = Interpreter.checkType(src.read(frame), null, RValue.Reference.class);
-				RValue.Cell cell = ref.deref();
-				return cell.read();
-			}
-
-			@Override
-			public void write(CallStack frame, RValue rhs) {
-				RValue.Reference ref = Interpreter.checkType(src.read(frame), null, RValue.Reference.class);
-				RValue.Cell cell = ref.deref();
-				cell.write(rhs);
 			}
 		}
 	}

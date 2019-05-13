@@ -160,6 +160,22 @@ public class ErrorMessages {
 	public static final MultiPartMessage AMBIGUOUS_COERCION = new MultiPartMessage("ambiguous coercion required ("," to ",")");
 
 	// ========================================================================
+	// Verification
+	// ========================================================================
+	public static final StaticMessage PRECONDITION_NOT_SATISFIED = new StaticMessage("precondition not satisfied");
+	public static final StaticMessage POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
+	public static final StaticMessage TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
+	public static final StaticMessage LOOPINVARIANT_NOT_SATISFIED_ON_ENTRY = new StaticMessage("loop invariant does not hold on entry");
+	public static final StaticMessage LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant does not restored");
+	public static final StaticMessage ASSERTION_FAILED = new StaticMessage("assertion failed");
+	public static final StaticMessage ASSUMPTION_FAILED = new StaticMessage("assumption failed");
+	public static final StaticMessage INDEX_BELOW_BOUNDS = new StaticMessage("index out-of-bounds (negative)");
+	public static final StaticMessage INDEX_ABOVE_BOUNDS = new StaticMessage("index out-of-bounds (greater than length)");
+	public static final StaticMessage NEGATIVE_LENGTH = new StaticMessage("negative array length");
+	public static final StaticMessage DIVISION_BY_ZERO = new StaticMessage("division by zero");
+	public static final StaticMessage RUNTIME_FAULT = new StaticMessage("runtime fault encountered");
+
+	// ========================================================================
 	// Misc
 	// ========================================================================
 	public static final StaticMessage INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
@@ -233,6 +249,21 @@ public class ErrorMessages {
 			METHODCALL_NOT_PERMITTED,   // 608;
 			REFERENCE_ACCESS_NOT_PERMITTED,   // 609;
 			INVALID_LVAL_EXPRESSION,   // 610;
+		},
+		{
+			// Verification
+			PRECONDITION_NOT_SATISFIED, // 700
+			POSTCONDITION_NOT_SATISFIED, // 701
+			TYPEINVARIANT_NOT_SATISFIED, // 702;
+			LOOPINVARIANT_NOT_SATISFIED_ON_ENTRY, // 703;
+			LOOPINVARIANT_NOT_RESTORED, // 704;
+			ASSERTION_FAILED, // 705
+			ASSUMPTION_FAILED, // 706
+			INDEX_BELOW_BOUNDS, // 707;
+			INDEX_ABOVE_BOUNDS, // 708;
+			NEGATIVE_LENGTH, // 709;
+			DIVISION_BY_ZERO, // 710;
+			RUNTIME_FAULT, // 711
 		}
 	};
 
