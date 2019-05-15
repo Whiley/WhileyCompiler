@@ -699,6 +699,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Decl.Variable>) get(4);
 			}
 
+			/**
+			 * Get the body associated with this callable declaration which is either a
+			 * statement block (for functions and methods) or an expression (for properties
+			 * and lambdas).
+			 *
+			 * @return
+			 */
+			public abstract Stmt getBody();
+
 			@Override
 			public abstract WyilFile.Type.Callable getType();
 		}
@@ -762,6 +771,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Expr>) get(6);
 			}
 
+			@Override
 			public Stmt.Block getBody() {
 				return (Stmt.Block) get(7);
 			}
@@ -974,6 +984,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Expr>) get(5);
 			}
 
+			@Override
+			public Stmt getBody() {
+				// FIXME: this doesn't make sense for properties. Realistically, this should be
+				// resolved when properties are changed from their current form into something
+				// more useful.
+				throw new UnsupportedOperationException();
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Property clone(SyntacticItem[] operands) {
@@ -1045,6 +1063,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Identifier>) get(6);
 			}
 
+			@Override
 			public Expr getBody() {
 				return (Expr) get(7);
 			}
@@ -1379,8 +1398,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
+				Identifier name = getDeclaration().getName();
 				String arguments = getArguments().toBareString();
-				return "<" + arguments + ">";
+				return name + "<" + arguments + ">";
 			}
 		}
 	}
@@ -5021,7 +5041,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toCanonicalString() {
-				return "property" + WyilFile.toCanonicalString(getParameters()) + ")->("
+				return "property(" + WyilFile.toCanonicalString(getParameters()) + ")->("
 						+ WyilFile.toCanonicalString(getReturns()) + ")";
 			}
 		}
@@ -5779,8 +5799,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int INDEX_BELOW_BOUNDS = 707;
 	public static final int INDEX_ABOVE_BOUNDS = 708;
 	public static final int NEGATIVE_LENGTH = 709;
-	public static final int DIVISION_BY_ZERO = 710;
-	public static final int RUNTIME_FAULT = 711;
+	public static final int NEGATIVE_RANGE = 710;
+	public static final int DIVISION_BY_ZERO = 711;
+	public static final int RUNTIME_FAULT = 712;
 
 	// ==============================================================================
 	//

@@ -230,7 +230,7 @@ public class QuickCheckInvalidTests {
 			} else {
 				// NOTE: this indicates everything passed so far. The question then is whether
 				// or not QuickCheck can detect a problem.
-				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read());
+				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), QuickCheck.DEFAULT_CONTEXT);
 				// Recheck whether any syntax errors produced
 				result = !TestUtils.findSyntaxErrors(wyilTarget.read().getRootItem(), new BitSet());
 			}

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
@@ -75,8 +76,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 	}
 
 	@Override
-	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
-		return new RValue.Lambda(context, frame, body);
+	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame) {
+		return new RValue.ConcreteLambda(context, frame);
 	}
 
 	public static abstract class RValue implements AbstractSemantics.RValue {
@@ -109,6 +110,19 @@ public class ConcreteSemantics implements AbstractSemantics {
 			return new RValue.Field(name,value);
 		}
 
+		public static RValue.Cell Cell(AbstractSemantics.RValue value) {
+			return new RValue.Cell((RValue) value);
+		}
+
+		public static RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
+			RValue.Cell cell = (RValue.Cell) value;
+			return new RValue.Reference(cell);
+		}
+
+		public static RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame) {
+			return new RValue.ConcreteLambda(context, frame);
+		}
+
 		/**
 		 * Check whether a given value is an instanceof of a given type.
 		 *
@@ -138,6 +152,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 						return True;
 					}
 				}
+			} else if (type instanceof Type.Variable) {
+				// NOTE: for now, type variables cannot have bounds and cannot be used in
+				// runtime type tests. Therefore, we can always assume this is always true. The
+				// only situation this is use is for checking type invariants within the
+				// interpreter.
+				return True;
 			}
 			// Default case.
 			return False;
@@ -684,7 +704,26 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 		}
 
-		public final static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
+		public abstract static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
+			/**
+			 * Execute this lambda with the given arguments. For example, in the normal
+			 * case, we can use the interpreter to execute the body of the lambda.
+			 *
+			 * @param interpreter
+			 * @param arguments
+			 * @param item
+			 * @return
+			 */
+			public abstract RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);
+
+			/**
+			 * Get the callable type for this lambda
+			 * @return
+			 */
+			public abstract Type.Callable getType();
+		}
+
+		public final static class ConcreteLambda extends Lambda {
 			/**
 			 * Identify the declaration for this lambda
 			 */
@@ -693,15 +732,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * The frame which holds true at this point.
 			 */
 			private final Interpreter.CallStack frame;
-			/**
-			 * The body of the lambda. This is either a stmt block or an expression.
-			 */
-			private final Stmt body;
 
-			private Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
+			private ConcreteLambda(Decl.Callable context, Interpreter.CallStack frame) {
 				this.context = context;
 				this.frame = frame;
-				this.body = body;
 			}
 
 			public Decl.Callable getContext() {
@@ -712,8 +746,23 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return frame;
 			}
 
-			public Stmt getBody() {
-				return body;
+			@Override
+			public Type.Callable getType() {
+				return context.getType();
+			}
+
+			/**
+			 * Execute this lambda with the given arguments. For a concrete lambda like
+			 * this, we simply use the interpreter to execute the body of the lambda.
+			 *
+			 * @param interpreter
+			 * @param arguments
+			 * @param item
+			 * @return
+			 */
+			@Override
+			public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem item) {
+				return interpreter.execute(context, frame, arguments, item);
 			}
 
 			@Override
@@ -735,9 +784,9 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				if(o instanceof RValue.Lambda) {
-					RValue.Lambda l = (RValue.Lambda) o;
-					return context.equals(l.context) && body.equals(l.body);
+				if(o instanceof RValue.ConcreteLambda) {
+					RValue.ConcreteLambda l = (RValue.ConcreteLambda) o;
+					return context.equals(l.context);
 				}
 				return false;
 			}
@@ -778,6 +827,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public int hashCode() {
 				return System.identityHashCode(referent);
+			}
+
+			@Override
+			public String toString() {
+				return "&" + System.identityHashCode(referent);
 			}
 		}
 

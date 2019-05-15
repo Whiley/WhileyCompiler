@@ -13,6 +13,7 @@
 // limitations under the License.
 package wyc.cmd;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
@@ -31,6 +32,7 @@ import jmodelgen.util.Domains;
 import wyil.interpreter.*;
 import wybs.lang.Build;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.Activator;
 import wyc.util.ErrorMessages;
@@ -38,6 +40,7 @@ import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
@@ -45,6 +48,7 @@ import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
 import static wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type.Callable;
 
 /**
  * <p>
@@ -86,6 +90,21 @@ import wyil.lang.WyilFile.Decl;
  *
  */
 public class QuickCheck implements Command {
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2,2);
+	// Configuration Options
+	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
+	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
+	public static Trie LENGTH_CONFIG_OPTION = Trie.fromString("check/length");
+	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
+	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
+	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	// Configuration Defaults
+	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
+	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
+	public static Value.Int LENGTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getMaxArrayLength());
+	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
+	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
+	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
 	/**
 	 * The descriptor for this command.
 	 */
@@ -107,7 +126,18 @@ public class QuickCheck implements Command {
 
 		@Override
 		public Schema getConfigurationSchema() {
-			return Configuration.EMPTY_SCHEMA;
+			return Configuration.fromArray(
+					Configuration.UNBOUND_INTEGER(MIN_CONFIG_OPTION, "Specify minimum integer value which can be generated",
+							MIN_DEFAULT),
+					Configuration.UNBOUND_INTEGER(MAX_CONFIG_OPTION, "Specify maximum integer value which can be generated",
+							MAX_DEFAULT),
+					Configuration.UNBOUND_INTEGER(LENGTH_CONFIG_OPTION, "Specify maximum length of a generated array", LENGTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(DEPTH_CONFIG_OPTION, "Specify maximum depth of a recurisive type",
+							DEPTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(WIDTH_CONFIG_OPTION, "Specify aliasing width to use for reference types",
+							WIDTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
+							ROTATION_DEFAULT));
 		}
 
 		@Override
@@ -150,9 +180,11 @@ public class QuickCheck implements Command {
 	private final Interpreter interpreter;
 
 	/**
-	 * Cache of previously computed values.
+	 * Cache of previously computed values. This is useful for reducing memory
+	 * requirements. Furthermore, it is necessary to ensure that aliasing bugs are
+	 * identified.
 	 */
-	private final HashMap<Decl,Domain<RValue>> cache;
+	private final HashMap<Type,Domain<RValue>> cache;
 
 	public QuickCheck(Build.Project project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
@@ -180,6 +212,13 @@ public class QuickCheck implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
+		// Extract configuration options
+		int minInteger = configuration.get(Value.Int.class,MIN_CONFIG_OPTION).unwrap().intValue();
+		int maxInteger = configuration.get(Value.Int.class,MAX_CONFIG_OPTION).unwrap().intValue();
+		int maxArrayLength = configuration.get(Value.Int.class,LENGTH_CONFIG_OPTION).unwrap().intValue();
+		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
+		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
+		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Specify directory where generated WyIL files are dumped.
 		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
@@ -189,61 +228,128 @@ public class QuickCheck implements Command {
 		if (binaryRoot.exists(pkg, WyilFile.ContentType)) {
 			// Yes, it does so reuse it.
 			Path.Entry<WyilFile> binary = binaryRoot.get(pkg, WyilFile.ContentType);
-			// Perform the check
-			check(binary.read());
 			//
-			return true;
+			project.getLogger().logTimedMessage("Check configuration has ints (" + minInteger + ".." + maxInteger
+					+ "), array lengths (max " + maxArrayLength + "), type depths (max " + maxTypeDepth + ")", 0, 0);
+			// Read the target wyilfile
+			WyilFile wf = binary.read();
+			// Construct initial context
+			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
+					maxRotationWidth);
+			// Perform the check
+			boolean OK = check(wf, context);
+			//
+			if(!OK) {
+				// FIXME: this does not seem like a good solution :|
+				List<wybs.lang.Build.Task> tasks = project.getTasks();
+				// Look for error messages
+				for (wybs.lang.Build.Task task : tasks) {
+					wycc.commands.Build.printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+				}
+			}
+			// Print out any
+			return OK;
 		} else {
 			return false;
 		}
 	}
 
-	public void check(WyilFile wf) {
-		for (Decl.Unit unit : wf.getModule().getUnits()) {
-			check(wf,unit);
+	public boolean check(WyilFile parent, Context context) throws IOException {
+		// Initialise the base stack frame
+		CallStack frame = initialiseStackFrame(parent);
+		//
+		return check(parent, new ExtendedContext(frame,context));
+	}
+	
+	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
+		boolean OK = true;
+		for (Decl.Unit unit : parent.getModule().getUnits()) {
+			OK &= check(parent,unit, context);
 		}
+		return OK;
 	}
 
-	private void check(WyilFile context, Decl.Unit unit) {
+	private boolean check(WyilFile parent, Decl.Unit unit, ExtendedContext context) throws IOException {
+		boolean OK = true;
+		//
 		for (Decl d : unit.getDeclarations()) {
 			switch (d.getOpcode()) {
 			case DECL_function:
 			case DECL_method:
-				check(context, (Decl.FunctionOrMethod) d);
+				OK &= check((Decl.FunctionOrMethod) d, parent, context);
 				break;
 			case DECL_type:
-				check((Decl.Type) d);
+				OK &= check((Decl.Type) d, context);
 				break;
 			}
 		}
+
+		return OK;
 	}
 
-	private void check(WyilFile context, Decl.FunctionOrMethod fm) {
-		System.out.println("Checking " + fm.getName() + " : " + fm.getType() + ".");
+	/**
+	 * Apply quick check to a given function or method. First, we generate inputs
+	 * which meet the preconditions of the function or method in question. Second,
+	 * we execute the function in question over the given inputs and observe any
+	 * runtime faults arising.
+	 *
+	 * @param fm
+	 * @param parent
+	 * @param context
+	 * @return
+	 * @throws IOException
+	 */
+	private boolean check(Decl.FunctionOrMethod fm, WyilFile parent, ExtendedContext context) throws IOException {
+		Runtime runtime = Runtime.getRuntime();
+		long time = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
 		// Get appropriate generators for each parameter
-		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), new Context());
+		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 		//
 		List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), generators);
 		//
-		System.out.println("Generated " + inputs.size() + " inputs.");
+		long total = calculateTotalInputs(generators);
 		//
 		for(RValue[] args : inputs) {
+			// FIXME: bug here related to side effects caused by invoking a method
+			CallStack frame = context.getFrame().enter(fm);
 			// Invoke the method!!
-			if (!execute(context, fm.getQualifiedName(), fm.getType(), args)) {
+			if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
 				// Failed, so exit early
-				return;
+				return false;
 			}
 		}
-
+		time = System.currentTimeMillis() - time;
+		memory = memory - runtime.freeMemory();
+		//
+		double percent = (inputs.size() * 100) / total;
+		project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%)", time, memory);
+		// Passed all inputs
+		return true;
 	}
 
-	private boolean execute(WyilFile context, QualifiedName name, Type.Callable signature, RValue... args) {
-		// FIXME: approach for constructing stack frame is rather inefficient.
+	private boolean check(Decl.Type t, ExtendedContext context) {
+		Runtime runtime = Runtime.getRuntime();
+		long time = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+		//
+		CallStack frame = context.getFrame().enter(t);		
+		// Get an appropriate generator for the underlying type
+		Domain<RValue> generator = constructGenerator(t.getType(), context);
+		// iterate through all values in the generator to see whether any pass the
+		// invariant and, hence, are valid instances of this invariant.
+		Domain<RValue> domain = execute(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
+		//
+		time = System.currentTimeMillis() - time;
+		memory = memory - runtime.freeMemory();
+		double percent = (domain.size() * 100) / generator.size();
+		project.getLogger().logTimedMessage("Checked " + toNameString(t) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time, memory);
+		//
+		return domain.size() > 0;
+	}
 
-		// Construct a fresh call stack for this execution
-		CallStack frame = interpreter.new CallStack();
-		// Load all relevant modules
-		frame.load(context);
+	private boolean execute(WyilFile context, QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) throws IOException {
+		// FIXME: approach for constructing stack frame inefficient!
 		//
 		try {
 			interpreter.execute(name, signature, frame, args);
@@ -252,9 +358,11 @@ public class QuickCheck implements Command {
 		} catch (Interpreter.RuntimeError e) {
 			// Add appropriate syntax error to the syntactic item where the error arose.
 			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+			// FIXME: need better error reporting here
+//			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + ")");
 			// Done
 			return false;
-		} catch(Exception e) {
+		} catch (Exception e) {
 			// FIXME: this is a temporary hack to help identify situations where the
 			// interpreter is not throwing appropriate error messages.
 			e.printStackTrace(System.out);
@@ -262,22 +370,7 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private void check(Decl.Type t) {
-		check(t,new Context());
-	}
-
-	private void check(Decl.Type t, Context context) {
-		// Get an appropriate generator for the underlying type
-		Domain<RValue> generator = constructGenerator(t.getType(), context);
-		// iterate through all values in the generator to see whether any pass the
-		// invariant and, hence, are valid instances of this invariant.
-		Domain<RValue> domain = execute(t.getInvariant(), t.getVariableDeclaration(), generator);
-		//
-		cache.put(t,domain);
-	}
-
-	private Domain<RValue> execute(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator) {
-		CallStack frame = interpreter.new CallStack();
+	private Domain<RValue> execute(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
@@ -298,18 +391,18 @@ public class QuickCheck implements Command {
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
-		DomainIterator iterator = new DomainIterator(generators);
+		Domain<RValue[]> domain = Domains.Product(generators);
 		//
 		CallStack frame = interpreter.new CallStack();
 		//
 		ArrayList<RValue[]> results = new ArrayList<>();
 		//
-		while(iterator.hasNext()) {
-			RValue[] inputs = iterator.next();
+		for(long i=0;i!=domain.size();++i) {
+			RValue[] inputs = domain.get(i);
 			// Construct the stack frame
-			for (int i = 0; i != inputs.length; ++i) {
+			for (int j = 0; j != inputs.length; ++j) {
 				// update environment
-				frame.putLocal(variables.get(i).getName(), inputs[i]);
+				frame.putLocal(variables.get(j).getName(), inputs[j]);
 			}
 			// execute invariant
 			if(execute(predicate,frame)) {
@@ -349,7 +442,29 @@ public class QuickCheck implements Command {
 		return b.boolValue();
 	}
 
-	private Domain<RValue>[] constructGenerators(Tuple<Decl.Variable> parameters, Context context) {
+	/**
+	 * Initialise a base stack frame from for this project, such that it can be used
+	 * to execute functions and methods within the project. This includes all
+	 * modules which this project depends upon.
+	 */
+	private CallStack initialiseStackFrame(WyilFile context) throws IOException {
+		CallStack frame = interpreter.new CallStack();
+		// Load all relevant modules
+		frame.load(context);
+		// Load all dependencies
+		for(Build.Package p : project.getPackages()) {
+			// FIXME: is this the right way to determine the binary file from a given
+			// package?
+			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+			//
+			for(Path.Entry<WyilFile> e : entries) {
+				frame.load(e.read());
+			}
+		}
+		return frame;
+	}
+
+	private Domain<RValue>[] constructGenerators(Tuple<Decl.Variable> parameters, ExtendedContext context) {
 		Domain<RValue>[] generators = new Domain[parameters.size()];
 		//
 		for (int i = 0; i != parameters.size(); ++i) {
@@ -358,76 +473,108 @@ public class QuickCheck implements Command {
 		return generators;
 	}
 
-	private Domain<RValue> constructGenerator(Type type, Context context) {
-		switch(type.getOpcode()) {
-		case TYPE_null:
-			return constructGenerator((Type.Null) type, context);
-		case TYPE_bool:
-			return constructGenerator((Type.Bool) type, context);
-		case TYPE_byte:
-			return constructGenerator((Type.Byte) type, context);
-		case TYPE_int:
-			return constructGenerator((Type.Int) type, context);
-		case TYPE_array:
-			return constructGenerator((Type.Array) type, context);
-		case TYPE_record:
-			return constructGenerator((Type.Record) type, context);
-		case TYPE_nominal:
-			return constructGenerator((Type.Nominal) type, context);
-		case TYPE_union:
-			return constructGenerator((Type.Union) type, context);
-		case TYPE_staticreference:
-		case TYPE_reference:
-		case TYPE_function:
-		case TYPE_method:
-		case TYPE_property:
-		default:
-			// FIXME: need to do something here.
-			throw new RuntimeException("unknown type encountered (" + type + ")");
+	/**
+	 * Construct a generator (i.e. domain) for a given type. This is responsible for
+	 * enumerating elements of that type within some finite bounds. Observe that
+	 * this caches the constructed domains for two reasons: firstly, to save memory;
+	 * secondly, to ensure possible aliasing between reference types.
+	 *
+	 * @param type
+	 * @param context
+	 * @return
+	 */
+	private Domain<RValue> constructGenerator(Type type, ExtendedContext context) {
+		Domain<RValue> result = cache.get(type);
+		if (result == null) {
+			switch (type.getOpcode()) {
+			case TYPE_null:
+				result = constructGenerator((Type.Null) type, context);
+				break;
+			case TYPE_bool:
+				result = constructGenerator((Type.Bool) type, context);
+				break;
+			case TYPE_byte:
+				result = constructGenerator((Type.Byte) type, context);
+				break;
+			case TYPE_int:
+				result = constructGenerator((Type.Int) type, context);
+				break;
+			case TYPE_array:
+				result = constructGenerator((Type.Array) type, context);
+				break;
+			case TYPE_record:
+				result = constructGenerator((Type.Record) type, context);
+				break;
+			case TYPE_nominal:
+				result = constructGenerator((Type.Nominal) type, context);
+				break;
+			case TYPE_union:
+				result = constructGenerator((Type.Union) type, context);
+				break;
+			case TYPE_variable:
+				result = constructGenerator((Type.Variable) type, context);
+				break;
+			case TYPE_staticreference:
+			case TYPE_reference:
+				result = constructGenerator((Type.Reference) type, context);
+				break;
+			case TYPE_function:
+				result = constructGenerator((Type.Function) type, context);
+				break;
+			case TYPE_method:
+				result = constructGenerator((Type.Method) type, context);
+				break;
+			case TYPE_property:
+			default:
+				// NOTE: this should be dead code.
+				throw new RuntimeException("unknown type encountered (" + type + ")");
+			}
+			// Store the computed result in the cache. This is important to reduce memory
+			// footprints. In some cases, this reduction can be quite significant.
+			cache.put(type,result);
 		}
+		return result;
 	}
 
-	private Domain<RValue> constructGenerator(Type.Null type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Null type, ExtendedContext context) {
 		return Domains.Finite(RValue.Null);
 	}
 
-	private Domain<RValue> constructGenerator(Type.Bool type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Bool type, ExtendedContext context) {
 		return Domains.Finite(RValue.False, RValue.True);
 	}
 
-	private Domain<RValue> constructGenerator(Type.Int type, Context context) {
-		return new DomainWrapper<Integer>(Domains.Int(context.minInt(), context.maxInt())) {
+	private Domain<RValue> constructGenerator(Type.Int type, ExtendedContext context) {
+		return new Domains.Adaptor<Integer, RValue>(Domains.Int(context.getIntegerMinimum(), context.getIntegerMaximum())) {
 			@Override
-			public RValue.Int get(long index) {
-				return RValue.Int(BigInteger.valueOf(domain.get(index)));
+			public RValue.Int get(Integer i) {
+				return RValue.Int(BigInteger.valueOf(i));
 			}
 		};
 	}
 
-	private Domain<RValue> constructGenerator(Type.Byte type, Context context) {
-		return new DomainWrapper<Integer>(Domains.Int(context.minInt(), context.maxInt())) {
+	private Domain<RValue> constructGenerator(Type.Byte type, ExtendedContext context) {
+		return new Domains.Adaptor<Integer,RValue>(Domains.Int(context.getIntegerMinimum(), context.getIntegerMaximum())) {
 			@Override
-			public RValue.Byte get(long index) {
-				int value = domain.get(index);
-				return RValue.Byte((byte) value);
+			public RValue.Byte get(Integer value) {
+				return RValue.Byte((byte) (int) value);
 			}
 		};
 	}
 
-	private Domain<RValue> constructGenerator(Type.Array type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Array type, ExtendedContext context) {
 		Domain<RValue> generator = constructGenerator(type.getElement(), context);
 		//
-		return new DomainWrapper<List<RValue>>(Domains.List(0,context.maxLength(), generator)) {
+		return new Domains.Adaptor<List<RValue>,RValue>(Domains.List(0,context.getMaxArrayLength(), generator)) {
 			@Override
-			public RValue.Array get(long index) {
-				List<RValue> list = domain.get(index);
+			public RValue.Array get(List<RValue> list) {
 				// FIXME: could be more efficient
 				return RValue.Array(list.toArray(new RValue[list.size()]));
 			}
 		};
 	}
 
-	private Domain<RValue> constructGenerator(Type.Record type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Record type, ExtendedContext context) {
 		// FIXME: need to support open records!
 		Tuple<Type.Field> fields = type.getFields();
 		Domain<RValue>[] generators = new Domain[fields.size()];
@@ -436,10 +583,9 @@ public class QuickCheck implements Command {
 			generators[i] = constructGenerator(fields.get(i).getType(), context);
 		}
 		//
-		return new DomainWrapper<RValue[]>(Domains.Product(generators)) {
+		return new Domains.Adaptor<RValue[],RValue>(Domains.Product(generators)) {
 			@Override
-			public RValue.Record get(long index) {
-				RValue[] vals = domain.get(index);
+			public RValue.Record get(RValue[] vals) {
 				Tuple<Type.Field> typeFields = type.getFields();
 				RValue.Field[] fields = new RValue.Field[vals.length];
 				//
@@ -452,21 +598,30 @@ public class QuickCheck implements Command {
 		};
 	}
 
-	private Domain<RValue> constructGenerator(Type.Nominal type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Nominal type, ExtendedContext context) {
 		Decl.Type decl = type.getLink().getTarget();
 		//
-		if (context.depth(decl) == context.maxDepth()) {
-			return Domains.Finite();
-		} else if (!cache.containsKey(decl)) {
+		if (context.depth(decl) == context.getRecursiveTypeDepth()) {
+			// NOTE: we've reached the maximum depth to explore for recursive types.
+			// Therefore, we simply return the empty domain.
+			return Domains.EMPTY;
+		} else {
 			context.enter(decl);
-			check(decl, context);
+			// Get an appropriate generator for the underlying type
+			Domain<RValue> generator = constructGenerator(decl.getType(), context);
+			//
+			CallStack frame = context.getFrame().enter(decl);		
+			// iterate through all values in the generator to see whether any pass the
+			// invariant and, hence, are valid instances of this invariant.			
+			Domain<RValue> domain = execute(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
+			//
 			context.leave(decl);
+			//
+			return domain;
 		}
-		//
-		return cache.get(decl);
 	}
 
-	private Domain<RValue> constructGenerator(Type.Union type, Context context) {
+	private Domain<RValue> constructGenerator(Type.Union type, ExtendedContext context) {
 		// Construct generators for each subtype
 		Domain<RValue>[] generators = new Domain[type.size()];
 		for(int i=0;i!=type.size();++i) {
@@ -476,64 +631,206 @@ public class QuickCheck implements Command {
 		return Domains.Union(generators);
 	}
 
-	private static abstract class DomainWrapper<T> implements Domain<RValue> {
-		protected final Domain<T> domain;
-
-		public DomainWrapper(Domain<T> domain) {
-			this.domain = domain;
+	/**
+	 * Construct a generator for a reference type. This is a bit challenging because
+	 * we want to ensure that the *same* references are always returned from this
+	 * domain. This sets up the possibility of aliasing.
+	 *
+	 * @param type
+	 * @param context
+	 * @return
+	 */
+	private Domain<RValue> constructGenerator(Type.Reference type, ExtendedContext context) {
+		int width = context.getAliasingWidth();
+		// NOTE: this is not done lazily which potentially could be problematic if
+		// sampling was used.
+		Domain<RValue> element = constructGenerator(type.getElement(), context);
+		// Construct a unique object for each possible element value.
+		RValue.Reference[] refs = new RValue.Reference[(int) element.size() * width];
+		// Construct our set of references.
+		for(int i = 0;i!=element.size();++i) {
+			for(int j=0;j!=width;++j) {
+				// Construct multiple references to a cell with the same value. This has the
+				// effect of ensuring the possibility of references to different cells which
+				// hold the same value.
+				refs[(i*width)+j] = RValue.Reference(RValue.Cell(element.get(i)));
+			}
 		}
-
-		@Override
-		public long size() {
-			return domain.size();
-		}
-
-		@Override
-		public Domain<RValue> slice(long start, long end) {
-			throw new UnsupportedOperationException();
-		}
+		//
+		return Domains.Finite(refs);
 	}
 
-	private static final class DomainIterator implements Iterator<RValue[]> {
-		private final long[] iterators;
-		private final Domain<RValue>[] generators;
-
-		public DomainIterator(Domain<RValue>...generators) {
-			this.iterators = new long[generators.length + 1];
-			this.generators = generators;
+	/**
+	 * <p>
+	 * Construct a generator for a function type. This is tricky because it relies
+	 * on synthesising a function somehow. In essence, we need to generate mappings
+	 * from input values to output values. This is very expensive in general. There
+	 * are some strategies that can help. For example, we can explore all known
+	 * functions and look for matches.
+	 * </p>
+	 * <p>
+	 * To synthesize a function, inputs are mapped to outputs in a linear fashion.
+	 * That is, the first possible input is mapped to the first possible output, and
+	 * so on. A key factor is that we need to ensure the same outputs are returned
+	 * for the same inputs.
+	 * </p>
+	 *
+	 * @param type
+	 * @param context
+	 * @return
+	 */
+	private Domain<RValue> constructGenerator(Type.Function type, ExtendedContext context) {
+		Domain<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+		RValue[] lambdas = new RValue[context.getLambdaWidth()];
+		for(int i=0;i!=context.getLambdaWidth();++i) {
+			// Apply the rotation (for i > 1)
+			Domain<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			// Construct the (deterministic) lambda
+			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
+		return Domains.Finite(lambdas);
+	}
 
-		@Override
-		public boolean hasNext() {
-			return iterators[generators.length] == 0;
+	/**
+	 * Construct a generator for a method type.
+	 *
+	 * @param type
+	 * @param context
+	 * @return
+	 */
+	private Domain<RValue> constructGenerator(Type.Method type, ExtendedContext context) {
+		Domain<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+		RValue[] lambdas = new RValue[context.getLambdaWidth()];
+		// FIXME: should make this non-deterministic!!
+		for(int i=0;i!=context.getLambdaWidth();++i) {
+			// Apply the rotation (for i > 1)
+			Domain<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			// Construct the (deterministic) lambda
+			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
+		return Domains.Finite(lambdas);
 
-		@Override
-		public RValue[] next() {
-			RValue[] result = new RValue[generators.length];
-			// Extract the result values
-			for (int i = 0; i != generators.length; ++i) {
-				result[i] = generators[i].get(iterators[i]);
+	}
+
+	/**
+	 * construct a generator from a tuple of types.
+	 *
+	 * @param types
+	 * @param context
+	 * @return
+	 */
+	private Domain<RValue[]> constructGenerator(Tuple<Type> types, ExtendedContext context) {
+		Domain<RValue>[] generators = new Domain[types.size()];
+		// Construct a generator for each type
+		for(int i=0;i!=types.size();++i) {
+			generators[i] = constructGenerator(types.get(i),context);
+		}
+		// Construct the product of generators
+		return Domains.Product(generators);
+	}
+
+	private Domain<RValue> constructGenerator(Type.Variable type, ExtendedContext context) {
+		return new Domains.Adaptor<Integer,RValue>(Domains.Int(context.getIntegerMinimum(), context.getIntegerMaximum())) {
+			@Override
+			public RValue.Int get(Integer i) {
+				return RValue.Int(BigInteger.valueOf(i));
 			}
-			// Increment the iterators
-			increment();
-			//
-			return result;
+		};
+	}
+
+	private final static <T> Domain<T> Rotate(Domain<T> domain, long rotation) {
+		final long size = domain.size();
+		return new Domain<T>() {
+
+			@Override
+			public long size() {
+				return size;
+			}
+
+			@Override
+			public T get(long index) {
+				// apply rotation
+				index = (index + rotation) % size;
+				//
+				return domain.get(index);
+			}
+
+			@Override
+			public Domain<T> slice(long start, long end) {
+				start = (start - rotation) % size;
+				end = (end - rotation) % size;
+				return domain.slice(start, end);
+			}
+		};
+	}
+
+	private final class SynthesizedLambda extends RValue.Lambda {
+		private final Type.Callable type;
+		private final ArrayList<RValue[]> inputs;
+		private final Domain<RValue[]> outputs;
+		private final long size;
+
+		public SynthesizedLambda(Type.Callable type, Domain<RValue[]> outputs) {
+			this.type = type;
+			this.inputs = new ArrayList<>();
+			this.outputs = outputs;
+			this.size = outputs.size();
 		}
 
-		private void increment() {
-			for (int i = 0; i != iterators.length; ++i) {
-				long iterator = iterators[i] + 1;
-				if (i >= generators.length || iterator < generators[i].size()) {
-					iterators[i] = iterator;
-					break;
-				} else {
-					iterators[i] = 0;
+		@Override
+		public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+			// Check through previous memoizations
+			for(int i=0;i!=inputs.size();++i) {
+				if(Arrays.equals(arguments, inputs.get(i))) {
+					return outputs.get(i % size);
 				}
 			}
+			// Not matched so create a new one
+			int r = inputs.size();
+			inputs.add(arguments);
+			return outputs.get(r % size);
 		}
+
+		@Override
+		public Callable getType() {
+			return type;
+		}
+
 	}
 
+	private static long calculateTotalInputs(Domain<?>... domains) {
+		long max = 1;
+		for(int i=0;i!=domains.length;++i) {
+			max = max * domains[i].size();
+		}
+		//
+		return max;
+	}
+
+	/**
+	 * Format the name and signature of a named declaration in a nice fashion for
+	 * writing to the log file.
+	 *
+	 * @param d
+	 * @return
+	 */
+	private static String toNameString(Decl.Named<?> d) {
+		if(d instanceof Decl.Function) {
+			Type.Callable t = ((Decl.Function)d).getType();
+			return "function " + d.getName() + t.getParameters() + "->" + t.getReturns();
+		} else if(d instanceof Decl.Method) {
+			Decl.Method m = (Decl.Method) d;
+			Type.Method t = m.getType();
+			// FIXME: this needs to be improved!
+			return "method " + m.getName() + t.getLifetimeParameters() + m.getTemplate() + t.getParameters() + "->" + t.getReturns();
+
+		} else if(d instanceof Decl.Type) {
+			return "type " + ((Decl.Type)d).getName();
+		} else {
+			return d.getName() + ":" + d.getType();
+		}
+	}
+	
 	/**
 	 * Provides various mechanisms for controlling the construction of generators,
 	 * such as limiting the maximum depth of recursive types.
@@ -542,22 +839,55 @@ public class QuickCheck implements Command {
 	 *
 	 */
 	public static class Context {
+		// Stores the based frame
 		private HashMap<Decl,Integer> depths = new HashMap<>();
+		private final int min;
+		private final int max;
+		private final int length;
+		private final int depth;
+		private final int width;
+		private final int rotation;
 
-		public int maxDepth() {
-			return 3;
+		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation) {
+			this.min = minInt;
+			this.max = maxInt;
+			this.length = maxLen;
+			this.depth = maxDepth;
+			this.width = width;
+			this.rotation = rotation;
+		}
+		
+		public Context(Context context) {
+			this.min = context.min;
+			this.max = context.max;
+			this.length = context.length;
+			this.depth = context.depth;
+			this.width = context.width;
+			this.rotation = context.rotation;
+		}
+		
+		public int getIntegerMinimum() {
+			return min;
 		}
 
-		public int minInt() {
-			return -3;
+		public int getIntegerMaximum() {
+			return max;
 		}
 
-		public int maxInt() {
-			return 3;
+		public int getMaxArrayLength() {
+			return length;
 		}
 
-		public int maxLength() {
-			return 3;
+		public int getRecursiveTypeDepth() {
+			return depth;
+		}
+
+		public int getAliasingWidth() {
+			return width;
+		}
+
+		public int getLambdaWidth() {
+			return rotation;
 		}
 
 		public int depth(Decl decl) {
@@ -580,5 +910,19 @@ public class QuickCheck implements Command {
 			int d = depth == null ? 0 : depth;
 			depths.put(decl, d-1);
 		}
+	}
+	
+	private static class ExtendedContext extends Context {
+		private final CallStack frame;
+		
+		public ExtendedContext(CallStack frame, Context context) {
+			super(context);
+			this.frame = frame;
+		}
+
+		public CallStack getFrame() {
+			return frame;
+		}
+		
 	}
 }
