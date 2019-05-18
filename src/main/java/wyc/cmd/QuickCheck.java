@@ -22,9 +22,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
-
+import java.util.Map;
 import java.util.function.Predicate;
 
 import jmodelgen.core.Domain;
@@ -307,6 +308,7 @@ public class QuickCheck implements Command {
 		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 		//
 		List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), generators);
+		long split = System.currentTimeMillis() - time;
 		//
 		long total = calculateTotalInputs(generators);
 		//
@@ -323,7 +325,7 @@ public class QuickCheck implements Command {
 		memory = memory - runtime.freeMemory();
 		//
 		double percent = (inputs.size() * 100) / total;
-		project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%)", time, memory);
+		project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
 		// Passed all inputs
 		return true;
 	}
@@ -922,7 +924,55 @@ public class QuickCheck implements Command {
 
 		public CallStack getFrame() {
 			return frame;
+		}		
+	}
+	
+	private static class ExtendedInterpreter extends Interpreter {
+		private final Cache cache = new Cache();
+		
+		public ExtendedInterpreter(PrintStream debug) {
+			super(debug);
 		}
 		
+		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
+			switch (lambda.getOpcode()) {
+			// cache functions
+			case DECL_function:
+				RValue[] outputs = cache.get(lambda, args);
+				if (outputs != null) {
+//					System.out.println("*** CACHE HIT: " + lambda.getName() + " : " + lambda.getType() + ", "
+//							+ Arrays.toString(args) + " => " + Arrays.toString(outputs));
+					return outputs;
+				} else {
+					outputs = super.execute(lambda, frame, args, context);
+					cache.put(lambda, args, outputs);
+					return outputs;
+				}
+			}
+			// Default back
+			return super.execute(lambda, frame, args, context);
+		}
+		
+		private static class Cache {
+			// FIXME: this is not exactly efficient.
+			private final IdentityHashMap<Decl.Callable,Map<List<RValue>,RValue[]>> cache = new IdentityHashMap<>();
+			
+			public RValue[] get(Decl.Callable decl, RValue[] inputs) {
+				Map<List<RValue>,RValue[]> entry = cache.get(decl);
+				if(entry != null) {
+					return entry.get(Arrays.asList(inputs));
+				}
+				return null;
+			}
+			
+			public void put(Decl.Callable decl, RValue[] inputs, RValue[] outputs) {
+				Map<List<RValue>,RValue[]> entry = cache.get(decl);
+				if(entry == null) {
+					entry = new HashMap<>();
+					cache.put(decl,entry);
+				}
+				entry.put(Arrays.asList(inputs), outputs);
+			}			
+		}
 	}
 }
