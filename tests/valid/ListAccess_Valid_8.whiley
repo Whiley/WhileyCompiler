@@ -6,7 +6,9 @@ public function toUnsignedInt(byte b) -> int:
     while b != 0b0:
         if (b & 0b00000001) == 0b00000001:
             r = r + base
-        b = b >> 1
+        // NOTE: following mask needed in leu of unsigned right shift
+        // operator.
+        b = (b >> 1) & 0b01111111                        
         base = base * 2
     return r
 

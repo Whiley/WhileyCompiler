@@ -15,6 +15,7 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Stmt;
@@ -100,11 +101,12 @@ public interface AbstractSemantics {
 	public RValue.Record Record(RValue.Field... fields);
 
 	/**
-	 * Create a new lambda value.
+	 * Create a new lambda value from a given callable entity and a corresponding
+	 * stack frame for captured variables.
 	 *
 	 * @return
 	 */
-	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body);
+	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame);
 
 	/**
 	 * Represents a value which may occur in a "read" position within a

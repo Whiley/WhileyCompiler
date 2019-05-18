@@ -17,11 +17,15 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.*;
 
+import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wyc.util.ErrorMessages;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 
-import static wyil.interpreter.ConcreteSemantics.LValue;
 import static wyil.interpreter.ConcreteSemantics.RValue;
 import static wyil.lang.WyilFile.*;
 
@@ -59,27 +63,39 @@ public class Interpreter {
 	}
 
 	private enum Status {
-		RETURN,
-		BREAK,
-		CONTINUE,
-		NEXT
+		RETURN, BREAK, CONTINUE, NEXT
 	}
 
 	/**
-	 * Execute a function or method identified by a name and type signature with
-	 * the given arguments, producing a return value or null (if none). If the
-	 * function or method cannot be found, or the number of arguments is
-	 * incorrect then an exception is thrown.
+	 * Execute a function or method identified by a name and type signature with the
+	 * given arguments, producing a return value or null (if none). If the function
+	 * or method cannot be found, or the number of arguments is incorrect then an
+	 * exception is thrown.
 	 *
-	 * @param nid
-	 *            The fully qualified identifier of the function or method
-	 * @param signature
-	 *            The exact type signature identifying the method.
-	 * @param args
-	 *            The supplied arguments
+	 * @param nid       The fully qualified identifier of the function or method
+	 * @param signature The exact type signature identifying the method.
+	 * @param args      The supplied arguments
 	 * @return
 	 */
 	public RValue[] execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
+		return execute(name, signature, frame, args, null);
+	}
+
+	/**
+	 * Execute a function or method identified by a name and type signature with the
+	 * given arguments, producing a return value or null (if none). If the function
+	 * or method cannot be found, or the number of arguments is incorrect then an
+	 * exception is thrown.
+	 *
+	 * @param nid       The fully qualified identifier of the function or method
+	 * @param signature The exact type signature identifying the method.
+	 * @param args      The supplied arguments
+	 * @param context   Identifies the position where this was invoked from to use
+	 *                  when reporting precondition violations.
+	 * @return
+	 */
+	public RValue[] execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue[] args,
+			SyntacticItem context) {
 		Decl.Callable lambda = frame.getCallable(name, signature);
 		if (lambda == null) {
 			throw new IllegalArgumentException("no function or method found: " + name + ", " + signature);
@@ -87,48 +103,71 @@ public class Interpreter {
 			throw new IllegalArgumentException(
 					"incorrect number of arguments: " + lambda.getName() + ", " + lambda.getType());
 		}
-		// Fourth, construct the stack frame for execution
+		// Enter a new frame for executing this callable item
 		frame = frame.enter(lambda);
-		extractParameters(frame,args,lambda);
+		// Execute the lambda we've extracted
+		return execute(lambda, frame, args, context);
+	}
+
+	/**
+	 * Execute a given callable entity, which could be a function, method, property
+	 * or lambda.
+	 *
+	 * @param lambda
+	 * @param frame
+	 * @param args    The supplied arguments
+	 * @param context Identifies the position where this was invoked from to use
+	 *                when reporting precondition violations.
+	 * @return
+	 */
+	public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
+		// Fourth, construct the stack frame for execution
+		extractParameters(frame, args, lambda);
 		// Check the precondition
-		if(lambda instanceof Decl.FunctionOrMethod) {
+		if (lambda instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
-			checkInvariants(frame,fm.getRequires());
+			// Check preconditions hold
+			checkPrecondition(WyilFile.PRECONDITION_NOT_SATISFIED, frame, fm.getRequires(), context);
 			// check function or method body exists
 			if (fm.getBody() == null) {
 				// FIXME: Add support for native functions or methods. That is,
 				// allow native functions to be implemented and called from the
 				// interpreter.
-				throw new IllegalArgumentException("no function or method body found: " + name + ", " + signature);
+				throw new IllegalArgumentException(
+						"no function or method body found: " + lambda.getQualifiedName() + " : " + lambda.getType());
 			}
 			// Execute the method or function body
 			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
 			// Extra the return values
-			RValue[] returns = packReturns(frame,lambda);
+			RValue[] returns = packReturns(frame, lambda);
 			// Restore original parameter values
-			extractParameters(frame,args,lambda);
+			extractParameters(frame, args, lambda);
 			// Check the postcondition holds
-			checkInvariants(frame, fm.getEnsures());
+			checkInvariants(WyilFile.POSTCONDITION_NOT_SATISFIED, frame, fm.getEnsures());
+			//
 			return returns;
+		} else if (lambda instanceof Decl.Lambda) {
+			Decl.Lambda l = (Decl.Lambda) lambda;
+			RValue retval = executeExpression(ANY_T, l.getBody(), frame);
+			return new RValue[] { retval };
 		} else {
 			// Properties always return true (provided their preconditions hold)
-			return new RValue[]{RValue.True};
+			return new RValue[] { RValue.True };
 		}
-		//
 	}
 
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
 		Tuple<Decl.Variable> parameters = decl.getParameters();
-		for(int i=0;i!=parameters.size();++i) {
+		for (int i = 0; i != parameters.size(); ++i) {
 			Decl.Variable parameter = parameters.get(i);
 			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
 
 	/**
-	 * Given an execution frame, extract the return values from a given function
-	 * or method. The parameters of the function or method are located first in
-	 * the frame, followed by the return values.
+	 * Given an execution frame, extract the return values from a given function or
+	 * method. The parameters of the function or method are located first in the
+	 * frame, followed by the return values.
 	 *
 	 * @param frame
 	 * @param type
@@ -148,14 +187,12 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a given block of statements starting from the beginning. Control
-	 * may terminate prematurely in a number of situations. For example, when a
-	 * return or break statement is encountered.
+	 * Execute a given block of statements starting from the beginning. Control may
+	 * terminate prematurely in a number of situations. For example, when a return
+	 * or break statement is encountered.
 	 *
-	 * @param block
-	 *            --- Statement block to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param block --- Statement block to execute
+	 * @param frame --- The current stack frame
 	 *
 	 * @return
 	 */
@@ -174,10 +211,8 @@ public class Interpreter {
 	/**
 	 * Execute a statement at a given point in the function or method body
 	 *
-	 * @param stmt
-	 *            --- The statement to be executed
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The statement to be executed
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
@@ -227,29 +262,97 @@ public class Interpreter {
 	}
 
 	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
-		// FIXME: handle multi-assignments properly
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
-		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
-		for (int i = 0; i != lhs.size(); ++i) {
-			LValue lval = constructLVal(lhs.get(i), frame);
-			lval.write(frame, rhs[i]);
+		Tuple<Expr> rhs = stmt.getRightHandSide();
+		RValue[] rvals = executeExpressions(stmt.getRightHandSide(), frame);
+		//
+		int index = 0;
+		// NOTE: this loop is more complicated because of multi-expressions.
+		for (int i = 0; i != rhs.size(); ++i) {
+			Expr r = rhs.get(i);
+			// Determine width of expression
+			int width = determineExpressionWidth(r);
+			// Execute components of expression
+			for (int j = 0; j != width; ++j) {
+				executeAssignLVal(lhs.get(index), rvals[index++], frame, scope, r);
+			}
 		}
 		return Status.NEXT;
 	}
 
+	private void executeAssignLVal(LVal lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		switch (lval.getOpcode()) {
+		case EXPR_arrayborrow:
+		case EXPR_arrayaccess: {
+			executeAssignArray((Expr.ArrayAccess) lval, rval, frame, scope, context);
+			break;
+		}
+		case EXPR_dereference: {
+			executeAssignDereference((Expr.Dereference) lval, rval, frame, scope, context);
+			break;
+		}
+		case EXPR_recordaccess:
+		case EXPR_recordborrow: {
+			executeAssignRecord((Expr.RecordAccess) lval, rval, frame, scope, context);
+			break;
+		}
+		case EXPR_variablemove:
+		case EXPR_variablecopy: {
+			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, scope, context);
+			break;
+		}
+		}
+	}
+
+	private void executeAssignArray(Expr.ArrayAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		RValue.Array array = executeExpression(ARRAY_T, lval.getFirstOperand(), frame);
+		RValue.Int index = executeExpression(INT_T, lval.getSecondOperand(), frame);
+		// Sanity check access
+		checkArrayBounds(array, index, frame, lval.getSecondOperand());
+		// Update the array
+		array = array.write(index, rval);
+		// Write the results back
+		executeAssignLVal((LVal) lval.getFirstOperand(), array, frame, scope, context);
+	}
+
+	private void executeAssignDereference(Expr.Dereference lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame);
+		// FIXME: need to check type invariant here??
+		RValue.Cell cell = ref.deref();
+		cell.write(rval);
+	}
+
+	private void executeAssignRecord(Expr.RecordAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		RValue.Record record = executeExpression(RECORD_T, lval.getOperand(), frame);
+		// Write rval to field
+		record = record.write(lval.getField(), rval);
+		//
+		executeAssignLVal((LVal) lval.getOperand(), record, frame, scope, context);
+	}
+
+	private void executeAssignVariable(Expr.VariableAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		// Check type invariants for lval being assigned
+		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, context);
+		//
+		frame.putLocal(lval.getVariableDeclaration().getName(), rval);
+	}
+
 	/**
 	 * Execute an assert or assume statement. In both cases, if the condition
 	 * evaluates to false an exception is thrown.
 	 *
-	 * @param stmt
-	 *            --- Assert statement.
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Assert statement.
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeAssert(Stmt.Assert stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(frame,stmt.getCondition());
+		checkInvariants(WyilFile.ASSERTION_FAILED, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -257,15 +360,13 @@ public class Interpreter {
 	 * Execute an assert or assume statement. In both cases, if the condition
 	 * evaluates to false an exception is thrown.
 	 *
-	 * @param stmt
-	 *            --- Assert statement.
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Assert statement.
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeAssume(Stmt.Assume stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(frame,stmt.getCondition());
+		checkInvariants(WyilFile.ASSUMPTION_FAILED, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -273,10 +374,8 @@ public class Interpreter {
 	 * Execute a break statement. This transfers to control out of the nearest
 	 * enclosing loop.
 	 *
-	 * @param stmt
-	 *            --- Break statement.
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Break statement.
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeBreak(Stmt.Break stmt, CallStack frame, EnclosingScope scope) {
@@ -286,13 +385,11 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a continue statement. This transfers to control back to the start
-	 * the nearest enclosing loop.
+	 * Execute a continue statement. This transfers to control back to the start the
+	 * nearest enclosing loop.
 	 *
-	 * @param stmt
-	 *            --- Break statement.
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Break statement.
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeContinue(Stmt.Continue stmt, CallStack frame, EnclosingScope scope) {
@@ -300,19 +397,17 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a Debug statement at a given point in the function or method
-	 * body. This will write the provided string out to the debug stream.
+	 * Execute a Debug statement at a given point in the function or method body.
+	 * This will write the provided string out to the debug stream.
 	 *
-	 * @param stmt
-	 *            --- Debug statement to executed
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Debug statement to executed
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeDebug(Stmt.Debug stmt, CallStack frame, EnclosingScope scope) {
-		//
-		// FIXME: need to do something with this
+		//	
 		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame);
+		//
 		for (RValue item : arr.getElements()) {
 			RValue.Int i = (RValue.Int) item;
 			char c = (char) i.intValue();
@@ -323,20 +418,23 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a DoWhile statement at a given point in the function or method
-	 * body. This will loop over the body zero or more times.
+	 * Execute a DoWhile statement at a given point in the function or method body.
+	 * This will loop over the body zero or more times.
 	 *
-	 * @param stmt
-	 *            --- Loop statement to executed
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Loop statement to executed
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, EnclosingScope scope) {
+		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
 		Status r = Status.NEXT;
 		while (r == Status.NEXT || r == Status.CONTINUE) {
 			r = executeBlock(stmt.getBody(), frame, scope);
 			if (r == Status.NEXT) {
+				// NOTE: only check loop invariant if normal execution, since breaks are handled
+				// differently.
+				checkInvariants(errcode, frame, stmt.getInvariant());
+				errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
 				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 				if (operand == RValue.False) {
 					return Status.NEXT;
@@ -357,24 +455,20 @@ public class Interpreter {
 	 * Execute a fail statement at a given point in the function or method body.
 	 * This will generate a runtime fault.
 	 *
-	 * @param stmt
-	 *            --- The fail statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The fail statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeFail(Stmt.Fail stmt, CallStack frame, EnclosingScope scope) {
-		throw new AssertionError("Runtime fault occurred");
+		throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, stmt);
 	}
 
 	/**
-	 * Execute an if statement at a given point in the function or method body.
-	 * This will proceed done either the true or false branch.
+	 * Execute an if statement at a given point in the function or method body. This
+	 * will proceed done either the true or false branch.
 	 *
-	 * @param stmt
-	 *            --- The if statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The if statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeIf(Stmt.IfElse stmt, CallStack frame, EnclosingScope scope) {
@@ -393,35 +487,36 @@ public class Interpreter {
 	/**
 	 * Execute a named block which is simply a block of statements.
 	 *
-	 * @param stmt
-	 *            --- Block statement to executed
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Block statement to executed
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeNamedBlock(Stmt.NamedBlock stmt, CallStack frame, EnclosingScope scope) {
-		return executeBlock(stmt.getBlock(),frame,scope);
+		return executeBlock(stmt.getBlock(), frame, scope);
 	}
 
 	/**
-	 * Execute a While statement at a given point in the function or method
-	 * body. This will loop over the body zero or more times.
+	 * Execute a While statement at a given point in the function or method body.
+	 * This will loop over the body zero or more times.
 	 *
-	 * @param stmt
-	 *            --- Loop statement to executed
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- Loop statement to executed
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeWhile(Stmt.While stmt, CallStack frame, EnclosingScope scope) {
+		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
 		Status r;
+		int count = 0;
 		do {
+			checkInvariants(errcode, frame, stmt.getInvariant());
 			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 			if (operand == RValue.False) {
 				return Status.NEXT;
 			}
 			// Keep executing the loop body until we exit it somehow.
 			r = executeBlock(stmt.getBody(), frame, scope);
+			//
+			errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
 		} while (r == Status.NEXT || r == Status.CONTINUE);
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
@@ -433,13 +528,10 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a Return statement at a given point in the function or method
-	 * body
+	 * Execute a Return statement at a given point in the function or method body
 	 *
-	 * @param stmt
-	 *            --- The return statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The return statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeReturn(Stmt.Return stmt, CallStack frame, EnclosingScope scope) {
@@ -449,7 +541,12 @@ public class Interpreter {
 		// method.
 		Decl.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
+		Type.Callable type = context.getType();
+		// Execute return expressions
 		RValue[] values = executeExpressions(stmt.getReturns(), frame);
+		// Check type invariants
+		checkTypeInvariants(type.getReturns(), values, stmt.getReturns(), frame);
+		// Configure return values
 		for (int i = 0; i != returns.size(); ++i) {
 			frame.putLocal(returns.get(i).getName(), values[i]);
 		}
@@ -457,13 +554,10 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a skip statement at a given point in the function or method
-	 * body
+	 * Execute a skip statement at a given point in the function or method body
 	 *
-	 * @param stmt
-	 *            --- The skip statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The skip statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeSkip(Stmt.Skip stmt, CallStack frame, EnclosingScope scope) {
@@ -472,13 +566,10 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a Switch statement at a given point in the function or method
-	 * body
+	 * Execute a Switch statement at a given point in the function or method body
 	 *
-	 * @param stmt
-	 *            --- The swithc statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The swithc statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeSwitch(Stmt.Switch stmt, CallStack frame, EnclosingScope scope) {
@@ -505,20 +596,18 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a variable declaration statement at a given point in the function or method
-	 * body
+	 * Execute a variable declaration statement at a given point in the function or
+	 * method body
 	 *
-	 * @param stmt
-	 *            --- The statement to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param stmt  --- The statement to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame) {
 		// We only need to do something if this has an initialiser
-		if(stmt.hasInitialiser()) {
+		if (stmt.hasInitialiser()) {
 			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
-			frame.putLocal(stmt.getName(),value);
+			frame.putLocal(stmt.getName(), value);
 		}
 		return Status.NEXT;
 	}
@@ -528,16 +617,13 @@ public class Interpreter {
 	// =============================================================
 
 	/**
-	 * Execute a single expression which is expected to return a single result
-	 * of an expected type. If a result of an incorrect type is returned, then
-	 * an exception is raised.
+	 * Execute a single expression which is expected to return a single result of an
+	 * expected type. If a result of an incorrect type is returned, then an
+	 * exception is raised.
 	 *
-	 * @param expected
-	 *            The expected type of the result
-	 * @param expr
-	 *            The expression to be executed
-	 * @param frame
-	 *            The frame in which the expression is executing
+	 * @param expected The expected type of the result
+	 * @param expr     The expression to be executed
+	 * @param frame    The frame in which the expression is executing
 	 * @return
 	 */
 	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
@@ -679,15 +765,11 @@ public class Interpreter {
 		return checkType(val, expr, expected);
 	}
 
-
 	/**
-	 * Execute a Constant expression at a given point in the function or
-	 * method body
+	 * Execute a Constant expression at a given point in the function or method body
 	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param expr  --- The expression to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private RValue executeConst(Expr.Constant expr, CallStack frame) {
@@ -730,10 +812,8 @@ public class Interpreter {
 	/**
 	 * Execute a type conversion at a given point in the function or method body
 	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param expr  --- The expression to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private RValue executeConvert(Expr.Cast expr, CallStack frame) {
@@ -804,10 +884,8 @@ public class Interpreter {
 	 * method body. This simply loads the value of the given variable from the
 	 * frame.
 	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param expr  --- The expression to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 */
 	private RValue executeVariableAccess(Expr.VariableAccess expr, CallStack frame) {
@@ -859,12 +937,14 @@ public class Interpreter {
 	public RValue executeIntegerDivision(Expr.IntegerDivision expr, CallStack frame) {
 		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		checkDivisionByZero(rhs, frame, expr.getSecondOperand());
 		return lhs.divide(rhs);
 	}
 
 	public RValue executeIntegerRemainder(Expr.IntegerRemainder expr, CallStack frame) {
 		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		checkDivisionByZero(rhs, frame, expr.getSecondOperand());
 		return lhs.remainder(rhs);
 	}
 
@@ -913,9 +993,9 @@ public class Interpreter {
 		// This is a short-circuiting operator. Therefore, we fail as soon as one
 		// argument fails.
 		Tuple<Expr> operands = expr.getOperands();
-		for(int i=0;i!=operands.size();++i) {
+		for (int i = 0; i != operands.size(); ++i) {
 			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
-			if(b == RValue.False) {
+			if (b == RValue.False) {
 				return b;
 			}
 		}
@@ -926,9 +1006,9 @@ public class Interpreter {
 		// This is a short-circuiting operator. Therefore, we succeed as soon as one
 		// argument succeeds.
 		Tuple<Expr> operands = expr.getOperands();
-		for(int i=0;i!=operands.size();++i) {
+		for (int i = 0; i != operands.size(); ++i) {
 			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
-			if(b == RValue.True) {
+			if (b == RValue.True) {
 				return b;
 			}
 		}
@@ -937,7 +1017,7 @@ public class Interpreter {
 
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
 		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame);
-		if(lhs == RValue.False) {
+		if (lhs == RValue.False) {
 			return RValue.True;
 		} else {
 			RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame);
@@ -988,6 +1068,7 @@ public class Interpreter {
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		return lhs.shl(rhs);
 	}
+
 	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
@@ -1002,6 +1083,9 @@ public class Interpreter {
 	public RValue executeArrayAccess(Expr.ArrayAccess expr, CallStack frame) {
 		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame);
 		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		// Sanity check access
+		checkArrayBounds(array, index, frame, expr.getSecondOperand());
+		// Perform the read
 		return array.read(index);
 	}
 
@@ -1010,7 +1094,7 @@ public class Interpreter {
 		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		int n = count.intValue();
 		if (n < 0) {
-			throw new AssertionError("negative array length");
+			throw new RuntimeError(WyilFile.NEGATIVE_LENGTH, frame, expr.getSecondOperand());
 		}
 		RValue[] values = new RValue[n];
 		for (int i = 0; i != n; ++i) {
@@ -1031,6 +1115,9 @@ public class Interpreter {
 	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame) {
 		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
 		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
+		if (start < 0 || end < start) {
+			throw new RuntimeError(WyilFile.NEGATIVE_RANGE, frame, expr.getSecondOperand());
+		}
 		RValue[] elements = new RValue[end - start];
 		for (int i = start; i < end; ++i) {
 			elements[i - start] = semantics.Int(BigInteger.valueOf(i));
@@ -1052,19 +1139,20 @@ public class Interpreter {
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
 		// Locate the function or method body in order to execute it
 		Decl.Callable decl = expr.getLink().getTarget();
-		if(decl instanceof Decl.FunctionOrMethod) {
+		//
+		if (decl instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
 			// Clone frame to ensure it executes in this exact environment.
-			return semantics.Lambda(decl, frame.clone(), fm.getBody());
+			return semantics.Lambda(decl, frame.clone());
 		} else {
-			return (RValue) error("cannot take address of property",expr);
+			throw new SyntacticException("cannot take address of property", null, expr);
 		}
 	}
 
 	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame) {
 		// FIXME: this needs a clone of the frame? Otherwise, it's just
 		// executing in the later environment.
-		return semantics.Lambda(decl, frame.clone(), decl.getBody());
+		return semantics.Lambda(decl, frame.clone());
 	}
 
 	// =============================================================
@@ -1072,10 +1160,9 @@ public class Interpreter {
 	// =============================================================
 
 	/**
-	 * Execute one or more expressions. This is slightly more complex than for
-	 * the single expression case because of the potential to encounter
-	 * "positional operands". That is, severals which arise from executing the
-	 * same expression.
+	 * Execute one or more expressions. This is slightly more complex than for the
+	 * single expression case because of the potential to encounter "positional
+	 * operands". That is, severals which arise from executing the same expression.
 	 *
 	 * @param expressions
 	 * @param frame
@@ -1084,13 +1171,13 @@ public class Interpreter {
 	private RValue[] executeExpressions(Tuple<Expr> expressions, CallStack frame) {
 		RValue[][] results = new RValue[expressions.size()][];
 		int count = 0;
-		for(int i=0;i!=expressions.size();++i) {
-			results[i] = executeMultiReturnExpression(expressions.get(i),frame);
+		for (int i = 0; i != expressions.size(); ++i) {
+			results[i] = executeMultiReturnExpression(expressions.get(i), frame);
 			count += results[i].length;
 		}
 		RValue[] rs = new RValue[count];
 		int j = 0;
-		for(int i=0;i!=expressions.size();++i) {
+		for (int i = 0; i != expressions.size(); ++i) {
 			Object[] r = results[i];
 			System.arraycopy(r, 0, rs, j, r.length);
 			j += r.length;
@@ -1099,9 +1186,9 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute an expression which has the potential to return more than one
-	 * result. Thus the return type must accommodate this by allowing zero or
-	 * more returned values.
+	 * Execute an expression which has the potential to return more than one result.
+	 * Thus the return type must accommodate this by allowing zero or more returned
+	 * values.
 	 *
 	 * @param expr
 	 * @param frame
@@ -1129,48 +1216,36 @@ public class Interpreter {
 	/**
 	 * Execute an IndirectInvoke bytecode instruction at a given point in the
 	 * function or method body. This first checks the operand is a function
-	 * reference, and then generates a recursive call to execute the given
-	 * function. If the function does not exist, or is provided with the wrong
-	 * number of arguments, then a runtime fault will occur.
+	 * reference, and then generates a recursive call to execute the given function.
+	 * If the function does not exist, or is provided with the wrong number of
+	 * arguments, then a runtime fault will occur.
 	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
+	 * @param expr    --- The expression to execute
+	 * @param frame   --- The current stack frame
+	 * @param context --- Context in which bytecodes are executed
 	 * @return
 	 */
 	private RValue[] executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
-		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(),frame);
+		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(), frame);
 		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
-		// Here we have to use the enclosing frame when the lambda was created.
+		// Extract concrete type
+		Type.Callable type = src.getType();
+		// Check parameter type invariants
+		checkTypeInvariants(type.getParameters(), arguments, expr.getArguments(), frame);
+		// Here we supply the enclosing frame when the lambda was created.
 		// The reason for this is that the lambda may try to access enclosing
 		// variables in the scope it was created.
-		frame = src.getFrame();
-		extractParameters(frame,arguments,src.getContext());
-		// Execute the method or function body
-		Stmt body = src.getBody();
-		if(body instanceof Stmt.Block) {
-			executeBlock((Stmt.Block) body, frame, new FunctionOrMethodScope(src.getContext()));
-			// Extra the return values
-			return packReturns(frame,src.getContext());
-		} else {
-			RValue retval = executeExpression(ANY_T,(Expr) body, frame);
-			return new RValue[]{retval};
-		}
+		return src.execute(this,arguments,expr);
 	}
 
 	/**
-	 * Execute an Invoke bytecode instruction at a given point in the function
-	 * or method body. This generates a recursive call to execute the given
-	 * function. If the function does not exist, or is provided with the wrong
-	 * number of arguments, then a runtime fault will occur.
+	 * Execute an Invoke bytecode instruction at a given point in the function or
+	 * method body. This generates a recursive call to execute the given function.
+	 * If the function does not exist, or is provided with the wrong number of
+	 * arguments, then a runtime fault will occur.
 	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
+	 * @param expr  --- The expression to execute
+	 * @param frame --- The current stack frame
 	 * @return
 	 * @throws ResolutionError
 	 */
@@ -1179,54 +1254,56 @@ public class Interpreter {
 		Decl.Callable decl = expr.getLink().getTarget();
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
+		// Extract the concrete type
+		Type.Callable type = expr.getBinding().getConcreteType();
+		// Check type invariants
+		checkTypeInvariants(type.getParameters(), arguments, expr.getOperands(), frame);
+		// Enter a new frame for executing this declaration
+		frame = frame.enter(decl);
 		// Invoke the function or method in question
-		RValue[] rs = execute(decl.getQualifiedName(), decl.getType(), frame, arguments);
-		return rs;
+		// FIXME: could potentially optimise this by calling execute with decl directly.
+		// This currently fails for external symbols which are represented as
+		// prototypes.
+		return execute(decl.getQualifiedName(), decl.getType(), frame, arguments, expr);
 	}
 
 	// =============================================================
 	// Constants
 	// =============================================================
 
-	/**
-	 * This method constructs a "mutable" representation of the lval. This is a
-	 * bit strange, but is necessary because values in the frame are currently
-	 * immutable.
-	 *
-	 * @param operand
-	 * @param frame
-	 * @param context
-	 * @return
-	 */
-	private LValue constructLVal(Expr expr, CallStack frame) {
-		switch (expr.getOpcode()) {
-		case EXPR_arrayborrow:
-		case EXPR_arrayaccess: {
-			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
-			LValue src = constructLVal(e.getFirstOperand(), frame);
-			RValue.Int index = executeExpression(INT_T, e.getSecondOperand(), frame);
-			return new LValue.Array(src, index);
+	public void checkArrayBounds(RValue.Array array, RValue.Int index, CallStack frame, SyntacticItem context) {
+		int len = array.length().intValue();
+		int idx = index.intValue();
+		if (idx < 0) {
+			throw new RuntimeError(WyilFile.INDEX_BELOW_BOUNDS, frame, context);
+		} else if (idx >= len) {
+			throw new RuntimeError(WyilFile.INDEX_ABOVE_BOUNDS, frame, context);
 		}
-		case EXPR_dereference: {
-			Expr.Dereference e = (Expr.Dereference) expr;
-			LValue src = constructLVal(e.getOperand(), frame);
-			return new LValue.Dereference(src);
+	}
+
+	public void checkDivisionByZero(RValue.Int value, CallStack frame, SyntacticItem context) {
+		if (value.intValue() == 0) {
+			throw new RuntimeError(WyilFile.DIVISION_BY_ZERO, frame, context);
 		}
-		case EXPR_recordaccess:
-		case EXPR_recordborrow: {
-			Expr.RecordAccess e = (Expr.RecordAccess) expr;
-			LValue src = constructLVal(e.getOperand(), frame);
-			return new LValue.Record(src, e.getField());
+	}
+
+	public void checkTypeInvariants(Tuple<Type> variables, RValue[] values, Tuple<Expr> rvals, CallStack frame) {
+		// This is a bit tricky because we have to account for multi-expressions which,
+		// as always, are annoying.
+		int index = 0;
+		for (int i = 0; i != rvals.size(); ++i) {
+			Expr rval = rvals.get(i);
+			int width = determineExpressionWidth(rval);
+			for (int j = 0; j != width; ++j) {
+				checkTypeInvariants(variables.get(index), values[index++], frame, rval);
+			}
 		}
-		case EXPR_variablemove:
-		case EXPR_variablecopy: {
-			Expr.VariableAccess e = (Expr.VariableAccess) expr;
-			Decl.Variable decl = e.getVariableDeclaration();
-			return new LValue.Variable(decl.getName());
+	}
+
+	public void checkTypeInvariants(Type type, RValue value, CallStack frame, SyntacticItem context) {
+		if (value.is(type, frame).boolValue() == false) {
+			throw new RuntimeError(WyilFile.TYPEINVARAINT_NOT_SATISFIED, frame, context);
 		}
-		}
-		deadCode(expr);
-		return null; // deadcode
 	}
 
 	/**
@@ -1237,12 +1314,14 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(CallStack frame, Tuple<Expr> invariants) {
+	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants) {
 		for (int i = 0; i != invariants.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, invariants.get(i), frame);
+			Expr invariant = invariants.get(i);
+			// Execute invariant
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			// Check whether it holds or not
 			if (b == RValue.False) {
-				// FIXME: need to do more here
-				throw new AssertionError();
+				throw new RuntimeError(code, frame, invariant);
 			}
 		}
 	}
@@ -1255,12 +1334,38 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(CallStack frame, Expr... invariants) {
-		for (int i = 0; i != invariants.length; ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, invariants[i], frame);
+	public void checkPrecondition(int code, CallStack frame, Tuple<Expr> invariants, SyntacticItem context) {
+		for (int i = 0; i != invariants.size(); ++i) {
+			Expr invariant = invariants.get(i);
+			// Execute invariant
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			// Check whether it holds or not
 			if (b == RValue.False) {
-				// FIXME: need to do more here
-				throw new AssertionError();
+				if (context != null) {
+					throw new RuntimeError(code, frame, context, invariant);
+				} else {
+					throw new RuntimeError(code, frame, invariant);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Evaluate zero or more conditional expressions, and check whether any is
+	 * false. If so, raise an exception indicating a runtime fault.
+	 *
+	 * @param frame
+	 * @param context
+	 * @param invariants
+	 */
+	public void checkInvariants(int code, CallStack frame, Expr... invariants) {
+		for (int i = 0; i != invariants.length; ++i) {
+			Expr invariant = invariants[i];
+			// Execute invariant
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			// Check whether it holds or not
+			if (b == RValue.False) {
+				throw new RuntimeError(code, frame, invariant);
 			}
 		}
 	}
@@ -1268,12 +1373,9 @@ public class Interpreter {
 	/**
 	 * Check that a given operand value matches an expected type.
 	 *
-	 * @param operand
-	 *            --- bytecode operand to be checked
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @param types
-	 *            --- Types to be checked against
+	 * @param operand --- bytecode operand to be checked
+	 * @param context --- Context in which bytecodes are executed
+	 * @param types   --- Types to be checked against
 	 */
 	@SafeVarargs
 	public static <T extends RValue> T checkType(RValue operand, SyntacticItem context, Class<T>... types) {
@@ -1284,40 +1386,36 @@ public class Interpreter {
 				return (T) operand;
 			}
 		}
-		// No match, therefore through an error
+		// No match, therefore throw an error
 		if (operand == null) {
-			error("null operand", context);
+			throw new SyntacticException("null operand", null, context);
 		} else {
-			error("operand returned " + operand.getClass().getName() + ", expecting one of " + Arrays.toString(types),
-					context);
+			throw new SyntacticException(
+					"operand returned " + operand.getClass().getName() + ", expecting one of " + Arrays.toString(types),
+					null, context);
 		}
-		return null;
 	}
 
 	/**
-	 * This method is provided as a generic mechanism for reporting runtime
-	 * errors within the interpreter.
+	 * This method is provided to properly handled positions which should be dead
+	 * code.
 	 *
-	 * @param msg
-	 *            --- Message to be printed when error arises.
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 */
-	public static Object error(String msg, SyntacticItem context) {
-		// FIXME: do more here
-		throw new RuntimeException(msg);
-	}
-
-	/**
-	 * This method is provided to properly handled positions which should be
-	 * dead code.
-	 *
-	 * @param context
-	 *            --- Context in which bytecodes are executed
+	 * @param context --- Context in which bytecodes are executed
 	 */
 	private <T> T deadCode(SyntacticItem element) {
 		// FIXME: do more here
 		throw new RuntimeException("internal failure --- dead code reached");
+	}
+
+	/**
+	 * A simple helper method to determine the width of an expression. That is
+	 *
+	 * @param e
+	 * @return
+	 */
+	private static int determineExpressionWidth(Expr e) {
+		Tuple<Type> types = e.getTypes();
+		return types == null ? 1 : types.size();
 	}
 
 	private static final Class<RValue> ANY_T = RValue.class;
@@ -1328,6 +1426,35 @@ public class Interpreter {
 	private static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
+
+	public final static class RuntimeError extends SyntacticException {
+		private final int code;
+		private final CallStack frame;
+
+		public RuntimeError(int code, CallStack frame, SyntacticItem element, SyntacticItem... context) {
+			super(ErrorMessages.getErrorMessage(code, new Tuple<>(context)), extractEntry(element), element);
+			this.code = code;
+			this.frame = frame;
+		}
+
+		public int getErrorCode() {
+			return code;
+		}
+
+		public CallStack getFrame() {
+			return frame;
+		}
+
+		private static Path.Entry<?> extractEntry(SyntacticItem item) {
+			// FIXME: this feels like a hack
+			SyntacticHeap h = item.getHeap();
+			if (h instanceof WyilFile) {
+				return ((WyilFile) h).getEntry();
+			} else {
+				return null;
+			}
+		}
+	}
 
 	public final class CallStack {
 		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
@@ -1400,8 +1527,8 @@ public class Interpreter {
 		}
 
 		/**
-		 * Load a given module and make sure that all static variables are
-		 * properly initialised.
+		 * Load a given module and make sure that all static variables are properly
+		 * initialised.
 		 *
 		 * @param mid
 		 * @param frame
@@ -1413,7 +1540,7 @@ public class Interpreter {
 					switch (d.getOpcode()) {
 					case DECL_staticvar: {
 						Decl.StaticVariable decl = (Decl.StaticVariable) d;
-						if(!statics.containsKey(decl.getQualifiedName())) {
+						if (!statics.containsKey(decl.getQualifiedName())) {
 							// Static variable has not been initialised yet, therefore force its
 							// initialisation.
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
@@ -1425,10 +1552,10 @@ public class Interpreter {
 					case DECL_method:
 					case DECL_property:
 						Decl.Callable decl = (Decl.Callable) d;
-						Map<String,Decl.Callable> map = callables.get(decl.getQualifiedName());
-						if(map == null) {
+						Map<String, Decl.Callable> map = callables.get(decl.getQualifiedName());
+						if (map == null) {
 							map = new HashMap<>();
-							callables.put(decl.getQualifiedName(),map);
+							callables.put(decl.getQualifiedName(), map);
 						}
 						// NOTE: must use canonical string here to ensure unique signature for lookup.
 						map.put(decl.getType().toCanonicalString(), decl);
@@ -1441,10 +1568,10 @@ public class Interpreter {
 
 	/**
 	 * An enclosing scope captures the nested of declarations, blocks and other
-	 * staments (e.g. loops). It is used to store information associated with
-	 * these things such they can be accessed further down the chain. It can
-	 * also be used to propagate information up the chain (for example, the
-	 * environments arising from a break or continue statement).
+	 * staments (e.g. loops). It is used to store information associated with these
+	 * things such they can be accessed further down the chain. It can also be used
+	 * to propagate information up the chain (for example, the environments arising
+	 * from a break or continue statement).
 	 *
 	 * @author David J. Pearce
 	 *
@@ -1458,9 +1585,8 @@ public class Interpreter {
 
 		/**
 		 * Get the innermost enclosing block of a given kind. For example, when
-		 * processing a return statement we may wish to get the enclosing
-		 * function or method declaration such that we can type check the return
-		 * types.
+		 * processing a return statement we may wish to get the enclosing function or
+		 * method declaration such that we can type check the return types.
 		 *
 		 * @param kind
 		 */
@@ -1483,7 +1609,7 @@ public class Interpreter {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Decl.Callable context;;
+		private final Decl.Callable context;
 
 		public FunctionOrMethodScope(Decl.Callable context) {
 			super(null);
