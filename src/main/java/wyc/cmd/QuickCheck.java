@@ -13,27 +13,41 @@
 // limitations under the License.
 package wyc.cmd;
 
+import static wyil.lang.WyilFile.DECL_function;
+import static wyil.lang.WyilFile.DECL_method;
+import static wyil.lang.WyilFile.DECL_type;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_property;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
+import static wyil.lang.WyilFile.TYPE_variable;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import jmodelgen.core.Domain;
 import jmodelgen.util.Domains;
-import wyil.interpreter.*;
 import wybs.lang.Build;
-import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.Activator;
 import wyc.util.ErrorMessages;
@@ -45,10 +59,13 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter;
 import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
-import static wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
 /**
@@ -178,7 +195,7 @@ public class QuickCheck implements Command {
 	/**
 	 * The interpreter instance used for executing code.
 	 */
-	private final Interpreter interpreter;
+	private ExtendedInterpreter interpreter;
 
 	/**
 	 * Cache of previously computed values. This is useful for reducing memory
@@ -192,7 +209,6 @@ public class QuickCheck implements Command {
 		this.configuration = configuration;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
-		this.interpreter = new Interpreter(this.syserr);
 		this.cache = new HashMap<>();
 	}
 
@@ -256,12 +272,16 @@ public class QuickCheck implements Command {
 	}
 
 	public boolean check(WyilFile parent, Context context) throws IOException {
-		// Initialise the base stack frame
-		CallStack frame = initialiseStackFrame(parent);
+		// Initialise Interpreter
+		this.interpreter = new ExtendedInterpreter(this.syserr, context);
+		// Construct extended context
+		ExtendedContext eContext = interpreter.getExtendedContext();
+		// Initialise by context
+		eContext.initialise(project,parent);
 		//
-		return check(parent, new ExtendedContext(frame,context));
+		return check(parent, eContext);
 	}
-	
+
 	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
 		boolean OK = true;
 		for (Decl.Unit unit : parent.getModule().getUnits()) {
@@ -335,7 +355,7 @@ public class QuickCheck implements Command {
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 		//
-		CallStack frame = context.getFrame().enter(t);		
+		CallStack frame = context.getFrame().enter(t);
 		// Get an appropriate generator for the underlying type
 		Domain<RValue> generator = constructGenerator(t.getType(), context);
 		// iterate through all values in the generator to see whether any pass the
@@ -442,28 +462,6 @@ public class QuickCheck implements Command {
 	private boolean execute(Expr predicate, CallStack frame) {
 		RValue.Bool b = interpreter.executeExpression(RValue.Bool.class,predicate,frame);
 		return b.boolValue();
-	}
-
-	/**
-	 * Initialise a base stack frame from for this project, such that it can be used
-	 * to execute functions and methods within the project. This includes all
-	 * modules which this project depends upon.
-	 */
-	private CallStack initialiseStackFrame(WyilFile context) throws IOException {
-		CallStack frame = interpreter.new CallStack();
-		// Load all relevant modules
-		frame.load(context);
-		// Load all dependencies
-		for(Build.Package p : project.getPackages()) {
-			// FIXME: is this the right way to determine the binary file from a given
-			// package?
-			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
-			//
-			for(Path.Entry<WyilFile> e : entries) {
-				frame.load(e.read());
-			}
-		}
-		return frame;
 	}
 
 	private Domain<RValue>[] constructGenerators(Tuple<Decl.Variable> parameters, ExtendedContext context) {
@@ -612,9 +610,9 @@ public class QuickCheck implements Command {
 			// Get an appropriate generator for the underlying type
 			Domain<RValue> generator = constructGenerator(decl.getType(), context);
 			//
-			CallStack frame = context.getFrame().enter(decl);		
+			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
-			// invariant and, hence, are valid instances of this invariant.			
+			// invariant and, hence, are valid instances of this invariant.
 			Domain<RValue> domain = execute(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
 			//
 			context.leave(decl);
@@ -832,7 +830,7 @@ public class QuickCheck implements Command {
 			return d.getName() + ":" + d.getType();
 		}
 	}
-	
+
 	/**
 	 * Provides various mechanisms for controlling the construction of generators,
 	 * such as limiting the maximum depth of recursive types.
@@ -858,7 +856,7 @@ public class QuickCheck implements Command {
 			this.width = width;
 			this.rotation = rotation;
 		}
-		
+
 		public Context(Context context) {
 			this.min = context.min;
 			this.max = context.max;
@@ -867,7 +865,7 @@ public class QuickCheck implements Command {
 			this.width = context.width;
 			this.rotation = context.rotation;
 		}
-		
+
 		public int getIntegerMinimum() {
 			return min;
 		}
@@ -913,27 +911,78 @@ public class QuickCheck implements Command {
 			depths.put(decl, d-1);
 		}
 	}
-	
+
 	private static class ExtendedContext extends Context {
+		private final ExtendedInterpreter interpreter;
 		private final CallStack frame;
-		
-		public ExtendedContext(CallStack frame, Context context) {
+
+		public ExtendedContext(ExtendedInterpreter interpreter, CallStack frame, Context context) {
 			super(context);
+			this.interpreter = interpreter;
 			this.frame = frame;
 		}
 
 		public CallStack getFrame() {
 			return frame;
-		}		
+		}
+
+		public ExtendedInterpreter getInterpreter() {
+			return interpreter;
+		}
+
+		/**
+		 * Initialise a base stack frame from for this project, such that it can be used
+		 * to execute functions and methods within the project. This includes all
+		 * modules which this project depends upon.
+		 */
+		public void initialise(Build.Project project, WyilFile context) throws IOException {
+			// Load all relevant modules
+			frame.load(context);
+			// Load all dependencies
+			for(Build.Package p : project.getPackages()) {
+				// FIXME: is this the right way to determine the binary file from a given
+				// package?
+				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+				//
+				for(Path.Entry<WyilFile> e : entries) {
+					frame.load(e.read());
+				}
+			}
+		}
 	}
-	
-	private static class ExtendedInterpreter extends Interpreter {
+
+	private class ExtendedInterpreter extends Interpreter {
+		private final ExtendedContext context;
+
+		public ExtendedInterpreter(PrintStream debug, Context context) {
+			super(debug);
+			this.context = new ExtendedContext(this,new CallStack(),context);
+		}
+
+		public ExtendedContext getExtendedContext() {
+			return context;
+		}
+
+		@Override
+		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
+			if (lambda.getBody().size() == 0) {
+				Domain<RValue[]> returns = constructGenerator(lambda.getType().getReturns(), context);
+				// FIXME: could return randomly here
+				return returns.get(0);
+			} else {
+				return super.execute(lambda, frame, args, item);
+			}
+		}
+	}
+
+	private static class CachingInterpreter extends Interpreter {
 		private final Cache cache = new Cache();
-		
-		public ExtendedInterpreter(PrintStream debug) {
+
+		public CachingInterpreter(PrintStream debug) {
 			super(debug);
 		}
-		
+
+		@Override
 		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
 			switch (lambda.getOpcode()) {
 			// cache functions
@@ -952,11 +1001,11 @@ public class QuickCheck implements Command {
 			// Default back
 			return super.execute(lambda, frame, args, context);
 		}
-		
+
 		private static class Cache {
 			// FIXME: this is not exactly efficient.
 			private final IdentityHashMap<Decl.Callable,Map<List<RValue>,RValue[]>> cache = new IdentityHashMap<>();
-			
+
 			public RValue[] get(Decl.Callable decl, RValue[] inputs) {
 				Map<List<RValue>,RValue[]> entry = cache.get(decl);
 				if(entry != null) {
@@ -964,7 +1013,7 @@ public class QuickCheck implements Command {
 				}
 				return null;
 			}
-			
+
 			public void put(Decl.Callable decl, RValue[] inputs, RValue[] outputs) {
 				Map<List<RValue>,RValue[]> entry = cache.get(decl);
 				if(entry == null) {
@@ -972,7 +1021,7 @@ public class QuickCheck implements Command {
 					cache.put(decl,entry);
 				}
 				entry.put(Arrays.asList(inputs), outputs);
-			}			
+			}
 		}
 	}
 }

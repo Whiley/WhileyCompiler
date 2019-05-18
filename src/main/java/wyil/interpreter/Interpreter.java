@@ -129,7 +129,7 @@ public class Interpreter {
 			// Check preconditions hold
 			checkPrecondition(WyilFile.PRECONDITION_NOT_SATISFIED, frame, fm.getRequires(), context);
 			// check function or method body exists
-			if (fm.getBody() == null) {
+			if (fm.getBody().size() == 0) {
 				// FIXME: Add support for native functions or methods. That is,
 				// allow native functions to be implemented and called from the
 				// interpreter.
