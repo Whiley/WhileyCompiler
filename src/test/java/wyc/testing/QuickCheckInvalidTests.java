@@ -389,6 +389,9 @@ public class QuickCheckInvalidTests {
 		IGNORED.put("While_Invalid_6", "not relevant");
 		IGNORED.put("While_Invalid_9", "not relevant");
 		IGNORED.put("XOR_Invalid_1", "not relevant");
+
+		// Ignored for timing reasons
+		IGNORED.put("RecursiveType_Invalid_8", "expensive main");
 	}
 
 	/**

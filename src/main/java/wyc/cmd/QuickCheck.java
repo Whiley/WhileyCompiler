@@ -652,8 +652,8 @@ public class QuickCheck implements Command {
 			return Domains.EMPTY;
 		} else {
 			context.enter(decl);
-			// Get an appropriate generator for the underlying type
-			Domain<RValue> generator = constructGenerator(decl.getType(), context);
+			// Get an appropriate generator for the underlying type/
+			Domain<RValue> generator = constructGenerator(type.getConcreteType(), context);
 			//
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
