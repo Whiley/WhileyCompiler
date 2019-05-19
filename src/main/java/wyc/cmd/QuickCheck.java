@@ -377,7 +377,8 @@ public class QuickCheck implements Command {
 		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
-		double percent = (domain.size() * 100) / generator.size();
+		long total = generator.size();
+		double percent = total == 0 ? 0 : (domain.size() * 100) / total;
 		project.getLogger().logTimedMessage("Checked " + toNameString(t) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time, memory);
 		//
 		return domain.size() > 0;
@@ -394,7 +395,7 @@ public class QuickCheck implements Command {
 			// Add appropriate syntax error to the syntactic item where the error arose.
 			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
 			// FIXME: need better error reporting here
-			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
+			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
 			// Done
 			return false;
 		} catch (Exception e) {
