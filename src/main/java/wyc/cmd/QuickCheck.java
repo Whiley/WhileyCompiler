@@ -108,7 +108,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, false);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -339,7 +339,7 @@ public class QuickCheck implements Command {
 			// Get appropriate generators for each parameter
 			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 			//
-			List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), generators);
+			List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), context, generators);
 			long split = System.currentTimeMillis() - time;
 			//
 			long total = calculateTotalInputs(generators);
@@ -394,7 +394,7 @@ public class QuickCheck implements Command {
 			// Add appropriate syntax error to the syntactic item where the error arose.
 			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
 			// FIXME: need better error reporting here
-//			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + ")");
+			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
 			// Done
 			return false;
 		} catch (Exception e) {
@@ -422,13 +422,13 @@ public class QuickCheck implements Command {
 		return Domains.Finite(results.toArray(new RValue[results.size()]));
 	}
 
-	private List<RValue[]> execute(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, Domain<RValue>... generators) {
+	private List<RValue[]> execute(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, ExtendedContext context, Domain<RValue>... generators) {
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
 		Domain<RValue[]> domain = Domains.Product(generators);
 		//
-		CallStack frame = interpreter.new CallStack();
+		CallStack frame = context.getFrame();
 		//
 		ArrayList<RValue[]> results = new ArrayList<>();
 		//
@@ -926,21 +926,15 @@ public class QuickCheck implements Command {
 		// Stores the based frame
 		private HashMap<Decl,Integer> depths = new HashMap<>();
 
-		private final ExtendedInterpreter interpreter;
 		private final CallStack frame;
 
-		public ExtendedContext(ExtendedInterpreter interpreter, CallStack frame, Context context) {
+		public ExtendedContext(CallStack frame, Context context) {
 			super(context);
-			this.interpreter = interpreter;
 			this.frame = frame;
 		}
 
 		public CallStack getFrame() {
 			return frame;
-		}
-
-		public ExtendedInterpreter getInterpreter() {
-			return interpreter;
 		}
 
 		/**
@@ -991,7 +985,7 @@ public class QuickCheck implements Command {
 
 		public ExtendedInterpreter(PrintStream debug, Context context) {
 			super(debug);
-			this.context = new ExtendedContext(this,new CallStack(),context);
+			this.context = new ExtendedContext(new CallStack(),context);
 		}
 
 		public ExtendedContext getExtendedContext() {

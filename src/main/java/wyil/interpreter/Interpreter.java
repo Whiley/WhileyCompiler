@@ -13,21 +13,46 @@
 // limitations under the License.
 package wyil.interpreter;
 
+import static wybs.util.AbstractCompilationUnit.ITEM_bool;
+import static wybs.util.AbstractCompilationUnit.ITEM_byte;
+import static wybs.util.AbstractCompilationUnit.ITEM_int;
+import static wybs.util.AbstractCompilationUnit.ITEM_null;
+import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
+import static wyil.lang.WyilFile.DECL_function;
+import static wyil.lang.WyilFile.DECL_method;
+import static wyil.lang.WyilFile.DECL_property;
+import static wyil.lang.WyilFile.DECL_staticvar;
+import static wyil.lang.WyilFile.EXPR_arrayaccess;
+import static wyil.lang.WyilFile.EXPR_arrayborrow;
+import static wyil.lang.WyilFile.EXPR_dereference;
+import static wyil.lang.WyilFile.EXPR_recordaccess;
+import static wyil.lang.WyilFile.EXPR_recordborrow;
+import static wyil.lang.WyilFile.EXPR_variablecopy;
+import static wyil.lang.WyilFile.EXPR_variablemove;
+
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
+import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
+import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-
-import static wyil.interpreter.ConcreteSemantics.RValue;
-import static wyil.lang.WyilFile.*;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.LVal;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 
 /**
  * <p>
@@ -405,7 +430,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeDebug(Stmt.Debug stmt, CallStack frame, EnclosingScope scope) {
-		//	
+		//
 		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame);
 		//
 		for (RValue item : arr.getElements()) {
@@ -1482,6 +1507,14 @@ public class Interpreter {
 
 		public void putLocal(Identifier name, RValue value) {
 			locals.put(name, value);
+		}
+
+		public Map<Identifier,RValue> getLocals() {
+			return locals;
+		}
+
+		public Map<QualifiedName,RValue> getStatics() {
+			return statics;
 		}
 
 		public RValue getStatic(QualifiedName name) {
