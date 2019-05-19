@@ -339,7 +339,7 @@ public class QuickCheck implements Command {
 			// Get appropriate generators for each parameter
 			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 			//
-			List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), context, generators);
+			List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
 			long split = System.currentTimeMillis() - time;
 			//
 			long total = calculateTotalInputs(generators);
@@ -373,7 +373,7 @@ public class QuickCheck implements Command {
 		Domain<RValue> generator = constructGenerator(t.getType(), context);
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
-		Domain<RValue> domain = execute(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
+		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
 		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
@@ -406,24 +406,52 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private Domain<RValue> execute(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
+	/**
+	 * Generate the valid inputs for a given set of predicates. This is called to
+	 * determine the inputs for a given function or method. Inputs which cause
+	 * faults (e.g. out-of-bounds errors) are discarded as these are of no interest.
+	 * In other words, valid inputs must be defined.
+	 *
+	 * @param predicate
+	 * @param variable
+	 * @param generator
+	 * @param frame
+	 * @return
+	 */
+	private Domain<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
 		for(int i=0;i!=generator.size();++i) {
 			RValue input = generator.get(i);
-			// Construct the stack frame
-			frame.putLocal(variable.getName(), input);
-			// execute invariant
-			if(execute(predicate,frame)) {
-				results.add(input);
+			try {
+				// Construct the stack frame
+				frame.putLocal(variable.getName(), input);
+				// execute invariant
+				if(execute(predicate,frame)) {
+					results.add(input);
+				}
+			} catch(Interpreter.RuntimeError e) {
+
 			}
 		}
 		// FIXME: not very efficient?
 		return Domains.Finite(results.toArray(new RValue[results.size()]));
 	}
 
-	private List<RValue[]> execute(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, ExtendedContext context, Domain<RValue>... generators) {
+	/**
+	 * Generate the valid inputs for a given set of predicates. This is called to
+	 * determine the inputs for a given function or method. Inputs which cause
+	 * faults (e.g. out-of-bounds errors) are discarded as these are of no interest.
+	 * In other words, valid inputs must be defined.
+	 *
+	 * @param predicate
+	 * @param variables
+	 * @param context
+	 * @param generators
+	 * @return
+	 */
+	private List<RValue[]> generateValidInputs(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, ExtendedContext context, Domain<RValue>... generators) {
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
@@ -435,14 +463,17 @@ public class QuickCheck implements Command {
 		//
 		for(long i=0;i!=domain.size();++i) {
 			RValue[] inputs = domain.get(i);
-			// Construct the stack frame
-			for (int j = 0; j != inputs.length; ++j) {
-				// update environment
-				frame.putLocal(variables.get(j).getName(), inputs[j]);
-			}
-			// execute invariant
-			if(execute(predicate,frame)) {
-				results.add(inputs);
+			try {
+				// Construct the stack frame
+				for (int j = 0; j != inputs.length; ++j) {
+					// update environment
+					frame.putLocal(variables.get(j).getName(), inputs[j]);
+				}
+				// execute invariant
+				if(execute(predicate,frame)) {
+					results.add(inputs);
+				}
+			} catch(Interpreter.RuntimeError e) {
 			}
 		}
 		//
@@ -627,7 +658,7 @@ public class QuickCheck implements Command {
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
-			Domain<RValue> domain = execute(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
+			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
 			//
 			context.leave(decl);
 			//
