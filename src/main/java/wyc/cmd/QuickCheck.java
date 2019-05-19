@@ -356,7 +356,7 @@ public class QuickCheck implements Command {
 			time = System.currentTimeMillis() - time;
 			memory = memory - runtime.freeMemory();
 			//
-			double percent = (inputs.size() * 100) / total;
+			double percent = total == 0 ? 0 : (inputs.size() * 100) / total;
 			project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
 			// Passed all inputs
 		}
