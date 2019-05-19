@@ -108,7 +108,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2,2);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -116,6 +116,7 @@ public class QuickCheck implements Command {
 	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -123,6 +124,7 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
+	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
 	/**
 	 * The descriptor for this command.
 	 */
@@ -155,7 +157,9 @@ public class QuickCheck implements Command {
 					Configuration.UNBOUND_INTEGER(WIDTH_CONFIG_OPTION, "Specify aliasing width to use for reference types",
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
-							ROTATION_DEFAULT));
+							ROTATION_DEFAULT),
+					Configuration.UNBOUND_BOOLEAN(METHODS_CONFIG_OPTION, "Specify whether or not to include methods",
+							METHODS_DEFAULT));
 		}
 
 		@Override
@@ -236,6 +240,7 @@ public class QuickCheck implements Command {
 		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
 		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
+		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Specify directory where generated WyIL files are dumped.
 		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
@@ -252,7 +257,7 @@ public class QuickCheck implements Command {
 			WyilFile wf = binary.read();
 			// Construct initial context
 			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
-					maxRotationWidth);
+					maxRotationWidth, methodsFlag);
 			// Perform the check
 			boolean OK = check(wf, context);
 			//
@@ -295,8 +300,8 @@ public class QuickCheck implements Command {
 		//
 		for (Decl d : unit.getDeclarations()) {
 			switch (d.getOpcode()) {
-			case DECL_function:
 			case DECL_method:
+			case DECL_function:
 				OK &= check((Decl.FunctionOrMethod) d, parent, context);
 				break;
 			case DECL_type:
@@ -324,29 +329,37 @@ public class QuickCheck implements Command {
 		Runtime runtime = Runtime.getRuntime();
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-		// Get appropriate generators for each parameter
-		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
-		//
-		List<RValue[]> inputs = execute(fm.getRequires(), fm.getParameters(), generators);
-		long split = System.currentTimeMillis() - time;
-		//
-		long total = calculateTotalInputs(generators);
-		//
-		for(RValue[] args : inputs) {
-			// FIXME: bug here related to side effects caused by invoking a method
-			CallStack frame = context.getFrame().enter(fm);
-			// Invoke the method!!
-			if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
-				// Failed, so exit early
-				return false;
+		// Check whether skipping  method
+		if(fm instanceof Decl.Method && !context.getMethodsFlag()) {
+			// Yes, skip this method
+			time = System.currentTimeMillis() - time;
+			memory = memory - runtime.freeMemory();
+			project.getLogger().logTimedMessage("Skipped " + toNameString(fm), time, memory);
+		} else {
+			// Get appropriate generators for each parameter
+			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
+			//
+			List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
+			long split = System.currentTimeMillis() - time;
+			//
+			long total = calculateTotalInputs(generators);
+			//
+			for(RValue[] args : inputs) {
+				// FIXME: bug here related to side effects caused by invoking a method
+				CallStack frame = context.getFrame().enter(fm);
+				// Invoke the method!!
+				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
+					// Failed, so exit early
+					return false;
+				}
 			}
+			time = System.currentTimeMillis() - time;
+			memory = memory - runtime.freeMemory();
+			//
+			double percent = total == 0 ? 0 : (inputs.size() * 100) / total;
+			project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
+			// Passed all inputs
 		}
-		time = System.currentTimeMillis() - time;
-		memory = memory - runtime.freeMemory();
-		//
-		double percent = (inputs.size() * 100) / total;
-		project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
-		// Passed all inputs
 		return true;
 	}
 
@@ -360,11 +373,12 @@ public class QuickCheck implements Command {
 		Domain<RValue> generator = constructGenerator(t.getType(), context);
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
-		Domain<RValue> domain = execute(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
+		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
 		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
-		double percent = (domain.size() * 100) / generator.size();
+		long total = generator.size();
+		double percent = total == 0 ? 0 : (domain.size() * 100) / total;
 		project.getLogger().logTimedMessage("Checked " + toNameString(t) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time, memory);
 		//
 		return domain.size() > 0;
@@ -381,7 +395,7 @@ public class QuickCheck implements Command {
 			// Add appropriate syntax error to the syntactic item where the error arose.
 			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
 			// FIXME: need better error reporting here
-//			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + ")");
+			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
 			// Done
 			return false;
 		} catch (Exception e) {
@@ -392,43 +406,74 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private Domain<RValue> execute(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
+	/**
+	 * Generate the valid inputs for a given set of predicates. This is called to
+	 * determine the inputs for a given function or method. Inputs which cause
+	 * faults (e.g. out-of-bounds errors) are discarded as these are of no interest.
+	 * In other words, valid inputs must be defined.
+	 *
+	 * @param predicate
+	 * @param variable
+	 * @param generator
+	 * @param frame
+	 * @return
+	 */
+	private Domain<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
 		for(int i=0;i!=generator.size();++i) {
 			RValue input = generator.get(i);
-			// Construct the stack frame
-			frame.putLocal(variable.getName(), input);
-			// execute invariant
-			if(execute(predicate,frame)) {
-				results.add(input);
+			try {
+				// Construct the stack frame
+				frame.putLocal(variable.getName(), input);
+				// execute invariant
+				if(execute(predicate,frame)) {
+					results.add(input);
+				}
+			} catch(Interpreter.RuntimeError e) {
+
 			}
 		}
 		// FIXME: not very efficient?
 		return Domains.Finite(results.toArray(new RValue[results.size()]));
 	}
 
-	private List<RValue[]> execute(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, Domain<RValue>... generators) {
+	/**
+	 * Generate the valid inputs for a given set of predicates. This is called to
+	 * determine the inputs for a given function or method. Inputs which cause
+	 * faults (e.g. out-of-bounds errors) are discarded as these are of no interest.
+	 * In other words, valid inputs must be defined.
+	 *
+	 * @param predicate
+	 * @param variables
+	 * @param context
+	 * @param generators
+	 * @return
+	 */
+	private List<RValue[]> generateValidInputs(Tuple<Expr> predicate, Tuple<Decl.Variable> variables, ExtendedContext context, Domain<RValue>... generators) {
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
 		Domain<RValue[]> domain = Domains.Product(generators);
 		//
-		CallStack frame = interpreter.new CallStack();
+		CallStack frame = context.getFrame();
 		//
 		ArrayList<RValue[]> results = new ArrayList<>();
 		//
 		for(long i=0;i!=domain.size();++i) {
 			RValue[] inputs = domain.get(i);
-			// Construct the stack frame
-			for (int j = 0; j != inputs.length; ++j) {
-				// update environment
-				frame.putLocal(variables.get(j).getName(), inputs[j]);
-			}
-			// execute invariant
-			if(execute(predicate,frame)) {
-				results.add(inputs);
+			try {
+				// Construct the stack frame
+				for (int j = 0; j != inputs.length; ++j) {
+					// update environment
+					frame.putLocal(variables.get(j).getName(), inputs[j]);
+				}
+				// execute invariant
+				if(execute(predicate,frame)) {
+					results.add(inputs);
+				}
+			} catch(Interpreter.RuntimeError e) {
 			}
 		}
 		//
@@ -607,13 +652,13 @@ public class QuickCheck implements Command {
 			return Domains.EMPTY;
 		} else {
 			context.enter(decl);
-			// Get an appropriate generator for the underlying type
-			Domain<RValue> generator = constructGenerator(decl.getType(), context);
+			// Get an appropriate generator for the underlying type/
+			Domain<RValue> generator = constructGenerator(type.getConcreteType(), context);
 			//
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
-			Domain<RValue> domain = execute(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
+			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
 			//
 			context.leave(decl);
 			//
@@ -822,12 +867,24 @@ public class QuickCheck implements Command {
 			Decl.Method m = (Decl.Method) d;
 			Type.Method t = m.getType();
 			// FIXME: this needs to be improved!
-			return "method " + m.getName() + t.getLifetimeParameters() + m.getTemplate() + t.getParameters() + "->" + t.getReturns();
+			return "method " + m.getName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
 
 		} else if(d instanceof Decl.Type) {
 			return "type " + ((Decl.Type)d).getName();
 		} else {
 			return d.getName() + ":" + d.getType();
+		}
+	}
+
+	private static String toMethodParametersString(Tuple<? extends SyntacticItem> lifetimes, Tuple<? extends SyntacticItem> variables) {
+		if(lifetimes.size() == 0 && variables.size() == 0) {
+			return "";
+		} else if(lifetimes.size() > 0) {
+			return "<" + lifetimes.toBareString() + ">";
+		} else  if(variables.size() > 0) {
+			return "<" + variables.toBareString() + ">";
+		} else {
+			return "<" + lifetimes.toBareString() + ", " + variables.toBareString() + ">";
 		}
 	}
 
@@ -839,22 +896,22 @@ public class QuickCheck implements Command {
 	 *
 	 */
 	public static class Context {
-		// Stores the based frame
-		private HashMap<Decl,Integer> depths = new HashMap<>();
 		private final int min;
 		private final int max;
 		private final int length;
 		private final int depth;
 		private final int width;
 		private final int rotation;
+		private final boolean methods;
 
-		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation) {
+		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
 			this.depth = maxDepth;
 			this.width = width;
 			this.rotation = rotation;
+			this.methods = methods;
 		}
 
 		public Context(Context context) {
@@ -864,6 +921,7 @@ public class QuickCheck implements Command {
 			this.depth = context.depth;
 			this.width = context.width;
 			this.rotation = context.rotation;
+			this.methods = context.methods;
 		}
 
 		public int getIntegerMinimum() {
@@ -890,6 +948,48 @@ public class QuickCheck implements Command {
 			return rotation;
 		}
 
+		public boolean getMethodsFlag() {
+			return methods;
+		}
+
+	}
+
+	private static class ExtendedContext extends Context {
+		// Stores the based frame
+		private HashMap<Decl,Integer> depths = new HashMap<>();
+
+		private final CallStack frame;
+
+		public ExtendedContext(CallStack frame, Context context) {
+			super(context);
+			this.frame = frame;
+		}
+
+		public CallStack getFrame() {
+			return frame;
+		}
+
+		/**
+		 * Initialise a base stack frame from for this project, such that it can be used
+		 * to execute functions and methods within the project. This includes all
+		 * modules which this project depends upon.
+		 */
+		public void initialise(Build.Project project, WyilFile context) throws IOException {
+			// Load all relevant modules
+			frame.load(context);
+			// Load all dependencies
+			for(Build.Package p : project.getPackages()) {
+				// FIXME: is this the right way to determine the binary file from a given
+				// package?
+				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+				//
+				for(Path.Entry<WyilFile> e : entries) {
+					frame.load(e.read());
+				}
+			}
+		}
+
+
 		public int depth(Decl decl) {
 			Integer depth = depths.get(decl);
 			if(depth == null) {
@@ -912,51 +1012,12 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private static class ExtendedContext extends Context {
-		private final ExtendedInterpreter interpreter;
-		private final CallStack frame;
-
-		public ExtendedContext(ExtendedInterpreter interpreter, CallStack frame, Context context) {
-			super(context);
-			this.interpreter = interpreter;
-			this.frame = frame;
-		}
-
-		public CallStack getFrame() {
-			return frame;
-		}
-
-		public ExtendedInterpreter getInterpreter() {
-			return interpreter;
-		}
-
-		/**
-		 * Initialise a base stack frame from for this project, such that it can be used
-		 * to execute functions and methods within the project. This includes all
-		 * modules which this project depends upon.
-		 */
-		public void initialise(Build.Project project, WyilFile context) throws IOException {
-			// Load all relevant modules
-			frame.load(context);
-			// Load all dependencies
-			for(Build.Package p : project.getPackages()) {
-				// FIXME: is this the right way to determine the binary file from a given
-				// package?
-				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
-				//
-				for(Path.Entry<WyilFile> e : entries) {
-					frame.load(e.read());
-				}
-			}
-		}
-	}
-
 	private class ExtendedInterpreter extends Interpreter {
 		private final ExtendedContext context;
 
 		public ExtendedInterpreter(PrintStream debug, Context context) {
 			super(debug);
-			this.context = new ExtendedContext(this,new CallStack(),context);
+			this.context = new ExtendedContext(new CallStack(),context);
 		}
 
 		public ExtendedContext getExtendedContext() {
@@ -965,7 +1026,7 @@ public class QuickCheck implements Command {
 
 		@Override
 		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
-			if (lambda.getBody().size() == 0) {
+			if (lambda instanceof Decl.Method && lambda.getBody().size() == 0) {
 				Domain<RValue[]> returns = constructGenerator(lambda.getType().getReturns(), context);
 				// FIXME: could return randomly here
 				return returns.get(0);
