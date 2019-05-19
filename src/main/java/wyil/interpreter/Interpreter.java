@@ -176,7 +176,18 @@ public class Interpreter {
 			RValue retval = executeExpression(ANY_T, l.getBody(), frame);
 			return new RValue[] { retval };
 		} else {
-			// Properties always return true (provided their preconditions hold)
+			Decl.Property p = (Decl.Property) lambda;
+			Tuple<Expr> invariant = p.getInvariant();
+			// Evaluate clauses of property, and terminate early as soon as one doesn't
+			// hold.
+			for(int i=0;i!=invariant.size();++i) {
+				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame);
+				if(!retval.boolValue()) {
+					// Short circuit
+					return new RValue[] { retval };
+				}
+			}
+			//
 			return new RValue[] { RValue.True };
 		}
 	}
