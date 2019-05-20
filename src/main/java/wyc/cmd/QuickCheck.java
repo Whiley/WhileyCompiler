@@ -108,7 +108,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true, Integer.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -116,6 +116,7 @@ public class QuickCheck implements Command {
 	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
@@ -124,6 +125,7 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
+	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
 	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
 	/**
 	 * The descriptor for this command.
@@ -159,7 +161,9 @@ public class QuickCheck implements Command {
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
 					Configuration.UNBOUND_BOOLEAN(METHODS_CONFIG_OPTION, "Specify whether or not to include methods",
-							METHODS_DEFAULT));
+							METHODS_DEFAULT),
+					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
+							LIMIT_DEFAULT));
 		}
 
 		@Override
@@ -240,6 +244,7 @@ public class QuickCheck implements Command {
 		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
 		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
+		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
 		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Specify directory where generated WyIL files are dumped.
@@ -257,7 +262,7 @@ public class QuickCheck implements Command {
 			WyilFile wf = binary.read();
 			// Construct initial context
 			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
-					maxRotationWidth, methodsFlag);
+					maxRotationWidth, methodsFlag, testLimit);
 			// Perform the check
 			boolean OK = check(wf, context);
 			//
@@ -456,6 +461,10 @@ public class QuickCheck implements Command {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
 		Domain<RValue[]> domain = Domains.Product(generators);
+		//
+		if(context.getTestLimit() != Integer.MAX_VALUE) {
+			domain = Domains.Sample(domain,context.getTestLimit());
+		}
 		//
 		CallStack frame = context.getFrame();
 		//
@@ -931,9 +940,10 @@ public class QuickCheck implements Command {
 		private final int depth;
 		private final int width;
 		private final int rotation;
+		private final int limit;
 		private final boolean methods;
 
-		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods) {
+		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -941,6 +951,7 @@ public class QuickCheck implements Command {
 			this.width = width;
 			this.rotation = rotation;
 			this.methods = methods;
+			this.limit = limit;
 		}
 
 		public Context(Context context) {
@@ -951,6 +962,7 @@ public class QuickCheck implements Command {
 			this.width = context.width;
 			this.rotation = context.rotation;
 			this.methods = context.methods;
+			this.limit = context.limit;
 		}
 
 		public int getIntegerMinimum() {
@@ -981,6 +993,9 @@ public class QuickCheck implements Command {
 			return methods;
 		}
 
+		public int getTestLimit() {
+			return limit;
+		}
 	}
 
 	private static class ExtendedContext extends Context {
