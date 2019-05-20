@@ -143,7 +143,19 @@ public class QuickCheck implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays.asList(
+					Command.OPTION_NONNEGATIVE_INTEGER("limit",
+						"Specify limit on test inputs to try for each function or method"),
+					Command.OPTION_NONNEGATIVE_INTEGER("min",
+						"Specify minimum integer value which can be generated"),
+					Command.OPTION_NONNEGATIVE_INTEGER("max",
+						"Specify maximum integer value which can be generated"),
+					Command.OPTION_NONNEGATIVE_INTEGER("length",
+						"Specify maximum length of a generated array"),
+					Command.OPTION_NONNEGATIVE_INTEGER("depth",
+						"Specify maximum depth of a recurisive type"),
+					Command.OPTION_FLAG("methods", "Specify whether or not to include methods")
+					);
 		}
 
 		@Override
@@ -247,11 +259,33 @@ public class QuickCheck implements Command {
 		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
 		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
+		// Extract command-line options
+		Command.Options options = template.getOptions();
+		//
+		if(options.has("limit")) {
+			testLimit = options.get("limit", Integer.class);
+		}
+		if(options.has("min")) {
+			minInteger = options.get("min", Integer.class);
+		}
+		if(options.has("max")) {
+			maxInteger = options.get("max", Integer.class);
+		}
+		if(options.has("length")) {
+			maxArrayLength = options.get("length", Integer.class);
+		}
+		if(options.has("depth")) {
+			maxTypeDepth = options.get("depth", Integer.class);
+		}
+		if(options.has("methods")) {
+			methodsFlag = options.get("methods", Boolean.class);
+		}
 		// Specify directory where generated WyIL files are dumped.
 		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
 		//
 		Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
 		//
+
 		if (binaryRoot.exists(pkg, WyilFile.ContentType)) {
 			// Yes, it does so reuse it.
 			Path.Entry<WyilFile> binary = binaryRoot.get(pkg, WyilFile.ContentType);
