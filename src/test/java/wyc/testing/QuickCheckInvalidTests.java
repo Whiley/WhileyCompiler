@@ -42,6 +42,7 @@ import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.util.TestUtils;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -391,6 +392,8 @@ public class QuickCheckInvalidTests {
 		IGNORED.put("XOR_Invalid_1", "not relevant");
 
 		// Ignored for timing reasons
+		IGNORED.put("RecursiveType_Invalid_4", "expensive main");
+		IGNORED.put("RecursiveType_Invalid_7", "expensive main");
 		IGNORED.put("RecursiveType_Invalid_8", "expensive main");
 	}
 
@@ -506,7 +509,9 @@ public class QuickCheckInvalidTests {
 				QuickCheck.Context smallContext = new QuickCheck.Context(-1,1,1,1,1,1,true);
 				QuickCheck.Context mediumContext = new QuickCheck.Context(-2,2,2,2,2,2,true);
 				QuickCheck.Context largeContext = new QuickCheck.Context(-3,3,3,3,3,3,true);
-				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), largeContext);
+				QuickCheck.Context hugeContext = new QuickCheck.Context(-4,4,4,4,4,4,true);
+				project.setLogger(new Logger.Default(System.err));
+				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), hugeContext);
 				// Recheck whether any syntax errors produced
 				result = !TestUtils.findSyntaxErrors(wyilTarget.read().getRootItem(), new BitSet());
 			}

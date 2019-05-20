@@ -645,12 +645,19 @@ public class QuickCheck implements Command {
 
 	private Domain<RValue> constructGenerator(Type.Nominal type, ExtendedContext context) {
 		Decl.Type decl = type.getLink().getTarget();
+		int depth = context.depth(decl);
 		//
-		if (context.depth(decl) == context.getRecursiveTypeDepth()) {
+		if (depth == context.getRecursiveTypeDepth()) {
 			// NOTE: we've reached the maximum depth to explore for recursive types.
 			// Therefore, we simply return the empty domain.
 			return Domains.EMPTY;
 		} else {
+			Runtime runtime = Runtime.getRuntime();
+			long time = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+			//
+			// FIXME: not using the cache!!
+			//
 			context.enter(decl);
 			// Get an appropriate generator for the underlying type/
 			Domain<RValue> generator = constructGenerator(type.getConcreteType(), context);
@@ -659,6 +666,19 @@ public class QuickCheck implements Command {
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
 			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
+			//
+			if(depth == 0) {
+				// NOTE: only log when depth is zero to avoid recursive (i.e. intermediate)
+				// generations.
+				time = System.currentTimeMillis() - time;
+				memory = memory - runtime.freeMemory();
+				long total = generator.size();
+				double percent = total == 0 ? 0 : (domain.size() * 100) / total;
+				//
+				project.getLogger().logTimedMessage(
+						"Generated " + toNameString(type.getLink().getTarget(),type.getParameters()) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time,
+						memory);
+			}
 			//
 			context.leave(decl);
 			//
@@ -862,17 +882,26 @@ public class QuickCheck implements Command {
 	private static String toNameString(Decl.Named<?> d) {
 		if(d instanceof Decl.Function) {
 			Type.Callable t = ((Decl.Function)d).getType();
-			return "function " + d.getName() + t.getParameters() + "->" + t.getReturns();
+			return "function " + d.getQualifiedName() + t.getParameters() + "->" + t.getReturns();
 		} else if(d instanceof Decl.Method) {
 			Decl.Method m = (Decl.Method) d;
 			Type.Method t = m.getType();
 			// FIXME: this needs to be improved!
-			return "method " + m.getName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
+			return "method " + m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
 
 		} else if(d instanceof Decl.Type) {
-			return "type " + ((Decl.Type)d).getName();
+			return "type " + ((Decl.Type)d).getQualifiedName();
 		} else {
-			return d.getName() + ":" + d.getType();
+			return d.getQualifiedName() + ":" + d.getType();
+		}
+	}
+
+	private static String toNameString(Decl.Named<?> d, Tuple<Type> parameters) {
+		String name = toNameString(d);
+		if(parameters.size() > 0) {
+			return name + "<" + parameters.toBareString() + ">";
+		} else {
+			return name;
 		}
 	}
 
