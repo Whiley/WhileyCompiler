@@ -415,7 +415,7 @@ public class QuickCheck implements Command {
 		Domain<RValue> generator = constructGenerator(t.getType(), context);
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
-		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, frame);
+		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
 		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
@@ -456,16 +456,20 @@ public class QuickCheck implements Command {
 	 *
 	 * @param predicate
 	 * @param variable
-	 * @param generator
+	 * @param domain
 	 * @param frame
 	 * @return
 	 */
-	private Domain<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> generator, CallStack frame) {
+	private Domain<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> domain, ExtendedContext context, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
-		for(int i=0;i!=generator.size();++i) {
-			RValue input = generator.get(i);
+		if(context.getTestLimit() != Integer.MAX_VALUE) {
+			domain = Domains.Sample(domain,context.getTestLimit());
+		}
+		//
+		for(int i=0;i!=domain.size();++i) {
+			RValue input = domain.get(i);
 			try {
 				// Construct the stack frame
 				frame.putLocal(variable.getName(), input);
@@ -711,7 +715,7 @@ public class QuickCheck implements Command {
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
-			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, frame);
+			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
 			//
 			if(depth == 0) {
 				// NOTE: only log when depth is zero to avoid recursive (i.e. intermediate)
