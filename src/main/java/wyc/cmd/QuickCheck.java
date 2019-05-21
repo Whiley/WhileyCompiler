@@ -968,16 +968,16 @@ public class QuickCheck implements Command {
 	 *
 	 */
 	public static class Context {
-		private final int min;
-		private final int max;
-		private final int length;
-		private final int depth;
-		private final int width;
-		private final int rotation;
-		private final int limit;
-		private final boolean methods;
+		private int min;
+		private int max;
+		private int length;
+		private int depth;
+		private int width;
+		private int rotation;
+		private int limit;
+		private boolean methods;
 
-		public Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit) {
+		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -988,7 +988,7 @@ public class QuickCheck implements Command {
 			this.limit = limit;
 		}
 
-		public Context(Context context) {
+		private Context(Context context) {
 			this.min = context.min;
 			this.max = context.max;
 			this.length = context.length;
@@ -1003,32 +1003,80 @@ public class QuickCheck implements Command {
 			return min;
 		}
 
+		public Context setIntegerMinimum(int min) {
+			Context context = new Context(this);
+			context.min = min;
+			return context;
+		}
+
 		public int getIntegerMaximum() {
 			return max;
+		}
+
+		public Context setIntegerMaximum(int max) {
+			Context context = new Context(this);
+			context.max = max;
+			return context;
 		}
 
 		public int getMaxArrayLength() {
 			return length;
 		}
 
+		public Context setArrayLength(int length) {
+			Context context = new Context(this);
+			context.length = length;
+			return context;
+		}
+
 		public int getRecursiveTypeDepth() {
 			return depth;
+		}
+
+		public Context setTypeDepth(int depth) {
+			Context context = new Context(this);
+			context.depth = depth;
+			return context;
 		}
 
 		public int getAliasingWidth() {
 			return width;
 		}
 
+		public Context setAliasingWidth(int width) {
+			Context context = new Context(this);
+			context.width = width;
+			return context;
+		}
+
 		public int getLambdaWidth() {
 			return rotation;
+		}
+
+		public Context setLambdaWidth(int width) {
+			Context context = new Context(this);
+			context.rotation = width;
+			return context;
 		}
 
 		public boolean getMethodsFlag() {
 			return methods;
 		}
 
+		public Context setMethodsFlag(boolean flag) {
+			Context context = new Context(this);
+			context.methods = flag;
+			return context;
+		}
+
 		public int getTestLimit() {
 			return limit;
+		}
+
+		public Context setTestLimit(int limit) {
+			Context context = new Context(this);
+			context.limit = limit;
+			return context;
 		}
 	}
 

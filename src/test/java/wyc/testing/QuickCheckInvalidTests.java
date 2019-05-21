@@ -505,13 +505,9 @@ public class QuickCheckInvalidTests {
 			} else {
 				// NOTE: this indicates everything passed so far. The question then is whether
 				// or not QuickCheck can detect a problem.
-//				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-				QuickCheck.Context smallContext = new QuickCheck.Context(-1,1,1,1,1,1,true, Integer.MAX_VALUE);
-				QuickCheck.Context mediumContext = new QuickCheck.Context(-2,2,2,2,2,2,true, Integer.MAX_VALUE);
-				QuickCheck.Context largeContext = new QuickCheck.Context(-3,3,3,3,3,3,true, Integer.MAX_VALUE);
-				QuickCheck.Context hugeContext = new QuickCheck.Context(-4,4,4,4,4,4,true, Integer.MAX_VALUE);
+				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
 				project.setLogger(new Logger.Default(System.err));
-				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), hugeContext);
+				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), context);
 				// Recheck whether any syntax errors produced
 				result = !TestUtils.findSyntaxErrors(wyilTarget.read().getRootItem(), new BitSet());
 			}
