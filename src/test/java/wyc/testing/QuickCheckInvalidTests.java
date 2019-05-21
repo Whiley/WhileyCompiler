@@ -392,9 +392,9 @@ public class QuickCheckInvalidTests {
 		IGNORED.put("XOR_Invalid_1", "not relevant");
 
 		// Ignored for timing reasons
-		IGNORED.put("RecursiveType_Invalid_4", "expensive main");
-		IGNORED.put("RecursiveType_Invalid_7", "expensive main");
-		IGNORED.put("RecursiveType_Invalid_8", "expensive main");
+//		IGNORED.put("RecursiveType_Invalid_4", "expensive main");
+//		IGNORED.put("RecursiveType_Invalid_7", "expensive main");
+//		IGNORED.put("RecursiveType_Invalid_8", "expensive main");
 	}
 
 	/**
@@ -505,7 +505,7 @@ public class QuickCheckInvalidTests {
 			} else {
 				// NOTE: this indicates everything passed so far. The question then is whether
 				// or not QuickCheck can detect a problem.
-				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
+				QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT.setIntegerRange(-1,1);
 				project.setLogger(new Logger.Default(System.err));
 				new QuickCheck(project, null, System.out, System.err).check(wyilTarget.read(), context);
 				// Recheck whether any syntax errors produced

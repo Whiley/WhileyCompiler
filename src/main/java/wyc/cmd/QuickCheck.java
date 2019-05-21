@@ -926,20 +926,29 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private static String toNameString(Decl.Named<?> d) {
+		String kind;
+		String rest;
 		if(d instanceof Decl.Function) {
 			Type.Callable t = ((Decl.Function)d).getType();
-			return "function " + d.getQualifiedName() + t.getParameters() + "->" + t.getReturns();
+			kind = "function";
+			rest = d.getQualifiedName().toString() + t.getParameters() + "->" + t.getReturns();
 		} else if(d instanceof Decl.Method) {
 			Decl.Method m = (Decl.Method) d;
 			Type.Method t = m.getType();
 			// FIXME: this needs to be improved!
-			return "method " + m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
+			kind = "method";
+			rest = m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
 
 		} else if(d instanceof Decl.Type) {
-			return "type " + ((Decl.Type)d).getQualifiedName();
+			kind = "type";
+			rest = ((Decl.Type)d).getQualifiedName().toString();
 		} else {
-			return d.getQualifiedName() + ":" + d.getType();
+			throw new RuntimeException("unknown declaration encountered: " + d);
 		}
+		// Remove all whitespace
+		rest = rest.replace(" ", "_");
+		//
+		return kind + " " + rest;
 	}
 
 	private static String toNameString(Decl.Named<?> d, Tuple<Type> parameters) {
@@ -1006,18 +1015,13 @@ public class QuickCheck implements Command {
 			return min;
 		}
 
-		public Context setIntegerMinimum(int min) {
-			Context context = new Context(this);
-			context.min = min;
-			return context;
-		}
-
 		public int getIntegerMaximum() {
 			return max;
 		}
 
-		public Context setIntegerMaximum(int max) {
+		public Context setIntegerRange(int min, int max) {
 			Context context = new Context(this);
+			context.min = min;
 			context.max = max;
 			return context;
 		}
