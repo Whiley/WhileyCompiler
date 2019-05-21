@@ -368,6 +368,8 @@ public class QuickCheck implements Command {
 		Runtime runtime = Runtime.getRuntime();
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
+		// Set default result
+		boolean result = true;
 		// Check whether skipping  method
 		if(fm instanceof Decl.Method && !context.getMethodsFlag()) {
 			// Yes, skip this method
@@ -389,17 +391,18 @@ public class QuickCheck implements Command {
 				// Invoke the method!!
 				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
 					// Failed, so exit early
-					return false;
+					result=false;
+					break;
 				}
 			}
 			time = System.currentTimeMillis() - time;
 			memory = memory - runtime.freeMemory();
 			//
 			double percent = total == 0 ? 0 : (inputs.size() * 100) / total;
-			project.getLogger().logTimedMessage("Checked " + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
-			// Passed all inputs
+			String label = result ? "Checked " : "Failed ";
+			project.getLogger().logTimedMessage(label + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
 		}
-		return true;
+		return result;
 	}
 
 	private boolean check(Decl.Type t, ExtendedContext context) {
