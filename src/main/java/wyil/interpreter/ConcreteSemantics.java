@@ -19,6 +19,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.interpreter.Interpreter.CallStack;
@@ -32,23 +34,25 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 	@Override
 	public RValue.Bool Bool(boolean value) {
-		return value ? RValue.True : RValue.False;
+		return RValue.Bool(value);
 	}
 
 	@Override
 	public RValue.Byte Byte(byte value) {
-		return new RValue.Byte(value);
+		return RValue.Byte(value);
 	}
+
 
 	@Override
 	public RValue.Int Int(BigInteger value) {
-		return new RValue.Int(value);
+		return RValue.Int(value);
 	}
 
 	@Override
 	public RValue.Cell Cell(AbstractSemantics.RValue value) {
 		return new RValue.Cell((RValue) value);
 	}
+
 
 	@Override
 	public RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
@@ -58,28 +62,66 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 	@Override
 	public RValue.Array Array(AbstractSemantics.RValue... elements) {
-		return new RValue.Array((RValue[]) elements);
+		return RValue.Array((RValue[]) elements);
 	}
 
 	@Override
 	public RValue.Field Field(Identifier name, AbstractSemantics.RValue value) {
-		return new RValue.Field(name,(RValue) value);
+		return RValue.Field(name,(RValue) value);
 	}
 
 	@Override
 	public RValue.Record Record(AbstractSemantics.RValue.Field... fields) {
-		return new RValue.Record((RValue.Field[]) fields);
+		return RValue.Record((RValue.Field[]) fields);
 	}
 
 	@Override
-	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
-		return new RValue.Lambda(context, frame, body);
+	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame) {
+		return new RValue.ConcreteLambda(context, frame);
 	}
 
 	public static abstract class RValue implements AbstractSemantics.RValue {
 		public static final RValue.Null Null = new RValue.Null();
 		public static final RValue.Bool True = new RValue.Bool(true);
 		public static final RValue.Bool False = new RValue.Bool(false);
+
+
+		public static RValue.Bool Bool(boolean value) {
+			return value ? RValue.True : RValue.False;
+		}
+
+		public static RValue.Byte Byte(byte value) {
+			return new RValue.Byte(value);
+		}
+
+		public static RValue.Int Int(BigInteger value) {
+			return new RValue.Int(value);
+		}
+
+		public static RValue.Array Array(RValue... elements) {
+			return new RValue.Array(elements);
+		}
+
+		public static RValue.Record Record(RValue.Field... fields) {
+			return new RValue.Record(fields);
+		}
+
+		public static RValue.Field Field(Identifier name, RValue value) {
+			return new RValue.Field(name,value);
+		}
+
+		public static RValue.Cell Cell(AbstractSemantics.RValue value) {
+			return new RValue.Cell((RValue) value);
+		}
+
+		public static RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
+			RValue.Cell cell = (RValue.Cell) value;
+			return new RValue.Reference(cell);
+		}
+
+		public static RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame) {
+			return new RValue.ConcreteLambda(context, frame);
+		}
 
 		/**
 		 * Check whether a given value is an instanceof of a given type.
@@ -110,6 +152,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 						return True;
 					}
 				}
+			} else if (type instanceof Type.Variable) {
+				// NOTE: for now, type variables cannot have bounds and cannot be used in
+				// runtime type tests. Therefore, we can always assume this is always true. The
+				// only situation this is use is for checking type invariants within the
+				// interpreter.
+				return True;
 			}
 			// Default case.
 			return False;
@@ -465,9 +513,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue read(AbstractSemantics.RValue.Int _index) {
 				RValue.Int index = (RValue.Int) _index;
 				int idx = index.value.intValue();
-				if(idx < 0 || idx >= elements.length) {
-					throw new AssertionError("out-of-bounds array access");
-				}
 				return elements[idx];
 			}
 
@@ -659,7 +704,26 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 		}
 
-		public final static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
+		public abstract static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
+			/**
+			 * Execute this lambda with the given arguments. For example, in the normal
+			 * case, we can use the interpreter to execute the body of the lambda.
+			 *
+			 * @param interpreter
+			 * @param arguments
+			 * @param item
+			 * @return
+			 */
+			public abstract RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);
+
+			/**
+			 * Get the callable type for this lambda
+			 * @return
+			 */
+			public abstract Type.Callable getType();
+		}
+
+		public final static class ConcreteLambda extends Lambda {
 			/**
 			 * Identify the declaration for this lambda
 			 */
@@ -668,15 +732,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * The frame which holds true at this point.
 			 */
 			private final Interpreter.CallStack frame;
-			/**
-			 * The body of the lambda. This is either a stmt block or an expression.
-			 */
-			private final Stmt body;
 
-			private Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
+			private ConcreteLambda(Decl.Callable context, Interpreter.CallStack frame) {
 				this.context = context;
 				this.frame = frame;
-				this.body = body;
 			}
 
 			public Decl.Callable getContext() {
@@ -687,8 +746,23 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return frame;
 			}
 
-			public Stmt getBody() {
-				return body;
+			@Override
+			public Type.Callable getType() {
+				return context.getType();
+			}
+
+			/**
+			 * Execute this lambda with the given arguments. For a concrete lambda like
+			 * this, we simply use the interpreter to execute the body of the lambda.
+			 *
+			 * @param interpreter
+			 * @param arguments
+			 * @param item
+			 * @return
+			 */
+			@Override
+			public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem item) {
+				return interpreter.execute(context, frame, arguments, item);
 			}
 
 			@Override
@@ -710,9 +784,9 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				if(o instanceof RValue.Lambda) {
-					RValue.Lambda l = (RValue.Lambda) o;
-					return context.equals(l.context) && body.equals(l.body);
+				if(o instanceof RValue.ConcreteLambda) {
+					RValue.ConcreteLambda l = (RValue.ConcreteLambda) o;
+					return context.equals(l.context);
 				}
 				return false;
 			}
@@ -754,6 +828,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public int hashCode() {
 				return System.identityHashCode(referent);
 			}
+
+			@Override
+			public String toString() {
+				return "&" + System.identityHashCode(referent);
+			}
 		}
 
 		public final static class Cell extends RValue implements AbstractSemantics.RValue.Cell {
@@ -771,95 +850,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public void write(AbstractSemantics.RValue value) {
 				this.value = (RValue) value;
-			}
-		}
-	}
-
-	public static abstract class LValue {
-		abstract public RValue read(CallStack frame);
-		abstract public void write(CallStack frame, RValue rhs);
-
-		public static final class Variable extends LValue {
-			private final Identifier name;
-
-			public Variable(Identifier name) {
-				this.name = name;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				return frame.getLocal(name);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue rhs) {
-				frame.putLocal(name, rhs);
-			}
-		}
-
-		public static class Array extends LValue {
-			private final LValue src;
-			private final RValue.Int index;
-
-			public Array(LValue src, RValue.Int index) {
-				this.src = src;
-				this.index = index;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Array src = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
-				return src.read(index);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue value) {
-				RValue.Array arr = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
-				src.write(frame, arr.write(index, value));
-			}
-		}
-
-		public static class Record extends LValue {
-			private final LValue src;
-			private final Identifier field;
-
-			public Record(LValue src, Identifier field) {
-				this.src = src;
-				this.field = field;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Record src = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
-				return src.read(field);
-			}
-
-			@Override
-			public void write(CallStack frame, RValue value) {
-				RValue.Record rec = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
-				src.write(frame, rec.write(field, value));
-			}
-		}
-
-		public static class Dereference extends LValue {
-			private final LValue src;
-
-			public Dereference(LValue src) {
-				this.src = src;
-			}
-
-			@Override
-			public RValue read(CallStack frame) {
-				RValue.Reference ref = Interpreter.checkType(src.read(frame), null, RValue.Reference.class);
-				RValue.Cell cell = ref.deref();
-				return cell.read();
-			}
-
-			@Override
-			public void write(CallStack frame, RValue rhs) {
-				RValue.Reference ref = Interpreter.checkType(src.read(frame), null, RValue.Reference.class);
-				RValue.Cell cell = ref.deref();
-				cell.write(rhs);
 			}
 		}
 	}

@@ -73,10 +73,12 @@ ensures index < 6:
     // Get item from random sequence
     int result = r.sequence[r.index]
     // Move to next item
-    r.index = r.index + 1
+    int tmp = r.index + 1
     // Check for overflow
-    if r.index == |r.sequence|:
-        r.index = 0
+    if tmp == |r.sequence|:
+        tmp = 0
+    //
+    r.index = tmp
     //
     return result, r
 

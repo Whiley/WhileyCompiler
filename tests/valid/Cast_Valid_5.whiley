@@ -22,7 +22,9 @@ ensures 0 <= r && r <= 255:
         where base == bases[i]:
         if (b & 0b00000001) == 0b0000_0001:
             x = x + base
-        b = b >> 1
+        // NOTE: following mask needed in leu of unsigned right shift
+        // operator.
+        b = (b >> 1) & 0b01111111
         base = base * 2
         i = i + 1
     //
