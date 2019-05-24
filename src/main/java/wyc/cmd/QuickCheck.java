@@ -15,6 +15,7 @@ package wyc.cmd;
 
 import static wyil.lang.WyilFile.DECL_function;
 import static wyil.lang.WyilFile.DECL_method;
+import static wyil.lang.WyilFile.DECL_rectype;
 import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.TYPE_array;
 import static wyil.lang.WyilFile.TYPE_bool;
@@ -343,6 +344,7 @@ public class QuickCheck implements Command {
 			case DECL_function:
 				OK &= check((Decl.FunctionOrMethod) d, parent, context);
 				break;
+			case DECL_rectype:
 			case DECL_type:
 				OK &= check((Decl.Type) d, context);
 				break;
@@ -416,7 +418,7 @@ public class QuickCheck implements Command {
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
 		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
-		//
+ 		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
 		long total = generator.size();
