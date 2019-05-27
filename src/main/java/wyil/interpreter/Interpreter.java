@@ -646,6 +646,9 @@ public class Interpreter {
 		// We only need to do something if this has an initialiser
 		if (stmt.hasInitialiser()) {
 			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+			//
 			frame.putLocal(stmt.getName(), value);
 		}
 		return Status.NEXT;
