@@ -162,13 +162,9 @@ public class Interpreter {
 						"no function or method body found: " + lambda.getQualifiedName() + " : " + lambda.getType());
 			}
 			// Execute the method or function body
-			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
+			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm, args));
 			// Extra the return values
 			RValue[] returns = packReturns(frame, lambda);
-			// Restore original parameter values
-			extractParameters(frame, args, lambda);
-			// Check the postcondition holds
-			checkInvariants(WyilFile.POSTCONDITION_NOT_SATISFIED, frame, fm.getEnsures());
 			//
 			return returns;
 		} else if (lambda instanceof Decl.Lambda) {
@@ -469,7 +465,7 @@ public class Interpreter {
 			if (r == Status.NEXT) {
 				// NOTE: only check loop invariant if normal execution, since breaks are handled
 				// differently.
-				checkInvariants(errcode, frame, stmt.getInvariant());
+				checkInvariants(errcode, frame, stmt.getInvariant(), null);
 				errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
 				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 				if (operand == RValue.False) {
@@ -544,7 +540,7 @@ public class Interpreter {
 		Status r;
 		int count = 0;
 		do {
-			checkInvariants(errcode, frame, stmt.getInvariant());
+			checkInvariants(errcode, frame, stmt.getInvariant(), null);
 			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 			if (operand == RValue.False) {
 				return Status.NEXT;
@@ -575,7 +571,9 @@ public class Interpreter {
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		Decl.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
+		FunctionOrMethodScope enclosingScope = scope.getEnclosingScope(FunctionOrMethodScope.class);
+		// Extract relevant information
+		Decl.FunctionOrMethod context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
 		// Execute return expressions
@@ -586,6 +584,11 @@ public class Interpreter {
 		for (int i = 0; i != returns.size(); ++i) {
 			frame.putLocal(returns.get(i).getName(), values[i]);
 		}
+		// Restore original parameter values
+		extractParameters(frame, enclosingScope.getArguments(), context);
+		// Check the postcondition holds
+		checkInvariants(WyilFile.POSTCONDITION_NOT_SATISFIED, frame, context.getEnsures(), stmt);
+		//
 		return Status.RETURN;
 	}
 
@@ -1350,14 +1353,18 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants) {
+	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants, SyntacticItem context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
 			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
 			// Check whether it holds or not
 			if (b == RValue.False) {
-				throw new RuntimeError(code, frame, invariant);
+				if(context == null) {
+					throw new RuntimeError(code, frame, invariant);
+				} else {
+					throw new RuntimeError(code, frame, context, invariant);
+				}
 			}
 		}
 	}
@@ -1653,15 +1660,28 @@ public class Interpreter {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Decl.Callable context;
+		/**
+		 * The declaration being invoked
+		 */
+		private final Decl.FunctionOrMethod context;
+		/**
+		 * Arguments provided to the invocation.  These are needed for evaluating the post-condition at the point of a return.
+		 * @param context
+		 */
+		private final RValue[] args;
 
-		public FunctionOrMethodScope(Decl.Callable context) {
+		public FunctionOrMethodScope(Decl.FunctionOrMethod context, RValue[] args) {
 			super(null);
 			this.context = context;
+			this.args = args;
 		}
 
-		public Decl.Callable getContext() {
+		public Decl.FunctionOrMethod getContext() {
 			return context;
+		}
+
+		public RValue[] getArguments() {
+			return args;
 		}
 	}
 }
