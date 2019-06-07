@@ -339,19 +339,29 @@ public class QuickCheck implements Command {
 		boolean OK = true;
 		//
 		for (Decl d : unit.getDeclarations()) {
-			switch (d.getOpcode()) {
-			case DECL_method:
-			case DECL_function:
-				OK &= check((Decl.FunctionOrMethod) d, parent, context);
-				break;
-			case DECL_rectype:
-			case DECL_type:
-				OK &= check((Decl.Type) d, context);
-				break;
+			if (d instanceof Decl.Named) {
+				OK &= check((Decl.Named) d, parent, context);
 			}
 		}
 
 		return OK;
+	}
+
+	private boolean check(Decl.Named d, WyilFile parent, ExtendedContext context) throws IOException {
+		try {
+			switch (d.getOpcode()) {
+			case DECL_method:
+			case DECL_function:
+				return check((Decl.FunctionOrMethod) d, parent, context);
+			case DECL_rectype:
+			case DECL_type:
+				return check((Decl.Type) d, context);
+			}
+			return true;
+		} catch(Throwable t) {
+			project.getLogger().logTimedMessage("Failure(" + t.getClass().getSimpleName() + ", " + t.getMessage() + ") "+ toNameString(d), 0,0);
+			return false;
+		}
 	}
 
 	/**
