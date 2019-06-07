@@ -225,12 +225,26 @@ public class QuickCheck implements Command {
 	 */
 	private final HashMap<Type,Domain<RValue>> cache;
 
+	/**
+	 * Provides the output chanel for information about the quick check process.
+	 */
+	private StructuredLogger<LogEntry> logger;
+
 	public QuickCheck(Build.Project project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
 		this.configuration = configuration;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
+		// Default logger just reports up to project logger
+		this.logger = new StructuredLogger<LogEntry>() {
+
+			@Override
+			public void logTimedMessage(LogEntry result, long time, long memory) {
+				project.getLogger().logTimedMessage(result.toString(), time, memory);
+			}
+
+		};
 	}
 
 	@Override
@@ -246,6 +260,10 @@ public class QuickCheck implements Command {
 	@Override
 	public void finalise() {
 
+	}
+
+	public void setLogger(StructuredLogger<LogEntry> logger) {
+		this.logger = logger;
 	}
 
 	@Override
@@ -290,14 +308,12 @@ public class QuickCheck implements Command {
 		if (binaryRoot.exists(pkg, WyilFile.ContentType)) {
 			// Yes, it does so reuse it.
 			Path.Entry<WyilFile> binary = binaryRoot.get(pkg, WyilFile.ContentType);
-			//
-			project.getLogger().logTimedMessage("Check configuration has ints (" + minInteger + ".." + maxInteger
-					+ "), array lengths (max " + maxArrayLength + "), type depths (max " + maxTypeDepth + ")", 0, 0);
 			// Read the target wyilfile
 			WyilFile wf = binary.read();
 			// Construct initial context
 			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
 					maxRotationWidth, methodsFlag, testLimit);
+			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
 			boolean OK = check(wf, context);
 			//
@@ -359,7 +375,7 @@ public class QuickCheck implements Command {
 			}
 			return true;
 		} catch(Throwable t) {
-			project.getLogger().logTimedMessage("Failure(" + t.getClass().getSimpleName() + ", " + t.getMessage() + ") "+ toNameString(d), 0,0);
+			logger.logTimedMessage(new InternalFailure(d,t), 0,0);
 			return false;
 		}
 	}
@@ -387,7 +403,7 @@ public class QuickCheck implements Command {
 			// Yes, skip this method
 			time = System.currentTimeMillis() - time;
 			memory = memory - runtime.freeMemory();
-			project.getLogger().logTimedMessage("Skipped " + toNameString(fm), time, memory);
+			logger.logTimedMessage(new Skipped(fm), time, memory);
 		} else {
 			// Get appropriate generators for each parameter
 			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
@@ -410,9 +426,7 @@ public class QuickCheck implements Command {
 			time = System.currentTimeMillis() - time;
 			memory = memory - runtime.freeMemory();
 			//
-			double percent = total == 0 ? 0 : (inputs.size() * 100) / total;
-			String label = result ? "Checked " : "Failed ";
-			project.getLogger().logTimedMessage(label + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
+			logger.logTimedMessage(new Result(fm, result, inputs.size(), total), time, memory);
 		}
 		return result;
 	}
@@ -431,9 +445,8 @@ public class QuickCheck implements Command {
  		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
-		long total = generator.size();
-		double percent = total == 0 ? 0 : (domain.size() * 100) / total;
-		project.getLogger().logTimedMessage("Checked " + toNameString(t) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time, memory);
+		//
+		logger.logTimedMessage(new Result(t, true, domain.size(), generator.size()), time, memory);
 		//
 		return domain.size() > 0;
 	}
@@ -737,9 +750,7 @@ public class QuickCheck implements Command {
 				long total = generator.size();
 				double percent = total == 0 ? 0 : (domain.size() * 100) / total;
 				//
-				project.getLogger().logTimedMessage(
-						"Generated " + toNameString(type.getLink().getTarget(),type.getParameters()) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time,
-						memory);
+				logger.logTimedMessage(new Generated(type.getLink().getTarget(), type.getParameters(), domain.size(),generator.size()), time, memory);
 			}
 			//
 			context.leave(decl);
@@ -1232,6 +1243,138 @@ public class QuickCheck implements Command {
 				}
 				entry.put(Arrays.asList(inputs), outputs);
 			}
+		}
+	}
+
+	public static interface StructuredLogger<T> {
+		public void logTimedMessage(T result, long time, long memory);
+	}
+
+	public static interface LogEntry {
+
+	}
+
+	/**
+	 * A QuickCheck result is generate for each
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class AbstractLogEntry implements LogEntry {
+		protected final Decl.Named item;
+
+		public AbstractLogEntry(Decl.Named item) {
+			this.item = item;
+		}
+
+		public Decl.Named getItem() {
+			return item;
+		}
+	}
+
+	/**
+	 * Indicates that the given item was skipped.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Skipped extends AbstractLogEntry {
+		public Skipped(Decl.Named item) {
+			super(item);
+		}
+
+		@Override
+		public String toString() {
+			return "Skipped " + toNameString(item);
+		}
+	}
+
+	/**
+	 * Indicates that the given item caused some kind of internal failure (e.g. a
+	 * stack overflow, etc).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class InternalFailure extends AbstractLogEntry {
+		private final Throwable ex;
+
+		public InternalFailure(Decl.Named item, Throwable ex) {
+			super(item);
+			this.ex = ex;
+		}
+
+		@Override
+		public String toString() {
+			return "Failure(" + ex.getClass().getSimpleName() + ", " + ex.getMessage() + ") "+ toNameString(item);
+		}
+
+		public Throwable getThrowable() {
+			return ex;
+		}
+	}
+
+	/**
+	 * Indicates that a QuickCheck result was obtained for a given named declaration
+	 * (e.g. a function or type declaration).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Result extends AbstractLogEntry {
+		private boolean success;
+		private long total;
+		private long checked;
+
+		public Result(Decl.Named n, boolean success, long checked, long total) {
+			super(n);
+			this.success = success;
+			this.checked = checked;
+			this.total = total;
+		}
+
+		@Override
+		public String toString() {
+			String label = success ? "Checked " : "Failed ";
+			double percent = total == 0 ? 0 : (checked * 100) / total;
+			return label + toNameString(item) + " (" + checked + "/" + total + "=" + percent +"%)";
+		}
+	}
+
+	public static class Generated extends AbstractLogEntry {
+		private long total;
+		private long checked;
+		private Tuple<Type> parameters;
+
+		public Generated(Decl.Named n, Tuple<Type> parameters, long checked, long total) {
+			super(n);
+			this.checked = checked;
+			this.total = total;
+			this.parameters = parameters;
+		}
+
+		@Override
+		public String toString() {
+			double percent = total == 0 ? 0 : (checked * 100) / total;
+			return "Generated " + toNameString(item,parameters) + " (" + checked + "/" + total + "=" + percent +"%)";
+		}
+	}
+
+	/**
+	 * Provides summary information on the QuickCheck configuration being used.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Summary implements LogEntry {
+		private final Context context;
+		public Summary(Context context) {
+			this.context = context;
+		}
+		@Override
+		public String toString() {
+			return "Check configuration has ints (" + context.getIntegerMinimum() + ".." + context.getIntegerMaximum()
+					+ "), array lengths (max " + context.getMaxArrayLength() + "), type depths (max "
+					+ context.getRecursiveTypeDepth() + ")";
 		}
 	}
 }
