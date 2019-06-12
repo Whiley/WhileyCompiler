@@ -109,7 +109,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true, Integer.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true, Integer.MAX_VALUE, Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -119,6 +119,7 @@ public class QuickCheck implements Command {
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
+	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -128,6 +129,7 @@ public class QuickCheck implements Command {
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
 	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
 	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
+	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
 	/**
 	 * The descriptor for this command.
 	 */
@@ -155,7 +157,9 @@ public class QuickCheck implements Command {
 						"Specify maximum length of a generated array"),
 					Command.OPTION_NONNEGATIVE_INTEGER("depth",
 						"Specify maximum depth of a recurisive type"),
-					Command.OPTION_FLAG("methods", "Specify whether or not to include methods")
+					Command.OPTION_FLAG("methods", "Specify whether or not to include methods"),
+					Command.OPTION_NONNEGATIVE_INTEGER("timeout",
+							"Specify timeout (in seconds) to spend on each function or method")
 					);
 		}
 
@@ -176,7 +180,9 @@ public class QuickCheck implements Command {
 					Configuration.UNBOUND_BOOLEAN(METHODS_CONFIG_OPTION, "Specify whether or not to include methods",
 							METHODS_DEFAULT),
 					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
-							LIMIT_DEFAULT));
+							LIMIT_DEFAULT),
+					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, "Specify timeout (in seconds) to spend on each function or method",
+							TIMEOUT_DEFAULT));
 		}
 
 		@Override
@@ -276,6 +282,7 @@ public class QuickCheck implements Command {
 		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
 		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
@@ -299,6 +306,9 @@ public class QuickCheck implements Command {
 		if(options.has("methods")) {
 			methodsFlag = options.get("methods", Boolean.class);
 		}
+		if(options.has("timeout")) {
+			timeout = options.get("timeout", Integer.class);
+		}
 		// Specify directory where generated WyIL files are dumped.
 		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
 		//
@@ -312,7 +322,7 @@ public class QuickCheck implements Command {
 			WyilFile wf = binary.read();
 			// Construct initial context
 			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
-					maxRotationWidth, methodsFlag, testLimit);
+					maxRotationWidth, methodsFlag, testLimit, timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
 			boolean OK = check(wf, context);
@@ -364,6 +374,9 @@ public class QuickCheck implements Command {
 	}
 
 	private boolean check(Decl.Named d, WyilFile parent, ExtendedContext context) throws IOException {
+		Runtime runtime = Runtime.getRuntime();
+		long time = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
 		try {
 			switch (d.getOpcode()) {
 			case DECL_method:
@@ -374,8 +387,16 @@ public class QuickCheck implements Command {
 				return check((Decl.Type) d, context);
 			}
 			return true;
+		} catch (Interpreter.TimeoutException e) {
+			// Done
+			time = System.currentTimeMillis() - time;
+			memory = memory - runtime.freeMemory();
+			logger.logTimedMessage(new Timeout(d,context.getTimeout()), time, memory);
+			return false;
 		} catch(Throwable t) {
-			logger.logTimedMessage(new InternalFailure(d,t), 0,0);
+			time = System.currentTimeMillis() - time;
+			memory = memory - runtime.freeMemory();
+			logger.logTimedMessage(new InternalFailure(d,t), time, memory);
 			return false;
 		}
 	}
@@ -409,15 +430,14 @@ public class QuickCheck implements Command {
 			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 			//
 			List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
-			long split = System.currentTimeMillis() - time;
 			//
 			long total = calculateTotalInputs(generators);
 			//
+			CallStack frame = context.getFrame().enter(fm);
+			//
 			for(RValue[] args : inputs) {
-				// FIXME: bug here related to side effects caused by invoking a method
-				CallStack frame = context.getFrame().enter(fm);
 				// Invoke the method!!
-				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
+				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame.clone(), args)) {
 					// Failed, so exit early
 					result=false;
 					break;
@@ -429,6 +449,23 @@ public class QuickCheck implements Command {
 			logger.logTimedMessage(new Result(fm, result, inputs.size(), total), time, memory);
 		}
 		return result;
+	}
+
+	private boolean execute(WyilFile context, QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) throws IOException {
+		// FIXME: approach for constructing stack frame inefficient!
+		//
+		try {
+			interpreter.execute(name, signature, frame, args);
+			//
+			return true;
+		} catch (Interpreter.RuntimeError e) {
+			// Add appropriate syntax error to the syntactic item where the error arose.
+			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+			// FIXME: need better error reporting here
+			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
+			// Done
+			return false;
+		}
 	}
 
 	private boolean check(Decl.Type t, ExtendedContext context) {
@@ -449,28 +486,6 @@ public class QuickCheck implements Command {
 		logger.logTimedMessage(new Result(t, true, domain.size(), generator.size()), time, memory);
 		//
 		return domain.size() > 0;
-	}
-
-	private boolean execute(WyilFile context, QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) throws IOException {
-		// FIXME: approach for constructing stack frame inefficient!
-		//
-		try {
-			interpreter.execute(name, signature, frame, args);
-			//
-			return true;
-		} catch (Interpreter.RuntimeError e) {
-			// Add appropriate syntax error to the syntactic item where the error arose.
-			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
-			// FIXME: need better error reporting here
-			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
-			// Done
-			return false;
-		} catch (Exception e) {
-			// FIXME: this is a temporary hack to help identify situations where the
-			// interpreter is not throwing appropriate error messages.
-			e.printStackTrace(System.out);
-			return true;
-		}
 	}
 
 	/**
@@ -1003,9 +1018,10 @@ public class QuickCheck implements Command {
 		private int width;
 		private int rotation;
 		private int limit;
+		private long timeout;
 		private boolean methods;
 
-		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit) {
+		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1014,6 +1030,7 @@ public class QuickCheck implements Command {
 			this.rotation = rotation;
 			this.methods = methods;
 			this.limit = limit;
+			this.timeout = timeout;
 		}
 
 		private Context(Context context) {
@@ -1025,6 +1042,7 @@ public class QuickCheck implements Command {
 			this.rotation = context.rotation;
 			this.methods = context.methods;
 			this.limit = context.limit;
+			this.timeout = context.timeout;
 		}
 
 		public int getIntegerMinimum() {
@@ -1101,21 +1119,44 @@ public class QuickCheck implements Command {
 			context.limit = limit;
 			return context;
 		}
+
+		public long getTimeout() {
+			return timeout;
+		}
+
+		public Context setTimeout(long timeout) {
+			Context context = new Context(this);
+			context.timeout = timeout;
+			return context;
+		}
 	}
 
 	private static class ExtendedContext extends Context {
 		// Stores the based frame
 		private HashMap<Decl,Integer> depths = new HashMap<>();
-
 		private final CallStack frame;
+		private final long timeoutMillis;
 
 		public ExtendedContext(CallStack frame, Context context) {
 			super(context);
 			this.frame = frame;
+			//
+			long timeout = context.getTimeout();
+			//
+			if(timeout != Long.MAX_VALUE) {
+				timeoutMillis = timeout * 1000;
+			} else {
+				timeoutMillis = Long.MAX_VALUE;
+			}
+			//
 		}
 
 		public CallStack getFrame() {
-			return frame;
+			return frame.setTimeout(timeoutMillis);
+		}
+
+		public long getTimeoutMillis() {
+			return timeoutMillis;
 		}
 
 		/**
@@ -1299,6 +1340,20 @@ public class QuickCheck implements Command {
 
 		public Throwable getThrowable() {
 			return ex;
+		}
+	}
+
+	public static class Timeout extends AbstractLogEntry {
+		private final long timeout;
+
+		public Timeout(Decl.Named item, long timeout) {
+			super(item);
+			this.timeout = timeout;
+		}
+
+		@Override
+		public String toString() {
+			return "Timeout(" + timeout + "s) " + toNameString(item);
 		}
 	}
 

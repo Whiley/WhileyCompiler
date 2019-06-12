@@ -248,6 +248,8 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
+		checkForTimeout(frame);
+		//
 		switch (stmt.getOpcode()) {
 		case WyilFile.STMT_assert:
 			return executeAssert((Stmt.Assert) stmt, frame, scope);
@@ -669,6 +671,8 @@ public class Interpreter {
 	 * @return
 	 */
 	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
+		checkForTimeout(frame);
+		//
 		RValue val;
 		switch (expr.getOpcode()) {
 		case WyilFile.EXPR_constant:
@@ -1442,6 +1446,13 @@ public class Interpreter {
 		}
 	}
 
+	private void checkForTimeout(CallStack frame) {
+		long time = System.currentTimeMillis();
+		if(time > frame.getTimeout()) {
+			throw new TimeoutException("timeout!");
+		}
+	}
+
 	/**
 	 * This method is provided to properly handled positions which should be dead
 	 * code.
@@ -1502,13 +1513,26 @@ public class Interpreter {
 		}
 	}
 
+	public final static class TimeoutException extends RuntimeException {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public TimeoutException(String msg) {
+			super(msg);
+		}
+	}
+
 	public final class CallStack {
+		private long timeout;
 		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
 		private final HashMap<QualifiedName, RValue> statics;
 		private final HashMap<Identifier, RValue> locals;
 		private final Decl.Named context;
 
 		public CallStack() {
+			this.timeout = Long.MAX_VALUE;
 			this.callables = new HashMap<>();
 			this.statics = new HashMap<>();
 			this.locals = new HashMap<>();
@@ -1516,10 +1540,15 @@ public class Interpreter {
 		}
 
 		private CallStack(CallStack parent, Decl.Named context) {
+			this.timeout = parent.timeout;
 			this.context = context;
 			this.locals = new HashMap<>();
 			this.statics = parent.statics;
 			this.callables = parent.callables;
+		}
+
+		public long getTimeout() {
+			return timeout;
 		}
 
 		public RValue getLocal(Identifier name) {
@@ -1558,6 +1587,14 @@ public class Interpreter {
 
 		public <T extends RValue> T execute(Class<T> expected, Expr expr, CallStack frame) {
 			return Interpreter.this.executeExpression(expected, expr, frame);
+		}
+
+		public CallStack setTimeout(long timeout) {
+			if(timeout != Long.MAX_VALUE) {
+				long start = System.currentTimeMillis();
+				this.timeout = start + timeout;
+			}
+			return this;
 		}
 
 		@Override
