@@ -727,12 +727,12 @@ public class QuickCheck implements Command {
 			// Therefore, we simply return the empty domain.
 			return Domains.EMPTY;
 		} else {
-			Runtime runtime = Runtime.getRuntime();
-			long time = System.currentTimeMillis();
-			long memory = runtime.freeMemory();
-			//
-			// FIXME: not using the cache!!
-			//
+			// =============================================================================
+			// FIXME: we're not using any form of cache here which could potentially improve
+			// performance dramatically. A key aspect is that this must be for the concrete
+			// type, to ensure that type parameters are included. Furthermore, handling of
+			// recursive types needs to be done with care.
+			// =============================================================================
 			context.enter(decl);
 			// Get an appropriate generator for the underlying type/
 			Domain<RValue> generator = constructGenerator(type.getConcreteType(), context);
@@ -741,17 +741,6 @@ public class QuickCheck implements Command {
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
 			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
-			//
-			if(depth == 0) {
-				// NOTE: only log when depth is zero to avoid recursive (i.e. intermediate)
-				// generations.
-				time = System.currentTimeMillis() - time;
-				memory = memory - runtime.freeMemory();
-				long total = generator.size();
-				double percent = total == 0 ? 0 : (domain.size() * 100) / total;
-				//
-				logger.logTimedMessage(new Generated(type.getLink().getTarget(), type.getParameters(), domain.size(),generator.size()), time, memory);
-			}
 			//
 			context.leave(decl);
 			//
@@ -1321,8 +1310,18 @@ public class QuickCheck implements Command {
 	 *
 	 */
 	public static class Result extends AbstractLogEntry {
+		/**
+		 * Indicates whether check successful or not. That is, whether or not some kind
+		 * of violation was detected.
+		 */
 		private boolean success;
+		/**
+		 * Indicates the total number of inputs generated.
+		 */
 		private long total;
+		/**
+		 * Indicates the total number of inputs checked.
+		 */
 		private long checked;
 
 		public Result(Decl.Named n, boolean success, long checked, long total) {
@@ -1332,30 +1331,39 @@ public class QuickCheck implements Command {
 			this.total = total;
 		}
 
+		/**
+		 * Check whether any problems were encountered during the run.
+		 *
+		 * @return
+		 */
+		public boolean isChecked() {
+			return success;
+		}
+
+		/**
+		 * Get total space of inputs determined for this run.
+		 *
+		 * @return
+		 */
+		public long getTotalInputs() {
+			return total;
+		}
+
+		/**
+		 * Get number of inputs actually used for checking. This will be lower that the
+		 * total in the cases where some inputs don't meet preconditions or type
+		 * invariants, etc.
+		 *
+		 * @return
+		 */
+		public long getCheckedInputs() {
+			return checked;
+		}
 		@Override
 		public String toString() {
 			String label = success ? "Checked " : "Failed ";
 			double percent = total == 0 ? 0 : (checked * 100) / total;
 			return label + toNameString(item) + " (" + checked + "/" + total + "=" + percent +"%)";
-		}
-	}
-
-	public static class Generated extends AbstractLogEntry {
-		private long total;
-		private long checked;
-		private Tuple<Type> parameters;
-
-		public Generated(Decl.Named n, Tuple<Type> parameters, long checked, long total) {
-			super(n);
-			this.checked = checked;
-			this.total = total;
-			this.parameters = parameters;
-		}
-
-		@Override
-		public String toString() {
-			double percent = total == 0 ? 0 : (checked * 100) / total;
-			return "Generated " + toNameString(item,parameters) + " (" + checked + "/" + total + "=" + percent +"%)";
 		}
 	}
 
