@@ -109,7 +109,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], true, Integer.MAX_VALUE,
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], Integer.MAX_VALUE,
 			Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
@@ -119,7 +119,6 @@ public class QuickCheck implements Command {
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
-	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
 	// Configuration Defaults
@@ -130,7 +129,6 @@ public class QuickCheck implements Command {
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
 	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
-	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
 	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
 	public static Value.Array IGNORES_DEFAULT = new Value.Array();
 	/**
@@ -160,7 +158,6 @@ public class QuickCheck implements Command {
 						"Specify maximum length of a generated array"),
 					Command.OPTION_NONNEGATIVE_INTEGER("depth",
 						"Specify maximum depth of a recurisive type"),
-					Command.OPTION_FLAG("methods", "Specify whether or not to include methods"),
 					Command.OPTION_NONNEGATIVE_INTEGER("timeout",
 							"Specify timeout (in seconds) to spend on each function or method")
 					);
@@ -180,8 +177,6 @@ public class QuickCheck implements Command {
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
-					Configuration.UNBOUND_BOOLEAN(METHODS_CONFIG_OPTION, "Specify whether or not to include methods",
-							METHODS_DEFAULT),
 					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
 							LIMIT_DEFAULT),
 					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, "Specify timeout (in seconds) to spend on each function or method",
@@ -288,7 +283,6 @@ public class QuickCheck implements Command {
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
 		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
 		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
-		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
 		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
@@ -308,9 +302,6 @@ public class QuickCheck implements Command {
 		}
 		if(options.has("depth")) {
 			maxTypeDepth = options.get("depth", Integer.class);
-		}
-		if(options.has("methods")) {
-			methodsFlag = options.get("methods", Boolean.class);
 		}
 		if(options.has("timeout")) {
 			timeout = options.get("timeout", Integer.class);
@@ -435,7 +426,7 @@ public class QuickCheck implements Command {
 		// Set default result
 		boolean result = true;
 		// Check whether skipping  method
-		if(fm instanceof Decl.Method && !context.getMethodsFlag()) {
+		if(fm instanceof Decl.Method) {
 			// Yes, skip this method
 			time = System.currentTimeMillis() - time;
 			memory = memory - runtime.freeMemory();
@@ -1049,10 +1040,9 @@ public class QuickCheck implements Command {
 		private int limit;
 		private String[] ignores;
 		private long timeout;
-		private boolean methods;
 
 		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
-				boolean methods, int limit, long timeout) {
+				int limit, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1060,7 +1050,6 @@ public class QuickCheck implements Command {
 			this.width = width;
 			this.rotation = rotation;
 			this.ignores = ignores;
-			this.methods = methods;
 			this.limit = limit;
 			this.timeout = timeout;
 		}
@@ -1072,7 +1061,6 @@ public class QuickCheck implements Command {
 			this.depth = context.depth;
 			this.width = context.width;
 			this.rotation = context.rotation;
-			this.methods = context.methods;
 			this.ignores = context.ignores;
 			this.limit = context.limit;
 			this.timeout = context.timeout;
@@ -1130,16 +1118,6 @@ public class QuickCheck implements Command {
 		public Context setLambdaWidth(int width) {
 			Context context = new Context(this);
 			context.rotation = width;
-			return context;
-		}
-
-		public boolean getMethodsFlag() {
-			return methods;
-		}
-
-		public Context setMethodsFlag(boolean flag) {
-			Context context = new Context(this);
-			context.methods = flag;
 			return context;
 		}
 
