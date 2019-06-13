@@ -1135,7 +1135,7 @@ public class QuickCheck implements Command {
 			return false;
 		}
 
-		public Context setIgnores(String[] ignores) {
+		public Context setIgnores(String... ignores) {
 			Context context = new Context(this);
 			context.ignores = ignores;
 			return context;
