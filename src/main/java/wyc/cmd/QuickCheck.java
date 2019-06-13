@@ -109,7 +109,8 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true, Integer.MAX_VALUE, Long.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], true, Integer.MAX_VALUE,
+			Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -120,6 +121,7 @@ public class QuickCheck implements Command {
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
+	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -130,6 +132,7 @@ public class QuickCheck implements Command {
 	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
 	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
 	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
+	public static Value.Array IGNORES_DEFAULT = new Value.Array();
 	/**
 	 * The descriptor for this command.
 	 */
@@ -182,7 +185,9 @@ public class QuickCheck implements Command {
 					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
 							LIMIT_DEFAULT),
 					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, "Specify timeout (in seconds) to spend on each function or method",
-							TIMEOUT_DEFAULT));
+							TIMEOUT_DEFAULT),
+					Configuration.UNBOUND_STRING_ARRAY(IGNORES_CONFIG_OPTION,
+							"Specify items (e.g. functions or methods) which should be ignored", IGNORES_DEFAULT));
 		}
 
 		@Override
@@ -284,6 +289,7 @@ public class QuickCheck implements Command {
 		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
 		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
+		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
@@ -321,8 +327,9 @@ public class QuickCheck implements Command {
 			// Read the target wyilfile
 			WyilFile wf = binary.read();
 			// Construct initial context
-			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
-					maxRotationWidth, methodsFlag, testLimit, timeout);
+			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
+					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
+					.setIgnores(ignores).setTestLimit(testLimit).setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
 			boolean OK = check(wf, context);
@@ -374,30 +381,38 @@ public class QuickCheck implements Command {
 	}
 
 	private boolean check(Decl.Named d, WyilFile parent, ExtendedContext context) throws IOException {
-		Runtime runtime = Runtime.getRuntime();
-		long time = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-		try {
-			switch (d.getOpcode()) {
-			case DECL_method:
-			case DECL_function:
-				return check((Decl.FunctionOrMethod) d, parent, context);
-			case DECL_rectype:
-			case DECL_type:
-				return check((Decl.Type) d, context);
-			}
+		// Check whether declaration should be checked or not
+		if(context.isIgnored(d)) {
+			// No, this declaration was explicitly marked as ignored.
+			logger.logTimedMessage(new Skipped(d), 0,0);
 			return true;
-		} catch (Interpreter.TimeoutException e) {
-			// Done
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			logger.logTimedMessage(new Timeout(d,context.getTimeout()), time, memory);
-			return false;
-		} catch(Throwable t) {
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			logger.logTimedMessage(new InternalFailure(d,t), time, memory);
-			return false;
+		} else {
+			// Yes, this declaration should be checked.
+			Runtime runtime = Runtime.getRuntime();
+			long time = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+			try {
+				switch (d.getOpcode()) {
+				case DECL_method:
+				case DECL_function:
+					return check((Decl.FunctionOrMethod) d, parent, context);
+				case DECL_rectype:
+				case DECL_type:
+					return check((Decl.Type) d, context);
+				}
+				return true;
+			} catch (Interpreter.TimeoutException e) {
+				// Done
+				time = System.currentTimeMillis() - time;
+				memory = memory - runtime.freeMemory();
+				logger.logTimedMessage(new Timeout(d,context.getTimeout()), time, memory);
+				return false;
+			} catch(Throwable t) {
+				time = System.currentTimeMillis() - time;
+				memory = memory - runtime.freeMemory();
+				logger.logTimedMessage(new InternalFailure(d,t), time, memory);
+				return false;
+			}
 		}
 	}
 
@@ -1004,6 +1019,20 @@ public class QuickCheck implements Command {
 	}
 
 	/**
+	 * Convert a value array into a string array.
+	 *
+	 * @param array
+	 * @return
+	 */
+	public static String[] toStringArray(Value.Array array) {
+		String[] items = new String[array.size()];
+		for(int i=0;i!=array.size();++i) {
+			items[i] = array.get(i).toString();
+		}
+		return items;
+	}
+
+	/**
 	 * Provides various mechanisms for controlling the construction of generators,
 	 * such as limiting the maximum depth of recursive types.
 	 *
@@ -1018,16 +1047,19 @@ public class QuickCheck implements Command {
 		private int width;
 		private int rotation;
 		private int limit;
+		private String[] ignores;
 		private long timeout;
 		private boolean methods;
 
-		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit, long timeout) {
+		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
+				boolean methods, int limit, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
 			this.depth = maxDepth;
 			this.width = width;
 			this.rotation = rotation;
+			this.ignores = ignores;
 			this.methods = methods;
 			this.limit = limit;
 			this.timeout = timeout;
@@ -1041,6 +1073,7 @@ public class QuickCheck implements Command {
 			this.width = context.width;
 			this.rotation = context.rotation;
 			this.methods = context.methods;
+			this.ignores = context.ignores;
 			this.limit = context.limit;
 			this.timeout = context.timeout;
 		}
@@ -1107,6 +1140,26 @@ public class QuickCheck implements Command {
 		public Context setMethodsFlag(boolean flag) {
 			Context context = new Context(this);
 			context.methods = flag;
+			return context;
+		}
+
+		public String[] getIgnores() {
+			return ignores;
+		}
+
+		public boolean isIgnored(Decl.Named decl) {
+			String s = decl.getQualifiedName().toString();
+			for(int i=0;i!=ignores.length;++i) {
+				if(s.endsWith(ignores[i])) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public Context setIgnores(String[] ignores) {
+			Context context = new Context(this);
+			context.ignores = ignores;
 			return context;
 		}
 
