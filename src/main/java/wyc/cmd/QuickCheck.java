@@ -346,9 +346,12 @@ public class QuickCheck implements Command {
 		// Construct extended context
 		ExtendedContext eContext = interpreter.getExtendedContext();
 		// Initialise by context
-		eContext.initialise(project,parent);
-		//
-		return check(parent, eContext);
+		if(eContext.initialise(project,parent)) {
+			//
+			return check(parent, eContext);
+		} else {
+			return false;
+		}
 	}
 
 	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
@@ -1195,9 +1198,16 @@ public class QuickCheck implements Command {
 		 * to execute functions and methods within the project. This includes all
 		 * modules which this project depends upon.
 		 */
-		public void initialise(Build.Project project, WyilFile context) throws IOException {
-			// Load all relevant modules
-			frame.load(context);
+		public boolean initialise(Build.Project project, WyilFile context) throws IOException {
+			try {
+				// Load all relevant modules
+				frame.load(context);
+			} catch (Interpreter.RuntimeError e) {
+				// Add appropriate syntax error to the syntactic item where the error arose.
+				ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+				// Done
+				return false;
+			}
 			// Load all dependencies
 			for(Build.Package p : project.getPackages()) {
 				// FIXME: is this the right way to determine the binary file from a given
@@ -1208,6 +1218,7 @@ public class QuickCheck implements Command {
 					frame.load(e.read());
 				}
 			}
+			return true;
 		}
 
 

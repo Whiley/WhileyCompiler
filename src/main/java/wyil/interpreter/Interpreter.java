@@ -1635,6 +1635,9 @@ public class Interpreter {
 							// Static variable has not been initialised yet, therefore force its
 							// initialisation.
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+							// Check type invariants.
+							checkTypeInvariants(decl.getType(), value, new CallStack(), decl);
+							// Done.
 							statics.put(decl.getQualifiedName(), value);
 						}
 						break;
