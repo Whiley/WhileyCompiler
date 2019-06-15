@@ -13,10 +13,18 @@
 // limitations under the License.
 package wyil.lang;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticHeap;
@@ -26,7 +34,6 @@ import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
@@ -274,6 +281,34 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public WyilFile(Path.Entry<WyilFile> entry) {
 		super(entry);
+	}
+
+	/**
+	 * Copy constructor which creates an identical WyilFile.
+	 *
+	 * @param wf
+	 */
+	public WyilFile(Path.Entry<WyilFile> entry, WyilFile wf) {
+		super(entry);
+		// Create initial copies
+		for (int i = 0; i != wf.size(); ++i) {
+			SyntacticItem item = wf.getSyntacticItem(i);
+			// Construct unlinked item
+			item = SCHEMA[item.getOpcode()].construct(item.getOpcode(), new SyntacticItem[item.size()], item.getData());
+			syntacticItems.add(item);
+			item.allocate(this, i);
+		}
+		// Link operands up
+		for (int i = 0; i != wf.size(); ++i) {
+			SyntacticItem item = wf.getSyntacticItem(i);
+			SyntacticItem nItem = syntacticItems.get(i);
+			for(int j=0;j!=item.size();++j) {
+				int operand = item.get(j).getIndex();
+				nItem.setOperand(j, syntacticItems.get(operand));
+			}
+		}
+		// Set the distinguished root item
+		setRootItem(getSyntacticItem(root));
 	}
 
 	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items) {

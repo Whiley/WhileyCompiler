@@ -28,14 +28,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -44,17 +43,16 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
-import wyil.interpreter.Interpreter;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -100,7 +98,7 @@ public class TestUtils {
 	 */
 	public static Type fromString(String from) {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
-		WyilFile wf = new WyilFile(null);
+		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
 		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
