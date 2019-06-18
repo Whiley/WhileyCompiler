@@ -109,8 +109,7 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], Integer.MAX_VALUE,
-			Long.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], 5, 100, Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -118,6 +117,7 @@ public class QuickCheck implements Command {
 	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	public static Trie SAMPLE_CONFIG_OPTION = Trie.fromString("check/sample");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
@@ -128,7 +128,8 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
-	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
+	public static Value.Int SAMPLE_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getSampleSize());
+	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLimit());
 	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
 	public static Value.Array IGNORES_DEFAULT = new Value.Array();
 	/**
@@ -148,8 +149,10 @@ public class QuickCheck implements Command {
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
 			return Arrays.asList(
+					Command.OPTION_NONNEGATIVE_INTEGER("sample",
+						"Specify sample size (%) on test inputs to try for each function or method"),
 					Command.OPTION_NONNEGATIVE_INTEGER("limit",
-						"Specify limit on test inputs to try for each function or method"),
+							"Specify limit above which sampling takes place"),
 					Command.OPTION_NONNEGATIVE_INTEGER("min",
 						"Specify minimum integer value which can be generated"),
 					Command.OPTION_NONNEGATIVE_INTEGER("max",
@@ -177,7 +180,9 @@ public class QuickCheck implements Command {
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
-					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
+					Configuration.BOUND_INTEGER(SAMPLE_CONFIG_OPTION, "Specify sample size (%) test inputs to try for each function or method",
+							SAMPLE_DEFAULT,0,100),
+					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit above which sampling takes place",
 							LIMIT_DEFAULT),
 					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, "Specify timeout (in seconds) to spend on each function or method",
 							TIMEOUT_DEFAULT),
@@ -281,15 +286,19 @@ public class QuickCheck implements Command {
 		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
 		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
-		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+		int limit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+		int sampleSize = configuration.get(Value.Int.class,SAMPLE_CONFIG_OPTION).unwrap().intValue();
 		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
 		//
+		if(options.has("sample")) {
+			sampleSize = options.get("sample", Integer.class);
+		}
 		if(options.has("limit")) {
-			testLimit = options.get("limit", Integer.class);
+			limit = options.get("limit", Integer.class);
 		}
 		if(options.has("min")) {
 			minInteger = options.get("min", Integer.class);
@@ -320,7 +329,7 @@ public class QuickCheck implements Command {
 			// Construct initial context
 			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
 					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
-					.setIgnores(ignores).setTestLimit(testLimit).setTimeout(timeout);
+					.setIgnores(ignores).setSampleSize(sampleSize).setLimit(limit).setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
 			boolean OK = check(wf, context);
@@ -402,6 +411,7 @@ public class QuickCheck implements Command {
 				logger.logTimedMessage(new Timeout(d,context.getTimeout()), time, memory);
 				return false;
 			} catch(Throwable t) {
+				t.printStackTrace();
 				time = System.currentTimeMillis() - time;
 				memory = memory - runtime.freeMemory();
 				logger.logTimedMessage(new InternalFailure(d,t), time, memory);
@@ -508,9 +518,10 @@ public class QuickCheck implements Command {
 	private Domain<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain<RValue> domain, ExtendedContext context, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
-		//
-		if(context.getTestLimit() != Integer.MAX_VALUE) {
-			domain = Domains.Sample(domain,context.getTestLimit());
+		//;
+		if(context.getSampleSize() < 100 && context.getLimit() < domain.size()) {
+			long k = (domain.size() * context.getSampleSize()) / 100;
+			domain = Domains.Sample(domain,(int) k);
 		}
 		//
 		for(int i=0;i!=domain.size();++i) {
@@ -548,8 +559,9 @@ public class QuickCheck implements Command {
 		}
 		Domain<RValue[]> domain = Domains.Product(generators);
 		//
-		if(context.getTestLimit() != Integer.MAX_VALUE) {
-			domain = Domains.Sample(domain,context.getTestLimit());
+		if(context.getSampleSize() < 100 && context.getLimit() < domain.size()) {
+			long k = (domain.size() * context.getSampleSize()) / 100;
+			domain = Domains.Sample(domain,(int) k);
 		}
 		//
 		CallStack frame = context.getFrame();
@@ -1036,12 +1048,13 @@ public class QuickCheck implements Command {
 		private int depth;
 		private int width;
 		private int rotation;
+		private int sample;
 		private int limit;
 		private String[] ignores;
 		private long timeout;
 
 		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
-				int limit, long timeout) {
+				int sample, int limit, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1049,6 +1062,7 @@ public class QuickCheck implements Command {
 			this.width = width;
 			this.rotation = rotation;
 			this.ignores = ignores;
+			this.sample = sample;
 			this.limit = limit;
 			this.timeout = timeout;
 		}
@@ -1061,6 +1075,7 @@ public class QuickCheck implements Command {
 			this.width = context.width;
 			this.rotation = context.rotation;
 			this.ignores = context.ignores;
+			this.sample = context.sample;
 			this.limit = context.limit;
 			this.timeout = context.timeout;
 		}
@@ -1140,14 +1155,24 @@ public class QuickCheck implements Command {
 			return context;
 		}
 
-		public int getTestLimit() {
-			return limit;
+		public int getSampleSize() {
+			return sample;
 		}
 
-		public Context setTestLimit(int limit) {
+		public Context setSampleSize(int sample) {
+			Context context = new Context(this);
+			context.sample = sample;
+			return context;
+		}
+
+		public Context setLimit(int limit) {
 			Context context = new Context(this);
 			context.limit = limit;
 			return context;
+		}
+
+		public long getLimit() {
+			return limit;
 		}
 
 		public long getTimeout() {
@@ -1481,7 +1506,8 @@ public class QuickCheck implements Command {
 		public String toString() {
 			return "Check configuration has ints (" + context.getIntegerMinimum() + ".." + context.getIntegerMaximum()
 					+ "), array lengths (max " + context.getMaxArrayLength() + "), type depths (max "
-					+ context.getRecursiveTypeDepth() + ")";
+					+ context.getRecursiveTypeDepth() + "), sampling (" + context.getSampleSize() + "%, limit "
+					+ context.getLimit() + ")";
 		}
 	}
 }
