@@ -428,35 +428,29 @@ public class QuickCheck implements Command {
 		long memory = runtime.freeMemory();
 		// Set default result
 		boolean result = true;
-		// Check whether skipping  method
-		if(fm instanceof Decl.Method) {
-			// Yes, skip this method
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			logger.logTimedMessage(new Skipped(fm), time, memory);
-		} else {
-			// Get appropriate generators for each parameter
-			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
-			//
-			List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
-			//
-			long total = calculateTotalInputs(generators);
-			//
-			CallStack frame = context.getFrame().enter(fm);
-			//
-			for(RValue[] args : inputs) {
-				// Invoke the method!!
-				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame.clone(), args)) {
-					// Failed, so exit early
-					result=false;
-					break;
-				}
+		// Get appropriate generators for each parameter
+		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
+		//
+		List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
+		//
+		long total = calculateTotalInputs(generators);
+		long split = System.currentTimeMillis()-time;
+		//
+		CallStack frame = context.getFrame().enter(fm);
+		//
+		for(RValue[] args : inputs) {
+			// Invoke the method!!
+			if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame.clone(), args)) {
+				// Failed, so exit early
+				result=false;
+				break;
 			}
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			//
-			logger.logTimedMessage(new Result(fm, result, inputs.size(), total), time, memory);
 		}
+		time = System.currentTimeMillis() - time;
+		memory = memory - runtime.freeMemory();
+		//
+		logger.logTimedMessage(new Result(fm, result, inputs.size(), total, split), time, memory);
+		//
 		return result;
 	}
 
@@ -485,6 +479,8 @@ public class QuickCheck implements Command {
 		CallStack frame = context.getFrame().enter(t);
 		// Get an appropriate generator for the underlying type
 		Domain<RValue> generator = constructGenerator(t.getType(), context);
+		// Record split time
+		long split = System.currentTimeMillis() - time;
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
 		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
@@ -492,7 +488,7 @@ public class QuickCheck implements Command {
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
 		//
-		logger.logTimedMessage(new Result(t, true, domain.size(), generator.size()), time, memory);
+		logger.logTimedMessage(new Result(t, true, domain.size(), generator.size(), split), time, memory);
 		//
 		return domain.size() > 0;
 	}
@@ -1421,11 +1417,17 @@ public class QuickCheck implements Command {
 		 */
 		private long checked;
 
-		public Result(Decl.Named n, boolean success, long checked, long total) {
+		/**
+		 * Indicates the time taken to generate the inputs.
+		 */
+		private long split;
+
+		public Result(Decl.Named n, boolean success, long checked, long total, long split) {
 			super(n);
 			this.success = success;
 			this.checked = checked;
 			this.total = total;
+			this.split = split;
 		}
 
 		/**
@@ -1460,7 +1462,7 @@ public class QuickCheck implements Command {
 		public String toString() {
 			String label = success ? "Checked " : "Failed ";
 			double percent = total == 0 ? 0 : (checked * 100) / total;
-			return label + toNameString(item) + " (" + checked + "/" + total + "=" + percent +"%)";
+			return label + toNameString(item) + " (" + checked + "/" + total + "=" + percent +"%, " + split + "ms)";
 		}
 	}
 

@@ -19,6 +19,9 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.LVal;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 
 /**
