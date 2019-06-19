@@ -38,6 +38,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -67,6 +68,7 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.StackFrame;
+import wyil.lang.WyilFile.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
@@ -352,13 +354,58 @@ public class QuickCheck implements Command {
 				List<wybs.lang.Build.Task> tasks = project.getTasks();
 				// Look for error messages
 				for (wybs.lang.Build.Task task : tasks) {
-					wycc.commands.Build.printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+					printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 				}
 			}
 			// Print out any
 			return OK;
 		} else {
 			return false;
+		}
+	}
+
+	/**
+	 * Print out syntactic markers for all entries in the build graph. This requires
+	 * going through all entries, extracting the markers and then printing them.
+	 *
+	 * <b>NOTE:</b> this method is a copy of
+	 * wycc.commands.Build.printSyntacticMarkers which is extended to support
+	 * printing of stack frames. However, this is really a temporary solution which
+	 * should be replaced in the future with something more generic.
+	 *
+	 * @param executor
+	 * @throws IOException
+	 */
+	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
+		// Extract all syntactic markers from entries in the build graph
+		List<SyntacticItem.Marker> items = wycc.commands.Build.extractSyntacticMarkers(target);
+		// For each marker, print out error messages appropriately
+		for (int i = 0; i != items.size(); ++i) {
+			SyntacticItem.Marker marker = items.get(i);
+			// Print separator
+			for(int k=0;k!=80;++k) {
+				output.print("=");
+			}
+			output.println();
+			// Log the error message
+			wycc.commands.Build.printSyntacticMarkers(output, sources, marker);
+			// FIXME: this whole thing is a complete hack
+			if(marker instanceof SyntaxError) {
+				SyntaxError err = (SyntaxError) marker;
+				Tuple<SyntacticItem> context = err.getContext();
+				boolean firstTime=true;
+				for(int j=0;j!=context.size();++j) {
+					SyntacticItem jth = context.get(j);
+					if(jth instanceof StackFrame) {
+						StackFrame sf = (StackFrame) jth;
+						if(firstTime) {
+							output.println("Stack Trace:");
+						}
+						output.println("--> " + sf.getContext().getQualifiedName().toString() + sf.getArguments());
+						firstTime=false;
+					}
+				}
+			}
 		}
 	}
 
@@ -459,7 +506,7 @@ public class QuickCheck implements Command {
 		long total = calculateTotalInputs(generators);
 		long split = System.currentTimeMillis()-time;
 		//
-		CallStack frame = context.getFrame().enter(fm);
+		CallStack frame = context.getFrame().clone();
 		//
 		for(RValue[] args : inputs) {
 			// Invoke the method!!
@@ -485,12 +532,14 @@ public class QuickCheck implements Command {
 			//
 			return true;
 		} catch (Interpreter.RuntimeError e) {
+			// FIXME: there is a known problem here because the stack frame will produce the
+			// current values for the parameters, not their actual values on entry. The
+			// easiest way to fix this is to prevent assignments to parameters!!
+			//
 			// Extract stack frame information
-			Tuple<StackFrame> errorframe = e.getFrame().toStackFrame();
+			StackFrame[] errorframe = e.getFrame().toStackFrame();
 			// Add appropriate syntax error to the syntactic item where the error arose.
 			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode(), errorframe);
-			// FIXME: need better error reporting here
-			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
 			// Done
 			return false;
 		}

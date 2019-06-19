@@ -22,6 +22,7 @@ import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
@@ -738,8 +739,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public Value toValue() {
-				// FIXME: need to implement this
-				return new Value.Null();
+				WyilFile.Pair<Identifier,Value>[] entries = new WyilFile.Pair[fields.length];
+				for(int i=0;i!=fields.length;++i) {
+					RValue.Field field = fields[i];
+					entries[i] = new WyilFile.Pair<>(field.name,field.value.toValue());
+				}
+				return new Value.Dictionary(entries);
 			}
 		}
 
