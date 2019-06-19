@@ -21,7 +21,9 @@ import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.DECL_function;
 import static wyil.lang.WyilFile.DECL_method;
 import static wyil.lang.WyilFile.DECL_property;
+import static wyil.lang.WyilFile.DECL_rectype;
 import static wyil.lang.WyilFile.DECL_staticvar;
+import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.EXPR_arrayaccess;
 import static wyil.lang.WyilFile.EXPR_arrayborrow;
 import static wyil.lang.WyilFile.EXPR_dereference;
@@ -44,6 +46,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
+import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
@@ -51,6 +54,7 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.StackFrame;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 
@@ -1304,8 +1308,6 @@ public class Interpreter {
 		Type.Callable type = expr.getBinding().getConcreteType();
 		// Check type invariants
 		checkTypeInvariants(type.getParameters(), arguments, expr.getOperands(), frame);
-		// Enter a new frame for executing this declaration
-		frame = frame.enter(decl);
 		// Invoke the function or method in question
 		// FIXME: could potentially optimise this by calling execute with decl directly.
 		// This currently fails for external symbols which are represented as
@@ -1525,6 +1527,7 @@ public class Interpreter {
 	}
 
 	public final class CallStack {
+		private CallStack parent;
 		private long timeout;
 		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
 		private final HashMap<QualifiedName, RValue> statics;
@@ -1532,6 +1535,7 @@ public class Interpreter {
 		private final Decl.Named context;
 
 		public CallStack() {
+			this.parent = null;
 			this.timeout = Long.MAX_VALUE;
 			this.callables = new HashMap<>();
 			this.statics = new HashMap<>();
@@ -1540,6 +1544,7 @@ public class Interpreter {
 		}
 
 		private CallStack(CallStack parent, Decl.Named context) {
+			this.parent = parent;
 			this.timeout = parent.timeout;
 			this.context = context;
 			this.locals = new HashMap<>();
@@ -1600,6 +1605,8 @@ public class Interpreter {
 		@Override
 		public CallStack clone() {
 			CallStack frame = new CallStack(this, this.context);
+			// Reset parent
+			frame.parent = this.parent;
 			frame.locals.putAll(locals);
 			return frame;
 		}
@@ -1615,6 +1622,52 @@ public class Interpreter {
 				load(modules[i]);
 			}
 			return this;
+		}
+
+		public StackFrame[] toStackFrame() {
+			if(context == null) {
+				return new StackFrame[0];
+			} else {
+				Value[] arguments;
+				//
+				switch(context.getOpcode()) {
+				case DECL_function:
+				case DECL_method:
+				case DECL_property: {
+					Decl.Callable fm = (Decl.Callable) context;
+					Tuple<Decl.Variable> parameters = fm.getParameters();
+					arguments = new Value[parameters.size()];
+					for(int i=0;i!=arguments.length;++i) {
+						Decl.Variable parameter = parameters.get(i);
+						// FIXME: why is this needed?
+						if(getLocal(parameter.getName()) != null) {
+							arguments[i] = getLocal(parameter.getName()).toValue();
+						} else {
+							arguments[i] = new Value.Null();
+						}
+					}
+					break;
+				}
+				case DECL_rectype:
+				case DECL_type: {
+					Decl.Type t = (Decl.Type) context;
+					Decl.Variable parameter = t.getVariableDeclaration();
+					arguments = new Value[1];
+					arguments[0] = getLocal(parameter.getName()).toValue();
+					break;
+				}
+				case DECL_staticvar: {
+					arguments = new Value[0];
+					break;
+				}
+				default:
+					throw new IllegalArgumentException("unknown context: " + context.getQualifiedName());
+				}
+				// Extract parent stack frame (if applicable)
+				StackFrame[] sf = parent != null ? parent.toStackFrame() : new StackFrame[0];
+				// Append new item
+				return ArrayUtils.append(new StackFrame(context, new Tuple<>(arguments)),sf);
+			}
 		}
 
 		/**

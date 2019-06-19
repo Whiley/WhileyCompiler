@@ -166,6 +166,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_warning = ATTR_mask + 0;
 	public static final int ATTR_error = ATTR_mask + 1;
 	public static final int ATTR_verificationcondition = ATTR_mask + 2;
+	public static final int ATTR_stackframe = ATTR_mask + 4;
 	// TYPES:
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
@@ -5793,6 +5794,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return Trie.fromString(nameStr);
 		}
 	}
+
+	public static class StackFrame extends AbstractSyntacticItem {
+		public StackFrame(Decl.Named<?> context, Tuple<Value> arguments) {
+			super(ATTR_stackframe,context,arguments);
+		}
+
+		public Decl.Named<?> getContext() {
+			return (Decl.Named) operands[0];
+		}
+
+		public Tuple<Value> getArguments() {
+			return (Tuple<Value>) operands[1];
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
+		}
+	}
+
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;
@@ -6070,6 +6091,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				int errcode = new BigInteger(data).intValue();
 				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+			}
+		};
+		schema[ATTR_stackframe] = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
 			}
 		};
 		// TYPES: 00100000 (32) -- 00111111 (63)
