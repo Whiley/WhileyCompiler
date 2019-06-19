@@ -532,13 +532,14 @@ public class QuickCheck implements Command {
 		ArrayList<RValue> results = new ArrayList<>();
 		//
 		long size = domain.size();
-		int k = context.getSampleSize(domain.size());
+		int k = context.getSampleSize(size);
 		if (k != size) {
-			// Sampling is in action
-			domain = Domains.Sample(domain, k);
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
 		}
 		//
-		for(int i=0;i!=domain.size();++i) {
+		for(long i=0;i!=domain.size();++i) {
 			RValue input = domain.get(i);
 			try {
 				// Construct the stack frame
@@ -574,10 +575,11 @@ public class QuickCheck implements Command {
 		Domain<RValue[]> domain = Domains.Product(generators);
 		//
 		long size = domain.size();
-		int k = context.getSampleSize(domain.size());
+		int k = context.getSampleSize(size);
 		if (k != size) {
-			// Sampling is in action
-			domain = Domains.Sample(domain, k);
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
 		}
 		//
 		CallStack frame = context.getFrame();
