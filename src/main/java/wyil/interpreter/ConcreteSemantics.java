@@ -13,17 +13,18 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import static wyil.lang.WyilFile.*;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import wybs.lang.SyntacticException;
+import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyil.interpreter.Interpreter.CallStack;
+import wybs.util.AbstractCompilationUnit.Value;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Type;
 
 public class ConcreteSemantics implements AbstractSemantics {
 
@@ -193,6 +194,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 		}
 
 		/**
+		 * Convert to a value object which can be stored in a WyilFile.
+		 * @return
+		 */
+		public abstract Value toValue();
+		/**
 		 * Check whether the invariant for a given nominal type holds for this value
 		 * or not. This requires physically evaluating the invariant to see whether
 		 * or not it holds true.
@@ -252,6 +258,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return null;
 			}
+			@Override
+			public Value.Null toValue() {
+				return new Value.Null();
+			}
 		}
 
 		public final static class Bool extends RValue implements AbstractSemantics.RValue.Bool {
@@ -305,6 +315,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Boolean.toString(value);
+			}
+			@Override
+			public Value.Bool toValue() {
+				return new Value.Bool(value);
 			}
 		}
 
@@ -381,6 +395,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Integer.toBinaryString(value);
+			}
+
+			@Override
+			public Value.Byte toValue() {
+				return new Value.Byte(value);
 			}
 		}
 
@@ -473,6 +492,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return value.toString();
 			}
+
+			@Override
+			public Value.Int toValue() {
+				return new Value.Int(value);
+			}
 		}
 
 		public final static class Array extends RValue implements AbstractSemantics.RValue.Array {
@@ -547,6 +571,15 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Arrays.toString(elements);
+			}
+
+			@Override
+			public Value.Array toValue() {
+				Value[] es = new Value[elements.length];
+				for(int i=0;i!=es.length;++i) {
+					es[i] = elements[i].toValue();
+				}
+				return new Value.Array(es);
 			}
 		}
 
@@ -702,6 +735,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 				}
 				return r + "}";
 			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
+			}
 		}
 
 		public abstract static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
@@ -795,6 +834,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public int hashCode() {
 				return context.hashCode() ^ context.hashCode();
 			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
+			}
 		}
 
 		public final static class Reference extends RValue implements AbstractSemantics.RValue.Reference {
@@ -833,6 +878,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return "&" + System.identityHashCode(referent);
 			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
+			}
 		}
 
 		public final static class Cell extends RValue implements AbstractSemantics.RValue.Cell {
@@ -850,6 +901,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public void write(AbstractSemantics.RValue value) {
 				this.value = (RValue) value;
+			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
 			}
 		}
 	}

@@ -66,6 +66,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.StackFrame;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
@@ -484,10 +485,12 @@ public class QuickCheck implements Command {
 			//
 			return true;
 		} catch (Interpreter.RuntimeError e) {
+			// Extract stack frame information
+			Tuple<StackFrame> errorframe = e.getFrame().toStackFrame();
 			// Add appropriate syntax error to the syntactic item where the error arose.
-			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode(), errorframe);
 			// FIXME: need better error reporting here
-			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
+			System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
 			// Done
 			return false;
 		}
@@ -973,6 +976,10 @@ public class QuickCheck implements Command {
 			return type;
 		}
 
+		@Override
+		public Value toValue() {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static long calculateTotalInputs(Domain<?>... domains) {
