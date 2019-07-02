@@ -167,6 +167,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_error = ATTR_mask + 1;
 	public static final int ATTR_verificationcondition = ATTR_mask + 2;
 	public static final int ATTR_stackframe = ATTR_mask + 4;
+	public static final int ATTR_counterexample = ATTR_mask + 5;
 	// TYPES:
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
@@ -5814,6 +5815,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
+	public static class CounterExample extends AbstractSyntacticItem {
+		public CounterExample(Value.Dictionary mapping) {
+			super(ATTR_counterexample,mapping);
+		}
+
+		public Value.Dictionary getMapping() {
+			return (Value.Dictionary) operands[0];
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new CounterExample((Value.Dictionary) operands[0]);
+		}
+
+		@Override
+		public String toString() {
+			return getMapping().toString();
+		}
+	}
+
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;
@@ -5847,7 +5868,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Verification Subset
 	public static final int PRECONDITION_NOT_SATISFIED = 700;
 	public static final int POSTCONDITION_NOT_SATISFIED = 701;
-	public static final int TYPEINVARAINT_NOT_SATISFIED = 702;
+	public static final int TYPEINVARIANT_NOT_SATISFIED = 702;
 	public static final int LOOPINVARIANT_NOT_ESTABLISHED = 703;
 	public static final int LOOPINVARIANT_NOT_RESTORED = 704;
 	public static final int ASSERTION_FAILED = 705;
@@ -5858,6 +5879,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int NEGATIVE_RANGE = 710;
 	public static final int DIVISION_BY_ZERO = 711;
 	public static final int RUNTIME_FAULT = 712;
+
+	public static final int PRECONDITION_MAYBE_NOT_SATISFIED = 716;
+	public static final int POSTCONDITION_MAYBE_NOT_SATISFIED = 717;
+	public static final int TYPEINVARIANT_MAYBE_NOT_SATISFIED = 718;
+	public static final int LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = 719;
+	public static final int LOOPINVARIANT_MAYBE_NOT_RESTORED = 720;
 
 	// ==============================================================================
 	//
@@ -6098,6 +6125,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
+			}
+		};
+		schema[ATTR_counterexample] = new Schema(Operands.TWO, Data.ZERO, "ATTR_counterexample") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new CounterExample((Value.Dictionary) operands[1]);
 			}
 		};
 		// TYPES: 00100000 (32) -- 00111111 (63)

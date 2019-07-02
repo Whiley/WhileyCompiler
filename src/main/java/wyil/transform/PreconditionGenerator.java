@@ -4,7 +4,6 @@ import java.math.BigInteger;
 
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
-import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.util.Pair;
@@ -169,7 +168,7 @@ public class PreconditionGenerator {
 				WyalFile.Name name = vcg.convert(fm.getQualifiedName(), "_requires_" + i, expr);
 				Expr clause = new Expr.Invoke(null, name, null, arguments);
 				context.emit(new VerificationCondition("precondition may not be satisfied", context.getAssumptions(),
-						clause, expr.getParent(WyilFile.Attribute.Span.class)));
+						clause, expr));
 			}
 			// Perform parameter checks
 			for (int i = 0; i != parameterTypes.size(); ++i) {
@@ -186,7 +185,7 @@ public class PreconditionGenerator {
 		Expr neqZero = new Expr.NotEqual(rhs.first(), constant);
 		//
 		context.emit(new VerificationCondition("division by zero", context.getAssumptions(), neqZero,
-				expr.getParent(WyilFile.Attribute.Span.class)));
+				expr));
 	}
 
 	private void checkIndexOutOfBounds(WyilFile.Expr.ArrayAccess expr, Context context) {
@@ -200,9 +199,9 @@ public class PreconditionGenerator {
 		Expr lenTest = new Expr.LessThan(idx.first(), length);
 		//
 		context.emit(new VerificationCondition("index out of bounds (negative)", context.getAssumptions(), negTest,
-				expr.getParent(WyilFile.Attribute.Span.class)));
+				expr));
 		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.getAssumptions(),
-				lenTest, expr.getParent(WyilFile.Attribute.Span.class)));
+				lenTest, expr));
 	}
 
 	private void checkArrayGeneratorLength(WyilFile.Expr.ArrayGenerator expr, Context context) {
@@ -213,6 +212,6 @@ public class PreconditionGenerator {
 		Expr neqZero = new Expr.GreaterThanOrEqual(len.first(), constant);
 		//
 		context.emit(new VerificationCondition("negative length possible", context.getAssumptions(), neqZero,
-				expr.getParent(WyilFile.Attribute.Span.class)));
+				expr));
 	}
 }

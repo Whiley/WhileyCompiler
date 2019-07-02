@@ -22,7 +22,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -153,6 +156,9 @@ public class AllValidVerificationTest {
 		// Type Test operator?
 		IGNORED.put("TypeEquals_Valid_58", "??");
 		IGNORED.put("TypeEquals_Valid_59", "??");
+		//
+		IGNORED.put("Lambda_Valid_13", "??");
+		IGNORED.put("While_Valid_68", "??");
 		//
 		IGNORED.put("Property_Valid_10", "??");
 		IGNORED.put("Property_Valid_11", "??");

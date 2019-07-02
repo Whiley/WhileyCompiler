@@ -1350,7 +1350,7 @@ public class Interpreter {
 
 	public void checkTypeInvariants(Type type, RValue value, CallStack frame, SyntacticItem context) {
 		if (value.is(type, frame).boolValue() == false) {
-			throw new RuntimeError(WyilFile.TYPEINVARAINT_NOT_SATISFIED, frame, context);
+			throw new RuntimeError(WyilFile.TYPEINVARIANT_NOT_SATISFIED, frame, context);
 		}
 	}
 

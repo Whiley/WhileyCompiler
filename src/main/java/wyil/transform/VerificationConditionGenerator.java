@@ -13,27 +13,37 @@
 // limitations under the License.
 package wyil.transform;
 
-import static wyil.lang.WyilFile.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import java.util.*;
-
+import wyal.lang.WyalFile;
+import wyal.lang.WyalFile.Declaration;
+import wyal.lang.WyalFile.Declaration.Named;
+import wyal.lang.WyalFile.Expr;
+import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Attribute;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.ResolveError;
 import wycc.util.Pair;
-import wyal.lang.WyalFile;
-import wyal.lang.WyalFile.Declaration;
-import wyal.lang.WyalFile.Expr;
-//import wyal.lang.WyalFile.Type;
-import static wyal.lang.WyalFile.Value;
-import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.LVal;
+import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
-import wyc.lang.WhileyFile;
 
 /**
  * <p>
@@ -477,7 +487,7 @@ public class VerificationConditionGenerator {
 		context = p.second();
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("assertion failed", context.assumptions,
-				condition, stmt.getCondition().getParent(WyilFile.Attribute.Span.class));
+				condition, stmt.getCondition());
 		context.emit(verificationCondition);
 		//
 		return context.assume(condition);
@@ -825,7 +835,7 @@ public class VerificationConditionGenerator {
 		Expr condition = new Expr.Constant(new Value.Bool(false));
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("possible panic", context.assumptions,
-				condition, stmt.getParent(WyilFile.Attribute.Span.class));
+				condition, stmt);
 		context.emit(verificationCondition);
 		//
 		return null;
@@ -928,7 +938,7 @@ public class VerificationConditionGenerator {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
 			context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions, clause,
-					getSpan(rhs)));
+					rhs));
 		}
 	}
 
@@ -971,7 +981,7 @@ public class VerificationConditionGenerator {
 				Name ident = convert(declaration.getQualifiedName(), "_ensures_" + i, declaration.getName());
 				Expr clause = new Expr.Invoke(null, ident, null, arguments);
 				context.emit(new VerificationCondition("postcondition may not be satisfied", context.assumptions,
-						clause, stmt.getParent(WyilFile.Attribute.Span.class)));
+						clause, stmt));
 			}
 		}
 	}
@@ -1132,7 +1142,7 @@ public class VerificationConditionGenerator {
 			Name ident = convert(declaration.getQualifiedName(), "_loopinvariant_" + clause.getIndex(), declaration.getName());
 			Expr macroCall = new Expr.Invoke(null, ident, null, arguments);
 			context.emit(new VerificationCondition(msg, context.assumptions, macroCall,
-					clause.getParent(WyilFile.Attribute.Span.class)));
+					clause));
 		}
 	}
 
@@ -2023,9 +2033,8 @@ public class VerificationConditionGenerator {
 			// FIXME: this is not ideal
 			Path.ID id = Trie.fromString(unit.getName().toString().replaceAll("::", "/"));
 			// Add generated verification condition as assertion
-			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition, vc.description,
-					id, WhileyFile.ContentType);
-			allocate(assrt, vc.getSpan());
+			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition, vc.description, vc.context);
+			allocate(assrt, vc.context.getParent(WyilFile.Attribute.Span.class));
 		}
 	}
 
@@ -2700,18 +2709,14 @@ public class VerificationConditionGenerator {
 		private final String description;
 		private final AssumptionSet antecedent;
 		private final Expr consequent;
-		private final WyilFile.Attribute.Span span;
+		private final SyntacticItem context;
 
 		public VerificationCondition(String description, AssumptionSet antecedent, Expr consequent,
-				WyilFile.Attribute.Span span) {
+				SyntacticItem context) {
 			this.description = description;
 			this.antecedent = antecedent;
 			this.consequent = consequent;
-			this.span = span;
-		}
-
-		public WyilFile.Attribute.Span getSpan() {
-			return span;
+			this.context = context;
 		}
 	}
 

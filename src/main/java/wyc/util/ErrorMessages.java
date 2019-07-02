@@ -14,9 +14,7 @@
 package wyc.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntacticItem;
@@ -166,11 +164,21 @@ public class ErrorMessages {
 	public static final StaticMessage POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
 	public static final StaticMessage TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
 	public static final StaticMessage LOOPINVARIANT_NOT_ESTABLISHED = new StaticMessage("loop invariant not established");
-	public static final StaticMessage LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant does not restored");
+	public static final StaticMessage LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant not restored");
+	public static final StaticMessage PRECONDITION_MAYBE_NOT_SATISFIED = new StaticMessage(
+			"precondition may not be satisfied");
+	public static final StaticMessage POSTCONDITION_MAYBE_NOT_SATISFIED = new StaticMessage(
+			"postcondition may not be satisfied");
+	public static final StaticMessage TYPEINVARIANT_MAYBE_NOT_SATISFIED = new StaticMessage(
+			"type invariant may not be satisfied");
+	public static final StaticMessage LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = new StaticMessage(
+			"loop invariant may not be established");
+	public static final StaticMessage LOOPINVARIANT_MAYBE_NOT_RESTORED = new StaticMessage(
+			"loop invariant may not be restored");
 	public static final StaticMessage ASSERTION_FAILED = new StaticMessage("assertion failed");
 	public static final StaticMessage ASSUMPTION_FAILED = new StaticMessage("assumption failed");
 	public static final StaticMessage INDEX_BELOW_BOUNDS = new StaticMessage("index out-of-bounds (negative)");
-	public static final StaticMessage INDEX_ABOVE_BOUNDS = new StaticMessage("index out-of-bounds (greater than length)");
+	public static final StaticMessage INDEX_ABOVE_BOUNDS = new StaticMessage("index out-of-bounds (not less than length)");
 	public static final StaticMessage NEGATIVE_LENGTH = new StaticMessage("negative array length");
 	public static final StaticMessage NEGATIVE_RANGE = new StaticMessage("negative array range");
 	public static final StaticMessage DIVISION_BY_ZERO = new StaticMessage("division by zero");
@@ -266,6 +274,14 @@ public class ErrorMessages {
 			NEGATIVE_RANGE, // 710;
 			DIVISION_BY_ZERO, // 711;
 			RUNTIME_FAULT, // 712
+			null, // 713
+			null, // 714
+			null, // 715
+			PRECONDITION_MAYBE_NOT_SATISFIED, // 716
+			POSTCONDITION_MAYBE_NOT_SATISFIED, // 717
+			TYPEINVARIANT_MAYBE_NOT_SATISFIED, // 718;
+			LOOPINVARIANT_MAYBE_NOT_ESTABLISHED, // 719;
+			LOOPINVARIANT_MAYBE_NOT_RESTORED, // 720;
 		}
 	};
 
