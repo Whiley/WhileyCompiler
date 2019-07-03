@@ -110,47 +110,47 @@ public class ErrorMessages {
 	// ========================================================================
 	// Name Resolution
 	// ========================================================================
-	public static final StaticMessage RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
-	public static final StaticMessage MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
-	public static final StaticMessage TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
+	public static final Message RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
+	public static final Message MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
+	public static final Message TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
 	// ========================================================================
 	// Type Checking
 	// ========================================================================
 	public static final MultiPartMessage SUBTYPE_ERROR = new MultiPartMessage("expected type ",", found ");
-	public static final StaticMessage EMPTY_TYPE  = new StaticMessage("empty type encountered");
-	public static final StaticMessage EXPECTED_ARRAY  = new StaticMessage("expected array type");
-	public static final StaticMessage EXPECTED_RECORD  = new StaticMessage("expected record type");
-	public static final StaticMessage EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
-	public static final StaticMessage EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
-	public static final StaticMessage INVALID_FIELD  = new StaticMessage("invalid field access");
-	public static final StaticMessage MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");
-	public static final StaticMessage UNREACHABLE_CODE = new StaticMessage("unreachable code encountered (i.e. execution can never reach this statement)");
-	public static final StaticMessage BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
+	public static final Message EMPTY_TYPE  = new StaticMessage("empty type encountered");
+	public static final Message EXPECTED_ARRAY  = new StaticMessage("expected array type");
+	public static final Message EXPECTED_RECORD  = new StaticMessage("expected record type");
+	public static final Message EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
+	public static final Message EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
+	public static final Message INVALID_FIELD  = new StaticMessage("invalid field access");
+	public static final Message MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");
+	public static final Message UNREACHABLE_CODE = new StaticMessage("unreachable code encountered (i.e. execution can never reach this statement)");
+	public static final Message BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
 	public static final MultiPartMessage INCOMPARABLE_OPERANDS = new MultiPartMessage("incomparable operands: "," and ");
-    public static final StaticMessage INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
-	public static final StaticMessage TOO_MANY_RETURNS = new StaticMessage("too many return values");
-	public static final StaticMessage INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
-	public static final StaticMessage INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
+    public static final Message INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
+	public static final Message TOO_MANY_RETURNS = new StaticMessage("too many return values");
+	public static final Message INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
+	public static final Message INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
 
 	// ========================================================================
 	// Definite (Un)Assignment
 	// ========================================================================
-	public static final StaticMessage VARIABLE_POSSIBLY_UNITIALISED = new StaticMessage("variable may be uninitialised");
-	public static final StaticMessage PARAMETER_REASSIGNED = new StaticMessage("cannot assign parameter");
-	public static final StaticMessage FINAL_VARIABLE_REASSIGNED = new StaticMessage("cannot reassign final variable");
+	public static final Message VARIABLE_POSSIBLY_UNITIALISED = new StaticMessage("variable may be uninitialised");
+	public static final Message PARAMETER_REASSIGNED = new StaticMessage("cannot assign parameter");
+	public static final Message FINAL_VARIABLE_REASSIGNED = new StaticMessage("cannot reassign final variable");
 
 	// ========================================================================
 	// Static Variable Check
 	// ========================================================================
-	public static final StaticMessage CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
+	public static final Message CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
 
 	// ========================================================================
 	// Functional Check
 	// ========================================================================
-	public static final StaticMessage ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
-	public static final StaticMessage REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
-	public static final StaticMessage METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
-	public static final StaticMessage REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+	public static final Message ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
+	public static final Message REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
+	public static final Message METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
+	public static final Message REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
 
 	// ========================================================================
 	// Ambiguous Coercion Check
@@ -160,39 +160,41 @@ public class ErrorMessages {
 	// ========================================================================
 	// Verification
 	// ========================================================================
-	public static final StaticMessage PRECONDITION_NOT_SATISFIED = new StaticMessage("precondition not satisfied");
-	public static final StaticMessage POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
-	public static final StaticMessage TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
-	public static final StaticMessage LOOPINVARIANT_NOT_ESTABLISHED = new StaticMessage("loop invariant not established");
-	public static final StaticMessage LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant not restored");
-	public static final StaticMessage PRECONDITION_MAYBE_NOT_SATISFIED = new StaticMessage(
-			"precondition may not be satisfied");
-	public static final StaticMessage POSTCONDITION_MAYBE_NOT_SATISFIED = new StaticMessage(
-			"postcondition may not be satisfied");
-	public static final StaticMessage TYPEINVARIANT_MAYBE_NOT_SATISFIED = new StaticMessage(
-			"type invariant may not be satisfied");
-	public static final StaticMessage LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = new StaticMessage(
-			"loop invariant may not be established");
-	public static final StaticMessage LOOPINVARIANT_MAYBE_NOT_RESTORED = new StaticMessage(
-			"loop invariant may not be restored");
-	public static final StaticMessage ASSERTION_FAILED = new StaticMessage("assertion failed");
-	public static final StaticMessage ASSUMPTION_FAILED = new StaticMessage("assumption failed");
-	public static final StaticMessage INDEX_BELOW_BOUNDS = new StaticMessage("index out-of-bounds (negative)");
-	public static final StaticMessage INDEX_ABOVE_BOUNDS = new StaticMessage("index out-of-bounds (not less than length)");
-	public static final StaticMessage NEGATIVE_LENGTH = new StaticMessage("negative array length");
-	public static final StaticMessage NEGATIVE_RANGE = new StaticMessage("negative array range");
-	public static final StaticMessage DIVISION_BY_ZERO = new StaticMessage("division by zero");
-	public static final StaticMessage RUNTIME_FAULT = new StaticMessage("runtime fault encountered");
+	public static final Message PRECONDITION_NOT_SATISFIED = new StaticMessage("precondition not satisfied");
+	public static final Message POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
+	public static final Message TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
+	public static final Message LOOPINVARIANT_NOT_ESTABLISHED = new StaticMessage("loop invariant not established");
+	public static final Message LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant not restored");
+	public static final Message PRECONDITION_MAYBE_NOT_SATISFIED = new MultiPartMessage(
+			"precondition may not be satisfied ");
+	public static final Message POSTCONDITION_MAYBE_NOT_SATISFIED = new MultiPartMessage(
+			"postcondition may not be satisfied ");
+	public static final Message TYPEINVARIANT_MAYBE_NOT_SATISFIED = new MultiPartMessage(
+			"type invariant may not be satisfied ");
+	public static final Message LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = new MultiPartMessage(
+			"loop invariant may not be established by first iteration ");
+	public static final Message LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY = new MultiPartMessage(
+			"loop invariant may not hold on entry ");
+	public static final Message LOOPINVARIANT_MAYBE_NOT_RESTORED = new MultiPartMessage(
+			"loop invariant may not be restored ");
+	public static final Message ASSERTION_FAILED = new MultiPartMessage("assertion failed ");
+	public static final Message ASSUMPTION_FAILED = new MultiPartMessage("assumption failed ");
+	public static final Message INDEX_BELOW_BOUNDS = new MultiPartMessage("index out of bounds (negative) ");
+	public static final Message INDEX_ABOVE_BOUNDS = new MultiPartMessage("index out of bounds (not less than length) ");
+	public static final Message NEGATIVE_LENGTH = new MultiPartMessage("negative length possible ");
+	public static final Message NEGATIVE_RANGE = new MultiPartMessage("negative array range ");
+	public static final Message DIVISION_BY_ZERO = new MultiPartMessage("division by zero ");
+	public static final Message RUNTIME_FAULT = new MultiPartMessage("possible panic ");
 
 	// ========================================================================
 	// Misc
 	// ========================================================================
-	public static final StaticMessage INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
-	public static final StaticMessage INVALID_BOOLEAN_EXPRESSION = new StaticMessage("invalid boolean expression");
-	public static final StaticMessage INVALID_NUMERIC_EXPRESSION = new StaticMessage("invalid numeric expression");
-	public static final StaticMessage INVALID_UNARY_EXPRESSION = new StaticMessage("invalid unary expression");
-	public static final StaticMessage INVALID_BINARY_EXPRESSION = new StaticMessage("invalid binary expression");
-	public static final StaticMessage INVALID_ARRAY_EXPRESSION  = new StaticMessage("invalid array expression");
+	public static final Message INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
+	public static final Message INVALID_BOOLEAN_EXPRESSION = new StaticMessage("invalid boolean expression");
+	public static final Message INVALID_NUMERIC_EXPRESSION = new StaticMessage("invalid numeric expression");
+	public static final Message INVALID_UNARY_EXPRESSION = new StaticMessage("invalid unary expression");
+	public static final Message INVALID_BINARY_EXPRESSION = new StaticMessage("invalid binary expression");
+	public static final Message INVALID_ARRAY_EXPRESSION  = new StaticMessage("invalid array expression");
 
 //	public static final StaticMessage INVALID_TUPLE_LVAL = new StaticMessage("invalid tuple lval");
 //	public static final StaticMessage INVALID_FILE_ACCESS = new StaticMessage("invalid file access");
@@ -281,7 +283,8 @@ public class ErrorMessages {
 			POSTCONDITION_MAYBE_NOT_SATISFIED, // 717
 			TYPEINVARIANT_MAYBE_NOT_SATISFIED, // 718;
 			LOOPINVARIANT_MAYBE_NOT_ESTABLISHED, // 719;
-			LOOPINVARIANT_MAYBE_NOT_RESTORED, // 720;
+			LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY, // 720;
+			LOOPINVARIANT_MAYBE_NOT_RESTORED, // 721;
 		}
 	};
 

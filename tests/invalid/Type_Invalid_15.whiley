@@ -1,3 +1,5 @@
+type nat is (int x) where x >= 0
+
 type Random is {nat index, nat[] sequence}
 // index is valid position in random sequence
 where index < |sequence|

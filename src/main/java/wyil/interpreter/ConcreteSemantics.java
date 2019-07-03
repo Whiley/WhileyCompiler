@@ -26,6 +26,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Callable;
 
 public class ConcreteSemantics implements AbstractSemantics {
 
@@ -167,9 +168,24 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 		@Override
 		public RValue convert(Type type) {
-			// At the moment, this appears to be sound because there are no actual
-			// coercion which need to take place.
-			return this;
+			if(type instanceof Type.Union) {
+				Type.Union t = (Type.Union) type;
+				for (int i=0;i!=t.size();++i) {
+					Type element = t.get(i);
+					RValue r = this.convert(element);
+					if (r != null) {
+						return r;
+					}
+				}
+				return null;
+			} else if(type instanceof Type.Nominal) {
+				Type.Nominal nom = (Type.Nominal) type;
+				Decl.Type decl = nom.getLink().getTarget();
+				Decl.Variable var = decl.getVariableDeclaration();
+				return convert(var.getType());
+			} else {
+				return null;
+			}
 		}
 
 		/**
@@ -679,13 +695,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
 					Tuple<Type.Field> fields = t.getFields();
-					RValue.Record rec = this;
+					RValue.Field[] rs = new RValue.Field[fields.size()];
 					for (int i = 0; i != fields.size(); ++i) {
-						Type.Field f = fields.get(i);
-						RValue v = this.read(f.getName()).convert(f.getType());
-						rec = rec.write(f.getName(), v);
+						Type.Field ff = fields.get(i);
+						Identifier name = ff.getName();
+						rs[i] = new RValue.Field(name,read(name).convert(ff.getType()));
 					}
-					return rec;
+					return Record(rs);
 				} else {
 					return super.convert(type);
 				}
@@ -765,6 +781,46 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @return
 			 */
 			public abstract Type.Callable getType();
+
+			@Override
+			public RValue convert(Type type) {
+				// Create a lambda for the coercion
+				if (type instanceof Type.Callable) {
+					return new RValue.Lambda() {
+
+						@Override
+						public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+							return RValue.Lambda.this.execute(interpreter, arguments, context);
+						}
+
+						@Override
+						public Callable getType() {
+							return (Type.Callable) type;
+						}
+
+						@Override
+						public Value toValue() {
+							return RValue.Lambda.this.toValue();
+						}
+
+						@Override
+						public RValue.Bool is(Type t, Interpreter.CallStack frame) {
+							if(t instanceof Type.Callable) {
+								Type.Callable tc = (Type.Callable) t;
+								if(tc.equals(type)) {
+									return True;
+								} else {
+									return False;
+								}
+							} else {
+								return super.is(t, frame);
+							}
+						}
+					};
+				} else {
+					return super.convert(type);
+				}
+			}
 		}
 
 		public final static class ConcreteLambda extends Lambda {
@@ -825,6 +881,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					return super.is(type, frame);
 				}
 			}
+
 
 			@Override
 			public boolean equals(Object o) {

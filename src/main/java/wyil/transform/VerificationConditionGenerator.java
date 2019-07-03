@@ -182,7 +182,7 @@ public class VerificationConditionGenerator {
 			Context context = new Context(wyalFile, AssumptionSet.ROOT, localEnvironment, localEnvironment, null, vcs);
 			//
 			Pair<Expr, Context> rp = translateExpressionWithChecks(decl.getInitialiser(), null, context);
-			generateTypeInvariantCheck(decl.getType(), rp.first(), context);
+			generateTypeInvariantCheck(decl.getType(), rp.first(), decl.getInitialiser(), context);
 			// Translate each generated verification condition into an assertion in
 			// the underlying WyalFile.
 			createAssertions(decl, vcs, globalEnvironment);
@@ -517,7 +517,7 @@ public class VerificationConditionGenerator {
 		}
 		// Second, apply the bundles to implement assignments.
 		for (int i = 0; i != rhs.size(); ++i) {
-			context = translateAssign(lvals[i], rvals[i], context);
+			context = translateAssign(lvals[i], rvals[i], rhs.get(i), context);
 		}
 		// Done
 		return context;
@@ -572,11 +572,11 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private Context translateAssign(WyilFile.LVal[] lval, Expr[] rval, Context context) {
+	private Context translateAssign(WyilFile.LVal[] lval, Expr[] rval, WyilFile.Expr rhs, Context context) {
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
 			WyilFile.LVal lhs = lval[i];
-			generateTypeInvariantCheck(lhs.getType(), rval[i], context);
+			generateTypeInvariantCheck(lhs.getType(), rval[i], rhs, context);
 			context = translateSingleAssignment(lval[i], rval[i], context);
 		}
 		return context;
@@ -900,7 +900,7 @@ public class VerificationConditionGenerator {
 			Expr[] exprs = p.first();
 			context = p.second();
 			//
-			generateReturnTypeInvariantCheck(stmt, exprs, context);
+			generateReturnTypeInvariantCheck(stmt, exprs, returns, context);
 			generatePostconditionChecks(stmt, exprs, context);
 		}
 		// Return null to signal that execution does not continue after this
@@ -919,7 +919,7 @@ public class VerificationConditionGenerator {
 	 * @param context
 	 * @throws ResolveError
 	 */
-	private void generateReturnTypeInvariantCheck(WyilFile.Stmt.Return stmt, Expr[] exprs, Context context) {
+	private void generateReturnTypeInvariantCheck(WyilFile.Stmt.Return stmt, Expr[] exprs, Tuple<WyilFile.Expr> returns, Context context) {
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
 				.getParent().enclosingDeclaration;
 		Tuple<WyilFile.Type> returnTypes = declaration.getType().getReturns();
@@ -929,16 +929,16 @@ public class VerificationConditionGenerator {
 			// FIXME: at this point, we want to determine whether or not the
 			// check is actually required. To do this, we need to check whether
 			// the actualType is a true subtype of the returnType.
-			generateTypeInvariantCheck(returnType, exprs[i], context);
+			generateTypeInvariantCheck(returnType, exprs[i], returns.get(i), context);
 		}
 	}
 
-	public void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
+	public void generateTypeInvariantCheck(Type lhs, Expr rhs, SyntacticItem item, Context context) {
 		if (typeMayHaveInvariant(lhs, context)) {
 			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
 			Expr clause = new Expr.Is(rhs, typeTest);
 			context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions, clause,
-					rhs));
+					item));
 		}
 	}
 
@@ -1181,7 +1181,7 @@ public class VerificationConditionGenerator {
 		if (stmt.hasInitialiser()) {
 			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getInitialiser(), null, context);
 			context = p.second();
-			generateTypeInvariantCheck(stmt.getType(), p.first(), context);
+			generateTypeInvariantCheck(stmt.getType(), p.first(), stmt.getInitialiser(), context);
 			context = context.write(stmt, p.first());
 		}
 		//
@@ -1471,7 +1471,6 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateConvert(WyilFile.Expr.Cast expr, LocalEnvironment environment) {
-		// TODO: check whether need to do any more here
 		return translateExpression(expr.getOperand(), null, environment);
 	}
 

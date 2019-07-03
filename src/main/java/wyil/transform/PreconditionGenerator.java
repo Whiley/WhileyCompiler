@@ -141,6 +141,11 @@ public class PreconditionGenerator {
 			}
 
 			@Override
+			public void visitCast(WyilFile.Expr.Cast expr, Context context) {
+				checkCast(expr,context);
+			}
+
+			@Override
 			public void visitType(WyilFile.Type type, Context context) {
 				// NOTE: don't need to visit types.
 			}
@@ -172,7 +177,7 @@ public class PreconditionGenerator {
 			}
 			// Perform parameter checks
 			for (int i = 0; i != parameterTypes.size(); ++i) {
-				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], context);
+				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], expr.getOperands().get(i), context);
 			}
 		}
 	}
@@ -213,5 +218,11 @@ public class PreconditionGenerator {
 		//
 		context.emit(new VerificationCondition("negative length possible", context.getAssumptions(), neqZero,
 				expr));
+	}
+
+	private void checkCast(WyilFile.Expr.Cast expr, Context context) {
+		Pair<Expr,Context> p = vcg.translateExpressionWithChecks(expr, null, context);
+		context = p.second();
+		vcg.generateTypeInvariantCheck(expr.getType(),p.first(),expr.getOperand(),context);
 	}
 }

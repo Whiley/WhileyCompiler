@@ -1,7 +1,7 @@
 type LinkedList<T> is null | { LinkedList<T> next, T data }
 
 property length<T>(LinkedList<T> list, int n)
-where length(list.next,n-1)
+where list.next != null ==> length(list.next,n-1)
 
 function recursive<T>(LinkedList<T> l) -> (int len)
 ensures length(l,len):

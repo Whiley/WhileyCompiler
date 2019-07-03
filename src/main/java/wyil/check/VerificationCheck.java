@@ -14,7 +14,6 @@
 package wyil.check;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import wyal.lang.WyalFile;
@@ -79,18 +78,18 @@ public class VerificationCheck {
 			SyntacticItem item = e.getElement();
 			String message = e.getMessage();
 			// FIXME: translate from WyilFile to WhileyFile. This is a temporary hack
-			if(item != null) {
+			if(item instanceof WyalFile.Declaration.Assert) {
+				// Extract failed assertion
+				WyalFile.Declaration.Assert assertion = (WyalFile.Declaration.Assert) item;
 				//
 				int code = codeFromMessage(e.getMessage());
 				CounterExample[] cegs;
-				if (counterexamples && item instanceof WyalFile.Declaration.Assert) {
-					cegs = findCounterexamples((WyalFile.Declaration.Assert) item);
+				if (counterexamples) {
+					cegs = findCounterexamples(assertion);
 				} else {
-					System.out.println("GOT HERE: " + item.getClass().getName());
 					cegs = new CounterExample[0];
 				}
-				System.out.println("COUNTEREXAMPLE: " + Arrays.toString(cegs));
-				ErrorMessages.syntaxError(item, code, cegs);
+				ErrorMessages.syntaxError(assertion.getContext(), code, cegs);
 				return false;
 			} else {
 				// FIXME: enjoy debugging this when the time comes :)
@@ -135,6 +134,8 @@ public class VerificationCheck {
 			return WyilFile.POSTCONDITION_MAYBE_NOT_SATISFIED;
 		case "loop invariant may not be established by first iteration":
 			return WyilFile.LOOPINVARIANT_MAYBE_NOT_ESTABLISHED;
+		case "loop invariant may not hold on entry":
+			return WyilFile.LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY;
 		case "loop invariant may not be restored":
 			return WyilFile.LOOPINVARIANT_MAYBE_NOT_RESTORED;
 		case "division by zero":

@@ -1678,23 +1678,10 @@ public class Interpreter {
 		 * @param frame
 		 */
 		private void load(WyilFile module) {
-			//
+			// Load all invokable items
 			for (Decl.Unit unit : module.getModule().getUnits()) {
 				for (Decl d : unit.getDeclarations()) {
 					switch (d.getOpcode()) {
-					case DECL_staticvar: {
-						Decl.StaticVariable decl = (Decl.StaticVariable) d;
-						if (!statics.containsKey(decl.getQualifiedName())) {
-							// Static variable has not been initialised yet, therefore force its
-							// initialisation.
-							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
-							// Check type invariants.
-							checkTypeInvariants(decl.getType(), value, new CallStack(), decl);
-							// Done.
-							statics.put(decl.getQualifiedName(), value);
-						}
-						break;
-					}
 					case DECL_function:
 					case DECL_method:
 					case DECL_property:
@@ -1707,6 +1694,26 @@ public class Interpreter {
 						// NOTE: must use canonical string here to ensure unique signature for lookup.
 						map.put(decl.getType().toCanonicalString(), decl);
 						break;
+					}
+				}
+			}
+			// Execute all static variable initialisers
+			for (Decl.Unit unit : module.getModule().getUnits()) {
+				for (Decl d : unit.getDeclarations()) {
+					switch (d.getOpcode()) {
+					case DECL_staticvar: {
+						Decl.StaticVariable decl = (Decl.StaticVariable) d;
+						if (!statics.containsKey(decl.getQualifiedName())) {
+							// Static variable has not been initialised yet, therefore force its
+							// initialisation.
+							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+							// Check type invariants.
+							checkTypeInvariants(decl.getType(), value, this, decl);
+							// Done.
+							statics.put(decl.getQualifiedName(), value);
+						}
+						break;
+					}
 					}
 				}
 			}

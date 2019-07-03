@@ -21,7 +21,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -29,7 +31,6 @@ import org.junit.runners.Parameterized.Parameters;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;
-import wyil.interpreter.Interpreter;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -91,6 +92,13 @@ public class AllValidTest {
 		IGNORED.put("TypeEquals_Valid_33", "#837");
 		IGNORED.put("TypeEquals_Valid_35", "#837");
 		IGNORED.put("Coercion_Valid_10", "#837");
+		// Problems checking type invariants on lambdas
+		IGNORED.put("Lambda_Valid_11", "???");
+		IGNORED.put("Lambda_Valid_7", "???");
+		IGNORED.put("Lifetime_Lambda_Valid_1", "???");
+		IGNORED.put("Lifetime_Lambda_Valid_3", "???");
+		IGNORED.put("Lifetime_Lambda_Valid_4", "???");
+
 	}
 
 

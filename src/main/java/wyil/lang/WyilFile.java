@@ -5870,7 +5870,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int POSTCONDITION_NOT_SATISFIED = 701;
 	public static final int TYPEINVARIANT_NOT_SATISFIED = 702;
 	public static final int LOOPINVARIANT_NOT_ESTABLISHED = 703;
-	public static final int LOOPINVARIANT_NOT_RESTORED = 704;
+		public static final int LOOPINVARIANT_NOT_RESTORED = 704;
 	public static final int ASSERTION_FAILED = 705;
 	public static final int ASSUMPTION_FAILED = 706;
 	public static final int INDEX_BELOW_BOUNDS = 707;
@@ -5884,7 +5884,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int POSTCONDITION_MAYBE_NOT_SATISFIED = 717;
 	public static final int TYPEINVARIANT_MAYBE_NOT_SATISFIED = 718;
 	public static final int LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = 719;
-	public static final int LOOPINVARIANT_MAYBE_NOT_RESTORED = 720;
+	public static final int LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY = 720;
+	public static final int LOOPINVARIANT_MAYBE_NOT_RESTORED = 721;
 
 	// ==============================================================================
 	//
@@ -6127,11 +6128,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
 			}
 		};
-		schema[ATTR_counterexample] = new Schema(Operands.TWO, Data.ZERO, "ATTR_counterexample") {
+		schema[ATTR_counterexample] = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new CounterExample((Value.Dictionary) operands[1]);
+				return new CounterExample((Value.Dictionary) operands[0]);
 			}
 		};
 		// TYPES: 00100000 (32) -- 00111111 (63)

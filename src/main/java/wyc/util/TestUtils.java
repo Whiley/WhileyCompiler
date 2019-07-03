@@ -322,10 +322,11 @@ public class TestUtils {
 		Interpreter interpreter = new Interpreter(System.out);
 		// Create the initial stack
 		Interpreter.CallStack stack = interpreter.new CallStack();
-		// Load the relevant WyIL module
-		stack.load(root.get(id, WyilFile.ContentType).read());
 		//
 		try {
+			// Load the relevant WyIL module
+			stack.load(root.get(id, WyilFile.ContentType).read());
+			//
 			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {
