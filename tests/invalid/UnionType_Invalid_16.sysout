@@ -1,0 +1,3 @@
+tests/invalid/UnionType_Invalid_16.whiley:4: expected array type
+    return f[0]
+           ^

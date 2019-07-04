@@ -14,7 +14,7 @@ where l is Node ==> length(l.next, len-1)
 // list.
 property diff(List head, List pos, int d)
 where (head == pos) ==> (d == 0)
-where (head != pos) ==> diff(head.next, pos, d-1)
+where (head is Node) ==> diff(head.next, pos, d-1)
 
 function len(List l) -> (int r)
 // Ensure we capture the real length
