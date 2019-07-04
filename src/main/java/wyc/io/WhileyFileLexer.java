@@ -14,19 +14,15 @@
 package wyc.io;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.SyntacticException;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
-import wyil.lang.WyilFile;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -85,7 +81,7 @@ public class WhileyFileLexer {
 			} else if (Character.isWhitespace(c)) {
 				scanWhiteSpace(tokens);
 			} else {
-				syntaxError("unknown token encountered",pos);
+				tokens.add(new Token(Token.Kind.Unknown, "" + c, pos++));
 			}
 		}
 
@@ -158,6 +154,7 @@ public class WhileyFileLexer {
 	 * @return
 	 */
 	public Token scanCharacterLiteral() {
+		boolean failed = false;
 		int start = pos;
 		pos++;
 		char c = input.charAt(pos++);
@@ -189,15 +186,19 @@ public class WhileyFileLexer {
 				c = '\\';
 				break;
 			default:
-				syntaxError("unrecognised escape character", pos);
+				failed=true;
 			}
 		}
 		if (input.charAt(pos) != '\'') {
-			syntaxError("unexpected end-of-character", pos);
+			return new Token(Token.Kind.Unknown, "" + c, pos);
 		}
 		pos = pos + 1;
-		return new Token(Token.Kind.CharLiteral, input.substring(start, pos),
-				start);
+		if(failed) {
+			return new Token(Token.Kind.Unknown, input.substring(start, pos), start);
+		} else {
+			return new Token(Token.Kind.CharLiteral, input.substring(start, pos),
+					start);
+		}
 	}
 
 	public Token scanStringLiteral() {
@@ -216,8 +217,7 @@ public class WhileyFileLexer {
 			}
 			pos = pos + 1;
 		}
-		syntaxError("unexpected end-of-string", pos - 1);
-		return null;
+		return new Token(Token.Kind.Unknown, input.substring(start, pos), pos - 1);
 	}
 
 	public static final char UC_FORALL = '\u2200';
@@ -419,9 +419,7 @@ public class WhileyFileLexer {
 		case UC_LOGICALAND:
 			return new Token(Token.Kind.LogicalAnd, "" + c, pos++);
 		}
-
-		syntaxError("unknown operator encountered: " + c, pos);
-		return null;
+		return new Token(Token.Kind.Unknown, "" + c, pos++);
 	}
 
 	public Token scanIdentifier() {
@@ -457,8 +455,7 @@ public class WhileyFileLexer {
 						pos + 2), pos));
 				pos = pos + 2;
 			} else {
-				syntaxError("unknown whitespace character encounterd: \""
-						+ input.charAt(pos), pos);
+				tokens.add(new Token(Token.Kind.Unknown, "" + input.charAt(pos), pos++));
 			}
 		}
 	}
@@ -544,20 +541,6 @@ public class WhileyFileLexer {
 	}
 
 	/**
-	 * Raise a syntax error with a given message at given index.
-	 *
-	 * @param msg
-	 *            --- message to raise.
-	 * @param index
-	 *            --- index position to associate the error with.
-	 */
-	private void syntaxError(String msg, int index) {
-		// FIXME: this is clearly not a sensible approach
-		throw new SyntacticException(msg, entry, new WyilFile.Attribute.Span(null,index,index));
-
-	}
-
-	/**
 	 * A map from identifier strings to the corresponding token kind.
 	 */
 	public static final HashMap<String, Token.Kind> keywords = new HashMap<String, Token.Kind>() {
@@ -629,6 +612,7 @@ public class WhileyFileLexer {
 	public static class Token {
 
 		public enum Kind {
+			Unknown,
 			Identifier,
 			// Constants
 			True("true"),

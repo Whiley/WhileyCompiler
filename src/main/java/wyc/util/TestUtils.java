@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
@@ -214,25 +213,11 @@ public class TestUtils {
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
 			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
-		} catch(ExecutionException e) {
-			// FIXME: this is a complete kludge to handle the workaround for
-			// VerificationCheck. This currently uses the old theorem prover which forceably
-			// throws exceptions (yuk)
-			Throwable cause = e;
-			while (cause.getCause() != null) {
-				cause = cause.getCause();
-				if (cause instanceof SyntacticException) {
-					SyntacticException se = (SyntacticException) cause;
-					// Print out the syntax error
-					se.outputSourceError(psyserr, false);
-					result = false;
-				}
-			}
 		} catch (SyntacticException e) {
 			// Print out the syntax error
-			e.outputSourceError(psyserr,false);
+			//e.outputSourceError(psyserr);
 			result = false;
-		} catch (Exception e) {
+		}catch (Exception e) {
 			// Print out the syntax error
 			e.printStackTrace(psyserr);
 			result = false;

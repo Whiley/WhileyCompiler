@@ -123,6 +123,31 @@ public class ErrorMessages {
 	}
 
 	// ========================================================================
+	// Parsing
+	// ========================================================================
+
+	public static final Message EXPECTING_TOKEN = new MultiPartMessage("expecting \"", "\" here");
+	public static final Message EXPECTED_LIFETIME = new StaticMessage("expecting lifetime identifier");
+	public static final Message UNEXPECTED_EOF = new StaticMessage("unexpected end-of-file");
+	public static final Message UNEXPECTED_BLOCK_END = new StaticMessage("unexpected end-of-block");
+	public static final Message UNKNOWN_LIFETIME = new StaticMessage("use of undeclared lifetime");
+	public static final Message UNKNOWN_TYPE = new StaticMessage("unknown type encountered");
+	public static final Message UNKNOWN_LVAL = new StaticMessage("unexpected lval");
+	public static final Message UNKNOWN_TERM = new StaticMessage("unrecognised term");
+	public static final Message INVALID_UNICODE_LITERAL = new StaticMessage("invalid unicode string");
+	public static final Message INVALID_BINARY_LITERAL = new StaticMessage("invalid binary literal");
+	public static final Message INVALID_HEX_LITERAL = new StaticMessage("invalid hex literal (invalid characters)");
+	public static final Message DUPLICATE_VISIBILITY_MODIFIER = new StaticMessage("visibility modifier already given");
+	public static final Message DUPLICATE_TEMPLATE_VARIABLE = new StaticMessage("duplicate template variable");
+	public static final Message DUPLICATE_CASE_LABEL = new StaticMessage("duplicate case label");
+	public static final Message DUPLICATE_DEFAULT_LABEL = new StaticMessage("duplicate default label");
+	public static final Message DUPLICATE_FIELD = new StaticMessage("duplicate record key");
+	public static final Message DUPLICATE_DECLARATION = new StaticMessage("name already declared");
+	public static final Message MISSING_TYPE_VARIABLE = new StaticMessage("missing type variable(s)");
+	public static final Message BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
+	public static final Message CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
+
+	// ========================================================================
 	// Name Resolution
 	// ========================================================================
 	public static final Message AMBIGUOUS_RESOLUTION = new Message() {
@@ -256,7 +281,28 @@ public class ErrorMessages {
 		null, // 00
 		null, // 01
 		null, // 02
-		null, // 03
+		{
+			EXPECTING_TOKEN, // 300
+			EXPECTED_LIFETIME, // 301
+			UNEXPECTED_EOF, // 302
+			UNEXPECTED_BLOCK_END, // 303
+			UNKNOWN_LIFETIME, // 304
+			UNKNOWN_TYPE, // 305
+			UNKNOWN_LVAL, // 306
+			UNKNOWN_TERM, // 307
+			INVALID_UNICODE_LITERAL, // 308
+			INVALID_BINARY_LITERAL, // 309
+			INVALID_HEX_LITERAL, // 310
+			DUPLICATE_VISIBILITY_MODIFIER, // 311
+			DUPLICATE_TEMPLATE_VARIABLE, // 312
+			DUPLICATE_CASE_LABEL, // 313
+			DUPLICATE_DEFAULT_LABEL, // 314
+			DUPLICATE_FIELD, // 315
+			DUPLICATE_DECLARATION, // 316
+			MISSING_TYPE_VARIABLE, // 317
+			BREAK_OUTSIDE_SWITCH_OR_LOOP, // 318
+			CONTINUE_OUTSIDE_LOOP, // 319
+		},
 		{
 			SUBTYPE_ERROR,     // 400
 			EMPTY_TYPE,        // 401

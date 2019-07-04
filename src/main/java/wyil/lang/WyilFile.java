@@ -5840,6 +5840,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
+	// Parsing
+	public static final int EXPECTING_TOKEN = 300;	// "expecting \"" + kind + "\" here"
+	public static final int EXPECTED_LIFETIME = 301;// "expecting lifetime identifier"
+	public static final int UNEXPECTED_EOF = 302; // "unexpected end-of-file"
+	public static final int UNEXPECTED_BLOCK_END = 303; // "unexpected end-of-block"
+	public static final int UNKNOWN_LIFETIME = 304; // "use of undeclared lifetime"
+	public static final int UNKNOWN_TYPE = 305; // "unknown type encountered"
+	public static final int UNKNOWN_LVAL = 306; // "unexpected lval"
+	public static final int UNKNOWN_TERM = 307; // "unrecognised term"
+	public static final int INVALID_UNICODE_LITERAL = 308; // "invalid unicode string"
+	public static final int INVALID_BINARY_LITERAL = 309; // "invalid binary literal"
+	public static final int INVALID_HEX_LITERAL = 310; // "invalid hex literal (invalid characters)"
+	public static final int DUPLICATE_VISIBILITY_MODIFIER = 311; // "visibility modifier already given"
+	public static final int DUPLICATE_TEMPLATE_VARIABLE = 312; // "duplicate template variable"
+	public static final int DUPLICATE_CASE_LABEL = 313; // "duplicate case label"
+	public static final int DUPLICATE_DEFAULT_LABEL = 314; // "duplicate default label"
+	public static final int DUPLICATE_FIELD = 315; // "duplicate record key"
+	public static final int DUPLICATE_DECLARATION = 316; // "name already declared"
+	public static final int MISSING_TYPE_VARIABLE = 317; // "missing type variable(s)"
+	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 318; // "break outside switch or loop"
+	public static final int CONTINUE_OUTSIDE_LOOP = 319; // "continue outside loop"
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;

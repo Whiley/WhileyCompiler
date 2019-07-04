@@ -31,7 +31,6 @@ import wyil.check.StaticVariableCheck;
 import wyil.check.VerificationCheck;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
@@ -171,6 +170,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(WyilFile target, WhileyFile... sources) {
+		boolean r = true;
 		// Parse source files into target
 		for (int i = 0; i != sources.length; ++i) {
 			// NOTE: this is somehow where we work out the initial deltas for incremental
@@ -178,17 +178,12 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			WhileyFile source = sources[i];
 			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			//
-			Decl.Unit nunit = wyp.read();
-			Decl.Unit ounit = target.getModule().putUnit(nunit);
-			//
-			if(ounit != null) {
-				target.replace(ounit, nunit);
-			}
+			r &= wyp.read();
 		}
+		//
 		// Perform name resolution.
-		boolean r;
 		try {
-			r = new NameResolution(project, target).apply();
+			r = r && new NameResolution(project, target).apply();
 		} catch(IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
