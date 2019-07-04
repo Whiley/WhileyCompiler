@@ -108,7 +108,7 @@ public class VerificationCheck {
 			if (!result.holds()) {
 				return toCounterExamples(result.getEnvironment());
 			}
-		} catch (Interpreter.UndefinedException e) {
+		} catch (Exception e) {
 			// do nothing for now
 		}
 		return new CounterExample[0];

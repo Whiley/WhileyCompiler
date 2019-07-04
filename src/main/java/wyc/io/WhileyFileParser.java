@@ -13,6 +13,85 @@
 // limitations under the License.
 package wyc.io;
 
+import static wyc.io.WhileyFileLexer.Token.Kind.All;
+import static wyc.io.WhileyFileLexer.Token.Kind.Ampersand;
+import static wyc.io.WhileyFileLexer.Token.Kind.Assert;
+import static wyc.io.WhileyFileLexer.Token.Kind.Assume;
+import static wyc.io.WhileyFileLexer.Token.Kind.Break;
+import static wyc.io.WhileyFileLexer.Token.Kind.Caret;
+import static wyc.io.WhileyFileLexer.Token.Kind.Case;
+import static wyc.io.WhileyFileLexer.Token.Kind.Colon;
+import static wyc.io.WhileyFileLexer.Token.Kind.ColonColon;
+import static wyc.io.WhileyFileLexer.Token.Kind.Comma;
+import static wyc.io.WhileyFileLexer.Token.Kind.Continue;
+import static wyc.io.WhileyFileLexer.Token.Kind.Debug;
+import static wyc.io.WhileyFileLexer.Token.Kind.Default;
+import static wyc.io.WhileyFileLexer.Token.Kind.Do;
+import static wyc.io.WhileyFileLexer.Token.Kind.Dot;
+import static wyc.io.WhileyFileLexer.Token.Kind.DotDot;
+import static wyc.io.WhileyFileLexer.Token.Kind.DotDotDot;
+import static wyc.io.WhileyFileLexer.Token.Kind.Else;
+import static wyc.io.WhileyFileLexer.Token.Kind.Ensures;
+import static wyc.io.WhileyFileLexer.Token.Kind.Equals;
+import static wyc.io.WhileyFileLexer.Token.Kind.EqualsEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Export;
+import static wyc.io.WhileyFileLexer.Token.Kind.Fail;
+import static wyc.io.WhileyFileLexer.Token.Kind.Final;
+import static wyc.io.WhileyFileLexer.Token.Kind.Function;
+import static wyc.io.WhileyFileLexer.Token.Kind.GreaterEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Identifier;
+import static wyc.io.WhileyFileLexer.Token.Kind.If;
+import static wyc.io.WhileyFileLexer.Token.Kind.Import;
+import static wyc.io.WhileyFileLexer.Token.Kind.In;
+import static wyc.io.WhileyFileLexer.Token.Kind.Indent;
+import static wyc.io.WhileyFileLexer.Token.Kind.Is;
+import static wyc.io.WhileyFileLexer.Token.Kind.LeftAngle;
+import static wyc.io.WhileyFileLexer.Token.Kind.LeftAngleLeftAngle;
+import static wyc.io.WhileyFileLexer.Token.Kind.LeftBrace;
+import static wyc.io.WhileyFileLexer.Token.Kind.LeftCurly;
+import static wyc.io.WhileyFileLexer.Token.Kind.LeftSquare;
+import static wyc.io.WhileyFileLexer.Token.Kind.LessEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.LogicalAnd;
+import static wyc.io.WhileyFileLexer.Token.Kind.LogicalIff;
+import static wyc.io.WhileyFileLexer.Token.Kind.LogicalImplication;
+import static wyc.io.WhileyFileLexer.Token.Kind.LogicalOr;
+import static wyc.io.WhileyFileLexer.Token.Kind.Method;
+import static wyc.io.WhileyFileLexer.Token.Kind.Minus;
+import static wyc.io.WhileyFileLexer.Token.Kind.MinusGreater;
+import static wyc.io.WhileyFileLexer.Token.Kind.Native;
+import static wyc.io.WhileyFileLexer.Token.Kind.New;
+import static wyc.io.WhileyFileLexer.Token.Kind.NewLine;
+import static wyc.io.WhileyFileLexer.Token.Kind.NotEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Package;
+import static wyc.io.WhileyFileLexer.Token.Kind.Percent;
+import static wyc.io.WhileyFileLexer.Token.Kind.Plus;
+import static wyc.io.WhileyFileLexer.Token.Kind.Private;
+import static wyc.io.WhileyFileLexer.Token.Kind.Property;
+import static wyc.io.WhileyFileLexer.Token.Kind.Public;
+import static wyc.io.WhileyFileLexer.Token.Kind.Requires;
+import static wyc.io.WhileyFileLexer.Token.Kind.Return;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightAngle;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightAngleRightAngle;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightBrace;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightCurly;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightSlash;
+import static wyc.io.WhileyFileLexer.Token.Kind.RightSquare;
+import static wyc.io.WhileyFileLexer.Token.Kind.SemiColon;
+import static wyc.io.WhileyFileLexer.Token.Kind.Shreak;
+import static wyc.io.WhileyFileLexer.Token.Kind.Skip;
+import static wyc.io.WhileyFileLexer.Token.Kind.Some;
+import static wyc.io.WhileyFileLexer.Token.Kind.Star;
+import static wyc.io.WhileyFileLexer.Token.Kind.Subset;
+import static wyc.io.WhileyFileLexer.Token.Kind.SubsetEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Superset;
+import static wyc.io.WhileyFileLexer.Token.Kind.SupersetEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Switch;
+import static wyc.io.WhileyFileLexer.Token.Kind.This;
+import static wyc.io.WhileyFileLexer.Token.Kind.Tilde;
+import static wyc.io.WhileyFileLexer.Token.Kind.VerticalBar;
+import static wyc.io.WhileyFileLexer.Token.Kind.Where;
+import static wyc.io.WhileyFileLexer.Token.Kind.While;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -23,18 +102,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Pair;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.AbstractCompilationUnit.Value;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
-
-import static wybs.lang.SyntacticException.*;
-import static wyc.io.WhileyFileLexer.Token.Kind.*;
-import static wyil.lang.WyilFile.*;
-
+import wyc.util.ErrorMessages;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.LVal;
+import wyil.lang.WyilFile.Modifier;
+import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -70,24 +156,40 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public Decl.Unit read() {
+	public boolean read() {
+		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = parseModuleName(source.getEntry());
-
 		skipWhiteSpace();
-		while (index < tokens.size()) {
-			Decl declaration;
+		try {
+			while (index < tokens.size()) {
+				// Parse next logical declaration
+				declarations.add(parseDeclaration());
+				skipWhiteSpace();
+			}
 
-			declaration = parseDeclaration();
-
-			declarations.add(declaration);
-			skipWhiteSpace();
+		} catch (ParseError e) {
+			// Allocate an unknown declaration to represent this parse error.
+			Decl d = parent.allocate(new Decl.Unknown());
+			// Add to declarations for enclosing unit
+			declarations.add(d);
+			// Give the unknown declaration a span corresponding to exact point of error.
+			parent.allocate(new Attribute.Span(d,e.getStart(),e.getEnd()));
+			// Generate a syntax error which identifies the parse error
+			ErrorMessages.syntaxError(d, e.getErrorCode(),e.context);
+			// Signal that we have failed
+			status = false;
 		}
 		// Finally, construct the new file.
 		Tuple<Decl> decls = new Tuple<>(declarations);
 		Decl.Unit module = new Decl.Unit(name,decls);
-		// FIXME: update module list?
-		return parent.allocate(module);
+		//
+		Decl.Unit nunit = parent.allocate(module);
+		Decl.Unit ounit = parent.getModule().putUnit(nunit);
+		if(ounit != null) {
+			parent.replace(ounit, nunit);
+		}
+		return status;
 	}
 
 	private Name parseModuleName(Path.Entry<WhileyFile> entry) {
@@ -170,7 +272,7 @@ public class WhileyFileParser {
 		if (lookahead != null) {
 			// Optional from identifier was given
 			if (!lookahead.text.equals("from")) {
-				syntaxError("expected \"from\" here", lookahead);
+				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("from"));
 			}
 			return from;
 		} else {
@@ -210,7 +312,7 @@ public class WhileyFileParser {
 			case Public:
 			case Private:
 				if (visible) {
-					syntaxError("visibility modifier already given", lookahead);
+					syntaxError(WyilFile.DUPLICATE_VISIBILITY_MODIFIER, lookahead);
 				}
 			}
 			switch (lookahead.kind) {
@@ -577,14 +679,14 @@ public class WhileyFileParser {
 			}
 			Template.Variable var = parseTemplateVariable();
 			if(vars.contains(var.getName())) {
-				syntaxError("duplicate template variable", var);
+				syntaxError(WyilFile.DUPLICATE_TEMPLATE_VARIABLE, var);
 			} else {
 				vars.add(var);
 				scope.declareTemplateVariable(var);
 			}
 		}
 		if (vars.size() == 0) {
-			syntaxError("missing type variable(s)", left, right);
+			syntaxError(WyilFile.MISSING_TYPE_VARIABLE, left, right);
 		}
 		return new Tuple<>(vars);
 	}
@@ -652,7 +754,7 @@ public class WhileyFileParser {
 				// First, check the indentation matches that for this block.
 				if (!indent.equivalent(nextIndent)) {
 					// No, it's not equivalent so signal an error.
-					syntaxError("unexpected end-of-block", nextIndent);
+					syntaxError(WyilFile.UNEXPECTED_BLOCK_END, nextIndent);
 				}
 				// Second, parse the actual statement at this point!
 				stmts.add(parseStatement(blockScope));
@@ -980,7 +1082,7 @@ public class WhileyFileParser {
 		matchEndLine();
 		// Check that break statement makes sense at this point.
 		if (!scope.isInLoop()) {
-			syntaxError("break outside switch or loop", t);
+			syntaxError(WyilFile.BREAK_OUTSIDE_SWITCH_OR_LOOP, t);
 		}
 		// Done.
 		return annotateSourceLocation(new Stmt.Break(),start,end-1);
@@ -1009,7 +1111,7 @@ public class WhileyFileParser {
 		matchEndLine();
 		// Check that continue statement makes sense at this point.
 		if (!scope.isInLoop()) {
-			syntaxError("continue outside loop", t);
+			syntaxError(WyilFile.CONTINUE_OUTSIDE_LOOP, t);
 		}
 		// Done.
 		return annotateSourceLocation(new Stmt.Continue(),start,end-1);
@@ -1297,7 +1399,7 @@ public class WhileyFileParser {
 				// First, check the indentation matches that for this block.
 				if (!indent.equivalent(nextIndent)) {
 					// No, it's not equivalent so signal an error.
-					syntaxError("unexpected end-of-block", indent);
+					syntaxError(WyilFile.UNEXPECTED_BLOCK_END, indent);
 				}
 
 				// Second, parse the actual case statement at this point!
@@ -1320,9 +1422,9 @@ public class WhileyFileParser {
 		for(int i=0;i!=cases.size();++i) {
 			Stmt.Case c = cases.get(i);
 			if (c.getConditions().size() > 0 && hasDefault) {
-				syntaxError("unreachable code", c);
+				syntaxError(WyilFile.UNREACHABLE_CODE, c);
 			} else if (c.getConditions().size() == 0 && hasDefault) {
-				syntaxError("duplicate default label", c);
+				syntaxError(WyilFile.DUPLICATE_DEFAULT_LABEL, c);
 			} else {
 				hasDefault = c.getConditions().size() == 0;
 			}
@@ -1345,7 +1447,7 @@ public class WhileyFileParser {
 			for(int j=0;j!=conditions.size();++j) {
 				Expr condition = conditions.get(j);
 				if(seen.contains(condition)) {
-					syntaxError("duplicate case label", condition);
+					syntaxError(WyilFile.DUPLICATE_CASE_LABEL, condition);
 				} else {
 					seen.add(condition);
 				}
@@ -1550,7 +1652,7 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.Dereference(Type.Void, lval), start);
 		}
 		default:
-			syntaxError("unrecognised lval", lookahead);
+			syntaxError(WyilFile.UNKNOWN_LVAL, lookahead);
 			return null; // dead-code
 		}
 	}
@@ -2428,7 +2530,7 @@ public class WhileyFileParser {
 			return parseLambdaExpression(scope, terminated);
 		}
 
-		syntaxError("unrecognised term", token);
+		syntaxError(WyilFile.UNKNOWN_TERM, token);
 		return null;
 	}
 
@@ -2789,7 +2891,7 @@ public class WhileyFileParser {
 			Identifier field = parseIdentifier();
 			// Check field name is unique
 			if (keys.contains(field.get())) {
-				syntaxError("duplicate record key", field);
+				syntaxError(WyilFile.DUPLICATE_FIELD, field);
 			}
 			match(Colon);
 			// Parse expression being assigned to field
@@ -2972,7 +3074,7 @@ public class WhileyFileParser {
 				SyntacticItem targ = templateArguments.get(i);
 				if (!(targ instanceof Identifier)) {
 					// anything other that lifetime not OK.
-					syntaxError("expected lifetime identifier", targ);
+					syntaxError(WyilFile.EXPECTED_LIFETIME, targ);
 				}
 			}
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
@@ -3672,7 +3774,7 @@ public class WhileyFileParser {
 		case Method:
 			return parseFunctionOrMethodType(false, scope);
 		default:
-			syntaxError("unknown type encountered", token);
+			syntaxError(WyilFile.UNKNOWN_TYPE, token);
 			return null;
 		}
 		match(token.kind);
@@ -3772,7 +3874,7 @@ public class WhileyFileParser {
 				p = parseMixedType(scope);
 				Identifier id = p.getSecond();
 				if (names.contains(id)) {
-					syntaxError("duplicate record key", id);
+					syntaxError(WyilFile.DUPLICATE_FIELD, id);
 				}
 				names.add(id);
 				types.add(new Type.Field(id, p.getFirst()));
@@ -4109,7 +4211,7 @@ public class WhileyFileParser {
 		if (id != null) {
 			return id;
 		} else {
-			syntaxError("expecting lifetime identifier", tokens.get(index));
+			syntaxError(WyilFile.EXPECTED_LIFETIME, tokens.get(index));
 		}
 		throw new RuntimeException("deadcode"); // dead-code
 	}
@@ -4157,7 +4259,7 @@ public class WhileyFileParser {
 		checkNotEof();
 		Token token = tokens.get(index++);
 		if (token.kind != kind) {
-			syntaxError("expecting \"" + kind + "\" here", token);
+			syntaxError(WyilFile.EXPECTING_TOKEN, token, new Value.UTF8(kind.toString()));
 		}
 		return token;
 	}
@@ -4179,7 +4281,7 @@ public class WhileyFileParser {
 			if (token.kind == kinds[i]) {
 				result[i] = token;
 			} else {
-				syntaxError("Expected \"" + kinds[i] + "\" here", token);
+				syntaxError(WyilFile.EXPECTING_TOKEN, token, new Value.UTF8(kinds[i].toString()));
 			}
 		}
 		return result;
@@ -4349,7 +4451,7 @@ public class WhileyFileParser {
 		if (index >= tokens.size()) {
 			return; // EOF
 		} else if (tokens.get(index).kind != NewLine) {
-			syntaxError("expected end-of-line", tokens.get(index));
+			syntaxError(WyilFile.UNEXPECTED_EOF, tokens.get(index));
 		} else {
 			index = index + 1;
 		}
@@ -4362,13 +4464,7 @@ public class WhileyFileParser {
 	private void checkNotEof() {
 		skipWhiteSpace();
 		if (index >= tokens.size()) {
-			if (index > 0) {
-				syntaxError("unexpected end-of-file", tokens.get(index - 1));
-			} else {
-				// I believe this is actually dead-code, since checkNotEof()
-				// won't be called before at least one token is matched.
-				throw new SyntacticException("unexpected end-of-file", source.getEntry(), null);
-			}
+			syntaxError(WyilFile.UNEXPECTED_EOF, tokens.get(index - 1));
 		}
 	}
 
@@ -4557,7 +4653,7 @@ public class WhileyFileParser {
 			return result.toString().getBytes("UTF8");
 		} catch (UnsupportedEncodingException e) {
 			// This really should be deadcode
-			syntaxError("invalid unicode string", token);
+			syntaxError(WyilFile.INVALID_UNICODE_LITERAL, token);
 			return null; // deadcode
 		}
 	}
@@ -4585,7 +4681,7 @@ public class WhileyFileParser {
 		String text = input.text;
 		if (text.length() > 11) {
 			// FIXME: this will be deprecated!
-			syntaxError("invalid binary literal (too long)", input);
+			syntaxError(WyilFile.INVALID_BINARY_LITERAL, input);
 		}
 		int val = 0;
 		// Start past 0b
@@ -4599,7 +4695,7 @@ public class WhileyFileParser {
 			} else if (c == '0') {
 
 			} else {
-				syntaxError("invalid binary literal (invalid characters)", input);
+				syntaxError(WyilFile.INVALID_BINARY_LITERAL, input);
 			}
 		}
 		return (byte) val;
@@ -4618,7 +4714,7 @@ public class WhileyFileParser {
 		for (int i = 2; i != text.length(); ++i) {
 			char c = text.charAt(i);
 			if(c != '_' && !isHexDigit(c)) {
-				syntaxError("invalid hex literal (invalid characters)", input);
+				syntaxError(WyilFile.INVALID_HEX_LITERAL, input);
 			}
 		}
 		// Remove "0x" and "_"
@@ -4638,18 +4734,20 @@ public class WhileyFileParser {
 		return strings;
 	}
 
-	private void syntaxError(String msg, SyntacticItem e) {
-		throw new SyntacticException(msg, source.getEntry(), e);
+	private void syntaxError(int errcode, SyntacticItem e) {
+		// FIXME: personally I think this method indicates something is wrong.
+		// Specifically, we've actually parsed something but we are still not happy with
+		// it.
+		Attribute.Span span = e.getParent(Attribute.Span.class);
+		throw new ParseError(errcode, span.getStart().get().intValue(), span.getEnd().get().intValue());
 	}
 
-	private void syntaxError(String msg, Token t) {
-		throw new SyntacticException(msg, source.getEntry(), new Attribute.Span(null,t.start,t.end()));
+	private void syntaxError(int errcode, Token t, Value... context) {
+		throw new ParseError(errcode, t.start, t.end(), context);
 	}
 
-	private void syntaxError(String msg, Token... tokens) {
-		Token s = tokens[0];
-		Token e = tokens[tokens.length-1];
-		throw new SyntacticException(msg, source.getEntry(), new Attribute.Span(null,s.start,e.end()));
+	private void syntaxError(int errcode, Token left, Token right) {
+		throw new ParseError(errcode, left.start, right.end());
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
@@ -4858,7 +4956,7 @@ public class WhileyFileParser {
 		 */
 		public void mustBeLifetime(Identifier id) {
 			if (!isLifetime(id)) {
-				syntaxError("use of undeclared lifetime", id);
+				syntaxError(WyilFile.UNKNOWN_LIFETIME, id);
 			}
 		}
 
@@ -4873,7 +4971,7 @@ public class WhileyFileParser {
 		public void checkNameAvailable(Identifier id) {
 			if (!isAvailableName(id)) {
 				// name is not available!
-				syntaxError("name already declared", id);
+				syntaxError(WyilFile.DUPLICATE_DECLARATION, id);
 			}
 		}
 
@@ -4899,7 +4997,7 @@ public class WhileyFileParser {
 			Identifier id = decl.getName();
 			if (!isAvailableName(id)) {
 				// name is not available!
-				syntaxError("name already declared", id);
+				syntaxError(WyilFile.DUPLICATE_DECLARATION, id);
 			}
 			this.environment.put(id, decl);
 		}
@@ -4925,7 +5023,7 @@ public class WhileyFileParser {
 		public void declareLifetime(Identifier id) {
 			if (!isAvailableName(id)) {
 				// name is not available!
-				syntaxError("name already declared", id);
+				syntaxError(WyilFile.DUPLICATE_DECLARATION, id);
 			}
 			this.lifetimes.add(id);
 		}
@@ -4945,7 +5043,7 @@ public class WhileyFileParser {
 			Identifier name = var.getName();
 			if(!isAvailableName(name)) {
 				// name is not available!
-				syntaxError("name already declared", name);
+				syntaxError(WyilFile.DUPLICATE_DECLARATION, name);
 			} else if(var instanceof Template.Lifetime) {
 				lifetimes.add(name);
 			} else {
@@ -5020,6 +5118,33 @@ public class WhileyFileParser {
 				String str = name.toString();
 				return !str.equals("*") && !str.equals("this");
 			}
+		}
+	}
+
+	private static class ParseError extends Error {
+		private final int errcode;
+		private final int start;
+		private final int end;
+		private final SyntacticItem[] context;
+
+		public ParseError(int errcode, int start, int end, SyntacticItem... context) {
+			super("parse error");
+			this.errcode = errcode;
+			this.start = start;
+			this.end = end;
+			this.context = context;
+		}
+
+		public int getErrorCode() {
+			return errcode;
+		}
+
+		public int getStart() {
+			return start;
+		}
+
+		public int getEnd() {
+			return end;
 		}
 	}
 }
