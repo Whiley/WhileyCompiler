@@ -185,6 +185,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Template_Valid_26", "??");
 		IGNORED.put("Template_Valid_28", "??");
 		IGNORED.put("Template_Valid_29", "??");
+		IGNORED.put("Template_Valid_30", "??");
 		IGNORED.put("Template_Valid_3", "??");
 		IGNORED.put("Template_Valid_5", "??");
 	}

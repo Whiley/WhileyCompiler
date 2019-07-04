@@ -221,7 +221,7 @@ public class PreconditionGenerator {
 	}
 
 	private void checkCast(WyilFile.Expr.Cast expr, Context context) {
-		Pair<Expr,Context> p = vcg.translateExpressionWithChecks(expr, null, context);
+		Pair<Expr,Context> p = vcg.translateExpressionWithChecks(expr.getOperand(), null, context);
 		context = p.second();
 		vcg.generateTypeInvariantCheck(expr.getType(),p.first(),expr.getOperand(),context);
 	}

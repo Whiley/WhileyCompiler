@@ -5813,6 +5813,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public SyntacticItem clone(SyntacticItem[] operands) {
 			return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
 		}
+
+		@Override
+		public String toString() {
+			return getContext().getQualifiedName().toString() + getArguments();
+		}
 	}
 
 	public static class CounterExample extends AbstractSyntacticItem {
@@ -5865,27 +5870,35 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
-	// Verification Subset
-	public static final int PRECONDITION_NOT_SATISFIED = 700;
-	public static final int POSTCONDITION_NOT_SATISFIED = 701;
-	public static final int TYPEINVARIANT_NOT_SATISFIED = 702;
-	public static final int LOOPINVARIANT_NOT_ESTABLISHED = 703;
-		public static final int LOOPINVARIANT_NOT_RESTORED = 704;
-	public static final int ASSERTION_FAILED = 705;
-	public static final int ASSUMPTION_FAILED = 706;
-	public static final int INDEX_BELOW_BOUNDS = 707;
-	public static final int INDEX_ABOVE_BOUNDS = 708;
-	public static final int NEGATIVE_LENGTH = 709;
-	public static final int NEGATIVE_RANGE = 710;
-	public static final int DIVISION_BY_ZERO = 711;
+	// Runtime Failure Subset
+	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
+	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
+	public static final int RUNTIME_TYPEINVARIANT_FAILURE = 702;
+	public static final int RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE = 703;
+	public static final int RUNTIME_LOOPINVARIANT_RESTORED_FAILURE = 704;
+	public static final int RUNTIME_ASSERTION_FAILURE = 705;
+	public static final int RUNTIME_ASSUMPTION_FAILURE = 706;
+	public static final int RUNTIME_BELOWBOUNDS_INDEX_FAILURE = 707;
+	public static final int RUNTIME_ABOVEBOUNDS_INDEX_FAILURE = 708;
+	public static final int RUNTIME_NEGATIVE_LENGTH_FAILURE = 709;
+	public static final int RUNTIME_NEGATIVE_RANGE_FAILURE = 710;
+	public static final int RUNTIME_DIVIDEBYZERO_FAILURE = 711;
 	public static final int RUNTIME_FAULT = 712;
-
-	public static final int PRECONDITION_MAYBE_NOT_SATISFIED = 716;
-	public static final int POSTCONDITION_MAYBE_NOT_SATISFIED = 717;
-	public static final int TYPEINVARIANT_MAYBE_NOT_SATISFIED = 718;
-	public static final int LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = 719;
-	public static final int LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY = 720;
-	public static final int LOOPINVARIANT_MAYBE_NOT_RESTORED = 721;
+	// Verification Subset
+	public static final int STATIC_PRECONDITION_FAILURE = 716;
+	public static final int STATIC_POSTCONDITION_FAILURE = 717;
+	public static final int STATIC_TYPEINVARIANT_FAILURE = 718;
+	public static final int STATIC_ESTABLISH_LOOPINVARIANT_FAILURE = 719;
+	public static final int STATIC_ENTER_LOOPINVARIANT_FAILURE = 720;
+	public static final int STATIC_RESTORE_LOOPINVARIANT_FAILURE = 721;
+	public static final int STATIC_ASSERTION_FAILURE = 722;
+	public static final int STATIC_ASSUMPTION_FAILURE = 723;
+	public static final int STATIC_BELOWBOUNDS_INDEX_FAILURE = 724;
+	public static final int STATIC_ABOVEBOUNDS_INDEX_FAILURE = 725;
+	public static final int STATIC_NEGATIVE_LENGTH_FAILURE = 726;
+	public static final int STATIC_NEGATIVE_RANGE_FAILURE = 727;
+	public static final int STATIC_DIVIDEBYZERO_FAILURE = 728;
+	public static final int STATIC_FAULT = 729;
 
 	// ==============================================================================
 	//

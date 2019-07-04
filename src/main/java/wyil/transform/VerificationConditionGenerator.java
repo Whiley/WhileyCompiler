@@ -919,17 +919,26 @@ public class VerificationConditionGenerator {
 	 * @param context
 	 * @throws ResolveError
 	 */
-	private void generateReturnTypeInvariantCheck(WyilFile.Stmt.Return stmt, Expr[] exprs, Tuple<WyilFile.Expr> returns, Context context) {
+	private void generateReturnTypeInvariantCheck(WyilFile.Stmt.Return stmt, Expr[] exprs, Tuple<WyilFile.Expr> returns,
+			Context context) {
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
 				.getParent().enclosingDeclaration;
 		Tuple<WyilFile.Type> returnTypes = declaration.getType().getReturns();
 		//
-		for (int i = 0; i != exprs.length; ++i) {
-			WyilFile.Type returnType = returnTypes.get(i);
-			// FIXME: at this point, we want to determine whether or not the
-			// check is actually required. To do this, we need to check whether
-			// the actualType is a true subtype of the returnType.
-			generateTypeInvariantCheck(returnType, exprs[i], returns.get(i), context);
+		for (int i = 0, k = 0; i != returns.size(); ++i) {
+			WyilFile.Expr e = returns.get(i);
+			Tuple<Type> e_types = e.getTypes();
+			if (e_types == null) {
+				WyilFile.Type returnType = returnTypes.get(k);
+				generateTypeInvariantCheck(returnType, exprs[k], e, context);
+				k = k + 1;
+			} else {
+				for (int j = 0; j != e_types.size(); ++j) {
+					WyilFile.Type returnType = returnTypes.get(k);
+					generateTypeInvariantCheck(returnType, exprs[k], e, context);
+					k = k + 1;
+				}
+			}
 		}
 	}
 

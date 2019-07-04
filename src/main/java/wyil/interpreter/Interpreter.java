@@ -156,7 +156,7 @@ public class Interpreter {
 		if (lambda instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
 			// Check preconditions hold
-			checkPrecondition(WyilFile.PRECONDITION_NOT_SATISFIED, frame, fm.getRequires(), context);
+			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, fm.getRequires(), context);
 			// check function or method body exists
 			if (fm.getBody().size() == 0) {
 				// FIXME: Add support for native functions or methods. That is,
@@ -390,7 +390,7 @@ public class Interpreter {
 	 */
 	private Status executeAssert(Stmt.Assert stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.ASSERTION_FAILED, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSERTION_FAILURE, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -404,7 +404,7 @@ public class Interpreter {
 	 */
 	private Status executeAssume(Stmt.Assume stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.ASSUMPTION_FAILED, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSUMPTION_FAILURE, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -464,7 +464,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, EnclosingScope scope) {
-		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
+		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r = Status.NEXT;
 		while (r == Status.NEXT || r == Status.CONTINUE) {
 			r = executeBlock(stmt.getBody(), frame, scope);
@@ -472,7 +472,7 @@ public class Interpreter {
 				// NOTE: only check loop invariant if normal execution, since breaks are handled
 				// differently.
 				checkInvariants(errcode, frame, stmt.getInvariant(), null);
-				errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
+				errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
 				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 				if (operand == RValue.False) {
 					return Status.NEXT;
@@ -542,7 +542,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeWhile(Stmt.While stmt, CallStack frame, EnclosingScope scope) {
-		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
+		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r;
 		int count = 0;
 		do {
@@ -554,7 +554,7 @@ public class Interpreter {
 			// Keep executing the loop body until we exit it somehow.
 			r = executeBlock(stmt.getBody(), frame, scope);
 			//
-			errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
+			errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
 		} while (r == Status.NEXT || r == Status.CONTINUE);
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
@@ -593,7 +593,7 @@ public class Interpreter {
 		// Restore original parameter values
 		extractParameters(frame, enclosingScope.getArguments(), context);
 		// Check the postcondition holds
-		checkInvariants(WyilFile.POSTCONDITION_NOT_SATISFIED, frame, context.getEnsures(), stmt);
+		checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, context.getEnsures(), stmt);
 		//
 		return Status.RETURN;
 	}
@@ -1144,7 +1144,7 @@ public class Interpreter {
 		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		int n = count.intValue();
 		if (n < 0) {
-			throw new RuntimeError(WyilFile.NEGATIVE_LENGTH, frame, expr.getSecondOperand());
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_LENGTH_FAILURE, frame, expr.getSecondOperand());
 		}
 		RValue[] values = new RValue[n];
 		for (int i = 0; i != n; ++i) {
@@ -1166,7 +1166,7 @@ public class Interpreter {
 		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
 		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
 		if (start < 0 || end < start) {
-			throw new RuntimeError(WyilFile.NEGATIVE_RANGE, frame, expr.getSecondOperand());
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr.getSecondOperand());
 		}
 		RValue[] elements = new RValue[end - start];
 		for (int i = start; i < end; ++i) {
@@ -1323,15 +1323,15 @@ public class Interpreter {
 		int len = array.length().intValue();
 		int idx = index.intValue();
 		if (idx < 0) {
-			throw new RuntimeError(WyilFile.INDEX_BELOW_BOUNDS, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_BELOWBOUNDS_INDEX_FAILURE, frame, context);
 		} else if (idx >= len) {
-			throw new RuntimeError(WyilFile.INDEX_ABOVE_BOUNDS, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_ABOVEBOUNDS_INDEX_FAILURE, frame, context);
 		}
 	}
 
 	public void checkDivisionByZero(RValue.Int value, CallStack frame, SyntacticItem context) {
 		if (value.intValue() == 0) {
-			throw new RuntimeError(WyilFile.DIVISION_BY_ZERO, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_DIVIDEBYZERO_FAILURE, frame, context);
 		}
 	}
 
@@ -1350,7 +1350,7 @@ public class Interpreter {
 
 	public void checkTypeInvariants(Type type, RValue value, CallStack frame, SyntacticItem context) {
 		if (value.is(type, frame).boolValue() == false) {
-			throw new RuntimeError(WyilFile.TYPEINVARIANT_NOT_SATISFIED, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_TYPEINVARIANT_FAILURE, frame, context);
 		}
 	}
 

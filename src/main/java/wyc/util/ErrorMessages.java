@@ -97,6 +97,31 @@ public class ErrorMessages {
 		}
 	}
 
+	/**
+	 * A multi-part message is a dynamic message which is created based upon the
+	 * context in which it exists.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static final class StackTraceMessage implements Message {
+		private final String message;
+
+		public StackTraceMessage(String message) {
+			this.message = message;
+		}
+
+		@Override
+		public String getMessage(Tuple<SyntacticItem> context) {
+			String output = message;
+			for(int i=0;i!=context.size();++i) {
+				output = output + "\n";
+				output += "--> " + context.get(i).toString();
+			}
+			return output;
+		}
+	}
+
 	// ========================================================================
 	// Name Resolution
 	// ========================================================================
@@ -160,32 +185,42 @@ public class ErrorMessages {
 	// ========================================================================
 	// Verification
 	// ========================================================================
-	public static final Message PRECONDITION_NOT_SATISFIED = new StaticMessage("precondition not satisfied");
-	public static final Message POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
-	public static final Message TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
-	public static final Message LOOPINVARIANT_NOT_ESTABLISHED = new StaticMessage("loop invariant not established");
-	public static final Message LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant not restored");
-	public static final Message PRECONDITION_MAYBE_NOT_SATISFIED = new MultiPartMessage(
-			"precondition may not be satisfied ");
-	public static final Message POSTCONDITION_MAYBE_NOT_SATISFIED = new MultiPartMessage(
-			"postcondition may not be satisfied ");
-	public static final Message TYPEINVARIANT_MAYBE_NOT_SATISFIED = new MultiPartMessage(
-			"type invariant may not be satisfied ");
-	public static final Message LOOPINVARIANT_MAYBE_NOT_ESTABLISHED = new MultiPartMessage(
-			"loop invariant may not be established by first iteration ");
-	public static final Message LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY = new MultiPartMessage(
-			"loop invariant may not hold on entry ");
-	public static final Message LOOPINVARIANT_MAYBE_NOT_RESTORED = new MultiPartMessage(
-			"loop invariant may not be restored ");
-	public static final Message ASSERTION_FAILED = new MultiPartMessage("assertion failed ");
-	public static final Message ASSUMPTION_FAILED = new MultiPartMessage("assumption failed ");
-	public static final Message INDEX_BELOW_BOUNDS = new MultiPartMessage("index out of bounds (negative) ");
-	public static final Message INDEX_ABOVE_BOUNDS = new MultiPartMessage("index out of bounds (not less than length) ");
-	public static final Message NEGATIVE_LENGTH = new MultiPartMessage("negative length possible ");
-	public static final Message NEGATIVE_RANGE = new MultiPartMessage("negative array range ");
-	public static final Message DIVISION_BY_ZERO = new MultiPartMessage("division by zero ");
-	public static final Message RUNTIME_FAULT = new MultiPartMessage("possible panic ");
+	public static final Message RUNTIME_PRECONDITION_FAILURE = new StackTraceMessage("precondition not satisfied");
+	public static final Message RUNTIME_POSTCONDITION_FAILURE = new StackTraceMessage("postcondition not satisfied");
+	public static final Message RUNTIME_TYPEINVARIANT_FAILURE = new StackTraceMessage("type invariant not satisfied");
+	public static final Message RUNTIME_ESTABLISH_LOOPINVARIANT_FAILURE = new StackTraceMessage("loop invariant not established");
+	public static final Message RUNTIME_RESTORE_LOOPINVARIANT_FAILURE = new StackTraceMessage("loop invariant not restored");
+	public static final Message RUNTIME_ASSERTION_FAILURE = new StackTraceMessage("assertion failed");
+	public static final Message RUNTIME_ASSUMPTION_FAILURE = new StackTraceMessage("assumption failed");
+	public static final Message RUNTIME_BELOWBOUNDS_INDEX_FAILURE = new StackTraceMessage("index out of bounds (negative)");
+	public static final Message RUNTIME_ABOVEBOUNDS_INDEX_ABOVE_FAILURE = new StackTraceMessage("index out of bounds (not less than length)");
+	public static final Message RUNTIME_NEGATIVE_LENGTH_FAILURE = new StackTraceMessage("negative length");
+	public static final Message RUNTIME_NEGATIVE_RANGE_FAILURE = new StackTraceMessage("negative array range");
+	public static final Message RUNTIME_DIVIDEBYZERO_FAILURE = new StackTraceMessage("division by zero");
+	public static final Message RUNTIME_FAULT = new StackTraceMessage("runtime fault");
 
+	public static final Message STATIC_PRECONDITION_FAILURE = new MultiPartMessage(
+			"precondition may not be satisfied ");
+	public static final Message STATIC_POSTCONDITION_FAILURE = new MultiPartMessage(
+			"postcondition may not be satisfied ");
+	public static final Message STATIC_TYPEINVARIANT_FAILURE = new MultiPartMessage(
+			"type invariant may not be satisfied ");
+	public static final Message STATIC_ESTABLISH_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not be established by first iteration ");
+	public static final Message STATIC_ENTER_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not hold on entry ");
+	public static final Message STATIC_RESTORE_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not be restored ");
+	public static final Message STATIC_ASSERTION_FAILURE = new MultiPartMessage("assertion may not hold ");
+	public static final Message STATIC_ASSUMPTION_FAILURE = new MultiPartMessage("assumption may not hold ");
+	public static final Message STATIC_BELOWBOUNDS_INDEX_FAILURE = new MultiPartMessage(
+			"possible index out of bounds (negative) ");
+	public static final Message STATIC_ABOVEBOUNDS_INDEX_ABOVE_FAILURE = new MultiPartMessage(
+			"possible index out of bounds (not less than length) ");
+	public static final Message STATIC_NEGATIVE_LENGTH_FAILURE = new MultiPartMessage("negative length possible ");
+	public static final Message STATIC_NEGATIVE_RANGE_FAILURE = new MultiPartMessage("possible negative array range ");
+	public static final Message STATIC_DIVIDEBYZERO_FAILURE = new MultiPartMessage("possible division by zero ");
+	public static final Message STATIC_FAULT = new MultiPartMessage("possible panic ");
 	// ========================================================================
 	// Misc
 	// ========================================================================
@@ -263,28 +298,36 @@ public class ErrorMessages {
 		},
 		{
 			// Verification
-			PRECONDITION_NOT_SATISFIED, // 700
-			POSTCONDITION_NOT_SATISFIED, // 701
-			TYPEINVARIANT_NOT_SATISFIED, // 702;
-			LOOPINVARIANT_NOT_ESTABLISHED, // 703;
-			LOOPINVARIANT_NOT_RESTORED, // 704;
-			ASSERTION_FAILED, // 705
-			ASSUMPTION_FAILED, // 706
-			INDEX_BELOW_BOUNDS, // 707;
-			INDEX_ABOVE_BOUNDS, // 708;
-			NEGATIVE_LENGTH, // 709;
-			NEGATIVE_RANGE, // 710;
-			DIVISION_BY_ZERO, // 711;
+			RUNTIME_PRECONDITION_FAILURE, // 700
+			RUNTIME_POSTCONDITION_FAILURE, // 701
+			RUNTIME_TYPEINVARIANT_FAILURE, // 702;
+			RUNTIME_ESTABLISH_LOOPINVARIANT_FAILURE, // 703;
+			RUNTIME_RESTORE_LOOPINVARIANT_FAILURE, // 704;
+			RUNTIME_ASSERTION_FAILURE, // 705
+			RUNTIME_ASSUMPTION_FAILURE, // 706
+			RUNTIME_BELOWBOUNDS_INDEX_FAILURE, // 707;
+			RUNTIME_ABOVEBOUNDS_INDEX_ABOVE_FAILURE, // 708;
+			RUNTIME_NEGATIVE_LENGTH_FAILURE, // 709;
+			RUNTIME_NEGATIVE_RANGE_FAILURE, // 710;
+			RUNTIME_DIVIDEBYZERO_FAILURE, // 711;
 			RUNTIME_FAULT, // 712
 			null, // 713
 			null, // 714
 			null, // 715
-			PRECONDITION_MAYBE_NOT_SATISFIED, // 716
-			POSTCONDITION_MAYBE_NOT_SATISFIED, // 717
-			TYPEINVARIANT_MAYBE_NOT_SATISFIED, // 718;
-			LOOPINVARIANT_MAYBE_NOT_ESTABLISHED, // 719;
-			LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY, // 720;
-			LOOPINVARIANT_MAYBE_NOT_RESTORED, // 721;
+			STATIC_PRECONDITION_FAILURE, // 716
+			STATIC_POSTCONDITION_FAILURE, // 717
+			STATIC_TYPEINVARIANT_FAILURE, // 718;
+			STATIC_ESTABLISH_LOOPINVARIANT_FAILURE, // 719;
+			STATIC_ENTER_LOOPINVARIANT_FAILURE, // 720;
+			STATIC_RESTORE_LOOPINVARIANT_FAILURE, // 721;
+			STATIC_ASSERTION_FAILURE, // 722
+			STATIC_ASSUMPTION_FAILURE, // 723
+			STATIC_BELOWBOUNDS_INDEX_FAILURE, // 724
+			STATIC_ABOVEBOUNDS_INDEX_ABOVE_FAILURE, // 725
+			STATIC_NEGATIVE_LENGTH_FAILURE, // 726
+			STATIC_NEGATIVE_RANGE_FAILURE, // 727
+			STATIC_DIVIDEBYZERO_FAILURE, // 728
+			STATIC_FAULT, // 729
 		}
 	};
 

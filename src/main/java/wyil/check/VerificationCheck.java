@@ -92,6 +92,8 @@ public class VerificationCheck {
 				ErrorMessages.syntaxError(assertion.getContext(), code, cegs);
 				return false;
 			} else {
+				e.printStackTrace();
+				System.out.println("GOT HERE: " + item.getClass().getName());
 				// FIXME: enjoy debugging this when the time comes :)
 				throw new SyntacticException(message,null,item,e.getCause());
 			}
@@ -123,29 +125,29 @@ public class VerificationCheck {
 	private static int codeFromMessage(String message) {
 		switch(message) {
 		case "assertion failed":
-			return WyilFile.ASSERTION_FAILED;
+			return WyilFile.STATIC_ASSERTION_FAILURE;
 		case "possible panic":
-			return WyilFile.RUNTIME_FAULT;
+			return WyilFile.STATIC_FAULT;
 		case "type invariant may not be satisfied":
-			return WyilFile.TYPEINVARIANT_MAYBE_NOT_SATISFIED;
+			return WyilFile.STATIC_TYPEINVARIANT_FAILURE;
 		case "precondition may not be satisfied":
-			return WyilFile.PRECONDITION_MAYBE_NOT_SATISFIED;
+			return WyilFile.STATIC_PRECONDITION_FAILURE;
 		case "postcondition may not be satisfied":
-			return WyilFile.POSTCONDITION_MAYBE_NOT_SATISFIED;
+			return WyilFile.STATIC_POSTCONDITION_FAILURE;
 		case "loop invariant may not be established by first iteration":
-			return WyilFile.LOOPINVARIANT_MAYBE_NOT_ESTABLISHED;
+			return WyilFile.STATIC_ESTABLISH_LOOPINVARIANT_FAILURE;
 		case "loop invariant may not hold on entry":
-			return WyilFile.LOOPINVARIANT_MAYBE_NOT_HOLD_ENTRY;
+			return WyilFile.STATIC_ENTER_LOOPINVARIANT_FAILURE;
 		case "loop invariant may not be restored":
-			return WyilFile.LOOPINVARIANT_MAYBE_NOT_RESTORED;
+			return WyilFile.STATIC_RESTORE_LOOPINVARIANT_FAILURE;
 		case "division by zero":
-			return WyilFile.DIVISION_BY_ZERO;
+			return WyilFile.STATIC_DIVIDEBYZERO_FAILURE;
 		case "index out of bounds (negative)":
-			return WyilFile.INDEX_BELOW_BOUNDS;
+			return WyilFile.STATIC_BELOWBOUNDS_INDEX_FAILURE;
 		case "index out of bounds (not less than length)":
-			return WyilFile.INDEX_ABOVE_BOUNDS;
+			return WyilFile.STATIC_ABOVEBOUNDS_INDEX_FAILURE;
 		case "negative length possible":
-			return WyilFile.NEGATIVE_LENGTH;
+			return WyilFile.STATIC_NEGATIVE_LENGTH_FAILURE;
 		default:
 			throw new RuntimeException("unknown verification message encountered");
 		}
