@@ -92,8 +92,6 @@ public class VerificationCheck {
 				ErrorMessages.syntaxError(assertion.getContext(), code, cegs);
 				return false;
 			} else {
-				e.printStackTrace();
-				System.out.println("GOT HERE: " + item.getClass().getName());
 				// FIXME: enjoy debugging this when the time comes :)
 				throw new SyntacticException(message,null,item,e.getCause());
 			}
