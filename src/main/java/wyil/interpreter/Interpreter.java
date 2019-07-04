@@ -21,7 +21,9 @@ import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.DECL_function;
 import static wyil.lang.WyilFile.DECL_method;
 import static wyil.lang.WyilFile.DECL_property;
+import static wyil.lang.WyilFile.DECL_rectype;
 import static wyil.lang.WyilFile.DECL_staticvar;
+import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.EXPR_arrayaccess;
 import static wyil.lang.WyilFile.EXPR_arrayborrow;
 import static wyil.lang.WyilFile.EXPR_dereference;
@@ -44,6 +46,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
+import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
@@ -51,6 +54,7 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.StackFrame;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 
@@ -152,7 +156,7 @@ public class Interpreter {
 		if (lambda instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
 			// Check preconditions hold
-			checkPrecondition(WyilFile.PRECONDITION_NOT_SATISFIED, frame, fm.getRequires(), context);
+			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, fm.getRequires(), context);
 			// check function or method body exists
 			if (fm.getBody().size() == 0) {
 				// FIXME: Add support for native functions or methods. That is,
@@ -162,13 +166,9 @@ public class Interpreter {
 						"no function or method body found: " + lambda.getQualifiedName() + " : " + lambda.getType());
 			}
 			// Execute the method or function body
-			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
+			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm, args));
 			// Extra the return values
 			RValue[] returns = packReturns(frame, lambda);
-			// Restore original parameter values
-			extractParameters(frame, args, lambda);
-			// Check the postcondition holds
-			checkInvariants(WyilFile.POSTCONDITION_NOT_SATISFIED, frame, fm.getEnsures());
 			//
 			return returns;
 		} else if (lambda instanceof Decl.Lambda) {
@@ -252,6 +252,8 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
+		checkForTimeout(frame);
+		//
 		switch (stmt.getOpcode()) {
 		case WyilFile.STMT_assert:
 			return executeAssert((Stmt.Assert) stmt, frame, scope);
@@ -388,7 +390,7 @@ public class Interpreter {
 	 */
 	private Status executeAssert(Stmt.Assert stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.ASSERTION_FAILED, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSERTION_FAILURE, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -402,7 +404,7 @@ public class Interpreter {
 	 */
 	private Status executeAssume(Stmt.Assume stmt, CallStack frame, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.ASSUMPTION_FAILED, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSUMPTION_FAILURE, frame, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -462,15 +464,15 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, EnclosingScope scope) {
-		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
+		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r = Status.NEXT;
 		while (r == Status.NEXT || r == Status.CONTINUE) {
 			r = executeBlock(stmt.getBody(), frame, scope);
 			if (r == Status.NEXT) {
 				// NOTE: only check loop invariant if normal execution, since breaks are handled
 				// differently.
-				checkInvariants(errcode, frame, stmt.getInvariant());
-				errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
+				checkInvariants(errcode, frame, stmt.getInvariant(), null);
+				errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
 				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 				if (operand == RValue.False) {
 					return Status.NEXT;
@@ -540,11 +542,11 @@ public class Interpreter {
 	 * @return
 	 */
 	private Status executeWhile(Stmt.While stmt, CallStack frame, EnclosingScope scope) {
-		int errcode = WyilFile.LOOPINVARIANT_NOT_ESTABLISHED;
+		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r;
 		int count = 0;
 		do {
-			checkInvariants(errcode, frame, stmt.getInvariant());
+			checkInvariants(errcode, frame, stmt.getInvariant(), null);
 			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 			if (operand == RValue.False) {
 				return Status.NEXT;
@@ -552,7 +554,7 @@ public class Interpreter {
 			// Keep executing the loop body until we exit it somehow.
 			r = executeBlock(stmt.getBody(), frame, scope);
 			//
-			errcode = WyilFile.LOOPINVARIANT_NOT_RESTORED;
+			errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
 		} while (r == Status.NEXT || r == Status.CONTINUE);
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
@@ -575,7 +577,9 @@ public class Interpreter {
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		Decl.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
+		FunctionOrMethodScope enclosingScope = scope.getEnclosingScope(FunctionOrMethodScope.class);
+		// Extract relevant information
+		Decl.FunctionOrMethod context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
 		// Execute return expressions
@@ -586,6 +590,11 @@ public class Interpreter {
 		for (int i = 0; i != returns.size(); ++i) {
 			frame.putLocal(returns.get(i).getName(), values[i]);
 		}
+		// Restore original parameter values
+		extractParameters(frame, enclosingScope.getArguments(), context);
+		// Check the postcondition holds
+		checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, context.getEnsures(), stmt);
+		//
 		return Status.RETURN;
 	}
 
@@ -643,6 +652,9 @@ public class Interpreter {
 		// We only need to do something if this has an initialiser
 		if (stmt.hasInitialiser()) {
 			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+			//
 			frame.putLocal(stmt.getName(), value);
 		}
 		return Status.NEXT;
@@ -663,6 +675,8 @@ public class Interpreter {
 	 * @return
 	 */
 	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
+		checkForTimeout(frame);
+		//
 		RValue val;
 		switch (expr.getOpcode()) {
 		case WyilFile.EXPR_constant:
@@ -1130,7 +1144,7 @@ public class Interpreter {
 		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
 		int n = count.intValue();
 		if (n < 0) {
-			throw new RuntimeError(WyilFile.NEGATIVE_LENGTH, frame, expr.getSecondOperand());
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_LENGTH_FAILURE, frame, expr.getSecondOperand());
 		}
 		RValue[] values = new RValue[n];
 		for (int i = 0; i != n; ++i) {
@@ -1152,7 +1166,7 @@ public class Interpreter {
 		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
 		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
 		if (start < 0 || end < start) {
-			throw new RuntimeError(WyilFile.NEGATIVE_RANGE, frame, expr.getSecondOperand());
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr.getSecondOperand());
 		}
 		RValue[] elements = new RValue[end - start];
 		for (int i = start; i < end; ++i) {
@@ -1294,8 +1308,6 @@ public class Interpreter {
 		Type.Callable type = expr.getBinding().getConcreteType();
 		// Check type invariants
 		checkTypeInvariants(type.getParameters(), arguments, expr.getOperands(), frame);
-		// Enter a new frame for executing this declaration
-		frame = frame.enter(decl);
 		// Invoke the function or method in question
 		// FIXME: could potentially optimise this by calling execute with decl directly.
 		// This currently fails for external symbols which are represented as
@@ -1311,15 +1323,15 @@ public class Interpreter {
 		int len = array.length().intValue();
 		int idx = index.intValue();
 		if (idx < 0) {
-			throw new RuntimeError(WyilFile.INDEX_BELOW_BOUNDS, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_BELOWBOUNDS_INDEX_FAILURE, frame, context);
 		} else if (idx >= len) {
-			throw new RuntimeError(WyilFile.INDEX_ABOVE_BOUNDS, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_ABOVEBOUNDS_INDEX_FAILURE, frame, context);
 		}
 	}
 
 	public void checkDivisionByZero(RValue.Int value, CallStack frame, SyntacticItem context) {
 		if (value.intValue() == 0) {
-			throw new RuntimeError(WyilFile.DIVISION_BY_ZERO, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_DIVIDEBYZERO_FAILURE, frame, context);
 		}
 	}
 
@@ -1338,7 +1350,7 @@ public class Interpreter {
 
 	public void checkTypeInvariants(Type type, RValue value, CallStack frame, SyntacticItem context) {
 		if (value.is(type, frame).boolValue() == false) {
-			throw new RuntimeError(WyilFile.TYPEINVARAINT_NOT_SATISFIED, frame, context);
+			throw new RuntimeError(WyilFile.RUNTIME_TYPEINVARIANT_FAILURE, frame, context);
 		}
 	}
 
@@ -1350,14 +1362,18 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants) {
+	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants, SyntacticItem context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
 			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
 			// Check whether it holds or not
 			if (b == RValue.False) {
-				throw new RuntimeError(code, frame, invariant);
+				if(context == null) {
+					throw new RuntimeError(code, frame, invariant);
+				} else {
+					throw new RuntimeError(code, frame, context, invariant);
+				}
 			}
 		}
 	}
@@ -1432,6 +1448,13 @@ public class Interpreter {
 		}
 	}
 
+	private void checkForTimeout(CallStack frame) {
+		long time = System.currentTimeMillis();
+		if(time > frame.getTimeout()) {
+			throw new TimeoutException("timeout!");
+		}
+	}
+
 	/**
 	 * This method is provided to properly handled positions which should be dead
 	 * code.
@@ -1492,13 +1515,28 @@ public class Interpreter {
 		}
 	}
 
+	public final static class TimeoutException extends RuntimeException {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public TimeoutException(String msg) {
+			super(msg);
+		}
+	}
+
 	public final class CallStack {
+		private CallStack parent;
+		private long timeout;
 		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
 		private final HashMap<QualifiedName, RValue> statics;
 		private final HashMap<Identifier, RValue> locals;
 		private final Decl.Named context;
 
 		public CallStack() {
+			this.parent = null;
+			this.timeout = Long.MAX_VALUE;
 			this.callables = new HashMap<>();
 			this.statics = new HashMap<>();
 			this.locals = new HashMap<>();
@@ -1506,10 +1544,16 @@ public class Interpreter {
 		}
 
 		private CallStack(CallStack parent, Decl.Named context) {
+			this.parent = parent;
+			this.timeout = parent.timeout;
 			this.context = context;
 			this.locals = new HashMap<>();
 			this.statics = parent.statics;
 			this.callables = parent.callables;
+		}
+
+		public long getTimeout() {
+			return timeout;
 		}
 
 		public RValue getLocal(Identifier name) {
@@ -1550,9 +1594,19 @@ public class Interpreter {
 			return Interpreter.this.executeExpression(expected, expr, frame);
 		}
 
+		public CallStack setTimeout(long timeout) {
+			if(timeout != Long.MAX_VALUE) {
+				long start = System.currentTimeMillis();
+				this.timeout = start + timeout;
+			}
+			return this;
+		}
+
 		@Override
 		public CallStack clone() {
 			CallStack frame = new CallStack(this, this.context);
+			// Reset parent
+			frame.parent = this.parent;
 			frame.locals.putAll(locals);
 			return frame;
 		}
@@ -1570,6 +1624,52 @@ public class Interpreter {
 			return this;
 		}
 
+		public StackFrame[] toStackFrame() {
+			if(context == null) {
+				return new StackFrame[0];
+			} else {
+				Value[] arguments;
+				//
+				switch(context.getOpcode()) {
+				case DECL_function:
+				case DECL_method:
+				case DECL_property: {
+					Decl.Callable fm = (Decl.Callable) context;
+					Tuple<Decl.Variable> parameters = fm.getParameters();
+					arguments = new Value[parameters.size()];
+					for(int i=0;i!=arguments.length;++i) {
+						Decl.Variable parameter = parameters.get(i);
+						// FIXME: why is this needed?
+						if(getLocal(parameter.getName()) != null) {
+							arguments[i] = getLocal(parameter.getName()).toValue();
+						} else {
+							arguments[i] = new Value.Null();
+						}
+					}
+					break;
+				}
+				case DECL_rectype:
+				case DECL_type: {
+					Decl.Type t = (Decl.Type) context;
+					Decl.Variable parameter = t.getVariableDeclaration();
+					arguments = new Value[1];
+					arguments[0] = getLocal(parameter.getName()).toValue();
+					break;
+				}
+				case DECL_staticvar: {
+					arguments = new Value[0];
+					break;
+				}
+				default:
+					throw new IllegalArgumentException("unknown context: " + context.getQualifiedName());
+				}
+				// Extract parent stack frame (if applicable)
+				StackFrame[] sf = parent != null ? parent.toStackFrame() : new StackFrame[0];
+				// Append new item
+				return ArrayUtils.append(new StackFrame(context, new Tuple<>(arguments)),sf);
+			}
+		}
+
 		/**
 		 * Load a given module and make sure that all static variables are properly
 		 * initialised.
@@ -1578,20 +1678,10 @@ public class Interpreter {
 		 * @param frame
 		 */
 		private void load(WyilFile module) {
-			//
+			// Load all invokable items
 			for (Decl.Unit unit : module.getModule().getUnits()) {
 				for (Decl d : unit.getDeclarations()) {
 					switch (d.getOpcode()) {
-					case DECL_staticvar: {
-						Decl.StaticVariable decl = (Decl.StaticVariable) d;
-						if (!statics.containsKey(decl.getQualifiedName())) {
-							// Static variable has not been initialised yet, therefore force its
-							// initialisation.
-							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
-							statics.put(decl.getQualifiedName(), value);
-						}
-						break;
-					}
 					case DECL_function:
 					case DECL_method:
 					case DECL_property:
@@ -1604,6 +1694,26 @@ public class Interpreter {
 						// NOTE: must use canonical string here to ensure unique signature for lookup.
 						map.put(decl.getType().toCanonicalString(), decl);
 						break;
+					}
+				}
+			}
+			// Execute all static variable initialisers
+			for (Decl.Unit unit : module.getModule().getUnits()) {
+				for (Decl d : unit.getDeclarations()) {
+					switch (d.getOpcode()) {
+					case DECL_staticvar: {
+						Decl.StaticVariable decl = (Decl.StaticVariable) d;
+						if (!statics.containsKey(decl.getQualifiedName())) {
+							// Static variable has not been initialised yet, therefore force its
+							// initialisation.
+							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+							// Check type invariants.
+							checkTypeInvariants(decl.getType(), value, this, decl);
+							// Done.
+							statics.put(decl.getQualifiedName(), value);
+						}
+						break;
+					}
 					}
 				}
 			}
@@ -1653,15 +1763,28 @@ public class Interpreter {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Decl.Callable context;
+		/**
+		 * The declaration being invoked
+		 */
+		private final Decl.FunctionOrMethod context;
+		/**
+		 * Arguments provided to the invocation.  These are needed for evaluating the post-condition at the point of a return.
+		 * @param context
+		 */
+		private final RValue[] args;
 
-		public FunctionOrMethodScope(Decl.Callable context) {
+		public FunctionOrMethodScope(Decl.FunctionOrMethod context, RValue[] args) {
 			super(null);
 			this.context = context;
+			this.args = args;
 		}
 
-		public Decl.Callable getContext() {
+		public Decl.FunctionOrMethod getContext() {
 			return context;
+		}
+
+		public RValue[] getArguments() {
+			return args;
 		}
 	}
 }

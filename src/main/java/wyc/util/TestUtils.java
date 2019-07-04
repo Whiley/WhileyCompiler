@@ -28,14 +28,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -44,17 +42,16 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
+import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Type;
-import wyil.interpreter.Interpreter;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -100,7 +97,7 @@ public class TestUtils {
 	 */
 	public static Type fromString(String from) {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
-		WyilFile wf = new WyilFile(null);
+		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
 		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
@@ -216,25 +213,11 @@ public class TestUtils {
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
 			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
-		} catch(ExecutionException e) {
-			// FIXME: this is a complete kludge to handle the workaround for
-			// VerificationCheck. This currently uses the old theorem prover which forceably
-			// throws exceptions (yuk)
-			Throwable cause = e;
-			while (cause.getCause() != null) {
-				cause = cause.getCause();
-				if (cause instanceof SyntacticException) {
-					SyntacticException se = (SyntacticException) cause;
-					// Print out the syntax error
-					se.outputSourceError(psyserr, false);
-					result = false;
-				}
-			}
 		} catch (SyntacticException e) {
 			// Print out the syntax error
-			e.outputSourceError(psyserr,false);
+			//e.outputSourceError(psyserr);
 			result = false;
-		} catch (Exception e) {
+		}catch (Exception e) {
 			// Print out the syntax error
 			e.printStackTrace(psyserr);
 			result = false;
@@ -324,10 +307,11 @@ public class TestUtils {
 		Interpreter interpreter = new Interpreter(System.out);
 		// Create the initial stack
 		Interpreter.CallStack stack = interpreter.new CallStack();
-		// Load the relevant WyIL module
-		stack.load(root.get(id, WyilFile.ContentType).read());
 		//
 		try {
+			// Load the relevant WyIL module
+			stack.load(root.get(id, WyilFile.ContentType).read());
+			//
 			RValue[] returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {

@@ -13,10 +13,18 @@
 // limitations under the License.
 package wyil.lang;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.*;
-import java.util.function.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticHeap;
@@ -26,7 +34,6 @@ import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
@@ -159,6 +166,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_warning = ATTR_mask + 0;
 	public static final int ATTR_error = ATTR_mask + 1;
 	public static final int ATTR_verificationcondition = ATTR_mask + 2;
+	public static final int ATTR_stackframe = ATTR_mask + 4;
+	public static final int ATTR_counterexample = ATTR_mask + 5;
 	// TYPES:
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
@@ -274,6 +283,34 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public WyilFile(Path.Entry<WyilFile> entry) {
 		super(entry);
+	}
+
+	/**
+	 * Copy constructor which creates an identical WyilFile.
+	 *
+	 * @param wf
+	 */
+	public WyilFile(Path.Entry<WyilFile> entry, WyilFile wf) {
+		super(entry);
+		// Create initial copies
+		for (int i = 0; i != wf.size(); ++i) {
+			SyntacticItem item = wf.getSyntacticItem(i);
+			// Construct unlinked item
+			item = SCHEMA[item.getOpcode()].construct(item.getOpcode(), new SyntacticItem[item.size()], item.getData());
+			syntacticItems.add(item);
+			item.allocate(this, i);
+		}
+		// Link operands up
+		for (int i = 0; i != wf.size(); ++i) {
+			SyntacticItem item = wf.getSyntacticItem(i);
+			SyntacticItem nItem = syntacticItems.get(i);
+			for(int j=0;j!=item.size();++j) {
+				int operand = item.get(j).getIndex();
+				nItem.setOperand(j, syntacticItems.get(operand));
+			}
+		}
+		// Set the distinguished root item
+		setRootItem(getSyntacticItem(root));
 	}
 
 	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items) {
@@ -5758,6 +5795,72 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			return Trie.fromString(nameStr);
 		}
 	}
+
+	public static class StackFrame extends AbstractSyntacticItem {
+		public StackFrame(Decl.Named<?> context, Tuple<Value> arguments) {
+			super(ATTR_stackframe,context,arguments);
+		}
+
+		public Decl.Named<?> getContext() {
+			return (Decl.Named) operands[0];
+		}
+
+		public Tuple<Value> getArguments() {
+			return (Tuple<Value>) operands[1];
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
+		}
+
+		@Override
+		public String toString() {
+			return getContext().getQualifiedName().toString() + getArguments();
+		}
+	}
+
+	public static class CounterExample extends AbstractSyntacticItem {
+		public CounterExample(Value.Dictionary mapping) {
+			super(ATTR_counterexample,mapping);
+		}
+
+		public Value.Dictionary getMapping() {
+			return (Value.Dictionary) operands[0];
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new CounterExample((Value.Dictionary) operands[0]);
+		}
+
+		@Override
+		public String toString() {
+			return getMapping().toString();
+		}
+	}
+
+	// Parsing
+	public static final int EXPECTING_TOKEN = 300;	// "expecting \"" + kind + "\" here"
+	public static final int EXPECTED_LIFETIME = 301;// "expecting lifetime identifier"
+	public static final int UNEXPECTED_EOF = 302; // "unexpected end-of-file"
+	public static final int UNEXPECTED_BLOCK_END = 303; // "unexpected end-of-block"
+	public static final int UNKNOWN_LIFETIME = 304; // "use of undeclared lifetime"
+	public static final int UNKNOWN_TYPE = 305; // "unknown type encountered"
+	public static final int UNKNOWN_LVAL = 306; // "unexpected lval"
+	public static final int UNKNOWN_TERM = 307; // "unrecognised term"
+	public static final int INVALID_UNICODE_LITERAL = 308; // "invalid unicode string"
+	public static final int INVALID_BINARY_LITERAL = 309; // "invalid binary literal"
+	public static final int INVALID_HEX_LITERAL = 310; // "invalid hex literal (invalid characters)"
+	public static final int DUPLICATE_VISIBILITY_MODIFIER = 311; // "visibility modifier already given"
+	public static final int DUPLICATE_TEMPLATE_VARIABLE = 312; // "duplicate template variable"
+	public static final int DUPLICATE_CASE_LABEL = 313; // "duplicate case label"
+	public static final int DUPLICATE_DEFAULT_LABEL = 314; // "duplicate default label"
+	public static final int DUPLICATE_FIELD = 315; // "duplicate record key"
+	public static final int DUPLICATE_DECLARATION = 316; // "name already declared"
+	public static final int MISSING_TYPE_VARIABLE = 317; // "missing type variable(s)"
+	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 318; // "break outside switch or loop"
+	public static final int CONTINUE_OUTSIDE_LOOP = 319; // "continue outside loop"
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;
@@ -5788,20 +5891,35 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
-	// Verification Subset
-	public static final int PRECONDITION_NOT_SATISFIED = 700;
-	public static final int POSTCONDITION_NOT_SATISFIED = 701;
-	public static final int TYPEINVARAINT_NOT_SATISFIED = 702;
-	public static final int LOOPINVARIANT_NOT_ESTABLISHED = 703;
-	public static final int LOOPINVARIANT_NOT_RESTORED = 704;
-	public static final int ASSERTION_FAILED = 705;
-	public static final int ASSUMPTION_FAILED = 706;
-	public static final int INDEX_BELOW_BOUNDS = 707;
-	public static final int INDEX_ABOVE_BOUNDS = 708;
-	public static final int NEGATIVE_LENGTH = 709;
-	public static final int NEGATIVE_RANGE = 710;
-	public static final int DIVISION_BY_ZERO = 711;
+	// Runtime Failure Subset
+	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
+	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
+	public static final int RUNTIME_TYPEINVARIANT_FAILURE = 702;
+	public static final int RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE = 703;
+	public static final int RUNTIME_LOOPINVARIANT_RESTORED_FAILURE = 704;
+	public static final int RUNTIME_ASSERTION_FAILURE = 705;
+	public static final int RUNTIME_ASSUMPTION_FAILURE = 706;
+	public static final int RUNTIME_BELOWBOUNDS_INDEX_FAILURE = 707;
+	public static final int RUNTIME_ABOVEBOUNDS_INDEX_FAILURE = 708;
+	public static final int RUNTIME_NEGATIVE_LENGTH_FAILURE = 709;
+	public static final int RUNTIME_NEGATIVE_RANGE_FAILURE = 710;
+	public static final int RUNTIME_DIVIDEBYZERO_FAILURE = 711;
 	public static final int RUNTIME_FAULT = 712;
+	// Verification Subset
+	public static final int STATIC_PRECONDITION_FAILURE = 716;
+	public static final int STATIC_POSTCONDITION_FAILURE = 717;
+	public static final int STATIC_TYPEINVARIANT_FAILURE = 718;
+	public static final int STATIC_ESTABLISH_LOOPINVARIANT_FAILURE = 719;
+	public static final int STATIC_ENTER_LOOPINVARIANT_FAILURE = 720;
+	public static final int STATIC_RESTORE_LOOPINVARIANT_FAILURE = 721;
+	public static final int STATIC_ASSERTION_FAILURE = 722;
+	public static final int STATIC_ASSUMPTION_FAILURE = 723;
+	public static final int STATIC_BELOWBOUNDS_INDEX_FAILURE = 724;
+	public static final int STATIC_ABOVEBOUNDS_INDEX_FAILURE = 725;
+	public static final int STATIC_NEGATIVE_LENGTH_FAILURE = 726;
+	public static final int STATIC_NEGATIVE_RANGE_FAILURE = 727;
+	public static final int STATIC_DIVIDEBYZERO_FAILURE = 728;
+	public static final int STATIC_FAULT = 729;
 
 	// ==============================================================================
 	//
@@ -6035,6 +6153,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				int errcode = new BigInteger(data).intValue();
 				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+			}
+		};
+		schema[ATTR_stackframe] = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
+			}
+		};
+		schema[ATTR_counterexample] = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new CounterExample((Value.Dictionary) operands[0]);
 			}
 		};
 		// TYPES: 00100000 (32) -- 00111111 (63)

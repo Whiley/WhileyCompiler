@@ -16,20 +16,20 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.*;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.util.TestUtils;
 import wycc.util.Pair;
-import wyfs.util.Trie;
 
 /**
  * Run through all invalid test cases with verification enabled. Since every
@@ -98,6 +98,10 @@ public class AllInvalidTest {
 		IGNORED.put("Type_Invalid_5", "885");
 		IGNORED.put("Type_Invalid_7", "885");
 		IGNORED.put("Type_Invalid_8", "885");
+		IGNORED.put("Reference_Invalid_2", "unclassified");
+		IGNORED.put("Type_Invalid_14", "??");
+		IGNORED.put("Type_Invalid_15", "??");
+		IGNORED.put("While_Invalid_24", "??");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

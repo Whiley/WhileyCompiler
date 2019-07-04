@@ -19,7 +19,7 @@ ensures 0 <= r && r <= 255:
     while i <= 7
         where 0 <= i
         where 0 <= x && x < base
-        where base == bases[i]:
+        where i > 7 || base == bases[i]:
         if (b & 0b00000001) == 0b0000_0001:
             x = x + base
         // NOTE: following mask needed in leu of unsigned right shift

@@ -13,17 +13,20 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import static wyil.lang.WyilFile.*;
-
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import wybs.lang.SyntacticException;
+import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyil.interpreter.Interpreter.CallStack;
+import wybs.util.AbstractCompilationUnit.Value;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Callable;
 
 public class ConcreteSemantics implements AbstractSemantics {
 
@@ -165,9 +168,24 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 		@Override
 		public RValue convert(Type type) {
-			// At the moment, this appears to be sound because there are no actual
-			// coercion which need to take place.
-			return this;
+			if(type instanceof Type.Union) {
+				Type.Union t = (Type.Union) type;
+				for (int i=0;i!=t.size();++i) {
+					Type element = t.get(i);
+					RValue r = this.convert(element);
+					if (r != null) {
+						return r;
+					}
+				}
+				return null;
+			} else if(type instanceof Type.Nominal) {
+				Type.Nominal nom = (Type.Nominal) type;
+				Decl.Type decl = nom.getLink().getTarget();
+				Decl.Variable var = decl.getVariableDeclaration();
+				return convert(var.getType());
+			} else {
+				return null;
+			}
 		}
 
 		/**
@@ -192,6 +210,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			return this.equals(rhs) ? False : True;
 		}
 
+		/**
+		 * Convert to a value object which can be stored in a WyilFile.
+		 * @return
+		 */
+		public abstract Value toValue();
 		/**
 		 * Check whether the invariant for a given nominal type holds for this value
 		 * or not. This requires physically evaluating the invariant to see whether
@@ -252,6 +275,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return null;
 			}
+			@Override
+			public Value.Null toValue() {
+				return new Value.Null();
+			}
 		}
 
 		public final static class Bool extends RValue implements AbstractSemantics.RValue.Bool {
@@ -305,6 +332,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Boolean.toString(value);
+			}
+			@Override
+			public Value.Bool toValue() {
+				return new Value.Bool(value);
 			}
 		}
 
@@ -381,6 +412,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Integer.toBinaryString(value);
+			}
+
+			@Override
+			public Value.Byte toValue() {
+				return new Value.Byte(value);
 			}
 		}
 
@@ -473,6 +509,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return value.toString();
 			}
+
+			@Override
+			public Value.Int toValue() {
+				return new Value.Int(value);
+			}
 		}
 
 		public final static class Array extends RValue implements AbstractSemantics.RValue.Array {
@@ -547,6 +588,15 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public String toString() {
 				return Arrays.toString(elements);
+			}
+
+			@Override
+			public Value.Array toValue() {
+				Value[] es = new Value[elements.length];
+				for(int i=0;i!=es.length;++i) {
+					es[i] = elements[i].toValue();
+				}
+				return new Value.Array(es);
 			}
 		}
 
@@ -645,13 +695,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
 					Tuple<Type.Field> fields = t.getFields();
-					RValue.Record rec = this;
+					RValue.Field[] rs = new RValue.Field[fields.size()];
 					for (int i = 0; i != fields.size(); ++i) {
-						Type.Field f = fields.get(i);
-						RValue v = this.read(f.getName()).convert(f.getType());
-						rec = rec.write(f.getName(), v);
+						Type.Field ff = fields.get(i);
+						Identifier name = ff.getName();
+						rs[i] = new RValue.Field(name,read(name).convert(ff.getType()));
 					}
-					return rec;
+					return Record(rs);
 				} else {
 					return super.convert(type);
 				}
@@ -702,6 +752,16 @@ public class ConcreteSemantics implements AbstractSemantics {
 				}
 				return r + "}";
 			}
+
+			@Override
+			public Value toValue() {
+				WyilFile.Pair<Identifier,Value>[] entries = new WyilFile.Pair[fields.length];
+				for(int i=0;i!=fields.length;++i) {
+					RValue.Field field = fields[i];
+					entries[i] = new WyilFile.Pair<>(field.name,field.value.toValue());
+				}
+				return new Value.Dictionary(entries);
+			}
 		}
 
 		public abstract static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
@@ -721,6 +781,46 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @return
 			 */
 			public abstract Type.Callable getType();
+
+			@Override
+			public RValue convert(Type type) {
+				// Create a lambda for the coercion
+				if (type instanceof Type.Callable) {
+					return new RValue.Lambda() {
+
+						@Override
+						public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+							return RValue.Lambda.this.execute(interpreter, arguments, context);
+						}
+
+						@Override
+						public Callable getType() {
+							return (Type.Callable) type;
+						}
+
+						@Override
+						public Value toValue() {
+							return RValue.Lambda.this.toValue();
+						}
+
+						@Override
+						public RValue.Bool is(Type t, Interpreter.CallStack frame) {
+							if(t instanceof Type.Callable) {
+								Type.Callable tc = (Type.Callable) t;
+								if(tc.equals(type)) {
+									return True;
+								} else {
+									return False;
+								}
+							} else {
+								return super.is(t, frame);
+							}
+						}
+					};
+				} else {
+					return super.convert(type);
+				}
+			}
 		}
 
 		public final static class ConcreteLambda extends Lambda {
@@ -782,6 +882,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				}
 			}
 
+
 			@Override
 			public boolean equals(Object o) {
 				if(o instanceof RValue.ConcreteLambda) {
@@ -794,6 +895,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public int hashCode() {
 				return context.hashCode() ^ context.hashCode();
+			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
 			}
 		}
 
@@ -833,6 +940,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public String toString() {
 				return "&" + System.identityHashCode(referent);
 			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
+			}
 		}
 
 		public final static class Cell extends RValue implements AbstractSemantics.RValue.Cell {
@@ -850,6 +963,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public void write(AbstractSemantics.RValue value) {
 				this.value = (RValue) value;
+			}
+
+			@Override
+			public Value toValue() {
+				// FIXME: need to implement this
+				return new Value.Null();
 			}
 		}
 	}

@@ -1,13 +1,16 @@
 type fptr is function(int)->(int)
 
-function apply(fptr f, int x) -> (int r):
+function apply(fptr f, int x) -> (int r)
+ensures r == f(x):
     //
     return f(x)
 
-function id(int x) -> (int y):
+function id(int x) -> (int y)
+ensures x == y:
     return x
 
-function inc(int x) -> (int y):
+function inc(int x) -> (int y)
+ensures (x+1) == y:
     return x+1
 
 public export method test():

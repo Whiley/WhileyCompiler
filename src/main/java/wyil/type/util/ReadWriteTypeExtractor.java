@@ -13,22 +13,41 @@
 // limitations under the License.
 package wyil.type.util;
 
-import static wyil.lang.WyilFile.*;
+import static wyil.lang.WyilFile.SEMTYPE_array;
+import static wyil.lang.WyilFile.SEMTYPE_difference;
+import static wyil.lang.WyilFile.SEMTYPE_intersection;
+import static wyil.lang.WyilFile.SEMTYPE_record;
+import static wyil.lang.WyilFile.SEMTYPE_reference;
+import static wyil.lang.WyilFile.SEMTYPE_staticreference;
+import static wyil.lang.WyilFile.SEMTYPE_union;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_property;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
 
+import java.util.Arrays;
+
+import wyal.util.NameResolver.ResolutionError;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.lang.WyilFile.SemanticType;
-import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.SemanticType.Array;
 import wyil.lang.WyilFile.SemanticType.Atom;
 import wyil.lang.WyilFile.SemanticType.Record;
 import wyil.lang.WyilFile.SemanticType.Reference;
+import wyil.lang.WyilFile.Type;
+import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.type.subtyping.SubtypeOperator;
-
-import java.util.Arrays;
-
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
 
 /**
  * <p>
@@ -236,7 +255,9 @@ public class ReadWriteTypeExtractor {
 				T tmp = construct(conjunct, lifetimes, kind);
 				if (tmp == null) {
 					// This indicates one of the conjuncts did not generate a proper
-					// extraction. In this case, we can simply ignore it.
+					// extraction. Hence, we cannot construct a type of the appropriate kind and
+					// should abort.
+					return null;
 				} else if (result == null) {
 					result = tmp;
 				} else {

@@ -13,16 +13,41 @@
 // limitations under the License.
 package wyil.type.subtyping;
 
+import static wyil.lang.WyilFile.SEMTYPE_array;
+import static wyil.lang.WyilFile.SEMTYPE_difference;
+import static wyil.lang.WyilFile.SEMTYPE_intersection;
+import static wyil.lang.WyilFile.SEMTYPE_record;
+import static wyil.lang.WyilFile.SEMTYPE_reference;
+import static wyil.lang.WyilFile.SEMTYPE_union;
+import static wyil.lang.WyilFile.TYPE_any;
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_property;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_recursive;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_union;
+import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.TYPE_void;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.SemanticType;
+import wyil.lang.WyilFile.Type;
 import wyil.type.util.BinaryRelation;
 import wyil.type.util.HashSetBinaryRelation;
-
-import static wyil.lang.WyilFile.Name;
-import static wyil.lang.WyilFile.*;
 
 /**
  * <p>
@@ -780,20 +805,23 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			Tuple<Type> lhsReturns = lhs.type.getReturns();
 			Tuple<Type> rhsReturns = rhs.type.getReturns();
 			// FIXME: should maximise be flipped for parameters as well?
-			//
-			// Parameters are contravariant. We can think of this as turning the hierarchy
-			// upside down. Things which were large before are now small, etc. For example,
-			// fun(int)->(int) & !fun(any)->(int) is not void. This is because, under
-			// contravariance, any is *smaller* than int. However, fun(int|null)->(int) &
-			// !fun(int)->(int) is void.
-			boolean paramsContravariantVoid = isVoidParameters(lhs.negate(), lhsParameters, rhs.negate(), rhsParameters,
+			boolean equalParams = isEqualParameters(lhs, lhsParameters, rhs, rhsParameters,
 					assumptions, lifetimes);
-			// Returns are covariant, which is the usual way of thinking about things. For
-			// example, fun(int)->(int) & !fun(int)->any is void, whilst
-			// fun(int)->(int|null) & !fun(int)->(int) is not.
-			boolean returnsCovariantVoid = isVoidParameters(lhs, lhsReturns, rhs, rhsReturns, assumptions, lifetimes);
+			boolean equalReturns = isEqualParameters(lhs, lhsReturns, rhs, rhsReturns,
+					assumptions, lifetimes);
 			// If both parameters and returns are void, then the whole thing is void.
-			return paramsContravariantVoid && returnsCovariantVoid;
+			boolean elemEqual = equalParams && equalReturns;
+			//
+			if (lhs.sign && rhs.sign) {
+				// (&T1 & &T2) == 0 iff T1 != T2
+				return !elemEqual;
+			} else if (lhs.sign || rhs.sign) {
+				// (!(&T1) & &T2) == 0 iff T1 == T2 && T2 in T1
+				return elemEqual;
+			} else {
+				// (!(&T1) & !(&T2)) != 0
+				return false;
+			}
 		} else {
 			// In this case, we are intersecting two negative function types.
 			// For example, !(function(int)->(int)) and
@@ -802,8 +830,7 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 		}
 	}
 
-	protected boolean isVoidParameters(Context lhsContext, Tuple<Type> lhs, Context rhsContext, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
-		boolean sign = lhsContext.sign == rhsContext.sign;
+	protected boolean isEqualParameters(Context lhsContext, Tuple<Type> lhs, Context rhsContext, Tuple<Type> rhs, BinaryRelation<Term<?>> assumptions, LifetimeRelation lifetimes) {
 		//
 		if (lhs.size() != rhs.size()) {
 			// Different number of parameters. In either pos-pos or neg-neg
@@ -814,32 +841,20 @@ public class StrictTypeEmptinessTest implements EmptinessTest<SemanticType> {
 			for (int i = 0; i != lhs.size(); ++i) {
 				Type lhsParameter = lhs.get(i);
 				Type rhsParameter = rhs.get(i);
-				Term<?> lhsTerm = new Term<>(lhsParameter, lhsContext);
-				Term<?> rhsTerm = new Term<>(rhsParameter, rhsContext);
-				if (sign == isVoidTerm(lhsTerm, rhsTerm, assumptions, lifetimes)) {
-					// For pos-pos / neg-neg case, there is no intersection
-					// between this parameterand, hence, no intersection
-					// overall; for pos-neg case, there is some
-					// intersection between these parameters which means
-					// that some intersections exists overall. For example,
-					// consider the case (int,int|null) & !(int,int). There is
-					// no intersection for first parameter (i.e. since int &
-					// !int = void), whilst there is an intersection for second
-					// parameter (i.e. since int|null & !int = null). Hence, we
-					// can conclude that there is an intersection between them
-					// with (int,null).
-					return sign;
+				Term<?> lhsTrueTerm = new Term<>(lhsParameter, lhsContext.positify());
+				Term<?> rhsTrueTerm = new Term<>(rhsParameter, rhsContext.positify());
+				Term<?> lhsFalseTerm = new Term<>(lhsParameter, lhsContext.negatify());
+				Term<?> rhsFalseTerm = new Term<>(rhsParameter, rhsContext.negatify());
+				// Check whether lhs :> rhs (as (!lhs & rhs) == 0)
+				boolean elemLhsSubsetRhs = isVoidTerm(lhsFalseTerm, rhsTrueTerm, assumptions, lifetimes);
+				// Check whether rhs :> lhs (as (!rhs & lhs) == 0)
+				boolean elemRhsSubsetLhs = isVoidTerm(rhsFalseTerm, lhsTrueTerm, assumptions, lifetimes);
+				// Check whether element not equal
+				if (!elemLhsSubsetRhs || !elemRhsSubsetLhs) {
+					return false;
 				}
 			}
-			if (sign == true) {
-				// for pos-pos case, all parameters have intersection. Hence,
-				// there is a possible intersection.
-				return false;
-			} else {
-				// for pos-neg case, no parameters have intersection. Hence, no
-				// possible intersection.
-				return true;
-			}
+			return true;
 		}
 	}
 

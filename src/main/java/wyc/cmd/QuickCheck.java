@@ -15,6 +15,7 @@ package wyc.cmd;
 
 import static wyil.lang.WyilFile.DECL_function;
 import static wyil.lang.WyilFile.DECL_method;
+import static wyil.lang.WyilFile.DECL_rectype;
 import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.TYPE_array;
 import static wyil.lang.WyilFile.TYPE_bool;
@@ -37,6 +38,7 @@ import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -65,6 +67,8 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.StackFrame;
+import wyil.lang.WyilFile.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
@@ -108,7 +112,8 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, true, Integer.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], 1.0D, 1000, 10_000_000,
+			false, Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -116,8 +121,11 @@ public class QuickCheck implements Command {
 	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	public static Trie SAMPLING_CONFIG_OPTION = Trie.fromString("check/sample");
+	public static Trie LOGSAMPLING_CONFIG_OPTION = Trie.fromString("check/logsample");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
-	public static Trie METHODS_CONFIG_OPTION = Trie.fromString("check/methods");
+	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
+	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -125,8 +133,11 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
-	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTestLimit());
-	public static Value.Bool METHODS_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getMethodsFlag());
+	public static Value.Bool LOGSAMPLING_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getLogSampling());
+	public static Value.Decimal SAMPLING_DEFAULT = new Value.Decimal(DEFAULT_CONTEXT.getSamplingRate());
+	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getSampleMin());
+	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
+	public static Value.Array IGNORES_DEFAULT = new Value.Array();
 	/**
 	 * The descriptor for this command.
 	 */
@@ -144,8 +155,12 @@ public class QuickCheck implements Command {
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
 			return Arrays.asList(
+					Command.OPTION_BOUNDED_DOUBLE("sampling",
+							"Specify sample size on test inputs to try for each function or method", 0.0D, 10.0D),
+					Command.OPTION_FLAG("logsampling",
+							"Specify log sample size  test inputs to try for each function or method"),
 					Command.OPTION_NONNEGATIVE_INTEGER("limit",
-						"Specify limit on test inputs to try for each function or method"),
+							"Specify limit above which sampling takes place"),
 					Command.OPTION_NONNEGATIVE_INTEGER("min",
 						"Specify minimum integer value which can be generated"),
 					Command.OPTION_NONNEGATIVE_INTEGER("max",
@@ -154,7 +169,8 @@ public class QuickCheck implements Command {
 						"Specify maximum length of a generated array"),
 					Command.OPTION_NONNEGATIVE_INTEGER("depth",
 						"Specify maximum depth of a recurisive type"),
-					Command.OPTION_FLAG("methods", "Specify whether or not to include methods")
+					Command.OPTION_NONNEGATIVE_INTEGER("timeout",
+							"Specify timeout (in seconds) to spend on each function or method")
 					);
 		}
 
@@ -172,10 +188,16 @@ public class QuickCheck implements Command {
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
-					Configuration.UNBOUND_BOOLEAN(METHODS_CONFIG_OPTION, "Specify whether or not to include methods",
-							METHODS_DEFAULT),
-					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit on test inputs to try for each function or method",
-							LIMIT_DEFAULT));
+					Configuration.UNBOUND_BOOLEAN(LOGSAMPLING_CONFIG_OPTION, "Specify log sampling for each function or method",
+							LOGSAMPLING_DEFAULT),
+					Configuration.BOUND_DECIMAL(SAMPLING_CONFIG_OPTION, "Specify sample rate of test inputs to try for each function or method",
+							SAMPLING_DEFAULT,0.0D,1.0D),
+					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit above which sampling takes place",
+							LIMIT_DEFAULT),
+					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, "Specify timeout (in seconds) to spend on each function or method",
+							TIMEOUT_DEFAULT),
+					Configuration.UNBOUND_STRING_ARRAY(IGNORES_CONFIG_OPTION,
+							"Specify items (e.g. functions or methods) which should be ignored", IGNORES_DEFAULT));
 		}
 
 		@Override
@@ -224,12 +246,26 @@ public class QuickCheck implements Command {
 	 */
 	private final HashMap<Type,Domain<RValue>> cache;
 
+	/**
+	 * Provides the output chanel for information about the quick check process.
+	 */
+	private StructuredLogger<LogEntry> logger;
+
 	public QuickCheck(Build.Project project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
 		this.configuration = configuration;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
+		// Default logger just reports up to project logger
+		this.logger = new StructuredLogger<LogEntry>() {
+
+			@Override
+			public void logTimedMessage(LogEntry result, long time, long memory) {
+				project.getLogger().logTimedMessage(result.toString(), time, memory);
+			}
+
+		};
 	}
 
 	@Override
@@ -247,6 +283,10 @@ public class QuickCheck implements Command {
 
 	}
 
+	public void setLogger(StructuredLogger<LogEntry> logger) {
+		this.logger = logger;
+	}
+
 	@Override
 	public boolean execute(Template template) throws Exception {
 		// Extract configuration options
@@ -256,14 +296,23 @@ public class QuickCheck implements Command {
 		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
 		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
-		int testLimit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
-		boolean methodsFlag = configuration.get(Value.Bool.class,METHODS_CONFIG_OPTION).unwrap();
+		int limit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+		boolean  logSampling = configuration.get(Value.Bool.class,LOGSAMPLING_CONFIG_OPTION).unwrap();
+		double samplingRate = configuration.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
+		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
+		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
 		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
 		//
+		if(options.has("sampling")) {
+			samplingRate = options.get("sampling", Double.class);
+		}
+		if(options.has("logsampling")) {
+			logSampling = options.get("logsampling", Boolean.class);
+		}
 		if(options.has("limit")) {
-			testLimit = options.get("limit", Integer.class);
+			limit = options.get("limit", Integer.class);
 		}
 		if(options.has("min")) {
 			minInteger = options.get("min", Integer.class);
@@ -277,8 +326,8 @@ public class QuickCheck implements Command {
 		if(options.has("depth")) {
 			maxTypeDepth = options.get("depth", Integer.class);
 		}
-		if(options.has("methods")) {
-			methodsFlag = options.get("methods", Boolean.class);
+		if(options.has("timeout")) {
+			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
 		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
@@ -289,14 +338,14 @@ public class QuickCheck implements Command {
 		if (binaryRoot.exists(pkg, WyilFile.ContentType)) {
 			// Yes, it does so reuse it.
 			Path.Entry<WyilFile> binary = binaryRoot.get(pkg, WyilFile.ContentType);
-			//
-			project.getLogger().logTimedMessage("Check configuration has ints (" + minInteger + ".." + maxInteger
-					+ "), array lengths (max " + maxArrayLength + "), type depths (max " + maxTypeDepth + ")", 0, 0);
 			// Read the target wyilfile
 			WyilFile wf = binary.read();
 			// Construct initial context
-			Context context = new Context(minInteger, maxInteger, maxArrayLength, maxTypeDepth, maxAliasingWidth,
-					maxRotationWidth, methodsFlag, testLimit);
+			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
+					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
+					.setIgnores(ignores).setSamplingRate(samplingRate).setLogSampling(logSampling).setSampleMin(limit)
+					.setTimeout(timeout);
+			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
 			boolean OK = check(wf, context);
 			//
@@ -305,7 +354,7 @@ public class QuickCheck implements Command {
 				List<wybs.lang.Build.Task> tasks = project.getTasks();
 				// Look for error messages
 				for (wybs.lang.Build.Task task : tasks) {
-					wycc.commands.Build.printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+					printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 				}
 			}
 			// Print out any
@@ -315,15 +364,63 @@ public class QuickCheck implements Command {
 		}
 	}
 
+	/**
+	 * Print out syntactic markers for all entries in the build graph. This requires
+	 * going through all entries, extracting the markers and then printing them.
+	 *
+	 * <b>NOTE:</b> this method is a copy of
+	 * wycc.commands.Build.printSyntacticMarkers which is extended to support
+	 * printing of stack frames. However, this is really a temporary solution which
+	 * should be replaced in the future with something more generic.
+	 *
+	 * @param executor
+	 * @throws IOException
+	 */
+	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
+		// Extract all syntactic markers from entries in the build graph
+		List<SyntacticItem.Marker> items = wycc.commands.Build.extractSyntacticMarkers(target);
+		// For each marker, print out error messages appropriately
+		for (int i = 0; i != items.size(); ++i) {
+			SyntacticItem.Marker marker = items.get(i);
+			// Print separator
+			for(int k=0;k!=80;++k) {
+				output.print("=");
+			}
+			output.println();
+			// Log the error message
+			wycc.commands.Build.printSyntacticMarkers(output, sources, marker);
+			// FIXME: this whole thing is a complete hack
+			if(marker instanceof SyntaxError) {
+				SyntaxError err = (SyntaxError) marker;
+				Tuple<SyntacticItem> context = err.getContext();
+				boolean firstTime=true;
+				for(int j=0;j!=context.size();++j) {
+					SyntacticItem jth = context.get(j);
+					if(jth instanceof StackFrame) {
+						StackFrame sf = (StackFrame) jth;
+						if(firstTime) {
+							output.println("Stack Trace:");
+						}
+						output.println("--> " + sf.getContext().getQualifiedName().toString() + sf.getArguments());
+						firstTime=false;
+					}
+				}
+			}
+		}
+	}
+
 	public boolean check(WyilFile parent, Context context) throws IOException {
 		// Initialise Interpreter
 		this.interpreter = new ExtendedInterpreter(this.syserr, context);
 		// Construct extended context
 		ExtendedContext eContext = interpreter.getExtendedContext();
 		// Initialise by context
-		eContext.initialise(project,parent);
-		//
-		return check(parent, eContext);
+		if(eContext.initialise(project,parent)) {
+			//
+			return check(parent, eContext);
+		} else {
+			return false;
+		}
 	}
 
 	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
@@ -338,18 +435,49 @@ public class QuickCheck implements Command {
 		boolean OK = true;
 		//
 		for (Decl d : unit.getDeclarations()) {
-			switch (d.getOpcode()) {
-			case DECL_method:
-			case DECL_function:
-				OK &= check((Decl.FunctionOrMethod) d, parent, context);
-				break;
-			case DECL_type:
-				OK &= check((Decl.Type) d, context);
-				break;
+			if (d instanceof Decl.Named) {
+				OK &= check((Decl.Named) d, parent, context);
 			}
 		}
 
 		return OK;
+	}
+
+	private boolean check(Decl.Named d, WyilFile parent, ExtendedContext context) throws IOException {
+		// Check whether declaration should be checked or not
+		if(context.isIgnored(d)) {
+			// No, this declaration was explicitly marked as ignored.
+			logger.logTimedMessage(new Skipped(d), 0,0);
+			return true;
+		} else {
+			// Yes, this declaration should be checked.
+			Runtime runtime = Runtime.getRuntime();
+			long time = System.currentTimeMillis();
+			long memory = runtime.freeMemory();
+			try {
+				switch (d.getOpcode()) {
+				case DECL_method:
+				case DECL_function:
+					return check((Decl.FunctionOrMethod) d, parent, context);
+				case DECL_rectype:
+				case DECL_type:
+					return check((Decl.Type) d, context);
+				}
+				return true;
+			} catch (Interpreter.TimeoutException e) {
+				// Done
+				time = System.currentTimeMillis() - time;
+				memory = memory - runtime.freeMemory();
+				logger.logTimedMessage(new Timeout(d,context.getTimeout()), time, memory);
+				return false;
+			} catch(Throwable t) {
+				t.printStackTrace();
+				time = System.currentTimeMillis() - time;
+				memory = memory - runtime.freeMemory();
+				logger.logTimedMessage(new InternalFailure(d,t), time, memory);
+				return false;
+			}
+		}
 	}
 
 	/**
@@ -370,60 +498,30 @@ public class QuickCheck implements Command {
 		long memory = runtime.freeMemory();
 		// Set default result
 		boolean result = true;
-		// Check whether skipping  method
-		if(fm instanceof Decl.Method && !context.getMethodsFlag()) {
-			// Yes, skip this method
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			project.getLogger().logTimedMessage("Skipped " + toNameString(fm), time, memory);
-		} else {
-			// Get appropriate generators for each parameter
-			Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
-			//
-			List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
-			long split = System.currentTimeMillis() - time;
-			//
-			long total = calculateTotalInputs(generators);
-			//
-			for(RValue[] args : inputs) {
-				// FIXME: bug here related to side effects caused by invoking a method
-				CallStack frame = context.getFrame().enter(fm);
-				// Invoke the method!!
-				if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame, args)) {
-					// Failed, so exit early
-					result=false;
-					break;
-				}
+		// Get appropriate generators for each parameter
+		Domain<RValue>[] generators = constructGenerators(fm.getParameters(), context);
+		//
+		List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
+		//
+		long total = calculateTotalInputs(generators);
+		long split = System.currentTimeMillis()-time;
+		//
+		CallStack frame = context.getFrame().clone();
+		//
+		for(RValue[] args : inputs) {
+			// Invoke the method!!
+			if (!execute(parent, fm.getQualifiedName(), fm.getType(), frame.clone(), args)) {
+				// Failed, so exit early
+				result=false;
+				break;
 			}
-			time = System.currentTimeMillis() - time;
-			memory = memory - runtime.freeMemory();
-			//
-			double percent = total == 0 ? 0 : (inputs.size() * 100) / total;
-			String label = result ? "Checked " : "Failed ";
-			project.getLogger().logTimedMessage(label + toNameString(fm) + " (" + inputs.size() + "/" + total + "=" + percent +"%, " + split + "ms)", time, memory);
 		}
-		return result;
-	}
-
-	private boolean check(Decl.Type t, ExtendedContext context) {
-		Runtime runtime = Runtime.getRuntime();
-		long time = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-		//
-		CallStack frame = context.getFrame().enter(t);
-		// Get an appropriate generator for the underlying type
-		Domain<RValue> generator = constructGenerator(t.getType(), context);
-		// iterate through all values in the generator to see whether any pass the
-		// invariant and, hence, are valid instances of this invariant.
-		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
-		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
-		long total = generator.size();
-		double percent = total == 0 ? 0 : (domain.size() * 100) / total;
-		project.getLogger().logTimedMessage("Checked " + toNameString(t) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time, memory);
 		//
-		return domain.size() > 0;
+		logger.logTimedMessage(new Result(fm, result, inputs.size(), total, split), time, memory);
+		//
+		return result;
 	}
 
 	private boolean execute(WyilFile context, QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) throws IOException {
@@ -434,18 +532,39 @@ public class QuickCheck implements Command {
 			//
 			return true;
 		} catch (Interpreter.RuntimeError e) {
+			// FIXME: there is a known problem here because the stack frame will produce the
+			// current values for the parameters, not their actual values on entry. The
+			// easiest way to fix this is to prevent assignments to parameters!!
+			//
+			// Extract stack frame information
+			StackFrame[] errorframe = e.getFrame().toStackFrame();
 			// Add appropriate syntax error to the syntactic item where the error arose.
-			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
-			// FIXME: need better error reporting here
-			//System.out.println("FRAME: " + name + "(" + Arrays.deepToString(args) + "," + e.getFrame().getLocals() + ")");
+			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode(), errorframe);
 			// Done
 			return false;
-		} catch (Exception e) {
-			// FIXME: this is a temporary hack to help identify situations where the
-			// interpreter is not throwing appropriate error messages.
-			e.printStackTrace(System.out);
-			return true;
 		}
+	}
+
+	private boolean check(Decl.Type t, ExtendedContext context) {
+		Runtime runtime = Runtime.getRuntime();
+		long time = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+		//
+		CallStack frame = context.getFrame().enter(t);
+		// Get an appropriate generator for the underlying type
+		Domain<RValue> generator = constructGenerator(t.getType(), context);
+		// Record split time
+		long split = System.currentTimeMillis() - time;
+		// iterate through all values in the generator to see whether any pass the
+		// invariant and, hence, are valid instances of this invariant.
+		Domain<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
+ 		//
+		time = System.currentTimeMillis() - time;
+		memory = memory - runtime.freeMemory();
+		//
+		logger.logTimedMessage(new Result(t, true, domain.size(), generator.size(), split), time, memory);
+		//
+		return domain.size() > 0;
 	}
 
 	/**
@@ -464,11 +583,15 @@ public class QuickCheck implements Command {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
-		if(context.getTestLimit() != Integer.MAX_VALUE) {
-			domain = Domains.Sample(domain,context.getTestLimit());
+		long size = domain.size();
+		int k = context.getSampleSize(size);
+		if (k != size) {
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
 		}
 		//
-		for(int i=0;i!=domain.size();++i) {
+		for(long i=0;i!=domain.size();++i) {
 			RValue input = domain.get(i);
 			try {
 				// Construct the stack frame
@@ -503,8 +626,12 @@ public class QuickCheck implements Command {
 		}
 		Domain<RValue[]> domain = Domains.Product(generators);
 		//
-		if(context.getTestLimit() != Integer.MAX_VALUE) {
-			domain = Domains.Sample(domain,context.getTestLimit());
+		long size = domain.size();
+		int k = context.getSampleSize(size);
+		if (k != size) {
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
 		}
 		//
 		CallStack frame = context.getFrame();
@@ -702,12 +829,12 @@ public class QuickCheck implements Command {
 			// Therefore, we simply return the empty domain.
 			return Domains.EMPTY;
 		} else {
-			Runtime runtime = Runtime.getRuntime();
-			long time = System.currentTimeMillis();
-			long memory = runtime.freeMemory();
-			//
-			// FIXME: not using the cache!!
-			//
+			// =============================================================================
+			// FIXME: we're not using any form of cache here which could potentially improve
+			// performance dramatically. A key aspect is that this must be for the concrete
+			// type, to ensure that type parameters are included. Furthermore, handling of
+			// recursive types needs to be done with care.
+			// =============================================================================
 			context.enter(decl);
 			// Get an appropriate generator for the underlying type/
 			Domain<RValue> generator = constructGenerator(type.getConcreteType(), context);
@@ -716,19 +843,6 @@ public class QuickCheck implements Command {
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
 			Domain<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
-			//
-			if(depth == 0) {
-				// NOTE: only log when depth is zero to avoid recursive (i.e. intermediate)
-				// generations.
-				time = System.currentTimeMillis() - time;
-				memory = memory - runtime.freeMemory();
-				long total = generator.size();
-				double percent = total == 0 ? 0 : (domain.size() * 100) / total;
-				//
-				project.getLogger().logTimedMessage(
-						"Generated " + toNameString(type.getLink().getTarget(),type.getParameters()) + " (" + domain.size() + "/" + generator.size() + "=" + percent + "%)", time,
-						memory);
-			}
 			//
 			context.leave(decl);
 			//
@@ -911,6 +1025,10 @@ public class QuickCheck implements Command {
 			return type;
 		}
 
+		@Override
+		public Value toValue() {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private static long calculateTotalInputs(Domain<?>... domains) {
@@ -977,6 +1095,20 @@ public class QuickCheck implements Command {
 	}
 
 	/**
+	 * Convert a value array into a string array.
+	 *
+	 * @param array
+	 * @return
+	 */
+	public static String[] toStringArray(Value.Array array) {
+		String[] items = new String[array.size()];
+		for(int i=0;i!=array.size();++i) {
+			items[i] = array.get(i).toString();
+		}
+		return items;
+	}
+
+	/**
 	 * Provides various mechanisms for controlling the construction of generators,
 	 * such as limiting the maximum depth of recursive types.
 	 *
@@ -990,18 +1122,27 @@ public class QuickCheck implements Command {
 		private int depth;
 		private int width;
 		private int rotation;
-		private int limit;
-		private boolean methods;
+		private double samplingRate;
+		private int sampleMin;
+		private int sampleMax;
+		private boolean logSampling;
+		private String[] ignores;
+		private long timeout;
 
-		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, boolean methods, int limit) {
+		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
+				double samplingRate, int sampleMin, int sampleMax, boolean logSampling, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
 			this.depth = maxDepth;
 			this.width = width;
 			this.rotation = rotation;
-			this.methods = methods;
-			this.limit = limit;
+			this.ignores = ignores;
+			this.samplingRate = samplingRate;
+			this.sampleMin = sampleMin;
+			this.sampleMax = sampleMax;
+			this.logSampling = logSampling;
+			this.timeout = timeout;
 		}
 
 		private Context(Context context) {
@@ -1011,8 +1152,12 @@ public class QuickCheck implements Command {
 			this.depth = context.depth;
 			this.width = context.width;
 			this.rotation = context.rotation;
-			this.methods = context.methods;
-			this.limit = context.limit;
+			this.ignores = context.ignores;
+			this.samplingRate = context.samplingRate;
+			this.sampleMin = context.sampleMin;
+			this.sampleMax = context.sampleMax;
+			this.logSampling = context.logSampling;
+			this.timeout = context.timeout;
 		}
 
 		public int getIntegerMinimum() {
@@ -1070,23 +1215,89 @@ public class QuickCheck implements Command {
 			return context;
 		}
 
-		public boolean getMethodsFlag() {
-			return methods;
+		public String[] getIgnores() {
+			return ignores;
 		}
 
-		public Context setMethodsFlag(boolean flag) {
+		public boolean isIgnored(Decl.Named decl) {
+			String s = decl.getQualifiedName().toString();
+			for(int i=0;i!=ignores.length;++i) {
+				if(s.endsWith(ignores[i])) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public Context setIgnores(String... ignores) {
 			Context context = new Context(this);
-			context.methods = flag;
+			context.ignores = ignores;
 			return context;
 		}
 
-		public int getTestLimit() {
-			return limit;
+		public double getSamplingRate() {
+			return samplingRate;
 		}
 
-		public Context setTestLimit(int limit) {
+		public Context setSamplingRate(double rate) {
 			Context context = new Context(this);
-			context.limit = limit;
+			context.samplingRate = rate;
+			return context;
+		}
+
+		public Context setSampleMin(int limit) {
+			Context context = new Context(this);
+			context.sampleMin = limit;
+			return context;
+		}
+
+		public Context setSampleMax(int limit) {
+			Context context = new Context(this);
+			context.sampleMax = limit;
+			return context;
+		}
+
+		public long getSampleMin() {
+			return sampleMin;
+		}
+
+		public int getSampleMax() {
+			return sampleMax;
+		}
+
+		public int getSampleSize(long size) {
+			long k = (long) (size * samplingRate);
+			if(logSampling) {
+				// Apply log sampling
+				k = (long) Math.log(size);
+			}
+			// Cap samples to ensure fits integer
+			k = Math.min(Integer.MAX_VALUE, k);
+			// Ensure *at least* some number of samples
+			k = Math.max(Math.min(size, sampleMin), k);
+			// Ensure *at most* some number of samples
+			k = Math.min(sampleMax, k);
+			// Done
+			return (int) k;
+		}
+
+		public boolean getLogSampling() {
+			return logSampling;
+		}
+
+		public Context setLogSampling(boolean flag) {
+			Context context = new Context(this);
+			context.logSampling = flag;
+			return context;
+		}
+
+		public long getTimeout() {
+			return timeout;
+		}
+
+		public Context setTimeout(long timeout) {
+			Context context = new Context(this);
+			context.timeout = timeout;
 			return context;
 		}
 	}
@@ -1094,16 +1305,29 @@ public class QuickCheck implements Command {
 	private static class ExtendedContext extends Context {
 		// Stores the based frame
 		private HashMap<Decl,Integer> depths = new HashMap<>();
-
 		private final CallStack frame;
+		private final long timeoutMillis;
 
 		public ExtendedContext(CallStack frame, Context context) {
 			super(context);
 			this.frame = frame;
+			//
+			long timeout = context.getTimeout();
+			//
+			if(timeout != Long.MAX_VALUE) {
+				timeoutMillis = timeout * 1000;
+			} else {
+				timeoutMillis = Long.MAX_VALUE;
+			}
+			//
 		}
 
 		public CallStack getFrame() {
-			return frame;
+			return frame.setTimeout(timeoutMillis);
+		}
+
+		public long getTimeoutMillis() {
+			return timeoutMillis;
 		}
 
 		/**
@@ -1111,9 +1335,16 @@ public class QuickCheck implements Command {
 		 * to execute functions and methods within the project. This includes all
 		 * modules which this project depends upon.
 		 */
-		public void initialise(Build.Project project, WyilFile context) throws IOException {
-			// Load all relevant modules
-			frame.load(context);
+		public boolean initialise(Build.Project project, WyilFile context) throws IOException {
+			try {
+				// Load all relevant modules
+				frame.load(context);
+			} catch (Interpreter.RuntimeError e) {
+				// Add appropriate syntax error to the syntactic item where the error arose.
+				ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+				// Done
+				return false;
+			}
 			// Load all dependencies
 			for(Build.Package p : project.getPackages()) {
 				// FIXME: is this the right way to determine the binary file from a given
@@ -1124,6 +1355,7 @@ public class QuickCheck implements Command {
 					frame.load(e.read());
 				}
 			}
+			return true;
 		}
 
 
@@ -1220,6 +1452,178 @@ public class QuickCheck implements Command {
 				}
 				entry.put(Arrays.asList(inputs), outputs);
 			}
+		}
+	}
+
+	public static interface StructuredLogger<T> {
+		public void logTimedMessage(T result, long time, long memory);
+	}
+
+	public static interface LogEntry {
+
+	}
+
+	/**
+	 * A QuickCheck result is generate for each
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class AbstractLogEntry implements LogEntry {
+		protected final Decl.Named item;
+
+		public AbstractLogEntry(Decl.Named item) {
+			this.item = item;
+		}
+
+		public Decl.Named getItem() {
+			return item;
+		}
+	}
+
+	/**
+	 * Indicates that the given item was skipped.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Skipped extends AbstractLogEntry {
+		public Skipped(Decl.Named item) {
+			super(item);
+		}
+
+		@Override
+		public String toString() {
+			return "Skipped " + toNameString(item);
+		}
+	}
+
+	/**
+	 * Indicates that the given item caused some kind of internal failure (e.g. a
+	 * stack overflow, etc).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class InternalFailure extends AbstractLogEntry {
+		private final Throwable ex;
+
+		public InternalFailure(Decl.Named item, Throwable ex) {
+			super(item);
+			this.ex = ex;
+		}
+
+		@Override
+		public String toString() {
+			return "Failure(" + ex.getClass().getSimpleName() + ", " + ex.getMessage() + ") "+ toNameString(item);
+		}
+
+		public Throwable getThrowable() {
+			return ex;
+		}
+	}
+
+	public static class Timeout extends AbstractLogEntry {
+		private final long timeout;
+
+		public Timeout(Decl.Named item, long timeout) {
+			super(item);
+			this.timeout = timeout;
+		}
+
+		@Override
+		public String toString() {
+			return "Timeout(" + timeout + "s) " + toNameString(item);
+		}
+	}
+
+	/**
+	 * Indicates that a QuickCheck result was obtained for a given named declaration
+	 * (e.g. a function or type declaration).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Result extends AbstractLogEntry {
+		/**
+		 * Indicates whether check successful or not. That is, whether or not some kind
+		 * of violation was detected.
+		 */
+		private boolean success;
+		/**
+		 * Indicates the total number of inputs generated.
+		 */
+		private long total;
+		/**
+		 * Indicates the total number of inputs checked.
+		 */
+		private long checked;
+
+		/**
+		 * Indicates the time taken to generate the inputs.
+		 */
+		private long split;
+
+		public Result(Decl.Named n, boolean success, long checked, long total, long split) {
+			super(n);
+			this.success = success;
+			this.checked = checked;
+			this.total = total;
+			this.split = split;
+		}
+
+		/**
+		 * Check whether any problems were encountered during the run.
+		 *
+		 * @return
+		 */
+		public boolean isChecked() {
+			return success;
+		}
+
+		/**
+		 * Get total space of inputs determined for this run.
+		 *
+		 * @return
+		 */
+		public long getTotalInputs() {
+			return total;
+		}
+
+		/**
+		 * Get number of inputs actually used for checking. This will be lower that the
+		 * total in the cases where some inputs don't meet preconditions or type
+		 * invariants, etc.
+		 *
+		 * @return
+		 */
+		public long getCheckedInputs() {
+			return checked;
+		}
+		@Override
+		public String toString() {
+			String label = success ? "Checked " : "Failed ";
+			double percent = total == 0 ? 0 : (checked * 100) / total;
+			return label + toNameString(item) + " (" + checked + "/" + total + "=" + percent +"%, " + split + "ms)";
+		}
+	}
+
+	/**
+	 * Provides summary information on the QuickCheck configuration being used.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Summary implements LogEntry {
+		private final Context context;
+		public Summary(Context context) {
+			this.context = context;
+		}
+		@Override
+		public String toString() {
+			return "Check configuration has ints (" + context.getIntegerMinimum() + ".." + context.getIntegerMaximum()
+					+ "), array lengths (max " + context.getMaxArrayLength() + "), type depths (max "
+					+ context.getRecursiveTypeDepth() + "), sampling (" + context.getSamplingRate() + ", limits "
+					+ context.getSampleMin() + ".." + context.getSampleMax() + ")";
 		}
 	}
 }

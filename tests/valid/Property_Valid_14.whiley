@@ -12,9 +12,9 @@ where l is Node ==> length(l.next, len-1)
 // Another recursive property capturing the different in length
 // between the head of a list and a given position within that
 // list.
-property diff(List head, List pos, int diff)
-where (head == pos) ==> (diff == 0)
-where (head is Node) ==> length(head.next, diff-1)
+property diff(List head, List pos, int d)
+where (head == pos) ==> (d == 0)
+where (head is Node) ==> diff(head.next, pos, d-1)
 
 function len(List l) -> (int r)
 // Ensure we capture the real length

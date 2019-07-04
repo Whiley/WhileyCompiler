@@ -14,9 +14,7 @@
 package wyc.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntacticItem;
@@ -99,6 +97,56 @@ public class ErrorMessages {
 		}
 	}
 
+	/**
+	 * A multi-part message is a dynamic message which is created based upon the
+	 * context in which it exists.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static final class StackTraceMessage implements Message {
+		private final String message;
+
+		public StackTraceMessage(String message) {
+			this.message = message;
+		}
+
+		@Override
+		public String getMessage(Tuple<SyntacticItem> context) {
+			String output = message;
+			for(int i=0;i!=context.size();++i) {
+				output = output + "\n";
+				output += "--> " + context.get(i).toString();
+			}
+			return output;
+		}
+	}
+
+	// ========================================================================
+	// Parsing
+	// ========================================================================
+
+	public static final Message EXPECTING_TOKEN = new MultiPartMessage("expecting \"", "\" here");
+	public static final Message EXPECTED_LIFETIME = new StaticMessage("expecting lifetime identifier");
+	public static final Message UNEXPECTED_EOF = new StaticMessage("unexpected end-of-file");
+	public static final Message UNEXPECTED_BLOCK_END = new StaticMessage("unexpected end-of-block");
+	public static final Message UNKNOWN_LIFETIME = new StaticMessage("use of undeclared lifetime");
+	public static final Message UNKNOWN_TYPE = new StaticMessage("unknown type encountered");
+	public static final Message UNKNOWN_LVAL = new StaticMessage("unexpected lval");
+	public static final Message UNKNOWN_TERM = new StaticMessage("unrecognised term");
+	public static final Message INVALID_UNICODE_LITERAL = new StaticMessage("invalid unicode string");
+	public static final Message INVALID_BINARY_LITERAL = new StaticMessage("invalid binary literal");
+	public static final Message INVALID_HEX_LITERAL = new StaticMessage("invalid hex literal (invalid characters)");
+	public static final Message DUPLICATE_VISIBILITY_MODIFIER = new StaticMessage("visibility modifier already given");
+	public static final Message DUPLICATE_TEMPLATE_VARIABLE = new StaticMessage("duplicate template variable");
+	public static final Message DUPLICATE_CASE_LABEL = new StaticMessage("duplicate case label");
+	public static final Message DUPLICATE_DEFAULT_LABEL = new StaticMessage("duplicate default label");
+	public static final Message DUPLICATE_FIELD = new StaticMessage("duplicate record key");
+	public static final Message DUPLICATE_DECLARATION = new StaticMessage("name already declared");
+	public static final Message MISSING_TYPE_VARIABLE = new StaticMessage("missing type variable(s)");
+	public static final Message BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
+	public static final Message CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
+
 	// ========================================================================
 	// Name Resolution
 	// ========================================================================
@@ -112,47 +160,47 @@ public class ErrorMessages {
 	// ========================================================================
 	// Name Resolution
 	// ========================================================================
-	public static final StaticMessage RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
-	public static final StaticMessage MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
-	public static final StaticMessage TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
+	public static final Message RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
+	public static final Message MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
+	public static final Message TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
 	// ========================================================================
 	// Type Checking
 	// ========================================================================
 	public static final MultiPartMessage SUBTYPE_ERROR = new MultiPartMessage("expected type ",", found ");
-	public static final StaticMessage EMPTY_TYPE  = new StaticMessage("empty type encountered");
-	public static final StaticMessage EXPECTED_ARRAY  = new StaticMessage("expected array type");
-	public static final StaticMessage EXPECTED_RECORD  = new StaticMessage("expected record type");
-	public static final StaticMessage EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
-	public static final StaticMessage EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
-	public static final StaticMessage INVALID_FIELD  = new StaticMessage("invalid field access");
-	public static final StaticMessage MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");
-	public static final StaticMessage UNREACHABLE_CODE = new StaticMessage("unreachable code encountered (i.e. execution can never reach this statement)");
-	public static final StaticMessage BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
+	public static final Message EMPTY_TYPE  = new StaticMessage("empty type encountered");
+	public static final Message EXPECTED_ARRAY  = new StaticMessage("expected array type");
+	public static final Message EXPECTED_RECORD  = new StaticMessage("expected record type");
+	public static final Message EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
+	public static final Message EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
+	public static final Message INVALID_FIELD  = new StaticMessage("invalid field access");
+	public static final Message MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");
+	public static final Message UNREACHABLE_CODE = new StaticMessage("unreachable code encountered (i.e. execution can never reach this statement)");
+	public static final Message BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
 	public static final MultiPartMessage INCOMPARABLE_OPERANDS = new MultiPartMessage("incomparable operands: "," and ");
-    public static final StaticMessage INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
-	public static final StaticMessage TOO_MANY_RETURNS = new StaticMessage("too many return values");
-	public static final StaticMessage INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
-	public static final StaticMessage INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
+    public static final Message INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
+	public static final Message TOO_MANY_RETURNS = new StaticMessage("too many return values");
+	public static final Message INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
+	public static final Message INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
 
 	// ========================================================================
 	// Definite (Un)Assignment
 	// ========================================================================
-	public static final StaticMessage VARIABLE_POSSIBLY_UNITIALISED = new StaticMessage("variable may be uninitialised");
-	public static final StaticMessage PARAMETER_REASSIGNED = new StaticMessage("cannot assign parameter");
-	public static final StaticMessage FINAL_VARIABLE_REASSIGNED = new StaticMessage("cannot reassign final variable");
+	public static final Message VARIABLE_POSSIBLY_UNITIALISED = new StaticMessage("variable may be uninitialised");
+	public static final Message PARAMETER_REASSIGNED = new StaticMessage("cannot assign parameter");
+	public static final Message FINAL_VARIABLE_REASSIGNED = new StaticMessage("cannot reassign final variable");
 
 	// ========================================================================
 	// Static Variable Check
 	// ========================================================================
-	public static final StaticMessage CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
+	public static final Message CYCLIC_STATIC_INITIALISER = new StaticMessage("cyclic static initialiser");
 
 	// ========================================================================
 	// Functional Check
 	// ========================================================================
-	public static final StaticMessage ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
-	public static final StaticMessage REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
-	public static final StaticMessage METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
-	public static final StaticMessage REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+	public static final Message ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
+	public static final Message REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
+	public static final Message METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
+	public static final Message REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
 
 	// ========================================================================
 	// Ambiguous Coercion Check
@@ -162,29 +210,51 @@ public class ErrorMessages {
 	// ========================================================================
 	// Verification
 	// ========================================================================
-	public static final StaticMessage PRECONDITION_NOT_SATISFIED = new StaticMessage("precondition not satisfied");
-	public static final StaticMessage POSTCONDITION_NOT_SATISFIED = new StaticMessage("postcondition not satisfied");
-	public static final StaticMessage TYPEINVARIANT_NOT_SATISFIED = new StaticMessage("type invariant not satisfied");
-	public static final StaticMessage LOOPINVARIANT_NOT_ESTABLISHED = new StaticMessage("loop invariant not established");
-	public static final StaticMessage LOOPINVARIANT_NOT_RESTORED = new StaticMessage("loop invariant does not restored");
-	public static final StaticMessage ASSERTION_FAILED = new StaticMessage("assertion failed");
-	public static final StaticMessage ASSUMPTION_FAILED = new StaticMessage("assumption failed");
-	public static final StaticMessage INDEX_BELOW_BOUNDS = new StaticMessage("index out-of-bounds (negative)");
-	public static final StaticMessage INDEX_ABOVE_BOUNDS = new StaticMessage("index out-of-bounds (greater than length)");
-	public static final StaticMessage NEGATIVE_LENGTH = new StaticMessage("negative array length");
-	public static final StaticMessage NEGATIVE_RANGE = new StaticMessage("negative array range");
-	public static final StaticMessage DIVISION_BY_ZERO = new StaticMessage("division by zero");
-	public static final StaticMessage RUNTIME_FAULT = new StaticMessage("runtime fault encountered");
+	public static final Message RUNTIME_PRECONDITION_FAILURE = new StackTraceMessage("precondition not satisfied");
+	public static final Message RUNTIME_POSTCONDITION_FAILURE = new StackTraceMessage("postcondition not satisfied");
+	public static final Message RUNTIME_TYPEINVARIANT_FAILURE = new StackTraceMessage("type invariant not satisfied");
+	public static final Message RUNTIME_ESTABLISH_LOOPINVARIANT_FAILURE = new StackTraceMessage("loop invariant not established");
+	public static final Message RUNTIME_RESTORE_LOOPINVARIANT_FAILURE = new StackTraceMessage("loop invariant not restored");
+	public static final Message RUNTIME_ASSERTION_FAILURE = new StackTraceMessage("assertion failed");
+	public static final Message RUNTIME_ASSUMPTION_FAILURE = new StackTraceMessage("assumption failed");
+	public static final Message RUNTIME_BELOWBOUNDS_INDEX_FAILURE = new StackTraceMessage("index out of bounds (negative)");
+	public static final Message RUNTIME_ABOVEBOUNDS_INDEX_ABOVE_FAILURE = new StackTraceMessage("index out of bounds (not less than length)");
+	public static final Message RUNTIME_NEGATIVE_LENGTH_FAILURE = new StackTraceMessage("negative length");
+	public static final Message RUNTIME_NEGATIVE_RANGE_FAILURE = new StackTraceMessage("negative array range");
+	public static final Message RUNTIME_DIVIDEBYZERO_FAILURE = new StackTraceMessage("division by zero");
+	public static final Message RUNTIME_FAULT = new StackTraceMessage("runtime fault");
 
+	public static final Message STATIC_PRECONDITION_FAILURE = new MultiPartMessage(
+			"precondition may not be satisfied ");
+	public static final Message STATIC_POSTCONDITION_FAILURE = new MultiPartMessage(
+			"postcondition may not be satisfied ");
+	public static final Message STATIC_TYPEINVARIANT_FAILURE = new MultiPartMessage(
+			"type invariant may not be satisfied ");
+	public static final Message STATIC_ESTABLISH_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not be established by first iteration ");
+	public static final Message STATIC_ENTER_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not hold on entry ");
+	public static final Message STATIC_RESTORE_LOOPINVARIANT_FAILURE = new MultiPartMessage(
+			"loop invariant may not be restored ");
+	public static final Message STATIC_ASSERTION_FAILURE = new MultiPartMessage("assertion may not hold ");
+	public static final Message STATIC_ASSUMPTION_FAILURE = new MultiPartMessage("assumption may not hold ");
+	public static final Message STATIC_BELOWBOUNDS_INDEX_FAILURE = new MultiPartMessage(
+			"possible index out of bounds (negative) ");
+	public static final Message STATIC_ABOVEBOUNDS_INDEX_ABOVE_FAILURE = new MultiPartMessage(
+			"possible index out of bounds (not less than length) ");
+	public static final Message STATIC_NEGATIVE_LENGTH_FAILURE = new MultiPartMessage("negative length possible ");
+	public static final Message STATIC_NEGATIVE_RANGE_FAILURE = new MultiPartMessage("possible negative array range ");
+	public static final Message STATIC_DIVIDEBYZERO_FAILURE = new MultiPartMessage("possible division by zero ");
+	public static final Message STATIC_FAULT = new MultiPartMessage("possible panic ");
 	// ========================================================================
 	// Misc
 	// ========================================================================
-	public static final StaticMessage INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
-	public static final StaticMessage INVALID_BOOLEAN_EXPRESSION = new StaticMessage("invalid boolean expression");
-	public static final StaticMessage INVALID_NUMERIC_EXPRESSION = new StaticMessage("invalid numeric expression");
-	public static final StaticMessage INVALID_UNARY_EXPRESSION = new StaticMessage("invalid unary expression");
-	public static final StaticMessage INVALID_BINARY_EXPRESSION = new StaticMessage("invalid binary expression");
-	public static final StaticMessage INVALID_ARRAY_EXPRESSION  = new StaticMessage("invalid array expression");
+	public static final Message INVALID_CONSTANT_EXPRESSION = new StaticMessage("invalid constant expression");
+	public static final Message INVALID_BOOLEAN_EXPRESSION = new StaticMessage("invalid boolean expression");
+	public static final Message INVALID_NUMERIC_EXPRESSION = new StaticMessage("invalid numeric expression");
+	public static final Message INVALID_UNARY_EXPRESSION = new StaticMessage("invalid unary expression");
+	public static final Message INVALID_BINARY_EXPRESSION = new StaticMessage("invalid binary expression");
+	public static final Message INVALID_ARRAY_EXPRESSION  = new StaticMessage("invalid array expression");
 
 //	public static final StaticMessage INVALID_TUPLE_LVAL = new StaticMessage("invalid tuple lval");
 //	public static final StaticMessage INVALID_FILE_ACCESS = new StaticMessage("invalid file access");
@@ -211,7 +281,28 @@ public class ErrorMessages {
 		null, // 00
 		null, // 01
 		null, // 02
-		null, // 03
+		{
+			EXPECTING_TOKEN, // 300
+			EXPECTED_LIFETIME, // 301
+			UNEXPECTED_EOF, // 302
+			UNEXPECTED_BLOCK_END, // 303
+			UNKNOWN_LIFETIME, // 304
+			UNKNOWN_TYPE, // 305
+			UNKNOWN_LVAL, // 306
+			UNKNOWN_TERM, // 307
+			INVALID_UNICODE_LITERAL, // 308
+			INVALID_BINARY_LITERAL, // 309
+			INVALID_HEX_LITERAL, // 310
+			DUPLICATE_VISIBILITY_MODIFIER, // 311
+			DUPLICATE_TEMPLATE_VARIABLE, // 312
+			DUPLICATE_CASE_LABEL, // 313
+			DUPLICATE_DEFAULT_LABEL, // 314
+			DUPLICATE_FIELD, // 315
+			DUPLICATE_DECLARATION, // 316
+			MISSING_TYPE_VARIABLE, // 317
+			BREAK_OUTSIDE_SWITCH_OR_LOOP, // 318
+			CONTINUE_OUTSIDE_LOOP, // 319
+		},
 		{
 			SUBTYPE_ERROR,     // 400
 			EMPTY_TYPE,        // 401
@@ -253,19 +344,36 @@ public class ErrorMessages {
 		},
 		{
 			// Verification
-			PRECONDITION_NOT_SATISFIED, // 700
-			POSTCONDITION_NOT_SATISFIED, // 701
-			TYPEINVARIANT_NOT_SATISFIED, // 702;
-			LOOPINVARIANT_NOT_ESTABLISHED, // 703;
-			LOOPINVARIANT_NOT_RESTORED, // 704;
-			ASSERTION_FAILED, // 705
-			ASSUMPTION_FAILED, // 706
-			INDEX_BELOW_BOUNDS, // 707;
-			INDEX_ABOVE_BOUNDS, // 708;
-			NEGATIVE_LENGTH, // 709;
-			NEGATIVE_RANGE, // 710;
-			DIVISION_BY_ZERO, // 711;
+			RUNTIME_PRECONDITION_FAILURE, // 700
+			RUNTIME_POSTCONDITION_FAILURE, // 701
+			RUNTIME_TYPEINVARIANT_FAILURE, // 702;
+			RUNTIME_ESTABLISH_LOOPINVARIANT_FAILURE, // 703;
+			RUNTIME_RESTORE_LOOPINVARIANT_FAILURE, // 704;
+			RUNTIME_ASSERTION_FAILURE, // 705
+			RUNTIME_ASSUMPTION_FAILURE, // 706
+			RUNTIME_BELOWBOUNDS_INDEX_FAILURE, // 707;
+			RUNTIME_ABOVEBOUNDS_INDEX_ABOVE_FAILURE, // 708;
+			RUNTIME_NEGATIVE_LENGTH_FAILURE, // 709;
+			RUNTIME_NEGATIVE_RANGE_FAILURE, // 710;
+			RUNTIME_DIVIDEBYZERO_FAILURE, // 711;
 			RUNTIME_FAULT, // 712
+			null, // 713
+			null, // 714
+			null, // 715
+			STATIC_PRECONDITION_FAILURE, // 716
+			STATIC_POSTCONDITION_FAILURE, // 717
+			STATIC_TYPEINVARIANT_FAILURE, // 718;
+			STATIC_ESTABLISH_LOOPINVARIANT_FAILURE, // 719;
+			STATIC_ENTER_LOOPINVARIANT_FAILURE, // 720;
+			STATIC_RESTORE_LOOPINVARIANT_FAILURE, // 721;
+			STATIC_ASSERTION_FAILURE, // 722
+			STATIC_ASSUMPTION_FAILURE, // 723
+			STATIC_BELOWBOUNDS_INDEX_FAILURE, // 724
+			STATIC_ABOVEBOUNDS_INDEX_ABOVE_FAILURE, // 725
+			STATIC_NEGATIVE_LENGTH_FAILURE, // 726
+			STATIC_NEGATIVE_RANGE_FAILURE, // 727
+			STATIC_DIVIDEBYZERO_FAILURE, // 728
+			STATIC_FAULT, // 729
 		}
 	};
 

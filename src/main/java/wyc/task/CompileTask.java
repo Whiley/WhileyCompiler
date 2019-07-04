@@ -13,10 +13,14 @@
 // limitations under the License.
 package wyc.task;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 
+import wybs.lang.Build;
+import wybs.util.AbstractBuildTask;
+import wyc.io.WhileyFileParser;
+import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
 import wyil.check.AmbiguousCoercionCheck;
 import wyil.check.DefiniteAssignmentCheck;
@@ -25,17 +29,11 @@ import wyil.check.FlowTypeCheck;
 import wyil.check.FunctionalCheck;
 import wyil.check.StaticVariableCheck;
 import wyil.check.VerificationCheck;
-import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
+import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 import wyil.transform.RecursiveTypeAnalysis;
-import wybs.io.SyntacticHeapPrinter;
-import wybs.lang.*;
-import wybs.util.AbstractBuildTask;
-import wyc.io.WhileyFileParser;
-import wyc.lang.*;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -109,13 +107,18 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	private final Compiler.Check[] stages;
 
 	/**
+	 * Optional stage
+	 */
+	private final VerificationCheck verifier;
+
+	/**
 	 * The set of transforms. These perform certain transformations on the generated
 	 * WyilFile.
 	 */
 	private final Compiler.Transform[] transforms;
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
-			Collection<Path.Entry<WhileyFile>> sources) {
+			Collection<Path.Entry<WhileyFile>> sources) throws IOException {
 		super(project, target, sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
@@ -124,6 +127,8 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		// Instantiate other checks
 		this.stages = new Compiler.Check[] { new DefiniteAssignmentCheck(), new DefiniteUnassignmentCheck(),
 				new FunctionalCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
+		//
+		this.verifier = new VerificationCheck(project,target);
 		// Instantiate various transformations
 		this.transforms = new Compiler.Transform[] { new MoveAnalysis(), new RecursiveTypeAnalysis() };
 	}
@@ -165,6 +170,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(WyilFile target, WhileyFile... sources) {
+		boolean r = true;
 		// Parse source files into target
 		for (int i = 0; i != sources.length; ++i) {
 			// NOTE: this is somehow where we work out the initial deltas for incremental
@@ -172,17 +178,12 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			WhileyFile source = sources[i];
 			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			//
-			Decl.Unit nunit = wyp.read();
-			Decl.Unit ounit = target.getModule().putUnit(nunit);
-			//
-			if(ounit != null) {
-				target.replace(ounit, nunit);
-			}
+			r &= wyp.read();
 		}
+		//
 		// Perform name resolution.
-		boolean r;
 		try {
-			r = new NameResolution(project, target).apply();
+			r = r && new NameResolution(project, target).apply();
 		} catch(IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
@@ -197,9 +198,8 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		for (int i = 0; i != stages.length; ++i) {
 			r = r && stages[i].check(target);
 		}
-		//
-		if (r & verification) {
-			verify();
+		if(verification) {
+			r = r && verifier.check(target,counterexamples);
 		}
 		// Transforms
 		if (r) {
@@ -212,14 +212,5 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		//target.gc();
 		// Done
 		return r;
-	}
-
-	private void verify() {
-		try {
-			// FIXME: this is seriously a kludge for now.
-			new VerificationCheck(project, sourceRoot, counterexamples).apply(this.target, this.sources);
-		} catch(IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 }

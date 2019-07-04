@@ -20,7 +20,7 @@ property validTransitions(Transition[] transitions)
 where all { k in 0..|transitions| | transitions[k].to <= |transitions| }
 
 // Define the Empty Trie
-Transition DummyTransition = { from: 0, to: 0, character: 0 }
+Transition DummyTransition = { from: 0, to: 1, character: 0 }
 Trie EmptyTrie = { transitions: [DummyTransition; 0] }
 
 function append(Transition[] transitions, Transition t) -> (Transition[] result)

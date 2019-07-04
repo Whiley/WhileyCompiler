@@ -1,0 +1,3 @@
+tests/invalid/UnionType_Invalid_24.whiley:4: expected record type
+    rec.f = 1
+    ^^^
