@@ -213,7 +213,11 @@ public class TestUtils {
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
 			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
-		} catch (Exception e) {
+		} catch (SyntacticException e) {
+			// Print out the syntax error
+			//e.outputSourceError(psyserr);
+			result = false;
+		}catch (Exception e) {
 			// Print out the syntax error
 			e.printStackTrace(psyserr);
 			result = false;
