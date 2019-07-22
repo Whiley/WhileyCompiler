@@ -574,6 +574,8 @@ public class NameResolution {
 				// Done
 				return item;
 			}
+			case DECL_property:
+				// NOTE: properties are included here because we always import the full "body".
 			default:
 				return super.allocate(item);
 			}
