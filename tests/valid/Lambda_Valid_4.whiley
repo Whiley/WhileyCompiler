@@ -6,13 +6,13 @@ type InputStream is {
 type BufferState is &{byte[] bytes, int pos}
 
 // Define the 8bit ASCII character
-public type char is (int x) where 0 <= x && x <= 255
+type char is (int x) where 0 <= x && x <= 255
 
 // Define 8bit ASCII String
 type string is char[]
 
 // Convert an ASCII character into a byte.
-public function toByte(char v) -> byte:
+function toByte(char v) -> byte:
     //
     byte mask = 0b00000001
     byte r = 0b0
@@ -26,7 +26,7 @@ public function toByte(char v) -> byte:
     return r
 
 // Convert an ASCII string into a list of bytes
-public function toBytes(string s) -> byte[]:
+function toBytes(string s) -> byte[]:
     byte[] r = [0b0; |s|]
     int i = 0
     while i < |s| where i >= 0:
@@ -58,7 +58,7 @@ method eof(BufferState state) -> bool:
     return state->pos >= |state->bytes|
 
 // Construct buffer from list of bytes
-public method BufferInputStream(byte[] buffer) -> InputStream:
+method BufferInputStream(byte[] buffer) -> InputStream:
     BufferState _this = new {bytes: buffer, pos: 0}
     return {
         read: &(int x -> read(_this, x)),

@@ -5,7 +5,7 @@ type Proc is &{int data}
 method read(Proc _this, int x) -> int:
     return x + _this->data
 
-public method get(Proc p, int arg) -> int:
+method get(Proc p, int arg) -> int:
     return read(p,arg)
 
 public export method test() :

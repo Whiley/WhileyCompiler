@@ -159,9 +159,8 @@ public class NameResolution {
 					if(!symbolTable.contains(name)) {
 						// Cannot identify name
 						syntaxError(path.get(path.size()-1), RESOLUTION_ERROR);
-					}
-					// Sanity check imported names (if applicable)
-					if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
+					} else if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
+						// Sanity check imported names (if applicable)
 						syntaxError(imp.getFrom(), RESOLUTION_ERROR);
 					}
 				}
@@ -496,8 +495,6 @@ public class NameResolution {
 				} else {
 					// NOTE: if we get here, then we have a public member referring to a hidden
 					// member.  For now, this is prohibited further upstream.
-					CompilationUnit cu = (CompilationUnit) e.getHeap();
-					throw new SyntacticException("attempting to import hidden declaration",cu.getEntry(),e);
 				}
 				break;
 			}

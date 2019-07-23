@@ -1,6 +1,6 @@
 
 
-type Proc is &{
+public type Proc is &{
     function func(int) -> int
 }
 

@@ -16,7 +16,7 @@ ensures (x >= 5) <==> (r == 1):
     else:
         return 0
 
-public export test():
+public export method test():
     assert f(-2) == 0
     assert f(-1) == 0
     assert f(0) == 2

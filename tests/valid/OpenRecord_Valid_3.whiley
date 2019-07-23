@@ -1,6 +1,6 @@
 
 
-type Object is {
+public type Object is {
     function fn(Object)->int,
     ...
 }

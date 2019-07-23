@@ -1,11 +1,11 @@
 
-type BNode is {
+public type BNode is {
     int item,   // data item
     BTree left, // left subtree
     BTree right // right righttree
 }
 
-type BTree is (null | BNode tree) where
+public type BTree is (null | BNode tree) where
     // item in left subtree must be below this item
     ((tree is BNode && tree.left is BNode) ==> tree.left.item < tree.item) &&
     // item in right subtree must be above this item

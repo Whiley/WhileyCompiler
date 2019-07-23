@@ -2,10 +2,10 @@
 
 type BTree is null | {int item, BTree left, BTree right}
 
-public function BTree() -> BTree:
+function BTree() -> BTree:
     return null
 
-public function add(BTree tree, int item) -> BTree:
+function add(BTree tree, int item) -> BTree:
     if tree is null:
         tree = {item: item, left: null, right: null}
     else:

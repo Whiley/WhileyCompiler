@@ -1,6 +1,6 @@
-type u8 is (int n) where 0 <= n && n <= 0x00_ff
+public type u8 is (int n) where 0 <= n && n <= 0x00_ff
 
-int[] bases = [1,2,4,8,16,32,64,128]
+public int[] bases = [1,2,4,8,16,32,64,128]
 
 public function bases() -> (int[] r)
 ensures |bases| == |r|
