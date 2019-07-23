@@ -14,7 +14,7 @@ type C_string is (ASCII_char[] chars)
 where |chars| > 0 && chars[|chars|-1] == 0
 
 // Determine the length of a C ASCII.string.
-public function strlen(C_string str) -> (int r)
+function strlen(C_string str) -> (int r)
 ensures r >= 0:
     //
     int i = 0

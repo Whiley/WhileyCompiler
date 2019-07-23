@@ -13,8 +13,8 @@
 // limitations under the License.
 package wyil.transform;
 
-import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
+import wybs.lang.*;
+import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Ref;
@@ -26,6 +26,8 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.*;
+
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
@@ -33,10 +35,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Expr;
-import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.Type;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -161,9 +159,8 @@ public class NameResolution {
 					if(!symbolTable.contains(name)) {
 						// Cannot identify name
 						syntaxError(path.get(path.size()-1), RESOLUTION_ERROR);
-					}
-					// Sanity check imported names (if applicable)
-					if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
+					} else if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
+						// Sanity check imported names (if applicable)
 						syntaxError(imp.getFrom(), RESOLUTION_ERROR);
 					}
 				}
@@ -190,6 +187,12 @@ public class NameResolution {
 		 */
 		private ArrayList<Patch> patches = new ArrayList<>();
 
+		/**
+		 * Used to indicate when resolving something which is exposed (and, hence,
+		 * relevant members should themselves be exposed).
+		 */
+		private boolean isVisible = false;
+
 		public List<Patch> apply(WyilFile module) {
 			super.visitModule(module, null);
 			return patches;
@@ -199,6 +202,42 @@ public class NameResolution {
 		public void visitUnit(Decl.Unit unit, List<Decl.Import> unused) {
 			// Create an initially empty list of import statements.
 			super.visitUnit(unit, new ArrayList<>());
+		}
+
+		@Override
+		public void visitType(Decl.Type decl, List<Decl.Import> unused) {
+			isVisible = isPublic(decl);
+			super.visitType(decl, unused);
+			isVisible = false;
+		}
+
+		@Override
+		public void visitProperty(Decl.Property decl, List<Decl.Import> unused) {
+			isVisible = isPublic(decl);
+			super.visitProperty(decl, unused);
+			isVisible = false;
+		}
+
+		@Override
+		public void visitFunction(Decl.Function decl, List<Decl.Import> unused) {
+			isVisible = isPublic(decl);
+			visitVariables(decl.getParameters(), unused);
+			visitVariables(decl.getReturns(), unused);
+			visitExpressions(decl.getRequires(), unused);
+			visitExpressions(decl.getEnsures(), unused);
+			isVisible = false;
+			visitStatement(decl.getBody(), unused);
+		}
+
+		@Override
+		public void visitMethod(Decl.Method decl, List<Decl.Import> unused) {
+			isVisible = isPublic(decl);
+			visitVariables(decl.getParameters(), unused);
+			visitVariables(decl.getReturns(), unused);
+			visitExpressions(decl.getRequires(), unused);
+			visitExpressions(decl.getEnsures(), unused);
+			isVisible = false;
+			visitStatement(decl.getBody(), unused);
 		}
 
 		@Override
@@ -216,7 +255,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(name, expr));
+				patches.add(new Patch(isVisible,name, expr));
 			}
 		}
 
@@ -228,7 +267,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(name, expr));
+				patches.add(new Patch(isVisible,name, expr));
 			}
 		}
 
@@ -240,7 +279,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(name, expr));
+				patches.add(new Patch(isVisible,name, expr));
 			}
 		}
 
@@ -250,9 +289,9 @@ public class NameResolution {
 			// Resolve to qualified name
 			QualifiedName name = resolveAs(type.getLink(), imports);
 			// Sanity check result
-			if(name != null) {
+			if (name != null) {
 				// Create patch
-				patches.add(new Patch(name, type));
+				patches.add(new Patch(isVisible, name, type));
 			}
 		}
 
@@ -361,13 +400,15 @@ public class NameResolution {
 	 *
 	 */
 	public class Patch {
+		public final boolean isPublic;
 		public final QualifiedName name;
 		private final SyntacticItem target;
 
-		public Patch(QualifiedName name, SyntacticItem target) {
+		public Patch(boolean isPublic, QualifiedName name, SyntacticItem target) {
 			if(name == null || target == null) {
 				throw new IllegalArgumentException("name cannot be null");
 			}
+			this.isPublic = isPublic;
 			this.name = name;
 			this.target = target;
 		}
@@ -394,9 +435,17 @@ public class NameResolution {
 				// link-time analysis or generating a single binary.
 				ArrayList<Decl.Named> imported = new ArrayList<>();
 				for (Decl.Named d : symbolTable.getRegisteredDeclarations(name)) {
+					// Sanity check import
 					imported.add((Decl.Named) importer.allocate(d));
 				}
 				symbolTable.addAvailable(name, imported);
+			} else {
+				for (Decl.Named d : symbolTable.getRegisteredDeclarations(name)) {
+					// Sanity check local declarations
+					if(isPublic && !isPublic(d)) {
+						syntaxError(target,EXPOSING_HIDDEN_DECLARATION);
+					}
+				}
 			}
 		}
 
@@ -443,6 +492,9 @@ public class NameResolution {
 					}
 				} else if(d != null){
 					e.getLink().resolve(d);
+				} else {
+					// NOTE: if we get here, then we have a public member referring to a hidden
+					// member.  For now, this is prohibited further upstream.
 				}
 				break;
 			}
@@ -570,7 +622,6 @@ public class NameResolution {
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
-
 			switch (item.getOpcode()) {
 			case ITEM_ref:
 				Ref<?> ref = (Ref<?>) item;
@@ -600,7 +651,7 @@ public class NameResolution {
 				Decl.Link<? extends Decl.Named> link = linkable.getLink();
 				item = super.allocate(item);
 				// Register patch
-				patches.add(new Patch(link.getTarget().getQualifiedName(), item));
+				patches.add(new Patch(false, link.getTarget().getQualifiedName(), item));
 				// Done
 				return item;
 			}
@@ -647,6 +698,16 @@ public class NameResolution {
 			// Done
 			return item;
 		}
+	}
+
+	/**
+	 * Check whether named declaration is public or not.
+	 *
+	 * @param decl
+	 * @return
+	 */
+	private boolean isPublic(Decl.Named decl) {
+		return decl.getModifiers().match(Modifier.Public.class) != null;
 	}
 
 	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {

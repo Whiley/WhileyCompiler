@@ -5873,6 +5873,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int AMBIGUOUS_COERCION = 408;
 	public static final int MISSING_TEMPLATE_PARAMETERS = 409;
 	public static final int TOOMANY_TEMPLATE_PARAMETERS = 410;
+	public static final int EXPOSING_HIDDEN_DECLARATION = 411;
 	// Statements
 	public static final int MISSING_RETURN_STATEMENT = 500;
 	public static final int UNREACHABLE_CODE = 504;

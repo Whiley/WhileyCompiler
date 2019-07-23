@@ -5,7 +5,7 @@ type MyMeth is method(int) -> int
 method read(int x) -> int:
     return x + 123
 
-public method call(MyMeth m) -> int:
+method call(MyMeth m) -> int:
     return m(1)
 
 public export method test() :

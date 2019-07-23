@@ -6,7 +6,7 @@ type Point3D is {int z, int y, int x}
 
 type Points is Point | Point3D
 
-public method isPoint3D(Points t) -> bool:
+method isPoint3D(Points t) -> bool:
     if t is Point3D:
         return true
     else:
