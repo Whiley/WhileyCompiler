@@ -100,6 +100,7 @@ public class NameResolution {
 	 */
 	public boolean apply() {
 		// FIXME: need to make this incremental
+		checkImports(target);
 		// Create initial set of patches.
 		List<Patch> patches = resolver.apply(target);
 		// Keep iterating until all patches are resolved
@@ -139,6 +140,35 @@ public class NameResolution {
 			}
 		}
 		return externals;
+	}
+
+	/**
+	 * Sanity check that import statements make sense. Specifically. that: (1) the
+	 * module being imported from exists; (2) any names being imported exist.
+	 *
+	 * @param target
+	 */
+	private void checkImports(WyilFile target) {
+		for(Decl.Unit unit : target.getModule().getUnits()) {
+			for(Decl d : unit.getDeclarations()) {
+				if(d instanceof Decl.Import) {
+					// Found one to check!
+					Decl.Import imp = (Decl.Import) d;
+					Tuple<Identifier> path = imp.getPath();
+					// Sanity check module exists
+					Name name = new Name(path.toArray(Identifier.class));
+					// Sanity check imported module
+					if(!symbolTable.contains(name)) {
+						// Cannot identify name
+						syntaxError(path.get(path.size()-1), RESOLUTION_ERROR);
+					}
+					// Sanity check imported names (if applicable)
+					if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
+						syntaxError(imp.getFrom(), RESOLUTION_ERROR);
+					}
+				}
+			}
+		}
 	}
 
 	/**
