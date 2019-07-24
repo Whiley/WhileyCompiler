@@ -98,7 +98,11 @@ public class AllValidTest {
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_3", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "???");
-
+		// Bug Subtyping with Templates
+		IGNORED.put("Template_Valid_31", "934");
+		IGNORED.put("Template_Valid_32", "934");
+		IGNORED.put("Template_Valid_33", "934");
+		IGNORED.put("Template_Valid_34", "934");
 	}
 
 
