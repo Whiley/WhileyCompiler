@@ -7,4 +7,4 @@ public export method test() :
     if ptr is &int:
         (*ptr) = 123
     //
-    assume *ptr == 123
+    assume ptr is &bool || *ptr == 123

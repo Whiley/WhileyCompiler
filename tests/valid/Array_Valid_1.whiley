@@ -1,11 +1,7 @@
-type in_arr is ((int|null)[] n)
-type ib_arr is ((int|bool)[] n)
-type arr is in_arr | ib_arr
+type arr is ((int|null)[] n)
 
-function read(arr x, int i) -> (int|null|bool r)
-requires i >= 0
-requires (x is in_arr ==> i < |x|)
-requires (x is ib_arr ==> i < |x|):
+function read(arr x, int i) -> (int|null r)
+requires i >= 0 && i < |x|:
     //
     return x[i]
 

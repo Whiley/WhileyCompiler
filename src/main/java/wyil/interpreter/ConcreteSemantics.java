@@ -142,7 +142,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				Type.Nominal nom = (Type.Nominal) type;
 				Decl.Type decl = nom.getLink().getTarget();
 				Decl.Variable var = decl.getVariableDeclaration();
-				if(is(var.getType(), frame) == True) {
+				if(is(nom.getConcreteType(), frame) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();
 					return checkInvariant(var,invariant,frame);
 				}
@@ -273,7 +273,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 			@Override
 			public String toString() {
-				return null;
+				return "Null";
 			}
 			@Override
 			public Value.Null toValue() {
@@ -632,6 +632,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue getValue() {
 				return value;
 			}
+
+			@Override
+			public String toString() {
+				return name + ":" + value;
+			}
 		}
 
 		public final static class Record extends RValue implements AbstractSemantics.RValue.Record {
@@ -923,6 +928,15 @@ public class ConcreteSemantics implements AbstractSemantics {
 					return referent.value.is(ref.getElement(), frame);
 				} else {
 					return super.is(type, frame);
+				}
+			}
+
+			@Override
+			public RValue convert(Type type) {
+				if(type instanceof Type.Reference) {
+					return this;
+				} else {
+					return super.convert(type);
 				}
 			}
 

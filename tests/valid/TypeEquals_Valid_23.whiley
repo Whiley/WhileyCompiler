@@ -11,7 +11,7 @@ function f(expr e) -> int:
         return e + 1
 
 public export method test() :
-    x = f(1)
+    int x = f(1)
     assume x == 2
     x = f({y: 10, x: 4})
     assume x == 14

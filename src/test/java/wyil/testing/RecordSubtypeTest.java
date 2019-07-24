@@ -17,10 +17,8 @@ package wyil.testing;
 import org.junit.*;
 
 import wyc.util.TestUtils;
-import wyil.type.subtyping.SubtypeOperator;
 import wyil.lang.WyilFile.Type;
-import wyil.type.subtyping.RelaxedTypeEmptinessTest;
-import wyil.type.subtyping.StrictTypeEmptinessTest;
+import wyil.util.SubtypeOperator;
 
 import static org.junit.Assert.*;
 import static wyil.lang.WyilFile.Type;
@@ -1793,14 +1791,14 @@ public class RecordSubtypeTest {
 
 
 	private void checkIsSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertFalse(subtypeOperator.isSubtype(ft, tt, null));

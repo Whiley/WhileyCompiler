@@ -28,12 +28,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
-import wyil.type.subtyping.StrictTypeEmptinessTest;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.util.BinaryRelation;
-import wyil.type.util.HashSetBinaryRelation;
-import wyil.util.AbstractTypedVisitor;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
+import wyil.util.*;
 
 /**
  * <p>
@@ -85,7 +80,8 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	private boolean status = true;
 
 	public AmbiguousCoercionCheck() {
-		super(new SubtypeOperator(new StrictTypeEmptinessTest()));
+		// FIXME: figure out which one to use
+		super(new SubtypeOperator.Relaxed());
 	}
 
 	@Override
@@ -104,7 +100,6 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		}
 	}
 
-
 	@Override
 	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
 		if(checkCoercion(expr, targets, environment)) {
@@ -115,7 +110,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
 		boolean status = true;
-		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
+		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
 		Tuple<Type> types = expr.getTypes();
 		for(int j=0;j!=targets.size();++j) {
 			Type target = targets.get(j);
@@ -130,7 +125,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	}
 
 	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
-		HashSetBinaryRelation<Type> assumptions = new HashSetBinaryRelation<>();
+		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
 		Type source = expr.getType();
 		if (!checkCoercion(target, source, environment, assumptions, expr)) {
 			syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
@@ -174,7 +169,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		if (target instanceof Type.Primitive || target instanceof Type.Variable) {
+		if (source instanceof Type.Void || target instanceof Type.Primitive || target instanceof Type.Variable) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
@@ -268,7 +263,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private Type selectCoercionCandidate(Type[] candidates, Type type, Environment environment) {
 		// FIXME: this is temporary
-		return super.selectCandidate(candidates, type, environment);
+		return super.select(Arrays.asList(candidates), type, environment);
 	}
 
 	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {

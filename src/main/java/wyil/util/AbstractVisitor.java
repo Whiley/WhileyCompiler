@@ -15,12 +15,12 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
-import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 
@@ -705,6 +705,11 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitInvoke(Expr.Invoke expr) {
+		for(SyntacticItem arg : expr.getBinding().getArguments()) {
+			if(arg instanceof Type) {
+				visitType((Type) arg);
+			}
+		}
 		visitExpressions(expr.getOperands());
 	}
 
@@ -891,63 +896,5 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeVariable(Type.Variable type) {
-	}
-
-	public void visitSemanticType(SemanticType type) {
-		switch (type.getOpcode()) {
-		case SEMTYPE_array:
-			visitSemanticTypeArray((SemanticType.Array) type);
-			break;
-		case SEMTYPE_record:
-			visitSemanticTypeRecord((SemanticType.Record) type);
-			break;
-		case SEMTYPE_staticreference:
-		case SEMTYPE_reference:
-			visitSemanticTypeReference((SemanticType.Reference) type);
-			break;
-		case SEMTYPE_union:
-			visitSemanticTypeUnion((SemanticType.Union) type);
-			break;
-		case SEMTYPE_intersection:
-			visitSemanticTypeIntersection((SemanticType.Intersection) type);
-			break;
-		case SEMTYPE_difference:
-			visitSemanticTypeDifference((SemanticType.Difference) type);
-			break;
-		default:
-			// Handle leaf cases
-			visitType((Type) type);
-		}
-	}
-
-	public void visitSemanticTypeArray(SemanticType.Array type) {
-		visitSemanticType(type.getElement());
-	}
-
-	public void visitSemanticTypeRecord(SemanticType.Record type) {
-		for(SemanticType.Field f : type.getFields()) {
-			visitSemanticType(f.getType());
-		}
-	}
-
-	public void visitSemanticTypeReference(SemanticType.Reference type) {
-		visitSemanticType(type.getElement());
-	}
-
-	public void visitSemanticTypeUnion(SemanticType.Union type) {
-		for(SemanticType t : type.getAll()) {
-			visitSemanticType(t);
-		}
-	}
-
-	public void visitSemanticTypeIntersection(SemanticType.Intersection type) {
-		for(SemanticType t : type.getAll()) {
-			visitSemanticType(t);
-		}
-	}
-
-	public void visitSemanticTypeDifference(SemanticType.Difference type) {
-		visitSemanticType(type.getLeftHandSide());
-		visitSemanticType(type.getRightHandSide());
 	}
 }

@@ -15,10 +15,10 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -686,6 +686,11 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitInvoke(Expr.Invoke expr, P data) {
+		for(SyntacticItem arg : expr.getBinding().getArguments()) {
+			if(arg instanceof Type) {
+				visitType((Type) arg, data);
+			}
+		}
 		visitExpressions(expr.getOperands(), data);
 		return null;
 	}
@@ -878,63 +883,4 @@ public abstract class AbstractFunction<P,R> {
 	public R visitTypeVariable(Type.Variable type, P data) {
 		return null;
 	}
-
-	public R visitSemanticType(SemanticType type, P data) {
-		switch (type.getOpcode()) {
-		case SEMTYPE_array:
-			return visitSemanticTypeArray((SemanticType.Array) type, data);
-		case SEMTYPE_record:
-			return visitSemanticTypeRecord((SemanticType.Record) type, data);
-		case SEMTYPE_staticreference:
-		case SEMTYPE_reference:
-			return visitSemanticTypeReference((SemanticType.Reference) type, data);
-		case SEMTYPE_union:
-			return visitSemanticTypeUnion((SemanticType.Union) type, data);
-		case SEMTYPE_intersection:
-			return visitSemanticTypeIntersection((SemanticType.Intersection) type, data);
-		case SEMTYPE_difference:
-			return visitSemanticTypeDifference((SemanticType.Difference) type, data);
-		default:
-			// Handle leaf cases
-			return visitType((Type) type, data);
-		}
-	}
-
-	public R visitSemanticTypeArray(SemanticType.Array type, P data) {
-		visitSemanticType(type.getElement(), data);
-		return null;
-	}
-
-	public R visitSemanticTypeRecord(SemanticType.Record type, P data) {
-		for(SemanticType.Field f : type.getFields()) {
-			visitSemanticType(f.getType(), data);
-		}
-		return null;
-	}
-
-	public R visitSemanticTypeReference(SemanticType.Reference type, P data) {
-		visitSemanticType(type.getElement(), data);
-		return null;
-	}
-
-	public R visitSemanticTypeUnion(SemanticType.Union type, P data) {
-		for(SemanticType t : type.getAll()) {
-			visitSemanticType(t, data);
-		}
-		return null;
-	}
-
-	public R visitSemanticTypeIntersection(SemanticType.Intersection type, P data) {
-		for(SemanticType t : type.getAll()) {
-			visitSemanticType(t, data);
-		}
-		return null;
-	}
-
-	public R visitSemanticTypeDifference(SemanticType.Difference type, P data) {
-		visitSemanticType(type.getLeftHandSide(), data);
-		visitSemanticType(type.getRightHandSide(), data);
-		return null;
-	}
-
 }

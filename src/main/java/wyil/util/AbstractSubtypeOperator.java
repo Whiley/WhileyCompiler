@@ -11,81 +11,120 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.type.binding;
+package wyil.util;
 
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_property;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_variable;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Function;
+import java.util.*;
 
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.type.util.BinaryRelation;
-import wyil.type.util.ConcreteTypeExtractor;
-import wyil.type.util.HashSetBinaryRelation;
-import wyil.type.util.ReadWriteTypeExtractor;
+import wyil.util.SubtypeOperator.LifetimeRelation;
 
-public class RelaxedTypeResolver implements TypeResolver {
-	private final SubtypeOperator subtypeOperator;
-	private final ConcreteTypeExtractor concreteTypeExtractor;
-	private final ReadWriteTypeExtractor rwTypeExtractor;
+/**
+ * <p>
+ * Provides default implementations for <code>isSubtype</code> and
+ * <code>bind</code>. The intention is that these be overriden to provide
+ * different variants (e.g. relaxed subtype operators, etc).
+ * </p>
+ * <p>
+ * <b>(Subtyping)</b> The default subtype operator checks whether one type is a
+ * <i>strict subtype</i> of another. Unlike other subtype operators, this takes
+ * into account the invariants on types. Consider these two types:
+ *
+ * <pre>
+ * type nat is (int x) where x >= 0
+ * type pos is (nat x) where x > 0
+ * type tan is (int x) where x >= 0
+ * </pre>
+ *
+ * In this case, we have <code>nat <: int</code> since <code>int</code> is
+ * explicitly included in the definition of <code>nat</code>. Observe that this
+ * applies transitively and, hence, <code>pos <: nat</code>. But, it does not
+ * follow that <code>nat <: int</code> and, likewise, that
+ * <code>pos <: nat</code>. Likewise, <code>nat <: tan</code> does not follow
+ * (despite this being actually true) since we cannot reason about invariants.
+ * </p>
+ * <p>
+ * <b>(Binding)</b> An important task is computing a "binding" between a
+ * function, method or property declaration and a given set of concrete
+ * arguments types. For example, consider:
+ * </p>
+ *
+ * <pre>
+ * template<T>
+ * function get(T[] items, int i) -> T:
+ *    return items[i]
+ *
+ *  function f(int[] items) -> int:
+ *     return get(items,0)
+ * </pre>
+ *
+ * <p>
+ * At the point of the invocation for <code>get()</code> we must resolve the
+ * declared type <code>function(T[],int)->(T)</code> against the declared
+ * parameter types <code>(int[],int)</code>, yielding a binding
+ * <code>T=int</code>.
+ * </p>
+ * <p>
+ * Computing the binding between two types is non-trivial in Whiley. In addition
+ * to template arguments (as above), we must handle lifetime arguments. For
+ * example:
+ * </p>
+ *
+ * <pre>
+ * method <a> m(&a:int x) -> int:
+ *    return *a
+ *
+ * ...
+ *   &this:int ptr = new 1
+ *   return m(ptr)
+ * </pre>
+ * <p>
+ * At the invocation to <code>m()</code>, we need to infer the binding
+ * <code>a=this</code>. A major challenge is the presence of union types. For
+ * example, consider this binding problem:
+ * </p>
+ *
+ * <pre>
+ * template<S,T>
+ * function f(S x, S|T y) -> S|T:
+ *    return y
+ *
+ * function g(int p, bool|int q) -> (bool|int r):
+ *    return f(p,q)
+ * </pre>
+ * <p>
+ * At the invocation to <code>f</code> we must generate the binding
+ * <code>S=int,T=bool</code>. When binding <code>bool|int</code> against
+ * <code>S|T</code> we need to consider both cases where
+ * <code>S=bool,T=int</code> and <code>S=int,T=bool</code>. Otherwise, we cannot
+ * be sure to consider the right combination.
+ * </p>
+ *
+ * @author David J. Pearce
+ *
+ */
+public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 
-	public RelaxedTypeResolver(SubtypeOperator subtypeOperator, ConcreteTypeExtractor concreteTypeExtractor,
-			ReadWriteTypeExtractor rwTypeExtractor) {
-		this.subtypeOperator = subtypeOperator;
-		this.concreteTypeExtractor = concreteTypeExtractor;
-		this.rwTypeExtractor = rwTypeExtractor;
+
+	@Override
+	public boolean isSubtype(Type t1, Type t2, LifetimeRelation lifetimes) {
+		return isSubtype(t1,t2,lifetimes,null);
 	}
 
-	/**
-	 * Determine appropriate lifetime bindings for a given set of candidate function
-	 * or method declarations and concrete argument types. For example:
-	 *
-	 * <pre>
-	 * method f<a>(&a:int ptr):
-	 *    ...
-	 *
-	 * method g() -> int:
-	 *    &this:int ptr = this::new(1)
-	 *    f(ptr)
-	 *    return *ptr
-	 * </pre>
-	 *
-	 * Here, the invocation <code>f(ptr)</code> needs to bind the parameter type
-	 * <code>&a:int</code> with the concrete argument type <code>&this:int</code> by
-	 * mapping lifetime parameter <code>a</code> to lifetime argument
-	 * <code>this</code>.
-	 *
-	 * @param link
-	 * @param candidates
-	 * @param arguments
-	 * @param lifetimeArguments
-	 * @param lifetimes
-	 * @return
-	 */
 	@Override
-	public Type.Callable bind(Decl.Binding<Type.Callable,Decl.Callable> binding, Tuple<? extends SemanticType> types,
+	public boolean isEmpty(QualifiedName nid, Type type) {
+		return isContractive(nid, type, null);
+	}
+
+	@Override
+	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Tuple<Type> types,
 			LifetimeRelation environment) {
 		// Now attempt to bind the given candidate declarations against the concrete
 		// argument types.
@@ -100,7 +139,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 			// Select the most precise signature from the candidate bindings
 			Binding selected = selectCallableCandidate(link.getName(), bindings, environment);
 			// Check whether one was selected or not
-			if(selected != null) {
+			if (selected != null) {
 				// Assign descriptor to this expression
 				link.resolve(selected.getCandidateDeclaration());
 				// Set inferred lifetime parameters as well
@@ -111,6 +150,10 @@ public class RelaxedTypeResolver implements TypeResolver {
 		}
 		return null;
 	}
+
+	// ===========================================================================
+	// Bind
+	// ===========================================================================
 
 	/**
 	 * <p>
@@ -188,8 +231,8 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 *            Within relationship between declared lifetimes
 	 * @return
 	 */
-	private List<Binding> bindCallableCandidates(List<Decl.Callable> candidates,
-			Tuple<? extends SemanticType> arguments, Tuple<SyntacticItem> templateArguments,
+	protected List<Binding> bindCallableCandidates(List<Decl.Callable> candidates,
+			Tuple<Type> arguments, Tuple<SyntacticItem> templateArguments,
 			LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		// Go through each candidate and generate all possible bindings.
@@ -202,7 +245,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 		return bindings;
 	}
 
-	private void generateApplicableBindings(Decl.Callable candidate, Tuple<? extends SemanticType> arguments,
+	protected void generateApplicableBindings(Decl.Callable candidate, Tuple<Type> arguments,
 			Tuple<SyntacticItem> templateArguments, List<Binding> bindings, LifetimeRelation lifetimes) {
 		//
 		Tuple<Template.Variable> templateParameters = candidate.getTemplate();
@@ -227,8 +270,9 @@ public class RelaxedTypeResolver implements TypeResolver {
 			}
 		} else if(parameters.size() > 0) {
 			// Go through every argument attempting to form a binding.
-			HashSetBinaryRelation<SemanticType> relation = new HashSetBinaryRelation<>();
+			BinaryRelation.HashSet<Type> relation = new BinaryRelation.HashSet<>();
 			ConstraintSet constraints = new ConstraintSet(candidate, lifetimes);
+			//
 			for(int i=0;i!=arguments.size();++i) {
 				constraints = bind(parameters.get(i), arguments.get(i), constraints, relation);
 			}
@@ -237,8 +281,8 @@ public class RelaxedTypeResolver implements TypeResolver {
 		}
 	}
 
-	private void generateApplicableBindings(int index, SyntacticItem[] binding, ConstraintSet constraints,
-			Tuple<? extends SemanticType> arguments, List<Binding> bindings) {
+	protected void generateApplicableBindings(int index, SyntacticItem[] binding, ConstraintSet constraints,
+			Tuple<Type> arguments, List<Binding> bindings) {
 		//
 		if(index == constraints.size()) {
 			// BASE CASE.
@@ -285,8 +329,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @param args
 	 * @return
 	 */
-	private boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes,
-			Tuple<? extends SemanticType> args) {
+	protected boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes, Tuple<Type> args) {
 		Tuple<Type> parameters = candidate.getParameters();
 		if (parameters.size() != args.size()) {
 			// Differing number of parameters / arguments. Since we don't
@@ -297,8 +340,8 @@ public class RelaxedTypeResolver implements TypeResolver {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.size(); ++i) {
-				SemanticType param = parameters.get(i);
-				if (!subtypeOperator.isSubtype(param, args.get(i), lifetimes)) {
+				Type param = parameters.get(i);
+				if (!isSubtype(param, args.get(i), lifetimes)) {
 					return false;
 				}
 			}
@@ -328,8 +371,8 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @param bindings
 	 * @param lifetimes
 	 */
-	private ConstraintSet bind(Type parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
+	protected ConstraintSet bind(Type parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		if (assumptions.get(parameter, argument)) {
 			// Have visited this pair before, therefore nothing further to be gained.
 			// Furthermore, must terminate here to prevent infinite loop.
@@ -380,27 +423,18 @@ public class RelaxedTypeResolver implements TypeResolver {
 		}
 	}
 
-	public ConstraintSet bind(Type.Variable parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
+	public ConstraintSet bind(Type.Variable parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		LifetimeRelation lifetimes = constraints.getLifetimes();
 		// Simple case, bind directly against type variable.
-		Type t = concreteTypeExtractor.apply(argument, lifetimes);
-		// Sanity check whether this worked or not.
-		if (t instanceof Type.Void) {
-			// extraction failed for some reason
-		} else {
-			// No binding associated with this variable, therefore record this.
-			constraints = constraints.intersect(parameter.getOperand(), t);
-		}
-		return constraints;
+		// No binding associated with this variable, therefore record this.
+		return constraints.intersect(parameter.getOperand(), argument);
 	}
 
-	public ConstraintSet bind(Type.Array parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
-		LifetimeRelation lifetimes = constraints.getLifetimes();
+	public ConstraintSet bind(Type.Array parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		// Attempt to extract an array type so binding can continue.
-		SemanticType.Array t = rwTypeExtractor.apply(argument, lifetimes,
-				ReadWriteTypeExtractor.READABLE_ARRAY);
+		Type.Array t = extract(Type.Array.class,argument);
 		if (t != null) {
 			// Array type extracted successfully, therefore continue binding.
 			return bind(parameter.getElement(), t.getElement(), constraints, assumptions);
@@ -408,15 +442,14 @@ public class RelaxedTypeResolver implements TypeResolver {
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Record parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
-		LifetimeRelation lifetimes = constraints.getLifetimes();
+	public ConstraintSet bind(Type.Record parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		// Attempt to extract record type so binding can continue.
-		SemanticType.Record t = rwTypeExtractor.apply(argument, lifetimes, ReadWriteTypeExtractor.READABLE_RECORD);
+		Type.Record t = extract(Type.Record.class,argument);
 		//
 		if (t != null) {
 			Tuple<Type.Field> param_fields = parameter.getFields();
-			Tuple<? extends SemanticType.Field> arg_fields = t.getFields();
+			Tuple<Type.Field> arg_fields = t.getFields();
 			if (param_fields.size() == arg_fields.size()) {
 				// FIXME: problems with open records here?
 				for (int i = 0; i != param_fields.size(); ++i) {
@@ -429,12 +462,10 @@ public class RelaxedTypeResolver implements TypeResolver {
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Reference parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
-		LifetimeRelation lifetimes = constraints.getLifetimes();
+	public ConstraintSet bind(Type.Reference parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		// Attempt to extract reference type so binding can continue.
-		SemanticType.Reference t = rwTypeExtractor.apply(argument, lifetimes,
-				ReadWriteTypeExtractor.READABLE_REFERENCE);
+		Type.Reference t = extract(Type.Reference.class,argument);
 		//
 		if (t != null) {
 			// Bind against element type
@@ -454,11 +485,10 @@ public class RelaxedTypeResolver implements TypeResolver {
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Callable parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
-		LifetimeRelation lifetimes = constraints.getLifetimes();
+	public ConstraintSet bind(Type.Callable parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		// Attempt to extract callable type so binding can continue.
-		Type.Callable t = rwTypeExtractor.apply(argument, lifetimes, ReadWriteTypeExtractor.READABLE_CALLABLE);
+		Type.Callable t = extract(Type.Callable.class,argument);
 		//
 		if (t != null) {
 			// Bind against parameters and returns
@@ -478,14 +508,14 @@ public class RelaxedTypeResolver implements TypeResolver {
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Nominal parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
+	public ConstraintSet bind(Type.Nominal parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		// Recursively bind against the body of the nominal
 		return bind(parameter.getConcreteType(), argument, constraints, assumptions);
 	}
 
-	public ConstraintSet bind(Type.Union parameter, SemanticType argument, ConstraintSet constraints,
-			BinaryRelation<SemanticType> assumptions) {
+	public ConstraintSet bind(Type.Union parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
 		ConstraintSet results = bind(parameter.get(0), argument, constraints, assumptions);
 		//
 		for (int i = 1; i != parameter.size(); ++i) {
@@ -504,7 +534,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @param args
 	 * @return
 	 */
-	private Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
+	protected Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
 		Binding best = null;
 		Type.Callable bestType = null;
 		boolean bestValidWinner = false;
@@ -519,8 +549,8 @@ public class RelaxedTypeResolver implements TypeResolver {
 				bestType = candidateType;
 				bestValidWinner = true;
 			} else {
-				boolean csubb = isSubtype(bestType, candidateType, lifetimes);
-				boolean bsubc = isSubtype(candidateType, bestType, lifetimes);
+				boolean csubb = isParameterSubtype(bestType, candidateType, lifetimes);
+				boolean bsubc = isParameterSubtype(candidateType, bestType, lifetimes);
 				//
 				if (csubb && !bsubc) {
 					// This candidate is a subtype of the best seen so far. Hence, it is now the
@@ -563,7 +593,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @param rhs
 	 * @return
 	 */
-	private boolean isSubtype(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
+	protected boolean isParameterSubtype(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
 		Tuple<Type> parentParams = lhs.getParameters();
 		Tuple<Type> childParams = rhs.getParameters();
 		if (parentParams.size() != childParams.size()) {
@@ -575,14 +605,32 @@ public class RelaxedTypeResolver implements TypeResolver {
 		// Number of parameters matches number of arguments. Now, check that
 		// each argument is a subtype of its corresponding parameter.
 		for (int i = 0; i != parentParams.size(); ++i) {
-			SemanticType parentParam = parentParams.get(i);
-			SemanticType childParam = childParams.get(i);
-			if (!subtypeOperator.isSubtype(parentParam, childParam, lifetimes)) {
+			Type parentParam = parentParams.get(i);
+			Type childParam = childParams.get(i);
+			if (!isSubtype(parentParam, childParam, lifetimes)) {
 				return false;
 			}
 		}
 		//
 		return true;
+	}
+
+	/**
+	 * From an arbitrary type, extract a particular kind of type.
+	 *
+	 * @param kind
+	 * @param type
+	 * @return
+	 */
+	public <T extends Type> T extract(Class<T> kind, Type type) {
+		if (kind.isInstance(type)) {
+			return (T) type;
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			return extract(kind, t.getConcreteType());
+		} else {
+			return null; // deadcode
+		}
 	}
 
 	/**
@@ -601,7 +649,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class ConstraintSet {
+	protected class ConstraintSet {
 		private final LifetimeRelation lifetimes;
 		private final Decl.Callable callable;
 		private final Tuple<Template.Variable> variables;
@@ -722,7 +770,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 			}
 		}
 
-		public boolean subsumes(SyntacticItem l, SyntacticItem r) {
+		private boolean subsumes(SyntacticItem l, SyntacticItem r) {
 			if (l instanceof Identifier && r instanceof Identifier) {
 				Identifier li = (Identifier) l;
 				Identifier ri = (Identifier) r;
@@ -730,7 +778,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 			} else if(l instanceof Type && r instanceof Type) {
 				Type lt = (Type) l;
 				Type rt = (Type) r;
-				return subtypeOperator.isSubtype(lt, rt, lifetimes);
+				return isSubtype(lt, rt, lifetimes);
 			} else {
 				return false;
 			}
@@ -775,7 +823,7 @@ public class RelaxedTypeResolver implements TypeResolver {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class Binding  {
+	protected static class Binding  {
 		private final Tuple<SyntacticItem> arguments;
 		private final Decl.Callable candidate;
 		private final Type.Callable concreteType;
@@ -812,5 +860,478 @@ public class RelaxedTypeResolver implements TypeResolver {
 			}
 			return "{" + r + "}:" + candidate.getType();
 		}
+	}
+
+	// ===========================================================================
+	// Contractivity
+	// ===========================================================================
+
+	/**
+	 * Provides a helper implementation for isContractive.
+	 * @param name
+	 * @param type
+	 * @param visited
+	 * @return
+	 */
+	static boolean isContractive(QualifiedName name, Type type, HashSet<QualifiedName> visited) {
+		switch (type.getOpcode()) {
+		case TYPE_void:
+		case TYPE_any:
+		case TYPE_null:
+		case TYPE_bool:
+		case TYPE_int:
+		case TYPE_staticreference:
+		case TYPE_reference:
+		case TYPE_array:
+		case TYPE_record:
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property:
+		case TYPE_invariant:
+		case TYPE_byte:
+		case TYPE_unknown:
+			return true;
+		case TYPE_union: {
+			Type.Union c = (Type.Union) type;
+			for (int i = 0; i != c.size(); ++i) {
+				if (!isContractive(name, c.get(i), visited)) {
+					return false;
+				}
+			}
+			return true;
+		}
+		default:
+		case TYPE_nominal:
+			Type.Nominal n = (Type.Nominal) type;
+			Decl.Link<Decl.Type> link = n.getLink();
+			Decl.Type decl = link.getTarget();
+			QualifiedName nid = decl.getQualifiedName();
+			if (nid.equals(name)) {
+				// We have identified a non-contractive type.
+				return false;
+			} else if (visited != null && visited.contains(nid)) {
+				// NOTE: this identifies a type (other than the one we are looking for) which is
+				// not contractive. It may seem odd then, that we pretend it is in fact
+				// contractive. The reason for this is simply that we cannot tell here with the
+				// type we are interested in is contractive or not. Thus, to improve the error
+				// messages reported we ignore this non-contractiveness here (since we know
+				// it'll be caught down the track anyway).
+				return true;
+			} else if (decl.isRecursive()) {
+				// Lazily construct the visited set as, in the vast majority of cases, this is
+				// never required.
+				visited = new HashSet<>();
+				visited.add(nid);
+			}
+			return isContractive(name, decl.getType(), visited);
+		}
+	}
+
+	// ===========================================================================
+	// Subtyping
+	// ===========================================================================
+
+	/**
+	 * A subtype operator aimed at checking whether one type is a <i>strict
+	 * subtype</i> of another. Unlike other subtype operators, this takes into
+	 * account the invariants on types. Consider these two types:
+	 *
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * type pos is (nat x) where x > 0
+	 * type tan is (int x) where x >= 0
+	 * </pre>
+	 *
+	 * In this case, we have <code>nat <: int</code> since <code>int</code> is
+	 * explicitly included in the definition of <code>nat</code>. Observe that this
+	 * applies transitively and, hence, <code>pos <: nat</code>. But, it does not
+	 * follow that <code>nat <: int</code> and, likewise, that
+	 * <code>pos <: nat</code>. Likewise, <code>nat <: tan</code> does not follow
+	 * (despite this being actually true) since we cannot reason about invariants.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	protected boolean isSubtype(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		int t1_opcode = normalise(t1.getOpcode());
+		int t2_opcode = normalise(t2.getOpcode());
+		//
+		if (t1_opcode == t2_opcode) {
+			switch (t1_opcode) {
+			case TYPE_void:
+			case TYPE_null:
+			case TYPE_bool:
+			case TYPE_byte:
+			case TYPE_int:
+				return true;
+			case TYPE_array:
+				return isSubtype((Type.Array) t1, (Type.Array) t2, lifetimes, cache);
+			case TYPE_record:
+				return isSubtype((Type.Record) t1, (Type.Record)t2, lifetimes, cache);
+			case TYPE_nominal:
+				return isSubtype((Type.Nominal) t1, (Type.Nominal)t2, lifetimes, cache);
+			case TYPE_union:
+				return isSubtype(t1, (Type.Union) t2, lifetimes, cache);
+			case TYPE_staticreference:
+			case TYPE_reference:
+				return isSubtype((Type.Reference) t1, (Type.Reference) t2, lifetimes, cache);
+			case TYPE_method:
+			case TYPE_function:
+			case TYPE_property:
+				return isSubtype((Type.Callable) t1, (Type.Callable) t2, lifetimes, cache);
+			case TYPE_variable:
+				return isSubtype((Type.Variable) t1, (Type.Variable) t2, lifetimes, cache);
+			default:
+				throw new IllegalArgumentException("unexpected type encountered: " + t1);
+			}
+		} else if (t2_opcode == TYPE_nominal) {
+			return isSubtype(t1, (Type.Nominal) t2, lifetimes, cache);
+		} else if (t2_opcode == TYPE_union) {
+			return isSubtype(t1, (Type.Union) t2, lifetimes, cache);
+		} else if (t1_opcode == TYPE_union) {
+			return isSubtype((Type.Union) t1, t2, lifetimes, cache);
+		} else if (t1_opcode == TYPE_nominal) {
+			return isSubtype((Type.Nominal) t1, (Type.Atom) t2, lifetimes, cache);
+		} else {
+			// Nothing else works except void
+			return t2_opcode == TYPE_void;
+		}
+	}
+
+	protected boolean isSubtype(Type.Array t1, Type.Array t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		return isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+	}
+
+	protected boolean isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		Tuple<Type.Field> t1_fields = t1.getFields();
+		Tuple<Type.Field> t2_fields = t2.getFields();
+		// Sanity check number of fields are reasonable.
+		if(t1_fields.size() != t2_fields.size()) {
+			return false;
+		} else if(t1.isOpen() != t2.isOpen()) {
+			return false;
+		}
+		// Check fields one-by-one.
+		for (int i = 0; i != t1_fields.size(); ++i) {
+			Type.Field f1 = t1_fields.get(i);
+			Type.Field f2 = t2_fields.get(i);
+			if (!f1.getName().equals(f2.getName())) {
+				// Fields have differing names
+				return false;
+			} else if (!isSubtype(f1.getType(), f2.getType(), lifetimes, cache)) {
+				// Fields are not subtypes
+				return false;
+			}
+		}
+		// Done
+		return true;
+	}
+
+	protected boolean isSubtype(Type.Reference t1, Type.Reference t2, LifetimeRelation lifetimes,
+			BinaryRelation<Type> cache) {
+		String l1 = extractLifetime(t1);
+		String l2 = extractLifetime(t2);
+		//
+		return lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
+	}
+
+	protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
+			BinaryRelation<Type> cache) {
+		Tuple<Type> t1_params = t1.getParameters();
+		Tuple<Type> t2_params = t2.getParameters();
+		Tuple<Type> t1_returns = t1.getReturns();
+		Tuple<Type> t2_returns = t2.getReturns();
+		// Eliminate easy cases first
+		if (t1.getOpcode() != t2.getOpcode() || t1_params.size() != t2_params.size()
+				|| t1_returns.size() != t2_returns.size()) {
+			return false;
+		}
+		// Check parameters
+		for(int i=0;i!=t1_params.size();++i) {
+			if(!areEquivalent(t1_params.get(i),t2_params.get(i),lifetimes)) {
+				return false;
+			}
+		}
+		// Check returns
+		for(int i=0;i!=t1_returns.size();++i) {
+			if(!areEquivalent(t1_returns.get(i),t2_returns.get(i),lifetimes)) {
+				return false;
+			}
+		}
+		// Check lifetimes
+		if(t1 instanceof Type.Method) {
+			Type.Method m1 = (Type.Method) t1;
+			Type.Method m2 = (Type.Method) t2;
+			Tuple<Identifier> m1_lifetimes = m1.getLifetimeParameters();
+			Tuple<Identifier> m2_lifetimes = m2.getLifetimeParameters();
+			Tuple<Identifier> m1_captured = m1.getCapturedLifetimes();
+			Tuple<Identifier> m2_captured = m2.getCapturedLifetimes();
+			// FIXME: it's not clear to me what we need to do here. I think one problem is
+			// that we must normalise lifetimes somehow.
+			if (m1_lifetimes.size() > 0 || m2_lifetimes.size() > 0) {
+				throw new RuntimeException("must implement this!");
+			} else if (m1_captured.size() > 0 || m2_captured.size() > 0) {
+				throw new RuntimeException("must implement this!");
+			}
+		}
+		// Done
+		return true;
+	}
+
+	protected boolean isSubtype(Type.Variable t1, Type.Variable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		return t1.getOperand().equals(t2.getOperand());
+	}
+
+	protected boolean isSubtype(Type t1, Type.Union t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		for(int i=0;i!=t2.size();++i) {
+			if (!isSubtype(t1, t2.get(i), lifetimes, cache)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected boolean isSubtype(Type.Union t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		for (int i = 0; i != t1.size(); ++i) {
+			if (isSubtype(t1.get(i), t2, lifetimes, cache)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	protected boolean isSubtype(Type.Nominal t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		Decl.Type d1 = t1.getLink().getTarget();
+		Decl.Type d2 = t2.getLink().getTarget();
+		// FIXME: only need to check for coinductive case when both types are recursive.
+		// If either is not recursive, then are guaranteed to eventually terminate.
+		if (cache != null && cache.get(t1, t2)) {
+			return true;
+		} else if (cache == null) {
+			// Lazily construct cache.
+			cache = new BinaryRelation.HashSet<>();
+		}
+		cache.set(t1, t2, true);
+		//
+		Tuple<Expr> t1_invariant = d1.getInvariant();
+		Tuple<Expr> t2_invariant = d2.getInvariant();
+		// Dispatch easy cases
+		if (d1 == d2) {
+			Tuple<Type> t1s = t1.getParameters();
+			Tuple<Type> t2s = t2.getParameters();
+			for (int i = 0; i != t1s.size(); ++i) {
+				if (!isSubtype(t1s.get(i), t2s.get(i), lifetimes, cache)) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			boolean left = isSubtype(t1_invariant, t2_invariant);
+			boolean right = isSubtype(t2_invariant, t1_invariant);
+			if(left || right) {
+				Type tt1 = left ? t1.getConcreteType() : t1;
+				Type tt2 = right ? t2.getConcreteType() : t2;
+				return isSubtype(tt1,tt2, lifetimes, cache);
+			} else {
+				return false;
+			}
+		}
+	}
+
+	/**
+	 * Check whether a nominal type is a subtype of an atom (i.e. not a nominal or
+	 * union). For example, <code>int :> nat</code> or <code>{nat f} :> rec</code>.
+	 * This is actually easy as an invariants on the nominal type can be ignored
+	 * (since they already imply it is a subtype).
+	 *
+	 * @param t1
+	 * @param t2
+	 * @param lifetimes
+	 * @return
+	 */
+	protected boolean isSubtype(Type t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		return isSubtype(t1, t2.getConcreteType(), lifetimes, cache);
+	}
+
+	/**
+	 * Check whether a nominal type is a supertype of an atom (i.e. not a nominal or
+	 * union). For example, <code>int <: nat</code> or <code>{nat f} <: rec</code>.
+	 * This is harder because the invariant cannot be reasoned about. In fact, the
+	 * only case where this can hold true is when there is no invariant.
+	 *
+	 * @param t1
+	 * @param t2
+	 * @param lifetimes
+	 * @return
+	 */
+	protected boolean isSubtype(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		Decl.Type d1 = t1.getLink().getTarget();
+		Tuple<Expr> t1_invariant = d1.getInvariant();
+		// Dispatch easy cases
+		if (isSubtype(t1_invariant, EMPTY_INVARIANT)) {
+			return isSubtype(t1.getConcreteType(), t2, lifetimes, cache);
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Determine whether one invariant is a subtype of another. In other words, the
+	 * subtype invariant implies the supertype invariant.
+	 *
+	 * @param lhs The "super" type
+	 * @param rhs The "sub" type
+	 * @return
+	 */
+	protected abstract boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs);
+
+	/**
+	 * Determine whether two types are "equivalent" or not.
+	 *
+	 * @param t1
+	 * @param t2
+	 * @param lifetimes
+	 * @return
+	 */
+	protected boolean areEquivalent(Type t1, Type t2, LifetimeRelation lifetimes) {
+		// NOTE: this is a temporary solution.
+		return isSubtype(t1, t2, lifetimes, null) && isSubtype(t2, t1, lifetimes, null);
+	}
+
+	// ===============================================================================
+	// Type Selector
+	// ===============================================================================
+
+	/**
+	 * Select one type from a given type.
+	 *
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	@Override
+	public Type subtract(Type t1, Type t2) {
+		int t1_opcode = t1.getOpcode();
+		int t2_opcode = t2.getOpcode();
+		//
+		if(t1.equals(t2)) {
+			// Easy case
+			return Type.Void;
+		} else if(t1_opcode == t2_opcode) {
+			switch(t1_opcode) {
+			case TYPE_void:
+			case TYPE_null:
+			case TYPE_bool:
+			case TYPE_byte:
+			case TYPE_int:
+				return Type.Void;
+			case TYPE_array:
+			case TYPE_record:
+			case TYPE_staticreference:
+			case TYPE_reference:
+			case TYPE_method:
+			case TYPE_function:
+			case TYPE_property:
+				return t1;
+			case TYPE_nominal:
+				return subtract((Type.Nominal) t1, t2);
+			case TYPE_union:
+				return subtract((Type.Union) t1, t2);
+			default:
+				throw new IllegalArgumentException("unexpected type encountered: " + t1);
+			}
+		} else if (t2_opcode == TYPE_union) {
+			return subtract(t1, (Type.Union) t2);
+		} else if (t1_opcode == TYPE_union) {
+			return subtract((Type.Union) t1, t2);
+		} else if (t2_opcode == TYPE_nominal) {
+			return subtract((Type.Atom) t1, (Type.Nominal) t2);
+		} else if (t1_opcode == TYPE_nominal) {
+			return subtract((Type.Nominal) t1, (Type.Atom) t2);
+		} else {
+			return t1;
+		}
+	}
+
+	public Type subtract(Type t1, Type.Nominal t2) {
+		Decl.Type d2 = t2.getLink().getTarget();
+		if (d2.getInvariant().size() == 0) {
+			return subtract(t1,t2.getConcreteType());
+		} else {
+			return t1;
+		}
+	}
+
+	public Type subtract(Type.Nominal t1, Type t2) {
+		Decl.Type d1 = t1.getLink().getTarget();
+		if (d1.getInvariant().size() == 0) {
+			return subtract(t1.getConcreteType(), t2);
+		} else {
+			return t1;
+		}
+	}
+
+	public Type subtract(Type t1, Type.Union t2) {
+		for (int i = 0; i != t2.size(); ++i) {
+			t1 = subtract(t1, t2.get(i));
+		}
+		return t1;
+	}
+	public Type subtract(Type.Union t1, Type t2) {
+		Type[] types = new Type[t1.size()];
+		for(int i=0;i!=t1.size();++i) {
+			types[i] = subtract(t1.get(i),t2);
+		}
+		// Remove any selected cases
+		types = ArrayUtils.removeAll(types, Type.Void);
+		//
+		switch(types.length) {
+		case 0:
+			return Type.Void;
+		case 1:
+			return types[0];
+		default:
+			return new Type.Union(types);
+		}
+	}
+	// ===============================================================================
+	// Helpers
+	// ===============================================================================
+
+	private static final Tuple<Expr> EMPTY_INVARIANT = new Tuple<>();
+
+	/**
+	 * Extract the lifetime from a given reference type.
+	 *
+	 * @param ref
+	 * @return
+	 */
+	protected String extractLifetime(Type.Reference ref) {
+		if (ref.hasLifetime()) {
+			return ref.getLifetime().get();
+		} else {
+			return "*";
+		}
+	}
+
+	/**
+	 * Normalise opcode for sake of simplicity. This allows us to compare the types
+	 * of two operands more accurately using a switch.
+	 *
+	 * @param opcode
+	 * @return
+	 */
+	protected int normalise(int opcode) {
+		switch(opcode) {
+		case TYPE_reference:
+		case TYPE_staticreference:
+			return TYPE_reference;
+		case TYPE_method:
+		case TYPE_property:
+		case TYPE_function:
+			return TYPE_function;
+		}
+		//
+		return opcode;
 	}
 }

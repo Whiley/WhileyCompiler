@@ -21,7 +21,7 @@ function evaluate(Expr e) -> null | Value:
         else:
             null|Value src = evaluate(e.src)
             null|Value index = evaluate(e.index)
-            if src is Expr[] && index is int && index >= 0 && index < |src|:
+            if src is Value[] && index is int && index >= 0 && index < |src|:
                 return src[index]
             else:
                 return null

@@ -11,7 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wyil.type.util;
+package wyil.util;
+
+import java.util.HashSet;
+
+import wycc.util.Pair;
 
 /**
  * Implements a binary relation between values of a given type.
@@ -45,4 +49,35 @@ public interface BinaryRelation<T> {
 	 *            Status (i.e. related or not)
 	 */
 	public void set(T lhs, T rhs, boolean value);
+
+	/**
+	 * A simple and rather inefficient implementation of BinaryRelation which
+	 * employs a HashSet underneath.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public static class HashSet<T> implements BinaryRelation<T> {
+		private java.util.HashSet<Pair<T, T>> relations;
+
+		public HashSet() {
+			this.relations = new java.util.HashSet<>();
+		}
+
+		@Override
+		public boolean get(T lhs, T rhs) {
+			return relations.contains(new Pair<>(lhs, rhs));
+		}
+
+		@Override
+		public void set(T lhs, T rhs, boolean value) {
+			Pair<T, T> p = new Pair<>(lhs, rhs);
+			if (value) {
+				relations.add(p);
+			} else {
+				relations.remove(p);
+			}
+		}
+	}
 }

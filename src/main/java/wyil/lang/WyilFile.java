@@ -188,14 +188,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_invariant = TYPE_mask + 15;
 	public static final int TYPE_union = TYPE_mask + 16;
 	public static final int TYPE_byte = TYPE_mask + 17;
-	public static final int SEMTYPE_reference = TYPE_mask + 18;
-	public static final int SEMTYPE_staticreference = TYPE_mask + 19;
-	public static final int SEMTYPE_array = TYPE_mask + 20;
-	public static final int SEMTYPE_record = TYPE_mask + 21;
-	public static final int SEMTYPE_field = TYPE_mask + 22;
-	public static final int SEMTYPE_union = TYPE_mask + 23;
-	public static final int SEMTYPE_intersection = TYPE_mask + 24;
-	public static final int SEMTYPE_difference = TYPE_mask + 25;
 	public static final int TYPE_recursive = TYPE_mask + 26;
 	public static final int TYPE_variable = TYPE_mask + 27;
 	// STATEMENTS:
@@ -4116,7 +4108,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Syntactic Type
 	// =========================================================================
 
-	public static interface Type extends SemanticType {
+	public static interface Type extends SyntacticItem {
 
 		public static final Any Any = new Any();
 		public static final Void Void = new Void();
@@ -4140,14 +4132,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public String toCanonicalString();
 
-		public interface Atom extends Type, SemanticType.Atom {
+		public interface Atom extends Type {
 		}
 
 		public interface Primitive extends Atom {
 
 		}
 
-		static abstract class AbstractType extends AbstractSemanticType {
+		static abstract class AbstractType extends AbstractSyntacticItem {
 			AbstractType(int opcode) {
 				super(opcode);
 			}
@@ -4159,7 +4151,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			AbstractType(int opcode, SyntacticItem... operands) {
 				super(opcode, operands);
 			}
-
 		}
 
 		/**
@@ -4404,12 +4395,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Array extends SemanticType.Array implements Atom {
+		public static class Array extends AbstractType implements Atom {
 			public Array(Type element) {
 				super(TYPE_array, element);
 			}
 
-			@Override
 			public Type getElement() {
 				return (Type) get(0);
 			}
@@ -4454,7 +4444,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Reference extends SemanticType.Reference implements Atom {
+		public static class Reference extends AbstractType implements Atom {
 			public Reference(Type element) {
 				super(TYPE_staticreference, element);
 			}
@@ -4463,17 +4453,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(TYPE_reference, element, lifetime);
 			}
 
-			@Override
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
 			}
 
-			@Override
 			public Type getElement() {
 				return (Type) get(0);
 			}
 
-			@Override
 			public Identifier getLifetime() {
 				return (Identifier) get(1);
 			}
@@ -4535,7 +4522,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Record extends SemanticType.Record implements Atom {
+		public static class Record extends AbstractType implements Atom {
 			public Record(boolean isOpen, Tuple<Type.Field> fields) {
 				this(new Value.Bool(isOpen), fields);
 			}
@@ -4544,18 +4531,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(TYPE_record, isOpen, fields);
 			}
 
-			@Override
 			public boolean isOpen() {
 				Value.Bool flag = (Value.Bool) get(0);
 				return flag.get();
 			}
 
-			@Override
-			public Type getField(Identifier identifier) {
-				return (Type) super.getField(identifier);
+			public Type getField(Identifier fieldName) {
+				Tuple<Field> fields = getFields();
+				for (int i = 0; i != fields.size(); ++i) {
+					Field vd = fields.get(i);
+					Identifier declaredFieldName = vd.getName();
+					if (declaredFieldName.equals(fieldName)) {
+						return vd.getType();
+					}
+				}
+				return null;
 			}
 
-			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type.Field> getFields() {
 				return (Tuple<Type.Field>) get(1);
@@ -4643,18 +4635,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 
-		public static class Field extends SemanticType.Field {
+		public static class Field extends AbstractSyntacticItem {
 
 			public Field(Identifier name, Type type) {
 				super(TYPE_field, name, type);
 			}
 
-			@Override
 			public Identifier getName() {
 				return (Identifier) get(0);
 			}
 
-			@Override
 			public Type getType() {
 				return (Type) get(1);
 			}
@@ -4666,7 +4656,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
-				return getType().toString() + " " + getName();
+				Type type = getType();
+				if(type != null) {
+					return type.toString() + " " + getName();
+				} else {
+					return "??? " + getName();
+				}
 			}
 
 			public String toCanonicalString() {
@@ -4687,7 +4682,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Nominal extends AbstractSemanticType implements Type, Linkable {
+		public static class Nominal extends AbstractSyntacticItem implements Type, Linkable {
 
 			public Nominal(Decl.Link<Decl.Type> name, Tuple<Type> parameters) {
 				super(TYPE_nominal, name, parameters);
@@ -4749,54 +4744,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
-		 * Represents a recursive link. That is a backlink into the type itself.
-		 *
-		 * @return
-		 */
-		public static class Recursive extends AbstractSemanticType implements Type {
-
-			public Recursive(Ref<Type> reference) {
-				super(TYPE_recursive, reference);
-			}
-
-			public Type getHead() {
-				Ref<Type> r = (Ref<Type>) get(0);
-				return r.get();
-			}
-
-			public void setHead(Ref<Type> ref) {
-				operands[0] = ref;
-			}
-
-			@Override
-			public Recursive substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
-				return this;
-			}
-
-			@Override
-			public Recursive clone(SyntacticItem[] operands) {
-				return new Recursive((Ref<Type>) operands[0]);
-			}
-
-			@Override
-			public String toString() {
-				Type head = getHead();
-				if (head instanceof Type.Atom || head instanceof Type.Nominal) {
-					return "?" + head;
-				} else if (head.getHeap() != null) {
-					return "?" + head.getIndex();
-				} else {
-					return "?";
-				}
-			}
-
-			@Override
-			public String toCanonicalString() {
-				throw new UnsupportedOperationException();
-			}
-		}
-
-		/**
 		 * Represents a union type, which is of the form:
 		 *
 		 * <pre>
@@ -4815,7 +4762,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @return
 		 */
-		public static class Union extends SemanticType.Union implements Type {
+		public static class Union extends AbstractType implements Type {
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
@@ -5119,7 +5066,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 		}
 
-		public static class Variable extends AbstractSemanticType implements Atom {
+		public static class Variable extends AbstractType implements Atom {
 			public Variable(Identifier name) {
 				super(TYPE_variable, name);
 			}
@@ -5153,6 +5100,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return getOperand().toString();
 			}
 		}
+
+		/**
+		 * Represents a recursive link. That is a backlink into the type itself.
+		 *
+		 * @return
+		 */
+		public static class Recursive extends AbstractType implements Type {
+
+			public Recursive(Ref<Type> reference) {
+				super(TYPE_recursive, reference);
+			}
+
+			public Type getHead() {
+				Ref<Type> r = (Ref<Type>) get(0);
+				return r.get();
+			}
+
+			public void setHead(Ref<Type> ref) {
+				operands[0] = ref;
+			}
+
+			@Override
+			public Recursive substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+				return this;
+			}
+
+			@Override
+			public Recursive clone(SyntacticItem[] operands) {
+				return new Recursive((Ref<Type>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
+				Type head = getHead();
+				if (head instanceof Type.Atom || head instanceof Type.Nominal) {
+					return "?" + head;
+				} else if (head.getHeap() != null) {
+					return "?" + head.getIndex();
+				} else {
+					return "?";
+				}
+			}
+
+			@Override
+			public String toCanonicalString() {
+				throw new UnsupportedOperationException();
+			}
+}
 	}
 
 	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
@@ -5238,332 +5233,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			r += items.get(i).toString();
 		}
 		return r;
-	}
-
-	// ============================================================
-	// Semantic Types
-	// ============================================================
-
-	public static interface SemanticType extends SyntacticItem {
-
-		public static abstract class AbstractSemanticType extends AbstractSyntacticItem implements SemanticType {
-
-			public AbstractSemanticType(int opcode, SyntacticItem... operands) {
-				super(opcode, operands);
-			}
-
-		}
-
-		public interface Atom extends SemanticType {
-		}
-
-		public static interface Leaf extends SemanticType {
-		}
-
-		/**
-		 * A semantic type combinator represents either the intersection or union of
-		 * semantic types. Thus, it is an operator over one or more component types.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public interface Combinator extends SemanticType {
-			/**
-			 * Get number of component types in this combinator
-			 */
-			@Override
-			public int size();
-
-			/**
-			 * Get the ith component type in this combinator
-			 */
-			@Override
-			public SemanticType get(int i);
-
-			/**
-			 * Get all component types in this combinator
-			 */
-			@Override
-			public SemanticType[] getAll();
-		}
-
-		public static class Reference extends AbstractSemanticType implements SemanticType.Atom {
-			public Reference(SemanticType element) {
-				super(SEMTYPE_staticreference, element);
-			}
-
-			public Reference(SemanticType element, Identifier lifetime) {
-				super(SEMTYPE_reference, element, lifetime);
-			}
-
-			protected Reference(int opcode, SemanticType element) {
-				// NOTE: this is specifically to handle Type.Reference
-				super(opcode, element);
-				if (opcode != TYPE_reference && opcode != TYPE_staticreference) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			protected Reference(int opcode, SemanticType element, Identifier lifetime) {
-				// NOTE: this is specifically to handle Type.Reference
-				super(opcode, element, lifetime);
-				if (opcode != TYPE_reference) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			public boolean hasLifetime() {
-				return opcode == SEMTYPE_reference;
-			}
-
-			public SemanticType getElement() {
-				return (SemanticType) get(0);
-			}
-
-			public Identifier getLifetime() {
-				return (Identifier) get(1);
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Reference((SemanticType) operands[0]);
-				} else {
-					return new Reference((SemanticType) operands[0], (Identifier) operands[1]);
-				}
-			}
-
-			@Override
-			public String toString() {
-				if (hasLifetime()) {
-					Identifier lifetime = getLifetime();
-					return "&" + lifetime + ":" + braceAsNecessary(getElement());
-				} else {
-					return "&" + braceAsNecessary(getElement());
-				}
-			}
-		}
-
-		public static class Array extends AbstractSemanticType implements SemanticType.Atom {
-
-			public Array(SemanticType element) {
-				super(SEMTYPE_array, element);
-			}
-
-			protected Array(int opcode, SemanticType element) {
-				// NOTE: this is specifically to handle Type.Array
-				super(opcode, element);
-				if (opcode != TYPE_array) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			public SemanticType getElement() {
-				return (SemanticType) get(0);
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Array((SemanticType) operands[0]);
-			}
-
-			@Override
-			public String toString() {
-				return braceAsNecessary(getElement()) + "[]";
-			}
-		}
-
-		public static class Field extends AbstractSyntacticItem {
-
-			public Field(Identifier name, SemanticType type) {
-				super(SEMTYPE_field, name, type);
-			}
-
-			protected Field(int opcode, Identifier name, SemanticType type) {
-				// NOTE: specifically to handle Type.Field
-				super(opcode, name, type);
-				if (opcode != TYPE_field) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			public Identifier getName() {
-				return (Identifier) get(0);
-			}
-
-			public SemanticType getType() {
-				return (SemanticType) get(1);
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Field((Identifier) operands[0], (SemanticType) operands[1]);
-			}
-		}
-
-		public static class Record extends AbstractSemanticType implements SemanticType.Atom {
-			public Record(boolean isOpen, Tuple<Field> fields) {
-				super(SEMTYPE_record, new Value.Bool(isOpen), fields);
-			}
-
-			public Record(Value.Bool isOpen, Tuple<Field> fields) {
-				super(SEMTYPE_record, isOpen, fields);
-			}
-
-			protected Record(int opcode, Value.Bool isOpen, Tuple<Type.Field> fields) {
-				// NOTE: this is specifically to handle Type.Record
-				super(opcode, isOpen, fields);
-				if (opcode != TYPE_record) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			public boolean isOpen() {
-				Value.Bool flag = (Value.Bool) get(0);
-				return flag.get();
-			}
-
-			public Tuple<? extends Field> getFields() {
-				return (Tuple<Field>) get(1);
-			}
-
-			public SemanticType getField(Identifier fieldName) {
-				Tuple<? extends Field> fields = getFields();
-				for (int i = 0; i != fields.size(); ++i) {
-					Field vd = fields.get(i);
-					Identifier declaredFieldName = vd.getName();
-					if (declaredFieldName.equals(fieldName)) {
-						return vd.getType();
-					}
-				}
-				return null;
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Record(((Value.Bool) operands[0]), (Tuple<Field>) operands[1]);
-			}
-
-			@Override
-			public String toString() {
-				String r = "{";
-				Tuple<? extends Field> fields = getFields();
-				for (int i = 0; i != fields.size(); ++i) {
-					if (i != 0) {
-						r += ",";
-					}
-					Field field = fields.get(i);
-					r += field.getType() + " " + field.getName();
-				}
-				if (isOpen()) {
-					if (fields.size() > 0) {
-						r += ", ...";
-					} else {
-						r += "...";
-					}
-				}
-				return r + "}";
-			}
-		}
-
-		public static class Union extends AbstractSemanticType implements Combinator {
-			public Union(SemanticType... types) {
-				super(SEMTYPE_union, types);
-			}
-
-			protected Union(int opcode, SemanticType... types) {
-				// NOTE: this is specifically to handle Type.Union
-				super(opcode, types);
-				if (opcode != TYPE_union) {
-					throw new IllegalArgumentException("invalid opcode");
-				}
-			}
-
-			@Override
-			public SemanticType get(int i) {
-				return (SemanticType) super.get(i);
-			}
-
-			@Override
-			public SemanticType[] getAll() {
-				return (SemanticType[]) super.getAll();
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Union(ArrayUtils.toArray(SemanticType.class, operands));
-			}
-
-			@Override
-			public String toString() {
-				String r = "";
-				for (int i = 0; i != size(); ++i) {
-					if (i != 0) {
-						r += "|";
-					}
-					r += braceAsNecessary(get(i));
-				}
-				return r;
-			}
-		}
-
-		public static class Intersection extends AbstractSemanticType implements Combinator {
-			public Intersection(SemanticType... types) {
-				super(SEMTYPE_intersection, types);
-			}
-
-			@Override
-			public SemanticType get(int i) {
-				return (SemanticType) super.get(i);
-			}
-
-			@Override
-			public SemanticType[] getAll() {
-				return (SemanticType[]) super.getAll();
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Intersection(ArrayUtils.toArray(SemanticType.class, operands));
-			}
-
-			@Override
-			public String toString() {
-				String r = "";
-				for (int i = 0; i != size(); ++i) {
-					if (i != 0) {
-						r += "&";
-					}
-					r += braceAsNecessary(get(i));
-				}
-				return r;
-			}
-		}
-
-		public static class Difference extends AbstractSemanticType {
-
-			public Difference(SemanticType lhs, SemanticType rhs) {
-				super(SEMTYPE_difference, lhs, rhs);
-			}
-
-			public SemanticType getLeftHandSide() {
-				return (SemanticType) get(0);
-			}
-
-			public SemanticType getRightHandSide() {
-				return (SemanticType) get(1);
-			}
-
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Difference((SemanticType) operands[0], (SemanticType) operands[1]);
-			}
-
-			@Override
-			public String toString() {
-				return braceAsNecessary(getLeftHandSide()) + "-" + braceAsNecessary(getRightHandSide());
-			}
-		}
 	}
 
 	// ============================================================
@@ -5944,16 +5613,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
-	private static String braceAsNecessary(SemanticType type) {
-		String str = type.toString();
-		if (needsBraces(type)) {
-			return "(" + str + ")";
-		} else {
-			return str;
-		}
-	}
-
-	private static boolean needsBraces(SemanticType type) {
+	private static boolean needsBraces(Type type) {
 		if (type instanceof Type.Atom || type instanceof Type.Nominal) {
 			return false;
 		} else {
@@ -6291,56 +5951,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Variable((Identifier) operands[0]);
 			}
 		};
-		schema[SEMTYPE_reference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_reference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Reference((SemanticType) operands[0]);
-			}
-		};
-		schema[SEMTYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_staticreference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Reference((SemanticType) operands[0], (Identifier) operands[1]);
-			}
-		};
-		schema[SEMTYPE_array] = new Schema(Operands.ONE, Data.ZERO, "SEMTYPE_array") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Reference((SemanticType) operands[0]);
-			}
-		};
-		schema[SEMTYPE_record] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_record") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Record(((Value.Bool) operands[0]).get(),
-						(Tuple<SemanticType.Field>) operands[1]);
-			}
-		};
-		schema[SEMTYPE_field] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_field") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Field((Identifier) operands[0], (SemanticType) operands[1]);
-			}
-		};
-		schema[SEMTYPE_union] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_union") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Union(ArrayUtils.toArray(SemanticType.class, operands));
-			}
-		};
-		schema[SEMTYPE_intersection] = new Schema(Operands.MANY, Data.ZERO, "SEMTYPE_intersection") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Intersection(ArrayUtils.toArray(SemanticType.class, operands));
-			}
-		};
-		schema[SEMTYPE_difference] = new Schema(Operands.TWO, Data.ZERO, "SEMTYPE_difference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new SemanticType.Difference((SemanticType) operands[0], (SemanticType) operands[1]);
-			}
-		};
-		;
 
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
 		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
