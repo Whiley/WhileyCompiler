@@ -69,11 +69,6 @@ public class AllValidTest {
 		// Function Overloading for Nominal Types
 		IGNORED.put("Function_Valid_11", "#702");
 		IGNORED.put("Function_Valid_15", "#702");
-		// Bug Subtyping with Templates
-//		IGNORED.put("Template_Valid_31", "934");
-//		IGNORED.put("Template_Valid_32", "934");
-//		IGNORED.put("Template_Valid_33", "934");
-//		IGNORED.put("Template_Valid_34", "934");
 		// Redesigned Interpreter
 		IGNORED.put("Lambda_Valid_7", "908");
 		IGNORED.put("Lambda_Valid_11", "908");
@@ -83,6 +78,10 @@ public class AllValidTest {
 		IGNORED.put("RecursiveType_Valid_7", "936");
 		IGNORED.put("TypeEquals_Valid_61", "936");
 		IGNORED.put("TypeEquals_Valid_62", "936");
+		// FlowTyping over Logical Conditions
+		IGNORED.put("Complex_Valid_3", "936");
+		IGNORED.put("RecursiveType_Valid_12", "936");
+		IGNORED.put("RecursiveType_Valid_30", "936");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");

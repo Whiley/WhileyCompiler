@@ -24,6 +24,8 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
+import wyil.lang.WyilFile.Type.Field;
+import wyil.lang.WyilFile.Type.Record;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -1211,6 +1213,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 */
 	@Override
 	public Type subtract(Type t1, Type t2) {
+		return subtract(t1,t2,new BinaryRelation.HashSet<>());
+	}
+
+	private Type subtract(Type t1, Type t2, BinaryRelation<Type> cache) {
+
 		int t1_opcode = t1.getOpcode();
 		int t2_opcode = t2.getOpcode();
 		//
@@ -1226,61 +1233,125 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			case TYPE_int:
 				return Type.Void;
 			case TYPE_array:
-			case TYPE_record:
 			case TYPE_staticreference:
 			case TYPE_reference:
 			case TYPE_method:
 			case TYPE_function:
 			case TYPE_property:
 				return t1;
+			case TYPE_record:
+				return subtract((Type.Record) t1, (Type.Record) t2, cache);
 			case TYPE_nominal:
-				return subtract((Type.Nominal) t1, t2);
+				return subtract((Type.Nominal) t1, (Type.Nominal) t2, cache);
 			case TYPE_union:
-				return subtract((Type.Union) t1, t2);
+				return subtract((Type.Union) t1, t2, cache);
 			default:
 				throw new IllegalArgumentException("unexpected type encountered: " + t1);
 			}
 		} else if (t2_opcode == TYPE_union) {
-			return subtract(t1, (Type.Union) t2);
+			return subtract(t1, (Type.Union) t2, cache);
 		} else if (t1_opcode == TYPE_union) {
-			return subtract((Type.Union) t1, t2);
+			return subtract((Type.Union) t1, t2, cache);
 		} else if (t2_opcode == TYPE_nominal) {
-			return subtract((Type.Atom) t1, (Type.Nominal) t2);
+			return subtract(t1, (Type.Nominal) t2, cache);
 		} else if (t1_opcode == TYPE_nominal) {
-			return subtract((Type.Nominal) t1, (Type.Atom) t2);
+			return subtract((Type.Nominal) t1, t2, cache);
 		} else {
 			return t1;
 		}
 	}
 
-	public Type subtract(Type t1, Type.Nominal t2) {
-		Decl.Type d2 = t2.getLink().getTarget();
-		if (d2.getInvariant().size() == 0) {
-			return subtract(t1,t2.getConcreteType());
-		} else {
+	/**
+	 * Subtraction of records is possible in a limited number of cases.
+	 *
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public Type subtract(Type.Record t1, Type.Record t2, BinaryRelation<Type> cache) {
+		Tuple<Type.Field> t1_fields = t1.getFields();
+		Tuple<Type.Field> t2_fields = t2.getFields();
+		if(t1_fields.size() != t2_fields.size() || t1.isOpen() || t1.isOpen()) {
+			// Don't attempt anything
 			return t1;
 		}
+		Type.Field[] r_fields = new Type.Field[t1_fields.size()];
+		boolean found = false;
+		for(int i=0;i!=t1_fields.size();++i) {
+			Type.Field f1 = t1_fields.get(i);
+			Type.Field f2 = t2_fields.get(i);
+			if(!f1.getName().equals(f2.getName())) {
+				// Give up
+				return t1;
+			}
+			if(!f1.getType().equals(f2.getType())) {
+				if(found) {
+					return t1;
+				} else {
+					found = true;
+					Type tmp = subtract(f1.getType(), f2.getType(), cache);
+					r_fields[i] = new Type.Field(f1.getName(), tmp);
+				}
+			} else {
+				r_fields[i] = f1;
+			}
+		}
+		return new Type.Record(false,new Tuple<>(r_fields));
 	}
 
-	public Type subtract(Type.Nominal t1, Type t2) {
+	public Type subtract(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
+		// FIXME: only need to check for coinductive case when both types are recursive.
+		// If either is not recursive, then are guaranteed to eventually terminate.
+		if (cache != null && cache.get(t1, t2)) {
+			return t1;
+		} else if (cache == null) {
+			// Lazily construct cache.
+			cache = new BinaryRelation.HashSet<>();
+		}
+		cache.set(t1, t2, true);
+		//
 		Decl.Type d1 = t1.getLink().getTarget();
+		// NOTE: the following invariant check is essentially something akin to
+		// determining whether or not this is a union.
 		if (d1.getInvariant().size() == 0) {
-			return subtract(t1.getConcreteType(), t2);
+			return subtract(t1.getConcreteType(), (Type) t2, cache);
 		} else {
 			return t1;
 		}
 	}
 
-	public Type subtract(Type t1, Type.Union t2) {
+	public Type subtract(Type t1, Type.Nominal t2, BinaryRelation<Type> cache) {
+		Decl.Type d2 = t2.getLink().getTarget();
+		// NOTE: the following invariant check is essentially something akin to
+		// determining whether or not this is a union.
+		if (d2.getInvariant().size() == 0) {
+			return subtract(t1,t2.getConcreteType(),cache);
+		} else {
+			return t1;
+		}
+	}
+
+	public Type subtract(Type.Nominal t1, Type t2, BinaryRelation<Type> cache) {
+		Decl.Type d1 = t1.getLink().getTarget();
+		// NOTE: the following invariant check is essentially something akin to
+		// determining whether or not this is a union.
+		if (d1.getInvariant().size() == 0) {
+			return subtract(t1.getConcreteType(), t2, cache);
+		} else {
+			return t1;
+		}
+	}
+
+	public Type subtract(Type t1, Type.Union t2, BinaryRelation<Type> cache) {
 		for (int i = 0; i != t2.size(); ++i) {
-			t1 = subtract(t1, t2.get(i));
+			t1 = subtract(t1, t2.get(i), cache);
 		}
 		return t1;
 	}
-	public Type subtract(Type.Union t1, Type t2) {
+	public Type subtract(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
 		Type[] types = new Type[t1.size()];
 		for(int i=0;i!=t1.size();++i) {
-			types[i] = subtract(t1.get(i),t2);
+			types[i] = subtract(t1.get(i),t2,cache);
 		}
 		// Remove any selected cases
 		types = ArrayUtils.removeAll(types, Type.Void);
