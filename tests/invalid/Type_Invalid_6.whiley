@@ -1,1 +1,1 @@
-type Contractive is Contractive & int
+type Contractive is Contractive | Contractive | Contractive

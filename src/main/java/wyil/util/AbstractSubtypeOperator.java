@@ -882,25 +882,59 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		case TYPE_null:
 		case TYPE_bool:
 		case TYPE_int:
-		case TYPE_staticreference:
-		case TYPE_reference:
-		case TYPE_array:
-		case TYPE_record:
-		case TYPE_function:
-		case TYPE_method:
 		case TYPE_property:
 		case TYPE_invariant:
 		case TYPE_byte:
+		case TYPE_variable:
 		case TYPE_unknown:
 			return true;
+		case TYPE_staticreference:
+		case TYPE_reference: {
+			Type.Reference t = (Type.Reference) type;
+			return isContractive(name,t.getElement(),visited);
+		}
+		case TYPE_array: {
+			Type.Array t = (Type.Array) type;
+			return isContractive(name,t.getElement(),visited);
+		}
+		case TYPE_record: {
+			Type.Record t = (Type.Record) type;
+			Tuple<Type.Field> fields = t.getFields();
+			for(int i=0;i!=fields.size();++i) {
+				if(isContractive(name,fields.get(i).getType(),visited)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		case TYPE_function:
+		case TYPE_method: {
+			Type.Callable t = (Type.Callable) type;
+			Tuple<Type> t_params = t.getParameters();
+			Tuple<Type> t_returns = t.getReturns();
+			// check parameters
+			for(int i=0;i!=t_params.size();++i) {
+				if(isContractive(name,t_params.get(i),visited)) {
+					return true;
+				}
+			}
+			// check returns
+			for(int i=0;i!=t_returns.size();++i) {
+				if(isContractive(name,t_returns.get(i),visited)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		case TYPE_union: {
 			Type.Union c = (Type.Union) type;
 			for (int i = 0; i != c.size(); ++i) {
-				if (!isContractive(name, c.get(i), visited)) {
-					return false;
+				if (isContractive(name, c.get(i), visited)) {
+					return true;
 				}
 			}
-			return true;
+			return false;
 		}
 		default:
 		case TYPE_nominal:
@@ -919,7 +953,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				// messages reported we ignore this non-contractiveness here (since we know
 				// it'll be caught down the track anyway).
 				return true;
-			} else if (decl.isRecursive()) {
+			} else {
 				// Lazily construct the visited set as, in the vast majority of cases, this is
 				// never required.
 				visited = new HashSet<>();
@@ -1167,6 +1201,16 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 */
 	protected boolean isSubtype(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		// FIXME: only need to check for coinductive case when both types are recursive.
+		// If either is not recursive, then are guaranteed to eventually terminate.
+		if (cache != null && cache.get(t1, t2)) {
+			return true;
+		} else if (cache == null) {
+			// Lazily construct cache.
+			cache = new BinaryRelation.HashSet<>();
+		}
+		cache.set(t1, t2, true);
+		//
 		Decl.Type d1 = t1.getLink().getTarget();
 		Tuple<Expr> t1_invariant = d1.getInvariant();
 		// Dispatch easy cases

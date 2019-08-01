@@ -1,4 +1,0 @@
-tests/invalid/Intersection_Invalid_2.whiley:13: unable to resolve name (is ambiguous)
-	found function Intersection_Invalid_2::f(InterList)->(int)
-    return f(list)
-           ^

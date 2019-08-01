@@ -62,10 +62,6 @@ public class AllInvalidTest {
 		//
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
-		//
-		IGNORED.put("Parsing_Invalid_15", "609");
-		IGNORED.put("Parsing_Invalid_27", "609");
-		IGNORED.put("Parsing_Invalid_28", "609");
 		// Normalisation for Method Subtyping
 		IGNORED.put("Lifetime_Lambda_Invalid_3", "#794");
 		// Support Captured Lifetime Parameters
@@ -73,17 +69,6 @@ public class AllInvalidTest {
 		IGNORED.put("Lifetime_Lambda_Invalid_6", "#765");
 		// Access Static Variable from Type Invariant
 		IGNORED.put("Type_Invalid_11", "793");
-		// Infinite Array Types
-		IGNORED.put("Type_Invalid_10", "823");
-		// Temporary Removal of Intersections
-		IGNORED.put("Intersection_Invalid_1", "#843");
-		IGNORED.put("Intersection_Invalid_2", "#843");
-		IGNORED.put("NegationType_Invalid_2", "#843");
-		IGNORED.put("Type_Invalid_6", "#843");
-		IGNORED.put("Type_Invalid_9", "#843");
-		//
-		IGNORED.put("StaticVar_Invalid_10", "830");
-		IGNORED.put("Type_Invalid_12", "830");
 		// Problems with counterexample generation?
 		IGNORED.put("DoWhile_Invalid_6", "??");
 		IGNORED.put("DoWhile_Invalid_8", "??");
@@ -96,8 +81,7 @@ public class AllInvalidTest {
 		IGNORED.put("TypeEquals_Invalid_5", "??");
 		// #885 --- Contractive Types and isVoid()
 		IGNORED.put("Type_Invalid_5", "885");
-		IGNORED.put("Type_Invalid_7", "885");
-		IGNORED.put("Type_Invalid_8", "885");
+		IGNORED.put("Type_Invalid_8", "??");
 		IGNORED.put("Reference_Invalid_2", "unclassified");
 		IGNORED.put("Type_Invalid_14", "??");
 		IGNORED.put("Type_Invalid_15", "??");

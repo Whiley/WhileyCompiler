@@ -82,6 +82,9 @@ public class AllValidTest {
 		IGNORED.put("Complex_Valid_3", "936");
 		IGNORED.put("RecursiveType_Valid_12", "936");
 		IGNORED.put("RecursiveType_Valid_30", "936");
+		// Subtype Operator for Casting
+		IGNORED.put("Coercion_Valid_9", "938");
+		IGNORED.put("RecordCoercion_Valid_1", "938");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");

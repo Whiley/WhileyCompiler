@@ -9,7 +9,7 @@ function g(neg x) -> (pos[]|neg[] r):
 
 public export method test():
     //
-    assert f(1) == [1]
+    assume f(1) == [1]
     //
-    assert g(-1) == [-1]    
+    assume g(-1) == [-1]    
 

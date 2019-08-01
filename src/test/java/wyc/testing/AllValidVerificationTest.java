@@ -159,6 +159,7 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("Lambda_Valid_13", "??");
 		IGNORED.put("While_Valid_68", "??");
+		IGNORED.put("ConstrainedReference_Valid_1", "??");
 		//
 		IGNORED.put("Property_Valid_10", "??");
 		IGNORED.put("Property_Valid_11", "??");

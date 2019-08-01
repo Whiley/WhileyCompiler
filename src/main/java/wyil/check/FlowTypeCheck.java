@@ -1893,7 +1893,10 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	public <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
-		if (kind.isInstance(type)) {
+		if(type == null) {
+			// indicates failure upstream
+			return null;
+		} else if (kind.isInstance(type)) {
 			return (T) type;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) type;

@@ -226,6 +226,8 @@ public interface SubtypeOperator {
 				return false;
 			} else if (t2.isOpen() && !t1.isOpen()) {
 				return false;
+			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
+				return false;
 			}
 			// NOTE: the following is O(n^2) but, in reality, will be faster than the
 			// alternative (sorting fields into an array). That's because we expect a very

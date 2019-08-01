@@ -1,9 +1,3 @@
 tests/invalid/Type_Invalid_3.whiley:1: empty type encountered
 type contractive is { contractive next }
-                    ^^^^^^^^^^^^^^^^^^^^
-tests/invalid/Type_Invalid_3.whiley:3: empty type encountered
-function f(contractive x) -> contractive:
-           ^^^^^^^^^^^
-tests/invalid/Type_Invalid_3.whiley:3: empty type encountered
-function f(contractive x) -> contractive:
-                             ^^^^^^^^^^^
+     ^^^^^^^^^^^

@@ -1,3 +1,3 @@
-tests/invalid/Parsing_Invalid_28.whiley:1: empty type encountered
-type Rec is  {
-             ^^^
+tests/invalid/Parsing_Invalid_28.whiley:2: unable to resolve name
+     void[] xs
+     ^^^^
