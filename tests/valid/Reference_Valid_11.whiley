@@ -7,4 +7,4 @@ public export method test():
     p->ptr = q
     //
     assume p != q
-    assume *p == *q
+    assume p->data == q->data

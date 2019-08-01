@@ -3491,7 +3491,6 @@ public class WhileyFileParser {
 		skipWhiteSpace();
 		Token token = tokens.get(index);
 		switch (token.kind) {
-		case Void:
 		case Null:
 		case Bool:
 		case Byte:
@@ -3746,9 +3745,6 @@ public class WhileyFileParser {
 		Type t;
 
 		switch (token.kind) {
-		case Void:
-			t = new Type.Void();
-			break;
 		case Null:
 			t = new Type.Null();
 			break;

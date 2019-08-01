@@ -12,6 +12,6 @@ function f(msg2 m) -> int:
 
 public export method test() :
     msg1 m1 = {op: 1, s: 123}
-    msg1 m2 = {op: 2, s: 123}
+    msg2 m2 = {op: 2, s: 123}
     assume f(m1) == 1
     assume f(m2) == 2

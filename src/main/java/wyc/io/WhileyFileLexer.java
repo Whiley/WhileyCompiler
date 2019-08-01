@@ -546,7 +546,7 @@ public class WhileyFileLexer {
 	public static final HashMap<String, Token.Kind> keywords = new HashMap<String, Token.Kind>() {
 		{
 			// types
-			put("void", Token.Kind.Void);
+			//put("void", Token.Kind.Void);
 			put("null", Token.Kind.Null);
 			put("bool", Token.Kind.Bool);
 			put("byte", Token.Kind.Byte);
@@ -624,7 +624,7 @@ public class WhileyFileLexer {
 			StringLiteral,
 			// Types
 			Null("null"),
-			Void("void"),
+			//Void("void"),
 			Bool("bool"),
 			Byte("byte"),
 			Int("int"),

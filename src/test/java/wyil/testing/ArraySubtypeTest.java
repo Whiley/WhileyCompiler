@@ -20,9 +20,7 @@ import static org.junit.Assert.*;
 import static wyil.lang.WyilFile.Type;
 
 import wyc.util.TestUtils;
-import wyil.type.subtyping.RelaxedTypeEmptinessTest;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.subtyping.StrictTypeEmptinessTest;
+import wyil.util.SubtypeOperator;
 
 public class ArraySubtypeTest {
 	@Test public void test_52() { checkIsSubtype("null","null"); }
@@ -283,14 +281,14 @@ public class ArraySubtypeTest {
 	@Test public void test_2500() { checkIsSubtype("int[]|int","int[]|int"); }
 
 	private void checkIsSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator(new StrictTypeEmptinessTest());
+		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
 		assertFalse(subtypeOperator.isSubtype(ft, tt, null));

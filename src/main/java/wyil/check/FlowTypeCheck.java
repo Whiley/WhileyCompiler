@@ -103,18 +103,10 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
-import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.type.binding.RelaxedTypeResolver;
-import wyil.type.binding.TypeResolver;
-import wyil.type.subtyping.EmptinessTest;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.type.subtyping.RelaxedTypeEmptinessTest;
-import wyil.type.subtyping.StrictTypeEmptinessTest;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.util.ConcreteTypeExtractor;
-import wyil.type.util.ReadWriteTypeExtractor;
+import wyil.util.SubtypeOperator;
+import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -170,20 +162,13 @@ import wyil.type.util.ReadWriteTypeExtractor;
  *
  */
 public class FlowTypeCheck implements Compiler.Check {
-	private final SubtypeOperator relaxedSubtypeOperator;
+	//private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
-	private final ConcreteTypeExtractor concreteTypeExtractor;
-	private final ReadWriteTypeExtractor rwTypeExtractor;
-	private final TypeResolver typeInference;
 	private boolean status = true;
 
 	public FlowTypeCheck() {
-		EmptinessTest<SemanticType> strictEmptiness = new StrictTypeEmptinessTest();
-		this.concreteTypeExtractor = new ConcreteTypeExtractor(strictEmptiness);
-		this.relaxedSubtypeOperator = new SubtypeOperator(new RelaxedTypeEmptinessTest());
-		this.strictSubtypeOperator = new SubtypeOperator(strictEmptiness);
-		this.rwTypeExtractor = new ReadWriteTypeExtractor(strictSubtypeOperator);
-		this.typeInference = new RelaxedTypeResolver(relaxedSubtypeOperator, concreteTypeExtractor, rwTypeExtractor);
+		//this.relaxedSubtypeOperator = null;
+		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
 
 	// =========================================================================
@@ -488,11 +473,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment) {
-		// Check type is sensible
-		checkNonEmpty(decl, environment);
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
-			SemanticType type = checkExpression(decl.getInitialiser(), environment);
+			Type type = checkExpression(decl.getInitialiser(), environment);
 			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 		}
 		// Done.
@@ -568,7 +551,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
 		// FIXME: want to refine integer type here
 		Type std_ascii = new Type.Array(Type.Int);
-		SemanticType type = checkExpression(stmt.getOperand(), environment);
+		Type type = checkExpression(stmt.getOperand(), environment);
 		checkIsSubtype(std_ascii, type, environment, stmt.getOperand());
 		return environment;
 	}
@@ -973,7 +956,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_logicalexistential:
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
-			SemanticType t = checkExpression(condition, environment);
+			Type t = checkExpression(condition, environment);
 			checkIsSubtype(Type.Bool, t, environment, condition);
 			return environment;
 		}
@@ -1111,32 +1094,28 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
 		Expr lhs = expr.getOperand();
-		SemanticType lhsT = checkExpression(expr.getOperand(), environment);
-		SemanticType rhsT = expr.getTestType();
+		Type lhsT = checkExpression(expr.getOperand(), environment);
+		Type rhsT = expr.getTestType();
 		// Sanity check operands for this type test
-		SemanticType trueBranchRefinementT = new SemanticType.Intersection(lhsT, rhsT);
-		SemanticType falseBranchRefinementT = new SemanticType.Difference(lhsT, rhsT);
-		//
-		// NOTE: it's a little unclear to me whether use the strict subtype operator
-		// here makes sense in the long run. However, using the relaxed subtype operator
-		// definitely results in problems! See #845
-		if (strictSubtypeOperator.isVoid(trueBranchRefinementT, environment)) {
-			// DEFINITE TRUE CASE
-			syntaxError(expr, INCOMPARABLE_OPERANDS, lhsT, rhsT);
-		} else if (strictSubtypeOperator.isVoid(falseBranchRefinementT, environment)) {
-			// DEFINITE FALSE CASE
-			syntaxError(expr, BRANCH_ALWAYS_TAKEN);
-		}
-		//
+		checkIsSubtype(lhsT,rhsT,environment,rhsT);
+		// FIXME: need better support for detecting branch always taken.
+//		// Sanity check for definite branch taken
+//		if(strictSubtypeOperator.isSubtype(rhsT,lhsT,environment))  {
+//			// DEFINITE FALSE CASE
+//			syntaxError(expr, BRANCH_ALWAYS_TAKEN);
+//		}
+		// Extract variable being tested
 		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
 		if (extraction != null) {
 			Decl.Variable var = extraction.getFirst();
-			SemanticType varT = environment.getType(var);
-			SemanticType refinementT = extraction.getSecond();
-			if (sign) {
-				refinementT = new Type.Intersection(varT, refinementT);
-			} else {
-				refinementT = new SemanticType.Difference(varT, refinementT);
+			Type refinementT = extraction.getSecond();
+			if (!sign) {
+				refinementT = strictSubtypeOperator.subtract(environment.getType(var), refinementT);
+				// Sanity check for definite branch taken
+				if(refinementT instanceof Type.Void)  {
+					// DEFINITE FALSE CASE
+					syntaxError(expr, BRANCH_ALWAYS_TAKEN);
+				}
 			}
 			// Update the typing environment accordingly.
 			environment = environment.refineType(var, refinementT);
@@ -1146,7 +1125,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
-		checkNonEmpty(stmt.getParameters(), environment);
 		// Check array initialisers
 		for (Decl.Variable decl : stmt.getParameters()) {
 			checkExpression(decl.getInitialiser(), environment);
@@ -1224,19 +1202,16 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-		SemanticType src = checkExpression(lval.getFirstOperand(), environment);
+		Type src = checkExpression(lval.getFirstOperand(), environment);
 		// Extract the determined array type
-		SemanticType.Array arrT = extractArrayType(src, environment, ReadWriteTypeExtractor.WRITEABLE_ARRAY,
-				lval.getFirstOperand());
+		Type.Array arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
 		// Sanity check extraction
 		if(arrT != null) {
 			// Check for integer subscript
-			SemanticType subscriptT = checkExpression(lval.getSecondOperand(), environment);
+			Type subscriptT = checkExpression(lval.getSecondOperand(), environment);
 			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
-			// Extract element type
-			SemanticType elementT = extractElementType(arrT, lval.getFirstOperand());
 			// Convert to concrete type
-			return concreteTypeExtractor.apply(arrT.getElement(), environment);
+			return arrT.getElement();
 		} else {
 			// typing failure upstream
 			return null;
@@ -1244,29 +1219,19 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
-		SemanticType src = checkExpression(lval.getOperand(), environment);
+		Type src = checkExpression(lval.getOperand(), environment);
 		// Extract writeable record type
-		SemanticType.Record recT = extractRecordType(src, environment, ReadWriteTypeExtractor.WRITEABLE_RECORD,
-				lval.getOperand());
+		Type.Record recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
 		// Extract the field type
-		return extractConcreteFieldType(recT, lval.getField(), environment);
+		return extractFieldType(recT, lval.getField());
 	}
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
-		SemanticType src = checkExpression(lval.getOperand(), environment);
+		Type src = checkExpression(lval.getOperand(), environment);
 		// Extract writeable reference type
-		SemanticType.Reference refT = extractReferenceType(src, environment, ReadWriteTypeExtractor.WRITEABLE_REFERENCE,
-				lval.getOperand());
+		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Sanity check extraction
-		if(refT != null) {
-			// Extract element type
-			SemanticType elementT = extractElementType(refT, lval.getOperand());
-			//
-			return concreteTypeExtractor.apply(elementT, environment);
-		} else {
-			// typing failure upstream
-			return null;
-		}
+		return refT == null ? null : refT.getElement();
 	}
 
 	// =========================================================================
@@ -1317,7 +1282,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				break;
 			}
 			default:
-				SemanticType type = checkExpression(expression, environment);
+				Type type = checkExpression(expression, environment);
 				//
 				if ((expected.size() - j) < 1) {
 					syntaxError(expression, TOO_MANY_RETURNS);
@@ -1343,8 +1308,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public SemanticType checkExpression(Expr expression, Environment environment) {
-		SemanticType type;
+	public Type checkExpression(Expr expression, Environment environment) {
+		Type type;
 
 		switch (expression.getOpcode()) {
 		case EXPR_constant:
@@ -1491,14 +1456,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// can be generated when there is a type error upsteam.
 		if (type != null) {
 			// Allocate and set type for expression
-			Type concreteType = concreteTypeExtractor.apply(type, environment);
-			// Sanity check output
-			if (concreteType instanceof Type.Void) {
-				// Something has definitely gone wrong in the type extraction process.
-				syntaxError(expression, EMPTY_TYPE);
-			} else {
-				expression.setType(expression.getHeap().allocate(concreteType));
-			}
+			expression.setType(expression.getHeap().allocate(type));
 		}
 		// Done
 		return type;
@@ -1519,7 +1477,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private SemanticType checkConstant(Expr.Constant expr, Environment env) {
+	private Type checkConstant(Expr.Constant expr, Environment env) {
 		Value item = expr.getValue();
 		switch (item.getOpcode()) {
 		case ITEM_null:
@@ -1534,7 +1492,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// FIXME: this is not an optimal solution. The reason being that we
 			// have lost nominal information regarding whether it is an instance
 			// of std::ascii or std::utf8, for example.
-			return new SemanticType.Array(Type.Int);
+			return new Type.Array(Type.Int);
 		default:
 			return internalFailure("unknown constant encountered: " + expr, expr);
 		}
@@ -1548,12 +1506,12 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private SemanticType checkVariable(Expr.VariableAccess expr, Environment environment) {
+	private Type checkVariable(Expr.VariableAccess expr, Environment environment) {
 		Decl.Variable var = expr.getVariableDeclaration();
 		return environment.getType(var);
 	}
 
-	private SemanticType checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
+	private Type checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
 		//
 		Decl.Link<Decl.StaticVariable> l = expr.getLink();
 		if (l.isResolved()) {
@@ -1565,8 +1523,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private SemanticType checkCast(Expr.Cast expr, Environment environment) {
-		SemanticType rhsT = checkExpression(expr.getOperand(), environment);
+	private Type checkCast(Expr.Cast expr, Environment environment) {
+		Type rhsT = checkExpression(expr.getOperand(), environment);
 		checkIsSubtype(expr.getType(), rhsT, environment, expr);
 		return expr.getType();
 	}
@@ -1574,9 +1532,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Tuple<Type> checkInvoke(Expr.Invoke expr, Environment environment) {
 		boolean resolvable = true;
 		Tuple<Expr> arguments = expr.getOperands();
-		SemanticType[] types = new SemanticType[arguments.size()];
+		Type[] types = new Type[arguments.size()];
 		for (int i = 0; i != arguments.size(); ++i) {
-			SemanticType t = checkExpression(arguments.get(i), environment);
+			Type t = checkExpression(arguments.get(i), environment);
 			resolvable &= (t != null);
 			types[i] = t;
 		}
@@ -1585,7 +1543,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Attempt to resolve this invocation (if we can).
 		if(link.isPartiallyResolved() && resolvable) {
 			// Apply type inference algorithm to resolve invocation
-			Type.Callable type = typeInference.bind(expr.getBinding(), new Tuple<>(types), environment);
+			Type.Callable type = strictSubtypeOperator.bind(expr.getBinding(), new Tuple<>(types), environment);
 			// Sanity check we found something
 			if (type != null) {
 				// Finally, return the declared returns
@@ -1599,10 +1557,9 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
 		// Determine signature type from source
-		SemanticType type = checkExpression(expr.getSource(), environment);
+		Type type = checkExpression(expr.getSource(), environment);
 		// Extract readable callable type
-		Type.Callable sig = extractLambdaType(type, environment, ReadWriteTypeExtractor.READABLE_CALLABLE,
-				expr.getSource());
+		Type.Callable sig = extractType(Type.Callable.class, type, EXPECTED_LAMBDA, expr.getSource());
 		// Determine the argument types
 		if (sig == null) {
 			// Some kind of type error occurred upstream, therefore we're aborting.
@@ -1617,7 +1574,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// Sanity check types of arguments provided
 			for (int i = 0; i != arguments.size(); ++i) {
 				// Determine argument type
-				SemanticType arg = checkExpression(arguments.get(i), environment);
+				Type arg = checkExpression(arguments.get(i), environment);
 				// Check argument is subtype of parameter
 				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 			}
@@ -1631,7 +1588,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private SemanticType checkComparisonOperator(Expr.BinaryOperator expr, Environment environment) {
+	private Type checkComparisonOperator(Expr.BinaryOperator expr, Environment environment) {
 		switch (expr.getOpcode()) {
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -1641,26 +1598,27 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private SemanticType checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
-		SemanticType lhs = checkExpression(expr.getFirstOperand(), environment);
-		SemanticType rhs = checkExpression(expr.getSecondOperand(), environment);
+	private Type checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
+		Type lhs = checkExpression(expr.getFirstOperand(), environment);
+		Type rhs = checkExpression(expr.getSecondOperand(), environment);
 		if (lhs != null && rhs != null) {
 			// Sanity check that the types of operands are actually comparable.
-			SemanticType glb = new SemanticType.Intersection(lhs, rhs);
-			if (strictSubtypeOperator.isVoid(glb, environment)) {
+			boolean left = strictSubtypeOperator.isSubtype(lhs, rhs, environment);
+			boolean right = strictSubtypeOperator.isSubtype(rhs, lhs, environment);
+			if (!left && !right) {
 				syntaxError(expr, INCOMPARABLE_OPERANDS, lhs, rhs);
 			}
 		}
 		return Type.Bool;
 	}
 
-	private SemanticType checkIntegerComparator(Expr.BinaryOperator expr, Environment environment) {
+	private Type checkIntegerComparator(Expr.BinaryOperator expr, Environment environment) {
 		checkOperand(Type.Int, expr.getFirstOperand(), environment);
 		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Bool;
 	}
 
-	private SemanticType checkIntegerOperator(Expr.UnaryOperator expr, Environment environment) {
+	private Type checkIntegerOperator(Expr.UnaryOperator expr, Environment environment) {
 		checkOperand(Type.Int, expr.getOperand(), environment);
 		return Type.Int;
 	}
@@ -1672,85 +1630,86 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private SemanticType checkIntegerOperator(Expr.BinaryOperator expr, Environment environment) {
+	private Type checkIntegerOperator(Expr.BinaryOperator expr, Environment environment) {
 		checkOperand(Type.Int, expr.getFirstOperand(), environment);
 		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Int;
 	}
 
-	private SemanticType checkBitwiseOperator(Expr.UnaryOperator expr, Environment environment) {
+	private Type checkBitwiseOperator(Expr.UnaryOperator expr, Environment environment) {
 		checkOperand(Type.Byte, expr.getOperand(), environment);
 		return Type.Byte;
 	}
 
-	private SemanticType checkBitwiseOperator(Expr.NaryOperator expr, Environment environment) {
+	private Type checkBitwiseOperator(Expr.NaryOperator expr, Environment environment) {
 		checkOperands(Type.Byte, expr.getOperands(), environment);
 		return Type.Byte;
 	}
 
-	private SemanticType checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
+	private Type checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
 		checkOperand(Type.Byte, expr.getFirstOperand(), environment);
 		checkOperand(Type.Int, expr.getSecondOperand(), environment);
 		return Type.Byte;
 	}
 
-	private SemanticType checkRecordAccess(Expr.RecordAccess expr, Environment environment) {
+	private Type checkRecordAccess(Expr.RecordAccess expr, Environment environment) {
 		// Check expression against expected record types
-		SemanticType src = checkExpression(expr.getOperand(), environment);
+		Type src = checkExpression(expr.getOperand(), environment);
 		// Following may produce null if field not present
-		SemanticType.Record type = extractRecordType(src, environment, ReadWriteTypeExtractor.READABLE_RECORD,
-				expr.getOperand());
-		//
+		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getOperand());
 		// Return extracted field type
 		return extractFieldType(type, expr.getField());
 	}
 
-	private SemanticType checkRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
+	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
 		// Check src and value expressions
-		SemanticType src = checkExpression(expr.getFirstOperand(), environment);
-		SemanticType val = checkExpression(expr.getSecondOperand(), environment);
+		Type src = checkExpression(expr.getFirstOperand(), environment);
+		Type val = checkExpression(expr.getSecondOperand(), environment);
 		// Extract readable record type
-		SemanticType.Record readableRecordT = extractRecordType(src, environment,
-				ReadWriteTypeExtractor.READABLE_RECORD, expr.getFirstOperand());
+		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getFirstOperand());
 		// Extract corresponding field type
-		SemanticType fieldType = extractFieldType(readableRecordT, expr.getField());
+		Type fieldType = extractFieldType(type, expr.getField());
 		// Matched the field type
 		checkIsSubtype(fieldType, val, environment, expr.getSecondOperand());
 		return src;
 	}
 
-	private SemanticType checkRecordInitialiser(Expr.RecordInitialiser expr, Environment environment) {
+	private Type checkRecordInitialiser(Expr.RecordInitialiser expr, Environment environment) {
 		Tuple<Identifier> fields = expr.getFields();
 		Tuple<Expr> operands = expr.getOperands();
 		//
-		SemanticType.Field[] decls = new SemanticType.Field[operands.size()];
+		Type.Field[] decls = new Type.Field[operands.size()];
 		// Check field initialiser expressions one by one
 		for (int i = 0; i != operands.size(); ++i) {
 			Identifier field = fields.get(i);
-			SemanticType fieldType = checkExpression(operands.get(i), environment);
-			decls[i] = new SemanticType.Field(field, fieldType);
+			Type fieldType = checkExpression(operands.get(i), environment);
+			if(fieldType == null) {
+				// Signals a type failure further upstream
+				return null;
+			}
+			decls[i] = new Type.Field(field, fieldType);
 		}
 		//
-		return new SemanticType.Record(false, new Tuple<>(decls));
+		return new Type.Record(false, new Tuple<>(decls));
 	}
 
-	private SemanticType checkArrayLength(Expr.ArrayLength expr, Environment environment) {
-		SemanticType sourceT = checkExpression(expr.getOperand(), environment);
+	private Type checkArrayLength(Expr.ArrayLength expr, Environment environment) {
+		Type src = checkExpression(expr.getOperand(), environment);
 		// Check whether the source returns an array type or not.
-		extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY, expr.getOperand());
+		extractType(Type.Array.class, src, EXPECTED_ARRAY, expr.getOperand());
 		//
 		return Type.Int;
 	}
 
-	private SemanticType checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
+	private Type checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
 		// Check initialiser expressions
 		Tuple<Expr> operands = expr.getOperands();
-		SemanticType[] ts = new SemanticType[operands.size()];
+		Type[] ts = new Type[operands.size()];
 		for (int i = 0; i != ts.length; ++i) {
 			ts[i] = checkExpression(operands.get(i), environment);
 		}
 		ts = ArrayUtils.removeDuplicates(ts);
-		SemanticType element;
+		Type element;
 		switch (ts.length) {
 		case 0:
 			element = Type.Void;
@@ -1759,87 +1718,85 @@ public class FlowTypeCheck implements Compiler.Check {
 			element = ts[0];
 			break;
 		default: {
-			element = new SemanticType.Union(ts);
+			element = new Type.Union(ts);
 		}
 		}
-		return new SemanticType.Array(element);
+		return new Type.Array(element);
 	}
 
-	private SemanticType checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
+	private Type checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
 		Expr value = expr.getFirstOperand();
 		Expr length = expr.getSecondOperand();
 		// Check generation operands
-		SemanticType valueT = checkExpression(value, environment);
+		Type valueT = checkExpression(value, environment);
 		checkOperand(Type.Int, length, environment);
 		//
-		return new SemanticType.Array(valueT);
+		return new Type.Array(valueT);
 	}
 
-	private SemanticType checkArrayAccess(Expr.ArrayAccess expr, Environment environment) {
+	private Type checkArrayAccess(Expr.ArrayAccess expr, Environment environment) {
 		Expr source = expr.getFirstOperand();
 		Expr subscript = expr.getSecondOperand();
 		//
-		SemanticType sourceT = checkExpression(source, environment);
-		SemanticType subscriptT = checkExpression(subscript, environment);
+		Type sourceT = checkExpression(source, environment);
+		Type subscriptT = checkExpression(subscript, environment);
 		// Check whether source operand yielded an array type
-		SemanticType.Array sourceArrayT = extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY,
-				source);
+		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
 		// Check subscript has int type
 		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
 		// Return extracted array element type
-		return extractElementType(sourceArrayT, expr.getFirstOperand());
+		return sourceArrayT == null ? null : sourceArrayT.getElement();
 	}
 
-	private SemanticType checkArrayRange(Expr.ArrayRange expr, Environment environment) {
-		SemanticType lhsT = checkExpression(expr.getFirstOperand(), environment);
-		SemanticType rhsT = checkExpression(expr.getSecondOperand(), environment);
+	private Type checkArrayRange(Expr.ArrayRange expr, Environment environment) {
+		Type lhsT = checkExpression(expr.getFirstOperand(), environment);
+		Type rhsT = checkExpression(expr.getSecondOperand(), environment);
 		// Check integer types
 		checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
 		checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
 		// FIXME: what if lhsT and rhsT differ?
-		return new SemanticType.Array(lhsT);
+		return new Type.Array(lhsT);
 	}
 
-	private SemanticType checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
+	private Type checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
 		Expr source = expr.getFirstOperand();
 		Expr subscript = expr.getSecondOperand();
 		Expr value = expr.getThirdOperand();
 		// Check operand expressions
-		SemanticType sourceT = checkExpression(source, environment);
-		SemanticType subscriptT = checkExpression(subscript, environment);
-		SemanticType valueT = checkExpression(value, environment);
+		Type sourceT = checkExpression(source, environment);
+		Type subscriptT = checkExpression(subscript, environment);
+		Type valueT = checkExpression(value, environment);
 		// Extract the determined array type
-		SemanticType.Array sourceArrayT = extractArrayType(sourceT, environment, ReadWriteTypeExtractor.READABLE_ARRAY,
-				source);
+		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
 		// Extract the array element type
-		SemanticType elementT = extractElementType(sourceArrayT, expr.getFirstOperand());
+		Type elementT = sourceArrayT.getElement();
 		// Check for integer subscript
 		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
 		checkIsSubtype(elementT, valueT, environment, value);
 		return sourceArrayT;
 	}
 
-	private SemanticType checkDereference(Expr.Dereference expr, Environment environment) {
-		SemanticType operandT = checkExpression(expr.getOperand(), environment);
+	private Type checkDereference(Expr.Dereference expr, Environment environment) {
+		Type operandT = checkExpression(expr.getOperand(), environment);
 		// Extract an appropriate reference type form the source.
-		SemanticType.Reference readableReferenceT = extractReferenceType(operandT, environment,
-				ReadWriteTypeExtractor.READABLE_REFERENCE, expr.getOperand());
-		//
-		return extractElementType(readableReferenceT, expr.getOperand());
+		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
+				expr.getOperand());
+		// Done
+		return refT == null ? null : refT.getElement();
 	}
 
-	private SemanticType checkNew(Expr.New expr, Environment environment) {
+	private Type checkNew(Expr.New expr, Environment environment) {
 		// Check expression type against expected element types
-		SemanticType operandT = checkExpression(expr.getOperand(), environment);
+		Type operandT = checkExpression(expr.getOperand(), environment);
 		//
 		if (expr.hasLifetime()) {
-			return new SemanticType.Reference(operandT, expr.getLifetime());
+			return new Type.Reference(operandT, expr.getLifetime());
 		} else {
-			return new SemanticType.Reference(operandT);
+			return new Type.Reference(operandT);
 		}
 	}
 
-	private SemanticType checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
+	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
 		Decl.Link<Decl.Callable> link = expr.getLink();
 		Tuple<Type> types = expr.getParameterTypes();
 		// FIXME: there is a problem here in that we cannot distinguish
@@ -1848,7 +1805,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (types.size() > 0) {
 			// Now attempt to bind the given candidate declarations against the concrete
 			// argument types.
-			return typeInference.bind(expr.getBinding(), types, environment);
+			return strictSubtypeOperator.bind(expr.getBinding(), types, environment);
 		} else if (link.isResolved()) {
 			return link.getTarget().getType();
 		} else {
@@ -1858,13 +1815,11 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private SemanticType checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
+	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
 		Tuple<Type> parameterTypes = parameters.map((Decl.Variable p) -> p.getType());
-		// Sanity check no parameter is "empty", that is equivalent to void.
-		checkNonEmpty(parameters, environment);
 		// Type check the body of the lambda using the expected return types
-		Type result = concreteTypeExtractor.apply(checkExpression(expr.getBody(), environment), environment);
+		Type result = checkExpression(expr.getBody(), environment);
 		// Determine whether or not this is a pure or impure lambda.
 		Type.Callable signature;
 		if (FlowTypeUtils.isPure(expr.getBody())) {
@@ -1896,109 +1851,30 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkIsSubtype(SemanticType lhs, SemanticType rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
-		} else if (!relaxedSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+		} else if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
 			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}
 
 	private void checkContractive(Decl.Type d) {
-		if (!relaxedSubtypeOperator.isContractive(d.getQualifiedName(), d.getType())) {
+		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
 	}
 
 	/**
-	 * Check a given set of variable declarations are not "empty". That is, their
-	 * declared type is not equivalent to void.
-	 *
-	 * @param decls
-	 */
-	private void checkNonEmpty(Tuple<Decl.Variable> decls, LifetimeRelation lifetimes) {
-		for (int i = 0; i != decls.size(); ++i) {
-			checkNonEmpty(decls.get(i), lifetimes);
-		}
-	}
-
-	/**
-	 * Check that a given variable declaration is not empty. That is, the declared
-	 * type is not equivalent to void. This is an important sanity check.
-	 *
-	 * @param d
-	 */
-	private void checkNonEmpty(Decl.Variable d, LifetimeRelation lifetimes) {
-		if (relaxedSubtypeOperator.isVoid(d.getType(), lifetimes)) {
-			syntaxError(d.getType(), EMPTY_TYPE);
-		}
-	}
-
-	/**
-	 * From an arbitrary type, extract the array type it represents which is either
-	 * readable or writeable depending on the context.
-	 */
-	public SemanticType.Array extractArrayType(SemanticType type, Environment environment,
-			ReadWriteTypeExtractor.Combinator<SemanticType.Array> combinator, SyntacticItem item) {
-		//
-		if (type != null) {
-			SemanticType.Array sourceArrayT = rwTypeExtractor.apply(type, environment, combinator);
-			//
-			if (sourceArrayT == null) {
-				syntaxError(item, EXPECTED_ARRAY);
-			} else {
-				return sourceArrayT;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Extract the element type from an array. The array type can be null if some
-	 * earlier part of type checking generated an error message and we are just
-	 * continuing after that.
-	 *
-	 * @param type
-	 * @param item
-	 * @return
-	 */
-	public SemanticType extractElementType(SemanticType.Array type, SyntacticItem item) {
-		if (type == null) {
-			return null;
-		} else {
-			return type.getElement();
-		}
-	}
-
-	/**
-	 * From an arbitrary type, extract the record type it represents which is either
-	 * readable or writeable depending on the context.
-	 */
-	public SemanticType.Record extractRecordType(SemanticType type, Environment environment,
-			ReadWriteTypeExtractor.Combinator<SemanticType.Record> combinator, SyntacticItem item) {
-		//
-		if (type != null) {
-			SemanticType.Record recordT = rwTypeExtractor.apply(type, environment, combinator);
-			//
-			if (recordT == null) {
-				syntaxError(item, EXPECTED_RECORD);
-			} else {
-				return recordT;
-			}
-		}
-		return null;
-	}
-
-	/**
 	 * From a given record type, extract type for a given field.
 	 */
-	public SemanticType extractFieldType(SemanticType.Record type, Identifier field) {
+	public Type extractFieldType(Type.Record type, Identifier field) {
 		if (type == null) {
 			return null;
 		} else {
-			SemanticType fieldType = type.getField(field);
+			Type fieldType = type.getField(field);
 			if (fieldType == null) {
 				// Indicates an invalid field selection
 				syntaxError(field, INVALID_FIELD);
@@ -2007,70 +1883,28 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private Type extractConcreteFieldType(SemanticType.Record type, Identifier field, Environment environment) {
-		SemanticType ft = extractFieldType(type, field);
-		if (ft != null) {
-			// Convert to concrete type
-			return concreteTypeExtractor.apply(ft, environment);
-		} else {
-			return null;
-		}
-	}
-
 	/**
-	 * From an arbitrary type, extract the reference type it represents which is
-	 * either readable or writeable depending on the context.
-	 */
-	public SemanticType.Reference extractReferenceType(SemanticType type, Environment environment,
-			ReadWriteTypeExtractor.Combinator<SemanticType.Reference> combinator, SyntacticItem item) {
-		//
-		if (type != null) {
-			SemanticType.Reference refT = rwTypeExtractor.apply(type, environment, combinator);
-			//
-			if (refT == null) {
-				syntaxError(item, EXPECTED_REFERENCE);
-			} else {
-				return refT;
-			}
-		}
-		//
-		return null;
-	}
-
-	/**
-	 * Extract the element type from a reference. The array type can be null if some
-	 * earlier part of type checking generated an error message and we are just
-	 * continuing after that.
+	 * From an arbitrary type, extract a particular kind of type.
 	 *
+	 * @param kind
 	 * @param type
 	 * @param item
+	 * @param errcode
 	 * @return
 	 */
-	public SemanticType extractElementType(SemanticType.Reference type, SyntacticItem item) {
-		if (type == null) {
+	public <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
+		if(type == null) {
+			// indicates failure upstream
 			return null;
+		} else if (kind.isInstance(type)) {
+			return (T) type;
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			return extractType(kind, t.getConcreteType(), errcode, item);
 		} else {
-			return type.getElement();
+			syntaxError(item, errcode);
+			return null; // deadcode
 		}
-	}
-
-	/**
-	 * From an arbitrary type, extract the lambda type it represents which is either
-	 * readable or writeable depending on the context.
-	 */
-	public Type.Callable extractLambdaType(SemanticType type, Environment environment,
-			ReadWriteTypeExtractor.Combinator<Type.Callable> combinator, SyntacticItem item) {
-		//
-		if (type != null) {
-			Type.Callable refT = rwTypeExtractor.apply(type, environment, combinator);
-			//
-			if (refT == null) {
-				syntaxError(item, EXPECTED_LAMBDA);
-			} else {
-				return refT;
-			}
-		}
-		return null;
 	}
 
 	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {

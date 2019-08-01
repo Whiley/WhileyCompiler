@@ -16,14 +16,8 @@ package wyil.check;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
-import static wyil.lang.WyilFile.STMT_assign;
-import static wyil.lang.WyilFile.STMT_dowhile;
-import static wyil.lang.WyilFile.STMT_if;
-import static wyil.lang.WyilFile.STMT_ifelse;
-import static wyil.lang.WyilFile.STMT_namedblock;
-import static wyil.lang.WyilFile.STMT_switch;
-import static wyil.lang.WyilFile.STMT_while;
 import static wyc.util.ErrorMessages.syntaxError;
+import static wyil.lang.WyilFile.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,17 +30,14 @@ import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
-import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.SemanticType.Record;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.util.*;
+import wyil.lang.WyilFile.Type.Field;
+import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * This is an overflow class for <code>FlowTypeCheck</code>. It provides various
@@ -96,9 +87,9 @@ public class FlowTypeUtils {
 			for (Decl.Variable var : leftRefinements) {
 				if (rightRefinements.contains(var)) {
 					// We have a refinement on both branches
-					SemanticType leftT = left.getType(var);
-					SemanticType rightT = right.getType(var);
-					SemanticType mergeT = new SemanticType.Union(leftT, rightT);
+					Type leftT = left.getType(var);
+					Type rightT = right.getType(var);
+					Type mergeT = new Type.Union(leftT, rightT);
 					result = result.refineType(var, mergeT);
 				}
 			}
@@ -133,13 +124,26 @@ public class FlowTypeUtils {
 			return new Pair<>(var.getVariableDeclaration(), type);
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
-			Type.Field field = new Type.Field(((Expr.RecordAccess) expr).getField(), type);
-			Type.Record recT = new Type.Record(true, new Tuple<>(field));
-			return extractTypeTest(ra.getOperand(), recT);
-		} else {
-			// no extraction is possible
-			return null;
+			Expr ra_operand = ra.getOperand();
+			Type.Record ra_operandT = asType(ra_operand.getType(), Type.Record.class);
+			if (ra_operandT != null) {
+				Tuple<Type.Field> ra_fields = ra_operandT.getFields();
+				Type.Field[] fields = new Type.Field[ra_fields.size()];
+				//
+				for (int i = 0; i != ra_fields.size(); ++i) {
+					Type.Field f = ra_fields.get(i);
+					if (f.getName().equals(ra.getField())) {
+						fields[i] = new Type.Field(f.getName(), type);
+					} else {
+						fields[i] = f;
+					}
+				}
+				Type.Record recT = new Type.Record(ra_operandT.isOpen(), new Tuple<>(fields));
+				return extractTypeTest(ra.getOperand(), recT);
+			}
 		}
+		// no extraction is possible
+		return null;
 	}
 
 	/**
@@ -295,7 +299,7 @@ public class FlowTypeUtils {
 	 *
 	 */
 	public static class Environment implements LifetimeRelation {
-		private final Map<Decl.Variable, SemanticType> refinements;
+		private final Map<Decl.Variable, Type> refinements;
 		private final Map<String, String[]> withins;
 
 		public Environment() {
@@ -303,13 +307,13 @@ public class FlowTypeUtils {
 			this.withins = new HashMap<>();
 		}
 
-		public Environment(Map<Decl.Variable, SemanticType> refinements, Map<String, String[]> withins) {
+		public Environment(Map<Decl.Variable, Type> refinements, Map<String, String[]> withins) {
 			this.refinements = new HashMap<>(refinements);
 			this.withins = new HashMap<>(withins);
 		}
 
-		public SemanticType getType(Decl.Variable var) {
-			SemanticType refined = refinements.get(var);
+		public Type getType(Decl.Variable var) {
+			Type refined = refinements.get(var);
 			if (refined == null) {
 				return var.getType();
 			} else {
@@ -317,7 +321,7 @@ public class FlowTypeUtils {
 			}
 		}
 
-		public Environment refineType(Decl.Variable var, SemanticType refinement) {
+		public Environment refineType(Decl.Variable var, Type refinement) {
 			Environment r = new Environment(this.refinements, this.withins);
 			r.refinements.put(var, refinement);
 			return r;
@@ -560,7 +564,33 @@ public class FlowTypeUtils {
 	// ===============================================================================================================
 	// Type Filters
 	// ===============================================================================================================
-
+	/**
+	 * Unwrap a given type to reveal its underlying kind. For example, the type
+	 * <code>int</code> can be unwrapped only to <code>int</code>. A more complex
+	 * example:
+	 *
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * </pre>
+	 *
+	 * The type <code>nat</code> can be unwrapped to an <code>int</code>. In
+	 * general, the unwrapping process expands all nominal types until an atom is
+	 * encountered.
+	 *
+	 * @param type
+	 * @param kind
+	 * @return
+	 */
+	public static <T extends Type> T asType(Type type, Class<T> kind) {
+		if (kind.isInstance(type)) {
+			return (T) type;
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			return asType(t.getConcreteType(), kind);
+		} else {
+			return null;
+		}
+	}
 	/**
 	 * Given an array of record types, filter out those which do not contain exactly
 	 * the given set of fields. For example, consider this snippet:

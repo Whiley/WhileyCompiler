@@ -1,3 +1,3 @@
-function f((int&bool)[] p) -> int:
+function f(void[] p) -> int:
     return 0
     
