@@ -1,11 +1,12 @@
+dist: trusty
+
 language: java
 
-#
 jdk:
-    - oraclejdk9
-#
+    - oraclejdk8
+
 install: true
-#
+
 script:
     - touch running_on_travis
     - ant test
