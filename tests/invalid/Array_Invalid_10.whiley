@@ -1,6 +1,4 @@
-type in_arr is ((int|null)[] n)
-type ib_arr is ((int|bool)[] n)
-type arr is in_arr | ib_arr
+type arr is ((int|null)[] n)
 
 function read(arr x, int i) -> (int|null|bool r)
 requires i >= 0 && i < |x|:

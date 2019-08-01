@@ -1,0 +1,26 @@
+// This test is interesting because one cannot distinguish between
+// List<int> and List<bool> by looking a that their values.  Instead,
+// this test case forces the use of runtime type tags.
+type List<T> is null | { List<T> next }
+
+function isListInt(List<int>|List<bool> l) -> (bool r):
+    if l is List<int>:
+        return true
+    else:
+        return false
+
+public export method test():
+    List<int> li1 = null
+    List<int> li2 = { next: li1 }
+    List<int> li3 = { next: li2 }
+    List<bool> lb1 = null
+    List<bool> lb2 = { next: lb1 }
+    List<bool> lb3 = { next: lb2 }
+    // test negative cases
+    assume !isListInt(lb1)
+    assume !isListInt(lb2)
+    assume !isListInt(lb3)
+    // test positive cases
+    assume isListInt(li1)
+    assume isListInt(li2)
+    assume isListInt(li3)

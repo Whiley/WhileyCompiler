@@ -57,48 +57,39 @@ public class AllValidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		// Problem Type Checking Union Type
-		IGNORED.put("RecordSubtype_Valid_1", "#696");
-		IGNORED.put("RecordSubtype_Valid_2", "#696");
-		// Function Overloading for Nominal Types
-		IGNORED.put("Function_Valid_11", "#702");
-		IGNORED.put("Function_Valid_15", "#702");
 		//  Normalisation for Method Subtyping
 		IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
 		IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
 		IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
 		// Support Captured Lifetime Parameters
 		IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
-		// Type Tests with Invariants
-		IGNORED.put("TypeEquals_Valid_23", "#787");
-		IGNORED.put("TypeEquals_Valid_25", "#787");
-		IGNORED.put("TypeEquals_Valid_30", "#787");
-		IGNORED.put("TypeEquals_Valid_41", "#787");
-		// Remove Any and Negation Types
-		IGNORED.put("ConstrainedReference_Valid_1", "#827");
-		// Temporary Removal of Intersections
-		IGNORED.put("Intersection_Valid_1", "#843");
-		IGNORED.put("Intersection_Valid_2", "#843");
-		IGNORED.put("NegationType_Valid_3", "#843");
-		// Problems with relaxed versus strict subtype operator
-		IGNORED.put("Function_Valid_22", "#845");
+		// Problem Type Checking Union Type
+		IGNORED.put("RecordSubtype_Valid_1", "#696");
+		IGNORED.put("RecordSubtype_Valid_2", "#696");
+		// Function Overloading for Nominal Types
+		IGNORED.put("Function_Valid_11", "#702");
+		IGNORED.put("Function_Valid_15", "#702");
+		// Redesigned Interpreter
+		IGNORED.put("Lambda_Valid_7", "908");
+		IGNORED.put("Lambda_Valid_11", "908");
+		IGNORED.put("Template_Valid_35", "908");
+		IGNORED.put("Template_Valid_36", "908");
+		// Semantics of Runtime Type Tests
+		IGNORED.put("RecursiveType_Valid_7", "936");
+		IGNORED.put("TypeEquals_Valid_61", "936");
+		IGNORED.put("TypeEquals_Valid_62", "936");
+		// FlowTyping over Logical Conditions
+		IGNORED.put("Complex_Valid_3", "936");
+		IGNORED.put("RecursiveType_Valid_12", "936");
+		IGNORED.put("RecursiveType_Valid_30", "936");
+		// Subtype Operator for Casting
+		IGNORED.put("Coercion_Valid_9", "938");
+		IGNORED.put("RecordCoercion_Valid_1", "938");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
-		// Readable Reference Types
-		IGNORED.put("UnionType_Valid_26", "#849");
-		// Rethinking Runtime Type Test Operator ?
-		IGNORED.put("RecordAssign_Valid_11", "#850");
-		// Ambiguous coercions
-		IGNORED.put("TypeEquals_Valid_33", "#837");
-		IGNORED.put("TypeEquals_Valid_35", "#837");
-		IGNORED.put("Coercion_Valid_10", "#837");
-		// Problems checking type invariants on lambdas
-		IGNORED.put("Lambda_Valid_11", "???");
-		IGNORED.put("Lambda_Valid_7", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_3", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "???");
-
 	}
 
 

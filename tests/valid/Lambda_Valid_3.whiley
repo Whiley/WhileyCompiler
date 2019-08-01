@@ -1,12 +1,12 @@
-type t_Reader is method(int) -> byte[]
-type InputStream is { t_Reader read }
+public type t_Reader is method(int) -> byte[]
+public type InputStream is { t_Reader read }
 type BufferState is &{byte[] bytes, int pos}
 
 // Define the 8bit ASCII character
 public type char is (int x) where 0 <= x && x <= 255
 
 // Define ASCII String
-type string is char[]
+public type string is char[]
 
 // Convert an ASCII character into a byte.
 public function toByte(char v) -> byte:

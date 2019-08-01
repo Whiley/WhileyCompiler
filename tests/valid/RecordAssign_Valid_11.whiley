@@ -14,7 +14,7 @@ function write(rec x, int n) -> (rec r):
     if x is in_rec:
         x.f = n
     else:
-        x.f = n
+        x.f = false
     //
     return x
 

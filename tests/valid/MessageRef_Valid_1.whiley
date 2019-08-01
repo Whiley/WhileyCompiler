@@ -7,7 +7,7 @@ type MyMeth is method(MyProc, int) -> int
 method read(MyProc _this, int x) -> int:
     return x + 123
 
-public method call(MyMeth m, MyProc proc) -> int:
+method call(MyMeth m, MyProc proc) -> int:
     return m(proc,1)
 
 public export method test() :

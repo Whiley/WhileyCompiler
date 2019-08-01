@@ -13,6 +13,6 @@ function f(expr e) -> bool:
         return false
 
 public export method test() :
-    assume f(-1) == false
-    assume f(1) == true
-    assume f(1234) == true
+    assume f((neg) -1) == false
+    assume f((pos) 1) == true
+    assume f((pos) 1234) == true

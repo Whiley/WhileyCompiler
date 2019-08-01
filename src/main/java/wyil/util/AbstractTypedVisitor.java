@@ -14,23 +14,18 @@
 package wyil.util;
 
 import wycc.util.ArrayUtils;
-import wyil.type.subtyping.EmptinessTest.LifetimeRelation;
-import wyil.check.FlowTypeUtils.Environment;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
-import wyil.lang.WyilFile.SemanticType;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.type.subtyping.SubtypeOperator;
-import wyil.type.util.AbstractTypeFilter;
+import wyil.util.SubtypeOperator.LifetimeRelation;
 
 import static wyil.lang.WyilFile.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 
@@ -286,7 +281,6 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
-		// FIXME: Should be Type.Int(0,255)
 		Type std_ascii = new Type.Array(Type.Int);
 		visitExpression(stmt.getOperand(), std_ascii, environment);
 	}
@@ -816,6 +810,11 @@ public abstract class AbstractTypedVisitor {
 		Type.Callable signature = expr.getBinding().getConcreteType();
 		Tuple<Type> parameters = signature.getParameters();
 		// Done
+		for(SyntacticItem arg : expr.getBinding().getArguments()) {
+			if(arg instanceof Type) {
+				visitType((Type) arg);
+			}
+		}
 		visitExpressions(expr.getOperands(), parameters, environment);
 	}
 
@@ -1014,68 +1013,10 @@ public abstract class AbstractTypedVisitor {
 	public void visitTypeVariable(Type.Variable type) {
 	}
 
-	public void visitSemanticType(SemanticType type) {
-		switch (type.getOpcode()) {
-		case SEMTYPE_array:
-			visitSemanticTypeArray((SemanticType.Array) type);
-			break;
-		case SEMTYPE_record:
-			visitSemanticTypeRecord((SemanticType.Record) type);
-			break;
-		case SEMTYPE_staticreference:
-		case SEMTYPE_reference:
-			visitSemanticTypeReference((SemanticType.Reference) type);
-			break;
-		case SEMTYPE_union:
-			visitSemanticTypeUnion((SemanticType.Union) type);
-			break;
-		case SEMTYPE_intersection:
-			visitSemanticTypeIntersection((SemanticType.Intersection) type);
-			break;
-		case SEMTYPE_difference:
-			visitSemanticTypeDifference((SemanticType.Difference) type);
-			break;
-		default:
-			// Handle leaf cases
-			visitType((Type) type);
-		}
-	}
-
-	public void visitSemanticTypeArray(SemanticType.Array type) {
-		visitSemanticType(type.getElement());
-	}
-
-	public void visitSemanticTypeRecord(SemanticType.Record type) {
-		for (SemanticType.Field f : type.getFields()) {
-			visitSemanticType(f.getType());
-		}
-	}
-
-	public void visitSemanticTypeReference(SemanticType.Reference type) {
-		visitSemanticType(type.getElement());
-	}
-
-	public void visitSemanticTypeUnion(SemanticType.Union type) {
-		for (SemanticType t : type.getAll()) {
-			visitSemanticType(t);
-		}
-	}
-
-	public void visitSemanticTypeIntersection(SemanticType.Intersection type) {
-		for (SemanticType t : type.getAll()) {
-			visitSemanticType(t);
-		}
-	}
-
-	public void visitSemanticTypeDifference(SemanticType.Difference type) {
-		visitSemanticType(type.getLeftHandSide());
-		visitSemanticType(type.getRightHandSide());
-	}
-
 	public Type.Int selectInt(Type target, Expr expr, Environment environment) {
 		Type.Int type = asType(expr.getType(), Type.Int.class);
-		Type.Int[] ints = TYPE_INT_FILTER.apply(target);
-		return selectCandidate(ints, type, environment);
+		List<Type.Int> ints = filter(Type.Int.class,target);
+		return select(ints, type, environment);
 	}
 
 	/**
@@ -1106,8 +1047,8 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Array selectArray(Type target, Expr expr, Environment environment) {
 		Type.Array type = asType(expr.getType(), Type.Array.class);
-		Type.Array[] records = TYPE_ARRAY_FILTER.apply(target);
-		return selectCandidate(records, type, environment);
+		List<Type.Array> arrays = filter(Type.Array.class,target);
+		return select(arrays, type, environment);
 	}
 
 	/**
@@ -1139,8 +1080,8 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Record selectRecord(Type target, Expr expr, Environment environment) {
 		Type.Record type = asType(expr.getType(), Type.Record.class);
-		Type.Record[] records = TYPE_RECORD_FILTER.apply(target);
-		return selectCandidate(records, type, environment);
+		List<Type.Record> records = filter(Type.Record.class,target);
+		return select(records, type, environment);
 	}
 
 	/**
@@ -1172,8 +1113,8 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Reference selectReference(Type target, Expr expr, Environment environment) {
 		Type.Reference type = asType(expr.getType(), Type.Reference.class);
-		Type.Reference[] references = TYPE_REFERENCE_FILTER.apply(target);
-		return selectCandidate(references, type, environment);
+		List<Type.Reference> refs = filter(Type.Reference.class,target);
+		return select(refs, type, environment);
 	}
 
 	/**
@@ -1207,12 +1148,10 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public Type.Callable selectLambda(Type target, Expr expr, Environment environment) {
 		Type.Callable type = asType(expr.getType(), Type.Callable.class);
-		// Construct the default case for matching against any
-		Type.Callable anyType = new Type.Function(type.getParameters(), TUPLE_ANY);
 		// Create the filter itself
-		AbstractTypeFilter<Type.Callable> filter = new AbstractTypeFilter<>(Type.Callable.class, anyType);
+		List<Type.Callable> callables = filter(Type.Callable.class,target);
 		//
-		return selectCandidate(filter.apply(target), type, environment);
+		return select(callables, type, environment);
 	}
 
 	private static Tuple<Type> TUPLE_ANY = new Tuple<>(Type.Any);
@@ -1226,16 +1165,16 @@ public abstract class AbstractTypedVisitor {
 	 * @param actual
 	 * @return
 	 */
-	public <T extends Type> T selectCandidate(T[] candidates, T actual, Environment environment) {
+	public <T extends Type> T select(List<T> candidates, T actual, Environment environment) {
 		//
 		T candidate = null;
-		for (int i = 0; i != candidates.length; ++i) {
-			T next = candidates[i];
+		for (int i = 0; i != candidates.size(); ++i) {
+			T next = candidates.get(i);
 			if (subtypeOperator.isSubtype(next, actual, environment)) {
 				if (candidate == null) {
 					candidate = next;
 				} else {
-					candidate = selectCandidate(candidate, next, actual, environment);
+					candidate = select(candidate, next, actual, environment);
 				}
 			}
 		}
@@ -1255,7 +1194,7 @@ public abstract class AbstractTypedVisitor {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public <T extends Type> T selectCandidate(T candidate, T next, T actual, Environment environment) {
+	public <T extends Type> T select(T candidate, T next, T actual, Environment environment) {
 		// Found a viable candidate
 		boolean left = subtypeOperator.isSubtype(candidate, next, environment);
 		boolean right = subtypeOperator.isSubtype(next, candidate, environment);
@@ -1328,24 +1267,56 @@ public abstract class AbstractTypedVisitor {
 			return (T) type;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal t = (Type.Nominal) type;
-			Decl.Type decl = t.getLink().getTarget();
-			return asType(decl.getType(), kind);
+			return asType(t.getConcreteType(), kind);
 		} else {
 			throw new IllegalArgumentException("invalid type: " + type);
 		}
 	}
 
-	private static final AbstractTypeFilter<Type.Int> TYPE_INT_FILTER = new AbstractTypeFilter<>(Type.Int.class,
-			Type.Int);
+	/**
+	 * Filter a given type according to a given kind whilst descending through
+	 * unions. For example, consider the following:
+	 *
+	 * <pre>
+	 * {int f}|null xs = {f:0}
+	 * </pre>
+	 *
+	 * In this case, at the point of the record initialiser, we need to extract the
+	 * target type <code>{int f}</code> from the type of <code>xs</code>. This is
+	 * what the filter method does. The following illustrates another example:
+	 *
+	 * <pre>
+	 * {int f}|{bool f}|null xs = {f:0}
+	 * </pre>
+	 *
+	 * In this case, the filter will return two instances of
+	 * <code>Type.Record</code> one for <code>{int f}</code> and one for
+	 * <code>{bool f}</code>.
+	 *
+	 * @param <T>
+	 * @param kind
+	 * @param type
+	 * @return
+	 */
+	public static <T extends Type> List<T> filter(Class<T> kind, Type type) {
+		ArrayList<T> results = new ArrayList<>();
+		filter(kind,type,results);
+		return results;
+	}
 
-	private static final AbstractTypeFilter<Type.Array> TYPE_ARRAY_FILTER = new AbstractTypeFilter<>(Type.Array.class,
-			new Type.Array(Type.Any));
-
-	private static final AbstractTypeFilter<Type.Record> TYPE_RECORD_FILTER = new AbstractTypeFilter<>(
-			Type.Record.class, new Type.Record(true, new Tuple<>()));
-
-	private static final AbstractTypeFilter<Type.Reference> TYPE_REFERENCE_FILTER = new AbstractTypeFilter<>(
-			Type.Reference.class, new Type.Reference(Type.Any));
+	public static <T extends Type> void filter(Class<T> kind, Type type, List<T> results) {
+		if (kind.isInstance(type)) {
+			results.add((T) type);
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			filter(kind, t.getConcreteType(), results);
+		} else if (type instanceof Type.Union) {
+			Type.Union t = (Type.Union) type;
+			for (int i = 0; i != t.size(); ++i) {
+				filter(kind, t.get(i), results);
+			}
+		}
+	}
 
 	private static final Type.Array TYPE_ARRAY_INT = new Type.Array(Type.Int);
 

@@ -10,6 +10,6 @@ type expr is int | binop
 function f(expr e) -> expr:
     return e
 
-public export method test() -> expr:
+method test() -> expr:
     expr e1 = {op: 0, left: {op: MUL, left: 2, right: 2}, right: 2}
     return f(e1)

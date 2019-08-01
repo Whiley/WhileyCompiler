@@ -96,8 +96,8 @@ public class SymbolTable {
 	}
 
 	/**
-	 * Check whether a given name is registered. That is, whether or not there is a
-	 * corresponding name or not.
+	 * Check whether a given qualified name is registered. That is, whether or not
+	 * there is a corresponding name in a given group.
 	 *
 	 * @param name
 	 * @return
@@ -110,6 +110,18 @@ public class SymbolTable {
 	}
 
 	/**
+	 * Check whether a given unit is known to this symbol table.
+	 *
+	 * @param name
+	 * @return
+	 */
+	public boolean contains(Name name) {
+		// Get information associated with this unit
+		SymbolTable.Group group = symbolTable.get(name);
+		return group != null;
+	}
+
+	/**
 	 * Check whether a given symbol is currently external to the enclosing WyilFile.
 	 * Specifically, this indicates whether or not a stub is available for it.
 	 *
@@ -119,6 +131,16 @@ public class SymbolTable {
 	public boolean isAvailable(QualifiedName name) {
 		SymbolTable.Group group = symbolTable.get(name.getUnit());
 		return group != null && group.isAvailable(name.getName());
+	}
+
+	/**
+	 * Check whether a given unit is know to this symbol table.
+	 *
+	 * @param name
+	 * @return
+	 */
+	public Group getGroup(Name name) {
+		return symbolTable.get(name);
 	}
 
 	/**
@@ -236,7 +258,11 @@ public class SymbolTable {
 
 		@Override
 		public boolean isAvailable(Identifier name) {
-			return entries.get(name).isAvailable();
+			if(entries.containsKey(name)) {
+				return entries.get(name).isAvailable();
+			} else {
+				return false;
+			}
 		}
 
 		@Override
@@ -246,12 +272,20 @@ public class SymbolTable {
 
 		@Override
 		public List<Named> getRegisteredDeclarations(Identifier name) {
-			return entries.get(name).getDeclarations();
+			if(entries.containsKey(name)) {
+				return entries.get(name).getDeclarations();
+			} else {
+				return Collections.EMPTY_LIST;
+			}
 		}
 
 		@Override
 		public List<Named> getAvailableDeclarations(Identifier name) {
-			return entries.get(name).getAvailable();
+			if (entries.containsKey(name)) {
+				return entries.get(name).getAvailable();
+			} else {
+				return Collections.EMPTY_LIST;
+			}
 		}
 	}
 

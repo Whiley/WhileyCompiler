@@ -1,9 +1,6 @@
 tests/invalid/Type_Invalid_4.whiley:1: empty type encountered
 type Point is {
-              ^^^
-tests/invalid/Type_Invalid_4.whiley:5: empty type encountered
-function toString(int p) -> Point:
-                            ^^^^^
+     ^^^^^
 tests/invalid/Type_Invalid_4.whiley:6: expected type Point, found null
     return null
            ^^^^

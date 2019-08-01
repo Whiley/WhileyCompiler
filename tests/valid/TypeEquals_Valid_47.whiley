@@ -2,9 +2,9 @@
 
 type nat is (int n) where n >= 0
 
-type T is int | int[]
+type iorarr is int | int[]
 
-function f(T x) -> int:
+function f(iorarr x) -> int:
     if x is int[] | nat:
         return 0
     else:

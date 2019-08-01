@@ -161,6 +161,7 @@ public class ErrorMessages {
 	// Name Resolution
 	// ========================================================================
 	public static final Message RESOLUTION_ERROR = new StaticMessage("unable to resolve name");
+	public static final Message EXPOSING_HIDDEN_DECLARATION = new StaticMessage("exposing private declaration");
 	public static final Message MISSING_TEMPLATE_PARAMETERS = new StaticMessage("insufficient template parameters");
 	public static final Message TOOMANY_TEMPLATE_PARAMETERS = new StaticMessage("too many template parameters");
 	// ========================================================================
@@ -314,7 +315,8 @@ public class ErrorMessages {
 			RESOLUTION_ERROR,   // 407
 			AMBIGUOUS_COERCION,   // 408
 			MISSING_TEMPLATE_PARAMETERS,   // 409
-			TOOMANY_TEMPLATE_PARAMETERS,   // 409
+			TOOMANY_TEMPLATE_PARAMETERS,   // 410
+			EXPOSING_HIDDEN_DECLARATION,   // 411
 		},
 		{
 			MISSING_RETURN_STATEMENT, // 500;

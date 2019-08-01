@@ -18,7 +18,7 @@ function evaluate(Expr e) -> Value:
         else:
             Value src = evaluate(e.src)
             Value index = evaluate(e.index)
-            if (src is Expr[] && index is int &&
+            if (src is Value[] && index is int &&
                     index >= 0 && index < |src|):
                 return src[index]
             else:

@@ -77,10 +77,7 @@ function move2str(Move m) -> string:
                 else:
                     return "O-O-O"
             else:
-                if m is CheckMove:
-                    return append(move2str(m.check),"+")
-                else:
-                    return ""
+                return append(move2str(m.check),"+")
 
 function piece2str(Piece p) -> string:
     if p.kind == PAWN:

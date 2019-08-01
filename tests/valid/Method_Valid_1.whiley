@@ -8,7 +8,7 @@ type Board is (Piece[] pieces) where |pieces| == 9
 function EmptyBoard() -> Board:
     return [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK]
 
-public function numPieces(Board board, Piece piece) -> int:
+function numPieces(Board board, Piece piece) -> int:
     int count = 0
     int i = 0
     while i < |board| where i >= 0:
