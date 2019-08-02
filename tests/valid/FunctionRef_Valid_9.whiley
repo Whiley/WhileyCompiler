@@ -7,7 +7,7 @@ public type Proc is &{
 method func(Proc _this, int x) -> int:
     return x + 1
 
-public export method test(Proc _this, int arg) -> int:
+method test(Proc _this, int arg) -> int:
     return (*_this).func(arg)
 
 function id(int x) -> int:
