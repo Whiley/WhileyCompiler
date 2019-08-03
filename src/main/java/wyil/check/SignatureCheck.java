@@ -123,8 +123,6 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 		private String toMangledName(Decl.Named<?> decl) {
 			// Determine whether this is an exported symbol or not
 			boolean exported = decl.getModifiers().match(Modifier.Export.class) != null;
-			// Determine whether this is a native symbol or not
-			exported |= decl.getModifiers().match(Modifier.Native.class) != null;
 			// Construct base name
 			String name = decl.getQualifiedName().toString().replace("::", "$");
 			// Add type mangles for non-exported symbols
