@@ -819,7 +819,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Tuple<Type> targets, Environment environment) {
-		Type.Callable sourceT = asType(expr.getSource().getType(), Type.Callable.class);
+		Type.Callable sourceT = expr.getSource().getType().as(Type.Callable.class);
 		visitExpression(expr.getSource(), sourceT, environment);
 		visitExpressions(expr.getArguments(), sourceT.getParameters(), environment);
 	}
@@ -1014,8 +1014,8 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public Type.Int selectInt(Type target, Expr expr, Environment environment) {
-		Type.Int type = asType(expr.getType(), Type.Int.class);
-		List<Type.Int> ints = filter(Type.Int.class,target);
+		Type.Int type = expr.getType().as(Type.Int.class);
+		List<Type.Int> ints = target.filter(Type.Int.class);
 		return select(ints, type, environment);
 	}
 
@@ -1046,8 +1046,8 @@ public abstract class AbstractTypedVisitor {
 	 *
 	 */
 	public Type.Array selectArray(Type target, Expr expr, Environment environment) {
-		Type.Array type = asType(expr.getType(), Type.Array.class);
-		List<Type.Array> arrays = filter(Type.Array.class,target);
+		Type.Array type = expr.getType().as(Type.Array.class);
+		List<Type.Array> arrays = target.filter(Type.Array.class);
 		return select(arrays, type, environment);
 	}
 
@@ -1079,8 +1079,8 @@ public abstract class AbstractTypedVisitor {
 	 *
 	 */
 	public Type.Record selectRecord(Type target, Expr expr, Environment environment) {
-		Type.Record type = asType(expr.getType(), Type.Record.class);
-		List<Type.Record> records = filter(Type.Record.class,target);
+		Type.Record type = expr.getType().as(Type.Record.class);
+		List<Type.Record> records = target.filter(Type.Record.class);
 		return select(records, type, environment);
 	}
 
@@ -1112,8 +1112,8 @@ public abstract class AbstractTypedVisitor {
 	 *
 	 */
 	public Type.Reference selectReference(Type target, Expr expr, Environment environment) {
-		Type.Reference type = asType(expr.getType(), Type.Reference.class);
-		List<Type.Reference> refs = filter(Type.Reference.class,target);
+		Type.Reference type = expr.getType().as(Type.Reference.class);
+		List<Type.Reference> refs = target.filter(Type.Reference.class);
 		return select(refs, type, environment);
 	}
 
@@ -1147,9 +1147,9 @@ public abstract class AbstractTypedVisitor {
 	 *
 	 */
 	public Type.Callable selectLambda(Type target, Expr expr, Environment environment) {
-		Type.Callable type = asType(expr.getType(), Type.Callable.class);
+		Type.Callable type = expr.getType().as(Type.Callable.class);
 		// Create the filter itself
-		List<Type.Callable> callables = filter(Type.Callable.class,target);
+		List<Type.Callable> callables = target.filter(Type.Callable.class);
 		//
 		return select(callables, type, environment);
 	}
@@ -1242,79 +1242,6 @@ public abstract class AbstractTypedVisitor {
 			return isDerivation(parent, decl.getType());
 		} else {
 			return false;
-		}
-	}
-
-	/**
-	 * Unwrap a given type to reveal its underlying kind. For example, the type
-	 * <code>int</code> can be unwrapped only to <code>int</code>. A more complex
-	 * example:
-	 *
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * </pre>
-	 *
-	 * The type <code>nat</code> can be unwrapped to an <code>int</code>. In
-	 * general, the unwrapping process expands all nominal types until an atom is
-	 * encountered.
-	 *
-	 * @param type
-	 * @param kind
-	 * @return
-	 */
-	public <T extends Type> T asType(Type type, Class<T> kind) {
-		if (kind.isInstance(type)) {
-			return (T) type;
-		} else if (type instanceof Type.Nominal) {
-			Type.Nominal t = (Type.Nominal) type;
-			return asType(t.getConcreteType(), kind);
-		} else {
-			throw new IllegalArgumentException("invalid type: " + type);
-		}
-	}
-
-	/**
-	 * Filter a given type according to a given kind whilst descending through
-	 * unions. For example, consider the following:
-	 *
-	 * <pre>
-	 * {int f}|null xs = {f:0}
-	 * </pre>
-	 *
-	 * In this case, at the point of the record initialiser, we need to extract the
-	 * target type <code>{int f}</code> from the type of <code>xs</code>. This is
-	 * what the filter method does. The following illustrates another example:
-	 *
-	 * <pre>
-	 * {int f}|{bool f}|null xs = {f:0}
-	 * </pre>
-	 *
-	 * In this case, the filter will return two instances of
-	 * <code>Type.Record</code> one for <code>{int f}</code> and one for
-	 * <code>{bool f}</code>.
-	 *
-	 * @param <T>
-	 * @param kind
-	 * @param type
-	 * @return
-	 */
-	public static <T extends Type> List<T> filter(Class<T> kind, Type type) {
-		ArrayList<T> results = new ArrayList<>();
-		filter(kind,type,results);
-		return results;
-	}
-
-	public static <T extends Type> void filter(Class<T> kind, Type type, List<T> results) {
-		if (kind.isInstance(type)) {
-			results.add((T) type);
-		} else if (type instanceof Type.Nominal) {
-			Type.Nominal t = (Type.Nominal) type;
-			filter(kind, t.getConcreteType(), results);
-		} else if (type instanceof Type.Union) {
-			Type.Union t = (Type.Union) type;
-			for (int i = 0; i != t.size(); ++i) {
-				filter(kind, t.get(i), results);
-			}
 		}
 	}
 

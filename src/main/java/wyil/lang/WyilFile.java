@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -4126,6 +4127,55 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
 
 		/**
+		 * Expose the underlying type of this type. For example, consider this:
+		 *
+		 * <pre>
+		 *  type
+		 * Point is {int x, int y}
+		 *
+		 * function getX(Point p) -> (int r): return p.x
+		 * </pre>
+		 *
+		 * At the point of the record access `p.x` we may want to know the underlying
+		 * record type for `p` (e.g. perhaps to calculate the offset of field `x`).
+		 * However, the `getType()` method only returns an instance of `Type` which, in
+		 * fact, is an instance of `Type.Nominal`. We need to further expand this to get
+		 * at the underlying record type. That is what this function does.
+		 *
+		 * @param kind
+		 * @return
+		 */
+		public <T extends Type> T as(Class<T> kind);
+
+		/**
+		 * Filter a type according to a given kind whilst descending through unions. For
+		 * example, consider the following:
+		 *
+		 * <pre>
+		 * {int f}|null xs = {f:0}
+		 * </pre>
+		 *
+		 * In this case, at the point of the record initialiser, we need to extract the
+		 * target type <code>{int f}</code> from the type of <code>xs</code>. This is
+		 * what the filter method does. The following illustrates another example:
+		 *
+		 * <pre>
+		 * {int f}|{bool f}|null xs = {f:0}
+		 * </pre>
+		 *
+		 * In this case, the filter will return two instances of
+		 * <code>Type.Record</code> one for <code>{int f}</code> and one for
+		 * <code>{bool f}</code>.
+		 *
+		 * @param      <T>
+		 * @param kind
+		 * @param type
+		 * @return
+		 */
+
+		public <T extends Type> List<T> filter(Class<T> kind);
+
+		/**
 		 * Return a canonical string which embodies this type.
 		 *
 		 * @return
@@ -4139,7 +4189,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		}
 
-		static abstract class AbstractType extends AbstractSyntacticItem {
+		static abstract class AbstractType extends AbstractSyntacticItem implements Type {
 			AbstractType(int opcode) {
 				super(opcode);
 			}
@@ -4150,6 +4200,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			AbstractType(int opcode, SyntacticItem... operands) {
 				super(opcode, operands);
+			}
+
+			@Override
+			public <T extends Type> T as(Class<T> kind) {
+				if (kind.isInstance(this)) {
+					return (T) this;
+				} else {
+					return null;
+				}
+			}
+
+			@Override
+			public <T extends Type> List<T> filter(Class<T> kind) {
+				if (kind.isInstance(this)) {
+					ArrayList<T> results = new ArrayList<>();
+					results.add((T) this);
+					return results;
+				} else {
+					return Collections.EMPTY_LIST;
+				}
 			}
 		}
 
@@ -4697,6 +4767,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Type>) get(1);
 			}
 
+			@Override
+			public <T extends Type> T as(Class<T> kind) {
+				if(kind.isInstance(this)) {
+					return (T) this;
+				} else {
+					return getConcreteType().as(kind);
+				}
+			}
+
+			@Override
+			public <T extends Type> List<T> filter(Class<T> kind) {
+				if(kind.isInstance(this)) {
+					ArrayList<T> result = new ArrayList<>();
+					result.add((T) this);
+					return result;
+				} else {
+					return getConcreteType().filter(kind);
+				}
+			}
+
 			public Type getConcreteType() {
 				Decl.Type decl = getLink().getTarget();
 				Tuple<Template.Variable> template = decl.getTemplate();
@@ -4791,6 +4881,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public Type.Union clone(SyntacticItem[] operands) {
 				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
+			}
+
+			@Override
+			public <T extends Type> List<T> filter(Class<T> kind) {
+				ArrayList<T> result = new ArrayList<>();
+				if (kind.isInstance(this)) {
+					result.add((T) this);
+				} else {
+					for (int i = 0; i != size(); ++i) {
+						result.addAll(get(i).filter(kind));
+					}
+				}
+				return result;
 			}
 
 			@Override
