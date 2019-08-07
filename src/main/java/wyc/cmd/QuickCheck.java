@@ -246,7 +246,7 @@ public class QuickCheck implements Command {
 	 * requirements. Furthermore, it is necessary to ensure that aliasing bugs are
 	 * identified.
 	 */
-	private final HashMap<Type, Domain.Static<RValue>> cache;
+	private final HashMap<Type, Domain.Big<RValue>> cache;
 
 	/**
 	 * Provides the output chanel for information about the quick check process.
@@ -501,7 +501,7 @@ public class QuickCheck implements Command {
 		// Set default result
 		boolean result = true;
 		// Get appropriate generators for each parameter
-		Domain.Static<RValue>[] generators = constructGenerators(fm.getParameters(), context);
+		Domain.Big<RValue>[] generators = constructGenerators(fm.getParameters(), context);
 		//
 		List<RValue[]> inputs = generateValidInputs(fm.getRequires(), fm.getParameters(), context, generators);
 		//
@@ -554,7 +554,7 @@ public class QuickCheck implements Command {
 		//
 		CallStack frame = context.getFrame().enter(t);
 		// Get an appropriate generator for the underlying type
-		Domain.Static<RValue> generator = constructGenerator(t.getType(), context);
+		Domain.Big<RValue> generator = constructGenerator(t.getType(), context);
 		// Record split time
 		long split = System.currentTimeMillis() - time;
 		// iterate through all values in the generator to see whether any pass the
@@ -581,7 +581,7 @@ public class QuickCheck implements Command {
 	 * @param frame
 	 * @return
 	 */
-	private Domain.Small<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain.Static<RValue> domain, ExtendedContext context, CallStack frame) {
+	private Domain.Small<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain.Big<RValue> domain, ExtendedContext context, CallStack frame) {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
@@ -622,11 +622,11 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private List<RValue[]> generateValidInputs(Tuple<Expr> predicate, Tuple<Decl.Variable> variables,
-			ExtendedContext context, Domain.Static<RValue>... generators) {
+			ExtendedContext context, Domain.Big<RValue>... generators) {
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
 		}
-		Domain.Static<RValue[]> domain = Domains.Product(generators);
+		Domain.Big<RValue[]> domain = Domains.Product(generators);
 		//
 //		long size = domain.size();
 //		int k = context.getSampleSize(size);
@@ -687,8 +687,8 @@ public class QuickCheck implements Command {
 		return b.boolValue();
 	}
 
-	private Domain.Static<RValue>[] constructGenerators(Tuple<Decl.Variable> parameters, ExtendedContext context) {
-		Domain.Static<RValue>[] generators = new Domain.Static[parameters.size()];
+	private Domain.Big<RValue>[] constructGenerators(Tuple<Decl.Variable> parameters, ExtendedContext context) {
+		Domain.Big<RValue>[] generators = new Domain.Big[parameters.size()];
 		//
 		for (int i = 0; i != parameters.size(); ++i) {
 			generators[i] = constructGenerator(parameters.get(i).getType(), context);
@@ -706,8 +706,8 @@ public class QuickCheck implements Command {
 	 * @param context
 	 * @return
 	 */
-	private Domain.Static<RValue> constructGenerator(Type type, ExtendedContext context) {
-		Domain.Static<RValue> result = cache.get(type);
+	private Domain.Big<RValue> constructGenerator(Type type, ExtendedContext context) {
+		Domain.Big<RValue> result = cache.get(type);
 		if (result == null) {
 			switch (type.getOpcode()) {
 			case TYPE_null:
@@ -786,19 +786,19 @@ public class QuickCheck implements Command {
 		};
 	}
 
-	private Domain.Static<RValue> constructGenerator(Type.Array type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Array type, ExtendedContext context) {
 		// Construct domain for elements
-		Domain.Static<RValue> element = constructGenerator(type.getElement(), context);
+		Domain.Big<RValue> element = constructGenerator(type.getElement(), context);
 		// Construct domain for between 0 and max elements
-		Domain.Static<RValue[]> array = Domains.Array(0, context.getMaxArrayLength(), element);
+		Domain.Big<RValue[]> array = Domains.Array(0, context.getMaxArrayLength(), element);
 		// Adapt array to RValue.Array
 		return Domains.Adaptor(array, (vs) -> RValue.Array(vs));
 	}
 
-	private Domain.Static<RValue> constructGenerator(Type.Record type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Record type, ExtendedContext context) {
 		// FIXME: need to support open records!
 		Tuple<Type.Field> fields = type.getFields();
-		Domain.Static<RValue>[] generators = new Domain.Static[fields.size()];
+		Domain.Big<RValue>[] generators = new Domain.Big[fields.size()];
 		// Construct a generator for each field
 		for(int i=0;i!=fields.size();++i) {
 			generators[i] = constructGenerator(fields.get(i).getType(), context);
@@ -816,7 +816,7 @@ public class QuickCheck implements Command {
 		});
 	}
 
-	private Domain.Static<RValue> constructGenerator(Type.Nominal type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Nominal type, ExtendedContext context) {
 		Decl.Type decl = type.getLink().getTarget();
 		int depth = context.depth(decl);
 		//
@@ -833,12 +833,12 @@ public class QuickCheck implements Command {
 			// =============================================================================
 			context.enter(decl);
 			// Get an appropriate generator for the underlying type/
-			Domain.Static<RValue> generator = constructGenerator(type.getConcreteType(), context);
+			Domain.Big<RValue> generator = constructGenerator(type.getConcreteType(), context);
 			//
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
-			Domain.Static<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
+			Domain.Big<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
 			//
 			context.leave(decl);
 			//
@@ -846,9 +846,9 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private Domain.Static<RValue> constructGenerator(Type.Union type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Union type, ExtendedContext context) {
 		// Construct generators for each subtype
-		Domain.Static<RValue>[] generators = new Domain.Static[type.size()];
+		Domain.Big<RValue>[] generators = new Domain.Big[type.size()];
 		for(int i=0;i!=type.size();++i) {
 			generators[i] = constructGenerator(type.get(i), context);
 		}
@@ -865,11 +865,11 @@ public class QuickCheck implements Command {
 	 * @param context
 	 * @return
 	 */
-	private Domain.Static<RValue> constructGenerator(Type.Reference type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Reference type, ExtendedContext context) {
 		int width = context.getAliasingWidth();
 		// NOTE: this is not done lazily which potentially could be problematic if
 		// sampling was used.
-		Domain.Static<RValue> element = constructGenerator(type.getElement(), context);
+		Domain.Big<RValue> element = constructGenerator(type.getElement(), context);
 		// Construct a unique object for each possible element value.
 		RValue.Reference[] refs = new RValue.Reference[element.bigSize().intValue() * width];
 		// Construct our set of references.
@@ -906,12 +906,12 @@ public class QuickCheck implements Command {
 	 * @param context
 	 * @return
 	 */
-	private Domain.Static<RValue> constructGenerator(Type.Function type, ExtendedContext context) {
-		Domain.Static<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+	private Domain.Big<RValue> constructGenerator(Type.Function type, ExtendedContext context) {
+		Domain.Big<RValue[]> outputs = constructGenerator(type.getReturns(),context);
 		RValue[] lambdas = new RValue[context.getLambdaWidth()];
 		for(int i=0;i!=context.getLambdaWidth();++i) {
 			// Apply the rotation (for i > 1)
-			Domain.Static<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			Domain.Big<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
 			// Construct the (deterministic) lambda
 			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
@@ -925,13 +925,13 @@ public class QuickCheck implements Command {
 	 * @param context
 	 * @return
 	 */
-	private Domain.Static<RValue> constructGenerator(Type.Method type, ExtendedContext context) {
-		Domain.Static<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+	private Domain.Big<RValue> constructGenerator(Type.Method type, ExtendedContext context) {
+		Domain.Big<RValue[]> outputs = constructGenerator(type.getReturns(),context);
 		RValue[] lambdas = new RValue[context.getLambdaWidth()];
 		// FIXME: should make this non-deterministic!!
 		for(int i=0;i!=context.getLambdaWidth();++i) {
 			// Apply the rotation (for i > 1)
-			Domain.Static<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			Domain.Big<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
 			// Construct the (deterministic) lambda
 			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
@@ -946,8 +946,8 @@ public class QuickCheck implements Command {
 	 * @param context
 	 * @return
 	 */
-	private Domain.Static<RValue[]> constructGenerator(Tuple<Type> types, ExtendedContext context) {
-		Domain.Static<RValue>[] generators = new Domain.Static[types.size()];
+	private Domain.Big<RValue[]> constructGenerator(Tuple<Type> types, ExtendedContext context) {
+		Domain.Big<RValue>[] generators = new Domain.Big[types.size()];
 		// Construct a generator for each type
 		for(int i=0;i!=types.size();++i) {
 			generators[i] = constructGenerator(types.get(i),context);
@@ -956,25 +956,25 @@ public class QuickCheck implements Command {
 		return Domains.Product(generators);
 	}
 
-	private Domain.Static<RValue> constructGenerator(Type.Variable type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.Variable type, ExtendedContext context) {
 		return Domains.Adaptor(Domains.Int(context.getIntegerMinimum(), context.getIntegerMaximum()),
 				(i) -> RValue.Int(BigInteger.valueOf(i)));
 	}
 
-	private final static <T> Domain.Static<T> Rotate(Domain.Static<T> domain, int rotation) {
+	private final static <T> Domain.Big<T> Rotate(Domain.Big<T> domain, int rotation) {
 		if (domain instanceof Domain.Small) {
 			Domain.Small<T> small = (Domain.Small) domain;
-			final int size = small.size();
+			final long size = small.size();
 
 			return new AbstractSmallDomain<T>() {
 
 				@Override
-				public int size() {
+				public long size() {
 					return size;
 				}
 
 				@Override
-				public T get(int index) {
+				public T get(long index) {
 					// apply rotation
 					index = (index + rotation) % size;
 					//
@@ -989,10 +989,10 @@ public class QuickCheck implements Command {
 	private final class SynthesizedLambda extends RValue.Lambda {
 		private final Type.Callable type;
 		private final ArrayList<RValue[]> inputs;
-		private final Domain.Static<RValue[]> outputs;
+		private final Domain.Big<RValue[]> outputs;
 		private final long size;
 
-		public SynthesizedLambda(Type.Callable type, Domain.Static<RValue[]> outputs) {
+		public SynthesizedLambda(Type.Callable type, Domain.Big<RValue[]> outputs) {
 			this.type = type;
 			this.inputs = new ArrayList<>();
 			this.outputs = outputs;
@@ -1024,7 +1024,7 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private static double calculateTotalInputs(Domain.Static<?>... domains) {
+	private static double calculateTotalInputs(Domain.Big<?>... domains) {
 		double max = 1.0D;
 		for (int i = 0; i != domains.length; ++i) {
 			max = max * domains[i].bigSize().doubleValue();
@@ -1389,7 +1389,7 @@ public class QuickCheck implements Command {
 		@Override
 		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
 			if (lambda instanceof Decl.Method && lambda.getBody().size() == 0) {
-				Domain.Static<RValue[]> returns = constructGenerator(lambda.getType().getReturns(), context);
+				Domain.Big<RValue[]> returns = constructGenerator(lambda.getType().getReturns(), context);
 				// FIXME: could return randomly here
 				return returns.iterator().next();
 			} else {
