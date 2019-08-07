@@ -415,9 +415,9 @@ public class QuickCheckInvalidTests {
 	 * @param name
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
-	 * @throws IOException
+	 * @throws Throwable
 	 */
-	protected void runTest(String name) throws IOException {
+	protected void runTest(String name) throws Throwable {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 
 		Pair<Boolean, String> p = compile(whileySrcDir, // location of source directory
@@ -463,7 +463,7 @@ public class QuickCheckInvalidTests {
 		}
 	}
 
-	public static Pair<Boolean,String> compile(File whileydir, String arg) throws IOException {
+	public static Pair<Boolean,String> compile(File whileydir, String arg) throws Throwable {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
@@ -527,7 +527,8 @@ public class QuickCheckInvalidTests {
 				throw (RuntimeException) e;
 			}
 			// Internal failure
-			e.printStackTrace(new PrintStream(syserr));
+			//e.printStackTrace();
+			result = false;
 		}
 		// Convert bytes produced into resulting string.
 		byte[] errBytes = syserr.toByteArray();
@@ -561,7 +562,7 @@ public class QuickCheckInvalidTests {
 	}
 
 	@Test
-	public void invalid() throws IOException {
+	public void invalid() throws Throwable {
 		if (new File("../../running_on_travis").exists()) {
 			System.out.println(".");
 		}
