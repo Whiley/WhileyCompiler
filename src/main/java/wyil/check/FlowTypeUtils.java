@@ -467,45 +467,6 @@ public class FlowTypeUtils {
 	}
 
 	/**
-	 * Given an array of expected record types, determine corresponding expected
-	 * field types. For example, consider the following simple Whiley snippet:
-	 *
-	 * <pre>
-	 * function f(int x) -> {int f}:
-	 *    return {f:x}
-	 * </pre>
-	 *
-	 * The expected type for the expression <code>{f:x}</code> is
-	 * <code>{int f}</code>. From this, we calculate the expected type for the
-	 * expression <code>x</code> as <code>int</code>.
-	 *
-	 * @param field
-	 * @param expected
-	 * @return
-	 */
-	public static Type[] typeRecordFieldConstructor(Type.Record[] types, Identifier fieldName) {
-		Type[] fields = new Type[types.length];
-		for (int i = 0; i != fields.length; ++i) {
-			Type.Record type = types[i];
-			Type field = type.getField(fieldName);
-			if (field == null) {
-				if (type.isOpen()) {
-					field = Type.Any;
-				} else {
-					return null;
-				}
-			}
-			fields[i] = field;
-		}
-		fields = ArrayUtils.removeAll(fields, null);
-		if (fields.length == 0) {
-			return null;
-		} else {
-			return fields;
-		}
-	}
-
-	/**
 	 * Given an array of expected reference types, construct corresponding expected
 	 * element types. For example, consider the following simple Whiley snippet:
 	 *

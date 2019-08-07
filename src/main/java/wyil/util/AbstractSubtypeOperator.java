@@ -860,7 +860,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	static boolean isContractive(QualifiedName name, Type type, HashSet<QualifiedName> visited) {
 		switch (type.getOpcode()) {
 		case TYPE_void:
-		case TYPE_any:
 		case TYPE_null:
 		case TYPE_bool:
 		case TYPE_int:

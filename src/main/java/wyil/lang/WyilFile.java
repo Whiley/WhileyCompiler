@@ -173,7 +173,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_mask = MOD_mask + 32;
 	public static final int TYPE_unknown = TYPE_mask + 0;
 	public static final int TYPE_void = TYPE_mask + 1;
-	public static final int TYPE_any = TYPE_mask + 2;
+	//	public static final int TYPE_any = TYPE_mask + 2;
 	public static final int TYPE_null = TYPE_mask + 3;
 	public static final int TYPE_bool = TYPE_mask + 4;
 	public static final int TYPE_int = TYPE_mask + 5;
@@ -4111,7 +4111,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public static interface Type extends SyntacticItem {
 
-		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
@@ -4220,40 +4219,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				} else {
 					return Collections.EMPTY_LIST;
 				}
-			}
-		}
-
-		/**
-		 * An any type represents the type whose variables can hold any possible value.
-		 * Such types cannot currently be expressed at the source level, though remain
-		 * useful for the purposes of type checking.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static class Any extends AbstractType implements Primitive {
-			public Any() {
-				super(TYPE_any);
-			}
-
-			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
-				return this;
-			}
-
-			@Override
-			public Any clone(SyntacticItem[] operands) {
-				return new Any();
-			}
-
-			@Override
-			public String toString() {
-				return "any";
-			}
-
-			@Override
-			public String toCanonicalString() {
-				return "any";
 			}
 		}
 
@@ -5938,12 +5903,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Void();
-			}
-		};
-		schema[TYPE_any] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_any") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Any();
 			}
 		};
 		schema[TYPE_null] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {
