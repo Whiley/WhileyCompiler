@@ -1,4 +1,4 @@
 
-native function f(int x) -> int
+native export function f(int x) -> int
 
-native function f(int[] x) -> int
+native export function f(int[] x) -> int

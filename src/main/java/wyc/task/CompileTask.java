@@ -22,13 +22,7 @@ import wybs.util.AbstractBuildTask;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
-import wyil.check.AmbiguousCoercionCheck;
-import wyil.check.DefiniteAssignmentCheck;
-import wyil.check.DefiniteUnassignmentCheck;
-import wyil.check.FlowTypeCheck;
-import wyil.check.FunctionalCheck;
-import wyil.check.StaticVariableCheck;
-import wyil.check.VerificationCheck;
+import wyil.check.*;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
@@ -126,7 +120,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		this.checker = new FlowTypeCheck();
 		// Instantiate other checks
 		this.stages = new Compiler.Check[] { new DefiniteAssignmentCheck(), new DefiniteUnassignmentCheck(),
-				new FunctionalCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
+				new FunctionalCheck(), new SignatureCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
 		//
 		this.verifier = new VerificationCheck(project,target);
 		// Instantiate various transformations

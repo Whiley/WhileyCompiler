@@ -55,11 +55,6 @@ public class AllInvalidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Export_Invalid_1", "unclassified");
-		IGNORED.put("Function_Invalid_2", "unclassified");
-		IGNORED.put("Function_Invalid_9", "unclassified");
-		IGNORED.put("Native_Invalid_1", "unclassified");
-		//
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
 		// Normalisation for Method Subtyping

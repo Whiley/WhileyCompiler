@@ -7,7 +7,7 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc</artifactId>
-  <version>0.6.7</version>
+  <version>0.6.9</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -63,7 +63,7 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>jmodelgen</artifactId>
-      <version>0.3.7</version>
+      <version>0.4.0</version>
     </dependency>
     <dependency>
       <groupId>ant</groupId>
@@ -102,7 +102,7 @@
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-compiler-plugin</artifactId>
-	<version>3.5.1</version>
+	<version>3.8.1</version>
 	<configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -120,7 +120,7 @@
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-source-plugin</artifactId>
-	<version>2.2.1</version>
+	<version>3.1.0</version>
 	<executions>
           <execution>
             <id>attach-sources</id>
@@ -138,7 +138,7 @@
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-javadoc-plugin</artifactId>
-	<version>2.9.1</version>
+	<version>3.1.1</version>
 	<executions>
           <execution>
             <id>attach-javadocs</id>
@@ -159,7 +159,7 @@
       <plugin>
 	<groupId>org.apache.maven.plugins</groupId>
 	<artifactId>maven-gpg-plugin</artifactId>
-	<version>1.5</version>
+	<version>1.6</version>
 	<executions>
           <execution>
             <id>sign-artifacts</id>
@@ -178,7 +178,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5</version>
+        <version>2.5.3</version>
         <configuration>
           <useReleaseProfile>false</useReleaseProfile>
           <releaseProfiles>release</releaseProfiles>
@@ -189,7 +189,7 @@
       <plugin>
 	<groupId>org.sonatype.plugins</groupId>
 	<artifactId>nexus-staging-maven-plugin</artifactId>
-	<version>1.6.7</version>
+	<version>1.6.8</version>
 	<extensions>true</extensions>
 	<configuration>
 	  <serverId>ossrh</serverId>

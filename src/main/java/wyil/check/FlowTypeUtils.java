@@ -125,7 +125,7 @@ public class FlowTypeUtils {
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
 			Expr ra_operand = ra.getOperand();
-			Type.Record ra_operandT = asType(ra_operand.getType(), Type.Record.class);
+			Type.Record ra_operandT = ra_operand.getType().as(Type.Record.class);
 			if (ra_operandT != null) {
 				Tuple<Type.Field> ra_fields = ra_operandT.getFields();
 				Type.Field[] fields = new Type.Field[ra_fields.size()];
@@ -467,45 +467,6 @@ public class FlowTypeUtils {
 	}
 
 	/**
-	 * Given an array of expected record types, determine corresponding expected
-	 * field types. For example, consider the following simple Whiley snippet:
-	 *
-	 * <pre>
-	 * function f(int x) -> {int f}:
-	 *    return {f:x}
-	 * </pre>
-	 *
-	 * The expected type for the expression <code>{f:x}</code> is
-	 * <code>{int f}</code>. From this, we calculate the expected type for the
-	 * expression <code>x</code> as <code>int</code>.
-	 *
-	 * @param field
-	 * @param expected
-	 * @return
-	 */
-	public static Type[] typeRecordFieldConstructor(Type.Record[] types, Identifier fieldName) {
-		Type[] fields = new Type[types.length];
-		for (int i = 0; i != fields.length; ++i) {
-			Type.Record type = types[i];
-			Type field = type.getField(fieldName);
-			if (field == null) {
-				if (type.isOpen()) {
-					field = Type.Any;
-				} else {
-					return null;
-				}
-			}
-			fields[i] = field;
-		}
-		fields = ArrayUtils.removeAll(fields, null);
-		if (fields.length == 0) {
-			return null;
-		} else {
-			return fields;
-		}
-	}
-
-	/**
 	 * Given an array of expected reference types, construct corresponding expected
 	 * element types. For example, consider the following simple Whiley snippet:
 	 *
@@ -564,33 +525,7 @@ public class FlowTypeUtils {
 	// ===============================================================================================================
 	// Type Filters
 	// ===============================================================================================================
-	/**
-	 * Unwrap a given type to reveal its underlying kind. For example, the type
-	 * <code>int</code> can be unwrapped only to <code>int</code>. A more complex
-	 * example:
-	 *
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * </pre>
-	 *
-	 * The type <code>nat</code> can be unwrapped to an <code>int</code>. In
-	 * general, the unwrapping process expands all nominal types until an atom is
-	 * encountered.
-	 *
-	 * @param type
-	 * @param kind
-	 * @return
-	 */
-	public static <T extends Type> T asType(Type type, Class<T> kind) {
-		if (kind.isInstance(type)) {
-			return (T) type;
-		} else if (type instanceof Type.Nominal) {
-			Type.Nominal t = (Type.Nominal) type;
-			return asType(t.getConcreteType(), kind);
-		} else {
-			return null;
-		}
-	}
+
 	/**
 	 * Given an array of record types, filter out those which do not contain exactly
 	 * the given set of fields. For example, consider this snippet:

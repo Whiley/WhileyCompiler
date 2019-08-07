@@ -436,7 +436,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public ConstraintSet bind(Type.Array parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract an array type so binding can continue.
-		Type.Array t = extract(Type.Array.class,argument);
+		Type.Array t = argument.as(Type.Array.class);
 		if (t != null) {
 			// Array type extracted successfully, therefore continue binding.
 			return bind(parameter.getElement(), t.getElement(), constraints, assumptions);
@@ -447,7 +447,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public ConstraintSet bind(Type.Record parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract record type so binding can continue.
-		Type.Record t = extract(Type.Record.class,argument);
+		Type.Record t = argument.as(Type.Record.class);
 		//
 		if (t != null) {
 			Tuple<Type.Field> param_fields = parameter.getFields();
@@ -467,7 +467,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public ConstraintSet bind(Type.Reference parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract reference type so binding can continue.
-		Type.Reference t = extract(Type.Reference.class,argument);
+		Type.Reference t = argument.as(Type.Reference.class);
 		//
 		if (t != null) {
 			// Bind against element type
@@ -490,7 +490,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public ConstraintSet bind(Type.Callable parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract callable type so binding can continue.
-		Type.Callable t = extract(Type.Callable.class,argument);
+		Type.Callable t = argument.as(Type.Callable.class);
 		//
 		if (t != null) {
 			// Bind against parameters and returns
@@ -615,24 +615,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		}
 		//
 		return true;
-	}
-
-	/**
-	 * From an arbitrary type, extract a particular kind of type.
-	 *
-	 * @param kind
-	 * @param type
-	 * @return
-	 */
-	public <T extends Type> T extract(Class<T> kind, Type type) {
-		if (kind.isInstance(type)) {
-			return (T) type;
-		} else if (type instanceof Type.Nominal) {
-			Type.Nominal t = (Type.Nominal) type;
-			return extract(kind, t.getConcreteType());
-		} else {
-			return null; // deadcode
-		}
 	}
 
 	/**
@@ -878,7 +860,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	static boolean isContractive(QualifiedName name, Type type, HashSet<QualifiedName> visited) {
 		switch (type.getOpcode()) {
 		case TYPE_void:
-		case TYPE_any:
 		case TYPE_null:
 		case TYPE_bool:
 		case TYPE_int:
