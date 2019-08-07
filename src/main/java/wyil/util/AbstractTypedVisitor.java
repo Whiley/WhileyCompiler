@@ -1154,8 +1154,6 @@ public abstract class AbstractTypedVisitor {
 		return select(callables, type, environment);
 	}
 
-	private static Tuple<Type> TUPLE_ANY = new Tuple<>(Type.Any);
-
 	/**
 	 * Given an array of candidate types, select the most precise match for a actual
 	 * type. If no such candidate exists, return null (which should be impossible
