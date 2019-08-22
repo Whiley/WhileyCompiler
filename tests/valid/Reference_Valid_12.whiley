@@ -1,0 +1,16 @@
+// Attempt to break JavaScript handling of native references.
+public export method test():
+    int[] xs = [1,2,3]
+    // Create pointer to distinct value
+    &(int[]) ptr = new xs
+    // Update distinct value
+    (*ptr)[0] = 123
+    // Check what's changed
+    assert xs[0] == 1
+    assert xs[1] == 2
+    assert xs[2] == 3
+    assert (*ptr)[0] == 123
+    assert (*ptr)[1] == 2
+    assert (*ptr)[2] == 3    
+    
+    
