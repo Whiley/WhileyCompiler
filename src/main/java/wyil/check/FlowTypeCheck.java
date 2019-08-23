@@ -1581,8 +1581,9 @@ public class FlowTypeCheck implements Compiler.Check {
 			//
 			if (sig.getReturns().size() > 1) {
 				internalFailure("need support for multiple returns and indirect invocation", expr);
+			} else if(sig.getReturns().size() > 0) {
+				expr.setType(sig.getReturns().get(0));
 			}
-			expr.setType(sig.getReturns().get(0));
 			//
 			return sig.getReturns();
 		}
