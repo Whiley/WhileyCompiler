@@ -88,6 +88,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.SupersetEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Switch;
 import static wyc.io.WhileyFileLexer.Token.Kind.This;
 import static wyc.io.WhileyFileLexer.Token.Kind.Tilde;
+import static wyc.io.WhileyFileLexer.Token.Kind.QuestionMark;
 import static wyc.io.WhileyFileLexer.Token.Kind.VerticalBar;
 import static wyc.io.WhileyFileLexer.Token.Kind.Where;
 import static wyc.io.WhileyFileLexer.Token.Kind.While;
@@ -3521,7 +3522,12 @@ public class WhileyFileParser {
 
 	public boolean skipReferenceType(EnclosingScope scope) {
 		match(Ampersand);
-		return skipOptionalLifetimeIdentifier(scope) && skipType(scope);
+		return skipOptionalLifetimeIdentifier(scope) && skipReferenceModifier(scope) && skipType(scope);
+	}
+
+	public boolean skipReferenceModifier(EnclosingScope scope) {
+		tryAndMatch(false, QuestionMark);
+		return true;
 	}
 
 	public boolean skipOptionalLifetimeIdentifier(EnclosingScope scope) {
@@ -3791,7 +3797,6 @@ public class WhileyFileParser {
 	private Type parseReferenceType(EnclosingScope scope) {
 		int start = index;
 		match(Ampersand);
-
 		// Try to parse an annotated lifetime
 		int backtrack = index;
 		Identifier lifetimeIdentifier = parseOptionalLifetimeIdentifier(scope, false);
@@ -3803,16 +3808,21 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, Colon) != null && !isAtEOL()) {
 				// Now we know that there is an annotated lifetime
 				scope.mustBeLifetime(lifetimeIdentifier);
+				// Check whether this is an unknown reference or not
+				boolean unknown = tryAndMatch(true, QuestionMark) != null;
+				// Parse bound
 				Type element = parseArrayType(scope);
-				Type type = new Type.Reference(element, lifetimeIdentifier);
-				return annotateSourceLocation(type,start);
+				Type type = new Type.Reference(element, unknown, lifetimeIdentifier);
+				return annotateSourceLocation(type, start);
 			}
 		}
 		index = backtrack;
-
+		// Check whether this is an unknown reference or not
+		boolean unknown = tryAndMatch(true, QuestionMark) != null;
+		// Parse bound
 		Type element = parseArrayType(scope);
-		Type type = new Type.Reference(element);
-		return annotateSourceLocation(type,start);
+		Type type = new Type.Reference(element, unknown);
+		return annotateSourceLocation(type, start);
 	}
 
 	/**

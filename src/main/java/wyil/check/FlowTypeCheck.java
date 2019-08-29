@@ -1791,9 +1791,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type operandT = checkExpression(expr.getOperand(), environment);
 		//
 		if (expr.hasLifetime()) {
-			return new Type.Reference(operandT, expr.getLifetime());
+			return new Type.Reference(operandT, false, expr.getLifetime());
 		} else {
-			return new Type.Reference(operandT);
+			return new Type.Reference(operandT, false);
 		}
 	}
 

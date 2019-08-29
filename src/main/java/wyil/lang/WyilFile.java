@@ -4480,16 +4480,28 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Reference extends AbstractType implements Atom {
-			public Reference(Type element) {
-				super(TYPE_staticreference, element);
+			public Reference(Type element, boolean unknown) {
+				super(TYPE_staticreference, element, new Value.Bool(unknown));
 			}
 
-			public Reference(Type element, Identifier lifetime) {
-				super(TYPE_reference, element, lifetime);
+			public Reference(Type element, Value.Bool unknown) {
+				super(TYPE_staticreference, element, unknown);
+			}
+
+			public Reference(Type element, boolean unknown, Identifier lifetime) {
+				super(TYPE_reference, element, new Value.Bool(unknown), lifetime);
+			}
+
+			public Reference(Type element, Value.Bool unknown, Identifier lifetime) {
+				super(TYPE_reference, element, unknown, lifetime);
 			}
 
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
+			}
+
+			public boolean isUnknown() {
+				return ((Value.Bool)get(1)).get();
 			}
 
 			public Type getElement() {
@@ -4497,7 +4509,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(1);
+				return (Identifier) get(2);
 			}
 
 			@Override
@@ -4505,12 +4517,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Type.Reference(elementAfter);
+					return new Type.Reference(elementAfter, isUnknown());
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Type.Reference(elementAfter, (Identifier) lifetime);
+						return new Type.Reference(elementAfter, isUnknown(), (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -4518,10 +4530,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Type.Reference((Type) operands[0]);
+				if (operands.length == 2) {
+					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
 				} else {
-					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
+					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
 				}
 			}
 
@@ -5929,16 +5941,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Nominal((Decl.Link<Decl.Type>) operands[0], (Tuple<Type>) operands[1]);
 			}
 		};
-		schema[TYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+		schema[TYPE_staticreference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0]);
+				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
 			}
 		};
-		schema[TYPE_reference] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
+		schema[TYPE_reference] = new Schema(Operands.THREE, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
+				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
 			}
 		};
 		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
