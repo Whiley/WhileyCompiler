@@ -4539,10 +4539,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public String toString() {
+				String modifier = isUnknown() ? "?" : "";
 				if (hasLifetime()) {
-					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
+					return "&" + getLifetime() + ":" + modifier + braceAsNecessary(getElement());
 				} else {
-					return "&" + braceAsNecessary(getElement());
+					return "&" + modifier + braceAsNecessary(getElement());
 				}
 			}
 
@@ -4662,6 +4663,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					r += field.toString();
 				}
 				//
+				if(isOpen()) {
+					if(fields.size() > 0) {
+						r += ", ...";
+					} else {
+						r += "...";
+					}
+				}
+				//
 				return "{" + r + "}";
 			}
 
@@ -4676,6 +4685,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						r += ",";
 					}
 					r += field.toCanonicalString();
+				}
+				//
+				if(isOpen()) {
+					if(fields.size() > 0) {
+						r += ", ...";
+					} else {
+						r += "...";
+					}
 				}
 				//
 				return "{" + r + "}";

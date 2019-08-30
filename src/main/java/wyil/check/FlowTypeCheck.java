@@ -1230,6 +1230,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type src = checkExpression(lval.getOperand(), environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
+		// Sanity check writability of reference
+		checkIsWritable(refT, environment, lval.getOperand());
 		// Sanity check extraction
 		return refT == null ? null : refT.getElement();
 	}
@@ -1782,6 +1784,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Extract an appropriate reference type form the source.
 		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
 				expr.getOperand());
+		// Sanity check readability of reference
+		checkIsReadable(refT, environment,expr.getOperand());
 		// Done
 		return refT == null ? null : refT.getElement();
 	}
@@ -1849,6 +1853,40 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != operands.size(); ++i) {
 			Expr operand = operands.get(i);
 			checkOperand(type, operand, environment);
+		}
+	}
+
+	private void checkIsWritable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (rhs != null) {
+			Type.Reference lhs;
+			// Construct writeable variant
+			if (rhs.hasLifetime()) {
+				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+			} else {
+				lhs = new Type.Reference(rhs.getElement(), false);
+			}
+			// Perform the subtype test
+			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+				// FIXME: better error message?
+				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
+			}
+		}
+	}
+
+	private void checkIsReadable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (rhs != null) {
+			Type.Reference lhs;
+			// Construct writeable variant
+			if (rhs.hasLifetime()) {
+				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+			} else {
+				lhs = new Type.Reference(rhs.getElement(), false);
+			}
+			// Perform the subtype test
+			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+				// FIXME: better error message?
+				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
+			}
 		}
 	}
 

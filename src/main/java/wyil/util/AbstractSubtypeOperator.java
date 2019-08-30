@@ -1053,7 +1053,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			// Under this circumstance, can apply subtyping.
 			return lifetimes.isWithin(l1, l2) && isSubtype(t1.getElement(), t2.getElement(), lifetimes);
 		} else {
-			return lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
+			return !t2.isUnknown() && lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
 		}
 	}
 
