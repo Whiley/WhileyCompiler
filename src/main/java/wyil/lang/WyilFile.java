@@ -256,6 +256,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPR_new = EXPR_mask + 41;
 	public static final int EXPR_staticnew = EXPR_mask + 42;
 	public static final int EXPR_lambdaaccess = EXPR_mask + 43;
+	public static final int EXPR_fielddereference = EXPR_mask + 44;
 	// RECORDS
 	public static final int EXPR_recordaccess = EXPR_mask + 48;
 	public static final int EXPR_recordborrow = EXPR_mask + 49;
@@ -3610,6 +3611,43 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
+		 * Represents an object dereference expression of the form "<code>e->f</code>"
+		 * where <code>e</code> is the <i>operand expression</i> and <code>f</code> the
+		 * <i>target field</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class FieldDereference extends AbstractExpr implements LVal, UnaryOperator {
+			public FieldDereference(Type type, Expr operand, Identifier field) {
+				super(EXPR_fielddereference, type, operand, field);
+			}
+
+			/**
+			 * Get the operand to be dereferenced. That is,
+			 * <code>e<code> in </code>*e</code>.
+			 */
+			@Override
+			public Expr getOperand() {
+				return (Expr) super.get(1);
+			}
+
+			public Identifier getField() {
+				return (Identifier) super.get(2);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+			}
+
+			@Override
+			public String toString() {
+				return getOperand() + "->" + getField();
+			}
+		}
+
+		/**
 		 * Represents an <i>object allocation</i> expression of the form
 		 * <code>new e</code> or <code>l:new e</code> where <code>e</code> is the
 		 * operand expression and <code>l</code> the optional lifetime argument.
@@ -6390,6 +6428,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 						(Tuple<Type>) operands[1]);
+			}
+		};
+		schema[EXPR_fielddereference] = new Schema(Operands.THREE, Data.ZERO, "EXPR_fielddereference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 		};
 		// RECORDS

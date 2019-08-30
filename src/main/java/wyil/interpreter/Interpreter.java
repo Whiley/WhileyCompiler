@@ -27,6 +27,7 @@ import static wyil.lang.WyilFile.DECL_type;
 import static wyil.lang.WyilFile.EXPR_arrayaccess;
 import static wyil.lang.WyilFile.EXPR_arrayborrow;
 import static wyil.lang.WyilFile.EXPR_dereference;
+import static wyil.lang.WyilFile.EXPR_fielddereference;
 import static wyil.lang.WyilFile.EXPR_recordaccess;
 import static wyil.lang.WyilFile.EXPR_recordborrow;
 import static wyil.lang.WyilFile.EXPR_variablecopy;
@@ -330,6 +331,10 @@ public class Interpreter {
 			executeAssignDereference((Expr.Dereference) lval, rval, frame, scope, context);
 			break;
 		}
+		case EXPR_fielddereference: {
+			executeAssignFieldDereference((Expr.FieldDereference) lval, rval, frame, scope, context);
+			break;
+		}
 		case EXPR_recordaccess:
 		case EXPR_recordborrow: {
 			executeAssignRecord((Expr.RecordAccess) lval, rval, frame, scope, context);
@@ -361,6 +366,17 @@ public class Interpreter {
 		// FIXME: need to check type invariant here??
 		RValue.Cell cell = ref.deref();
 		cell.write(rval);
+	}
+
+	private void executeAssignFieldDereference(Expr.FieldDereference lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame);
+		// Extract target cell
+		RValue.Cell cell = ref.deref();
+		// FIXME: need to check type invariant here??
+		RValue.Record record = checkType(cell.read(), lval.getOperand(), RECORD_T);
+		// Update target
+		cell.write(record.write(lval.getField(), rval));
 	}
 
 	private void executeAssignRecord(Expr.RecordAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
@@ -803,6 +819,9 @@ public class Interpreter {
 		case WyilFile.EXPR_dereference:
 			val = executeDereference((Expr.Dereference) expr, frame);
 			break;
+		case WyilFile.EXPR_fielddereference:
+			val = executeFieldDereference((Expr.FieldDereference) expr, frame);
+			break;
 		case WyilFile.EXPR_lambdaaccess:
 			val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 			break;
@@ -1184,6 +1203,16 @@ public class Interpreter {
 	public RValue executeDereference(Expr.Dereference expr, CallStack frame) {
 		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
 		return ref.deref().read();
+	}
+
+	public RValue executeFieldDereference(Expr.FieldDereference expr, CallStack frame) {
+		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
+		// Extract target
+		RValue.Cell cell = ref.deref();
+		// Extract record value
+		RValue.Record rec = checkType(cell.read(),expr,RECORD_T);
+		// Read the given field
+		return rec.read(expr.getField());
 	}
 
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {

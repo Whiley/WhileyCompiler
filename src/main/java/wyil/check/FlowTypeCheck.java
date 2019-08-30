@@ -42,6 +42,7 @@ import static wyil.lang.WyilFile.EXPR_bitwisexor;
 import static wyil.lang.WyilFile.EXPR_cast;
 import static wyil.lang.WyilFile.EXPR_constant;
 import static wyil.lang.WyilFile.EXPR_dereference;
+import static wyil.lang.WyilFile.EXPR_fielddereference;
 import static wyil.lang.WyilFile.EXPR_equal;
 import static wyil.lang.WyilFile.EXPR_indirectinvoke;
 import static wyil.lang.WyilFile.EXPR_integeraddition;
@@ -1170,6 +1171,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_dereference:
 			type = checkDereferenceLVal((Expr.Dereference) lval, environment);
 			break;
+		case EXPR_fielddereference:
+			type = checkFieldDereferenceLVal((Expr.FieldDereference) lval, environment);
+			break;
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
 		}
@@ -1234,6 +1238,18 @@ public class FlowTypeCheck implements Compiler.Check {
 		checkIsWritable(refT, environment, lval.getOperand());
 		// Sanity check extraction
 		return refT == null ? null : refT.getElement();
+	}
+
+	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
+		Type src = checkExpression(lval.getOperand(), environment);
+		// Extract writeable reference type
+		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
+		// Extact target type
+		Type target = refT == null ? null : refT.getElement();
+		// Extract underlying record
+		Type.Record recT = extractType(Type.Record.class, target, EXPECTED_RECORD, lval.getOperand());
+		// extract field type
+		return extractFieldType(recT, lval.getField());
 	}
 
 	// =========================================================================
@@ -1442,6 +1458,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Reference expressions
 		case EXPR_dereference:
 			type = checkDereference((Expr.Dereference) expression, environment);
+			break;
+		case EXPR_fielddereference:
+			type = checkFieldDereference((Expr.FieldDereference) expression, environment);
 			break;
 		case EXPR_new:
 			type = checkNew((Expr.New) expression, environment);
@@ -1788,6 +1807,19 @@ public class FlowTypeCheck implements Compiler.Check {
 		checkIsReadable(refT, environment,expr.getOperand());
 		// Done
 		return refT == null ? null : refT.getElement();
+	}
+
+	private Type checkFieldDereference(Expr.FieldDereference expr, Environment environment) {
+		Type operandT = checkExpression(expr.getOperand(), environment);
+		// Extract an appropriate reference type form the source.
+		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
+				expr.getOperand());
+		// Extract target type
+		Type target = refT == null ? null : refT.getElement();
+		// Following may produce null if field not present
+		Type.Record recT = extractType(Type.Record.class, target, EXPECTED_RECORD, expr.getOperand());
+		// Return extracted field type
+		return extractFieldType(recT, expr.getField());
 	}
 
 	private Type checkNew(Expr.New expr, Environment environment) {

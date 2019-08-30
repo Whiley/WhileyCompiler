@@ -343,6 +343,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_fielddereference:
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
@@ -419,6 +420,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr, data);
+			break;
+		case EXPR_fielddereference:
+			visitFieldDereference((Expr.FieldDereference) expr, data);
 			break;
 		case EXPR_staticnew:
 		case EXPR_new:
@@ -610,6 +614,10 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitDereference(Expr.Dereference expr, T data) {
+		visitExpression(expr.getOperand(), data);
+	}
+
+	public void visitFieldDereference(Expr.FieldDereference expr, T data) {
 		visitExpression(expr.getOperand(), data);
 	}
 

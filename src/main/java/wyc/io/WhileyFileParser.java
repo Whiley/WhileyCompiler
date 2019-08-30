@@ -1591,19 +1591,23 @@ public class WhileyFileParser {
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(true, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
-			case LeftSquare:
+			case LeftSquare: {
 				// NOTE: expression is terminated by ']'
 				Expr rhs = parseAdditiveExpression(scope, true);
 				match(RightSquare);
 				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
 				break;
-			case MinusGreater:
-				lhs = new Expr.Dereference(Type.Void, lhs);
-				// Fall Through
-			case Dot:
+			}
+			case MinusGreater: {
+				Identifier name = parseIdentifier();
+				lhs = new Expr.FieldDereference(Type.Void, lhs, name);
+				break;
+			}
+			case Dot: {
 				Identifier name = parseIdentifier();
 				lhs = new Expr.RecordAccess(Type.Void, lhs, name);
 				break;
+			}
 			}
 			lhs = annotateSourceLocation(lhs,start);
 		}
@@ -2309,16 +2313,28 @@ public class WhileyFileParser {
 				match(RightSquare);
 				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
 				break;
-			case MinusGreater:
-				lhs = new Expr.Dereference(Type.Void, lhs);
-				// Fall through
-			case Dot:
+			case MinusGreater: {
 				// At this point, we could have a field access, or a
 				// method/function invocation. Therefore, we start by
 				// parsing the field access and then check whether or not its an
 				// invocation.
-				lhs = parseDotAccess(lhs, scope, terminated);
+				int slice = index;
+				Identifier name = parseIdentifier();
+				lhs = new Expr.FieldDereference(Type.Void, lhs, name);
+				lhs = parseDotAccess(lhs, scope, slice, terminated);
 				break;
+			}
+			case Dot: {
+				// At this point, we could have a field access, or a
+				// method/function invocation. Therefore, we start by
+				// parsing the field access and then check whether or not its an
+				// invocation.
+				int slice = index;
+				Identifier name = parseIdentifier();
+				lhs = new Expr.RecordAccess(Type.Void, lhs, name);
+				lhs = parseDotAccess(lhs, scope, slice, terminated);
+				break;
+			}
 			case ColonColon:
 				// At this point, we have a qualified access.
 				index = start;
@@ -2332,9 +2348,7 @@ public class WhileyFileParser {
 		return lhs;
 	}
 
-	private Expr parseDotAccess(Expr lhs, EnclosingScope scope, boolean terminated) {
-		int start = index;
-		Identifier name = parseIdentifier();
+	private Expr parseDotAccess(Expr lhs, EnclosingScope scope, int start, boolean terminated) {
 		// First we have to see if it is a method invocation. We can
 		// have optional lifetime arguments in angle brackets.
 		boolean isInvocation = false;
@@ -2350,11 +2364,8 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
-			lhs = annotateSourceLocation(new Expr.RecordAccess(Type.Void, lhs, name), start);
+			lhs = annotateSourceLocation(lhs, start);
 			lhs = new Expr.IndirectInvoke(Type.Void, lhs, lifetimes, arguments);
-		} else {
-			// Must be a plain old field access.
-			lhs = new Expr.RecordAccess(Type.Void, lhs, name);
 		}
 		return annotateSourceLocation(lhs,start);
 	}

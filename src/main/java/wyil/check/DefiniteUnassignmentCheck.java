@@ -215,7 +215,8 @@ public class DefiniteUnassignmentCheck
 			break;
 		}
 		case EXPR_dereference:
-			// NOTE: don't need to handle this case
+		case EXPR_fielddereference:
+			// NOTE: don't need to handle these cases
 			break;
 		default:
 			throw new UnsupportedOperationException("unknown lval (" + lval.getClass().getName() + ")");
