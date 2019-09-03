@@ -93,7 +93,7 @@ public class VerificationCheck {
 				return false;
 			} else {
 				// FIXME: enjoy debugging this when the time comes :)
-				throw new SyntacticException(message,null,item,e.getCause());
+				throw new SyntacticException(message,null,item,e);
 			}
 		}
 	}
