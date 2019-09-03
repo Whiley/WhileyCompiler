@@ -256,6 +256,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPR_new = EXPR_mask + 41;
 	public static final int EXPR_staticnew = EXPR_mask + 42;
 	public static final int EXPR_lambdaaccess = EXPR_mask + 43;
+	public static final int EXPR_fielddereference = EXPR_mask + 44;
 	// RECORDS
 	public static final int EXPR_recordaccess = EXPR_mask + 48;
 	public static final int EXPR_recordborrow = EXPR_mask + 49;
@@ -3610,6 +3611,43 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
+		 * Represents an object dereference expression of the form "<code>e->f</code>"
+		 * where <code>e</code> is the <i>operand expression</i> and <code>f</code> the
+		 * <i>target field</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class FieldDereference extends AbstractExpr implements LVal, UnaryOperator {
+			public FieldDereference(Type type, Expr operand, Identifier field) {
+				super(EXPR_fielddereference, type, operand, field);
+			}
+
+			/**
+			 * Get the operand to be dereferenced. That is,
+			 * <code>e<code> in </code>*e</code>.
+			 */
+			@Override
+			public Expr getOperand() {
+				return (Expr) super.get(1);
+			}
+
+			public Identifier getField() {
+				return (Identifier) super.get(2);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+			}
+
+			@Override
+			public String toString() {
+				return getOperand() + "->" + getField();
+			}
+		}
+
+		/**
 		 * Represents an <i>object allocation</i> expression of the form
 		 * <code>new e</code> or <code>l:new e</code> where <code>e</code> is the
 		 * operand expression and <code>l</code> the optional lifetime argument.
@@ -4480,16 +4518,28 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Reference extends AbstractType implements Atom {
-			public Reference(Type element) {
-				super(TYPE_staticreference, element);
+			public Reference(Type element, boolean unknown) {
+				super(TYPE_staticreference, element, new Value.Bool(unknown));
 			}
 
-			public Reference(Type element, Identifier lifetime) {
-				super(TYPE_reference, element, lifetime);
+			public Reference(Type element, Value.Bool unknown) {
+				super(TYPE_staticreference, element, unknown);
+			}
+
+			public Reference(Type element, boolean unknown, Identifier lifetime) {
+				super(TYPE_reference, element, new Value.Bool(unknown), lifetime);
+			}
+
+			public Reference(Type element, Value.Bool unknown, Identifier lifetime) {
+				super(TYPE_reference, element, unknown, lifetime);
 			}
 
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
+			}
+
+			public boolean isUnknown() {
+				return ((Value.Bool)get(1)).get();
 			}
 
 			public Type getElement() {
@@ -4497,7 +4547,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(1);
+				return (Identifier) get(2);
 			}
 
 			@Override
@@ -4505,12 +4555,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Type.Reference(elementAfter);
+					return new Type.Reference(elementAfter, isUnknown());
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Type.Reference(elementAfter, (Identifier) lifetime);
+						return new Type.Reference(elementAfter, isUnknown(), (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -4518,19 +4568,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Type.Reference((Type) operands[0]);
+				if (operands.length == 2) {
+					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
 				} else {
-					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
+					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
 				}
 			}
 
 			@Override
 			public String toString() {
+				String modifier = isUnknown() ? "?" : "";
 				if (hasLifetime()) {
-					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
+					return "&" + getLifetime() + ":" + modifier + braceAsNecessary(getElement());
 				} else {
-					return "&" + braceAsNecessary(getElement());
+					return "&" + modifier + braceAsNecessary(getElement());
 				}
 			}
 
@@ -4650,6 +4701,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					r += field.toString();
 				}
 				//
+				if(isOpen()) {
+					if(fields.size() > 0) {
+						r += ", ...";
+					} else {
+						r += "...";
+					}
+				}
+				//
 				return "{" + r + "}";
 			}
 
@@ -4664,6 +4723,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						r += ",";
 					}
 					r += field.toCanonicalString();
+				}
+				//
+				if(isOpen()) {
+					if(fields.size() > 0) {
+						r += ", ...";
+					} else {
+						r += "...";
+					}
 				}
 				//
 				return "{" + r + "}";
@@ -5929,16 +5996,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Type.Nominal((Decl.Link<Decl.Type>) operands[0], (Tuple<Type>) operands[1]);
 			}
 		};
-		schema[TYPE_staticreference] = new Schema(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+		schema[TYPE_staticreference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0]);
+				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
 			}
 		};
-		schema[TYPE_reference] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
+		schema[TYPE_reference] = new Schema(Operands.THREE, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
+				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
 			}
 		};
 		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
@@ -6361,6 +6428,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 						(Tuple<Type>) operands[1]);
+			}
+		};
+		schema[EXPR_fielddereference] = new Schema(Operands.THREE, Data.ZERO, "EXPR_fielddereference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 		};
 		// RECORDS

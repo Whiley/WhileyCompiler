@@ -232,7 +232,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.ArrayAccess) {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
 			return extractAssignedVariable((LVal) e.getFirstOperand());
-		} else if (lval instanceof Expr.Dereference) {
+		} else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
 			return null;
 		} else {
 			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);

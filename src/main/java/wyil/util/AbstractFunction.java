@@ -332,6 +332,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_fielddereference:
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
@@ -397,6 +398,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitBitwiseComplement((Expr.BitwiseComplement) expr, data);
 		case EXPR_dereference:
 			return visitDereference((Expr.Dereference) expr, data);
+		case EXPR_fielddereference:
+			return visitFieldDereference((Expr.FieldDereference) expr, data);
 		case EXPR_staticnew:
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
@@ -571,6 +574,11 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitDereference(Expr.Dereference expr, P data) {
+		visitExpression(expr.getOperand(), data);
+		return null;
+	}
+
+	public R visitFieldDereference(Expr.FieldDereference expr, P data) {
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}

@@ -1,0 +1,6 @@
+tests/invalid/UnknownReference_Invalid_4.whiley:7: expected type &{int x, ...}, found &?{int x, ...}
+    {int x} r = *q
+                 ^
+tests/invalid/UnknownReference_Invalid_4.whiley:7: expected type {int x}, found {int x, ...}
+    {int x} r = *q
+                ^^

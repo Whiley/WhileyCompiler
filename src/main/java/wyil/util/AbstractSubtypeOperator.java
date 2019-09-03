@@ -970,6 +970,16 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 *
 	 */
 	protected boolean isSubtype(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		// FIXME: only need to check for coinductive case when both types are recursive.
+		// If either is not recursive, then are guaranteed to eventually terminate.
+		if (cache != null && cache.get(t1, t2)) {
+			return true;
+		} else if (cache == null) {
+			// Lazily construct cache.
+			cache = new BinaryRelation.HashSet<>();
+		}
+		cache.set(t1, t2, true);
+		//
 		int t1_opcode = normalise(t1.getOpcode());
 		int t2_opcode = normalise(t2.getOpcode());
 		//
@@ -1049,7 +1059,12 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		String l1 = extractLifetime(t1);
 		String l2 = extractLifetime(t2);
 		//
-		return lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
+		if (t1.isUnknown()) {
+			// Under this circumstance, can apply subtyping.
+			return lifetimes.isWithin(l1, l2) && isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+		} else {
+			return !t2.isUnknown() && lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
+		}
 	}
 
 	protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
@@ -1120,15 +1135,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	protected boolean isSubtype(Type.Nominal t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		Decl.Type d1 = t1.getLink().getTarget();
 		Decl.Type d2 = t2.getLink().getTarget();
-		// FIXME: only need to check for coinductive case when both types are recursive.
-		// If either is not recursive, then are guaranteed to eventually terminate.
-		if (cache != null && cache.get(t1, t2)) {
-			return true;
-		} else if (cache == null) {
-			// Lazily construct cache.
-			cache = new BinaryRelation.HashSet<>();
-		}
-		cache.set(t1, t2, true);
 		//
 		Tuple<Expr> t1_invariant = d1.getInvariant();
 		Tuple<Expr> t2_invariant = d2.getInvariant();
@@ -1182,15 +1188,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 */
 	protected boolean isSubtype(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		// FIXME: only need to check for coinductive case when both types are recursive.
-		// If either is not recursive, then are guaranteed to eventually terminate.
-		if (cache != null && cache.get(t1, t2)) {
-			return true;
-		} else if (cache == null) {
-			// Lazily construct cache.
-			cache = new BinaryRelation.HashSet<>();
-		}
-		cache.set(t1, t2, true);
 		//
 		Decl.Type d1 = t1.getLink().getTarget();
 		Tuple<Expr> t1_invariant = d1.getInvariant();
@@ -1325,15 +1322,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	}
 
 	public Type subtract(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
-		// FIXME: only need to check for coinductive case when both types are recursive.
-		// If either is not recursive, then are guaranteed to eventually terminate.
-		if (cache != null && cache.get(t1, t2)) {
-			return t1;
-		} else if (cache == null) {
-			// Lazily construct cache.
-			cache = new BinaryRelation.HashSet<>();
-		}
-		cache.set(t1, t2, true);
 		//
 		Decl.Type d1 = t1.getLink().getTarget();
 		// NOTE: the following invariant check is essentially something akin to
