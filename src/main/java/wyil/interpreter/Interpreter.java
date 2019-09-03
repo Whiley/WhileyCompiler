@@ -174,8 +174,7 @@ public class Interpreter {
 			return returns;
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
-			RValue retval = executeExpression(ANY_T, l.getBody(), frame);
-			return new RValue[] { retval };
+			return executeMultiReturnExpression(l.getBody(), frame);
 		} else {
 			Decl.Property p = (Decl.Property) lambda;
 			Tuple<Expr> invariant = p.getInvariant();

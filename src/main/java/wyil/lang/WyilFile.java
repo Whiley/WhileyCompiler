@@ -2399,13 +2399,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public Tuple<Type> getTypes() {
 				Tuple<Type> types = getLink().getTarget().getType().getReturns();
-				if (types.size() > 1) {
+				if (types.size() != 1) {
 					return types;
 				} else {
 					// FIXME: this is a bit messed up, and exists only to help the particular
 					// implementation of WyTP (which should be fixed eventually).
 					return null;
 				}
+				// return getLink().getTarget().getType().getReturns();
 			}
 
 			@Override
@@ -2446,24 +2447,35 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class IndirectInvoke extends AbstractSyntacticItem implements Expr {
 
-			public IndirectInvoke(Type type, Expr source, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
-				super(EXPR_indirectinvoke, type, source, lifetimes, arguments);
+			public IndirectInvoke(Tuple<Type> types, Expr source, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
+				super(EXPR_indirectinvoke, types, source, lifetimes, arguments);
 			}
 
 			@Override
 			public Type getType() {
-				return (Type) get(0);
+				Tuple<Type> returns = getTypes();
+				// NOTE: if this method is called then it is assumed to be in a position which
+				// requires exactly one return type. Anything else is an error which should have
+				// been caught earlier in the pipeline.
+				if (returns.size() != 1) {
+					throw new IllegalArgumentException("invalid number of returns (" + returns.size() + ")");
+				} else {
+					return returns.get(0);
+				}
+			}
+
+			public void setTypes(Tuple<Type> types) {
+				operands[0] = types;
 			}
 
 			@Override
 			public void setType(Type type) {
-				operands[0] = type;
+				throw new UnsupportedOperationException();
 			}
 
 			@Override
 			public Tuple<Type> getTypes() {
-				// FIXME: this feels wrong.
-				return null;
+				return (Tuple<Type>) operands[0];
 			}
 
 			public Expr getSource() {
@@ -2483,8 +2495,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public IndirectInvoke clone(SyntacticItem[] operands) {
-				return new IndirectInvoke((Type) operands[0], (Expr) operands[1], (Tuple<Identifier>) operands[2],
-						(Tuple<Expr>) operands[3]);
+				return new IndirectInvoke((Tuple<Type>) operands[0], (Expr) operands[1],
+						(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
 			}
 
 			@Override
@@ -6237,8 +6249,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IndirectInvoke((Type) operands[0], (Expr) operands[1], (Tuple<Identifier>) operands[2],
-						(Tuple<Expr>) operands[3]);
+				return new Expr.IndirectInvoke((Tuple<Type>) operands[0], (Expr) operands[1],
+						(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
 			}
 		};
 		// LOGICAL

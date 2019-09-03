@@ -2365,7 +2365,7 @@ public class WhileyFileParser {
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
 			lhs = annotateSourceLocation(lhs, start);
-			lhs = new Expr.IndirectInvoke(Type.Void, lhs, lifetimes, arguments);
+			lhs = new Expr.IndirectInvoke(new Tuple<>(), lhs, lifetimes, arguments);
 		}
 		return annotateSourceLocation(lhs,start);
 	}
@@ -3092,7 +3092,7 @@ public class WhileyFileParser {
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
 			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start);
-			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
+			return annotateSourceLocation(new Expr.IndirectInvoke(new Tuple<>(), var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
 			Name nm = annotateSourceLocation(new Name(name), start, start);

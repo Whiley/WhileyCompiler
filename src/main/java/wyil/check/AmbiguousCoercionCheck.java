@@ -112,12 +112,20 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		boolean status = true;
 		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
 		Tuple<Type> types = expr.getTypes();
-		for(int j=0;j!=targets.size();++j) {
-			Type target = targets.get(j);
-			Type source = types.get(j);
-			if (!checkCoercion(target, source, environment, assumptions, expr)) {
+		if(types == null) {
+			Type target = targets.get(0);
+			Type source = expr.getType();
+			if (targets.size() != 1 || !checkCoercion(target, source, environment, assumptions, expr)) {
 				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
-				status = false;
+			}
+		} else {
+			for(int j=0;j!=targets.size();++j) {
+				Type target = targets.get(j);
+				Type source = types.get(j);
+				if (!checkCoercion(target, source, environment, assumptions, expr)) {
+					syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
+					status = false;
+				}
 			}
 		}
 		//

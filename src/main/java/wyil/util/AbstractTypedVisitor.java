@@ -96,7 +96,7 @@ public abstract class AbstractTypedVisitor {
 		environment = environment.declareWithin("this", decl.getLifetimes());
 		//
 		visitVariables(decl.getParameters(), environment);
-		visitExpression(decl.getBody(), decl.getBody().getType(), environment);
+		visitMultiExpression(decl.getBody(), decl.getType().getReturns(), environment);
 	}
 
 	public void visitVariables(Tuple<Decl.Variable> vars, Environment environment) {
@@ -370,8 +370,10 @@ public abstract class AbstractTypedVisitor {
 	public void visitMultiExpression(Expr expr, Tuple<Type> types, Environment environment) {
 		if (expr instanceof Expr.Invoke) {
 			visitInvoke((Expr.Invoke) expr, types, environment);
-		} else {
+		} else if(expr instanceof Expr.IndirectInvoke) {
 			visitIndirectInvoke((Expr.IndirectInvoke) expr, types, environment);
+		} else {
+			visitExpression(expr, types.get(0), environment);
 		}
 	}
 

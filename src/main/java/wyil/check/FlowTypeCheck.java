@@ -1314,6 +1314,18 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
+	public final Tuple<Type> checkMultiExpression(Expr expression, Environment environment) {
+		switch (expression.getOpcode()) {
+		case EXPR_invoke:
+			return checkInvoke((Expr.Invoke) expression, environment);
+		case EXPR_indirectinvoke:
+			return checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
+		default:
+			Type type = checkExpression(expression, environment);
+			return new Tuple<>(type);
+		}
+	}
+
 	/**
 	 * Type check a given expression assuming an initial environment.
 	 *
@@ -1573,6 +1585,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// failed
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
 		}
+		//
 		return null;
 	}
 
@@ -1600,10 +1613,8 @@ public class FlowTypeCheck implements Compiler.Check {
 				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 			}
 			//
-			if (sig.getReturns().size() > 1) {
-				internalFailure("need support for multiple returns and indirect invocation", expr);
-			} else if(sig.getReturns().size() > 0) {
-				expr.setType(sig.getReturns().get(0));
+			if(sig.getReturns().size() > 0) {
+				expr.setTypes(expr.getHeap().allocate(sig.getReturns()));
 			}
 			//
 			return sig.getReturns();
@@ -1856,15 +1867,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
 		Tuple<Type> parameterTypes = parameters.map((Decl.Variable p) -> p.getType());
 		// Type check the body of the lambda using the expected return types
-		Type result = checkExpression(expr.getBody(), environment);
+		Tuple<Type> results = checkMultiExpression(expr.getBody(), environment);
 		// Determine whether or not this is a pure or impure lambda.
 		Type.Callable signature;
 		if (FlowTypeUtils.isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
-			signature = new Type.Function(parameterTypes, new Tuple<>(result));
+			signature = new Type.Function(parameterTypes, results);
 		} else {
 			// This is an impure lambda, hence it has method type.
-			signature = new Type.Method(parameterTypes, new Tuple<>(result), expr.getCapturedLifetimes(),
+			signature = new Type.Method(parameterTypes, results, expr.getCapturedLifetimes(),
 					expr.getLifetimes());
 		}
 		// Update lambda declaration with inferred signature.
