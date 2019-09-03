@@ -1870,7 +1870,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Type> results = checkMultiExpression(expr.getBody(), environment);
 		// Determine whether or not this is a pure or impure lambda.
 		Type.Callable signature;
-		if (FlowTypeUtils.isPure(expr.getBody())) {
+		if(results == null) {
+			// An error occurred upstream
+			return null;
+		} else if (FlowTypeUtils.isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
 			signature = new Type.Function(parameterTypes, results);
 		} else {
