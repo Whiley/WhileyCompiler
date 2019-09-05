@@ -1,0 +1,3 @@
+tests/invalid/Reference_Invalid_4.whiley:3: expected reference type
+    &int ptr = new *x
+                    ^

@@ -1,0 +1,4 @@
+tests/invalid/Lambda_Invalid_4.whiley:12: unable to resolve name (is ambiguous)
+	found method Lambda_Invalid_4::f(Transformer<T>)->(Node<T>)
+    return [f<State>(&(State st -> push(st)))]
+            ^
