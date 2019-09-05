@@ -1206,9 +1206,17 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-		Type src = checkExpression(lval.getFirstOperand(), environment);
-		// Extract the determined array type
-		Type.Array arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
+		// NOTE: must check lval first, not expression (#950)
+		Type src = checkLVal((LVal) lval.getFirstOperand(), environment);
+		// Attempt to view src as a record
+		Type.Array arrT = src.as(Type.Array.class);
+		// Check declared type
+		if (arrT == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getFirstOperand(), environment);
+			// Extract array or fail
+			arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
+		}
 		// Sanity check extraction
 		if(arrT != null) {
 			// Check for integer subscript
@@ -1223,9 +1231,17 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), environment);
-		// Extract writeable record type
-		Type.Record recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
+		// NOTE: must check lval first, not expression (#950)
+		Type src = checkLVal((LVal) lval.getOperand(), environment);
+		// Attempt to view src as a record
+		Type.Record recT = src.as(Type.Record.class);
+		// Check declared type
+		if (recT == null || recT.getField(lval.getField()) == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getOperand(), environment);
+			// Extract record or fail
+			recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
+		}
 		// Extract the field type
 		return extractFieldType(recT, lval.getField());
 	}

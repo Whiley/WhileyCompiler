@@ -156,6 +156,8 @@ public class AllValidVerificationTest {
 		// Type Test operator?
 		IGNORED.put("TypeEquals_Valid_58", "??");
 		IGNORED.put("TypeEquals_Valid_59", "??");
+		IGNORED.put("Array_Valid_10", "?");
+		IGNORED.put("RecordAssign_Valid_15", "?");
 		//
 		IGNORED.put("Lambda_Valid_13", "??");
 		IGNORED.put("While_Valid_68", "??");
