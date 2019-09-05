@@ -1,1 +1,3 @@
-stuf goes here
+tests/invalid/TypeEquals_Invalid_14.whiley:9: expected type {int current}, found {null current}
+        return s
+               ^

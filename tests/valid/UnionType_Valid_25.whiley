@@ -1,10 +1,14 @@
 
 type nintarr is bool[]|int[]
 
-public export method test() :
-    nintarr xs = [1,2,3]
+method main(nintarr xs)
+requires (xs is int[]) ==> |xs| > 0:
     //
     if xs is int[]:
         xs[0] = 0
     //
     assume xs == [0,2,3]
+
+public export method test() :
+    main([1,2,3])
+    

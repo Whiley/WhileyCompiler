@@ -359,9 +359,14 @@ public class FlowTypeUtils {
 		}
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
-			Environment r = new Environment(this.refinements, this.withins);
-			r.refinements.put(var, refinement);
-			return r;
+			if(getType(var).equals(refinement)) {
+				// No refinement necessary
+				return this;
+			} else {
+				Environment r = new Environment(this.refinements, this.withins);
+				r.refinements.put(var, refinement);
+				return r;
+			}
 		}
 
 		public Set<Decl.Variable> getRefinedVariables() {

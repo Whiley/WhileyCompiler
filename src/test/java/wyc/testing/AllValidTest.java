@@ -87,6 +87,9 @@ public class AllValidTest {
 		// Subtype Operator for Casting
 		IGNORED.put("Coercion_Valid_9", "938");
 		IGNORED.put("RecordCoercion_Valid_1", "938");
+		// Separate out branch always taken 952
+		IGNORED.put("ListAccess_Valid_6", "952");
+		IGNORED.put("While_Valid_34", "952");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");

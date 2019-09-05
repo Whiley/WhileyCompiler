@@ -478,6 +478,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (decl.hasInitialiser()) {
 			Type type = checkExpression(decl.getInitialiser(), environment);
 			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
+			if (type != null) {
+				// Update the typing environment accordingly.
+				environment = environment.refineType(decl, type);
+			}
 		}
 		// Done.
 		return environment;
@@ -500,7 +504,19 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != lvals.size(); ++i) {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
-		checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
+		Type[] actuals = checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
+		// Update right-hand sides accordingly based on assigned types
+		for(int i=0;i!=actuals.length;++i) {
+			Type actual = actuals[i];
+			if(actual != null) {
+				// ignore upstream errors
+				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
+				if (extraction != null) {
+					// Update the typing environment accordingly.
+					environment = environment.refineType(extraction.getFirst(), extraction.getSecond());
+				}
+			}
+		}
 		return environment;
 	}
 
@@ -1283,7 +1299,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expressions
 	 * @param environment
 	 */
-	public final void checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
+	public final Type[] checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
+		Type[] actuals = new Type[expected.size()];
 		for (int i = 0, j = 0; i != expressions.size(); ++i) {
 			Expr expression = expressions.get(i);
 			switch (expression.getOpcode()) {
@@ -1295,7 +1312,9 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+						Type actual = results.get(k);
+						checkIsSubtype(expected.get(j + k), actual, environment, expression);
+						actuals[j + k] = actual;
 					}
 					j = j + results.size();
 				}
@@ -1309,25 +1328,29 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+						Type actual = results.get(k);
+						checkIsSubtype(expected.get(j + k), actual, environment, expression);
+						actuals[j + k] = actual;
 					}
 					j = j + results.size();
 				}
 				break;
 			}
 			default:
-				Type type = checkExpression(expression, environment);
+				Type actual = checkExpression(expression, environment);
 				//
 				if ((expected.size() - j) < 1) {
 					syntaxError(expression, TOO_MANY_RETURNS);
 				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
 					syntaxError(expression, INSUFFICIENT_RETURNS);
 				} else {
-					checkIsSubtype(expected.get(j), type, environment, expression);
+					checkIsSubtype(expected.get(j), actual, environment, expression);
+					actuals[j] = actual;
 				}
 				j = j + 1;
 			}
 		}
+		return actuals;
 	}
 
 	public final Tuple<Type> checkMultiExpression(Expr expression, Environment environment) {

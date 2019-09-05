@@ -1,3 +1,6 @@
 tests/invalid/UnionType_Invalid_5.whiley:8: expected record type
     x.op = [1, 2, 3]
     ^
+tests/invalid/UnionType_Invalid_5.whiley:10: expected type int, found int[]
+    y.op = [1, 2, 3]    
+           ^^^^^^^^^

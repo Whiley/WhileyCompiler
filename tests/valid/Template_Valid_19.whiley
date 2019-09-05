@@ -5,10 +5,10 @@ function select<S,T>(S|T x, S y) -> (S|T r):
         return x
 
 public export method test():
-    int|bool a1 = 1
-    int|bool bt = true
-    bool|int c2 = 2
-    bool|int df = false
+    int|bool a1 = (int|bool) 1
+    int|bool bt = (int|bool) true
+    bool|int c2 = (bool|int) 2
+    bool|int df = (bool|int) false
     //
     assume select(a1,1) == 1
     assume select<int,bool>(a1,2) == 1

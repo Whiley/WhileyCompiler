@@ -1,9 +1,11 @@
 type Point is {int x, int y}
 
-public export method test():
-    &Point p = new Point{x:1,y:2}
-    &?{int x, ...} q = p
+method main(&?{int x, ...} q):
     // Following not safe ...
     {int x} r = *q
+
+public export method test():
+    &Point p = new Point{x:1,y:2}
+    main(p)
 
 
