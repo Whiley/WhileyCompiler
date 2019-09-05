@@ -1613,11 +1613,16 @@ public class FlowTypeCheck implements Compiler.Check {
 				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 			}
 			//
-			if(sig.getReturns().size() > 0) {
-				expr.setTypes(expr.getHeap().allocate(sig.getReturns()));
-			}
+			Tuple<Type> returns = sig.getReturns();
 			//
-			return sig.getReturns();
+			if(sig.getReturns().size() > 0 && !contains(returns,null)) {
+				expr.setTypes(expr.getHeap().allocate(returns));
+				return returns;
+			} else {
+				// NOTE: must ignore returns if it contains null as this indicates some kind of
+				// upstream error.
+				return null;
+			}
 		}
 	}
 
@@ -1741,20 +1746,25 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != ts.length; ++i) {
 			ts[i] = checkExpression(operands.get(i), environment);
 		}
-		ts = ArrayUtils.removeDuplicates(ts);
-		Type element;
-		switch (ts.length) {
-		case 0:
-			element = Type.Void;
-			break;
-		case 1:
-			element = ts[0];
-			break;
-		default: {
-			element = new Type.Union(ts);
+		if (ArrayUtils.firstIndexOf(ts, null) >= 0) {
+			// Upstream error
+			return null;
+		} else {
+			ts = ArrayUtils.removeDuplicates(ts);
+			Type element;
+			switch (ts.length) {
+			case 0:
+				element = Type.Void;
+				break;
+			case 1:
+				element = ts[0];
+				break;
+			default: {
+				element = new Type.Union(ts);
+			}
+			}
+			return new Type.Array(element);
 		}
-		}
-		return new Type.Array(element);
 	}
 
 	private Type checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
@@ -1764,7 +1774,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type valueT = checkExpression(value, environment);
 		checkOperand(Type.Int, length, environment);
 		//
-		return new Type.Array(valueT);
+		if(valueT == null) {
+			// Upstream error
+			return null;
+		} else {
+			return new Type.Array(valueT);
+		}
 	}
 
 	private Type checkArrayAccess(Expr.ArrayAccess expr, Environment environment) {
@@ -1787,8 +1802,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check integer types
 		checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
 		checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
-		// FIXME: what if lhsT and rhsT differ?
-		return new Type.Array(lhsT);
+		//
+		return new Type.Array(Type.Int);
 	}
 
 	private Type checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
@@ -1837,7 +1852,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check expression type against expected element types
 		Type operandT = checkExpression(expr.getOperand(), environment);
 		//
-		if (expr.hasLifetime()) {
+		if(operandT == null) {
+			// upstream error
+			return null;
+		} else if (expr.hasLifetime()) {
 			return new Type.Reference(operandT, false, expr.getLifetime());
 		} else {
 			return new Type.Reference(operandT, false);
@@ -1882,7 +1900,10 @@ public class FlowTypeCheck implements Compiler.Check {
 					expr.getLifetimes());
 		}
 		// Update lambda declaration with inferred signature.
-		expr.setType(expr.getHeap().allocate(signature));
+		if(signature != null) {
+			// NOTE: must if has been upsteam error
+			expr.setType(expr.getHeap().allocate(signature));
+		}
 		// Done
 		return signature;
 	}
@@ -1950,6 +1971,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
+	}
+
+	private static <T extends SyntacticItem> boolean contains(Tuple<T> items, T item) {
+		for (int i = 0; i != items.size(); ++i) {
+			if (items.get(i) == item) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
