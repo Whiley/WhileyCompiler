@@ -343,6 +343,7 @@ public abstract class AbstractVisitor {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_fielddereference:
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
@@ -419,6 +420,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr);
+			break;
+		case EXPR_fielddereference:
+			visitFieldDereference((Expr.FieldDereference) expr);
 			break;
 		case EXPR_staticnew:
 		case EXPR_new:
@@ -610,6 +614,10 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitDereference(Expr.Dereference expr) {
+		visitExpression(expr.getOperand());
+	}
+
+	public void visitFieldDereference(Expr.FieldDereference expr) {
 		visitExpression(expr.getOperand());
 	}
 

@@ -1,3 +1,6 @@
-tests/invalid/UnionType_Invalid_12.whiley:3: expected reference type
+tests/invalid/UnionType_Invalid_12.whiley:3: expected type int, found bool
     *x = false
+         ^^^^^
+tests/invalid/UnionType_Invalid_12.whiley:5: expected reference type
+    *y = false
      ^

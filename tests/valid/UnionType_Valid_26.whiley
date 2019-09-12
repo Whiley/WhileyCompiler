@@ -1,10 +1,13 @@
 
 type bintref is ((&bool)|(&int) n)
 
-public export method test() :
-    bintref ptr = new 0
+method main(bintref ptr):
     //
     if ptr is &int:
         (*ptr) = 123
     //
     assume ptr is &bool || *ptr == 123
+
+public export method test() :
+    main(new 0)
+    

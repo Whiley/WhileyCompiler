@@ -42,6 +42,7 @@ import static wyil.lang.WyilFile.EXPR_bitwisexor;
 import static wyil.lang.WyilFile.EXPR_cast;
 import static wyil.lang.WyilFile.EXPR_constant;
 import static wyil.lang.WyilFile.EXPR_dereference;
+import static wyil.lang.WyilFile.EXPR_fielddereference;
 import static wyil.lang.WyilFile.EXPR_equal;
 import static wyil.lang.WyilFile.EXPR_indirectinvoke;
 import static wyil.lang.WyilFile.EXPR_integeraddition;
@@ -477,6 +478,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (decl.hasInitialiser()) {
 			Type type = checkExpression(decl.getInitialiser(), environment);
 			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
+			if (type != null) {
+				// Update the typing environment accordingly.
+				environment = environment.refineType(decl, type);
+			}
 		}
 		// Done.
 		return environment;
@@ -499,7 +504,19 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != lvals.size(); ++i) {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
-		checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
+		Type[] actuals = checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
+		// Update right-hand sides accordingly based on assigned types
+		for(int i=0;i!=actuals.length;++i) {
+			Type actual = actuals[i];
+			if(actual != null) {
+				// ignore upstream errors
+				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
+				if (extraction != null) {
+					// Update the typing environment accordingly.
+					environment = environment.refineType(extraction.getFirst(), extraction.getSecond());
+				}
+			}
+		}
 		return environment;
 	}
 
@@ -1170,6 +1187,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_dereference:
 			type = checkDereferenceLVal((Expr.Dereference) lval, environment);
 			break;
+		case EXPR_fielddereference:
+			type = checkFieldDereferenceLVal((Expr.FieldDereference) lval, environment);
+			break;
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
 		}
@@ -1202,9 +1222,17 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
-		Type src = checkExpression(lval.getFirstOperand(), environment);
-		// Extract the determined array type
-		Type.Array arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
+		// NOTE: must check lval first, not expression (#950)
+		Type src = checkLVal((LVal) lval.getFirstOperand(), environment);
+		// Attempt to view src as a record
+		Type.Array arrT = src.as(Type.Array.class);
+		// Check declared type
+		if (arrT == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getFirstOperand(), environment);
+			// Extract array or fail
+			arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
+		}
 		// Sanity check extraction
 		if(arrT != null) {
 			// Check for integer subscript
@@ -1219,9 +1247,17 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), environment);
-		// Extract writeable record type
-		Type.Record recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
+		// NOTE: must check lval first, not expression (#950)
+		Type src = checkLVal((LVal) lval.getOperand(), environment);
+		// Attempt to view src as a record
+		Type.Record recT = src.as(Type.Record.class);
+		// Check declared type
+		if (recT == null || recT.getField(lval.getField()) == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getOperand(), environment);
+			// Extract record or fail
+			recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
+		}
 		// Extract the field type
 		return extractFieldType(recT, lval.getField());
 	}
@@ -1230,8 +1266,22 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type src = checkExpression(lval.getOperand(), environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
+		// Sanity check writability of reference
+		checkIsWritable(refT, environment, lval.getOperand());
 		// Sanity check extraction
 		return refT == null ? null : refT.getElement();
+	}
+
+	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
+		Type src = checkExpression(lval.getOperand(), environment);
+		// Extract writeable reference type
+		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
+		// Extact target type
+		Type target = refT == null ? null : refT.getElement();
+		// Extract underlying record
+		Type.Record recT = extractType(Type.Record.class, target, EXPECTED_RECORD, lval.getOperand());
+		// extract field type
+		return extractFieldType(recT, lval.getField());
 	}
 
 	// =========================================================================
@@ -1249,7 +1299,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expressions
 	 * @param environment
 	 */
-	public final void checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
+	public final Type[] checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
+		Type[] actuals = new Type[expected.size()];
 		for (int i = 0, j = 0; i != expressions.size(); ++i) {
 			Expr expression = expressions.get(i);
 			switch (expression.getOpcode()) {
@@ -1261,7 +1312,9 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+						Type actual = results.get(k);
+						checkIsSubtype(expected.get(j + k), actual, environment, expression);
+						actuals[j + k] = actual;
 					}
 					j = j + results.size();
 				}
@@ -1275,24 +1328,40 @@ public class FlowTypeCheck implements Compiler.Check {
 				} else {
 					// FIXME: THIS LOOP IS UGLY
 					for (int k = 0; k != results.size(); ++k) {
-						checkIsSubtype(expected.get(j + k), results.get(k), environment, expression);
+						Type actual = results.get(k);
+						checkIsSubtype(expected.get(j + k), actual, environment, expression);
+						actuals[j + k] = actual;
 					}
 					j = j + results.size();
 				}
 				break;
 			}
 			default:
-				Type type = checkExpression(expression, environment);
+				Type actual = checkExpression(expression, environment);
 				//
 				if ((expected.size() - j) < 1) {
 					syntaxError(expression, TOO_MANY_RETURNS);
 				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
 					syntaxError(expression, INSUFFICIENT_RETURNS);
 				} else {
-					checkIsSubtype(expected.get(j), type, environment, expression);
+					checkIsSubtype(expected.get(j), actual, environment, expression);
+					actuals[j] = actual;
 				}
 				j = j + 1;
 			}
+		}
+		return actuals;
+	}
+
+	public final Tuple<Type> checkMultiExpression(Expr expression, Environment environment) {
+		switch (expression.getOpcode()) {
+		case EXPR_invoke:
+			return checkInvoke((Expr.Invoke) expression, environment);
+		case EXPR_indirectinvoke:
+			return checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
+		default:
+			Type type = checkExpression(expression, environment);
+			return new Tuple<>(type);
 		}
 	}
 
@@ -1441,6 +1510,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_dereference:
 			type = checkDereference((Expr.Dereference) expression, environment);
 			break;
+		case EXPR_fielddereference:
+			type = checkFieldDereference((Expr.FieldDereference) expression, environment);
+			break;
 		case EXPR_new:
 			type = checkNew((Expr.New) expression, environment);
 			break;
@@ -1552,6 +1624,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// failed
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
 		}
+		//
 		return null;
 	}
 
@@ -1579,12 +1652,16 @@ public class FlowTypeCheck implements Compiler.Check {
 				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
 			}
 			//
-			if (sig.getReturns().size() > 1) {
-				internalFailure("need support for multiple returns and indirect invocation", expr);
-			}
-			expr.setType(sig.getReturns().get(0));
+			Tuple<Type> returns = sig.getReturns();
 			//
-			return sig.getReturns();
+			if(sig.getReturns().size() > 0 && !contains(returns,null)) {
+				expr.setTypes(expr.getHeap().allocate(returns));
+				return returns;
+			} else {
+				// NOTE: must ignore returns if it contains null as this indicates some kind of
+				// upstream error.
+				return null;
+			}
 		}
 	}
 
@@ -1708,20 +1785,25 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != ts.length; ++i) {
 			ts[i] = checkExpression(operands.get(i), environment);
 		}
-		ts = ArrayUtils.removeDuplicates(ts);
-		Type element;
-		switch (ts.length) {
-		case 0:
-			element = Type.Void;
-			break;
-		case 1:
-			element = ts[0];
-			break;
-		default: {
-			element = new Type.Union(ts);
+		if (ArrayUtils.firstIndexOf(ts, null) >= 0) {
+			// Upstream error
+			return null;
+		} else {
+			ts = ArrayUtils.removeDuplicates(ts);
+			Type element;
+			switch (ts.length) {
+			case 0:
+				element = Type.Void;
+				break;
+			case 1:
+				element = ts[0];
+				break;
+			default: {
+				element = new Type.Union(ts);
+			}
+			}
+			return new Type.Array(element);
 		}
-		}
-		return new Type.Array(element);
 	}
 
 	private Type checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
@@ -1731,7 +1813,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type valueT = checkExpression(value, environment);
 		checkOperand(Type.Int, length, environment);
 		//
-		return new Type.Array(valueT);
+		if(valueT == null) {
+			// Upstream error
+			return null;
+		} else {
+			return new Type.Array(valueT);
+		}
 	}
 
 	private Type checkArrayAccess(Expr.ArrayAccess expr, Environment environment) {
@@ -1754,8 +1841,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check integer types
 		checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
 		checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
-		// FIXME: what if lhsT and rhsT differ?
-		return new Type.Array(lhsT);
+		//
+		return new Type.Array(Type.Int);
 	}
 
 	private Type checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
@@ -1781,18 +1868,36 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Extract an appropriate reference type form the source.
 		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
 				expr.getOperand());
+		// Sanity check readability of reference
+		checkIsReadable(refT, environment,expr.getOperand());
 		// Done
 		return refT == null ? null : refT.getElement();
+	}
+
+	private Type checkFieldDereference(Expr.FieldDereference expr, Environment environment) {
+		Type operandT = checkExpression(expr.getOperand(), environment);
+		// Extract an appropriate reference type form the source.
+		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
+				expr.getOperand());
+		// Extract target type
+		Type target = refT == null ? null : refT.getElement();
+		// Following may produce null if field not present
+		Type.Record recT = extractType(Type.Record.class, target, EXPECTED_RECORD, expr.getOperand());
+		// Return extracted field type
+		return extractFieldType(recT, expr.getField());
 	}
 
 	private Type checkNew(Expr.New expr, Environment environment) {
 		// Check expression type against expected element types
 		Type operandT = checkExpression(expr.getOperand(), environment);
 		//
-		if (expr.hasLifetime()) {
-			return new Type.Reference(operandT, expr.getLifetime());
+		if(operandT == null) {
+			// upstream error
+			return null;
+		} else if (expr.hasLifetime()) {
+			return new Type.Reference(operandT, false, expr.getLifetime());
 		} else {
-			return new Type.Reference(operandT);
+			return new Type.Reference(operandT, false);
 		}
 	}
 
@@ -1819,19 +1924,25 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Decl.Variable> parameters = expr.getParameters();
 		Tuple<Type> parameterTypes = parameters.map((Decl.Variable p) -> p.getType());
 		// Type check the body of the lambda using the expected return types
-		Type result = checkExpression(expr.getBody(), environment);
+		Tuple<Type> results = checkMultiExpression(expr.getBody(), environment);
 		// Determine whether or not this is a pure or impure lambda.
 		Type.Callable signature;
-		if (FlowTypeUtils.isPure(expr.getBody())) {
+		if(results == null) {
+			// An error occurred upstream
+			return null;
+		} else if (FlowTypeUtils.isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
-			signature = new Type.Function(parameterTypes, new Tuple<>(result));
+			signature = new Type.Function(parameterTypes, results);
 		} else {
 			// This is an impure lambda, hence it has method type.
-			signature = new Type.Method(parameterTypes, new Tuple<>(result), expr.getCapturedLifetimes(),
+			signature = new Type.Method(parameterTypes, results, expr.getCapturedLifetimes(),
 					expr.getLifetimes());
 		}
 		// Update lambda declaration with inferred signature.
-		expr.setType(expr.getHeap().allocate(signature));
+		if(signature != null) {
+			// NOTE: must if has been upsteam error
+			expr.setType(expr.getHeap().allocate(signature));
+		}
 		// Done
 		return signature;
 	}
@@ -1851,6 +1962,40 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
+	private void checkIsWritable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (rhs != null) {
+			Type.Reference lhs;
+			// Construct writeable variant
+			if (rhs.hasLifetime()) {
+				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+			} else {
+				lhs = new Type.Reference(rhs.getElement(), false);
+			}
+			// Perform the subtype test
+			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+				// FIXME: better error message?
+				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
+			}
+		}
+	}
+
+	private void checkIsReadable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (rhs != null) {
+			Type.Reference lhs;
+			// Construct writeable variant
+			if (rhs.hasLifetime()) {
+				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+			} else {
+				lhs = new Type.Reference(rhs.getElement(), false);
+			}
+			// Perform the subtype test
+			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+				// FIXME: better error message?
+				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
+			}
+		}
+	}
+
 	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
@@ -1865,6 +2010,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
+	}
+
+	private static <T extends SyntacticItem> boolean contains(Tuple<T> items, T item) {
+		for (int i = 0; i != items.size(); ++i) {
+			if (items.get(i) == item) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

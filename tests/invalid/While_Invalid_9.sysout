@@ -1,12 +1,6 @@
 tests/invalid/While_Invalid_9.whiley:4: expected type int, found int[]
     int r = [1]
             ^^^
-tests/invalid/While_Invalid_9.whiley:6: expected array type
-    while i < |ls| where |r| > 0:
-                          ^
 tests/invalid/While_Invalid_9.whiley:7: expected type int, found int[]
         r = rs
             ^^
-tests/invalid/While_Invalid_9.whiley:10: expected type int[], found int
-    return r
-           ^

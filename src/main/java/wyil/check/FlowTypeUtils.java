@@ -37,6 +37,7 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Field;
+import wyil.util.AbstractVisitor;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -232,7 +233,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.ArrayAccess) {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
 			return extractAssignedVariable((LVal) e.getFirstOperand());
-		} else if (lval instanceof Expr.Dereference) {
+		} else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
 			return null;
 		} else {
 			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
@@ -253,31 +254,67 @@ public class FlowTypeUtils {
 	 * @param item
 	 * @return
 	 */
-	public static boolean isPure(SyntacticItem item) {
-		// Examine expression to determine whether this expression is impure.
-		if (item instanceof Expr.StaticVariableAccess || item instanceof Expr.Dereference || item instanceof Expr.New) {
-			return false;
-		} else if (item instanceof Expr.Invoke) {
-			Expr.Invoke e = (Expr.Invoke) item;
-			Decl.Link<Decl.Callable> l = e.getLink();
+	public static boolean isPure(Expr e) {
+		PurityVisitor visitor = new PurityVisitor();
+		visitor.visitExpression(e);
+		return visitor.pure;
+	}
+
+	private static class PurityVisitor extends AbstractVisitor {
+		public boolean pure = true;
+
+		@Override
+		public void visitDeclaration(Decl type) {
+			// Terminate
+		}
+
+		@Override
+		public void visitStatement(Stmt stmt) {
+			// Terminate
+		}
+
+		@Override
+		public void visitStaticVariableAccess(Expr.StaticVariableAccess expr) {
+			pure = false;
+		}
+
+		@Override
+		public void visitNew(Expr.New expr) {
+			pure = false;
+		}
+
+		@Override
+		public void visitDereference(Expr.Dereference expr) {
+			pure = false;
+		}
+
+		@Override
+		public void visitFieldDereference(Expr.FieldDereference expr) {
+			pure = false;
+		}
+
+		@Override
+		public void visitInvoke(Expr.Invoke expr) {
+			Decl.Link<Decl.Callable> l = expr.getLink();
 			if (l.getTarget() instanceof Decl.Method) {
 				// This expression is definitely not pure
-				return false;
+				pure = false;
 			}
-		} else if (item instanceof Expr.IndirectInvoke) {
-			Expr.IndirectInvoke e = (Expr.IndirectInvoke) item;
-			// FIXME: need to do something here.
-			internalFailure("purity checking currently does not support indirect invocation", item);
 		}
-		// Recursively examine any subexpressions. The uniform nature of
-		// syntactic items makes this relatively easy.
-		boolean result = true;
-		//
-		for (int i = 0; i != item.size(); ++i) {
-			result &= isPure(item.get(i));
+
+		@Override
+		public void visitIndirectInvoke(Expr.IndirectInvoke expr) {
+			Type.Callable sourceType = expr.getSource().getType().as(Type.Callable.class);
+			if(sourceType instanceof Type.Method) {
+				pure = false;
+			}
 		}
-		return result;
-	}
+
+		@Override
+		public void visitType(Type type) {
+			// Terminate
+		}
+	};
 
 	// ===============================================================================================================
 	// Environment
@@ -322,9 +359,14 @@ public class FlowTypeUtils {
 		}
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
-			Environment r = new Environment(this.refinements, this.withins);
-			r.refinements.put(var, refinement);
-			return r;
+			if(getType(var).equals(refinement)) {
+				// No refinement necessary
+				return this;
+			} else {
+				Environment r = new Environment(this.refinements, this.withins);
+				r.refinements.put(var, refinement);
+				return r;
+			}
 		}
 
 		public Set<Decl.Variable> getRefinedVariables() {

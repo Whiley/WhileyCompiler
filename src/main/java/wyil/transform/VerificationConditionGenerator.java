@@ -605,6 +605,8 @@ public class VerificationConditionGenerator {
 			return translateArrayAssign((WyilFile.Expr.ArrayAccess) lval, rval, context);
 		case WyilFile.EXPR_dereference:
 			return translateDereference((WyilFile.Expr.Dereference) lval, rval, context);
+		case WyilFile.EXPR_fielddereference:
+			return translateFieldDereference((WyilFile.Expr.FieldDereference) lval, rval, context);
 		case WyilFile.EXPR_recordaccess:
 		case WyilFile.EXPR_recordborrow:
 			return translateRecordAssign((WyilFile.Expr.RecordAccess) lval, rval, context);
@@ -675,6 +677,22 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateDereference(WyilFile.Expr.Dereference lval, Expr rval, Context context) {
 		Expr e = translateDereference(lval, context.getEnvironment());
+		return context.assume(new Expr.Equal(e, rval));
+	}
+
+	/**
+	 * Translate an indirect field assignment through a reference.
+	 *
+	 * @param lval
+	 *            The array assignment expression
+	 * @param result
+	 *            The value being assigned to the given array element
+	 * @param context
+	 *            The enclosing context
+	 * @return
+	 */
+	private Context translateFieldDereference(WyilFile.Expr.FieldDereference lval, Expr rval, Context context) {
+		Expr e = translateFieldDereference(lval, context.getEnvironment());
 		return context.assume(new Expr.Equal(e, rval));
 	}
 
@@ -1438,6 +1456,9 @@ public class VerificationConditionGenerator {
 			case WyilFile.EXPR_dereference:
 				result = translateDereference((WyilFile.Expr.Dereference) expr, environment);
 				break;
+			case WyilFile.EXPR_fielddereference:
+				result = translateFieldDereference((WyilFile.Expr.FieldDereference) expr, environment);
+				break;
 			case WyilFile.EXPR_bitwiseshr:
 			case WyilFile.EXPR_bitwiseshl:
 			case WyilFile.EXPR_bitwiseand:
@@ -1615,6 +1636,14 @@ public class VerificationConditionGenerator {
 		return new Expr.Dereference(e);
 	}
 
+	private Expr translateFieldDereference(WyilFile.Expr.FieldDereference expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(), null, environment);
+		// Generate field name identifier
+		WyalFile.Identifier field = new WyalFile.Identifier(expr.getField().toString());
+		// Done
+		return new Expr.RecordAccess(new Expr.Dereference(e), field);
+	}
+
 	private Expr translateQuantifier(WyilFile.Expr.Quantifier expr, LocalEnvironment environment) {
 		// Determine the type and names of each quantified variable.
 		WyalFile.VariableDeclaration[] pattern = generateQuantifierTypePattern(expr, environment);
@@ -1655,11 +1684,24 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Expr translateAsUnknown(WyilFile.Expr expr, LocalEnvironment environment) {
+		Tuple<Type> types = expr.getTypes();
+		if(types == null) {
+			return translateAsUnknown(expr.getIndex(), expr.getType(), expr, environment);
+		} else if(types.size() > 0) {
+			// FIXME: THIS IS BROKEN
+			return translateAsUnknown(expr.getIndex(), types.get(0), expr, environment);
+		} else {
+			// FIXME: THIS IS BROKEN
+			return translateAsUnknown(expr.getIndex(), Type.Void, expr, environment);
+		}
+	}
+
+	private Expr translateAsUnknown(int index, Type etype, SyntacticItem elem, LocalEnvironment environment) {
 		// What we're doing here is creating a completely fresh variable to
 		// represent the return value. This is basically saying the return value
 		// could be anything, and we don't care what.
-		String name = "r" + Integer.toString(expr.getIndex());
-		WyalFile.Type type = convert(expr.getType(), expr);
+		String name = "r" + Integer.toString(index);
+		WyalFile.Type type = convert(etype, elem);
 		WyalFile.VariableDeclaration vf = allocate(
 				new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(name)), null);
 		// environment = environment.write(expr.getIndex());

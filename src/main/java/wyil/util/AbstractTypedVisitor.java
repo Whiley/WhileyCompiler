@@ -96,7 +96,7 @@ public abstract class AbstractTypedVisitor {
 		environment = environment.declareWithin("this", decl.getLifetimes());
 		//
 		visitVariables(decl.getParameters(), environment);
-		visitExpression(decl.getBody(), decl.getBody().getType(), environment);
+		visitMultiExpression(decl.getBody(), decl.getType().getReturns(), environment);
 	}
 
 	public void visitVariables(Tuple<Decl.Variable> vars, Environment environment) {
@@ -370,8 +370,10 @@ public abstract class AbstractTypedVisitor {
 	public void visitMultiExpression(Expr expr, Tuple<Type> types, Environment environment) {
 		if (expr instanceof Expr.Invoke) {
 			visitInvoke((Expr.Invoke) expr, types, environment);
-		} else {
+		} else if(expr instanceof Expr.IndirectInvoke) {
 			visitIndirectInvoke((Expr.IndirectInvoke) expr, types, environment);
+		} else {
+			visitExpression(expr, types.get(0), environment);
 		}
 	}
 
@@ -413,6 +415,7 @@ public abstract class AbstractTypedVisitor {
 		case EXPR_logicaluniversal:
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
+		case EXPR_fielddereference:
 		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
@@ -491,6 +494,9 @@ public abstract class AbstractTypedVisitor {
 			break;
 		case EXPR_dereference:
 			visitDereference((Expr.Dereference) expr, target, environment);
+			break;
+		case EXPR_fielddereference:
+			visitFieldDereference((Expr.FieldDereference) expr, target, environment);
 			break;
 		case EXPR_staticnew:
 		case EXPR_new: {
@@ -704,6 +710,10 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitDereference(Expr.Dereference expr, Type target, Environment environment) {
+		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
+	}
+
+	public void visitFieldDereference(Expr.FieldDereference expr, Type target, Environment environment) {
 		visitExpression(expr.getOperand(), expr.getOperand().getType(), environment);
 	}
 

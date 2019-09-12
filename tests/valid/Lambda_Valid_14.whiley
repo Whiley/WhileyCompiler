@@ -1,0 +1,14 @@
+type updater is method()
+
+public method update(&int ptr):
+    *ptr = 0
+
+public export method test():
+    &int p = new 123
+    // create curried closure
+    updater f = &( -> update(p))
+    // Apply it
+    f()
+    // Check it
+    assume *p == 0
+    

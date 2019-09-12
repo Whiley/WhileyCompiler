@@ -5,7 +5,7 @@ function f(IntList y) -> IntList:
     return y
 
 public export method test() :
-    IntList x = {op: 1, rest: [false]}
+    IntList x = (IntList) {op: 1, rest: [false]}
     if 0 == 10:
         x = {op: 0, rest: [false]}
     if x is {int op, bool[] rest}:

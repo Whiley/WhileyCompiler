@@ -344,6 +344,8 @@ public class WhileyFileLexer {
 			return new Token(Token.Kind.Caret, "^", pos++);
 		case '~':
 			return new Token(Token.Kind.Tilde, "~", pos++);
+		case '?':
+			return new Token(Token.Kind.QuestionMark, "?", pos++);
 		case '!':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
@@ -701,6 +703,7 @@ public class WhileyFileLexer {
 			Shreak("!"),
 			Caret("^"),
 			Tilde("~"),
+			QuestionMark("?"),
 			Dot("."),
 			DotDot(".."),
 			DotDotDot("..."),

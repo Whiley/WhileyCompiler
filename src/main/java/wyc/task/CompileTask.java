@@ -119,8 +119,14 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		// Instantiate type checker
 		this.checker = new FlowTypeCheck();
 		// Instantiate other checks
-		this.stages = new Compiler.Check[] { new DefiniteAssignmentCheck(), new DefiniteUnassignmentCheck(),
-				new FunctionalCheck(), new SignatureCheck(), new StaticVariableCheck(), new AmbiguousCoercionCheck() };
+		this.stages = new Compiler.Check[] {
+				new DefiniteAssignmentCheck(),
+				new DefiniteUnassignmentCheck(),
+				new FunctionalCheck(),
+				new SignatureCheck(),
+				new StaticVariableCheck(),
+				new AmbiguousCoercionCheck()
+			};
 		//
 		this.verifier = new VerificationCheck(project,target);
 		// Instantiate various transformations
