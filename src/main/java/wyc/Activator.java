@@ -84,7 +84,6 @@ public class Activator implements Module.Activator {
 			Path.Root sourceRoot = project.getRoot().createRelativeRoot(source);
 			// Construct the binary root
 			Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
-			System.out.println("BINARY ROOT: " + System.identityHashCode(project.getRoot()));
 			// Initialise the target file being built
 			Path.Entry<WyilFile> binary = initialiseBinaryTarget(binaryRoot,pkg);
 			// Add build rule to project.
