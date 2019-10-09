@@ -54,7 +54,6 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.Activator;
 import wyc.util.ErrorMessages;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
@@ -208,8 +207,8 @@ public class QuickCheck implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new QuickCheck(((WyProject) environment).getBuildProject(), configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new QuickCheck(environment, System.out, System.err);
 		}
 
 	};
@@ -227,14 +226,9 @@ public class QuickCheck implements Command {
 	private final PrintStream syserr;
 
 	/**
-	 * The configuration associated with this command.
+	 * The environment in which this command is executing
 	 */
-	private final Configuration configuration;
-
-	/**
-	 * The enclosing project for this build
-	 */
-	private final Build.Project project;
+	private final Command.Environment environment;
 
 	/**
 	 * The interpreter instance used for executing code.
@@ -253,9 +247,8 @@ public class QuickCheck implements Command {
 	 */
 	private StructuredLogger<LogEntry> logger;
 
-	public QuickCheck(Build.Project project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
-		this.project = project;
-		this.configuration = configuration;
+	public QuickCheck(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
+		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
@@ -264,7 +257,7 @@ public class QuickCheck implements Command {
 
 			@Override
 			public void logTimedMessage(LogEntry result, long time, long memory) {
-				project.getLogger().logTimedMessage(result.toString(), time, memory);
+				environment.getLogger().logTimedMessage(result.toString(), time, memory);
 			}
 
 		};
@@ -290,20 +283,20 @@ public class QuickCheck implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		// Extract configuration options
-		int minInteger = configuration.get(Value.Int.class,MIN_CONFIG_OPTION).unwrap().intValue();
-		int maxInteger = configuration.get(Value.Int.class,MAX_CONFIG_OPTION).unwrap().intValue();
-		int maxArrayLength = configuration.get(Value.Int.class,LENGTH_CONFIG_OPTION).unwrap().intValue();
-		int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
-		int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
-		int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
-		int limit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
-		boolean  logSampling = configuration.get(Value.Bool.class,LOGSAMPLING_CONFIG_OPTION).unwrap();
-		double samplingRate = configuration.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
-		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
-		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
-		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
+		int minInteger = project.get(Value.Int.class,MIN_CONFIG_OPTION).unwrap().intValue();
+		int maxInteger = project.get(Value.Int.class,MAX_CONFIG_OPTION).unwrap().intValue();
+		int maxArrayLength = project.get(Value.Int.class,LENGTH_CONFIG_OPTION).unwrap().intValue();
+		int maxTypeDepth = project.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
+		int maxAliasingWidth = project.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
+		int maxRotationWidth = project.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
+		int limit = project.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+		boolean  logSampling = project.get(Value.Bool.class,LOGSAMPLING_CONFIG_OPTION).unwrap();
+		double samplingRate = project.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
+		long timeout = project.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
+		String[] ignores = toStringArray(project.get(Value.Array.class,IGNORES_CONFIG_OPTION));
+		Trie pkg = Trie.fromString(project.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
 		//
@@ -332,11 +325,10 @@ public class QuickCheck implements Command {
 			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
-		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
+		Trie target = Trie.fromString(environment.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
 		//
 		Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
 		//
-
 		if (binaryRoot.exists(pkg, WyilFile.ContentType)) {
 			// Yes, it does so reuse it.
 			Path.Entry<WyilFile> binary = binaryRoot.get(pkg, WyilFile.ContentType);
@@ -349,7 +341,7 @@ public class QuickCheck implements Command {
 					.setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
-			boolean OK = check(wf, context);
+			boolean OK = check(project, wf, context);
 			//
 			if(!OK) {
 				// FIXME: this does not seem like a good solution :|
@@ -411,7 +403,7 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	public boolean check(WyilFile parent, Context context) throws IOException {
+	public boolean check(Build.Project project, WyilFile parent, Context context) throws IOException {
 		// Initialise Interpreter
 		this.interpreter = new ExtendedInterpreter(this.syserr, context);
 		// Construct extended context
