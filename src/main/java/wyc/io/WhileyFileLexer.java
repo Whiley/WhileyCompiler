@@ -40,14 +40,17 @@ public class WhileyFileLexer {
 		this.entry = entry;
 		Reader reader = new InputStreamReader(entry.inputStream());
 		BufferedReader in = new BufferedReader(reader);
-
-        StringBuilder text = new StringBuilder();
-		int len = 0;
-		char[] buf = new char[1024];
-		while ((len = in.read(buf)) != -1) {
-			text.append(buf, 0, len);
+		try {
+			StringBuilder text = new StringBuilder();
+			int len = 0;
+			char[] buf = new char[1024];
+			while ((len = in.read(buf)) != -1) {
+				text.append(buf, 0, len);
+			}
+			input = text;
+		} finally {
+			in.close();
 		}
-        input = text;
 	}
 
 	public WhileyFileLexer(String input) {

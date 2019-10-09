@@ -87,6 +87,12 @@ public class TestUtils {
 		public String suffix(Content.Type<?> t) {
 			return t.getSuffix();
 		}
+
+		@Override
+		public wyfs.lang.Content.Type<?> contentType(String suffix) {
+			// TODO Auto-generated method stub
+			return null;
+		}
 	}
 
 	/**
@@ -187,7 +193,7 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			SequentialBuildProject project = new SequentialBuildProject(root);
+			SequentialBuildProject project = new SequentialBuildProject(null, root);
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
 			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());

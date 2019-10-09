@@ -679,7 +679,7 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			Template.Variable var = parseTemplateVariable();
-			if(vars.contains(var.getName())) {
+			if(vars.contains(var)) {
 				syntaxError(WyilFile.DUPLICATE_TEMPLATE_VARIABLE, var);
 			} else {
 				vars.add(var);
