@@ -325,7 +325,7 @@ public class QuickCheck implements Command {
 			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
-		Trie target = Trie.fromString(environment.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
+		Trie target = Trie.fromString(project.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
 		//
 		Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
 		//
