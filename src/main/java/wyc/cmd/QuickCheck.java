@@ -607,8 +607,17 @@ public class QuickCheck implements Command {
 	 */
 	private List<RValue[]> generateValidInputs(Tuple<Expr> predicate, Tuple<Decl.Variable> variables,
 			ExtendedContext context, Domain.Big<RValue>... generators) {
+		//
+		ArrayList<RValue[]> results = new ArrayList<>();
+		// Sanity check inputs
 		if(variables.size() != generators.length) {
 			throw new IllegalArgumentException("invalid number of generators");
+		} else if(generators.length == 0) {
+			// A special case arises when there are no generators. In this case, we generate
+			// an empty input sequence to force execution. Without this, functions or
+			// methods without parameters are never tested.
+			results.add(new RValue[0]);
+			return results;
 		}
 		Domain.Big<RValue[]> domain = Domains.Product(generators);
 		//
@@ -621,8 +630,6 @@ public class QuickCheck implements Command {
 		}
 		//
 		CallStack frame = context.getFrame();
-		//
-		ArrayList<RValue[]> results = new ArrayList<>();
 		//
 		for (RValue[] inputs : domain) {
 			try {
