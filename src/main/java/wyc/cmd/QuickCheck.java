@@ -36,20 +36,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import jmodelgen.core.Domain;
 import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
-import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
+import wybs.lang.*;
+import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.Activator;
@@ -256,6 +249,11 @@ public class QuickCheck implements Command {
 				environment.getLogger().logTimedMessage(result.toString(), time, memory);
 			}
 
+			@Override
+			public void logTimedMessage(String msg, long time, long memory) {
+				environment.getLogger().logTimedMessage(msg, time, memory);
+			}
+
 		};
 	}
 
@@ -333,7 +331,7 @@ public class QuickCheck implements Command {
 					.setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
-			boolean OK = check(project, wf, context);
+			boolean OK = check(project, wf, context, template.getArguments());
 			//
 			if(!OK) {
 				// FIXME: this does not seem like a good solution :|
@@ -395,7 +393,7 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	public boolean check(Build.Project project, WyilFile parent, Context context) throws IOException {
+	public boolean check(Build.Project project, WyilFile parent, Context context, List<String> targets) throws IOException {
 		// Initialise Interpreter
 		this.interpreter = new ExtendedInterpreter(this.syserr, context);
 		// Construct extended context
@@ -403,16 +401,22 @@ public class QuickCheck implements Command {
 		// Initialise by context
 		if(eContext.initialise(project,parent)) {
 			//
-			return check(parent, eContext);
+			return check(parent, eContext, targets);
 		} else {
 			return false;
 		}
 	}
 
-	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
+	public boolean check(WyilFile parent, ExtendedContext context, List<String> targets) throws IOException {
 		boolean OK = true;
-		for (Decl.Unit unit : parent.getModule().getUnits()) {
-			OK &= check(parent,unit, context);
+		if(targets.isEmpty()) {
+			for (Decl.Unit unit : parent.getModule().getUnits()) {
+				OK &= check(parent,unit, context);
+			}
+		} else {
+			for (Decl.Named d : toNamedDeclarations(parent,targets)) {
+				OK &= check(d, parent, context);
+			}
 		}
 		return OK;
 	}
@@ -1079,6 +1083,42 @@ public class QuickCheck implements Command {
 	}
 
 	/**
+	 * Convert a bunch of compilation unit names into the corresponding
+	 * declarations.
+	 *
+	 * @param parent
+	 * @param names
+	 * @return
+	 */
+	private List<Decl.Named> toNamedDeclarations(WyilFile parent, List<String> names) {
+		HashSet<String> visited = new HashSet<>(names);
+		ArrayList<Decl.Named> decls = new ArrayList<>();
+		Decl.Module module = parent.getModule();
+		// Add all declarations listed
+		for (Decl.Unit unit : module.getUnits()) {
+			CompilationUnit.Name un = unit.getName();
+			for (Decl d : unit.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					String qn = n.getQualifiedName().toString();
+					if (visited.contains(qn)) {
+						decls.add(n);
+					}
+				}
+			}
+		}
+		// Sanity check we got them all
+		for(Decl.Named n : decls) {
+			visited.remove(n.getQualifiedName().toString());
+		}
+		//
+		for(String name : visited) {
+			logger.logTimedMessage("declaration not found: " + name, 0, 0);
+		}
+		return decls;
+	}
+
+	/**
 	 * Convert a value array into a string array.
 	 *
 	 * @param array
@@ -1424,6 +1464,7 @@ public class QuickCheck implements Command {
 
 	public static interface StructuredLogger<T> {
 		public void logTimedMessage(T result, long time, long memory);
+		public void logTimedMessage(String msg, long time, long memory);
 	}
 
 	public static interface LogEntry {
