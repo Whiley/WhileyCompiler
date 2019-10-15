@@ -114,7 +114,7 @@ import wyil.lang.WyilFile.Type.Callable;
  */
 public class QuickCheck implements Command {
 	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], 1.0D, 1000, 10_000_000,
-			false, Long.MAX_VALUE);
+			Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -123,7 +123,6 @@ public class QuickCheck implements Command {
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
 	public static Trie SAMPLING_CONFIG_OPTION = Trie.fromString("check/sample");
-	public static Trie LOGSAMPLING_CONFIG_OPTION = Trie.fromString("check/logsample");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
@@ -134,7 +133,6 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
-	public static Value.Bool LOGSAMPLING_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getLogSampling());
 	public static Value.Decimal SAMPLING_DEFAULT = new Value.Decimal(DEFAULT_CONTEXT.getSamplingRate());
 	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getSampleMin());
 	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
@@ -189,8 +187,6 @@ public class QuickCheck implements Command {
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
-					Configuration.UNBOUND_BOOLEAN(LOGSAMPLING_CONFIG_OPTION, "Specify log sampling for each function or method",
-							LOGSAMPLING_DEFAULT),
 					Configuration.BOUND_DECIMAL(SAMPLING_CONFIG_OPTION, "Specify sample rate of test inputs to try for each function or method",
 							SAMPLING_DEFAULT,0.0D,1.0D),
 					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit above which sampling takes place",
@@ -292,7 +288,6 @@ public class QuickCheck implements Command {
 		int maxAliasingWidth = project.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = project.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
 		int limit = project.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
-		boolean  logSampling = project.get(Value.Bool.class,LOGSAMPLING_CONFIG_OPTION).unwrap();
 		double samplingRate = project.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
 		long timeout = project.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		String[] ignores = toStringArray(project.get(Value.Array.class,IGNORES_CONFIG_OPTION));
@@ -302,9 +297,6 @@ public class QuickCheck implements Command {
 		//
 		if(options.has("sampling")) {
 			samplingRate = options.get("sampling", Double.class);
-		}
-		if(options.has("logsampling")) {
-			logSampling = options.get("logsampling", Boolean.class);
 		}
 		if(options.has("limit")) {
 			limit = options.get("limit", Integer.class);
@@ -337,7 +329,7 @@ public class QuickCheck implements Command {
 			// Construct initial context
 			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
 					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
-					.setIgnores(ignores).setSamplingRate(samplingRate).setLogSampling(logSampling).setSampleMin(limit)
+					.setIgnores(ignores).setSamplingRate(samplingRate).setSampleMin(limit)
 					.setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
@@ -577,13 +569,13 @@ public class QuickCheck implements Command {
 		//
 		ArrayList<RValue> results = new ArrayList<>();
 		//
-//		long size = domain.size();
-//		int k = context.getSampleSize(size);
-//		if (k != size) {
-//			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-//			// the sample.
-//			domain = Domains.FastApproximateSample(domain, k);
-//		}
+		BigInteger size = domain.bigSize();
+		int k = context.getSampleSize(size);
+		if (k != size.intValueExact()) {
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
+		}
 		//
 		for(RValue input : domain) {
 			try {
@@ -620,13 +612,13 @@ public class QuickCheck implements Command {
 		}
 		Domain.Big<RValue[]> domain = Domains.Product(generators);
 		//
-//		long size = domain.size();
-//		int k = context.getSampleSize(size);
-//		if (k != size) {
-//			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-//			// the sample.
-//			domain = Domains.FastApproximateSample(domain, k);
-//		}
+		BigInteger size = domain.bigSize();
+		int k = context.getSampleSize(size);
+		if (k != size.intValueExact()) {
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
+		}
 		//
 		CallStack frame = context.getFrame();
 		//
@@ -1110,12 +1102,11 @@ public class QuickCheck implements Command {
 		private double samplingRate;
 		private int sampleMin;
 		private int sampleMax;
-		private boolean logSampling;
 		private String[] ignores;
 		private long timeout;
 
 		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
-				double samplingRate, int sampleMin, int sampleMax, boolean logSampling, long timeout) {
+				double samplingRate, int sampleMin, int sampleMax, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1126,7 +1117,6 @@ public class QuickCheck implements Command {
 			this.samplingRate = samplingRate;
 			this.sampleMin = sampleMin;
 			this.sampleMax = sampleMax;
-			this.logSampling = logSampling;
 			this.timeout = timeout;
 		}
 
@@ -1141,7 +1131,6 @@ public class QuickCheck implements Command {
 			this.samplingRate = context.samplingRate;
 			this.sampleMin = context.sampleMin;
 			this.sampleMax = context.sampleMax;
-			this.logSampling = context.logSampling;
 			this.timeout = context.timeout;
 		}
 
@@ -1250,30 +1239,16 @@ public class QuickCheck implements Command {
 			return sampleMax;
 		}
 
-		public int getSampleSize(long size) {
-			long k = (long) (size * samplingRate);
-			if(logSampling) {
-				// Apply log sampling
-				k = (long) Math.log(size);
-			}
+		public int getSampleSize(BigInteger size) {
+			long k = (long) (size.longValueExact() * samplingRate);
 			// Cap samples to ensure fits integer
 			k = Math.min(Integer.MAX_VALUE, k);
 			// Ensure *at least* some number of samples
-			k = Math.max(Math.min(size, sampleMin), k);
+			k = Math.max(Math.min(size.longValue(), sampleMin), k);
 			// Ensure *at most* some number of samples
 			k = Math.min(sampleMax, k);
 			// Done
 			return (int) k;
-		}
-
-		public boolean getLogSampling() {
-			return logSampling;
-		}
-
-		public Context setLogSampling(boolean flag) {
-			Context context = new Context(this);
-			context.logSampling = flag;
-			return context;
 		}
 
 		public long getTimeout() {
