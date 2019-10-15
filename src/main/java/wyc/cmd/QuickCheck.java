@@ -35,6 +35,7 @@ import static wyil.lang.WyilFile.TYPE_variable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -106,8 +107,8 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], 1.0D, 1000, 10_000_000,
-			Long.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], BigDecimal.ONE, 1000,
+			10_000_000, Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -570,16 +571,9 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private Domain.Small<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain.Big<RValue> domain, ExtendedContext context, CallStack frame) {
-		//
 		ArrayList<RValue> results = new ArrayList<>();
-		//
-		BigInteger size = domain.bigSize();
-		int k = context.getSampleSize(size);
-		if (k != size.intValueExact()) {
-			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-			// the sample.
-			domain = Domains.FastApproximateSample(domain, k);
-		}
+		// Sample domain (if requested)
+		domain = applySamplingAsNecessary(domain,context);
 		//
 		for(RValue input : domain) {
 			try {
@@ -624,14 +618,8 @@ public class QuickCheck implements Command {
 			return results;
 		}
 		Domain.Big<RValue[]> domain = Domains.Product(generators);
-		//
-		BigInteger size = domain.bigSize();
-		int k = context.getSampleSize(size);
-		if (k != size.intValueExact()) {
-			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-			// the sample.
-			domain = Domains.FastApproximateSample(domain, k);
-		}
+		// Sample domain (if requested)
+		domain = applySamplingAsNecessary(domain,context);
 		//
 		CallStack frame = context.getFrame();
 		//
@@ -1019,6 +1007,18 @@ public class QuickCheck implements Command {
 		}
 	}
 
+	private static <T> Domain.Big<T> applySamplingAsNecessary(Domain.Big<T> domain, Context context) {
+		if (context.getSamplingRate() != BigDecimal.ONE) {
+			// Apply sampling
+			BigInteger size = domain.bigSize();
+			int k = context.getSampleSize(size);
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
+		}
+		return domain;
+	}
+
 	private static double calculateTotalInputs(Domain.Big<?>... domains) {
 		double max = 1.0D;
 		for (int i = 0; i != domains.length; ++i) {
@@ -1146,14 +1146,14 @@ public class QuickCheck implements Command {
 		private int depth;
 		private int width;
 		private int rotation;
-		private double samplingRate;
+		private BigDecimal samplingRate;
 		private int sampleMin;
 		private int sampleMax;
 		private String[] ignores;
 		private long timeout;
 
 		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
-				double samplingRate, int sampleMin, int sampleMax, long timeout) {
+				BigDecimal samplingRate, int sampleMin, int sampleMax, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1256,13 +1256,13 @@ public class QuickCheck implements Command {
 			return context;
 		}
 
-		public double getSamplingRate() {
+		public BigDecimal getSamplingRate() {
 			return samplingRate;
 		}
 
 		public Context setSamplingRate(double rate) {
 			Context context = new Context(this);
-			context.samplingRate = rate;
+			context.samplingRate = new BigDecimal(rate);
 			return context;
 		}
 
@@ -1287,15 +1287,13 @@ public class QuickCheck implements Command {
 		}
 
 		public int getSampleSize(BigInteger size) {
-			long k = (long) (size.longValueExact() * samplingRate);
-			// Cap samples to ensure fits integer
-			k = Math.min(Integer.MAX_VALUE, k);
+			BigInteger k = samplingRate.multiply(new BigDecimal(size)).toBigInteger();
 			// Ensure *at least* some number of samples
-			k = Math.max(Math.min(size.longValue(), sampleMin), k);
+			k = k.max(BigInteger.valueOf(Math.min(size.longValue(), sampleMin)));
 			// Ensure *at most* some number of samples
-			k = Math.min(sampleMax, k);
+			k = k.min(BigInteger.valueOf(sampleMax));
 			// Done
-			return (int) k;
+			return k.intValue();
 		}
 
 		public long getTimeout() {
