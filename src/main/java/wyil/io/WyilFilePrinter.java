@@ -450,6 +450,8 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
+		case EXPR_logiaclimplication:
+		case EXPR_logicaliff:
 			visitInfixLocations((Expr.BinaryOperator) expr, indent);
 			break;
 		case EXPR_logicaland:
@@ -803,6 +805,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			return "&&";
 		case EXPR_logicalor:
 			return "||";
+		case EXPR_logiaclimplication:
+			return "==>";
+		case EXPR_logicaliff:
+			return "<==>";
 		case EXPR_bitwiseor:
 			return "|";
 		case EXPR_bitwisexor:
