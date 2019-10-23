@@ -123,7 +123,12 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		visitModifiers(decl.getModifiers());
 		out.print(decl.getType());
 		out.print(" ");
-		out.println(decl.getName() + " = " + decl.getInitialiser());
+		out.print(decl.getName());
+		if(decl.hasInitialiser()) {
+			out.print(" = ");
+			visitExpression(decl.getInitialiser(), indent);
+		}
+		out.println();
 	}
 
 	@Override
@@ -212,11 +217,18 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitStatement(Stmt stmt, Integer indent) {
+		switch(stmt.getOpcode()) {
+		case EXPR_indirectinvoke:
+		case EXPR_invoke:
+			tabIndent(indent);
+		}
 		super.visitStatement(stmt, indent);
 		// Touch up a few
 		switch(stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
+		case EXPR_indirectinvoke:
+		case EXPR_invoke:
 			out.println();
 		}
 	}
@@ -494,6 +506,13 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	@Override
+	public void visitArrayRange(Expr.ArrayRange expr, Integer indent) {
+		visitExpression(expr.getFirstOperand(), indent);
+		out.print(" .. ");
+		visitExpression(expr.getSecondOperand(), indent);
+	}
+
+	@Override
 	public void visitCast(Expr.Cast expr, Integer indent) {
 		out.print("(" + expr.getType() + ") ");
 		visitExpression(expr.getOperand(), indent);
@@ -501,7 +520,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 
 	@Override
 	public void visitConstant(Expr.Constant expr, Integer indent) {
-		out.print(expr.getValue());
+		out.print(toString(expr.getValue()));
 	}
 
 	@Override
@@ -657,6 +676,12 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(" } ");
 	}
 
+
+	@Override
+	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Integer indent) {
+		out.print(expr.getLink().getName());
+	}
+
 	@Override
 	public void visitVariableAccess(Expr.VariableAccess expr, Integer indent) {
 		out.print(expr.getVariableDeclaration().getName());
@@ -706,6 +731,39 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			return true;
 		}
 		return false;
+	}
+
+	private static String toString(Value v) {
+		switch (v.getOpcode()) {
+
+		case ITEM_utf8:
+			return "\"" + v.toString() + "\"";
+		case ITEM_array: {
+			Value.Array arr = (Value.Array) v;
+			String r = "[";
+			for (int i = 0; i != arr.size(); ++i) {
+				if(i!=0) {
+					r = r + ", ";
+				}
+				r = r + toString(arr.get(i));
+			}
+			return r + "]";
+		}
+		case ITEM_dictionary: {
+			Value.Dictionary rec = (Value.Dictionary) v;
+			String r = "{";
+			for (int i = 0; i != rec.size(); ++i) {
+				if(i!=0) {
+					r = r + ", ";
+				}
+				Pair<Identifier,Value> p = rec.get(i);
+				r += p.getFirst() + ": " + toString(p.getSecond());
+			}
+			return r + "}";
+		}
+		default:
+			return v.toString();
+		}
 	}
 
 	private static String opcode(int k) {
