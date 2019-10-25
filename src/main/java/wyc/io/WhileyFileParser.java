@@ -253,7 +253,7 @@ public class WhileyFileParser {
 		EnclosingScope scope = new EnclosingScope();
 		match(Import);
 		Identifier fromName = parseOptionalFrom(scope);
-		Tuple<Identifier >filterPath = parseFilterPath(scope);
+		Tuple<Identifier> filterPath = parseFilterPath(scope);
 		int end = index;
 		matchEndLine();
 		Decl.Import imprt;
@@ -267,7 +267,7 @@ public class WhileyFileParser {
 
 	private Identifier parseOptionalFrom(EnclosingScope scope) {
 		int start = index;
-		Identifier from = parseIdentifier();
+		Identifier from = parseStarOrIdentifier(scope);
 		// Lookahead to see whether optional "from" component was specified or not.
 		Token lookahead = tryAndMatch(true, Identifier);
 		if (lookahead != null) {
@@ -297,8 +297,7 @@ public class WhileyFileParser {
 
 	private Identifier parseStarOrIdentifier(EnclosingScope scope) {
 		if (tryAndMatch(true, Star) != null) {
-			// TODO: implement something sensible here
-			return null;
+			return new Identifier("*");
 		} else {
 			return parseIdentifier();
 		}

@@ -156,12 +156,15 @@ public class NameResolution {
 					// Sanity check module exists
 					Name name = new Name(path.toArray(Identifier.class));
 					// Sanity check imported module
-					if(!symbolTable.contains(name)) {
+					if(!name.toString().contains("*") && !symbolTable.contains(name)) {
 						// Cannot identify name
 						syntaxError(path.get(path.size()-1), RESOLUTION_ERROR);
-					} else if(imp.hasFrom() && !symbolTable.contains(new QualifiedName(name,imp.getFrom()))) {
-						// Sanity check imported names (if applicable)
-						syntaxError(imp.getFrom(), RESOLUTION_ERROR);
+					} else if(imp.hasFrom()) {
+						Identifier from = imp.getFrom();
+						if(!from.get().equals("*") && !symbolTable.contains(new QualifiedName(name,from))) {
+							// 	Sanity check imported names (if applicable)
+							syntaxError(imp.getFrom(), RESOLUTION_ERROR);
+						}
 					}
 				}
 			}
