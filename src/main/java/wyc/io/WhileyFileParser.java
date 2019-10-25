@@ -289,7 +289,6 @@ public class WhileyFileParser {
 
 	private Tuple<Identifier> parseOptionalWiths(EnclosingScope scope) {
 		// Lookahead to see whether optional "with" component was specified or not.
-		System.out.println("GOT HERE");
 		Token lookahead = tryAndMatch(false, Identifier);
 		if (lookahead != null) {
 			// Optional from identifier was given

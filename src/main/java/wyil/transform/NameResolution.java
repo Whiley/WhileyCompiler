@@ -165,6 +165,15 @@ public class NameResolution {
 							// 	Sanity check imported names (if applicable)
 							syntaxError(imp.getFrom(), RESOLUTION_ERROR);
 						}
+					} else if(imp.hasWith()) {
+						Tuple<Identifier> withs = imp.getWith();
+						for (int i = 0; i != withs.size(); ++i) {
+							Identifier id = withs.get(i);
+							if (!id.get().equals("*") && !symbolTable.contains(new QualifiedName(name, id))) {
+								// Sanity check imported names (if applicable)
+								syntaxError(id, RESOLUTION_ERROR);
+							}
+						}
 					}
 				}
 			}
@@ -349,6 +358,14 @@ public class NameResolution {
 						Identifier from = imp.getFrom();
 						if (from.get().equals("*") || name.equals(from)) {
 							return new QualifiedName(imp.getPath(), name);
+						}
+					} else if (imp.hasWith()) {
+						Tuple<Identifier> withs = imp.getWith();
+						for (int j = 0; j != withs.size(); ++j) {
+							Identifier with = withs.get(j);
+							if (with.get().equals("*") || name.equals(with)) {
+								return new QualifiedName(imp.getPath(), name);
+							}
 						}
 					}
 				}
