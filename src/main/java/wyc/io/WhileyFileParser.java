@@ -280,7 +280,11 @@ public class WhileyFileParser {
 		Token lookahead = tryAndMatch(true, Identifier);
 		if (lookahead != null) {
 			// Optional from identifier was given
-			if (!lookahead.text.equals("from")) {
+			if(lookahead.text.equals("with")) {
+				// Backtrack
+				index = start;
+				return null;
+			} else if (!lookahead.text.equals("from")) {
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("from"));
 			}
 			return new Tuple<>(froms);
