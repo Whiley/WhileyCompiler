@@ -254,14 +254,18 @@ public class WhileyFileParser {
 		match(Import);
 		Identifier fromName = parseOptionalFrom(scope);
 		Tuple<Identifier> filterPath = parseFilterPath(scope);
-		int end = index;
-		matchEndLine();
 		Decl.Import imprt;
 		if(fromName != null) {
 			imprt = new Decl.Import(filterPath, fromName);
 		} else {
-			imprt = new Decl.Import(filterPath);
+			Tuple<Identifier> withs = parseOptionalWiths(scope);
+			if(withs != null) {
+				imprt = new Decl.Import(filterPath, withs);
+			} else {
+				imprt = new Decl.Import(filterPath);
+			}
 		}
+		matchEndLine();
 		return annotateSourceLocation(imprt, start);
 	}
 
@@ -279,6 +283,26 @@ public class WhileyFileParser {
 		} else {
 			// Optional from identifier was not given. Therefore, backtrack.
 			index = start;
+			return null;
+		}
+	}
+
+	private Tuple<Identifier> parseOptionalWiths(EnclosingScope scope) {
+		// Lookahead to see whether optional "with" component was specified or not.
+		System.out.println("GOT HERE");
+		Token lookahead = tryAndMatch(false, Identifier);
+		if (lookahead != null) {
+			// Optional from identifier was given
+			if (!lookahead.text.equals("with")) {
+				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("with"));
+			}
+			ArrayList<Identifier> withs = new ArrayList<>();
+			withs.add(parseIdentifier());
+			while (tryAndMatch(false, Comma) != null) {
+				withs.add(parseIdentifier());
+			}
+			return new Tuple<>(withs);
+		} else {
 			return null;
 		}
 	}

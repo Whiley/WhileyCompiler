@@ -43,6 +43,7 @@ public abstract class AbstractFunction<P,R> {
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			return visitUnit((Decl.Unit) decl, data);
+		case DECL_importwith:
 		case DECL_importfrom:
 		case DECL_import:
 			return visitImport((Decl.Import) decl, data);
