@@ -252,15 +252,15 @@ public class WhileyFileParser {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		match(Import);
-		Identifier fromName = parseOptionalFrom(scope);
+		Tuple<Identifier> names = parseOptionalFroms(scope);
 		Tuple<Identifier> filterPath = parseFilterPath(scope);
 		Decl.Import imprt;
-		if(fromName != null) {
-			imprt = new Decl.Import(filterPath, fromName);
+		if(names != null) {
+			imprt = new Decl.Import(filterPath, false, names);
 		} else {
-			Tuple<Identifier> withs = parseOptionalWiths(scope);
-			if(withs != null) {
-				imprt = new Decl.Import(filterPath, withs);
+			names = parseOptionalWiths(scope);
+			if(names != null) {
+				imprt = new Decl.Import(filterPath, true, names);
 			} else {
 				imprt = new Decl.Import(filterPath);
 			}
@@ -269,9 +269,13 @@ public class WhileyFileParser {
 		return annotateSourceLocation(imprt, start);
 	}
 
-	private Identifier parseOptionalFrom(EnclosingScope scope) {
+	private Tuple<Identifier> parseOptionalFroms(EnclosingScope scope) {
 		int start = index;
-		Identifier from = parseStarOrIdentifier(scope);
+		ArrayList<Identifier> froms = new ArrayList<>();
+		froms.add(parseStarOrIdentifier(scope));
+		while (tryAndMatch(false, Comma) != null) {
+			froms.add(parseIdentifier());
+		}
 		// Lookahead to see whether optional "from" component was specified or not.
 		Token lookahead = tryAndMatch(true, Identifier);
 		if (lookahead != null) {
@@ -279,7 +283,7 @@ public class WhileyFileParser {
 			if (!lookahead.text.equals("from")) {
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("from"));
 			}
-			return from;
+			return new Tuple<>(froms);
 		} else {
 			// Optional from identifier was not given. Therefore, backtrack.
 			index = start;
@@ -296,7 +300,7 @@ public class WhileyFileParser {
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("with"));
 			}
 			ArrayList<Identifier> withs = new ArrayList<>();
-			withs.add(parseIdentifier());
+			withs.add(parseStarOrIdentifier(scope));
 			while (tryAndMatch(false, Comma) != null) {
 				withs.add(parseIdentifier());
 			}
