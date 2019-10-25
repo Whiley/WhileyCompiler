@@ -105,7 +105,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	public void visitImport(Decl.Import decl, Integer indent) {
 		out.print("import ");
 		if(decl.hasFrom()) {
-			out.print(decl.getFrom());
+			out.print(WyilFile.toString(decl.getNames()));
 			out.print(" from ");
 		}
 		Tuple<Identifier> path= decl.getPath();
@@ -114,6 +114,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 				out.print("::");
 			}
 			out.print(path.get(i));
+		}
+		if(decl.hasWith()) {
+			out.print(" with ");
+			out.print(WyilFile.toString(decl.getNames()));
 		}
 		out.println();
 	}

@@ -150,6 +150,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_variableinitialiser = DECL_mask + 13;
 	public static final int DECL_link = DECL_mask + 14;
 	public static final int DECL_binding = DECL_mask + 15;
+	public static final int DECL_importwith = DECL_mask + 16;
 	// MODIFIERS
 	public static final int MOD_mask = DECL_mask + 32;
 	public static final int MOD_native = MOD_mask + 0;
@@ -599,8 +600,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(DECL_import, path);
 			}
 
-			public Import(Tuple<Identifier> path, Identifier from) {
-				super(DECL_importfrom, path, from);
+			public Import(Tuple<Identifier> path, boolean inclusive, Tuple<Identifier> names) {
+				super(inclusive ? DECL_importwith : DECL_importfrom, path, names);
 			}
 
 			/**
@@ -626,22 +627,37 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			/**
-			 * Get the from name associated with this import declaration. This is
-			 * <code>max</code> in <code>import max from std::math</code>.
+			 * Check whether from name is associated with this import declaration. This
+			 * would <code>max</code> in <code>import max from std::math</code>, but is not
+			 * present in <code>import std::math</code>.
 			 *
 			 * @return
 			 */
-			public Identifier getFrom() {
-				return (Identifier) super.get(1);
+			public boolean hasWith() {
+				return opcode == DECL_importwith;
+			}
+
+			/**
+			 * Get the with name(s) associated with this import declaration. This is
+			 * <code>max</code> in <code>import std::math with max</code>.
+			 *
+			 * @return
+			 */
+			public Tuple<Identifier> getNames() {
+				return (Tuple<Identifier>) super.get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Import clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
+				switch(opcode) {
+				case DECL_import:
 					return new Import((Tuple<Identifier>) operands[0]);
-				} else {
-					return new Import((Tuple<Identifier>) operands[0], (Identifier) operands[1]);
+				case DECL_importfrom:
+					return new Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
+				default:
+				case DECL_importwith:
+					return new Import((Tuple<Identifier>) operands[0], true, (Tuple<Identifier>) operands[1]);
 				}
 			}
 
@@ -649,7 +665,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				String r = "import ";
 				if (hasFrom()) {
-					r += getFrom();
+					r += WyilFile.toString(getNames());
 					r += " from ";
 				}
 				Tuple<Identifier> path = getPath();
@@ -664,6 +680,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						r += component.get();
 					}
 				}
+				if (hasWith()) {
+					r += " with ";
+					r += WyilFile.toString(getNames());
+				}
+
 				return r;
 			}
 		}
@@ -5371,7 +5392,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return r;
 	}
 
-	private static String toString(Tuple<? extends SyntacticItem> items) {
+	public static String toString(Tuple<? extends SyntacticItem> items) {
 		String r = "";
 		for (int i = 0; i != items.size(); ++i) {
 			if (i != 0) {
@@ -5815,7 +5836,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		schema[DECL_importfrom] = new Schema(Operands.TWO, Data.ZERO, "DECL_importfrom") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Import((Tuple<Identifier>) operands[0], (Identifier) operands[1]);
+				return new Decl.Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
+			}
+		};
+		schema[DECL_importwith] = new Schema(Operands.TWO, Data.ZERO, "DECL_importwith") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Decl.Import((Tuple<Identifier>) operands[0], true, (Tuple<Identifier>) operands[1]);
 			}
 		};
 		schema[DECL_staticvar] = new Schema(Operands.FOUR, Data.ZERO, "DECL_staticvar") {

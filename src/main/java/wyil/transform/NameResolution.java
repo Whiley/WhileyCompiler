@@ -159,11 +159,14 @@ public class NameResolution {
 					if(!name.toString().contains("*") && !symbolTable.contains(name)) {
 						// Cannot identify name
 						syntaxError(path.get(path.size()-1), RESOLUTION_ERROR);
-					} else if(imp.hasFrom()) {
-						Identifier from = imp.getFrom();
-						if(!from.get().equals("*") && !symbolTable.contains(new QualifiedName(name,from))) {
-							// 	Sanity check imported names (if applicable)
-							syntaxError(imp.getFrom(), RESOLUTION_ERROR);
+					} else if(imp.hasFrom() || imp.hasWith()) {
+						Tuple<Identifier> names = imp.getNames();
+						for (int i = 0; i != names.size(); ++i) {
+							Identifier id = names.get(i);
+							if (!id.get().equals("*") && !symbolTable.contains(new QualifiedName(name, id))) {
+								// Sanity check imported names (if applicable)
+								syntaxError(id, RESOLUTION_ERROR);
+							}
 						}
 					}
 				}
@@ -344,11 +347,13 @@ public class NameResolution {
 				// No, attempt to non-local resolve
 				for (int i = imports.size() - 1; i >= 0; --i) {
 					Decl.Import imp = imports.get(i);
-					if (imp.hasFrom()) {
-						// Resolving unqualified names requires "import from".
-						Identifier from = imp.getFrom();
-						if (from.get().equals("*") || name.equals(from)) {
-							return new QualifiedName(imp.getPath(), name);
+					if (imp.hasFrom() || imp.hasWith()) {
+						Tuple<Identifier> names = imp.getNames();
+						for (int j = 0; j != names.size(); ++j) {
+							Identifier with = names.get(j);
+							if (with.get().equals("*") || name.equals(with)) {
+								return new QualifiedName(imp.getPath(), name);
+							}
 						}
 					}
 				}

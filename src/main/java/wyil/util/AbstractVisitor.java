@@ -46,6 +46,7 @@ public abstract class AbstractVisitor {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl);
 			break;
+		case DECL_importwith:
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl);
