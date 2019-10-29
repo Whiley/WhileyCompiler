@@ -160,16 +160,12 @@ public class Activator implements Module.Activator {
 				// Yes, it does so reuse it.
 				return binroot.get(id, WyilFile.ContentType);
 			} else {
-				// No, it doesn't so create and initialise it
-				Path.Entry<WyilFile> target = binroot.create(id, WyilFile.ContentType);
-				//
-				WyilFile wf = new WyilFile(target);
-				// Initiale with empty file
-				target.write(wf);
-				// Create initially empty WyIL module.
+				// No, it doesn't so create and initialise it with an empty WyilFile
+				Path.Entry<WyilFile> e = binroot.create(id, WyilFile.ContentType);
+				WyilFile wf = new WyilFile(e);
 				wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
-				// Done
-				return target;
+				e.write(wf);
+				return e;
 			}
 		}
 	};

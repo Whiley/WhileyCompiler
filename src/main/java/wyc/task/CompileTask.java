@@ -19,6 +19,8 @@ import java.util.concurrent.Callable;
 
 import wybs.lang.Build;
 import wybs.util.AbstractBuildTask;
+import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
@@ -170,6 +172,11 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(WyilFile target, WhileyFile... sources) {
+		// FIXME: this is something of a hack to handle the fact that this is not an
+		// incremental compiler! Basically, we always start from scratch no matter what.
+		WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
+		target.setRootItem(new WyilFile.Decl.Module(module.getName(), new Tuple<>(), new Tuple<>(), new Tuple<>()));
+		//
 		boolean r = true;
 		// Parse source files into target
 		for (int i = 0; i != sources.length; ++i) {
