@@ -43,6 +43,10 @@ import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
+import wyil.lang.WyilFile.Type.Bool;
+import wyil.lang.WyilFile.Type.Byte;
+import wyil.lang.WyilFile.Type.Int;
+import wyil.lang.WyilFile.Type.Void;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -464,8 +468,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Decl.Unknown();
+				return new Unknown();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "DECL_unknown") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Unknown();
+				}
+			};
 		}
 
 		/**
@@ -546,6 +558,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2],
 						(Tuple<SyntacticItem.Marker>) operands[3]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "DECL_module") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
+							(Tuple<Decl.Unit>) operands[2], (Tuple<SyntacticItem.Marker>) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -575,6 +596,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "DECL_unit") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -687,6 +716,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.ONE, Data.ZERO, "DECL_import") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Import((Tuple<Identifier>) operands[0]);
+				}
+			};
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.TWO, Data.ZERO, "DECL_importfrom") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
+				}
+			};
+			public static final Schema DESCRIPTOR_0c = new Schema(Operands.TWO, Data.ZERO, "DECL_importwith") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Import((Tuple<Identifier>) operands[0], true, (Tuple<Identifier>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -893,6 +941,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "function " + getName() + " : " + getType();
 			}
 
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.EIGHT, Data.ZERO, "DECL_function") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
+							(Stmt.Block) operands[7]);
+				}
+			};
 		}
 
 		/**
@@ -982,6 +1040,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "method " + getName() + " : " + getType();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.EIGHT, Data.ZERO, "DECL_method") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
+							(Stmt.Block) operands[7]);
+				}
+			};
 		}
 
 		/**
@@ -1051,6 +1120,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.SIX, Data.ZERO, "DECL_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+				}
+			};
 		}
 
 		/**
@@ -1147,6 +1226,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						(Tuple<Decl.Variable>) operands[4], (Tuple<Identifier>) operands[5],
 						(Tuple<Identifier>) operands[6], (Expr) operands[7], (WyilFile.Type.Callable) operands[8]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.NINE, Data.ZERO, "DECL_lambda") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Identifier>) operands[5],
+							(Tuple<Identifier>) operands[6], (Expr) operands[7], (WyilFile.Type.Callable) operands[8]);
+				}
+			};
 		}
 
 		/**
@@ -1211,9 +1301,30 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public Decl.Type clone(SyntacticItem[] operands) {
-				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+				return new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.FIVE, Data.ZERO, "DECL_type") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.FIVE, Data.ZERO, "DECL_rectype") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Decl.Type r = new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3],
+							(Tuple<Expr>) operands[4]);
+					r.setRecursive();
+					return r;
+				}
+			};
 		}
 
 		// ============================================================
@@ -1268,10 +1379,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public Decl.Variable clone(SyntacticItem[] operands) {
 				if (operands.length == 3) {
-					return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WyilFile.Type) operands[2]);
 				} else {
-					return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WyilFile.Type) operands[2], (Expr) operands[3]);
 				}
 			}
@@ -1285,6 +1396,24 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.THREE, Data.ZERO, "DECL_var") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(WyilFile.Type) operands[2]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.FOUR, Data.ZERO, "DECL_varinit") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(WyilFile.Type) operands[2], (Expr) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -1324,6 +1453,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(WyilFile.Type) operands[2], (Expr) operands[3]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "DECL_staticvar") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(WyilFile.Type) operands[2], (Expr) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -1388,6 +1526,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Link<T>(DECL_link, operands);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.ZERO, "DECL_link") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Link(DECL_link, operands);
+				}
+			};
 		}
 
 		/**
@@ -1454,6 +1599,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				String arguments = getArguments().toBareString();
 				return name + "<" + arguments + ">";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "DECL_binding") {
+				@SuppressWarnings({ "unchecked", "rawtypes" })
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Binding((Decl.Link) operands[0], (Tuple<SyntacticItem>) operands[1]);
+				}
+			};
 		}
 	}
 	// ============================================================
@@ -1482,6 +1635,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getName().get();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "TEMPLATE_type") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Type((Identifier) operands[0]);
+				}
+			};
 		}
 
 		public static class Lifetime extends Variable {
@@ -1498,6 +1659,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "&" + getName().get();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "TEMPLATE_lifetime") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Lifetime((Identifier) operands[0]);
+				}
+			};
 		}
 	}
 	// ============================================================
@@ -1568,6 +1737,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Block clone(SyntacticItem[] operands) {
 				return new Block(ArrayUtils.toArray(Stmt.class, operands));
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Block(ArrayUtils.toArray(Stmt.class, operands));
+				}
+			};
 		}
 
 		/**
@@ -1603,6 +1779,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public NamedBlock clone(SyntacticItem[] operands) {
 				return new NamedBlock((Identifier) operands[0], (Block) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "STMT_namedblock") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new NamedBlock((Identifier) operands[0], (Stmt.Block) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -1640,6 +1823,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Assert((Expr) operands[0]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "STMT_assert") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Assert((Expr) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -1687,6 +1877,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "STMT_assign") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -1724,6 +1922,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Assume((Expr) operands[0]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "STMT_assume") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Assume((Expr) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -1747,6 +1952,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Debug((Expr) operands[0]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "STMT_debug") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Debug((Expr) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -1765,6 +1977,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Skip();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "STMT_skip") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Skip();
+				}
+			};
 		}
 
 		/**
@@ -1783,6 +2002,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Break();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "STMT_break") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Break();
+				}
+			};
 		}
 
 		/**
@@ -1802,6 +2028,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Continue();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "STMT_continue") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Continue();
+				}
+			};
 		}
 
 		/**
@@ -1869,6 +2102,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
 						(Stmt.Block) operands[3]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "STMT_dowhile") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1],
+							(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -1884,6 +2126,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Fail();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "STMT_fail") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Fail();
+				}
+			};
 		}
 
 		/**
@@ -1940,6 +2189,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1], (Stmt.Block) operands[2]);
 				}
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.TWO, Data.ZERO, "STMT_if") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.THREE, Data.ZERO, "STMT_ifelse") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1], (Stmt.Block) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -1977,6 +2240,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Return((Tuple<Expr>) operands[0]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.ZERO, "STMT_return") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Return((Tuple<Expr>) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -2018,6 +2289,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Switch((Expr) operands[0], (Tuple<Case>) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "STMT_switch") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Switch((Expr) operands[0], (Tuple<Stmt.Case>) operands[1]);
+				}
+			};
 		}
 
 		public static class Case extends AbstractSyntacticItem {
@@ -2044,6 +2323,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "STMT_caseblock") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2109,6 +2396,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new While((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
 						(Stmt.Block) operands[3]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "STMT_while") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new While((Expr) operands[0], (Tuple<Expr>) operands[1],
+							(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
+				}
+			};
 		}
 	}
 
@@ -2278,6 +2574,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "(" + getType() + ") " + getOperand();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_cast") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Cast((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2305,6 +2608,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getValue().toString();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_constant") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Constant((Type) operands[0], (Value) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2334,6 +2644,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getLink().toString();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvariable") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new StaticVariableAccess((Type) operands[0],
+							(Decl.Link<Decl.StaticVariable>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2382,6 +2700,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getOperand() + " is " + getTestType();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_is") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Is((Expr) operands[0], (Type) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2456,6 +2781,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getBinding().toString() + getOperands();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_invoke") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Invoke((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
+							(Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2526,6 +2860,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				r += getArguments();
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IndirectInvoke((Tuple<Type>) operands[0], (Expr) operands[1],
+							(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -2608,6 +2951,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				r += getOperand();
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicaluniversal") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2642,6 +2993,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				r += getOperand();
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicalexistential") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2682,6 +3041,22 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getVariableDeclaration().getName().toString();
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablecopy") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablemove") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Expr.VariableAccess v = new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
+					v.setMove();
+					return v;
+				}
+			};
 		}
 
 		// =========================================================================
@@ -2729,6 +3104,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " && ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicaland") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LogicalAnd((Tuple<Expr>) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -2773,6 +3155,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " || ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicalor") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LogicalOr((Tuple<Expr>) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -2821,6 +3210,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " ==> ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicalimplication") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LogicalImplication((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2870,6 +3266,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " <==> ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicaliff") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LogicalIff((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -2908,6 +3311,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Expr clone(SyntacticItem[] operands) {
 				return new LogicalNot((Expr) operands[0]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicalnot") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LogicalNot((Expr) operands[0]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -2960,6 +3370,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " == ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_equal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Equal((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3008,6 +3425,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " != ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_notequal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new NotEqual((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3057,6 +3481,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " < ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_integerlessthan") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerLessThan((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3106,6 +3537,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " <= ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_integerlessequal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerLessThanOrEqual((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3155,6 +3593,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " > ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_integergreaterthan") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerGreaterThan((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3204,6 +3649,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " >= ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_integergreaterequal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerGreaterThanOrEqual((Expr) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -3242,6 +3694,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " + ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_integeraddition") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerAddition((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3276,6 +3735,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " - ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_integersubtraction") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerSubtraction((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3310,6 +3776,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " * ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_integermultiplication") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerMultiplication((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3344,6 +3817,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " / ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_integerdivision") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerDivision((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3378,6 +3858,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " % ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_integerremainder") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerRemainder((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3406,6 +3893,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "-" + getOperand();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_integernegation") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new IntegerNegation((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -3452,6 +3946,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " << ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshl") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3494,6 +3995,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " >> ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshr") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3522,6 +4030,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " & ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseand") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3550,6 +4065,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " | ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseor") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3578,6 +4100,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return " ^ ";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisexor") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3605,6 +4134,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Expr clone(SyntacticItem[] operands) {
 				return new BitwiseComplement((Type) operands[0], (Expr) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisenot") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new BitwiseComplement((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -3641,6 +4177,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "*" + getOperand();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_dereference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Dereference((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3678,6 +4221,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getOperand() + "->" + getField();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_fielddereference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3727,6 +4277,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				return r + getOperand();
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.THREE, Data.ZERO, "EXPR_new") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticnew") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new New((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Bindable {
@@ -3771,6 +4335,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 						(Tuple<Type>) operands[1]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_lambdaaccess") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
+							(Tuple<Type>) operands[1]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -3827,6 +4400,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return getFirstOperand() + "[" + getSecondOperand() + "]";
 			}
 
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayaccess") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayborrow") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Expr.ArrayAccess r = new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+					r.setMove();
+					return r;
+				}
+			};
 		}
 
 		/**
@@ -3881,6 +4469,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getFirstOperand() + "[" + getSecondOperand() + ":=" + getThirdOperand() + "]";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "EXPR_arrayupdate") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2],
+							(Expr) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -3911,6 +4507,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return Arrays.toString(toArray(SyntacticItem.class));
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrayinitialiser") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -3950,6 +4553,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public ArrayGenerator clone(SyntacticItem[] operands) {
 				return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_arraygenerator") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -3988,6 +4598,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public ArrayRange clone(SyntacticItem[] operands) {
 				return new ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayrange") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -4017,6 +4634,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return "|" + getOperand() + "|";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "EXPR_arraylength") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ArrayLength((Type) operands[0], (Expr) operands[1]);
+				}
+			};
 		}
 
 		// =========================================================================
@@ -4070,6 +4694,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getOperand() + "." + getField();
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordaccess") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordborrow") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Expr.RecordAccess r = new RecordAccess((Type) operands[0], (Expr) operands[1],
+							(Identifier) operands[2]);
+					r.setMove();
+					return r;
+				}
+			};
 		}
 
 		/**
@@ -4119,6 +4760,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
 						(Tuple<Expr>) operands[2]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordinitialiser") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
+							(Tuple<Expr>) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -4173,6 +4823,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getFirstOperand() + "{" + getField() + ":=" + getSecondOperand() + "}";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "EXPR_recordupdate") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
+							(Expr) operands[3]);
+				}
+			};
 		}
 	}
 
@@ -4345,6 +5003,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return "void";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_void") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Void();
+				}
+			};
 		}
 
 		/**
@@ -4384,6 +5049,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return "null";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Null();
+				}
+			};
 		}
 
 		/**
@@ -4416,6 +5088,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return "bool";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_bool") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Bool();
+				}
+			};
 		}
 
 		/**
@@ -4452,6 +5131,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return "byte";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Byte();
+				}
+			};
 		}
 
 		/**
@@ -4486,6 +5172,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return "int";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_int") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Int();
+				}
+			};
 		}
 
 		/**
@@ -4517,13 +5210,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (before == after) {
 					return this;
 				} else {
-					return new Type.Array(after);
+					return new Array(after);
 				}
 			}
 
 			@Override
 			public Type.Array clone(SyntacticItem[] operands) {
-				return new Type.Array((Type) operands[0]);
+				return new Array((Type) operands[0]);
 			}
 
 			@Override
@@ -4535,6 +5228,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return canonicalBraceAsNecessary(getElement()) + "[]";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Array((Type) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -4588,12 +5288,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Type.Reference(elementAfter, isUnknown());
+					return new Reference(elementAfter, isUnknown());
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Type.Reference(elementAfter, isUnknown(), (Identifier) lifetime);
+						return new Reference(elementAfter, isUnknown(), (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -4602,9 +5302,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
 				if (operands.length == 2) {
-					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
+					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
 				} else {
-					return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
 				}
 			}
 
@@ -4626,6 +5326,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return "&" + canonicalBraceAsNecessary(getElement());
 				}
 			}
+
+			public static final Schema DESCRIPTOR_0a = new Schema(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+				}
+			};
+
+			public static final Schema DESCRIPTOR_0b = new Schema(Operands.THREE, Data.ZERO, "TYPE_reference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+				}
+			};
 		}
 
 		/**
@@ -4679,13 +5393,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (before == after) {
 					return this;
 				} else {
-					return new Type.Record(isOpen(), after);
+					return new Record(isOpen(), after);
 				}
 			}
 
 			@Override
 			public Type.Record clone(SyntacticItem[] operands) {
-				return new Type.Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
+				return new Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
 			}
 
 			/**
@@ -4705,13 +5419,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					if (before != after) {
 						// Now committed to a change
 						Type.Field[] nFields = fields.toArray(Type.Field.class);
-						nFields[i] = new Type.Field(field.getName(), after);
+						nFields[i] = new Field(field.getName(), after);
 						for (int j = i + 1; j < fields.size(); ++j) {
 							field = fields.get(j);
 							before = field.getType();
 							after = before.substitute(binding);
 							if (before != after) {
-								nFields[j] = new Type.Field(field.getName(), after);
+								nFields[j] = new Field(field.getName(), after);
 							}
 						}
 						return new Tuple<>(nFields);
@@ -4768,6 +5482,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				//
 				return "{" + r + "}";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "TYPE_record") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
+				}
+			};
 		}
 
 		public static class Field extends AbstractSyntacticItem {
@@ -4786,7 +5508,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Type.Field((Identifier) operands[0], (Type) operands[1]);
+				return new Field((Identifier) operands[0], (Type) operands[1]);
 			}
 
 			@Override
@@ -4802,6 +5524,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return getType().toString() + " " + getName();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "TYPE_field") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Field((Identifier) operands[0], (Type) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -4872,7 +5602,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (o_parameters == n_parameters) {
 					return this;
 				} else {
-					return new Type.Nominal(getLink(), n_parameters);
+					return new Nominal(getLink(), n_parameters);
 				}
 			}
 
@@ -4896,6 +5626,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				return getLink().getTarget().getQualifiedName().toString();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "TYPE_nominal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Nominal((Decl.Link<Decl.Type>) operands[0], (Tuple<Type>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -4939,13 +5676,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (before == after) {
 					return this;
 				} else {
-					return new Type.Union(after);
+					return new Union(after);
 				}
 			}
 
 			@Override
 			public Type.Union clone(SyntacticItem[] operands) {
-				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
+				return new Union(ArrayUtils.toArray(Type.class, operands));
 			}
 
 			@Override
@@ -4984,6 +5721,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				return r;
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.ZERO, "TYPE_union") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Union(ArrayUtils.toArray(Type.class, operands));
+				}
+			};
 		}
 
 		/**
@@ -5021,7 +5765,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
 					return this;
 				} else {
-					return new Type.Function(parametersAfter, returnsAfter);
+					return new Function(parametersAfter, returnsAfter);
 				}
 			}
 
@@ -5041,6 +5785,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "function(" + WyilFile.toCanonicalString(getParameters()) + ")->("
 						+ WyilFile.toCanonicalString(getReturns()) + ")";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "TYPE_function") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Function((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
+				}
+			};
 		}
 
 		/**
@@ -5096,7 +5848,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
 					return this;
 				} else {
-					return new Type.Method(parametersAfter, returnsAfter, getCapturedLifetimes(),
+					return new Method(parametersAfter, returnsAfter, getCapturedLifetimes(),
 							getLifetimeParameters());
 				}
 			}
@@ -5136,6 +5888,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return new Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1], (Tuple<Identifier>) operands[2],
 						(Tuple<Identifier>) operands[3]);
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.FOUR, Data.ZERO, "TYPE_method") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1],
+							(Tuple<Identifier>) operands[2], (Tuple<Identifier>) operands[3]);
+				}
+			};
 		}
 
 		/**
@@ -5148,7 +5909,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 */
 		public static class Property extends AbstractType implements Type.Callable {
 			public Property(Tuple<Type> parameters) {
-				super(TYPE_property, parameters, new Tuple<>(new Type.Bool()));
+				super(TYPE_property, parameters, new Tuple<>(new Bool()));
 			}
 
 			public Property(Tuple<Type> parameters, Tuple<Type> returns) {
@@ -5176,7 +5937,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (parametersBefore == parametersAfter && returnsBefore == returnsAfter) {
 					return this;
 				} else {
-					return new Type.Property(parametersAfter, returnsAfter);
+					return new Property(parametersAfter, returnsAfter);
 				}
 			}
 
@@ -5196,6 +5957,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "property(" + WyilFile.toCanonicalString(getParameters()) + ")->("
 						+ WyilFile.toCanonicalString(getReturns()) + ")";
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "TYPE_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Property((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
+				}
+			};
 		}
 
 		public static class Unknown extends AbstractType implements Callable {
@@ -5232,6 +6001,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				throw new UnsupportedOperationException();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "TYPE_unknown") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Unknown();
+				}
+			};
 		}
 
 		public static class Variable extends AbstractType implements Atom {
@@ -5267,6 +6043,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toString() {
 				return getOperand().toString();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "TYPE_variable") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Variable((Identifier) operands[0]);
+				}
+			};
 		}
 
 		/**
@@ -5315,7 +6098,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public String toCanonicalString() {
 				throw new UnsupportedOperationException();
 			}
-}
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "TYPE_recursive") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Recursive((Ref<Type>) operands[0]);
+				}
+			};
+		}
 	}
 
 	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
@@ -5454,6 +6243,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Public();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "MOD_public") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Public();
+				}
+			};
 		}
 
 		public static final class Private extends AbstractSyntacticItem implements Modifier {
@@ -5470,6 +6266,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Private();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "MOD_private") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Private();
+				}
+			};
 		}
 
 		public static final class Native extends AbstractSyntacticItem implements Modifier {
@@ -5486,6 +6289,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Native();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "MOD_native") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Native();
+				}
+			};
 		}
 
 		public static final class Export extends AbstractSyntacticItem implements Modifier {
@@ -5502,6 +6312,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Export();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "MOD_export") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Export();
+				}
+			};
 		}
 
 		public static final class Final extends AbstractSyntacticItem implements Modifier {
@@ -5518,6 +6335,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Final();
 			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ZERO, Data.ZERO, "MOD_final") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Final();
+				}
+			};
 		}
 	}
 
@@ -5631,6 +6455,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			String nameStr = unit.getName().toString().replace("::", "/");
 			return Trie.fromString(nameStr);
 		}
+
+		public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.TWO, "ATTR_error") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				int errcode = new BigInteger(data).intValue();
+				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+			}
+		};
 	}
 
 	public static class StackFrame extends AbstractSyntacticItem {
@@ -5655,6 +6488,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public String toString() {
 			return getContext().getQualifiedName().toString() + getArguments();
 		}
+
+		public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
+			}
+		};
 	}
 
 	public static class CounterExample extends AbstractSyntacticItem {
@@ -5675,6 +6516,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public String toString() {
 			return getMapping().toString();
 		}
+
+		public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new CounterExample((Value.Dictionary) operands[0]);
+			}
+		};
 	}
 
 	// Parsing
@@ -5805,753 +6654,127 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		SyntacticItem.Schema[] schema = AbstractCompilationUnit.getSchema();
 		schema = Arrays.copyOf(schema, 256);
 		// ==========================================================================
-		schema[DECL_unknown] = new Schema(Operands.ZERO, Data.ZERO, "DECL_unknown") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Unknown();
-			}
-		};
-		schema[DECL_module] = new Schema(Operands.FOUR, Data.ZERO, "DECL_module") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
-						(Tuple<Decl.Unit>) operands[2], (Tuple<SyntacticItem.Marker>) operands[3]);
-			}
-		};
-		schema[DECL_unit] = new Schema(Operands.TWO, Data.ZERO, "DECL_unit") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
-			}
-		};
-		schema[DECL_import] = new Schema(Operands.ONE, Data.ZERO, "DECL_import") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Import((Tuple<Identifier>) operands[0]);
-			}
-		};
-		schema[DECL_importfrom] = new Schema(Operands.TWO, Data.ZERO, "DECL_importfrom") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
-			}
-		};
-		schema[DECL_importwith] = new Schema(Operands.TWO, Data.ZERO, "DECL_importwith") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Import((Tuple<Identifier>) operands[0], true, (Tuple<Identifier>) operands[1]);
-			}
-		};
-		schema[DECL_staticvar] = new Schema(Operands.FOUR, Data.ZERO, "DECL_staticvar") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Type) operands[2], (Expr) operands[3]);
-			}
-		};
-		schema[DECL_type] = new Schema(Operands.FIVE, Data.ZERO, "DECL_type") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
-			}
-		};
-		schema[DECL_rectype] = new Schema(Operands.FIVE, Data.ZERO, "DECL_rectype") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				Decl.Type r = new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
-				r.setRecursive();
-				return r;
-			}
-		};
-		schema[DECL_function] = new Schema(Operands.EIGHT, Data.ZERO, "DECL_function") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
-						(Stmt.Block) operands[7]);
-			}
-		};
-		schema[DECL_method] = new Schema(Operands.EIGHT, Data.ZERO, "DECL_method") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
-						(Stmt.Block) operands[7]);
-			}
-		};
-		schema[DECL_property] = new Schema(Operands.SIX, Data.ZERO, "DECL_property") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
-			}
-		};
-		schema[DECL_lambda] = new Schema(Operands.NINE, Data.ZERO, "DECL_lambda") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Tuple<Identifier>) operands[5],
-						(Tuple<Identifier>) operands[6], (Expr) operands[7], (Type.Callable) operands[8]);
-			}
-		};
-		schema[DECL_variable] = new Schema(Operands.THREE, Data.ZERO, "DECL_var") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2]);
-			}
-		};
-		schema[DECL_variableinitialiser] = new Schema(Operands.FOUR, Data.ZERO, "DECL_varinit") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2],
-						(Expr) operands[3]);
-			}
-		};
-		schema[DECL_link] = new Schema(Operands.MANY,Data.ZERO, "ITEM_link") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Link(DECL_link, operands);
-			}
-		};
-		schema[DECL_binding] = new Schema(Operands.TWO, Data.ZERO, "DECL_binding") {
-			@SuppressWarnings({ "unchecked", "rawtypes" })
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Binding((Decl.Link) operands[0], (Tuple<SyntacticItem>) operands[1]);
-			}
-		};
-		schema[TEMPLATE_type] = new Schema(Operands.ONE, Data.ZERO, "TEMPLATE_type") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Template.Type((Identifier) operands[0]);
-			}
-		};
-		schema[TEMPLATE_lifetime] = new Schema(Operands.ONE, Data.ZERO, "TEMPLATE_lifetime") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Template.Lifetime((Identifier) operands[0]);
-			}
-		};
-		schema[MOD_native] = new Schema(Operands.ZERO, Data.ZERO, "MOD_native") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Modifier.Native();
-			}
-		};
-		schema[MOD_export] = new Schema(Operands.ZERO, Data.ZERO, "MOD_export") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Modifier.Export();
-			}
-		};
-		schema[MOD_final] = new Schema(Operands.ZERO, Data.ZERO, "MOD_final") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Modifier.Final();
-			}
-		};
-		schema[MOD_private] = new Schema(Operands.ZERO, Data.ZERO, "MOD_private") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Modifier.Private();
-			}
-		};
-		schema[MOD_public] = new Schema(Operands.ZERO, Data.ZERO, "MOD_public") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Modifier.Public();
-			}
-		};
-		schema[ATTR_error] = new Schema(Operands.MANY, Data.TWO, "ATTR_error") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				int errcode = new BigInteger(data).intValue();
-				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
-			}
-		};
-		schema[ATTR_stackframe] = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
-			}
-		};
-		schema[ATTR_counterexample] = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new CounterExample((Value.Dictionary) operands[0]);
-			}
-		};
+		schema[DECL_unknown] = Decl.Unknown.DESCRIPTOR_0;
+		schema[DECL_module] = Decl.Module.DESCRIPTOR_0;
+		schema[DECL_unit] = Decl.Unit.DESCRIPTOR_0;
+		schema[DECL_import] = Decl.Import.DESCRIPTOR_0a;
+		schema[DECL_importfrom] = Decl.Import.DESCRIPTOR_0b;
+		schema[DECL_importwith] = Decl.Import.DESCRIPTOR_0c;
+		schema[DECL_staticvar] = Decl.StaticVariable.DESCRIPTOR_0;
+		schema[DECL_type] = Decl.Type.DESCRIPTOR_0a;
+		schema[DECL_rectype] = Decl.Type.DESCRIPTOR_0b;
+		schema[DECL_function] = Decl.Function.DESCRIPTOR_0;
+		schema[DECL_method] = Decl.Method.DESCRIPTOR_0;
+		schema[DECL_property] = Decl.Property.DESCRIPTOR_0;
+		schema[DECL_lambda] = Decl.Lambda.DESCRIPTOR_0;
+		schema[DECL_variable] = Decl.Variable.DESCRIPTOR_0a;
+		schema[DECL_variableinitialiser] = Decl.Variable.DESCRIPTOR_0b;
+		schema[DECL_link] = Decl.Link.DESCRIPTOR_0;
+		schema[DECL_binding] = Decl.Binding.DESCRIPTOR_0;
+		schema[TEMPLATE_type] = Template.Type.DESCRIPTOR_0;
+		schema[TEMPLATE_lifetime] = Template.Lifetime.DESCRIPTOR_0;
+		schema[MOD_native] = Modifier.Native.DESCRIPTOR_0;
+		schema[MOD_export] = Modifier.Export.DESCRIPTOR_0;
+		schema[MOD_final] = Modifier.Final.DESCRIPTOR_0;
+		schema[MOD_private] = Modifier.Private.DESCRIPTOR_0;
+		schema[MOD_public] = Modifier.Public.DESCRIPTOR_0;
+		schema[ATTR_error] = SyntaxError.DESCRIPTOR_0;
+		schema[ATTR_stackframe] = StackFrame.DESCRIPTOR_0;
+		schema[ATTR_counterexample] = CounterExample.DESCRIPTOR_0;
 		// TYPES: 00100000 (32) -- 00111111 (63)
-		schema[TYPE_void] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_void") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Void();
-			}
-		};
-		schema[TYPE_null] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_null") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Null();
-			}
-		};
-		schema[TYPE_bool] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_bool") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Bool();
-			}
-		};
-		schema[TYPE_int] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_int") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Int();
-			}
-		};
-		schema[TYPE_nominal] = new Schema(Operands.TWO, Data.ZERO, "TYPE_nominal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Nominal((Decl.Link<Decl.Type>) operands[0], (Tuple<Type>) operands[1]);
-			}
-		};
-		schema[TYPE_staticreference] = new Schema(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1]);
-			}
-		};
-		schema[TYPE_reference] = new Schema(Operands.THREE, Data.ZERO, "TYPE_reference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
-			}
-		};
-		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Array((Type) operands[0]);
-			}
-		};
-		schema[TYPE_record] = new Schema(Operands.TWO, Data.ZERO, "TYPE_record") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Record((Value.Bool) operands[0], (Tuple<Type.Field>) operands[1]);
-			}
-		};
-		schema[TYPE_field] = new Schema(Operands.TWO, Data.ZERO, "TYPE_field") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Field((Identifier) operands[0], (Type) operands[1]);
-			}
-		};
-		schema[TYPE_function] = new Schema(Operands.TWO, Data.ZERO, "TYPE_function") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Function((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
-			}
-		};
-		schema[TYPE_method] = new Schema(Operands.FOUR, Data.ZERO, "TYPE_method") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1],
-						(Tuple<Identifier>) operands[2], (Tuple<Identifier>) operands[3]);
-			}
-		};
-		schema[TYPE_property] = new Schema(Operands.TWO, Data.ZERO, "TYPE_property") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Property((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
-			}
-		};
-		schema[TYPE_union] = new Schema(Operands.MANY, Data.ZERO, "TYPE_union") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
-			}
-		};
-		schema[TYPE_byte] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_byte") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Byte();
-			}
-		};
-		schema[TYPE_unknown] = new Schema(Operands.ZERO, Data.ZERO, "TYPE_unresolved") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Unknown();
-			}
-		};
-		schema[TYPE_recursive] = new Schema(Operands.ONE, Data.ZERO, "TYPE_recursive") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Recursive((Ref<Type>) operands[0]);
-			}
-		};
-		schema[TYPE_variable] = new Schema(Operands.ONE, Data.ZERO, "TYPE_variable") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Variable((Identifier) operands[0]);
-			}
-		};
-
+		schema[TYPE_void] = Type.Void.DESCRIPTOR_0;
+		schema[TYPE_null] = Type.Null.DESCRIPTOR_0;
+		schema[TYPE_bool] = Type.Bool.DESCRIPTOR_0;
+		schema[TYPE_int] = Type.Int.DESCRIPTOR_0;
+		schema[TYPE_nominal] = Type.Nominal.DESCRIPTOR_0;
+		schema[TYPE_staticreference] = Type.Reference.DESCRIPTOR_0a;
+		schema[TYPE_reference] = Type.Reference.DESCRIPTOR_0b;
+		schema[TYPE_array] = Type.Array.DESCRIPTOR_0;
+		schema[TYPE_record] = Type.Record.DESCRIPTOR_0;
+		schema[TYPE_field] = Type.Field.DESCRIPTOR_0;
+		schema[TYPE_function] = Type.Function.DESCRIPTOR_0;
+		schema[TYPE_method] = Type.Method.DESCRIPTOR_0;
+		schema[TYPE_property] = Type.Property.DESCRIPTOR_0;
+		schema[TYPE_union] = Type.Union.DESCRIPTOR_0;
+		schema[TYPE_byte] = Type.Byte.DESCRIPTOR_0;
+		schema[TYPE_unknown] = Type.Unknown.DESCRIPTOR_0;
+		schema[TYPE_recursive] = Type.Recursive.DESCRIPTOR_0;
+		schema[TYPE_variable] = Type.Variable.DESCRIPTOR_0;
 		// STATEMENTS: 01000000 (64) -- 001011111 (95)
-		schema[STMT_block] = new Schema(Operands.MANY, Data.ZERO, "STMT_block") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Block(ArrayUtils.toArray(Stmt.class, operands));
-			}
-		};
-		schema[STMT_namedblock] = new Schema(Operands.TWO, Data.ZERO, "STMT_namedblock") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.NamedBlock((Identifier) operands[0], (Stmt.Block) operands[1]);
-			}
-		};
-		schema[STMT_caseblock] = new Schema(Operands.TWO, Data.ZERO, "STMT_caseblock") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
-			}
-		};
-		schema[STMT_assert] = new Schema(Operands.ONE, Data.ZERO, "STMT_assert") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Assert((Expr) operands[0]);
-			}
-		};
-		schema[STMT_assign] = new Schema(Operands.TWO, Data.ZERO, "STMT_assign") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[STMT_assume] = new Schema(Operands.ONE, Data.ZERO, "STMT_assume") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Assume((Expr) operands[0]);
-			}
-		};
-		schema[STMT_debug] = new Schema(Operands.ONE, Data.ZERO, "STMT_debug") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Debug((Expr) operands[0]);
-			}
-		};
-		schema[STMT_skip] = new Schema(Operands.ZERO, Data.ZERO, "STMT_skip") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Skip();
-			}
-		};
-		schema[STMT_break] = new Schema(Operands.ZERO, Data.ZERO, "STMT_break") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Break();
-			}
-		};
-		schema[STMT_continue] = new Schema(Operands.ZERO, Data.ZERO, "STMT_continue") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Continue();
-			}
-		};
-		schema[STMT_dowhile] = new Schema(Operands.FOUR, Data.ZERO, "STMT_dowhile") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1],
-						(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
-			}
-		};
-		schema[STMT_fail] = new Schema(Operands.ZERO, Data.ZERO, "STMT_fail") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Fail();
-			}
-		};
-		schema[STMT_if] = new Schema(Operands.TWO, Data.ZERO, "STMT_if") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.IfElse((Expr) operands[0], (Stmt.Block) operands[1]);
-			}
-		};
-		schema[STMT_ifelse] = new Schema(Operands.THREE, Data.ZERO, "STMT_ifelse") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.IfElse((Expr) operands[0], (Stmt.Block) operands[1], (Stmt.Block) operands[2]);
-			}
-		};
-		schema[STMT_return] = new Schema(Operands.MANY, Data.ZERO, "STMT_return") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Return((Tuple<Expr>) operands[0]);
-			}
-		};
-		schema[STMT_switch] = new Schema(Operands.TWO, Data.ZERO, "STMT_switch") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Switch((Expr) operands[0], (Tuple<Stmt.Case>) operands[1]);
-			}
-		};
-		schema[STMT_while] = new Schema(Operands.FOUR, Data.ZERO, "STMT_while") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.While((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
-						(Stmt.Block) operands[3]);
-			}
-		};
+		schema[STMT_block] = Stmt.Block.DESCRIPTOR_0;
+		schema[STMT_namedblock] = Stmt.NamedBlock.DESCRIPTOR_0;
+		schema[STMT_caseblock] = Stmt.Case.DESCRIPTOR_0;
+		schema[STMT_assert] = Stmt.Assert.DESCRIPTOR_0;
+		schema[STMT_assign] = Stmt.Assign.DESCRIPTOR_0;
+		schema[STMT_assume] = Stmt.Assume.DESCRIPTOR_0;
+		schema[STMT_debug] = Stmt.Debug.DESCRIPTOR_0;
+		schema[STMT_skip] = Stmt.Skip.DESCRIPTOR_0;
+		schema[STMT_break] = Stmt.Break.DESCRIPTOR_0;
+		schema[STMT_continue] = Stmt.Continue.DESCRIPTOR_0;
+		schema[STMT_dowhile] = Stmt.DoWhile.DESCRIPTOR_0;
+		schema[STMT_fail] = Stmt.Fail.DESCRIPTOR_0;
+		schema[STMT_if] = Stmt.IfElse.DESCRIPTOR_0a;
+		schema[STMT_ifelse] = Stmt.IfElse.DESCRIPTOR_0b;
+		schema[STMT_return] = Stmt.Return.DESCRIPTOR_0;
+		schema[STMT_switch] = Stmt.Switch.DESCRIPTOR_0;
+		schema[STMT_while] = Stmt.While.DESCRIPTOR_0;
 		// EXPRESSIONS: 01100000 (96) -- 10011111 (159)
-		schema[EXPR_variablecopy] = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablecopy") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
-			}
-		};
-		schema[EXPR_variablemove] = new Schema(Operands.TWO, Data.ZERO, "EXPR_variablemove") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				Expr.VariableAccess v = new Expr.VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
-				v.setMove();
-				return v;
-			}
-		};
-		schema[EXPR_staticvariable] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvariable") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.StaticVariableAccess((Type) operands[0], (Decl.Link<Decl.StaticVariable>) operands[1]);
-			}
-		};
-		schema[EXPR_constant] = new Schema(Operands.TWO, Data.ZERO, "EXPR_constant") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Constant((Type) operands[0], (Value) operands[1]);
-			}
-		};
-		schema[EXPR_cast] = new Schema(Operands.TWO, Data.ZERO, "EXPR_cast") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Cast((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_invoke] = new Schema(Operands.TWO, Data.ZERO, "EXPR_invoke") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Invoke((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
-						(Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[EXPR_indirectinvoke] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IndirectInvoke((Tuple<Type>) operands[0], (Expr) operands[1],
-						(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
-			}
-		};
+		schema[EXPR_variablecopy] = Expr.VariableAccess.DESCRIPTOR_0a;
+		schema[EXPR_variablemove] = Expr.VariableAccess.DESCRIPTOR_0b;
+		schema[EXPR_staticvariable] = Expr.StaticVariableAccess.DESCRIPTOR_0;
+		schema[EXPR_constant] = Expr.Constant.DESCRIPTOR_0;
+		schema[EXPR_cast] = Expr.Cast.DESCRIPTOR_0;
+		schema[EXPR_invoke] = Expr.Invoke.DESCRIPTOR_0;
+		schema[EXPR_indirectinvoke] = Expr.IndirectInvoke.DESCRIPTOR_0;
 		// LOGICAL
-		schema[EXPR_logicalnot] = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicalnot") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalNot((Expr) operands[0]);
-			}
-		};
-		schema[EXPR_logicaland] = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicaland") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalAnd((Tuple<Expr>) operands[0]);
-			}
-		};
-		schema[EXPR_logicalor] = new Schema(Operands.ONE, Data.ZERO, "EXPR_logicalor") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalOr((Tuple<Expr>) operands[0]);
-			}
-		};
-		schema[EXPR_logiaclimplication] = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicalimplication") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalImplication((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_logicaliff] = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicaliff") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalIff((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_logicalexistential] = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicalexistential") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_logicaluniversal] = new Schema(Operands.TWO, Data.ZERO, "EXPR_logicaluniversal") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
-			}
-		};
+		schema[EXPR_logicalnot] = Expr.LogicalNot.DESCRIPTOR_0;
+		schema[EXPR_logicaland] = Expr.LogicalAnd.DESCRIPTOR_0;
+		schema[EXPR_logicalor] = Expr.LogicalOr.DESCRIPTOR_0;
+		schema[EXPR_logiaclimplication] = Expr.LogicalImplication.DESCRIPTOR_0;
+		schema[EXPR_logicaliff] = Expr.LogicalIff.DESCRIPTOR_0;
+		schema[EXPR_logicalexistential] = Expr.ExistentialQuantifier.DESCRIPTOR_0;
+		schema[EXPR_logicaluniversal] = Expr.UniversalQuantifier.DESCRIPTOR_0;
 		// COMPARATORS
-		schema[EXPR_equal] = new Schema(Operands.TWO, Data.ZERO, "EXPR_equal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Equal((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_notequal] = new Schema(Operands.TWO, Data.ZERO, "EXPR_notequal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.NotEqual((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_integerlessthan] = new Schema(Operands.TWO, Data.ZERO, "EXPR_integerlessthan") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerLessThan((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_integerlessequal] = new Schema(Operands.TWO, Data.ZERO, "EXPR_integerlessequal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerLessThanOrEqual((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_integergreaterthan] = new Schema(Operands.TWO, Data.ZERO, "EXPR_integergreaterthan") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerGreaterThan((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_integergreaterequal] = new Schema(Operands.TWO, Data.ZERO, "EXPR_integergreaterequal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerGreaterThanOrEqual((Expr) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_is] = new Schema(Operands.TWO, Data.ZERO, "EXPR_is") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Is((Expr) operands[0], (Type) operands[1]);
-			}
-		};
+		schema[EXPR_equal] = Expr.Equal.DESCRIPTOR_0;
+		schema[EXPR_notequal] = Expr.NotEqual.DESCRIPTOR_0;
+		schema[EXPR_integerlessthan] = Expr.IntegerLessThan.DESCRIPTOR_0;
+		schema[EXPR_integerlessequal] = Expr.IntegerLessThanOrEqual.DESCRIPTOR_0;
+		schema[EXPR_integergreaterthan] = Expr.IntegerGreaterThan.DESCRIPTOR_0;
+		schema[EXPR_integergreaterequal] = Expr.IntegerGreaterThanOrEqual.DESCRIPTOR_0;
+		schema[EXPR_is] = Expr.Is.DESCRIPTOR_0;
 		// ARITHMETIC
-		schema[EXPR_integernegation] = new Schema(Operands.TWO, Data.ZERO, "EXPR_integernegation") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerNegation((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_integeraddition] = new Schema(Operands.THREE, Data.ZERO, "EXPR_integeraddition") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerAddition((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_integersubtraction] = new Schema(Operands.THREE, Data.ZERO, "EXPR_integersubtraction") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerSubtraction((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_integermultiplication] = new Schema(Operands.THREE, Data.ZERO, "EXPR_integermultiplication") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerMultiplication((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_integerdivision] = new Schema(Operands.THREE, Data.ZERO, "EXPR_integerdivision") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerDivision((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_integerremainder] = new Schema(Operands.THREE, Data.ZERO, "EXPR_integerremainder") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IntegerRemainder((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
+		schema[EXPR_integernegation] = Expr.IntegerNegation.DESCRIPTOR_0;
+		schema[EXPR_integeraddition] = Expr.IntegerAddition.DESCRIPTOR_0;
+		schema[EXPR_integersubtraction] = Expr.IntegerSubtraction.DESCRIPTOR_0;
+		schema[EXPR_integermultiplication] = Expr.IntegerMultiplication.DESCRIPTOR_0;
+		schema[EXPR_integerdivision] = Expr.IntegerDivision.DESCRIPTOR_0;
+		schema[EXPR_integerremainder] = Expr.IntegerRemainder.DESCRIPTOR_0;
 		// BITWISE
-		schema[EXPR_bitwisenot] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisenot") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseComplement((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_bitwiseand] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseand") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[EXPR_bitwiseor] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseor") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[EXPR_bitwisexor] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisexor") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[EXPR_bitwiseshl] = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshl") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_bitwiseshr] = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshr") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
+		schema[EXPR_bitwisenot] = Expr.BitwiseComplement.DESCRIPTOR_0;
+		schema[EXPR_bitwiseand] = Expr.BitwiseAnd.DESCRIPTOR_0;
+		schema[EXPR_bitwiseor] = Expr.BitwiseOr.DESCRIPTOR_0;
+		schema[EXPR_bitwisexor] = Expr.BitwiseXor.DESCRIPTOR_0;
+		schema[EXPR_bitwiseshl] = Expr.BitwiseShiftLeft.DESCRIPTOR_0;
+		schema[EXPR_bitwiseshr] = Expr.BitwiseShiftRight.DESCRIPTOR_0;
 		// REFERENCES
-		schema[EXPR_dereference] = new Schema(Operands.TWO, Data.ZERO, "EXPR_dereference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Dereference((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_new] = new Schema(Operands.THREE, Data.ZERO, "EXPR_new") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
-			}
-		};
-		schema[EXPR_staticnew] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticnew") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.New((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_lambdaaccess] = new Schema(Operands.TWO, Data.ZERO, "EXPR_lambdaaccess") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
-						(Tuple<Type>) operands[1]);
-			}
-		};
-		schema[EXPR_fielddereference] = new Schema(Operands.THREE, Data.ZERO, "EXPR_fielddereference") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
-			}
-		};
+		schema[EXPR_dereference] = Expr.Dereference.DESCRIPTOR_0;
+		schema[EXPR_new] = Expr.New.DESCRIPTOR_0a;
+		schema[EXPR_staticnew] = Expr.New.DESCRIPTOR_0b;
+		schema[EXPR_lambdaaccess] = Expr.LambdaAccess.DESCRIPTOR_0;
+		schema[EXPR_fielddereference] = Expr.FieldDereference.DESCRIPTOR_0;
 		// RECORDS
-		schema[EXPR_recordaccess] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordaccess") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
-			}
-		};
-		schema[EXPR_recordborrow] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordborrow") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				Expr.RecordAccess r = new Expr.RecordAccess((Type) operands[0], (Expr) operands[1],
-						(Identifier) operands[2]);
-				r.setMove();
-				return r;
-			}
-		};
-		schema[EXPR_recordupdate] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_recordupdate") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
-						(Expr) operands[3]);
-			}
-		};
-		schema[EXPR_recordinitialiser] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recordinitialiser") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
-						(Tuple<Expr>) operands[2]);
-			}
-		};
+		schema[EXPR_recordaccess] = Expr.RecordAccess.DESCRIPTOR_0a;
+		schema[EXPR_recordborrow] = Expr.RecordAccess.DESCRIPTOR_0b;
+		schema[EXPR_recordupdate] = Expr.RecordUpdate.DESCRIPTOR_0;
+		schema[EXPR_recordinitialiser] = Expr.RecordInitialiser.DESCRIPTOR_0;
 		// ARRAYS
-		schema[EXPR_arrayaccess] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayaccess") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_arrayborrow] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayborrow") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				Expr.ArrayAccess r = new Expr.ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-				r.setMove();
-				return r;
-			}
-		};
-		schema[EXPR_arraylength] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arraylength") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayLength((Type) operands[0], (Expr) operands[1]);
-			}
-		};
-		schema[EXPR_arrayupdate] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_arrayupdate") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2],
-						(Expr) operands[3]);
-			}
-		};
-		schema[EXPR_arraygenerator] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arraygenerator") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
-		schema[EXPR_arrayinitialiser] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrayinitialiser") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
-			}
-		};
-		schema[EXPR_arrayrange] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrayrange") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
-			}
-		};
+		schema[EXPR_arrayaccess] = Expr.ArrayAccess.DESCRIPTOR_0a;
+		schema[EXPR_arrayborrow] = Expr.ArrayAccess.DESCRIPTOR_0b;
+		schema[EXPR_arraylength] = Expr.ArrayLength.DESCRIPTOR_0;
+		schema[EXPR_arrayupdate] = Expr.ArrayUpdate.DESCRIPTOR_0;
+		schema[EXPR_arraygenerator] = Expr.ArrayGenerator.DESCRIPTOR_0;
+		schema[EXPR_arrayinitialiser] = Expr.ArrayInitialiser.DESCRIPTOR_0;
+		schema[EXPR_arrayrange] = Expr.ArrayRange.DESCRIPTOR_0;
 		return schema;
 	}
 
