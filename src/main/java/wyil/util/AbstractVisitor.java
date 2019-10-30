@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyil.util;
 
-import static wyil.lang.WyilFile.SCHEMA.*;
+import static wyil.lang.WyilFile.*;
 
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;

@@ -37,7 +37,7 @@ import wybs.util.ResolveError;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import static wyil.lang.WyilFile.SCHEMA.*;
+import static wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.LVal;

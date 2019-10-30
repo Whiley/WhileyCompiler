@@ -18,7 +18,7 @@ import static wybs.util.AbstractCompilationUnit.ITEM_byte;
 import static wybs.util.AbstractCompilationUnit.ITEM_int;
 import static wybs.util.AbstractCompilationUnit.ITEM_null;
 import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
-import static wyil.lang.WyilFile.SCHEMA.*;
+import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
 import java.math.BigInteger;

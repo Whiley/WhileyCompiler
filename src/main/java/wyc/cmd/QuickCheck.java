@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyc.cmd;
 
-import static wyil.lang.WyilFile.SCHEMA.*;
+import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
 import java.io.OutputStream;

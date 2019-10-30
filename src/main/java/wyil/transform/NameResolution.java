@@ -29,7 +29,6 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
 import static wyil.lang.WyilFile.*;
-import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.io.IOException;
 import java.lang.reflect.Array;

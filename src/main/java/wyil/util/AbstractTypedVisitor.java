@@ -22,7 +22,6 @@ import wyil.lang.WyilFile.Type;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 import static wyil.lang.WyilFile.*;
-import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.util.*;
 

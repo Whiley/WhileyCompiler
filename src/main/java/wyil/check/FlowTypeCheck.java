@@ -33,7 +33,7 @@ import static wyil.lang.WyilFile.MISSING_RETURN_STATEMENT;
 import static wyil.lang.WyilFile.SUBTYPE_ERROR;
 import static wyil.lang.WyilFile.TOO_MANY_RETURNS;
 import static wyil.lang.WyilFile.UNREACHABLE_CODE;
-import static wyil.lang.WyilFile.SCHEMA.*;
+import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
 import java.util.Arrays;

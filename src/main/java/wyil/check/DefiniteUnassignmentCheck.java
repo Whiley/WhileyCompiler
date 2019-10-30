@@ -13,7 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import static wyil.lang.WyilFile.SCHEMA.*;
 import static wyil.lang.WyilFile.*;
 
 import wyc.util.ErrorMessages;
