@@ -14,6 +14,7 @@
 package wyil.util;
 
 import static wyil.lang.WyilFile.*;
+import static wyil.lang.WyilFile.SCHEMA.*;
 
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;

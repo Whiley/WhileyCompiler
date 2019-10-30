@@ -14,6 +14,7 @@
 package wyil.io;
 
 import static wyil.lang.WyilFile.*;
+import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.io.*;
 import java.util.*;

@@ -18,20 +18,7 @@ import static wybs.util.AbstractCompilationUnit.ITEM_byte;
 import static wybs.util.AbstractCompilationUnit.ITEM_int;
 import static wybs.util.AbstractCompilationUnit.ITEM_null;
 import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
-import static wyil.lang.WyilFile.DECL_function;
-import static wyil.lang.WyilFile.DECL_method;
-import static wyil.lang.WyilFile.DECL_property;
-import static wyil.lang.WyilFile.DECL_rectype;
-import static wyil.lang.WyilFile.DECL_staticvar;
-import static wyil.lang.WyilFile.DECL_type;
-import static wyil.lang.WyilFile.EXPR_arrayaccess;
-import static wyil.lang.WyilFile.EXPR_arrayborrow;
-import static wyil.lang.WyilFile.EXPR_dereference;
-import static wyil.lang.WyilFile.EXPR_fielddereference;
-import static wyil.lang.WyilFile.EXPR_recordaccess;
-import static wyil.lang.WyilFile.EXPR_recordborrow;
-import static wyil.lang.WyilFile.EXPR_variablecopy;
-import static wyil.lang.WyilFile.EXPR_variablemove;
+import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
@@ -255,43 +242,43 @@ public class Interpreter {
 		checkForTimeout(frame);
 		//
 		switch (stmt.getOpcode()) {
-		case WyilFile.STMT_assert:
+		case STMT_assert:
 			return executeAssert((Stmt.Assert) stmt, frame, scope);
-		case WyilFile.STMT_assume:
+		case STMT_assume:
 			return executeAssume((Stmt.Assume) stmt, frame, scope);
-		case WyilFile.STMT_assign:
+		case STMT_assign:
 			return executeAssign((Stmt.Assign) stmt, frame, scope);
-		case WyilFile.STMT_break:
+		case STMT_break:
 			return executeBreak((Stmt.Break) stmt, frame, scope);
-		case WyilFile.STMT_continue:
+		case STMT_continue:
 			return executeContinue((Stmt.Continue) stmt, frame, scope);
-		case WyilFile.STMT_debug:
+		case STMT_debug:
 			return executeDebug((Stmt.Debug) stmt, frame, scope);
-		case WyilFile.STMT_dowhile:
+		case STMT_dowhile:
 			return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
-		case WyilFile.STMT_fail:
+		case STMT_fail:
 			return executeFail((Stmt.Fail) stmt, frame, scope);
-		case WyilFile.STMT_if:
-		case WyilFile.STMT_ifelse:
+		case STMT_if:
+		case STMT_ifelse:
 			return executeIf((Stmt.IfElse) stmt, frame, scope);
-		case WyilFile.EXPR_indirectinvoke:
+		case EXPR_indirectinvoke:
 			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 			return Status.NEXT;
-		case WyilFile.EXPR_invoke:
+		case EXPR_invoke:
 			executeInvoke((Expr.Invoke) stmt, frame);
 			return Status.NEXT;
-		case WyilFile.STMT_namedblock:
+		case STMT_namedblock:
 			return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
-		case WyilFile.STMT_while:
+		case STMT_while:
 			return executeWhile((Stmt.While) stmt, frame, scope);
-		case WyilFile.STMT_return:
+		case STMT_return:
 			return executeReturn((Stmt.Return) stmt, frame, scope);
-		case WyilFile.STMT_skip:
+		case STMT_skip:
 			return executeSkip((Stmt.Skip) stmt, frame, scope);
-		case WyilFile.STMT_switch:
+		case STMT_switch:
 			return executeSwitch((Stmt.Switch) stmt, frame, scope);
-		case WyilFile.DECL_variableinitialiser:
-		case WyilFile.DECL_variable:
+		case DECL_variableinitialiser:
+		case DECL_variable:
 			return executeVariableDeclaration((Decl.Variable) stmt, frame);
 		}
 
@@ -694,137 +681,137 @@ public class Interpreter {
 		//
 		RValue val;
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_constant:
+		case EXPR_constant:
 			val = executeConst((Expr.Constant) expr, frame);
 			break;
-		case WyilFile.EXPR_cast:
+		case EXPR_cast:
 			val = executeConvert((Expr.Cast) expr, frame);
 			break;
-		case WyilFile.EXPR_recordinitialiser:
+		case EXPR_recordinitialiser:
 			val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 			break;
-		case WyilFile.EXPR_recordaccess:
-		case WyilFile.EXPR_recordborrow:
+		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 			break;
-		case WyilFile.EXPR_indirectinvoke:
+		case EXPR_indirectinvoke:
 			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
 			break;
-		case WyilFile.EXPR_invoke:
+		case EXPR_invoke:
 			val = executeInvoke((Expr.Invoke) expr, frame)[0];
 			break;
-		case WyilFile.EXPR_variablemove:
-		case WyilFile.EXPR_variablecopy:
+		case EXPR_variablemove:
+		case EXPR_variablecopy:
 			val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 			break;
-		case WyilFile.EXPR_staticvariable:
+		case EXPR_staticvariable:
 			val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
 			break;
-		case WyilFile.EXPR_is:
+		case EXPR_is:
 			val = executeIs((Expr.Is) expr, frame);
 			break;
-		case WyilFile.EXPR_logicalnot:
+		case EXPR_logicalnot:
 			val = executeLogicalNot((Expr.LogicalNot) expr, frame);
 			break;
-		case WyilFile.EXPR_logicaland:
+		case EXPR_logicaland:
 			val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
 			break;
-		case WyilFile.EXPR_logicalor:
+		case EXPR_logicalor:
 			val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 			break;
-		case WyilFile.EXPR_logiaclimplication:
+		case EXPR_logiaclimplication:
 			val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 			break;
-		case WyilFile.EXPR_logicaliff:
+		case EXPR_logicaliff:
 			val = executeLogicalIff((Expr.LogicalIff) expr, frame);
 			break;
-		case WyilFile.EXPR_logicalexistential:
-		case WyilFile.EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
+		case EXPR_logicaluniversal:
 			val = executeQuantifier((Expr.Quantifier) expr, frame);
 			break;
-		case WyilFile.EXPR_equal:
+		case EXPR_equal:
 			val = executeEqual((Expr.Equal) expr, frame);
 			break;
-		case WyilFile.EXPR_notequal:
+		case EXPR_notequal:
 			val = executeNotEqual((Expr.NotEqual) expr, frame);
 			break;
-		case WyilFile.EXPR_integernegation:
+		case EXPR_integernegation:
 			val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
 			break;
-		case WyilFile.EXPR_integeraddition:
+		case EXPR_integeraddition:
 			val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
 			break;
-		case WyilFile.EXPR_integersubtraction:
+		case EXPR_integersubtraction:
 			val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
 			break;
-		case WyilFile.EXPR_integermultiplication:
+		case EXPR_integermultiplication:
 			val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
 			break;
-		case WyilFile.EXPR_integerdivision:
+		case EXPR_integerdivision:
 			val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
 			break;
-		case WyilFile.EXPR_integerremainder:
+		case EXPR_integerremainder:
 			val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
 			break;
-		case WyilFile.EXPR_integerlessthan:
+		case EXPR_integerlessthan:
 			val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
 			break;
-		case WyilFile.EXPR_integerlessequal:
+		case EXPR_integerlessequal:
 			val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
 			break;
-		case WyilFile.EXPR_integergreaterthan:
+		case EXPR_integergreaterthan:
 			val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
 			break;
-		case WyilFile.EXPR_integergreaterequal:
+		case EXPR_integergreaterequal:
 			val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwisenot:
+		case EXPR_bitwisenot:
 			val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwiseor:
+		case EXPR_bitwiseor:
 			val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwisexor:
+		case EXPR_bitwisexor:
 			val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwiseand:
+		case EXPR_bitwiseand:
 			val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwiseshl:
+		case EXPR_bitwiseshl:
 			val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
 			break;
-		case WyilFile.EXPR_bitwiseshr:
+		case EXPR_bitwiseshr:
 			val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
 			break;
-		case WyilFile.EXPR_arrayborrow:
-		case WyilFile.EXPR_arrayaccess:
+		case EXPR_arrayborrow:
+		case EXPR_arrayaccess:
 			val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
 			break;
-		case WyilFile.EXPR_arraygenerator:
+		case EXPR_arraygenerator:
 			val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
 			break;
-		case WyilFile.EXPR_arraylength:
+		case EXPR_arraylength:
 			val = executeArrayLength((Expr.ArrayLength) expr, frame);
 			break;
-		case WyilFile.EXPR_arrayinitialiser:
+		case EXPR_arrayinitialiser:
 			val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
 			break;
-		case WyilFile.EXPR_arrayrange:
+		case EXPR_arrayrange:
 			val = executeArrayRange((Expr.ArrayRange) expr, frame);
 			break;
-		case WyilFile.EXPR_new:
+		case EXPR_new:
 			val = executeNew((Expr.New) expr, frame);
 			break;
-		case WyilFile.EXPR_dereference:
+		case EXPR_dereference:
 			val = executeDereference((Expr.Dereference) expr, frame);
 			break;
-		case WyilFile.EXPR_fielddereference:
+		case EXPR_fielddereference:
 			val = executeFieldDereference((Expr.FieldDereference) expr, frame);
 			break;
-		case WyilFile.EXPR_lambdaaccess:
+		case EXPR_lambdaaccess:
 			val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 			break;
-		case WyilFile.DECL_lambda:
+		case DECL_lambda:
 			val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
 			break;
 		default:
@@ -1274,17 +1261,17 @@ public class Interpreter {
 	 */
 	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_indirectinvoke:
+		case EXPR_indirectinvoke:
 			return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-		case WyilFile.EXPR_invoke:
+		case EXPR_invoke:
 			return executeInvoke((Expr.Invoke) expr, frame);
-		case WyilFile.EXPR_constant:
-		case WyilFile.EXPR_cast:
-		case WyilFile.EXPR_recordaccess:
-		case WyilFile.EXPR_recordborrow:
-		case WyilFile.DECL_lambda:
-		case WyilFile.EXPR_logicalexistential:
-		case WyilFile.EXPR_logicaluniversal:
+		case EXPR_constant:
+		case EXPR_cast:
+		case EXPR_recordaccess:
+		case EXPR_recordborrow:
+		case DECL_lambda:
+		case EXPR_logicalexistential:
+		case EXPR_logicaluniversal:
 		default:
 			RValue val = executeExpression(ANY_T, expr, frame);
 			return new RValue[] { val };

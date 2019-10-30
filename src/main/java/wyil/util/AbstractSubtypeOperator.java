@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyil.util;
 
-import static wyil.lang.WyilFile.*;
+import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.util.*;
 
@@ -24,9 +24,6 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
-import wyil.lang.WyilFile.Type.Field;
-import wyil.lang.WyilFile.Type.Record;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>

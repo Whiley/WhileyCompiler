@@ -17,7 +17,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
 import static wyc.util.ErrorMessages.syntaxError;
-import static wyil.lang.WyilFile.*;
+import static wyil.lang.WyilFile.SCHEMA.*;
 
 import java.util.Arrays;
 import java.util.HashMap;
