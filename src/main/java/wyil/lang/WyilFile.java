@@ -6812,6 +6812,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("STMT", "ifelse", Stmt.IfElse.DESCRIPTOR_0b);
 		builder.add("STMT", "return", Stmt.Return.DESCRIPTOR_0);
 		builder.add("STMT", "switch", Stmt.Switch.DESCRIPTOR_0);
+		builder.add("STMT", "while", Stmt.While.DESCRIPTOR_0);
 		// General Expressions
 		builder.add("EXPR", "variablecopy", Expr.VariableAccess.DESCRIPTOR_0a);
 		builder.add("EXPR", "variablemove", Expr.VariableAccess.DESCRIPTOR_0b);
@@ -6837,7 +6838,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "integerlessequal", Expr.IntegerLessThanOrEqual.DESCRIPTOR_0);
 		builder.add("EXPR", "integergreaterthan", Expr.IntegerGreaterThan.DESCRIPTOR_0);
 		builder.add("EXPR", "integergreaterequal", Expr.IntegerGreaterThanOrEqual.DESCRIPTOR_0);
-		builder.add("EXPR", "is", null);
+		builder.add("EXPR", "is", Expr.Is.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
 		// Arithmetic Expressions
 		builder.add("EXPR", "integernegation", Expr.IntegerNegation.DESCRIPTOR_0);
@@ -6886,7 +6887,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// Done
 		Schema v0_1 = builder.done();
 		//
-//		for(int i=0;i!=240;++i) {
+//		for(int i=0;i!=231;++i) {
 //			Descriptor desc = v0_1.getDescriptor(i);
 //			if(desc != null) {
 //				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + ";");
