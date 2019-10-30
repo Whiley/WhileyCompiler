@@ -6409,121 +6409,123 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// ============================================================
 	// Attributes
 	// ============================================================
-	public static class SyntaxError extends AbstractSyntacticItem implements SyntacticItem.Marker {
+	public interface Attr {
+		public static class SyntaxError extends AbstractSyntacticItem implements SyntacticItem.Marker {
 
-		public SyntaxError(int errcode, SyntacticItem target) {
-			super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, new Tuple<>());
-		}
-
-		public SyntaxError(int errcode, SyntacticItem target, Tuple<SyntacticItem> context) {
-			super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, context);
-		}
-
-		@Override
-		public SyntacticItem getTarget() {
-			return operands[0];
-		}
-
-		public Tuple<SyntacticItem> getContext() {
-			return (Tuple<SyntacticItem>) operands[1];
-		}
-
-		/**
-		 * Get the error code associated with this message
-		 *
-		 * @return
-		 */
-		public int getErrorCode() {
-			return new BigInteger(getData()).intValue();
-		}
-
-		@Override
-		public SyntacticItem clone(SyntacticItem[] operands) {
-			return new SyntaxError(getErrorCode(), operands[0], (Tuple<SyntacticItem>) operands[1]);
-		}
-
-		@Override
-		public String getMessage() {
-			// Done
-			return ErrorMessages.getErrorMessage(getErrorCode(), getContext());
-		}
-
-		@Override
-		public Path.ID getSource() {
-			Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
-			// FIXME: this is realy a temporary hack
-			String nameStr = unit.getName().toString().replace("::", "/");
-			return Trie.fromString(nameStr);
-		}
-
-		public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.TWO, "ATTR_error") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				int errcode = new BigInteger(data).intValue();
-				return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+			public SyntaxError(int errcode, SyntacticItem target) {
+				super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, new Tuple<>());
 			}
-		};
-	}
 
-	public static class StackFrame extends AbstractSyntacticItem {
-		public StackFrame(Decl.Named<?> context, Tuple<Value> arguments) {
-			super(ATTR_stackframe,context,arguments);
-		}
-
-		public Decl.Named<?> getContext() {
-			return (Decl.Named) operands[0];
-		}
-
-		public Tuple<Value> getArguments() {
-			return (Tuple<Value>) operands[1];
-		}
-
-		@Override
-		public SyntacticItem clone(SyntacticItem[] operands) {
-			return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
-		}
-
-		@Override
-		public String toString() {
-			return getContext().getQualifiedName().toString() + getArguments();
-		}
-
-		public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
+			public SyntaxError(int errcode, SyntacticItem target, Tuple<SyntacticItem> context) {
+				super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, context);
 			}
-		};
-	}
 
-	public static class CounterExample extends AbstractSyntacticItem {
-		public CounterExample(Value.Dictionary mapping) {
-			super(ATTR_counterexample,mapping);
-		}
-
-		public Value.Dictionary getMapping() {
-			return (Value.Dictionary) operands[0];
-		}
-
-		@Override
-		public SyntacticItem clone(SyntacticItem[] operands) {
-			return new CounterExample((Value.Dictionary) operands[0]);
-		}
-
-		@Override
-		public String toString() {
-			return getMapping().toString();
-		}
-
-		public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
-			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+			public SyntacticItem getTarget() {
+				return operands[0];
+			}
+
+			public Tuple<SyntacticItem> getContext() {
+				return (Tuple<SyntacticItem>) operands[1];
+			}
+
+			/**
+			 * Get the error code associated with this message
+			 *
+			 * @return
+			 */
+			public int getErrorCode() {
+				return new BigInteger(getData()).intValue();
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new SyntaxError(getErrorCode(), operands[0], (Tuple<SyntacticItem>) operands[1]);
+			}
+
+			@Override
+			public String getMessage() {
+				// Done
+				return ErrorMessages.getErrorMessage(getErrorCode(), getContext());
+			}
+
+			@Override
+			public Path.ID getSource() {
+				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
+				// FIXME: this is realy a temporary hack
+				String nameStr = unit.getName().toString().replace("::", "/");
+				return Trie.fromString(nameStr);
+			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.MANY, Data.TWO, "ATTR_error") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					int errcode = new BigInteger(data).intValue();
+					return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+				}
+			};
+		}
+
+		public static class StackFrame extends AbstractSyntacticItem {
+			public StackFrame(Decl.Named<?> context, Tuple<Value> arguments) {
+				super(ATTR_stackframe,context,arguments);
+			}
+
+			public Decl.Named<?> getContext() {
+				return (Decl.Named) operands[0];
+			}
+
+			public Tuple<Value> getArguments() {
+				return (Tuple<Value>) operands[1];
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return getContext().getQualifiedName().toString() + getArguments();
+			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
+				}
+			};
+		}
+
+		public static class CounterExample extends AbstractSyntacticItem {
+			public CounterExample(Value.Dictionary mapping) {
+				super(ATTR_counterexample,mapping);
+			}
+
+			public Value.Dictionary getMapping() {
+				return (Value.Dictionary) operands[0];
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new CounterExample((Value.Dictionary) operands[0]);
 			}
-		};
+
+			@Override
+			public String toString() {
+				return getMapping().toString();
+			}
+
+			public static final Schema DESCRIPTOR_0 = new Schema(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new CounterExample((Value.Dictionary) operands[0]);
+				}
+			};
+		}
 	}
 
 	// Parsing
@@ -6678,9 +6680,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		schema[MOD_final] = Modifier.Final.DESCRIPTOR_0;
 		schema[MOD_private] = Modifier.Private.DESCRIPTOR_0;
 		schema[MOD_public] = Modifier.Public.DESCRIPTOR_0;
-		schema[ATTR_error] = SyntaxError.DESCRIPTOR_0;
-		schema[ATTR_stackframe] = StackFrame.DESCRIPTOR_0;
-		schema[ATTR_counterexample] = CounterExample.DESCRIPTOR_0;
+		schema[ATTR_error] = Attr.SyntaxError.DESCRIPTOR_0;
+		schema[ATTR_stackframe] = Attr.StackFrame.DESCRIPTOR_0;
+		schema[ATTR_counterexample] = Attr.CounterExample.DESCRIPTOR_0;
 		// TYPES: 00100000 (32) -- 00111111 (63)
 		schema[TYPE_void] = Type.Void.DESCRIPTOR_0;
 		schema[TYPE_null] = Type.Null.DESCRIPTOR_0;

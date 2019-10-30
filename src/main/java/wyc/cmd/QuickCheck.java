@@ -62,8 +62,8 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.FunctionOrMethod;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.StackFrame;
-import wyil.lang.WyilFile.SyntaxError;
+import wyil.lang.WyilFile.Attr.StackFrame;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 

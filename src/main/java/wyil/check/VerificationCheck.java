@@ -31,7 +31,7 @@ import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.CounterExample;
+import wyil.lang.WyilFile.Attr.CounterExample;
 import wyil.transform.VerificationConditionGenerator;
 import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
