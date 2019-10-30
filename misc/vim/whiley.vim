@@ -32,7 +32,7 @@ syn keyword whileyLoop	do while for in
 syn keyword whileyOperator is as new
 syn keyword whileyScope	public protected private
 syn keyword whileyTypedef this
-syn keyword whileyKeyword export extern is assume from where ensures requires str in no some all
+syn keyword whileyKeyword export extern is assume from with where ensures requires str in no some all
 syn keyword whileyConditional if else switch break skip
 syn keyword whileyTodo contained TODO FIXME XXX
 

@@ -399,7 +399,7 @@ public class ErrorMessages {
 	public static void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
 		WyilFile wf = (WyilFile) e.getHeap();
 		// Allocate syntax error in the heap));
-		SyntacticItem.Marker m = wf.allocate(new WyilFile.SyntaxError(code, e, new Tuple<>(context)));
+		SyntacticItem.Marker m = wf.allocate(new WyilFile.Attr.SyntaxError(code, e, new Tuple<>(context)));
 		// Record marker to ensure it gets written to disk
 		wf.getModule().addAttribute(m);
 	}

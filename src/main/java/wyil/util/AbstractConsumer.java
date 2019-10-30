@@ -45,6 +45,7 @@ public abstract class AbstractConsumer<T> {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl, data);
 			break;
+		case DECL_importwith:
 		case DECL_importfrom:
 		case DECL_import:
 			visitImport((Decl.Import) decl, data);

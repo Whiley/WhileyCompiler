@@ -252,33 +252,64 @@ public class WhileyFileParser {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		match(Import);
-		Identifier fromName = parseOptionalFrom(scope);
-		Tuple<Identifier >filterPath = parseFilterPath(scope);
-		int end = index;
-		matchEndLine();
+		Tuple<Identifier> names = parseOptionalFroms(scope);
+		Tuple<Identifier> filterPath = parseFilterPath(scope);
 		Decl.Import imprt;
-		if(fromName != null) {
-			imprt = new Decl.Import(filterPath, fromName);
+		if(names != null) {
+			imprt = new Decl.Import(filterPath, false, names);
 		} else {
-			imprt = new Decl.Import(filterPath);
+			names = parseOptionalWiths(scope);
+			if(names != null) {
+				imprt = new Decl.Import(filterPath, true, names);
+			} else {
+				imprt = new Decl.Import(filterPath);
+			}
 		}
+		matchEndLine();
 		return annotateSourceLocation(imprt, start);
 	}
 
-	private Identifier parseOptionalFrom(EnclosingScope scope) {
+	private Tuple<Identifier> parseOptionalFroms(EnclosingScope scope) {
 		int start = index;
-		Identifier from = parseIdentifier();
+		ArrayList<Identifier> froms = new ArrayList<>();
+		froms.add(parseStarOrIdentifier(scope));
+		while (tryAndMatch(false, Comma) != null) {
+			froms.add(parseIdentifier());
+		}
 		// Lookahead to see whether optional "from" component was specified or not.
 		Token lookahead = tryAndMatch(true, Identifier);
 		if (lookahead != null) {
 			// Optional from identifier was given
-			if (!lookahead.text.equals("from")) {
+			if(lookahead.text.equals("with")) {
+				// Backtrack
+				index = start;
+				return null;
+			} else if (!lookahead.text.equals("from")) {
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("from"));
 			}
-			return from;
+			return new Tuple<>(froms);
 		} else {
 			// Optional from identifier was not given. Therefore, backtrack.
 			index = start;
+			return null;
+		}
+	}
+
+	private Tuple<Identifier> parseOptionalWiths(EnclosingScope scope) {
+		// Lookahead to see whether optional "with" component was specified or not.
+		Token lookahead = tryAndMatch(false, Identifier);
+		if (lookahead != null) {
+			// Optional from identifier was given
+			if (!lookahead.text.equals("with")) {
+				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("with"));
+			}
+			ArrayList<Identifier> withs = new ArrayList<>();
+			withs.add(parseStarOrIdentifier(scope));
+			while (tryAndMatch(false, Comma) != null) {
+				withs.add(parseIdentifier());
+			}
+			return new Tuple<>(withs);
+		} else {
 			return null;
 		}
 	}
@@ -297,8 +328,7 @@ public class WhileyFileParser {
 
 	private Identifier parseStarOrIdentifier(EnclosingScope scope) {
 		if (tryAndMatch(true, Star) != null) {
-			// TODO: implement something sensible here
-			return null;
+			return new Identifier("*");
 		} else {
 			return parseIdentifier();
 		}

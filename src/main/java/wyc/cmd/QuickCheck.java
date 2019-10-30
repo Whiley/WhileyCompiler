@@ -13,43 +13,20 @@
 // limitations under the License.
 package wyc.cmd;
 
-import static wyil.lang.WyilFile.DECL_function;
-import static wyil.lang.WyilFile.DECL_method;
-import static wyil.lang.WyilFile.DECL_rectype;
-import static wyil.lang.WyilFile.DECL_type;
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_property;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
-import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import jmodelgen.core.Domain;
 import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
-import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
+import wybs.lang.*;
+import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyc.Activator;
@@ -68,8 +45,8 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.FunctionOrMethod;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.StackFrame;
-import wyil.lang.WyilFile.SyntaxError;
+import wyil.lang.WyilFile.Attr.StackFrame;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
@@ -113,8 +90,8 @@ import wyil.lang.WyilFile.Type.Callable;
  *
  */
 public class QuickCheck implements Command {
-	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], 1.0D, 1000, 10_000_000,
-			false, Long.MAX_VALUE);
+	public static final Context DEFAULT_CONTEXT = new Context(-3, 3, 3, 3, 2, 2, new String[0], BigDecimal.ONE, 1000,
+			10_000_000, Long.MAX_VALUE);
 	// Configuration Options
 	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
 	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
@@ -123,7 +100,6 @@ public class QuickCheck implements Command {
 	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
 	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
 	public static Trie SAMPLING_CONFIG_OPTION = Trie.fromString("check/sample");
-	public static Trie LOGSAMPLING_CONFIG_OPTION = Trie.fromString("check/logsample");
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
@@ -134,7 +110,6 @@ public class QuickCheck implements Command {
 	public static Value.Int DEPTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getRecursiveTypeDepth());
 	public static Value.Int WIDTH_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getAliasingWidth());
 	public static Value.Int ROTATION_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getLambdaWidth());
-	public static Value.Bool LOGSAMPLING_DEFAULT = new Value.Bool(DEFAULT_CONTEXT.getLogSampling());
 	public static Value.Decimal SAMPLING_DEFAULT = new Value.Decimal(DEFAULT_CONTEXT.getSamplingRate());
 	public static Value.Int LIMIT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getSampleMin());
 	public static Value.Int TIMEOUT_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getTimeout());
@@ -189,8 +164,6 @@ public class QuickCheck implements Command {
 							WIDTH_DEFAULT),
 					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, "Specify rotation to use for synthesized lambdas",
 							ROTATION_DEFAULT),
-					Configuration.UNBOUND_BOOLEAN(LOGSAMPLING_CONFIG_OPTION, "Specify log sampling for each function or method",
-							LOGSAMPLING_DEFAULT),
 					Configuration.BOUND_DECIMAL(SAMPLING_CONFIG_OPTION, "Specify sample rate of test inputs to try for each function or method",
 							SAMPLING_DEFAULT,0.0D,1.0D),
 					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, "Specify limit above which sampling takes place",
@@ -260,6 +233,11 @@ public class QuickCheck implements Command {
 				environment.getLogger().logTimedMessage(result.toString(), time, memory);
 			}
 
+			@Override
+			public void logTimedMessage(String msg, long time, long memory) {
+				environment.getLogger().logTimedMessage(msg, time, memory);
+			}
+
 		};
 	}
 
@@ -292,7 +270,6 @@ public class QuickCheck implements Command {
 		int maxAliasingWidth = project.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
 		int maxRotationWidth = project.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
 		int limit = project.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
-		boolean  logSampling = project.get(Value.Bool.class,LOGSAMPLING_CONFIG_OPTION).unwrap();
 		double samplingRate = project.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
 		long timeout = project.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		String[] ignores = toStringArray(project.get(Value.Array.class,IGNORES_CONFIG_OPTION));
@@ -302,9 +279,6 @@ public class QuickCheck implements Command {
 		//
 		if(options.has("sampling")) {
 			samplingRate = options.get("sampling", Double.class);
-		}
-		if(options.has("logsampling")) {
-			logSampling = options.get("logsampling", Boolean.class);
 		}
 		if(options.has("limit")) {
 			limit = options.get("limit", Integer.class);
@@ -325,7 +299,7 @@ public class QuickCheck implements Command {
 			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
-		Trie target = Trie.fromString(environment.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
+		Trie target = Trie.fromString(project.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
 		//
 		Path.Root binaryRoot = project.getRoot().createRelativeRoot(target);
 		//
@@ -337,11 +311,11 @@ public class QuickCheck implements Command {
 			// Construct initial context
 			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
 					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
-					.setIgnores(ignores).setSamplingRate(samplingRate).setLogSampling(logSampling).setSampleMin(limit)
+					.setIgnores(ignores).setSamplingRate(samplingRate).setSampleMin(limit)
 					.setTimeout(timeout);
 			logger.logTimedMessage(new Summary(context), 0,0);
 			// Perform the check
-			boolean OK = check(project, wf, context);
+			boolean OK = check(project, wf, context, template.getArguments());
 			//
 			if(!OK) {
 				// FIXME: this does not seem like a good solution :|
@@ -403,7 +377,7 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	public boolean check(Build.Project project, WyilFile parent, Context context) throws IOException {
+	public boolean check(Build.Project project, WyilFile parent, Context context, List<String> targets) throws IOException {
 		// Initialise Interpreter
 		this.interpreter = new ExtendedInterpreter(this.syserr, context);
 		// Construct extended context
@@ -411,16 +385,22 @@ public class QuickCheck implements Command {
 		// Initialise by context
 		if(eContext.initialise(project,parent)) {
 			//
-			return check(parent, eContext);
+			return check(parent, eContext, targets);
 		} else {
 			return false;
 		}
 	}
 
-	public boolean check(WyilFile parent, ExtendedContext context) throws IOException {
+	public boolean check(WyilFile parent, ExtendedContext context, List<String> targets) throws IOException {
 		boolean OK = true;
-		for (Decl.Unit unit : parent.getModule().getUnits()) {
-			OK &= check(parent,unit, context);
+		if(targets.isEmpty()) {
+			for (Decl.Unit unit : parent.getModule().getUnits()) {
+				OK &= check(parent,unit, context);
+			}
+		} else {
+			for (Decl.Named d : toNamedDeclarations(parent,targets)) {
+				OK &= check(d, parent, context);
+			}
 		}
 		return OK;
 	}
@@ -574,16 +554,9 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private Domain.Small<RValue> generateValidInputs(Tuple<Expr> predicate, Decl.Variable variable, Domain.Big<RValue> domain, ExtendedContext context, CallStack frame) {
-		//
 		ArrayList<RValue> results = new ArrayList<>();
-		//
-//		long size = domain.size();
-//		int k = context.getSampleSize(size);
-//		if (k != size) {
-//			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-//			// the sample.
-//			domain = Domains.FastApproximateSample(domain, k);
-//		}
+		// Sample domain (if requested)
+		domain = applySamplingAsNecessary(domain,context);
 		//
 		for(RValue input : domain) {
 			try {
@@ -615,22 +588,23 @@ public class QuickCheck implements Command {
 	 */
 	private List<RValue[]> generateValidInputs(Tuple<Expr> predicate, Tuple<Decl.Variable> variables,
 			ExtendedContext context, Domain.Big<RValue>... generators) {
-		if(variables.size() != generators.length) {
-			throw new IllegalArgumentException("invalid number of generators");
-		}
-		Domain.Big<RValue[]> domain = Domains.Product(generators);
-		//
-//		long size = domain.size();
-//		int k = context.getSampleSize(size);
-//		if (k != size) {
-//			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
-//			// the sample.
-//			domain = Domains.FastApproximateSample(domain, k);
-//		}
-		//
-		CallStack frame = context.getFrame();
 		//
 		ArrayList<RValue[]> results = new ArrayList<>();
+		// Sanity check inputs
+		if(variables.size() != generators.length) {
+			throw new IllegalArgumentException("invalid number of generators");
+		} else if(generators.length == 0) {
+			// A special case arises when there are no generators. In this case, we generate
+			// an empty input sequence to force execution. Without this, functions or
+			// methods without parameters are never tested.
+			results.add(new RValue[0]);
+			return results;
+		}
+		Domain.Big<RValue[]> domain = Domains.Product(generators);
+		// Sample domain (if requested)
+		domain = applySamplingAsNecessary(domain,context);
+		//
+		CallStack frame = context.getFrame();
 		//
 		for (RValue[] inputs : domain) {
 			try {
@@ -1016,6 +990,18 @@ public class QuickCheck implements Command {
 		}
 	}
 
+	private static <T> Domain.Big<T> applySamplingAsNecessary(Domain.Big<T> domain, Context context) {
+		if (context.getSamplingRate() != BigDecimal.ONE) {
+			// Apply sampling
+			BigInteger size = domain.bigSize();
+			int k = context.getSampleSize(size);
+			// NOTE: use approximate algorithm here as, otherwise, we get stuck generating
+			// the sample.
+			domain = Domains.FastApproximateSample(domain, k);
+		}
+		return domain;
+	}
+
 	private static double calculateTotalInputs(Domain.Big<?>... domains) {
 		double max = 1.0D;
 		for (int i = 0; i != domains.length; ++i) {
@@ -1080,6 +1066,42 @@ public class QuickCheck implements Command {
 	}
 
 	/**
+	 * Convert a bunch of compilation unit names into the corresponding
+	 * declarations.
+	 *
+	 * @param parent
+	 * @param names
+	 * @return
+	 */
+	private List<Decl.Named> toNamedDeclarations(WyilFile parent, List<String> names) {
+		HashSet<String> visited = new HashSet<>(names);
+		ArrayList<Decl.Named> decls = new ArrayList<>();
+		Decl.Module module = parent.getModule();
+		// Add all declarations listed
+		for (Decl.Unit unit : module.getUnits()) {
+			CompilationUnit.Name un = unit.getName();
+			for (Decl d : unit.getDeclarations()) {
+				if (d instanceof Decl.Named) {
+					Decl.Named n = (Decl.Named) d;
+					String qn = n.getQualifiedName().toString();
+					if (visited.contains(qn)) {
+						decls.add(n);
+					}
+				}
+			}
+		}
+		// Sanity check we got them all
+		for(Decl.Named n : decls) {
+			visited.remove(n.getQualifiedName().toString());
+		}
+		//
+		for(String name : visited) {
+			logger.logTimedMessage("declaration not found: " + name, 0, 0);
+		}
+		return decls;
+	}
+
+	/**
 	 * Convert a value array into a string array.
 	 *
 	 * @param array
@@ -1107,15 +1129,14 @@ public class QuickCheck implements Command {
 		private int depth;
 		private int width;
 		private int rotation;
-		private double samplingRate;
+		private BigDecimal samplingRate;
 		private int sampleMin;
 		private int sampleMax;
-		private boolean logSampling;
 		private String[] ignores;
 		private long timeout;
 
 		private Context(int minInt, int maxInt, int maxLen, int maxDepth, int width, int rotation, String[] ignores,
-				double samplingRate, int sampleMin, int sampleMax, boolean logSampling, long timeout) {
+				BigDecimal samplingRate, int sampleMin, int sampleMax, long timeout) {
 			this.min = minInt;
 			this.max = maxInt;
 			this.length = maxLen;
@@ -1126,7 +1147,6 @@ public class QuickCheck implements Command {
 			this.samplingRate = samplingRate;
 			this.sampleMin = sampleMin;
 			this.sampleMax = sampleMax;
-			this.logSampling = logSampling;
 			this.timeout = timeout;
 		}
 
@@ -1141,7 +1161,6 @@ public class QuickCheck implements Command {
 			this.samplingRate = context.samplingRate;
 			this.sampleMin = context.sampleMin;
 			this.sampleMax = context.sampleMax;
-			this.logSampling = context.logSampling;
 			this.timeout = context.timeout;
 		}
 
@@ -1220,13 +1239,13 @@ public class QuickCheck implements Command {
 			return context;
 		}
 
-		public double getSamplingRate() {
+		public BigDecimal getSamplingRate() {
 			return samplingRate;
 		}
 
 		public Context setSamplingRate(double rate) {
 			Context context = new Context(this);
-			context.samplingRate = rate;
+			context.samplingRate = new BigDecimal(rate);
 			return context;
 		}
 
@@ -1250,30 +1269,14 @@ public class QuickCheck implements Command {
 			return sampleMax;
 		}
 
-		public int getSampleSize(long size) {
-			long k = (long) (size * samplingRate);
-			if(logSampling) {
-				// Apply log sampling
-				k = (long) Math.log(size);
-			}
-			// Cap samples to ensure fits integer
-			k = Math.min(Integer.MAX_VALUE, k);
+		public int getSampleSize(BigInteger size) {
+			BigInteger k = samplingRate.multiply(new BigDecimal(size)).toBigInteger();
 			// Ensure *at least* some number of samples
-			k = Math.max(Math.min(size, sampleMin), k);
+			k = k.max(BigInteger.valueOf(Math.min(size.longValue(), sampleMin)));
 			// Ensure *at most* some number of samples
-			k = Math.min(sampleMax, k);
+			k = k.min(BigInteger.valueOf(sampleMax));
 			// Done
-			return (int) k;
-		}
-
-		public boolean getLogSampling() {
-			return logSampling;
-		}
-
-		public Context setLogSampling(boolean flag) {
-			Context context = new Context(this);
-			context.logSampling = flag;
-			return context;
+			return k.intValue();
 		}
 
 		public long getTimeout() {
@@ -1442,6 +1445,7 @@ public class QuickCheck implements Command {
 
 	public static interface StructuredLogger<T> {
 		public void logTimedMessage(T result, long time, long memory);
+		public void logTimedMessage(String msg, long time, long memory);
 	}
 
 	public static interface LogEntry {

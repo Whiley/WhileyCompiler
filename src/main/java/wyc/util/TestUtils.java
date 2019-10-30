@@ -252,7 +252,7 @@ public class TestUtils {
 		if(!visited.get(index)) {
 			visited.set(index);
 			// Check whether this item has a marker associated with it.
-			if (item instanceof WyilFile.SyntaxError) {
+			if (item instanceof WyilFile.Attr.SyntaxError) {
 				// At least one marked associated with item.
 				return true;
 			}
