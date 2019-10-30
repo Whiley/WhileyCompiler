@@ -178,7 +178,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_stackframe = ATTR_mask + 4;
 	public static final int ATTR_counterexample = ATTR_mask + 5;
 	// TYPES:
-	public static final int TYPE_mask = ATTR_mask + 8;
+	public static final int TYPE_mask = ATTR_mask + 16;
 	public static final int TYPE_unknown = TYPE_mask + 0;
 	public static final int TYPE_void = TYPE_mask + 1;
 	//	public static final int TYPE_any = TYPE_mask + 2;
@@ -297,8 +297,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Constructors
 	// =========================================================================
 
+	private final int majorVersion;
+	private final int minorVersion;
+
 	public WyilFile(Path.Entry<WyilFile> entry) {
 		super(entry);
+		this.majorVersion = SCHEMA.getMajorVersion();
+		this.minorVersion = SCHEMA.getMinorVersion();
 	}
 
 	/**
@@ -308,6 +313,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	public WyilFile(Path.Entry<WyilFile> entry, WyilFile wf) {
 		super(entry);
+		this.majorVersion = wf.majorVersion;
+		this.minorVersion = wf.minorVersion;
 		// Create initial copies
 		for (int i = 0; i != wf.size(); ++i) {
 			SyntacticItem item = wf.getSyntacticItem(i);
@@ -330,8 +337,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		setRootItem(getSyntacticItem(root));
 	}
 
-	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items) {
+	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items, int major, int minor) {
 		super(entry);
+		this.majorVersion = major;
+		this.minorVersion = minor;
 		// Allocate every item into this heap
 		for (int i = 0; i != items.length; ++i) {
 			syntacticItems.add(items[i]);
@@ -344,6 +353,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// =========================================================================
 	// Accessors
 	// =========================================================================
+
+	public int getMajorVersion() {
+		return majorVersion;
+	}
+
+	public int getMinorVersion() {
+		return minorVersion;
+	}
 
 	public Decl.Module getModule() {
 		return (Decl.Module) getRootItem();
@@ -742,6 +759,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			};
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importfrom") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Identifier name = (Identifier) operands[1];
+					return new Import((Tuple<Identifier>) operands[0], false, new Tuple<>(name));
+				}
+			};
+			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importfrom") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
@@ -6702,13 +6726,51 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @return
 	 */
 	private static Schema createSchema() {
+		SectionedSchema v0_1 = createSchema_0_1();
+		// Updated on 30/10/2019
+		SectionedSchema v0_2 = createSchema_0_2(v0_1);
+		//
+//		for(int i=0;i<=238;++i) {
+//			Descriptor desc = v0_2.getDescriptor(i);
+//			if(desc != null) {
+//				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
+//			}
+//
+//		}
+//		System.out.println("VERSION: " + v0_2.getMajorVersion() + "." + v0_2.getMinorVersion());
+		//
+		return v0_2;
+	}
+
+	/**
+	 * Schema changed as a result of #967 (Import With).
+	 *
+	 * @param v0_1
+	 * @return
+	 */
+	private static SectionedSchema createSchema_0_2(SectionedSchema v0_1) {
+		SectionedSchema.Builder builder = v0_1.extend();
+		//
+		builder.replace("DECL", "importfrom", Decl.Import.DESCRIPTOR_1b);
+		builder.add("DECL", "importwith", Decl.Import.DESCRIPTOR_0c);
+		//
+		return builder.done();
+	}
+
+	/**
+	 * The first recorded schema for WyIL files. There were many many versions prior
+	 * to this, but their differences are now lost in time.
+	 *
+	 * @return
+	 */
+	private static SectionedSchema createSchema_0_1() {
 		SectionedSchema.Builder builder = SectionedSchema.ROOT.extend();
 		// Register the necessary sections
 		builder.register("ITEM", 16);
 		builder.register("DECL", 32);
 		builder.register("MOD", 8);
 		builder.register("TEMPLATE", 8);
-		builder.register("ATTR", 8);
+		builder.register("ATTR", 16);
 		builder.register("TYPE", 64);
 		builder.register("STMT", 32);
 		builder.register("EXPR", 64);
@@ -6746,7 +6808,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("DECL", "variableinitialiser", Decl.Variable.DESCRIPTOR_0b);
 		builder.add("DECL", "link", Decl.Link.DESCRIPTOR_0);
 		builder.add("DECL", "binding", Decl.Binding.DESCRIPTOR_0);
-		builder.add("DECL", "importwith", Decl.Import.DESCRIPTOR_0c);
 		// Modifiers
 		builder.add("MOD", "native", Modifier.Native.DESCRIPTOR_0);
 		builder.add("MOD", "export", Modifier.Export.DESCRIPTOR_0);
@@ -6885,16 +6946,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "arrayinitialiser", Expr.ArrayInitialiser.DESCRIPTOR_0);
 		builder.add("EXPR", "arrayrange", Expr.ArrayRange.DESCRIPTOR_0);
 		// Done
-		Schema v0_1 = builder.done();
-		//
-//		for(int i=0;i!=231;++i) {
-//			Descriptor desc = v0_1.getDescriptor(i);
-//			if(desc != null) {
-//				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + ";");
-//			}
-//
-//		}
-		//
+		SectionedSchema v0_1 = builder.done();
 		return v0_1;
 	}
 }
