@@ -302,8 +302,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public WyilFile(Path.Entry<WyilFile> entry) {
 		super(entry);
-		this.majorVersion = SCHEMA.getMajorVersion();
-		this.minorVersion = SCHEMA.getMinorVersion();
+		Schema schema = WyilFile.getSchema();
+		this.majorVersion = schema.getMajorVersion();
+		this.minorVersion = schema.getMinorVersion();
 	}
 
 	/**
