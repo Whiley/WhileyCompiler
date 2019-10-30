@@ -13,24 +13,7 @@
 // limitations under the License.
 package wyc.cmd;
 
-import static wyil.lang.WyilFile.DECL_function;
-import static wyil.lang.WyilFile.DECL_method;
-import static wyil.lang.WyilFile.DECL_rectype;
-import static wyil.lang.WyilFile.DECL_type;
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_property;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
-import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,8 +45,8 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.FunctionOrMethod;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.StackFrame;
-import wyil.lang.WyilFile.SyntaxError;
+import wyil.lang.WyilFile.Attr.StackFrame;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 

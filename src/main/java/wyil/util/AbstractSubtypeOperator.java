@@ -24,9 +24,6 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
-import wyil.lang.WyilFile.Type.Field;
-import wyil.lang.WyilFile.Type.Record;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>

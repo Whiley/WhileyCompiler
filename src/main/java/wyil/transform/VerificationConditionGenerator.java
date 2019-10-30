@@ -37,6 +37,7 @@ import wybs.util.ResolveError;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import static wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.LVal;
@@ -425,43 +426,43 @@ public class VerificationConditionGenerator {
 		//
 		try {
 			switch (stmt.getOpcode()) {
-			case WyilFile.STMT_assert:
+			case STMT_assert:
 				return translateAssert((WyilFile.Stmt.Assert) stmt, context);
-			case WyilFile.STMT_assign:
+			case STMT_assign:
 				return translateAssign((WyilFile.Stmt.Assign) stmt, context);
-			case WyilFile.STMT_assume:
+			case STMT_assume:
 				return translateAssume((WyilFile.Stmt.Assume) stmt, context);
-			case WyilFile.STMT_break:
+			case STMT_break:
 				return translateBreak((WyilFile.Stmt.Break) stmt, context);
-			case WyilFile.STMT_continue:
+			case STMT_continue:
 				return translateContinue((WyilFile.Stmt.Continue) stmt, context);
-			case WyilFile.STMT_debug:
+			case STMT_debug:
 				return context;
-			case WyilFile.STMT_dowhile:
+			case STMT_dowhile:
 				return translateDoWhile((WyilFile.Stmt.DoWhile) stmt, context);
-			case WyilFile.STMT_fail:
+			case STMT_fail:
 				return translateFail((WyilFile.Stmt.Fail) stmt, context);
-			case WyilFile.STMT_if:
-			case WyilFile.STMT_ifelse:
+			case STMT_if:
+			case STMT_ifelse:
 				return translateIf((WyilFile.Stmt.IfElse) stmt, context);
-			case WyilFile.EXPR_indirectinvoke:
-			case WyilFile.EXPR_invoke: {
+			case EXPR_indirectinvoke:
+			case EXPR_invoke: {
 				WyilFile.Expr expr = (WyilFile.Expr) stmt;
 				Pair<Expr, Context> r = translateExpressionWithChecks(expr, null, context);
 				return r.second();
 			}
-			case WyilFile.STMT_namedblock:
+			case STMT_namedblock:
 				return translateNamedBlock((WyilFile.Stmt.NamedBlock) stmt, context);
-			case WyilFile.STMT_return:
+			case STMT_return:
 				return translateReturn((WyilFile.Stmt.Return) stmt, context);
-			case WyilFile.STMT_skip:
+			case STMT_skip:
 				return translateSkip((WyilFile.Stmt.Skip) stmt, context);
-			case WyilFile.STMT_switch:
+			case STMT_switch:
 				return translateSwitch((WyilFile.Stmt.Switch) stmt, context);
-			case WyilFile.STMT_while:
+			case STMT_while:
 				return translateWhile((WyilFile.Stmt.While) stmt, context);
-			case WyilFile.DECL_variable:
-			case WyilFile.DECL_variableinitialiser:
+			case DECL_variable:
+			case DECL_variableinitialiser:
 				return translateVariableDeclaration((WyilFile.Decl.Variable) stmt, context);
 			default:
 				throw new SyntacticException("unknown statement encountered (" + stmt + ")",
@@ -600,18 +601,18 @@ public class VerificationConditionGenerator {
 		// operation in WyTP ... ?
 
 		switch (lval.getOpcode()) {
-		case WyilFile.EXPR_arrayaccess:
-		case WyilFile.EXPR_arrayborrow:
+		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			return translateArrayAssign((WyilFile.Expr.ArrayAccess) lval, rval, context);
-		case WyilFile.EXPR_dereference:
+		case EXPR_dereference:
 			return translateDereference((WyilFile.Expr.Dereference) lval, rval, context);
-		case WyilFile.EXPR_fielddereference:
+		case EXPR_fielddereference:
 			return translateFieldDereference((WyilFile.Expr.FieldDereference) lval, rval, context);
-		case WyilFile.EXPR_recordaccess:
-		case WyilFile.EXPR_recordborrow:
+		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			return translateRecordAssign((WyilFile.Expr.RecordAccess) lval, rval, context);
-		case WyilFile.EXPR_variablemove:
-		case WyilFile.EXPR_variablecopy:
+		case EXPR_variablemove:
+		case EXPR_variablecopy:
 			return translateVariableAssign((WyilFile.Expr.VariableAccess) lval, rval, context);
 		default:
 			throw new SyntacticException("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
@@ -725,18 +726,18 @@ public class VerificationConditionGenerator {
 	private WyilFile.Expr.VariableAccess extractAssignedVariable(WyilFile.LVal lval) {
 		//
 		switch (lval.getOpcode()) {
-		case WyilFile.EXPR_arrayaccess:
-		case WyilFile.EXPR_arrayborrow:
+		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
 			Expr.ArrayAccess ae = (Expr.ArrayAccess) lval;
 			return extractAssignedVariable((LVal) ae.getSource());
-		case WyilFile.EXPR_dereference:
+		case EXPR_dereference:
 			return null;
-		case WyilFile.EXPR_recordaccess:
-		case WyilFile.EXPR_recordborrow:
+		case EXPR_recordaccess:
+		case EXPR_recordborrow:
 			Expr.RecordAccess ar = (Expr.RecordAccess) lval;
 			return extractAssignedVariable((LVal) ar.getSource());
-		case WyilFile.EXPR_variablemove:
-		case WyilFile.EXPR_variablecopy:
+		case EXPR_variablemove:
+		case EXPR_variablecopy:
 			return (WyilFile.Expr.VariableAccess) lval;
 		default:
 			throw new SyntacticException("unknown lval encountered (" + lval + ")", ((WyilFile) lval.getHeap()).getEntry(),
@@ -1287,7 +1288,7 @@ public class VerificationConditionGenerator {
 				}
 			}
 			switch (expr.getOpcode()) {
-			case WyilFile.EXPR_invoke:
+			case EXPR_invoke:
 				context = assumeInvokePostconditions((WyilFile.Expr.Invoke) expr, context);
 				break;
 			}
@@ -1376,96 +1377,96 @@ public class VerificationConditionGenerator {
 		Expr result;
 		try {
 			switch (expr.getOpcode()) {
-			case WyilFile.EXPR_constant:
+			case EXPR_constant:
 				result = translateConstant((WyilFile.Expr.Constant) expr, environment);
 				break;
-			case WyilFile.EXPR_cast:
+			case EXPR_cast:
 				result = translateConvert((WyilFile.Expr.Cast) expr, environment);
 				break;
-			case WyilFile.EXPR_recordaccess:
-			case WyilFile.EXPR_recordborrow:
+			case EXPR_recordaccess:
+			case EXPR_recordborrow:
 				result = translateFieldLoad((WyilFile.Expr.RecordAccess) expr, environment);
 				break;
-			case WyilFile.EXPR_indirectinvoke:
+			case EXPR_indirectinvoke:
 				result = translateIndirectInvoke((WyilFile.Expr.IndirectInvoke) expr, environment);
 				break;
-			case WyilFile.EXPR_invoke:
+			case EXPR_invoke:
 				result = translateInvoke((WyilFile.Expr.Invoke) expr, selector, environment);
 				break;
-			case WyilFile.DECL_lambda:
+			case DECL_lambda:
 				result = translateLambda((WyilFile.Decl.Lambda) expr, environment);
 				break;
-			case WyilFile.EXPR_lambdaaccess:
+			case EXPR_lambdaaccess:
 				result = translateLambda((WyilFile.Expr.LambdaAccess) expr, environment);
 				break;
-			case WyilFile.EXPR_logicalexistential:
-			case WyilFile.EXPR_logicaluniversal:
+			case EXPR_logicalexistential:
+			case EXPR_logicaluniversal:
 				result = translateQuantifier((WyilFile.Expr.Quantifier) expr, environment);
 				break;
-			case WyilFile.EXPR_variablemove:
-			case WyilFile.EXPR_variablecopy:
+			case EXPR_variablemove:
+			case EXPR_variablecopy:
 				result = translateVariableAccess((WyilFile.Expr.VariableAccess) expr, environment);
 				break;
-			case WyilFile.EXPR_staticvariable:
+			case EXPR_staticvariable:
 				result = translateStaticVariableAccess((WyilFile.Expr.StaticVariableAccess) expr, environment);
 				break;
-			case WyilFile.EXPR_logicalnot:
+			case EXPR_logicalnot:
 				result = translateNotOperator((WyilFile.Expr.LogicalNot) expr, environment);
 				break;
-			case WyilFile.EXPR_integernegation:
+			case EXPR_integernegation:
 				result = translateArithmeticNegation((WyilFile.Expr.IntegerNegation) expr, environment);
 				break;
-			case WyilFile.EXPR_integeraddition:
-			case WyilFile.EXPR_integersubtraction:
-			case WyilFile.EXPR_integermultiplication:
-			case WyilFile.EXPR_integerdivision:
-			case WyilFile.EXPR_integerremainder:
-			case WyilFile.EXPR_equal:
-			case WyilFile.EXPR_notequal:
-			case WyilFile.EXPR_integerlessthan:
-			case WyilFile.EXPR_integerlessequal:
-			case WyilFile.EXPR_integergreaterthan:
-			case WyilFile.EXPR_integergreaterequal:
-			case WyilFile.EXPR_logiaclimplication:
-			case WyilFile.EXPR_logicaliff:
+			case EXPR_integeraddition:
+			case EXPR_integersubtraction:
+			case EXPR_integermultiplication:
+			case EXPR_integerdivision:
+			case EXPR_integerremainder:
+			case EXPR_equal:
+			case EXPR_notequal:
+			case EXPR_integerlessthan:
+			case EXPR_integerlessequal:
+			case EXPR_integergreaterthan:
+			case EXPR_integergreaterequal:
+			case EXPR_logiaclimplication:
+			case EXPR_logicaliff:
 				result = translateBinaryOperator((WyilFile.Expr.BinaryOperator) expr, environment);
 				break;
-			case WyilFile.EXPR_logicaland:
-			case WyilFile.EXPR_logicalor:
+			case EXPR_logicaland:
+			case EXPR_logicalor:
 				result = translateNaryOperator((WyilFile.Expr.NaryOperator) expr, environment);
 				break;
-			case WyilFile.EXPR_is:
+			case EXPR_is:
 				result = translateIs((WyilFile.Expr.Is) expr, environment);
 				break;
-			case WyilFile.EXPR_arrayaccess:
-			case WyilFile.EXPR_arrayborrow:
+			case EXPR_arrayaccess:
+			case EXPR_arrayborrow:
 				result = translateArrayIndex((WyilFile.Expr.ArrayAccess) expr, environment);
 				break;
-			case WyilFile.EXPR_arrayinitialiser:
+			case EXPR_arrayinitialiser:
 				result = translateArrayInitialiser((WyilFile.Expr.ArrayInitialiser) expr, environment);
 				break;
-			case WyilFile.EXPR_arraygenerator:
+			case EXPR_arraygenerator:
 				result = translateArrayGenerator((WyilFile.Expr.ArrayGenerator) expr, environment);
 				break;
-			case WyilFile.EXPR_recordinitialiser:
+			case EXPR_recordinitialiser:
 				result = translateRecordInitialiser((WyilFile.Expr.RecordInitialiser) expr, environment);
 				break;
-			case WyilFile.EXPR_arraylength:
+			case EXPR_arraylength:
 				result = translateArrayLength((WyilFile.Expr.ArrayLength) expr, environment);
 				break;
-			case WyilFile.EXPR_dereference:
+			case EXPR_dereference:
 				result = translateDereference((WyilFile.Expr.Dereference) expr, environment);
 				break;
-			case WyilFile.EXPR_fielddereference:
+			case EXPR_fielddereference:
 				result = translateFieldDereference((WyilFile.Expr.FieldDereference) expr, environment);
 				break;
-			case WyilFile.EXPR_bitwiseshr:
-			case WyilFile.EXPR_bitwiseshl:
-			case WyilFile.EXPR_bitwiseand:
-			case WyilFile.EXPR_bitwiseor:
-			case WyilFile.EXPR_bitwisexor:
-			case WyilFile.EXPR_bitwisenot:
-			case WyilFile.EXPR_new:
+			case EXPR_bitwiseshr:
+			case EXPR_bitwiseshl:
+			case EXPR_bitwiseand:
+			case EXPR_bitwiseor:
+			case EXPR_bitwisexor:
+			case EXPR_bitwisenot:
+			case EXPR_new:
 				result = translateAsUnknown(expr, environment);
 				break;
 			default:
@@ -1550,31 +1551,31 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(expr.getSecondOperand(), null, environment);
 		// FIXME: problem with > 2 operands
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_integeraddition:
+		case EXPR_integeraddition:
 			return new Expr.Addition(lhs, rhs);
-		case WyilFile.EXPR_integersubtraction:
+		case EXPR_integersubtraction:
 			return new Expr.Subtraction(lhs, rhs);
-		case WyilFile.EXPR_integermultiplication:
+		case EXPR_integermultiplication:
 			return new Expr.Multiplication(lhs, rhs);
-		case WyilFile.EXPR_integerdivision:
+		case EXPR_integerdivision:
 			return new Expr.Division(lhs, rhs);
-		case WyilFile.EXPR_integerremainder:
+		case EXPR_integerremainder:
 			return new Expr.Remainder(lhs, rhs);
-		case WyilFile.EXPR_equal:
+		case EXPR_equal:
 			return new Expr.Equal(lhs, rhs);
-		case WyilFile.EXPR_notequal:
+		case EXPR_notequal:
 			return new Expr.NotEqual(lhs, rhs);
-		case WyilFile.EXPR_integerlessthan:
+		case EXPR_integerlessthan:
 			return new Expr.LessThan(lhs, rhs);
-		case WyilFile.EXPR_integerlessequal:
+		case EXPR_integerlessequal:
 			return new Expr.LessThanOrEqual(lhs, rhs);
-		case WyilFile.EXPR_integergreaterthan:
+		case EXPR_integergreaterthan:
 			return new Expr.GreaterThan(lhs, rhs);
-		case WyilFile.EXPR_integergreaterequal:
+		case EXPR_integergreaterequal:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case WyilFile.EXPR_logiaclimplication:
+		case EXPR_logiaclimplication:
 			return new Expr.LogicalImplication(lhs, rhs);
-		case WyilFile.EXPR_logicaliff:
+		case EXPR_logicaliff:
 			return new Expr.LogicalIff(lhs, rhs);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
@@ -1585,9 +1586,9 @@ public class VerificationConditionGenerator {
 	private Expr translateNaryOperator(WyilFile.Expr.NaryOperator expr, LocalEnvironment environment) {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_logicaland:
+		case EXPR_logicaland:
 			return new Expr.LogicalAnd(operands);
-		case WyilFile.EXPR_logicalor:
+		case EXPR_logicalor:
 			return new Expr.LogicalOr(operands);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");

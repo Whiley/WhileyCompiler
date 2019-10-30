@@ -30,8 +30,6 @@ import wyil.lang.WyilFile;
  *
  */
 public final class WyilFileWriter extends SyntacticHeapWriter {
-	private static final int MAJOR_VERSION = 0;
-	private static final int MINOR_VERSION = 1;
 
 	public WyilFileWriter(OutputStream output) {
 		super(output, WyilFile.getSchema());
@@ -57,7 +55,7 @@ public final class WyilFileWriter extends SyntacticHeapWriter {
 	}
 
 	public void writeVersionNumber() throws IOException {
-		out.write_uv(MAJOR_VERSION);
-		out.write_uv(MINOR_VERSION);
+		out.write_uv(schema.getMajorVersion());
+		out.write_uv(schema.getMinorVersion());
 	}
 }

@@ -16,8 +16,8 @@ package wyil.io;
 import java.io.IOException;
 
 import wybs.io.SyntacticHeapReader;
-import wybs.lang.SyntacticHeap;
-import wybs.lang.SyntacticItem;
+import wybs.lang.*;
+import wybs.lang.SyntacticHeap.Schema;
 import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
@@ -32,22 +32,25 @@ import wyil.lang.WyilFile;
  */
 public final class WyilFileReader extends SyntacticHeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
-
 	private Path.Entry<WyilFile> entry;
+	private int minorVersion;
+	private int majorVersion;
 
 	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
-		super(entry.inputStream(), WyilFile.getSchema());
+		super(entry.inputStream());
 		this.entry = entry;
 	}
 
 	@Override
 	public WyilFile read() throws IOException {
 		Pair<Integer,SyntacticItem[]> p = readItems();
-		return new WyilFile(entry,p.first(),p.second());
+		return new WyilFile(entry,p.first(),p.second(), majorVersion, minorVersion);
 	}
 
 	@Override
-	protected void checkHeader() throws IOException {
+	protected Schema checkHeader() throws IOException {
+		// Extract current schema
+		Schema schema = WyilFile.getSchema();
 		// Check magic number
 		for (int i = 0; i != 8; ++i) {
 			char c = (char) in.read_u8();
@@ -56,9 +59,38 @@ public final class WyilFileReader extends SyntacticHeapReader {
 			}
 		}
 		// Check version number
-		int major = in.read_uv();
-		int minor = in.read_uv();
+		majorVersion = in.read_uv();
+		minorVersion = in.read_uv();
+		//
+		if (majorVersion > schema.getMajorVersion()
+				|| (majorVersion == schema.getMajorVersion() && minorVersion > schema.getMinorVersion())) {
+			String msg = "WyilFile compiled with newer version of WyC [" + entry.id() + ", " + majorVersion + "." + minorVersion
+					+ " > " + schema.getMajorVersion() + "." + schema.getMinorVersion() + "]";
+			throw new SyntacticException(msg, entry, null);
+		} else {
+			schema = selectSchema(majorVersion,minorVersion,schema);
+		}
 		// Pad to next byte boundary
 		in.pad_u8();
+		//
+		return schema;
+	}
+
+	/**
+	 * Select the most appropriate schema for decoding this file based on its
+	 * embedded version information.
+	 *
+	 * @param major
+	 * @param minor
+	 * @param current
+	 * @return
+	 */
+	private static SyntacticHeap.Schema selectSchema(int major, int minor, SyntacticHeap.Schema current) {
+		if (current.getMajorVersion() == major && current.getMinorVersion() == minor) {
+			return current;
+		} else {
+			// FIXME: need to check for incompatible parents.
+			return selectSchema(major, minor, current.getParent());
+		}
 	}
 }
