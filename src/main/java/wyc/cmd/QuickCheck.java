@@ -991,7 +991,7 @@ public class QuickCheck implements Command {
 	}
 
 	private static <T> Domain.Big<T> applySamplingAsNecessary(Domain.Big<T> domain, Context context) {
-		if (context.getSamplingRate() != BigDecimal.ONE) {
+		if (!context.getSamplingRate().equals(BigDecimal.ONE)) {
 			// Apply sampling
 			BigInteger size = domain.bigSize();
 			int k = context.getSampleSize(size);
