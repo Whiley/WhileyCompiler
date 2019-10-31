@@ -23,6 +23,7 @@ import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
+import wycc.util.Logger;
 import wyfs.lang.Path;
 import wyil.check.*;
 import wyil.lang.Compiler;
@@ -76,7 +77,7 @@ import wyil.transform.RecursiveTypeAnalysis;
  *
  */
 public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
-
+	private final Logger logger;
 	/**
 	 * Specify whether verification enabled or not
 	 */
@@ -129,6 +130,8 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				new StaticVariableCheck(),
 				new AmbiguousCoercionCheck()
 			};
+		// Extract the logger for debug information
+		this.logger = project.getEnvironment().getLogger();
 		//
 		this.verifier = new VerificationCheck(project,target);
 		// Instantiate various transformations
@@ -172,6 +175,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(WyilFile target, WhileyFile... sources) {
+		Task timer = new Task(logger);
 		// FIXME: this is something of a hack to handle the fact that this is not an
 		// incremental compiler! Basically, we always start from scratch no matter what.
 		WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
@@ -187,7 +191,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			//
 			r &= wyp.read();
 		}
-		//
+		timer.split("Parsed " + sources.length + " file(s)");
 		// Perform name resolution.
 		try {
 			r = r && new NameResolution(project, target).apply();
@@ -195,29 +199,65 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
 		}
+		timer.split("NameResolution");
 		// ========================================================================
 		// Flow Type Checking
 		// ========================================================================
 		r = r && checker.check(target);
+		timer.split("FlowTypeCheck");
 		// ========================================================================
 		// Compiler Checks
 		// ========================================================================
 		for (int i = 0; i != stages.length; ++i) {
 			r = r && stages[i].check(target);
+			timer.split(stages[i].getClass().getSimpleName());
 		}
 		if(verification) {
 			r = r && verifier.check(target,counterexamples);
+			timer.split("Verification");
 		}
 		// Transforms
 		if (r) {
 			// Only apply if previous stages have all passed.
 			for (int i = 0; i != transforms.length; ++i) {
 				transforms[i].apply(target);
+				timer.split(transforms[i].getClass().getSimpleName());
 			}
 		}
 		// Collect garbage
 		//target.gc();
+		timer.done("Compiled "  + sources.length + " whiley file(s)");
 		// Done
 		return r;
+	}
+
+	private static class Task {
+		private final Logger logger;
+		private final long time;
+		private final long memory;
+		private long splitTime;
+		private long splitMemory;
+
+		public Task(Logger logger) {
+			this.logger = logger;
+			this.splitTime = System.currentTimeMillis();
+			this.splitMemory = Runtime.getRuntime().freeMemory();
+			this.time = splitTime;
+			this.memory = splitMemory;
+		}
+
+		public void split(String msg) {
+			long t = splitTime;
+			long m = splitMemory;
+			splitTime = System.currentTimeMillis();
+			splitMemory = Runtime.getRuntime().freeMemory();
+			logger.logTimedMessage(msg, splitTime-t, splitMemory-m);
+		}
+
+		public void done(String msg) {
+			long t = System.currentTimeMillis();
+			long m = Runtime.getRuntime().freeMemory();
+			logger.logTimedMessage(msg, t-time, m-memory);
+		}
 	}
 }
