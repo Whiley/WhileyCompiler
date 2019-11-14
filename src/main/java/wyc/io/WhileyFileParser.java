@@ -888,7 +888,6 @@ public class WhileyFileParser {
 	 */
 	private Stmt parseHeadlessStatement(EnclosingScope scope) {
 		int start = index;
-
 		// See if it is a named block
 		Identifier blockName = parseOptionalIdentifier(scope);
 		if (blockName != null) {
@@ -3607,18 +3606,17 @@ public class WhileyFileParser {
 		// Attempt to parse type parameters (if present)
 		if(tryAndMatch(false, LeftAngle) != null) {
 			boolean firstTime = true;
-			while(skipType(scope)) {
+			while(tryAndMatch(false, RightAngle) == null) {
 				if(!firstTime && tryAndMatch(false,Comma) == null) {
 					// something went wrong
 					return false;
+				} else if(!skipType(scope)) {
+					// something went wrong
+					return false;
 				}
-			}
-			if(tryAndMatch(false, RightAngle) == null) {
-				// something went wrong
-				return false;
+				firstTime=false;
 			}
 		}
-
 		// If encountered a path (e.g. std::math) then we definitely have a type.
 		// Otherwise, is a type only if not already a local variable.
 		if(definite || !scope.isVariable(id)) {

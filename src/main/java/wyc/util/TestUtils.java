@@ -197,7 +197,7 @@ public class TestUtils {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
 			// Construct temporary build environment
-			Build.Environment environment = new Environment(root);
+			Build.Environment environment = new Environment(root,false);
 			// Construct build project within this environment
 			SequentialBuildProject project = new SequentialBuildProject(environment, root);
 			// Identify source files
@@ -386,10 +386,12 @@ public class TestUtils {
 	}
 
 	static public class Environment implements Build.Environment {
+		private final boolean verbose;
 		private final Path.Root root;
 
-		public Environment(Path.Root root) {
+		public Environment(Path.Root root, boolean verbose) {
 			this.root = root;
+			this.verbose = verbose;
 		}
 
 		@Override
@@ -404,7 +406,11 @@ public class TestUtils {
 
 		@Override
 		public Logger getLogger() {
-			return Logger.NULL;
+			if(verbose) {
+				return new Logger.Default(System.err);
+			} else {
+				return Logger.NULL;
+			}
 		}
 
 		@Override
