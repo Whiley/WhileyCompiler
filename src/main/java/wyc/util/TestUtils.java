@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
@@ -42,9 +43,11 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Root;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
@@ -193,7 +196,10 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			SequentialBuildProject project = new SequentialBuildProject(null, root);
+			// Construct temporary build environment
+			Build.Environment environment = new Environment(root,false);
+			// Construct build project within this environment
+			SequentialBuildProject project = new SequentialBuildProject(environment, root);
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
 			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
@@ -377,6 +383,50 @@ public class TestUtils {
 			return false;
 		}
 		return true;
+	}
+
+	static public class Environment implements Build.Environment {
+		private final boolean verbose;
+		private final Path.Root root;
+
+		public Environment(Path.Root root, boolean verbose) {
+			this.root = root;
+			this.verbose = verbose;
+		}
+
+		@Override
+		public Root getRoot() {
+			return root;
+		}
+
+		@Override
+		public List<Build.Project> getProjects() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Logger getLogger() {
+			if(verbose) {
+				return new Logger.Default(System.err);
+			} else {
+				return Logger.NULL;
+			}
+		}
+
+		@Override
+		public ExecutorService getExecutor() {
+			return ForkJoinPool.commonPool();
+		}
+
+		@Override
+		public wyfs.lang.Content.Registry getContentRegistry() {
+			return registry;
+		}
+
+		@Override
+		public List<Build.Platform> getBuildPlatforms() {
+			return Collections.EMPTY_LIST;
+		}
 	}
 
 	/**
