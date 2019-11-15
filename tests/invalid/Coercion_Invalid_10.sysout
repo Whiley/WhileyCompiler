@@ -1,3 +1,9 @@
-tests/invalid/Coercion_Invalid_10.whiley:11: ambiguous coercion required (void[] to intr[])
-    assume f([]) == [0;0]
-             ^^
+tests/invalid/Coercion_Invalid_10.whiley:13: ambiguous coercion required (int[] to intr[])
+    assume f([1, 2, 3, 4, 5, 6, 7]) == [1, 2, 3, 4, 5, 6, 7]
+             ^^^^^^^^^^^^^^^^^^^^^
+tests/invalid/Coercion_Invalid_10.whiley:15: ambiguous coercion required (int|bool[] to intr[])
+    assume f([1, 2, true]) == [1,2,3]
+             ^^^^^^^^^^^^
+tests/invalid/Coercion_Invalid_10.whiley:16: ambiguous coercion required (int|bool[] to intr[])
+    assume f([false, 2, true]) == [1,2,3]
+             ^^^^^^^^^^^^^^^^

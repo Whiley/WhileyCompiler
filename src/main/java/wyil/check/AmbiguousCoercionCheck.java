@@ -246,11 +246,21 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		if (candidate != null) {
 			// Indicates decision made easily enough. Continue traversal down the type.
 			return checkCoercion(candidate, source, environment, assumptions, item);
-		} else if (source instanceof Type.Nominal) {
+		}
+
+		switch(source.getOpcode()) {
+		case WyilFile.TYPE_void: {
+			// NOTE: void indicates an unusual case where an actual value is guaranteed
+			// impossible. Thus, any coercion is considered valid since, in practice,
+			// determination of the type tag never occurs.
+			return true;
+		}
+		case WyilFile.TYPE_nominal: {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
 			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
-		} else if (source instanceof Type.Union) {
+		}
+		case WyilFile.TYPE_union: {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
 			for (int i = 0; i != su.size(); ++i) {
@@ -259,13 +269,16 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 				}
 			}
 			return true;
-		} else if (source instanceof Type.Recursive) {
+		}
+		case WyilFile.TYPE_recursive: {
 			// Proceed by expanding source
 			Type.Recursive su = (Type.Recursive) source;
 			return checkCoercion(target, su.getHead(), environment, assumptions, item);
-		} else {
+		}
+		default: {
 			// Cannot proceed
 			return false;
+		}
 		}
 	}
 
