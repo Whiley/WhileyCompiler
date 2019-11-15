@@ -90,6 +90,8 @@ public class AllValidTest {
 		// Separate out branch always taken 952
 		IGNORED.put("ListAccess_Valid_6", "952");
 		IGNORED.put("While_Valid_34", "952");
+		// Lambda's and Multiple Returns
+		IGNORED.put("Lambda_Valid_17", "973");
 		// Unclassified
 		IGNORED.put("Lifetime_Valid_8", "???");
 		IGNORED.put("Lifetime_Lambda_Valid_1", "???");
