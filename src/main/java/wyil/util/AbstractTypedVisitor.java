@@ -349,7 +349,10 @@ public abstract class AbstractTypedVisitor {
 		for (int i = 0; i != exprs.size(); ++i) {
 			Expr e = exprs.get(i);
 			// Handle multi expressions
-			if(e.getTypes() != null) {
+			if(j >= targets.size()){
+				// Something has gone wrong somewhere
+				visitExpression(e, Type.Void, environment);
+			} else if(e.getTypes() != null) {
 				int len = e.getTypes().size();
 				Tuple<Type> types = targets.get(j,j+len);
 				visitMultiExpression(e,types,environment);

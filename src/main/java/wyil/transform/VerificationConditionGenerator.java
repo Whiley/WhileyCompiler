@@ -947,12 +947,15 @@ public class VerificationConditionGenerator {
 		for (int i = 0, k = 0; i != returns.size(); ++i) {
 			WyilFile.Expr e = returns.get(i);
 			Tuple<Type> e_types = e.getTypes();
-			if (e_types == null) {
+			if(k >= returnTypes.size()) {
+				// Ignore
+			} else if (e_types == null) {
 				WyilFile.Type returnType = returnTypes.get(k);
 				generateTypeInvariantCheck(returnType, exprs[k], e, context);
 				k = k + 1;
 			} else {
-				for (int j = 0; j != e_types.size(); ++j) {
+				// NOTE: min required to handle case when insufficient returns given.
+				for (int j = 0; j < Math.min(e_types.size(), returnTypes.size() - k); ++j) {
 					WyilFile.Type returnType = returnTypes.get(k);
 					generateTypeInvariantCheck(returnType, exprs[k], e, context);
 					k = k + 1;

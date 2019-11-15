@@ -36,6 +36,7 @@ import static wyil.lang.WyilFile.UNREACHABLE_CODE;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -457,10 +458,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != lvals.size(); ++i) {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
-		Type[] actuals = checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
+		List<Type> actuals = checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
 		// Update right-hand sides accordingly based on assigned types
-		for(int i=0;i!=actuals.length;++i) {
-			Type actual = actuals[i];
+		for(int i=0;i!=actuals.size();++i) {
+			Type actual = actuals.get(i);
 			if(actual != null) {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
@@ -1242,6 +1243,20 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	/**
+	 * A simple helper method.
+	 *
+	 * @param types
+	 * @param items
+	 */
+	private static void multiAddAll(List<Type> types, Tuple<Type> items) {
+		if(items != null) {
+			for(int i=0;i!=items.size();++i) {
+				types.add(items.get(i));
+			}
+		}
+	}
+
+	/**
 	 * Type check a sequence of zero or more multi-expressions, assuming a given
 	 * initial environment. A multi-expression is one which may have multiple return
 	 * values. There are relatively few situations where this can arise, particular
@@ -1252,56 +1267,38 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expressions
 	 * @param environment
 	 */
-	public final Type[] checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
-		Type[] actuals = new Type[expected.size()];
-		for (int i = 0, j = 0; i != expressions.size(); ++i) {
+	public final List<Type> checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
+		boolean upstreamFailure = false;
+		ArrayList<Expr> exprs = new ArrayList<>();
+		ArrayList<Type> actuals = new ArrayList<>();
+		// Check expressions and flattern types
+		for(int i=0;i!=expressions.size();++i) {
 			Expr expression = expressions.get(i);
-			switch (expression.getOpcode()) {
-			case EXPR_invoke: {
-				Tuple<Type> results = checkInvoke((Expr.Invoke) expression, environment);
-				if (results == null) {
-					// Some type error occurred upstream, therefore make conservative assumption
-					j = j + 1;
-				} else {
-					// FIXME: THIS LOOP IS UGLY
-					for (int k = 0; k != results.size(); ++k) {
-						Type actual = results.get(k);
-						checkIsSubtype(expected.get(j + k), actual, environment, expression);
-						actuals[j + k] = actual;
-					}
-					j = j + results.size();
+			Tuple<Type> types = checkMultiExpression(expression,environment);
+			if(types != null) {
+				for(int j=0;j!=types.size();++j) {
+					exprs.add(expression);
+					actuals.add(types.get(j));
 				}
-				break;
+			} else {
+				upstreamFailure = true;
 			}
-			case EXPR_indirectinvoke: {
-				Tuple<Type> results = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
-				if (results == null) {
-					// Some type error occurred upstream, therefore make conservative assumption
-					j = j + 1;
-				} else {
-					// FIXME: THIS LOOP IS UGLY
-					for (int k = 0; k != results.size(); ++k) {
-						Type actual = results.get(k);
-						checkIsSubtype(expected.get(j + k), actual, environment, expression);
-						actuals[j + k] = actual;
-					}
-					j = j + results.size();
-				}
-				break;
-			}
-			default:
-				Type actual = checkExpression(expression, environment);
-				//
-				if ((expected.size() - j) < 1) {
-					syntaxError(expression, TOO_MANY_RETURNS);
-				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
-					syntaxError(expression, INSUFFICIENT_RETURNS);
-				} else {
-					checkIsSubtype(expected.get(j), actual, environment, expression);
-					actuals[j] = actual;
-				}
-				j = j + 1;
-			}
+		}
+		// Check expression types against expected expression types.
+		for (int i = 0; i < Math.min(actuals.size(), expected.size()); ++i) {
+			Expr expression = exprs.get(i);
+			checkIsSubtype(expected.get(i), actuals.get(i), environment, expression);
+		}
+		// Sanity check what we got versus what was expected
+		if (actuals.size() > expected.size()) {
+			syntaxError(exprs.get(expected.size()), TOO_MANY_RETURNS);
+		} else if (!upstreamFailure && actuals.size() < expected.size()) {
+			// NOTE: ignore upstream failures related to invocations because this (most
+			// likely) signals a problem determining which method was called. In such case,
+			// the number of returns is likely to change when that upstream failure is
+			// corrected.
+			Expr last = expressions.get(expressions.size()-1);
+			syntaxError(last, INSUFFICIENT_RETURNS);
 		}
 		return actuals;
 	}
