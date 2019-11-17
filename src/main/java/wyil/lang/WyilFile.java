@@ -2787,7 +2787,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Tuple<Type> getTypes() {
-				Tuple<Type> types = getLink().getTarget().getType().getReturns();
+				Tuple<Type> types = getBinding().getConcreteType().getReturns();
 				if (types.size() != 1) {
 					return types;
 				} else {

@@ -1,4 +1,7 @@
-type intr is int|bool
+type pos is (int n) where n > 0
+type neg is (int n) where n < 0
+
+type intr is pos|neg|bool
 
 function f(intr[] e) -> int[]:
     if e is int[]:
