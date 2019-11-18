@@ -103,6 +103,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Attribute;
@@ -157,7 +158,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public boolean read() {
+	public boolean read(Build.Meter meter) {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = parseModuleName(source.getEntry());
@@ -165,7 +166,7 @@ public class WhileyFileParser {
 		try {
 			while (index < tokens.size()) {
 				// Parse next logical declaration
-				declarations.add(parseDeclaration());
+				declarations.add(parseDeclaration(meter));
 				skipWhiteSpace();
 			}
 
@@ -211,33 +212,34 @@ public class WhileyFileParser {
 		return new Name(bits);
 	}
 
-	private Decl parseDeclaration() {
+	private Decl parseDeclaration(Build.Meter meter) {
+		meter.step("declaration");
 		int start = index;
 		Token lookahead = tokens.get(index);
 		if (lookahead.kind == Import) {
-			return parseImportDeclaration();
+			return parseImportDeclaration(meter);
 		} else {
-			return parseNamedDeclaration();
+			return parseNamedDeclaration(meter);
 		}
 	}
 
-	private Decl.Named<? extends Type> parseNamedDeclaration() {
+	private Decl.Named<? extends Type> parseNamedDeclaration(Build.Meter meter) {
 		// Parse any modifiers
 		Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final);
 		checkNotEof();
 		//
 		Token lookahead = tokens.get(index);
 		if (lookahead.text.equals("type")) {
-			return parseTypeDeclaration(modifiers);
+			return parseTypeDeclaration(meter,modifiers);
 		} else if (lookahead.kind == Function) {
-			return parseFunctionOrMethodDeclaration(modifiers, true);
+			return parseFunctionOrMethodDeclaration(meter,modifiers, true);
 		} else if (lookahead.kind == Method) {
-			return parseFunctionOrMethodDeclaration(modifiers, false);
+			return parseFunctionOrMethodDeclaration(meter,modifiers, false);
 		} else if (lookahead.kind == Property) {
-			return parsePropertyDeclaration(modifiers);
+			return parsePropertyDeclaration(meter,modifiers);
 		} else {
 			// Fall back
-			return parseStaticVariableDeclaration(modifiers);
+			return parseStaticVariableDeclaration(meter,modifiers);
 		}
 	}
 
@@ -248,9 +250,9 @@ public class WhileyFileParser {
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( '::' ('*' | Identifier) )*
 	 * </pre>
 	 */
-	private Decl parseImportDeclaration() {
+	private Decl parseImportDeclaration(Build.Meter meter) {
 		int start = index;
-		EnclosingScope scope = new EnclosingScope();
+		EnclosingScope scope = new EnclosingScope(meter);
 		match(Import);
 		Tuple<Identifier> names = parseOptionalFroms(scope);
 		Tuple<Identifier> filterPath = parseFilterPath(scope);
@@ -422,11 +424,11 @@ public class WhileyFileParser {
 	 * any exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers,
+	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Build.Meter meter, Tuple<Modifier> modifiers,
 			boolean isFunction) {
 		int start = index;
 		// Create appropriate enclosing scope
-		EnclosingScope scope = new EnclosingScope();
+		EnclosingScope scope = new EnclosingScope(meter);
 		//
 		if (isFunction) {
 			match(Function);
@@ -490,8 +492,8 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 */
-	private Decl.Property parsePropertyDeclaration(Tuple<Modifier> modifiers) {
-		EnclosingScope scope = new EnclosingScope();
+	private Decl.Property parsePropertyDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+		EnclosingScope scope = new EnclosingScope(meter);
 		int start = index;
 		match(Property);
 		Identifier name = parseIdentifier();
@@ -596,9 +598,9 @@ public class WhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	public Decl.Type parseTypeDeclaration(Tuple<Modifier> modifiers) {
+	public Decl.Type parseTypeDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
 		int start = index;
-		EnclosingScope scope = new EnclosingScope();
+		EnclosingScope scope = new EnclosingScope(meter);
 		//
 		match(Identifier); // type
 		// Parse type name
@@ -675,10 +677,10 @@ public class WhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	private Decl.StaticVariable parseStaticVariableDeclaration(Tuple<Modifier> modifiers) {
+	private Decl.StaticVariable parseStaticVariableDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
 		//
 		int start = index;
-		EnclosingScope scope = new EnclosingScope();
+		EnclosingScope scope = new EnclosingScope(meter);
 		//
 		Type type = parseType(scope);
 		//
@@ -829,6 +831,8 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Stmt parseStatement(EnclosingScope scope) {
+		scope.step("statement");
+		//
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
@@ -1767,6 +1771,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseExpression(EnclosingScope scope, boolean terminated) {
+		scope.step("expression");
 		return parseLogicalExpression(scope, terminated);
 	}
 
@@ -3700,6 +3705,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	public Type parseType(EnclosingScope scope) {
+		scope.step("type");
 		return parseUnionType(scope);
 	}
 
@@ -4888,15 +4894,17 @@ public class WhileyFileParser {
 	 */
 	public class EnclosingScope {
 		/**
+		 * Enclosing meter for profiling information
+		 */
+		private final Build.Meter meter;
+		/**
 		 * The indent level of the enclosing scope.
 		 */
 		private final Indent indent;
-
 		/**
 		 * The set of declared variables in the enclosing scope.
 		 */
 		private final HashMap<Identifier,Decl.Variable> environment;
-
 		/**
 		 * The set of field aliases in the enclosing scope. A field alias occurs
 		 * for a record declaration where, for convenience, we allow the type
@@ -4922,7 +4930,8 @@ public class WhileyFileParser {
 		 */
 		private final boolean inLoop;
 
-		public EnclosingScope() {
+		public EnclosingScope(Build.Meter meter) {
+			this.meter = meter;
 			this.indent = ROOT_INDENT;
 			this.environment = new HashMap<>();
 			this.fieldAliases = new HashSet<>();
@@ -4931,9 +4940,10 @@ public class WhileyFileParser {
 			this.inLoop = false;
 		}
 
-		private EnclosingScope(Indent indent, Map<Identifier, Decl.Variable> variables,
+		private EnclosingScope(Build.Meter meter, Indent indent, Map<Identifier, Decl.Variable> variables,
 				Set<Identifier> fieldAliases, Set<Identifier> lifetimes, Set<Identifier> typeVariables,
 				boolean inLoop) {
+			this.meter = meter;
 			this.indent = indent;
 			this.environment = new HashMap<>(variables);
 			this.fieldAliases = new HashSet<>(fieldAliases);
@@ -5030,6 +5040,10 @@ public class WhileyFileParser {
 			return environment.get(name);
 		}
 
+		public void step(String tag) {
+			meter.step(tag);
+		}
+
 		/**
 		 * Declare a new variable in this scope.
 		 *
@@ -5107,7 +5121,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope() {
-			return new EnclosingScope(indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
+			return new EnclosingScope(meter,indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
 		}
 
 		/**
@@ -5121,7 +5135,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent) {
-			return new EnclosingScope(indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
+			return new EnclosingScope(meter,indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
 		}
 
 		/**
@@ -5135,7 +5149,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
-			return new EnclosingScope(indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
+			return new EnclosingScope(meter,indent, environment, fieldAliases, lifetimes, typeVariables, inLoop);
 		}
 
 		/**
@@ -5153,7 +5167,7 @@ public class WhileyFileParser {
 			for (int i = 0; i != lifetimes.size(); ++i) {
 				tmp.add(lifetimes.get(i));
 			}
-			return new EnclosingScope(indent, environment, fieldAliases, tmp, typeVariables, false);
+			return new EnclosingScope(meter,indent, environment, fieldAliases, tmp, typeVariables, false);
 		}
 
 		private boolean isAvailableName(Identifier name) {

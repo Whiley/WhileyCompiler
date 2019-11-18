@@ -44,6 +44,7 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
+import wyil.transform.VerificationConditionGenerator.Context;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -2318,6 +2319,10 @@ public class VerificationConditionGenerator {
 	 * given expression (or statement).
 	 */
 	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
+		@Override
+		public void visitExternalUnit(Decl.Unit unit, HashSet<Decl.Variable> used) {
+			// NOTE: we override this to prevent unnecessarily traversing units
+		}
 		@Override
 		public void visitVariableAccess(WyilFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
 			used.add(expr.getVariableDeclaration());

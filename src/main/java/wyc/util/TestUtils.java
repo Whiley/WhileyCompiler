@@ -33,6 +33,7 @@ import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Meter;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -43,6 +44,7 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
+import wycc.WyMain;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -108,7 +110,7 @@ public class TestUtils {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
 		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
 		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
-		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
+		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
 		return parser.parseType(scope);
 	}
 
@@ -218,7 +220,7 @@ public class TestUtils {
 			// FIXME: this is annoying!
 			project.refresh();
 			// Actually force the project to build!
-			result = project.build(ForkJoinPool.commonPool()).get();
+			result = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 			// Check whether any syntax error produced
@@ -386,12 +388,14 @@ public class TestUtils {
 	}
 
 	static public class Environment implements Build.Environment {
-		private final boolean verbose;
+		private final Build.Meter meter;
+		private final Logger logger;
 		private final Path.Root root;
 
 		public Environment(Path.Root root, boolean verbose) {
 			this.root = root;
-			this.verbose = verbose;
+			this.logger = verbose ? new Logger.Default(System.err) : Logger.NULL;
+			this.meter = new WyMain.Meter("TestUtils", logger);
 		}
 
 		@Override
@@ -406,11 +410,7 @@ public class TestUtils {
 
 		@Override
 		public Logger getLogger() {
-			if(verbose) {
-				return new Logger.Default(System.err);
-			} else {
-				return Logger.NULL;
-			}
+			return logger;
 		}
 
 		@Override
@@ -426,6 +426,11 @@ public class TestUtils {
 		@Override
 		public List<Build.Platform> getBuildPlatforms() {
 			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Meter getMeter() {
+			return meter;
 		}
 	}
 

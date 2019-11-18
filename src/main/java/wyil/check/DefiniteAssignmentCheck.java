@@ -17,10 +17,12 @@ import static wyil.lang.WyilFile.*;
 
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wyc.util.ErrorMessages;
 
@@ -53,11 +55,17 @@ public class DefiniteAssignmentCheck
 	private boolean status = true;
 
 	@Override
-	public boolean check(WyilFile wf) {
+	public boolean check(Build.Meter meter, WyilFile wf) {
 		//
 		visitModule(wf, null);
 		//
 		return status;
+	}
+
+	@Override
+	public ControlFlow visitExternalUnit(Decl.Unit unit, DefinitelyAssignedSet dummy) {
+		// NOTE: we override this to prevent unnecessarily traversing units
+		return null;
 	}
 
 	/**

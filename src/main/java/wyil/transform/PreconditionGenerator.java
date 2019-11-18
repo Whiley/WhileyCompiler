@@ -1,6 +1,7 @@
 package wyil.transform;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
@@ -63,6 +64,11 @@ public class PreconditionGenerator {
 
 	public void apply(WyilFile.Expr expr, Context context) {
 		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
+			@Override
+			public void visitExternalUnit(Decl.Unit unit, Context context) {
+				// NOTE: we override this to prevent unnecessarily traversing units
+			}
+
 			@Override
 			public void visitLogicalAnd(WyilFile.Expr.LogicalAnd expr, Context context) {
 				// In the case of a logical and condition we need to propagate

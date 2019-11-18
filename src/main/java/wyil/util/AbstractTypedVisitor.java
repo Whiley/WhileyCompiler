@@ -51,8 +51,13 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitModule(WyilFile wf) {
-		for (Decl decl : wf.getModule().getUnits()) {
-			visitDeclaration(decl);
+		Decl.Module module = wf.getModule();
+		//
+		for (Decl.Unit decl : module.getUnits()) {
+			visitUnit(decl);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExternalUnit(decl);
 		}
 	}
 
@@ -86,6 +91,10 @@ public abstract class AbstractTypedVisitor {
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl);
 		}
+	}
+
+	public void visitExternalUnit(Decl.Unit unit) {
+		visitUnit(unit);
 	}
 
 	public void visitImport(Decl.Import decl) {

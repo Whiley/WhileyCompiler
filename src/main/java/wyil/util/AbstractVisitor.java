@@ -36,8 +36,13 @@ import wyil.lang.WyilFile.Type;
 public abstract class AbstractVisitor {
 
 	public void visitModule(WyilFile wf) {
-		for (Decl decl : wf.getModule().getUnits()) {
-			visitDeclaration(decl);
+		Decl.Module module = wf.getModule();
+		//
+		for (Decl.Unit decl : module.getUnits()) {
+			visitUnit(decl);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExternalUnit(decl);
 		}
 	}
 
@@ -72,6 +77,10 @@ public abstract class AbstractVisitor {
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl);
 		}
+	}
+
+	public void visitExternalUnit(Decl.Unit unit) {
+		visitUnit(unit);
 	}
 
 	public void visitImport(Decl.Import decl) {

@@ -30,6 +30,8 @@ import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
+import wyil.check.DefiniteAssignmentCheck.ControlFlow;
+import wyil.check.DefiniteAssignmentCheck.DefinitelyAssignedSet;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -262,6 +264,11 @@ public class FlowTypeUtils {
 
 	private static class PurityVisitor extends AbstractVisitor {
 		public boolean pure = true;
+
+		@Override
+		public void visitExternalUnit(Decl.Unit unit) {
+			// Terminate
+		}
 
 		@Override
 		public void visitDeclaration(Decl type) {

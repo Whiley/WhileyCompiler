@@ -23,6 +23,7 @@ import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyc.util.ErrorMessages;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -85,11 +86,16 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	}
 
 	@Override
-	public boolean check(WyilFile file) {
+	public boolean check(Build.Meter meter, WyilFile file) {
 		// Only proceed if no errors in earlier stages
 		visitModule(file);
 		//
 		return status;
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override

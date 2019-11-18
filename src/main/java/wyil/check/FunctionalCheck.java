@@ -23,6 +23,8 @@ import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
+import java.util.HashSet;
+
 /**
  * <p>
  * Responsible for checking purity of statements and expressions in specific
@@ -75,13 +77,18 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	private boolean status = true;
 
 	@Override
-	public boolean check(WyilFile file) {
-		visitModule(file, null);
+	public boolean check(Build.Meter meter, WyilFile file) {
+		visitModule(meter, file, null);
 		return status;
 	}
 
 	public enum Context {
 		PURE, FUNCTIONAL, IMPURE
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Context data) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override
