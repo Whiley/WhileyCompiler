@@ -33,8 +33,13 @@ import wyil.lang.WyilFile.Type;
 public abstract class AbstractFunction<P,R> {
 
 	public R visitModule(WyilFile wf, P data) {
-		for (Decl decl : wf.getModule().getUnits()) {
-			visitDeclaration(decl, data);
+		Decl.Module module = wf.getModule();
+		//
+		for (Decl.Unit decl : module.getUnits()) {
+			visitUnit(decl, data);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExternalUnit(decl, data);
 		}
 		return null;
 	}
@@ -67,6 +72,12 @@ public abstract class AbstractFunction<P,R> {
 		}
 		return null;
 	}
+
+	public R visitExternalUnit(Decl.Unit unit, P data) {
+		visitUnit(unit,data);
+		return null;
+	}
+
 	public R visitImport(Decl.Import decl, P data) {
 		return null;
 	}

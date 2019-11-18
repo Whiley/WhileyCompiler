@@ -21,8 +21,10 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
@@ -61,9 +63,14 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> im
 	private boolean status = true;
 
 	@Override
-	public boolean check(WyilFile wf) {
-		visitModule(wf, null);
+	public boolean check(Build.Meter meter, WyilFile wf) {
+		visitModule(meter, wf, null);
 		return status;
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Set<QualifiedName> accessed) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override

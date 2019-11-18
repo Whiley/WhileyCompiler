@@ -13,9 +13,11 @@
 // limitations under the License.
 package wyil.check;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -52,9 +54,14 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 	private boolean status = true;
 
 	@Override
-	public boolean check(WyilFile file) {
-		visitModule(file, new Context());
+	public boolean check(Build.Meter meter, WyilFile file) {
+		visitModule(meter, file, new Context());
 		return status;
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Context data) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override

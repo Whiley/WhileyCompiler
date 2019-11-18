@@ -15,11 +15,15 @@ package wyil.transform;
 
 import static wyil.lang.WyilFile.*;
 
+import java.util.Set;
+
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
+import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Stmt;
 import wyil.util.AbstractConsumer;
 
@@ -69,13 +73,18 @@ import wyil.util.AbstractConsumer;
 public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.Transform {
 
 	@Override
-	public void apply(WyilFile module) {
-		visitModule(module,null);
+	public void apply(Build.Meter meter, WyilFile module) {
+		visitModule(meter, module, null);
 	}
 
 	// ===========================================================================
 	// DECLARATIONS
 	// ===========================================================================
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Boolean consumed) {
+		// NOTE: we override this to prevent unnecessarily traversing statements
+	}
 
 	@Override
 	public void visitType(Decl.Type t, Boolean consumed) {
@@ -86,7 +95,7 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	public void visitFunctionOrMethod(Decl.FunctionOrMethod fm, Boolean consumed) {
 		visitExpressions(fm.getRequires(), false);
 		visitExpressions(fm.getEnsures(), false);
-		visitStatement((fm.getBody()),false);
+		visitStatement((fm.getBody()), false);
 	}
 
 	@Override
@@ -131,19 +140,19 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	@Override
 	public void visitDoWhile(Stmt.DoWhile stmt, Boolean consumed) {
 		visitStatement(stmt.getBody(), null);
-		visitExpression(stmt.getCondition(),false);
-		visitExpressions(stmt.getInvariant(),false);
+		visitExpression(stmt.getCondition(), false);
+		visitExpressions(stmt.getInvariant(), false);
 	}
-
 
 	@Override
 	public void visitIfElse(Stmt.IfElse stmt, Boolean consumed) {
-		visitExpression(stmt.getCondition(),false);
-		visitStatement(stmt.getTrueBranch(),null);
+		visitExpression(stmt.getCondition(), false);
+		visitStatement(stmt.getTrueBranch(), null);
 		if (stmt.hasFalseBranch()) {
-			visitStatement(stmt.getFalseBranch(),null);
+			visitStatement(stmt.getFalseBranch(), null);
 		}
 	}
+
 	@Override
 	public void visitReturn(Stmt.Return stmt, Boolean consumed) {
 		visitExpressions(stmt.getReturns(), true);
@@ -161,30 +170,33 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	@Override
 	public void visitCase(Stmt.Case stmt, Boolean consume) {
 		visitExpressions(stmt.getConditions(), false);
-		visitStatement(stmt.getBlock(),null);
+		visitStatement(stmt.getBlock(), null);
 	}
 
 	@Override
 	public void visitWhile(Stmt.While stmt, Boolean consumed) {
-		visitExpression(stmt.getCondition(),false);
-		visitExpressions(stmt.getInvariant(),false);
-		visitStatement(stmt.getBody(),null);
+		visitExpression(stmt.getCondition(), false);
+		visitExpressions(stmt.getInvariant(), false);
+		visitStatement(stmt.getBody(), null);
 	}
 
 	// ===========================================================================
 	// GENERAL EXPRESSIONS
 	// ===========================================================================
 
-	@Override public void visitInvoke(Expr.Invoke expr, Boolean consumed) {
+	@Override
+	public void visitInvoke(Expr.Invoke expr, Boolean consumed) {
 		visitExpressions(expr.getOperands(), true);
 	}
 
-	@Override public void visitIndirectInvoke(Expr.IndirectInvoke expr, Boolean consumed) {
+	@Override
+	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Boolean consumed) {
 		visitExpression(expr.getSource(), false);
 		visitExpressions(expr.getArguments(), true);
 	}
 
-	@Override public void visitIs(Expr.Is expr, Boolean consumed) {
+	@Override
+	public void visitIs(Expr.Is expr, Boolean consumed) {
 		visitExpression(expr.getOperand(), false);
 	}
 
@@ -214,8 +226,8 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitEqual(Expr.Equal expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
@@ -230,16 +242,16 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitArrayAccess(Expr.ArrayAccess expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
-		if(!consumed) {
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
+		if (!consumed) {
 			expr.setMove();
 		}
 	}
 
 	@Override
 	public void visitArrayLength(Expr.ArrayLength expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
+		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
@@ -271,37 +283,36 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	// BITWISE EXPRESSIONS
 	// ===========================================================================
 
-
 	@Override
 	public void visitBitwiseComplement(Expr.BitwiseComplement expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
+		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitBitwiseAnd(Expr.BitwiseAnd expr, Boolean consumed) {
-		visitExpressions(expr.getOperands(),false);
+		visitExpressions(expr.getOperands(), false);
 	}
 
 	@Override
 	public void visitBitwiseOr(Expr.BitwiseOr expr, Boolean consumed) {
-		visitExpressions(expr.getOperands(),false);
+		visitExpressions(expr.getOperands(), false);
 	}
 
 	@Override
 	public void visitBitwiseXor(Expr.BitwiseXor expr, Boolean consumed) {
-		visitExpressions(expr.getOperands(),false);
+		visitExpressions(expr.getOperands(), false);
 	}
 
 	@Override
 	public void visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitBitwiseShiftRight(Expr.BitwiseShiftRight expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	// ===========================================================================
@@ -310,67 +321,66 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitIntegerLessThan(Expr.IntegerLessThan expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerNegation(Expr.IntegerNegation expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
+		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerAddition(Expr.IntegerAddition expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerDivision(Expr.IntegerDivision expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	// ===========================================================================
 	// LOGICAL EXPRESSIONS
 	// ===========================================================================
-
 
 	@Override
 	public void visitLogicalAnd(Expr.LogicalAnd expr, Boolean consumed) {
@@ -379,35 +389,35 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitLogicalImplication(Expr.LogicalImplication expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitLogicalIff(Expr.LogicalIff expr, Boolean consumed) {
-		visitExpression(expr.getFirstOperand(),false);
-		visitExpression(expr.getSecondOperand(),false);
+		visitExpression(expr.getFirstOperand(), false);
+		visitExpression(expr.getSecondOperand(), false);
 	}
 
 	@Override
 	public void visitLogicalNot(Expr.LogicalNot expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
+		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitLogicalOr(Expr.LogicalOr expr, Boolean consumed) {
-		visitExpressions(expr.getOperands(),false);
+		visitExpressions(expr.getOperands(), false);
 	}
 
 	@Override
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Boolean consumed) {
-		visitVariables(expr.getParameters(),true);
+		visitVariables(expr.getParameters(), true);
 		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Boolean consumed) {
-		visitVariables(expr.getParameters(),true);
+		visitVariables(expr.getParameters(), true);
 		visitExpression(expr.getOperand(), false);
 	}
 
@@ -417,15 +427,15 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitRecordAccess(Expr.RecordAccess expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
-		if(!consumed) {
+		visitExpression(expr.getOperand(), false);
+		if (!consumed) {
 			expr.setMove();
 		}
 	}
 
 	@Override
 	public void visitRecordInitialiser(Expr.RecordInitialiser expr, Boolean consumed) {
-		visitExpressions(expr.getOperands(),true);
+		visitExpressions(expr.getOperands(), true);
 	}
 
 	@Override
@@ -440,9 +450,8 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitDereference(Expr.Dereference expr, Boolean consumed) {
-		visitExpression(expr.getOperand(),false);
+		visitExpression(expr.getOperand(), false);
 	}
-
 
 	@Override
 	public void visitNew(Expr.New expr, Boolean consumed) {

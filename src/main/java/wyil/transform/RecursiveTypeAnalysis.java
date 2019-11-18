@@ -22,6 +22,8 @@ import static wyil.lang.WyilFile.*;
 import java.util.HashSet;
 import java.util.Set;
 
+import wybs.lang.Build;
+
 /**
  * <p>
  * A simple analysis of types to identify which are recurisve and which are not.
@@ -54,8 +56,8 @@ import java.util.Set;
 public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Transform {
 
 	@Override
-	public void apply(WyilFile module) {
-		visitModule(module, new HashSet<>());
+	public void apply(Build.Meter meter, WyilFile module) {
+		visitModule(meter, module, new HashSet<>());
 	}
 
 	// ===========================================================================
@@ -75,20 +77,27 @@ public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> 
 		}
 	}
 
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Set<QualifiedName> visited) {
+		// NOTE: we override this to prevent unnecessarily traversing statements
+	}
+
 	// ===========================================================================
 	// STATEMENTS
 	// ===========================================================================
 
-	public void visitStatement(Decl.Type t, Set<Name> visited) {
-		// do nothing
+	@Override
+	public void visitStatement(Stmt stmt, Set<QualifiedName> visited) {
+		// NOTE: we override this to prevent unnecessarily traversing statements
 	}
 
 	// ===========================================================================
 	// EXPRESSIONS
 	// ===========================================================================
 
-	public void visitExpression(Decl.Type t, Set<Name> visited) {
-		// do nothing
+	@Override
+	public void visitExpression(Expr expr, Set<QualifiedName> visited) {
+		// NOTE: we override this to prevent unnecessarily traversing expressions
 	}
 
 	// ===========================================================================

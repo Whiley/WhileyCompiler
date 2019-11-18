@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import wyil.util.AbstractConsumer;
 
@@ -96,15 +97,15 @@ public class NameResolution {
 	 *
 	 * @param wf
 	 */
-	public boolean apply() {
+	public boolean apply(Build.Meter meter) {
 		// FIXME: need to make this incremental
-		checkImports(target);
+		checkImports(meter,target);
 		// Create initial set of patches.
-		List<Patch> patches = resolver.apply(target);
+		List<Patch> patches = resolver.apply(meter,target);
 		// Keep iterating until all patches are resolved
 		while (patches.size() > 0) {
 			// Create importer
-			Importer importer = new Importer(target, true);
+			Importer importer = new Importer(meter, target, true);
 			// Now continue importing until patches all resolved.
 			for (int i = 0; i != patches.size(); ++i) {
 				// Import and link the given patch
@@ -114,7 +115,7 @@ public class NameResolution {
 			patches = importer.getPatches();
 		}
 		// Consolidate any imported declarations as externals.
-		symbolTable.consolidate();
+		symbolTable.consolidate(meter);
 		//
 		return status;
 	}
@@ -146,9 +147,10 @@ public class NameResolution {
 	 *
 	 * @param target
 	 */
-	private void checkImports(WyilFile target) {
+	private void checkImports(Build.Meter meter, WyilFile target) {
 		for(Decl.Unit unit : target.getModule().getUnits()) {
 			for(Decl d : unit.getDeclarations()) {
+				meter.step("check");
 				if(d instanceof Decl.Import) {
 					// Found one to check!
 					Decl.Import imp = (Decl.Import) d;
@@ -199,8 +201,8 @@ public class NameResolution {
 		 */
 		private boolean isVisible = false;
 
-		public List<Patch> apply(WyilFile module) {
-			super.visitModule(module, null);
+		public List<Patch> apply(Build.Meter meter, WyilFile module) {
+			super.visitModule(meter, module, null);
 			return patches;
 		}
 
@@ -208,6 +210,11 @@ public class NameResolution {
 		public void visitUnit(Decl.Unit unit, List<Decl.Import> unused) {
 			// Create an initially empty list of import statements.
 			super.visitUnit(unit, new ArrayList<>());
+		}
+
+		@Override
+		public void visitExternalUnit(Decl.Unit unit, List<Decl.Import> unused) {
+			// NOTE: we override this to prevent unnecessarily traversing units
 		}
 
 		@Override
@@ -611,6 +618,7 @@ public class NameResolution {
 	 *
 	 */
 	private class Importer extends AbstractSyntacticHeap.Allocator {
+		private final Build.Meter meter;
 		/**
 		 * Signals whether or not to only import stubs.
 		 */
@@ -622,14 +630,16 @@ public class NameResolution {
 
 		private final SyntacticItem REF_UNKNOWN;
 
-		public Importer(AbstractSyntacticHeap heap, boolean stubsOnly) {
+		public Importer(Build.Meter meter, AbstractSyntacticHeap heap, boolean stubsOnly) {
 			super(heap);
+			this.meter = meter;
 			this.stubsOnly = stubsOnly;
 			this.REF_UNKNOWN = super.allocate(REF_UNKNOWN_DECL);
 		}
 
 		@Override
 		public SyntacticItem allocate(SyntacticItem item) {
+			meter.step("import");
 			switch (item.getOpcode()) {
 			case ITEM_ref:
 				Ref<?> ref = (Ref<?>) item;

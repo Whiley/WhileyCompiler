@@ -63,11 +63,11 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	// ======================================================================
 
 	public void apply(WyilFile module) {
-		visitModule(module,0);
+		visitModule(module, 0);
 	}
 
 	@Override
-	public void visitModule(WyilFile wf, Integer indent) {
+	public void visitModule(Build.Meter meter, WyilFile wf, Integer indent) {
 		int major = wf.getMajorVersion();
 		int minor = wf.getMinorVersion();
 		out.println("// wyil version " + major + "." + minor);

@@ -18,11 +18,14 @@ import static wyil.lang.WyilFile.*;
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.check.DefiniteAssignmentCheck.ControlFlow;
+import wyil.check.DefiniteAssignmentCheck.DefinitelyAssignedSet;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 
 /**
@@ -77,11 +80,17 @@ public class DefiniteUnassignmentCheck
 	private boolean status = true;
 
 	@Override
-	public boolean check(WyilFile wf) {
+	public boolean check(Build.Meter meter, WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
 		//
 		return status;
+	}
+
+	@Override
+	public ControlFlow visitExternalUnit(Decl.Unit unit, MaybeAssignedSet dummy) {
+		// NOTE: we override this to prevent unnecessarily traversing units
+		return null;
 	}
 
 	/**

@@ -15,6 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -29,18 +30,27 @@ import wyil.lang.WyilFile.Decl;
  *
  */
 public abstract class AbstractConsumer<T> {
+	private Build.Meter meter;
 
 	public void visitModule(WyilFile wf, T data) {
+		visitModule(Build.NULL_METER,wf,data);
+	}
+
+	public void visitModule(Build.Meter meter, WyilFile wf, T data) {
+		this.meter = meter;
+		//
 		Decl.Module module = wf.getModule();
 		for (Decl.Unit decl : module.getUnits()) {
-			visitDeclaration(decl, data);
+			visitUnit(decl, data);
 		}
 		for (Decl.Unit decl : module.getExterns()) {
-			visitDeclaration(decl, data);
+			visitExternalUnit(decl, data);
 		}
 	}
 
 	public void visitDeclaration(Decl decl, T data) {
+		meter.step("declaration");
+		//
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl, data);
@@ -68,10 +78,16 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitUnit(Decl.Unit unit, T data) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
 	}
+
+	public void visitExternalUnit(Decl.Unit unit, T data) {
+		visitUnit(unit,data);
+	}
+
 	public void visitImport(Decl.Import decl, T data) {
 
 	}
@@ -157,6 +173,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitStatement(Stmt stmt, T data) {
+		meter.step("statemenmt");
+		//
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -314,6 +332,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitExpression(Expr expr, T data) {
+		meter.step("expression");
+		//
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -768,6 +788,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitType(Type type, T data) {
+		meter.step("type");
+		//
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			visitTypeArray((Type.Array) type, data);

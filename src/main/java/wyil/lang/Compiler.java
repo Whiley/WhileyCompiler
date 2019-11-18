@@ -13,13 +13,15 @@
 // limitations under the License.
 package wyil.lang;
 
+import wybs.lang.Build;
+
 public interface Compiler {
 
 	public interface Check {
-		public boolean check(WyilFile file);
+		public boolean check(Build.Meter meter, WyilFile file);
 	}
 
 	public interface Transform {
-		public void apply(WyilFile file);
+		public void apply(Build.Meter meter, WyilFile file);
 	}
 }

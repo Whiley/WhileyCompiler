@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import wyal.util.NameResolver.ResolutionError;
+import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
@@ -131,7 +132,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	@Override
-	public boolean check(WyilFile wf) {
+	public boolean check(Build.Meter meter, WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			checkDeclaration(decl);
 		}

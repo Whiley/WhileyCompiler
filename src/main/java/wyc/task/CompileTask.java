@@ -15,9 +15,13 @@ package wyc.task;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 import wybs.lang.Build;
+import wybs.lang.Build.Meter;
 import wybs.util.AbstractBuildTask;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -149,7 +153,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	}
 
 	@Override
-	public Callable<Boolean> initialise() throws IOException {
+	public Function<Meter,Boolean> initialise() throws IOException {
 		// Extract target and source files for compilation. This is the component which
 		// requires I/O.
 		WyilFile wyil = target.read();
@@ -160,7 +164,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		// Construct the lambda for subsequent execution. This will eventually make its
 		// way into some kind of execution pool, possibly for concurrent execution with
 		// other tasks.
-		return () -> execute(wyil, whileys);
+		return (Meter meter) -> execute(meter, wyil, whileys);
 	}
 
 	/**
@@ -168,14 +172,12 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * computation can proceed without performing any blocking I/O. This means it
 	 * can be used in e.g. a forkjoin task safely.
 	 *
-	 * @param target
-	 *            --- The WyilFile being written.
-	 * @param sources
-	 *            --- The WhileyFiles being compiled.
+	 * @param meter --- Records profiling information
+	 * @param target  --- The WyilFile being written.
+	 * @param sources --- The WhileyFiles being compiled.
 	 * @return
 	 */
-	public boolean execute(WyilFile target, WhileyFile... sources) {
-		Task timer = new Task(logger);
+	public boolean execute(Meter meter, WyilFile target, WhileyFile... sources) {
 		// FIXME: this is something of a hack to handle the fact that this is not an
 		// incremental compiler! Basically, we always start from scratch no matter what.
 		WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
@@ -183,81 +185,58 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		//
 		boolean r = true;
 		// Parse source files into target
+		Meter parserMeter = meter.fork(WhileyFileParser.class.getSimpleName());
 		for (int i = 0; i != sources.length; ++i) {
 			// NOTE: this is somehow where we work out the initial deltas for incremental
 			// compilation.
 			WhileyFile source = sources[i];
 			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			//
-			r &= wyp.read();
+			r &= wyp.read(parserMeter);
 		}
-		timer.split("Parsed " + sources.length + " file(s)");
+		parserMeter.done();
 		// Perform name resolution.
+		Meter nameResolutionMeter = meter.fork(NameResolution.class.getSimpleName());
 		try {
-			r = r && new NameResolution(project, target).apply();
+			r = r && new NameResolution(project, target).apply(nameResolutionMeter);
 		} catch(IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
 		}
-		timer.split("NameResolution");
+		nameResolutionMeter.done();
 		// ========================================================================
 		// Flow Type Checking
 		// ========================================================================
-		r = r && checker.check(target);
-		timer.split("FlowTypeCheck");
+		Meter typeCheckMeter = meter.fork(FlowTypeCheck.class.getSimpleName());
+		r = r && checker.check(typeCheckMeter,target);
+		typeCheckMeter.done();
 		// ========================================================================
 		// Compiler Checks
 		// ========================================================================
 		for (int i = 0; i != stages.length; ++i) {
-			r = r && stages[i].check(target);
-			timer.split(stages[i].getClass().getSimpleName());
+			Meter m = meter.fork(stages[i].getClass().getSimpleName());
+			r = r && stages[i].check(m,target);
+			m.done();
 		}
 		if(verification) {
+			Meter m = meter.fork(VerificationCheck.class.getSimpleName());
 			r = r && verifier.check(target,counterexamples);
-			timer.split("Verification");
+			m.done();
 		}
 		// Transforms
 		if (r) {
 			// Only apply if previous stages have all passed.
 			for (int i = 0; i != transforms.length; ++i) {
-				transforms[i].apply(target);
-				timer.split(transforms[i].getClass().getSimpleName());
+				Meter m = meter.fork(transforms[i].getClass().getSimpleName());
+				transforms[i].apply(m,target);
+				m.done();
 			}
 		}
 		// Collect garbage
 		//target.gc();
-		timer.done("Compiled "  + sources.length + " whiley file(s)");
+		//
+		meter.done();
 		// Done
 		return r;
-	}
-
-	private static class Task {
-		private final Logger logger;
-		private final long time;
-		private final long memory;
-		private long splitTime;
-		private long splitMemory;
-
-		public Task(Logger logger) {
-			this.logger = logger;
-			this.splitTime = System.currentTimeMillis();
-			this.splitMemory = Runtime.getRuntime().freeMemory();
-			this.time = splitTime;
-			this.memory = splitMemory;
-		}
-
-		public void split(String msg) {
-			long t = splitTime;
-			long m = splitMemory;
-			splitTime = System.currentTimeMillis();
-			splitMemory = Runtime.getRuntime().freeMemory();
-			logger.logTimedMessage(msg, splitTime-t, splitMemory-m);
-		}
-
-		public void done(String msg) {
-			long t = System.currentTimeMillis();
-			long m = Runtime.getRuntime().freeMemory();
-			logger.logTimedMessage(msg, t-time, m-memory);
-		}
 	}
 }
