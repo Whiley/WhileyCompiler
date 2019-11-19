@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
@@ -247,23 +248,12 @@ public class FlowTypeUtils {
 	// isPure
 	// ===============================================================================================================
 
-	/**
-	 * Determine whether a given expression calls an impure method, dereferences a
-	 * reference or accesses a static variable. This is done by exploiting the
-	 * uniform nature of syntactic items. Essentially, we just traverse the entire
-	 * tree representing the syntactic item looking for expressions of any kind.
-	 *
-	 * @param item
-	 * @return
-	 */
-	public static boolean isPure(Expr e) {
-		PurityVisitor visitor = new PurityVisitor();
-		visitor.visitExpression(e);
-		return visitor.pure;
-	}
-
-	private static class PurityVisitor extends AbstractVisitor {
+	public static class PurityVisitor extends AbstractVisitor {
 		public boolean pure = true;
+
+		public PurityVisitor(Build.Meter meter) {
+			super(meter);
+		}
 
 		@Override
 		public void visitExternalUnit(Decl.Unit unit) {

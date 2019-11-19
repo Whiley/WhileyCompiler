@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
@@ -1217,7 +1218,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						signature);
 			}
 
-			public Set<Decl.Variable> getCapturedVariables() {
+			public Set<Decl.Variable> getCapturedVariables(Build.Meter meter) {
+				UsedVariableExtractor usedVariableExtractor = new UsedVariableExtractor(meter);
 				HashSet<Decl.Variable> captured = new HashSet<>();
 				usedVariableExtractor.visitExpression(getBody(), captured);
 				Tuple<Decl.Variable> parameters = getParameters();
@@ -6683,7 +6685,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 	}
 
-	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
+	private static class UsedVariableExtractor extends AbstractConsumer<HashSet<Decl.Variable>> {
+		public UsedVariableExtractor(Build.Meter meter) {
+			super(meter);
+		}
+
 		@Override
 		public void visitVariableAccess(WyilFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {
 			used.add(expr.getVariableDeclaration());

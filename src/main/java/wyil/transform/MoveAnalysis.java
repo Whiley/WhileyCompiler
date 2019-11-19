@@ -72,9 +72,14 @@ import wyil.util.AbstractConsumer;
  */
 public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.Transform {
 
+	public MoveAnalysis(Build.Meter meter) {
+		super(meter.fork(MoveAnalysis.class.getSimpleName()));
+	}
+
 	@Override
-	public void apply(Build.Meter meter, WyilFile module) {
-		visitModule(meter, module, null);
+	public void apply(WyilFile module) {
+		visitModule(module, null);
+		meter.done();
 	}
 
 	// ===========================================================================

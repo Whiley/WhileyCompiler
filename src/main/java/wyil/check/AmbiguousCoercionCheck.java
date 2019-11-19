@@ -80,15 +80,16 @@ import wyil.util.*;
 public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Compiler.Check {
 	private boolean status = true;
 
-	public AmbiguousCoercionCheck() {
+	public AmbiguousCoercionCheck(Build.Meter meter) {
 		// FIXME: figure out which one to use
-		super(new SubtypeOperator.Relaxed());
+		super(meter.fork(AmbiguousCoercionCheck.class.getSimpleName()),new SubtypeOperator.Relaxed());
 	}
 
 	@Override
-	public boolean check(Build.Meter meter, WyilFile file) {
+	public boolean check(WyilFile file) {
 		// Only proceed if no errors in earlier stages
 		visitModule(file);
+		meter.done();
 		//
 		return status;
 	}

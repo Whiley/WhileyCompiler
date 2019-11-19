@@ -26,6 +26,7 @@ import wyal.lang.WyalFile.Declaration;
 import wyal.lang.WyalFile.Declaration.Named;
 import wyal.lang.WyalFile.Expr;
 import wyal.util.NameResolver.ResolutionError;
+import wybs.lang.Build;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Attribute;
@@ -119,9 +120,11 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class VerificationConditionGenerator {
+	private final Build.Meter meter;
 	private final WyalFile wyalFile;
 
-	public VerificationConditionGenerator(WyalFile wyalFile) {
+	public VerificationConditionGenerator(Build.Meter meter, WyalFile wyalFile) {
+		this.meter = meter.fork(VerificationConditionGenerator.class.getSimpleName());
 		this.wyalFile = wyalFile;
 	}
 
@@ -1272,7 +1275,7 @@ public class VerificationConditionGenerator {
 
 	@SuppressWarnings("unchecked")
 	private void checkExpressionPreconditions(WyilFile.Expr expr, Context context) {
-		new PreconditionGenerator(this).apply(expr, context);
+		new PreconditionGenerator(meter,this).apply(expr, context);
 	}
 
 	private Context assumeExpressionPostconditions(WyilFile.Expr expr, Context context) {
@@ -2318,7 +2321,10 @@ public class VerificationConditionGenerator {
 	 * Create a simple visitor for extracting all variable access expressions from a
 	 * given expression (or statement).
 	 */
-	private static final AbstractConsumer<HashSet<Decl.Variable>> usedVariableExtractor = new AbstractConsumer<HashSet<Decl.Variable>>() {
+	private static class UsedVariableExtractor extends AbstractConsumer<HashSet<Decl.Variable>> {
+		public UsedVariableExtractor(Build.Meter meter) {
+			super(meter);
+		}
 		@Override
 		public void visitExternalUnit(Decl.Unit unit, HashSet<Decl.Variable> used) {
 			// NOTE: we override this to prevent unnecessarily traversing units
@@ -2362,6 +2368,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	public Tuple<Decl.Variable> determineUsedVariables(Tuple<WyilFile.Expr> exprs) {
+		UsedVariableExtractor usedVariableExtractor = new UsedVariableExtractor(meter);
 		HashSet<Decl.Variable> used = new HashSet<>();
 		usedVariableExtractor.visitExpressions(exprs, used);
 		return new Tuple<>(used);

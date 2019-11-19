@@ -15,6 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
@@ -31,6 +32,11 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractFunction<P,R> {
+	protected final Build.Meter meter;
+
+	public AbstractFunction(Build.Meter meter) {
+		this.meter = meter;
+	}
 
 	public R visitModule(WyilFile wf, P data) {
 		Decl.Module module = wf.getModule();
@@ -45,6 +51,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitDeclaration(Decl decl, P data) {
+		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			return visitUnit((Decl.Unit) decl, data);
@@ -67,6 +74,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitUnit(Decl.Unit unit, P data) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
@@ -168,6 +176,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitStatement(Stmt stmt, P data) {
+		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -320,6 +329,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitExpression(Expr expr, P data) {
+		meter.step("expression");
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -772,6 +782,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitType(Type type, P data) {
+		meter.step("type");
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			return visitTypeArray((Type.Array) type, data);

@@ -395,7 +395,7 @@ public class TestUtils {
 		public Environment(Path.Root root, boolean verbose) {
 			this.root = root;
 			this.logger = verbose ? new Logger.Default(System.err) : Logger.NULL;
-			this.meter = new WyMain.Meter("TestUtils", logger);
+			this.meter = new WyMain.Meter("TestUtils", logger, verbose ? Integer.MAX_VALUE : 0);
 		}
 
 		@Override

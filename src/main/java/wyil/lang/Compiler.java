@@ -18,10 +18,10 @@ import wybs.lang.Build;
 public interface Compiler {
 
 	public interface Check {
-		public boolean check(Build.Meter meter, WyilFile file);
+		public boolean check(WyilFile file);
 	}
 
 	public interface Transform {
-		public void apply(Build.Meter meter, WyilFile file);
+		public void apply(WyilFile file);
 	}
 }

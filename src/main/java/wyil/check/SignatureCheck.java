@@ -53,9 +53,14 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 	private static final TypeMangler mangler = new TypeMangler.Default();
 	private boolean status = true;
 
+	public SignatureCheck(Build.Meter meter) {
+		super(meter.fork(SignatureCheck.class.getSimpleName()));
+	}
+
 	@Override
-	public boolean check(Build.Meter meter, WyilFile file) {
-		visitModule(meter, file, new Context());
+	public boolean check(WyilFile file) {
+		visitModule(file, new Context());
+		meter.done();
 		return status;
 	}
 

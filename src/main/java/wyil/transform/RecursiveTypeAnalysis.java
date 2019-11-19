@@ -55,9 +55,14 @@ import wybs.lang.Build;
  */
 public class RecursiveTypeAnalysis extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Transform {
 
+	public RecursiveTypeAnalysis(Build.Meter meter) {
+		super(meter.fork(RecursiveTypeAnalysis.class.getSimpleName()));
+	}
+
 	@Override
-	public void apply(Build.Meter meter, WyilFile module) {
-		visitModule(meter, module, new HashSet<>());
+	public void apply(WyilFile module) {
+		visitModule(module, new HashSet<>());
+		meter.done();
 	}
 
 	// ===========================================================================

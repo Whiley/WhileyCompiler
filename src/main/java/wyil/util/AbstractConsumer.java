@@ -30,14 +30,13 @@ import wyil.lang.WyilFile.Decl;
  *
  */
 public abstract class AbstractConsumer<T> {
-	private Build.Meter meter;
+	protected final Build.Meter meter;
 
-	public void visitModule(WyilFile wf, T data) {
-		visitModule(Build.NULL_METER,wf,data);
+	public AbstractConsumer(Build.Meter meter) {
+		this.meter = meter;
 	}
 
-	public void visitModule(Build.Meter meter, WyilFile wf, T data) {
-		this.meter = meter;
+	public void visitModule(WyilFile wf, T data) {
 		//
 		Decl.Module module = wf.getModule();
 		for (Decl.Unit decl : module.getUnits()) {
@@ -173,7 +172,7 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitStatement(Stmt stmt, T data) {
-		meter.step("statemenmt");
+		meter.step("statement");
 		//
 		switch (stmt.getOpcode()) {
 		case DECL_variable:

@@ -62,9 +62,14 @@ import static wyil.lang.WyilFile.*;
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Check {
 	private boolean status = true;
 
+	public StaticVariableCheck(Build.Meter meter) {
+		super(meter.fork(StaticVariableCheck.class.getSimpleName()));
+	}
+
 	@Override
-	public boolean check(Build.Meter meter, WyilFile wf) {
-		visitModule(meter, wf, null);
+	public boolean check(WyilFile wf) {
+		visitModule(wf, null);
+		meter.done();
 		return status;
 	}
 

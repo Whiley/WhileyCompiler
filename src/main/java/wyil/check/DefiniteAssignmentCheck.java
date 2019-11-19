@@ -54,10 +54,16 @@ public class DefiniteAssignmentCheck
 		implements Compiler.Check {
 	private boolean status = true;
 
+	public DefiniteAssignmentCheck(Build.Meter meter) {
+		super(meter.fork(DefiniteAssignmentCheck.class.getSimpleName()));
+	}
+
 	@Override
-	public boolean check(Build.Meter meter, WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		//
 		visitModule(wf, null);
+		//
+		meter.done();
 		//
 		return status;
 	}

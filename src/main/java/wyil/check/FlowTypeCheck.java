@@ -53,6 +53,7 @@ import wybs.util.ResolveError;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
+import wyil.check.FlowTypeUtils.PurityVisitor;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -118,11 +119,13 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  *
  */
 public class FlowTypeCheck implements Compiler.Check {
+	private final Build.Meter meter;
 	//private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private boolean status = true;
 
-	public FlowTypeCheck() {
+	public FlowTypeCheck(Build.Meter meter) {
+		this.meter = meter.fork(FlowTypeCheck.class.getSimpleName());
 		//this.relaxedSubtypeOperator = null;
 		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
@@ -132,10 +135,11 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	@Override
-	public boolean check(Build.Meter meter, WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		for (Decl decl : wf.getModule().getUnits()) {
 			checkDeclaration(decl);
 		}
+		meter.done();
 		return status;
 	}
 
@@ -144,6 +148,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	public void checkDeclaration(Decl decl) {
+		meter.step("declaration");
 		if (decl instanceof Decl.Unit) {
 			checkUnit((Decl.Unit) decl);
 		} else if (decl instanceof Decl.Import) {
@@ -298,6 +303,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
+		meter.step("statement");
 		try {
 			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
@@ -1329,6 +1335,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @throws ResolutionError
 	 */
 	public Type checkExpression(Expr expression, Environment environment) {
+		meter.step("expression");
 		Type type;
 
 		switch (expression.getOpcode()) {
@@ -1881,7 +1888,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if(results == null) {
 			// An error occurred upstream
 			return null;
-		} else if (FlowTypeUtils.isPure(expr.getBody())) {
+		} else if (isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
 			signature = new Type.Function(parameterTypes, results);
 		} else {
@@ -1901,6 +1908,21 @@ public class FlowTypeCheck implements Compiler.Check {
 	// ==========================================================================
 	// Helpers
 	// ==========================================================================
+
+	/**
+	 * Determine whether a given expression calls an impure method, dereferences a
+	 * reference or accesses a static variable. This is done by exploiting the
+	 * uniform nature of syntactic items. Essentially, we just traverse the entire
+	 * tree representing the syntactic item looking for expressions of any kind.
+	 *
+	 * @param item
+	 * @return
+	 */
+	private boolean isPure(Expr e) {
+		FlowTypeUtils.PurityVisitor visitor = new FlowTypeUtils.PurityVisitor(meter);
+		visitor.visitExpression(e);
+		return visitor.pure;
+	}
 
 	private void checkOperand(Type type, Expr operand, Environment environment) {
 		checkIsSubtype(type, checkExpression(operand, environment), environment, operand);

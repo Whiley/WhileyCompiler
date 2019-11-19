@@ -90,56 +90,25 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * Specify whether counterexample generation is enabled or not
 	 */
 	private boolean counterexamples;
-
-	/**
-	 * The source root to find Whiley files. This is far from ideal.
-	 */
-	private final Path.Root sourceRoot;
-
-	/**
-	 * Type checking stage. After name resolution, this must run before any other
-	 * stage, as all other stages depend on it.
-	 */
-	private final FlowTypeCheck checker;
-
-	/**
-	 * The set of compiler checks. These check the generated WyilFile is valid.
-	 */
-	private final Compiler.Check[] stages;
-
 	/**
 	 * Optional stage
 	 */
 	private final VerificationCheck verifier;
-
 	/**
-	 * The set of transforms. These perform certain transformations on the generated
-	 * WyilFile.
+	 * The source root to find Whiley files. This is far from ideal.
 	 */
-	private final Compiler.Transform[] transforms;
+	private final Path.Root sourceRoot;
 
 	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
 			Collection<Path.Entry<WhileyFile>> sources) throws IOException {
 		super(project, target, sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
-		// Instantiate type checker
-		this.checker = new FlowTypeCheck();
-		// Instantiate other checks
-		this.stages = new Compiler.Check[] {
-				new DefiniteAssignmentCheck(),
-				new DefiniteUnassignmentCheck(),
-				new FunctionalCheck(),
-				new SignatureCheck(),
-				new StaticVariableCheck(),
-				new AmbiguousCoercionCheck()
-			};
+
 		// Extract the logger for debug information
 		this.logger = project.getEnvironment().getLogger();
 		//
-		this.verifier = new VerificationCheck(project,target);
-		// Instantiate various transformations
-		this.transforms = new Compiler.Transform[] { new MoveAnalysis(), new RecursiveTypeAnalysis() };
+		this.verifier = new VerificationCheck(Build.NULL_METER,project,target);
 	}
 
 	public CompileTask setVerification(boolean flag) {
@@ -178,6 +147,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(Meter meter, WyilFile target, WhileyFile... sources) {
+		meter = meter.fork("WhileyCompiler");
 		// FIXME: this is something of a hack to handle the fact that this is not an
 		// incremental compiler! Basically, we always start from scratch no matter what.
 		WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
@@ -196,40 +166,34 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		}
 		parserMeter.done();
 		// Perform name resolution.
-		Meter nameResolutionMeter = meter.fork(NameResolution.class.getSimpleName());
 		try {
-			r = r && new NameResolution(project, target).apply(nameResolutionMeter);
+			r = r && new NameResolution(meter, project, target).apply();
 		} catch(IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
 		}
-		nameResolutionMeter.done();
 		// ========================================================================
 		// Flow Type Checking
 		// ========================================================================
-		Meter typeCheckMeter = meter.fork(FlowTypeCheck.class.getSimpleName());
-		r = r && checker.check(typeCheckMeter,target);
-		typeCheckMeter.done();
+		// Instantiate type checker
+		FlowTypeCheck checker = new FlowTypeCheck(meter);
+		r = r && checker.check(target);
 		// ========================================================================
 		// Compiler Checks
 		// ========================================================================
+		Compiler.Check[] stages = instantiateChecks(meter);
 		for (int i = 0; i != stages.length; ++i) {
-			Meter m = meter.fork(stages[i].getClass().getSimpleName());
-			r = r && stages[i].check(m,target);
-			m.done();
+			r = r && stages[i].check(target);
 		}
 		if(verification) {
-			Meter m = meter.fork(VerificationCheck.class.getSimpleName());
 			r = r && verifier.check(target,counterexamples);
-			m.done();
 		}
 		// Transforms
 		if (r) {
+			Compiler.Transform[] transforms = instantiateTransforms(meter);
 			// Only apply if previous stages have all passed.
 			for (int i = 0; i != transforms.length; ++i) {
-				Meter m = meter.fork(transforms[i].getClass().getSimpleName());
-				transforms[i].apply(m,target);
-				m.done();
+				transforms[i].apply(target);
 			}
 		}
 		// Collect garbage
@@ -238,5 +202,20 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		meter.done();
 		// Done
 		return r;
+	}
+
+	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
+		return new Compiler.Check[] {
+				new DefiniteAssignmentCheck(m),
+				new DefiniteUnassignmentCheck(m),
+				new FunctionalCheck(m),
+				new SignatureCheck(m),
+				new StaticVariableCheck(m),
+				new AmbiguousCoercionCheck(m)
+		};
+	}
+
+	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
+		return new Compiler.Transform[] { new MoveAnalysis(meter), new RecursiveTypeAnalysis(meter) };
 	}
 }

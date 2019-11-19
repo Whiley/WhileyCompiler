@@ -37,12 +37,14 @@ import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 
 public class VerificationCheck {
+	private final Build.Meter meter;
 	private final Build.Project project;
 	private Path.Entry<WyalFile> wyalTarget;
 	private Path.Entry<WyilFile> target;
 	//private final Path.Root sourceRoot;
 
-	public VerificationCheck(Build.Project project, Path.Entry<WyilFile> target) throws IOException {
+	public VerificationCheck(Build.Meter meter, Build.Project project, Path.Entry<WyilFile> target) throws IOException {
+		this.meter = meter.fork(VerificationCheck.class.getSimpleName());
 		this.project = project;
 		//
 		wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
@@ -63,7 +65,7 @@ public class VerificationCheck {
 		try {
 			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
 			// FIXME: this unfortunately puts it in the wrong directory.
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target);
+			WyalFile contents = new VerificationConditionGenerator(meter,new WyalFile(wyalTarget)).translate(target);
 			new TypeChecker(typeSystem, contents, this.target).check();
 //			wyalTarget.write(contents);
 //			wyalTarget.flush();
@@ -95,6 +97,8 @@ public class VerificationCheck {
 				// FIXME: enjoy debugging this when the time comes :)
 				throw new SyntacticException(message,null,item,e);
 			}
+		} finally {
+			meter.done();
 		}
 	}
 

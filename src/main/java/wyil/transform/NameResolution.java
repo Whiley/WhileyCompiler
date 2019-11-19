@@ -73,6 +73,7 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class NameResolution {
+	private final Build.Meter meter;
 	private final WyilFile target;
 	/**
 	 * The resolver identifies unresolved names and produces patches based on them.
@@ -85,11 +86,12 @@ public class NameResolution {
 
 	private boolean status = true;
 
-	public NameResolution(Build.Project project, WyilFile target) throws IOException {
+	public NameResolution(Build.Meter meter, Build.Project project, WyilFile target) throws IOException {
+		this.meter = meter.fork(NameResolution.class.getSimpleName());
 		this.project = project;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
-		this.resolver = new Resolver();
+		this.resolver = new Resolver(meter);
 	}
 
 	/**
@@ -97,11 +99,11 @@ public class NameResolution {
 	 *
 	 * @param wf
 	 */
-	public boolean apply(Build.Meter meter) {
+	public boolean apply() {
 		// FIXME: need to make this incremental
 		checkImports(meter,target);
 		// Create initial set of patches.
-		List<Patch> patches = resolver.apply(meter,target);
+		List<Patch> patches = resolver.apply(target);
 		// Keep iterating until all patches are resolved
 		while (patches.size() > 0) {
 			// Create importer
@@ -116,6 +118,8 @@ public class NameResolution {
 		}
 		// Consolidate any imported declarations as externals.
 		symbolTable.consolidate(meter);
+		//
+		meter.done();
 		//
 		return status;
 	}
@@ -201,8 +205,12 @@ public class NameResolution {
 		 */
 		private boolean isVisible = false;
 
-		public List<Patch> apply(Build.Meter meter, WyilFile module) {
-			super.visitModule(meter, module, null);
+		public Resolver(Build.Meter meter) {
+			super(meter);
+		}
+
+		public List<Patch> apply(WyilFile module) {
+			super.visitModule(module, null);
 			return patches;
 		}
 

@@ -43,10 +43,12 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private boolean verbose = false;
 
 	public WyilFilePrinter(PrintWriter visitr) {
+		super(Build.NULL_METER);
 		this.out = visitr;
 	}
 
 	public WyilFilePrinter(OutputStream stream) {
+		super(Build.NULL_METER);
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 
@@ -67,7 +69,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	@Override
-	public void visitModule(Build.Meter meter, WyilFile wf, Integer indent) {
+	public void visitModule(WyilFile wf, Integer indent) {
 		int major = wf.getMajorVersion();
 		int minor = wf.getMinorVersion();
 		out.println("// wyil version " + major + "." + minor);

@@ -25,6 +25,7 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
@@ -45,8 +46,10 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  */
 public abstract class AbstractTypedVisitor {
 	protected final SubtypeOperator subtypeOperator;
+	protected final Build.Meter meter;
 
-	public AbstractTypedVisitor(SubtypeOperator subtypeOperator) {
+	public AbstractTypedVisitor(Build.Meter meter, SubtypeOperator subtypeOperator) {
+		this.meter = meter;
 		this.subtypeOperator = subtypeOperator;
 	}
 
@@ -62,6 +65,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitDeclaration(Decl decl) {
+		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl);
@@ -88,6 +92,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitUnit(Decl.Unit unit) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl);
 		}
@@ -193,6 +198,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
+		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -398,6 +404,7 @@ public abstract class AbstractTypedVisitor {
 	 * @param target
 	 */
 	public void visitExpression(Expr expr, Type target, Environment environment) {
+		meter.step("expression");
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -898,6 +905,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitType(Type type) {
+		meter.step("type");
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			visitTypeArray((Type.Array) type);

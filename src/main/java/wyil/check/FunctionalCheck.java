@@ -76,9 +76,14 @@ import java.util.HashSet;
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> implements Compiler.Check {
 	private boolean status = true;
 
+	public FunctionalCheck(Build.Meter meter) {
+		super(meter.fork(FunctionalCheck.class.getSimpleName()));
+	}
+
 	@Override
-	public boolean check(Build.Meter meter, WyilFile file) {
-		visitModule(meter, file, null);
+	public boolean check(WyilFile file) {
+		visitModule(file, null);
+		meter.done();
 		return status;
 	}
 

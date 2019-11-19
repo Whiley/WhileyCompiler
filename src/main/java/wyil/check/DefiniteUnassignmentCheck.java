@@ -79,10 +79,15 @@ public class DefiniteUnassignmentCheck
 
 	private boolean status = true;
 
+	public DefiniteUnassignmentCheck(Build.Meter meter) {
+		super(meter.fork(DefiniteUnassignmentCheck.class.getSimpleName()));
+	}
+
 	@Override
-	public boolean check(Build.Meter meter, WyilFile wf) {
+	public boolean check(WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
+		meter.done();
 		//
 		return status;
 	}

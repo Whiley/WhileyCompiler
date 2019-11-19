@@ -5,6 +5,7 @@ import java.util.List;
 
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
+import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.util.Pair;
@@ -56,14 +57,16 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class PreconditionGenerator {
+	private final Build.Meter meter;
 	private final VerificationConditionGenerator vcg;
 
-	public PreconditionGenerator(VerificationConditionGenerator vcg) {
+	public PreconditionGenerator(Build.Meter meter, VerificationConditionGenerator vcg) {
+		this.meter = meter;
 		this.vcg = vcg;
 	}
 
 	public void apply(WyilFile.Expr expr, Context context) {
-		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
+		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>(meter) {
 			@Override
 			public void visitExternalUnit(Decl.Unit unit, Context context) {
 				// NOTE: we override this to prevent unnecessarily traversing units
