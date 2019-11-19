@@ -34,7 +34,6 @@ import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
-import wyil.transform.RecursiveTypeAnalysis;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -104,7 +103,6 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		super(project, target, sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
-
 		// Extract the logger for debug information
 		this.logger = project.getEnvironment().getLogger();
 		//
@@ -216,6 +214,9 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	}
 
 	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
-		return new Compiler.Transform[] { new MoveAnalysis(meter), new RecursiveTypeAnalysis(meter) };
+		return new Compiler.Transform[] {
+				new MoveAnalysis(meter),
+//				new RecursiveTypeAnalysis(meter)
+		};
 	}
 }

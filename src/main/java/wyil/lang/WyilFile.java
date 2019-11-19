@@ -1325,14 +1325,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Decl.Variable) get(3);
 			}
 
-			public boolean isRecursive() {
-				return opcode == DECL_rectype;
-			}
-
-			public void setRecursive() {
-				this.opcode = DECL_rectype;
-			}
-
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
 				return (Tuple<Expr>) get(4);
@@ -1366,7 +1358,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					Decl.Type r = new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3],
 							(Tuple<Expr>) operands[4]);
-					r.setRecursive();
+					//r.setRecursive();
 					return r;
 				}
 			};
