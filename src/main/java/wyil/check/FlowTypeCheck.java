@@ -440,8 +440,11 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type type = checkExpression(decl.getInitialiser(), environment);
 			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 			if (type != null) {
+				// Refine the declared type
+				Type refined = strictSubtypeOperator.refine(decl.getType(), type);
+				System.out.println("REFINED: " + decl.getType() + " & " + type + " => " + refined);
 				// Update the typing environment accordingly.
-				environment = environment.refineType(decl, type);
+				environment = environment.refineType(decl, refined);
 			}
 		}
 		// Done.
@@ -473,8 +476,11 @@ public class FlowTypeCheck implements Compiler.Check {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
 				if (extraction != null) {
+					Decl.Variable decl = extraction.getFirst();
+					// Refine the declared type
+					Type type = strictSubtypeOperator.refine(decl.getType(), extraction.getSecond());
 					// Update the typing environment accordingly.
-					environment = environment.refineType(extraction.getFirst(), extraction.getSecond());
+					environment = environment.refineType(extraction.getFirst(), type);
 				}
 			}
 		}

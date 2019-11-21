@@ -1202,11 +1202,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	}
 
 	// ===============================================================================
-	// Type Selector
+	// Type Subtraction
 	// ===============================================================================
 
 	/**
-	 * Select one type from a given type.
+	 * Subtract one type from another.
 	 *
 	 * @param lhs
 	 * @param rhs

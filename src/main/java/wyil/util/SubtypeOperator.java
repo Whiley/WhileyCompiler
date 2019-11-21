@@ -87,7 +87,7 @@ public interface SubtypeOperator {
 	public boolean isEmpty(QualifiedName nid, Type type);
 
 	/**
-	 * Select one type from another to producing the result. For example, selecting
+	 * Subtract one type from another to produce the result. For example, subtracting
 	 * <code>null</code> from <code>int|null</code> produces <code>int</code>.
 	 *
 	 * @param t1
