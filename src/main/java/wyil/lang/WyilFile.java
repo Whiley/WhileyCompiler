@@ -13,6 +13,20 @@
 // limitations under the License.
 package wyil.lang;
 
+import static wyil.lang.WyilFile.TYPE_array;
+import static wyil.lang.WyilFile.TYPE_bool;
+import static wyil.lang.WyilFile.TYPE_byte;
+import static wyil.lang.WyilFile.TYPE_function;
+import static wyil.lang.WyilFile.TYPE_int;
+import static wyil.lang.WyilFile.TYPE_method;
+import static wyil.lang.WyilFile.TYPE_nominal;
+import static wyil.lang.WyilFile.TYPE_null;
+import static wyil.lang.WyilFile.TYPE_property;
+import static wyil.lang.WyilFile.TYPE_record;
+import static wyil.lang.WyilFile.TYPE_reference;
+import static wyil.lang.WyilFile.TYPE_staticreference;
+import static wyil.lang.WyilFile.TYPE_void;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -35,6 +49,7 @@ import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Descriptor;
 import wybs.util.*;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
@@ -43,6 +58,7 @@ import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
+import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Bool;
 import wyil.lang.WyilFile.Type.Byte;
 import wyil.lang.WyilFile.Type.Int;
@@ -6142,6 +6158,204 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			};
 		}
+
+		/**
+		 * A type selector provides a form of refinement for a give type. More
+		 * specifically, it determines which type tags are active for a given type.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Selector {
+			/**
+			 * Indicates that the given element is not selected.
+			 */
+			public static final Selector BOTTOM = new Selector() {
+				@Override
+				public String toString(Type t) {
+					return "...";
+				}
+				@Override
+				public String toString() {
+					return "_";
+				}
+				@Override
+				public Type apply(Type source) {
+					return Type.Void;
+				}
+			};
+			/**
+			 * Indicates that the given element is selected entirely.
+			 */
+			public static final Selector TOP = new Selector() {
+				@Override
+				public String toString(Type t) {
+					return t.toString();
+				}
+				@Override
+				public Type apply(Type source) {
+					return source;
+				}
+				@Override
+				public String toString() {
+					return "*";
+				}
+			};
+
+			private final Selector[] children;
+
+			public Selector(Selector... nodes) {
+				this.children = nodes;
+			}
+
+			public int size() {
+				return children.length;
+			}
+
+			public Selector get(int ith) {
+				return children[ith];
+			}
+
+			@Override
+			public String toString() {
+				String r = "";
+				for(int i=0;i!=children.length;++i) {
+					if(i != 0) { r += ","; }
+					r += children[i].toString();
+				}
+				return "(" + r + ")";
+			}
+
+			/**
+			 * Generate a "partial" view of a given type according to this selector. For
+			 * example, <code>null|{int f}</code> with selector <code>(_|*)</code> would
+			 * produce the string <code>...|{int f}</code>.
+			 *
+			 * @param t
+			 * @return
+			 */
+			public String toString(Type type) {
+				switch (type.getOpcode()) {
+				case TYPE_void:
+				case TYPE_null:
+				case TYPE_bool:
+				case TYPE_byte:
+				case TYPE_int:
+				case TYPE_staticreference:
+				case TYPE_reference:
+				case TYPE_method:
+				case TYPE_function:
+				case TYPE_property:
+					return type.toString();
+				case TYPE_array: {
+					Type.Array t = (Type.Array) type;
+					return children[0].toString(t.getElement()) + "[]";
+				}
+				case TYPE_nominal: {
+					Type.Nominal t = (Type.Nominal) type;
+					return toString(t.getConcreteType());
+				}
+				case TYPE_record: {
+					Type.Record t = (Type.Record) type;
+					Tuple<Type.Field> fields = t.getFields();
+					String r = "";
+					boolean ignored = false;
+					for (int i = 0; i != fields.size(); ++i) {
+						Type.Field f = fields.get(i);
+						Selector s = children[i];
+						if(!ignored || s != BOTTOM) {
+							if(i != 0) { r = r + ", "; }
+							if(s == BOTTOM) {
+								r = r + s.toString(f.getType());
+							} else {
+								r = r + s.toString(f.getType()) + " " + f.getName();
+							}
+						}
+						ignored = (s == BOTTOM);
+					}
+					return "{" + r + "}";
+				}
+				default: {
+					Type.Union t = (Type.Union) type;
+					String r = "";
+					boolean ignored = false;
+					for(int i=0;i!=t.size();++i) {
+						Selector s = children[i];
+						if(!ignored || s != BOTTOM) {
+							if(i != 0) { r = r + "|"; }
+							r += s.toString(t.get(i));
+						}
+						ignored = (s == BOTTOM);
+					}
+					return r;
+				}
+				}
+			}
+
+			/**
+			 * Apply this selector to a given type, producing a potentially updated type.
+			 * For example, applying <code>int|null</code> to the selector <code>_|*</code>
+			 * yields <code>null</code>.
+			 *
+			 * @param source
+			 * @return
+			 */
+			public Type apply(Type type) {
+				// FIXME: need to support infinite selectors
+				switch (type.getOpcode()) {
+				case TYPE_void:
+				case TYPE_null:
+				case TYPE_bool:
+				case TYPE_byte:
+				case TYPE_int:
+				case TYPE_staticreference:
+				case TYPE_reference:
+				case TYPE_method:
+				case TYPE_function:
+				case TYPE_property:
+					return type;
+				case TYPE_array: {
+					Type.Array t = (Type.Array) type;
+					return new Type.Array(children[0].apply(t.getElement()));
+				}
+				case TYPE_nominal: {
+					Type.Nominal t = (Type.Nominal) type;
+					return apply(t.getConcreteType());
+				}
+				case TYPE_record: {
+					Type.Record t = (Type.Record) type;
+					Tuple<Type.Field> fields = t.getFields();
+					Type.Field[] items = new Type.Field[fields.size()];
+					for (int i = 0; i != fields.size(); ++i) {
+						Type.Field f = fields.get(i);
+						Type ft = children[i].apply(f.getType());
+						items[i] = new Type.Field(f.getName(), ft);
+					}
+					return new Type.Record(t.isOpen(), new Tuple<>(items));
+				}
+				default:
+					return apply((Type.Union) type);
+				}
+			}
+
+			private Type apply(Type.Union type) {
+				Type[] items = new Type[type.size()];
+				for(int i=0;i!=type.size();++i) {
+					items[i] = children[i].apply(type.get(i));
+				}
+				// Strip out unselected items
+				items = ArrayUtils.removeAll(items, Type.Void);
+				//
+				switch(items.length) {
+				case 0:
+					return Type.Void;
+				case 1:
+					return items[0];
+				default:
+					return new Type.Union(items);
+				}
+			}
+		}
 	}
 
 	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
@@ -6947,5 +7161,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// Done
 		SectionedSchema v0_1 = builder.done();
 		return v0_1;
+	}
+
+	public static void main(String[] args) {
+		Type r = new Type.Record(false, new Tuple<>(new Type.Field(new Identifier("f"), Type.Int),new Type.Field(new Identifier("g"), Type.Int),new Type.Field(new Identifier("h"), Type.Int)));
+		Type.Selector s = new Type.Selector(Type.Selector.BOTTOM, Type.Selector.BOTTOM, Type.Selector.TOP);
+		System.out.println("T: " + r);
+		System.out.println("S: " + s);
+		System.out.println("T o S: " + s.apply(r));
+		System.out.println("T o S: " + s.toString(r));
 	}
 }

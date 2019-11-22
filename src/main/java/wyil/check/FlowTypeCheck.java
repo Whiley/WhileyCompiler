@@ -63,6 +63,7 @@ import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 import wyil.util.SubtypeOperator;
+import wyil.util.TypeSelector;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -440,8 +441,10 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type type = checkExpression(decl.getInitialiser(), environment);
 			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 			if (type != null) {
+				// Refine the declared type
+				Type refined = refine(decl.getType(), type, environment);
 				// Update the typing environment accordingly.
-				environment = environment.refineType(decl, type);
+				environment = environment.refineType(decl, refined);
 			}
 		}
 		// Done.
@@ -473,8 +476,11 @@ public class FlowTypeCheck implements Compiler.Check {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
 				if (extraction != null) {
+					Decl.Variable decl = extraction.getFirst();
+					// Refine the declared type
+					Type type = refine(decl.getType(), extraction.getSecond(), environment);
 					// Update the typing environment accordingly.
-					environment = environment.refineType(extraction.getFirst(), extraction.getSecond());
+					environment = environment.refineType(extraction.getFirst(), type);
 				}
 			}
 		}
@@ -1908,6 +1914,21 @@ public class FlowTypeCheck implements Compiler.Check {
 	// ==========================================================================
 	// Helpers
 	// ==========================================================================
+
+	public Type refine(Type declared, Type selector, LifetimeRelation lifetimes) {
+		// FIXME: this method is a hack for now really, until such time as I resolve
+		// issues around subtyping and how to create proper type morphisms, etc.
+		Type.Selector s = TypeSelector.create(declared, selector, lifetimes);
+//		System.out.print("REFINING: " + declared + " is " + selector + " with " + s + " => ");
+		if (s == Type.Selector.BOTTOM) {
+//			System.out.println("FAILED");
+			// Something went wrong
+			return declared;
+		} else {
+//			System.out.println(s.apply(declared));
+			return s.apply(declared);
+		}
+	}
 
 	/**
 	 * Determine whether a given expression calls an impure method, dereferences a

@@ -10,5 +10,5 @@ function f2(int x) -> int:
 
 function g(int d) -> int
 requires d >= 0 && d < 3:
-    func_t y = table[d]
+    null|func_t y = table[d]
     return y(123)
