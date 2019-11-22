@@ -6193,6 +6193,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return t.toString();
 				}
 				@Override
+				public Type apply(Type source) {
+					return source;
+				}
+				@Override
 				public String toString() {
 					return "*";
 				}

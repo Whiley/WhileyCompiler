@@ -10,3 +10,7 @@ tests/invalid/Process_Invalid_1.whiley:14: expected type MyProc2, found MyProc1
 tests/invalid/Process_Invalid_1.whiley:15: expected record type
     p.set(false)
     ^
+tests/invalid/Process_Invalid_1.whiley:16: unable to resolve name (is ambiguous)
+	found method Process_Invalid_1::get(MyProc1)->(int)
+    return get(p)
+           ^^^
