@@ -160,7 +160,9 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitReturn(Stmt.Return stmt, Boolean consumed) {
-		visitExpressions(stmt.getReturns(), true);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), true);
+		}
 	}
 
 	@Override

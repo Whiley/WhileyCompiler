@@ -1,6 +1,6 @@
 tests/invalid/Function_Invalid_14.whiley:2: insufficient return values
     return f()
            ^^^
-tests/invalid/Function_Invalid_14.whiley:5: too many return values
+tests/invalid/Function_Invalid_14.whiley:5: expected type void, found int
     return h()
            ^^^

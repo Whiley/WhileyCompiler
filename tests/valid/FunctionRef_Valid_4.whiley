@@ -6,7 +6,7 @@ function f1(int x) -> int:
 function f2(int x) -> int:
     return -x
 
-type func is function(int)->int
+type func is function(int)->(int)
 
 function g(int d) -> int
 requires d >= 0 && d < |table|:

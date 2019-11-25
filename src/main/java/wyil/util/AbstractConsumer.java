@@ -19,6 +19,7 @@ import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -220,6 +221,7 @@ public abstract class AbstractConsumer<T> {
 			visitNamedBlock((Stmt.NamedBlock) stmt, data);
 			break;
 		case STMT_return:
+		case STMT_returnvoid:
 			visitReturn((Stmt.Return) stmt, data);
 			break;
 		case STMT_skip:
@@ -298,7 +300,9 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitReturn(Stmt.Return stmt, T data) {
-		visitExpressions(stmt.getReturns(), data);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), data);
+		}
 	}
 
 	public void visitSkip(Stmt.Skip stmt, T data) {
@@ -372,7 +376,7 @@ public abstract class AbstractConsumer<T> {
 			visitUnaryOperator((Expr.UnaryOperator) expr, data);
 			break;
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -403,6 +407,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr, data);
 			break;
 		// Ternary Operators
@@ -469,7 +474,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr, data);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr, data);
 			break;
 		case EXPR_logicaliff:
@@ -563,6 +568,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
+			break;
+		case EXPR_tupleinitialiser:
+			visitTupleInitialiser((Expr.TupleInitialiser) expr, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -776,14 +784,12 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
-	public void visitVariableAccess(Expr.VariableAccess expr, T data) {
-
+	public void visitTupleInitialiser(Expr.TupleInitialiser expr, T data) {
+		visitExpressions(expr.getOperands(), data);
 	}
 
-	public void visitTypes(Tuple<Type> type, T data) {
-		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
-		}
+	public void visitVariableAccess(Expr.VariableAccess expr, T data) {
+
 	}
 
 	public void visitType(Type type, T data) {
@@ -819,6 +825,9 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_method:
 		case TYPE_property:
 			visitTypeCallable((Type.Callable) type, data);
+			break;
+		case TYPE_tuple:
+			visitTypeTuple((Type.Tuple) type, data);
 			break;
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type, data);
@@ -866,8 +875,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeFunction(Type.Function type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeInt(Type.Int type, T data) {
@@ -875,12 +884,15 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeMethod(Type.Method type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeNominal(Type.Nominal type, T data) {
-		visitTypes(type.getParameters(), data);
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i),data);
+		}
 	}
 
 	public void visitTypeNull(Type.Null type, T data) {
@@ -888,8 +900,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeProperty(Type.Property type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeRecord(Type.Record type, T data) {
@@ -911,6 +923,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeUnion(Type.Union type, T data) {
+		for(int i=0;i!=type.size();++i) {
+			visitType(type.get(i), data);
+		}
+	}
+
+	public void visitTypeTuple(Type.Tuple type, T data) {
 		for(int i=0;i!=type.size();++i) {
 			visitType(type.get(i), data);
 		}

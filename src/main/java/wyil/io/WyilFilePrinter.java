@@ -366,11 +366,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitReturn(Stmt.Return stmt, Integer indent) {
 		tabIndent(indent);
-		Tuple<Expr> returns = stmt.getReturns();
 		out.print("return");
-		if(returns.size() > 0) {
+		if(stmt.hasReturn()) {
 			out.print(" ");
-			visitExpressions(returns, indent);
+			visitExpression(stmt.getReturn(), indent);
 		}
 		out.println();
 	}
@@ -459,7 +458,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 			visitInfixLocations((Expr.BinaryOperator) expr, indent);
 			break;
@@ -814,7 +813,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			return "&&";
 		case EXPR_logicalor:
 			return "||";
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return "==>";
 		case EXPR_logicaliff:
 			return "<==>";

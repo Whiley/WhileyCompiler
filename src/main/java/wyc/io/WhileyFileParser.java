@@ -1021,18 +1021,28 @@ public class WhileyFileParser {
 		// then we assume what's remaining is the returned expression. This
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
-		Tuple<Expr> returns;
+		Stmt.Return stmt;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			returns = parseExpressions(scope, false);
+			Tuple<Expr> returns = parseExpressions(scope, false);
+			switch(returns.size()) {
+			case 0:
+				stmt = new Stmt.Return();
+				break;
+			case 1:
+				stmt = new Stmt.Return(returns.get(0));
+				break;
+			default:
+				stmt = new Stmt.Return(new Expr.TupleInitialiser(Type.Void, returns));
+			}
 		} else {
-			returns = new Tuple<>();
+			stmt = new Stmt.Return();
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Return(returns), start, end-1);
+		return annotateSourceLocation(stmt, start, end-1);
 	}
 
 	/**
@@ -1620,7 +1630,6 @@ public class WhileyFileParser {
 	private LVal parseAccessLVal(int start, EnclosingScope scope) {
 		LVal lhs = parseLValTerm(start, scope);
 		Token token;
-
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(true, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
@@ -1680,9 +1689,17 @@ public class WhileyFileParser {
 			return annotateSourceLocation(var, start);
 		case LeftBrace: {
 			match(LeftBrace);
-			LVal lval = parseLVal(start, scope);
-			match(RightBrace);
-			return lval;
+			ArrayList<Expr> lvals = new ArrayList<>();
+			lvals.add(parseLVal(start, scope));
+			while (tryAndMatchOnLine(RightBrace) == null) {
+				match(Comma);
+				lvals.add(parseLVal(start, scope));
+			}
+			if(lvals.size() > 1) {
+				return annotateSourceLocation(new Expr.TupleInitialiser(Type.Void, new Tuple<>(lvals)), start);
+			} else {
+				return annotateSourceLocation((LVal) lvals.get(0), start);
+			}
 		}
 		case Star: {
 			match(Star);
@@ -2399,7 +2416,7 @@ public class WhileyFileParser {
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
 			lhs = annotateSourceLocation(lhs, start);
-			lhs = new Expr.IndirectInvoke(new Tuple<>(), lhs, lifetimes, arguments);
+			lhs = new Expr.IndirectInvoke(Type.Void, lhs, lifetimes, arguments);
 		}
 		return annotateSourceLocation(lhs,start);
 	}
@@ -2473,7 +2490,7 @@ public class WhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedOrCastExpression(scope, terminated);
+			return parseBracketedOrTupleOrCastExpression(scope, terminated);
 		case New:
 		case This:
 			return parseNewExpression(scope, terminated);
@@ -2719,7 +2736,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseBracketedOrCastExpression(EnclosingScope scope, boolean terminated) {
+	private Expr parseBracketedOrTupleOrCastExpression(EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftBrace);
 		// At this point, we must begin to disambiguate casts from general
@@ -2735,18 +2752,27 @@ public class WhileyFileParser {
 			return parseCastExpression(scope, terminated);
 		} else {
 			index = start; // backtrack
-			return parseBracketedExpression(scope, terminated);
+			return parseBracketedOrTupleExpression(scope, terminated);
 		}
 	}
 
-	public Expr parseBracketedExpression(EnclosingScope scope, boolean terminated) {
+	public Expr parseBracketedOrTupleExpression(EnclosingScope scope, boolean terminated) {
 		// We still may have either a cast or a bracketed expression, and we
 		// cannot tell which yet.
 		match(LeftBrace);
-		Expr e = parseExpression(scope, true);
-		match(RightBrace);
-		// Assume bracketed
-		return e;
+		ArrayList<Expr> es = new ArrayList<>();
+		es.add(parseExpression(scope, true));
+		while(tryAndMatch(true,RightBrace) == null) {
+			match(Comma);
+			es.add(parseExpression(scope, true));
+		}
+		// What have we got?
+		if(es.size() == 1) {
+			// Assume bracketed
+			return es.get(0);
+		} else {
+			return new Expr.TupleInitialiser(Type.Void, new Tuple<>(es));
+		}
 	}
 
 	public Expr parseCastExpression(EnclosingScope scope, boolean terminated) {
@@ -3126,7 +3152,7 @@ public class WhileyFileParser {
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
 			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start);
-			return annotateSourceLocation(new Expr.IndirectInvoke(new Tuple<>(), var, lifetimes, args), start);
+			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
 			Name nm = annotateSourceLocation(new Name(name), start, start);
@@ -3366,7 +3392,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Ampersand);
 		Name name = parseName(scope);
-		Tuple<Type> parameters;
+		Type parameters;
 		// Check whether or not parameters are supplied
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Yes, parameters are supplied!
@@ -3381,10 +3407,10 @@ public class WhileyFileParser {
 				Type type = parseType(scope);
 				tmp.add(type);
 			}
-			parameters = new Tuple<>(tmp);
+			parameters = Type.Tuple.create(tmp);
 		} else {
 			// No, parameters are not supplied.
-			parameters = new Tuple<>();
+			parameters = Type.Void;
 		}
 		Decl.Link link = new Decl.Link<Decl.Callable>(name);
 		Decl.Binding<Type.Callable, Decl.Callable> binding = new Decl.Binding<>(link, new Tuple<>());
@@ -4002,27 +4028,25 @@ public class WhileyFileParser {
 			lifetimes = parseOptionalLifetimeParameters(scope);
 		}
 		// First, parse the parameter type(s).
-		Tuple<Type> paramTypes = parseParameterTypes(scope);
-		Tuple<Type> returnTypes = new Tuple<>();
+		Type paramTypes = parseParameterTypes(scope);
+		Type returnType = Type.Void;
 		// Second, parse the right arrow.
 		if (isFunction) {
 			// Functions require a return type (since otherwise they are just
 			// nops)
 			match(MinusGreater);
 			// Third, parse the return types.
-			returnTypes = parseOptionalParameterTypes(scope);
+			returnType = parseType(scope);
 		} else if (tryAndMatch(true, MinusGreater) != null) {
-			// Methods have an optional return type
 			// Third, parse the return type
-			returnTypes = parseOptionalParameterTypes(scope);
+			returnType = parseType(scope);
 		}
-
 		// Done
 		Type type;
 		if (isFunction) {
-			type = new Type.Function(paramTypes, returnTypes);
+			type = new Type.Function(paramTypes, returnType);
 		} else {
-			type = new Type.Method(paramTypes, returnTypes, captures, lifetimes);
+			type = new Type.Method(paramTypes, returnType, captures, lifetimes);
 		}
 		return annotateSourceLocation(type,start);
 	}
@@ -4061,15 +4085,15 @@ public class WhileyFileParser {
 			if (id != null) {
 				// Yes, we have found a mixed function / method type definition.
 				// Therefore, we continue to pass the remaining type parameters.
-				Tuple<Type> paramTypes = parseParameterTypes(scope);
-				Tuple<Type> returnTypes = new Tuple<>();
+				Type paramTypes = parseParameterTypes(scope);
+				Type returnType = Type.Void;
 
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
 					match(MinusGreater);
 					// Third, parse the return type
-					returnTypes = parseOptionalParameterTypes(scope);
+					returnType = parseType(scope);
 				} else if (tryAndMatch(true, MinusGreater) != null) {
 					// Third, parse the (optional) return type. Observe that
 					// this is forced to be a
@@ -4078,15 +4102,15 @@ public class WhileyFileParser {
 					// may be part of an enclosing record type and we must
 					// disambiguate
 					// this.
-					returnTypes = parseOptionalParameterTypes(scope);
+					returnType = parseType(scope);
 				}
 
 				// Done
 				Type type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new Type.Function(paramTypes, returnTypes);
+					type = new Type.Function(paramTypes, returnType);
 				} else {
-					type = new Type.Method(paramTypes, returnTypes, new Tuple<>(),
+					type = new Type.Method(paramTypes, returnType, new Tuple<>(),
 							lifetimes);
 				}
 				return new Pair<>(annotateSourceLocation(type,start), id);
@@ -4105,17 +4129,16 @@ public class WhileyFileParser {
 		return new Pair<>(type, id);
 	}
 
-	public Tuple<Type> parseOptionalParameterTypes(EnclosingScope scope) {
+	public Type parseOptionalParameterTypes(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if (next < tokens.size() && tokens.get(next).kind == LeftBrace) {
 			return parseParameterTypes(scope);
 		} else {
-			Type t = parseType(scope);
-			return new Tuple<>(t);
+			return parseType(scope);
 		}
 	}
 
-	public Tuple<Type> parseParameterTypes(EnclosingScope scope) {
+	public Type parseParameterTypes(EnclosingScope scope) {
 		ArrayList<Type> paramTypes = new ArrayList<>();
 		match(LeftBrace);
 
@@ -4127,8 +4150,7 @@ public class WhileyFileParser {
 			firstTime = false;
 			paramTypes.add(parseType(scope));
 		}
-
-		return new Tuple<>(paramTypes);
+		return Type.Tuple.create(paramTypes);
 	}
 
 	private Name parseName(EnclosingScope scope) {

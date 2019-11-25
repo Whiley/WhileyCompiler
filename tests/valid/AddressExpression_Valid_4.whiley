@@ -1,5 +1,5 @@
-type fun1 is function(int,int)->int
-type fun2 is function(bool,bool)->bool
+type fun1 is function(int,int)->(int)
+type fun2 is function(bool,bool)->(bool)
 
 function overloaded(int a, int b) -> int:
     return a + b

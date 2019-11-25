@@ -223,6 +223,7 @@ public abstract class AbstractVisitor {
 			visitNamedBlock((Stmt.NamedBlock) stmt);
 			break;
 		case STMT_return:
+		case STMT_returnvoid:
 			visitReturn((Stmt.Return) stmt);
 			break;
 		case STMT_skip:
@@ -299,7 +300,9 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitReturn(Stmt.Return stmt) {
-		visitExpressions(stmt.getReturns());
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn());
+		}
 	}
 
 	public void visitSkip(Stmt.Skip stmt) {
@@ -372,7 +375,7 @@ public abstract class AbstractVisitor {
 			visitUnaryOperator((Expr.UnaryOperator) expr);
 			break;
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -403,6 +406,7 @@ public abstract class AbstractVisitor {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr);
 			break;
 		// Ternary Operators
@@ -469,7 +473,7 @@ public abstract class AbstractVisitor {
 		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr);
 			break;
 		case EXPR_logicaliff:
@@ -563,6 +567,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr);
+			break;
+		case EXPR_tupleinitialiser:
+			visitTupleInitialiser((Expr.TupleInitialiser) expr);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -776,14 +783,12 @@ public abstract class AbstractVisitor {
 
 	}
 
-	public void visitVariableAccess(Expr.VariableAccess expr) {
-
+	public void visitTupleInitialiser(Expr.TupleInitialiser expr) {
+		visitExpressions(expr.getOperands());
 	}
 
-	public void visitTypes(Tuple<Type> type) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i));
-		}
+	public void visitVariableAccess(Expr.VariableAccess expr) {
+
 	}
 
 	public void visitType(Type type) {
@@ -818,6 +823,9 @@ public abstract class AbstractVisitor {
 		case TYPE_method:
 		case TYPE_property:
 			visitTypeCallable((Type.Callable) type);
+			break;
+		case TYPE_tuple:
+			visitTypeTuple((Type.Tuple) type);
 			break;
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
@@ -865,8 +873,8 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeFunction(Type.Function type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeInt(Type.Int type) {
@@ -874,12 +882,15 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeMethod(Type.Method type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeNominal(Type.Nominal type) {
-		visitTypes(type.getParameters());
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i));
+		}
 	}
 
 	public void visitTypeNull(Type.Null type) {
@@ -887,8 +898,8 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeProperty(Type.Property type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeRecord(Type.Record type) {
@@ -909,6 +920,13 @@ public abstract class AbstractVisitor {
 	public void visitTypeReference(Type.Reference type) {
 		visitType(type.getElement());
 	}
+
+	public void visitTypeTuple(Type.Tuple type) {
+		for (int i = 0; i != type.size(); ++i) {
+			visitType(type.get(i));
+		}
+	}
+
 
 	public void visitTypeUnion(Type.Union type) {
 		for (int i = 0; i != type.size(); ++i) {

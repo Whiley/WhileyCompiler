@@ -25,8 +25,8 @@ function parseNumber(State st) -> (Expr f1, State f2):
 public export method test() :
     SExpr f1
     State f2
-    f1,f2 = parseTerm({input: "123", pos: 0})
+    (f1,f2) = parseTerm({input: "123", pos: 0})
     assume f1 == 6
-    f1,f2 = parseTerm({input: "abc", pos: 0})
+    (f1,f2) = parseTerm({input: "abc", pos: 0})
     //
     assume f1 is SyntaxError

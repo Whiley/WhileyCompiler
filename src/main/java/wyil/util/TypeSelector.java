@@ -26,6 +26,7 @@ import static wyil.lang.WyilFile.TYPE_record;
 import static wyil.lang.WyilFile.TYPE_reference;
 import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_union;
+import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_variable;
 import static wyil.lang.WyilFile.TYPE_void;
 
@@ -78,6 +79,8 @@ public abstract class TypeSelector {
 				return Type.Selector.TOP;
 			case TYPE_array:
 				return create((Type.Array) t1, (Type.Array) t2, lifetimes, cache);
+			case TYPE_tuple:
+				return create((Type.Tuple) t1, (Type.Tuple)t2, lifetimes, cache);
 			case TYPE_record:
 				return create((Type.Record) t1, (Type.Record)t2, lifetimes, cache);
 			case TYPE_nominal:
@@ -99,7 +102,7 @@ public abstract class TypeSelector {
 		} else if (t2_opcode == TYPE_nominal) {
 			return create(t1, (Type.Nominal) t2, lifetimes, cache);
 		} else if (t2_opcode == TYPE_union) {
-			return create(t1, (Type.Union) t2, lifetimes, cache);
+			return create(t1, t2, lifetimes, cache);
 		} else if (t1_opcode == TYPE_union) {
 			return create((Type.Union) t1, t2, lifetimes, cache);
 		} else if (t1_opcode == TYPE_nominal) {
@@ -116,6 +119,31 @@ public abstract class TypeSelector {
 			return element;
 		} else {
 			return new Type.Selector(element);
+		}
+	}
+
+	private static Type.Selector create(Type.Tuple t1, Type.Tuple t2, LifetimeRelation lifetimes,
+			BinaryRelation<Type> cache) {
+		// Sanity check number of fields are reasonable.
+		if (t1.size() != t2.size()) {
+			return Type.Selector.BOTTOM;
+		}
+		Type.Selector[] items = new Type.Selector[t1.size()];
+		// Check fields one-by-one.
+		for (int i = 0; i != t1.size(); ++i) {
+			Type f1 = t1.get(i);
+			Type f2 = t2.get(i);
+			Type.Selector s = create(f1, f2, lifetimes, cache);
+			if (s == Type.Selector.BOTTOM) {
+				return Type.Selector.BOTTOM;
+			} else {
+				items[i] = s;
+			}
+		}
+		if (isTop(items)) {
+			return Type.Selector.TOP;
+		} else {
+			return new Type.Selector(items);
 		}
 	}
 
@@ -166,26 +194,21 @@ public abstract class TypeSelector {
 	}
 
 	private static Type.Selector create(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		Tuple<Type> t1_params = t1.getParameters();
-		Tuple<Type> t2_params = t2.getParameters();
-		Tuple<Type> t1_returns = t1.getReturns();
-		Tuple<Type> t2_returns = t2.getReturns();
+		Type t1_params = t1.getParameter();
+		Type t2_params = t2.getParameter();
+		Type t1_return = t1.getReturn();
+		Type t2_return = t2.getReturn();
 		// Eliminate easy cases first
-		if (t1.getOpcode() != t2.getOpcode() || t1_params.size() != t2_params.size()
-				|| t1_returns.size() != t2_returns.size()) {
+		if (t1.getOpcode() != t2.getOpcode()) {
 			return Type.Selector.BOTTOM;
 		}
 		// Check parameters
-		for(int i=0;i!=t1_params.size();++i) {
-			if(Type.Selector.TOP != create(t1_params.get(i),t2_params.get(i),lifetimes)) {
-				return Type.Selector.BOTTOM;
-			}
+		if(Type.Selector.TOP != create(t1_params,t2_params,lifetimes)) {
+			return Type.Selector.BOTTOM;
 		}
-		// Check returns
-		for(int i=0;i!=t1_returns.size();++i) {
-			if(Type.Selector.TOP != create(t1_returns.get(i),t2_returns.get(i),lifetimes)) {
-				return Type.Selector.BOTTOM;
-			}
+		// Check return
+		if(Type.Selector.TOP != create(t1_return,t2_return,lifetimes)) {
+			return Type.Selector.BOTTOM;
 		}
 		// Check lifetimes
 		if(t1 instanceof Type.Method) {

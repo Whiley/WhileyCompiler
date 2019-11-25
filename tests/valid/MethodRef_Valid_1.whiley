@@ -1,6 +1,6 @@
 
 
-type MyMeth is method(int) -> int
+type MyMeth is method(int)->(int)
 
 method read(int x) -> int:
     return x + 123

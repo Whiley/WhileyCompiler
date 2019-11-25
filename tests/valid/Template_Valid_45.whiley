@@ -10,5 +10,5 @@ public export method test():
     Optional<int>[] bs
     int t
     byte b = 0b001
-    t,bs = empty_boxes<int>(0)
+    (t,bs) = empty_boxes<int>(0)
     assert bs == [{contents:0};0]

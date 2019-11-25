@@ -20,6 +20,7 @@ import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -209,6 +210,7 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_namedblock:
 			return visitNamedBlock((Stmt.NamedBlock) stmt, data);
 		case STMT_return:
+		case STMT_returnvoid:
 			return visitReturn((Stmt.Return) stmt, data);
 		case STMT_skip:
 			return visitSkip((Stmt.Skip) stmt, data);
@@ -291,7 +293,9 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitReturn(Stmt.Return stmt, P data) {
-		visitExpressions(stmt.getReturns(), data);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), data);
+		}
 		return null;
 	}
 
@@ -362,7 +366,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_arraylength:
 			return visitUnaryOperator((Expr.UnaryOperator) expr, data);
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -392,6 +396,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			return visitNaryOperator((Expr.NaryOperator) expr, data);
 		// Ternary Operators
 		case EXPR_arrayupdate:
@@ -442,7 +447,7 @@ public abstract class AbstractFunction<P,R> {
 			return visitEqual((Expr.Equal) expr, data);
 		case EXPR_notequal:
 			return visitNotEqual((Expr.NotEqual) expr, data);
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return visitLogicalImplication((Expr.LogicalImplication) expr, data);
 		case EXPR_logicaliff:
 			return visitLogicalIff((Expr.LogicalIff) expr, data);
@@ -512,6 +517,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitLogicalOr((Expr.LogicalOr) expr, data);
 		case EXPR_recordinitialiser:
 			return visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
+		case EXPR_tupleinitialiser:
+			return visitTupleInitialiser((Expr.TupleInitialiser) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
@@ -768,16 +775,12 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitVariableAccess(Expr.VariableAccess expr, P data) {
-
-		return null;
+	public R visitTupleInitialiser(Expr.TupleInitialiser expr, P data) {
+		return visitExpressions(expr.getOperands(), data);
 	}
 
-	public R visitTypes(Tuple<Type> type, P data) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i), data);
-			return null;
-		}
+	public R visitVariableAccess(Expr.VariableAccess expr, P data) {
+
 		return null;
 	}
 
@@ -804,6 +807,8 @@ public abstract class AbstractFunction<P,R> {
 		case TYPE_method:
 		case TYPE_property:
 			return visitTypeCallable((Type.Callable) type, data);
+		case TYPE_tuple:
+			return visitTypeTuple((Type.Tuple) type, data);
 		case TYPE_union:
 			return visitTypeUnion((Type.Union) type, data);
 		case TYPE_unknown:
@@ -844,8 +849,8 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeFunction(Type.Function type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
@@ -854,13 +859,16 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeMethod(Type.Method type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
 	public R visitTypeNominal(Type.Nominal type, P data) {
-		visitTypes(type.getParameters(), data);
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i),data);
+		}
 		return null;
 	}
 
@@ -869,8 +877,8 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeProperty(Type.Property type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
@@ -895,6 +903,15 @@ public abstract class AbstractFunction<P,R> {
 		visitType(type.getElement(), data);
 		return null;
 	}
+
+	public R visitTypeTuple(Type.Tuple type, P data) {
+		for (int i = 0; i != type.size(); ++i) {
+			visitType(type.get(i), data);
+			return null;
+		}
+		return null;
+	}
+
 
 	public R visitTypeUnion(Type.Union type, P data) {
 		for(int i=0;i!=type.size();++i) {

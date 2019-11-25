@@ -6,5 +6,5 @@ function empty_boxes<T>(T t) -> (T xs, Box<T>[] ys):
 public export method test():
     Box<int>[] bs
     int t
-    t,bs = empty_boxes<int>(0)
+    (t,bs) = empty_boxes<int>(0)
     assert bs == [{contents:0};0]

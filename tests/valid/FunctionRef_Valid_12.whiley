@@ -1,4 +1,4 @@
-type SizeGetter is function(Sized) -> int
+type SizeGetter is function(Sized) ->(int)
 type Sized is { SizeGetter getSize }
 
 function f(null|SizeGetter x) -> int:

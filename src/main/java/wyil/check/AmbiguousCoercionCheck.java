@@ -107,38 +107,6 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		}
 	}
 
-	@Override
-	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
-		if(checkCoercion(expr, targets, environment)) {
-			// Continue recursively exploring this expression
-			super.visitMultiExpression(expr, targets, environment);
-		}
-	}
-
-	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
-		boolean status = true;
-		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
-		Tuple<Type> types = expr.getTypes();
-		if(types == null) {
-			Type target = targets.get(0);
-			Type source = expr.getType();
-			if (targets.size() != 1 || !checkCoercion(target, source, environment, assumptions, expr)) {
-				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
-			}
-		} else {
-			for(int j=0;j!=targets.size();++j) {
-				Type target = targets.get(j);
-				Type source = types.get(j);
-				if (!checkCoercion(target, source, environment, assumptions, expr)) {
-					syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
-					status = false;
-				}
-			}
-		}
-		//
-		return status;
-	}
-
 	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
 		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
 		Type source = expr.getType();
@@ -203,6 +171,8 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			return checkCoercion((Type.Reference) target, (Type.Reference) source, environment, assumptions, item);
 		} else if (target instanceof Type.Record && source instanceof Type.Record) {
 			return checkCoercion((Type.Record) target, (Type.Record) source, environment, assumptions, item);
+		} else if (target instanceof Type.Tuple && source instanceof Type.Tuple) {
+			return checkCoercion((Type.Tuple) target, (Type.Tuple) source, environment, assumptions, item);
 		} else if (target instanceof Type.Callable && source instanceof Type.Callable) {
 			return checkCoercion((Type.Callable) target, (Type.Callable) source, environment, item);
 		} else {
@@ -228,6 +198,18 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			Type.Field field = fields.get(i);
 			Type type = source.getField(field.getName());
 			if (!checkCoercion(field.getType(), type, environment, assumptions, item)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean checkCoercion(Type.Tuple target, Type.Tuple source, Environment environment,
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
+		for (int i = 0; i != target.size(); ++i) {
+			Type element = target.get(i);
+			Type type = source.get(i);
+			if (!checkCoercion(element, type, environment, assumptions, item)) {
 				return false;
 			}
 		}

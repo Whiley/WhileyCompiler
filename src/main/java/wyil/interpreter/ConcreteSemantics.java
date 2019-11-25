@@ -63,6 +63,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 		return new RValue.Reference(cell);
 	}
 
+
+	@Override
+	public RValue.Tuple Tuple(AbstractSemantics.RValue... elements) {
+		return RValue.Tuple((RValue[]) elements);
+	}
+
+
 	@Override
 	public RValue.Array Array(AbstractSemantics.RValue... elements) {
 		return RValue.Array((RValue[]) elements);
@@ -99,6 +106,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 		public static RValue.Int Int(BigInteger value) {
 			return new RValue.Int(value);
+		}
+
+		public static RValue.Tuple Tuple(RValue... elements) {
+			return new RValue.Tuple(elements);
 		}
 
 		public static RValue.Array Array(RValue... elements) {
@@ -143,7 +154,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				Decl.Type decl = nom.getLink().getTarget();
 				Decl.Variable var = decl.getVariableDeclaration();
 				if(is(nom.getConcreteType(), frame) == True) {
-					Tuple<Expr> invariant = decl.getInvariant();
+					WyilFile.Tuple<Expr> invariant = decl.getInvariant();
 					return checkInvariant(var,invariant,frame);
 				}
 				return False;
@@ -161,6 +172,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 				// only situation this is use is for checking type invariants within the
 				// interpreter.
 				return True;
+			} else if(type instanceof Type.Tuple) {
+				// NOTE: this handles the special case of a unit tuple type which is always
+				// equivalent to its element type.
+				Type.Tuple t = (Type.Tuple) type;
+				if(t.size() == 1) {
+					return this.is(t.get(0),frame);
+				}
 			}
 			// Default case.
 			return False;
@@ -225,7 +243,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @param instance
 		 * @return
 		 */
-		public Bool checkInvariant(Decl.Variable var, Tuple<Expr> invariant, Interpreter.CallStack frame) {
+		public Bool checkInvariant(Decl.Variable var, WyilFile.Tuple<Expr> invariant, Interpreter.CallStack frame) {
 			if (invariant.size() > 0) {
 				// One or more type invariants to check. Therefore, we need
 				// to execute the invariant and determine whether or not it
@@ -600,6 +618,84 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 		}
 
+		public final static class Tuple extends RValue implements AbstractSemantics.RValue.Tuple {
+			private final RValue[] elements;
+
+			private Tuple(RValue... elements) {
+				this.elements = elements;
+			}
+
+			@Override
+			public int size() {
+				return elements.length;
+			}
+
+			@Override
+			public RValue get(int ith) {
+				return elements[ith];
+			}
+
+			@Override
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+				if(type instanceof Type.Tuple) {
+					Type.Tuple t = (Type.Tuple) type;
+					if(t.size() != size()) {
+						return False;
+					}
+					for (int i = 0; i != elements.length; ++i) {
+						if (elements[i].is(t.get(i), frame) == False) {
+							return False;
+						}
+					}
+					return True;
+				} else {
+					return super.is(type, frame);
+				}
+			}
+
+			@Override
+			public RValue convert(Type type) {
+				if (type instanceof Type.Tuple) {
+					Type.Tuple t = (Type.Tuple) type;
+					RValue[] values = new RValue[elements.length];
+					for (int i = 0; i != values.length; ++i) {
+						values[i] = elements[i].convert(t.get(i));
+					}
+					return new RValue.Tuple(values);
+				} else {
+					return super.convert(type);
+				}
+			}
+
+			public RValue[] getElements() {
+				return elements;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				return (o instanceof RValue.Tuple) && (Arrays.equals(elements, ((RValue.Array) o).elements));
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(elements);
+			}
+
+			@Override
+			public String toString() {
+				return Arrays.toString(elements);
+			}
+
+			@Override
+			public Value.Array toValue() {
+				Value[] es = new Value[elements.length];
+				for(int i=0;i!=es.length;++i) {
+					es[i] = elements[i].toValue();
+				}
+				return new Value.Array(es);
+			}
+		}
+
 		public final static class Field implements AbstractSemantics.RValue.Field {
 			public final Identifier name;
 			public final RValue value;
@@ -674,7 +770,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Type.Field> tFields = t.getFields();
+					WyilFile.Tuple<Type.Field> tFields = t.getFields();
 					for (int i = 0; i != tFields.size(); ++i) {
 						Type.Field f = tFields.get(i);
 						if (hasField(f.getName())) {
@@ -699,7 +795,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue convert(Type type) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Type.Field> fields = t.getFields();
+					WyilFile.Tuple<Type.Field> fields = t.getFields();
 					RValue.Field[] rs = new RValue.Field[fields.size()];
 					for (int i = 0; i != fields.size(); ++i) {
 						Type.Field ff = fields.get(i);
@@ -779,7 +875,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @param item
 			 * @return
 			 */
-			public abstract RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);
+			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);
 
 			/**
 			 * Get the callable type for this lambda
@@ -794,7 +890,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					return new RValue.Lambda() {
 
 						@Override
-						public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+						public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
 							return RValue.Lambda.this.execute(interpreter, arguments, context);
 						}
 
@@ -866,7 +962,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @return
 			 */
 			@Override
-			public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem item) {
+			public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem item) {
 				return interpreter.execute(context, frame, arguments, item);
 			}
 

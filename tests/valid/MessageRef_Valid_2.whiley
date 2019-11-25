@@ -4,7 +4,7 @@ type FileReader is &{int position}
 
 type Reader is {
     FileReader thus,
-    method read(FileReader, int) -> int
+    method read(FileReader, int) -> (int)
 }
 
 method read(FileReader _this, int amount) -> int:

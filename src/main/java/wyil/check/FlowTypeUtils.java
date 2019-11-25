@@ -171,16 +171,12 @@ public class FlowTypeUtils {
 			case STMT_assign: {
 				Stmt.Assign s = (Stmt.Assign) stmt;
 				for (LVal lval : s.getLeftHandSide()) {
-					Expr.VariableAccess lv = extractAssignedVariable(lval);
-					if (lv == null) {
-						// FIXME: this is not an ideal solution long term. In
-						// particular, we really need this method to detect not
-						// just modified variables, but also modified locations
-						// in general (e.g. assignments through references, etc)
-						continue;
-					} else {
-						modified.add(lv.getVariableDeclaration());
-					}
+					addAssignedVariables(lval,modified);
+					// FIXME: this is not an ideal solution long term. In
+					// particular, we really need this method to detect not
+					// just modified variables, but also modified locations
+					// in general (e.g. assignments through references, etc)
+					continue;
 				}
 				break;
 			}
@@ -227,20 +223,26 @@ public class FlowTypeUtils {
 	 * @param scope
 	 * @return
 	 */
-	public static Expr.VariableAccess extractAssignedVariable(LVal lval) {
+	public static void addAssignedVariables(LVal lval, Set<Decl.Variable> modified) {
 		if (lval instanceof Expr.VariableAccess) {
-			return (Expr.VariableAccess) lval;
+			Expr.VariableAccess lv = (Expr.VariableAccess) lval;
+			modified.add(lv.getVariableDeclaration());
 		} else if (lval instanceof Expr.RecordAccess) {
 			Expr.RecordAccess e = (Expr.RecordAccess) lval;
-			return extractAssignedVariable((LVal) e.getOperand());
+			addAssignedVariables((LVal) e.getOperand(), modified);
 		} else if (lval instanceof Expr.ArrayAccess) {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
-			return extractAssignedVariable((LVal) e.getFirstOperand());
+			addAssignedVariables((LVal) e.getFirstOperand(), modified);
+		} else if (lval instanceof Expr.TupleInitialiser) {
+			Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
+			Tuple<Expr> operands = e.getOperands();
+			for(int i=0;i!=operands.size();++i) {
+				addAssignedVariables((LVal) operands.get(i), modified);
+			}
 		} else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
-			return null;
+
 		} else {
 			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
-			return null; // dead code
 		}
 	}
 
@@ -553,10 +555,7 @@ public class FlowTypeUtils {
 	public static Type[] typeLambdaReturnConstructor(Type.Callable[] types) {
 		Type[] returnTypes = new Type[types.length];
 		for (int i = 0; i != types.length; ++i) {
-			// NOTE: this is an implicit assumption that typeLambdaFilter() only ever
-			// returns
-			// lambda types with exactly one return type.
-			returnTypes[i] = types[i].getReturns().get(0);
+			returnTypes[i] = types[i].getReturn();
 		}
 		return returnTypes;
 	}

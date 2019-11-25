@@ -18,5 +18,5 @@ public export method test():
     int[] ys
     int[] ws
     //
-    ys,ws = permute([1,2,3])
+    (ys,ws) = permute([1,2,3])
     assume ys == [1,2,3] && ws == [0,1,2]

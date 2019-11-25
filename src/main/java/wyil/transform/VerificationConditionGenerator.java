@@ -458,6 +458,7 @@ public class VerificationConditionGenerator {
 			case STMT_namedblock:
 				return translateNamedBlock((WyilFile.Stmt.NamedBlock) stmt, context);
 			case STMT_return:
+			case STMT_returnvoid:
 				return translateReturn((WyilFile.Stmt.Return) stmt, context);
 			case STMT_skip:
 				return translateSkip((WyilFile.Stmt.Skip) stmt, context);
@@ -514,7 +515,7 @@ public class VerificationConditionGenerator {
 		// First, generate bundles
 		for (int i = 0, j = 0; i != rhs.size(); ++i) {
 			WyilFile.Expr rval = rhs.get(i);
-			lvals[i] = generateEmptyLValBundle(rval.getTypes(), lhs, j);
+			lvals[i] = generateLValBundle(rval.getType(), lhs.get(j));
 			j += lvals[i].length;
 			Pair<Expr[], Context> p = generateRValBundle(rval, context);
 			rvals[i] = p.first();
@@ -528,22 +529,22 @@ public class VerificationConditionGenerator {
 		return context;
 	}
 
-	private WyilFile.LVal[] generateEmptyLValBundle(Tuple<WyilFile.Type> types, Tuple<WyilFile.LVal> lhs, int j) {
-		WyilFile.LVal[] lval;
-		if (types == null) {
-			lval = new WyilFile.LVal[] { lhs.get(j) };
-		} else {
-			lval = new WyilFile.LVal[types.size()];
-			for (int k = 0; k != types.size(); ++k) {
-				lval[k] = lhs.get(j++);
+	private WyilFile.LVal[] generateLValBundle(Type type, WyilFile.LVal lhs) {
+		if(lhs instanceof WyilFile.Expr.TupleInitialiser) {
+			WyilFile.Expr.TupleInitialiser l = (WyilFile.Expr.TupleInitialiser) lhs;
+			Tuple<WyilFile.Expr> exprs = l.getOperands();
+			WyilFile.LVal[] lval = new WyilFile.LVal[exprs.size()];
+			for (int k = 0; k != lval.length; ++k) {
+				lval[k] = (WyilFile.LVal) exprs.get(k);
 			}
+			return lval;
+		} else {
+			return new WyilFile.LVal[] { lhs };
 		}
-		return lval;
 	}
 
 	private Pair<Expr[], Context> generateRValBundle(WyilFile.Expr rhs, Context context) {
-		Tuple<WyilFile.Type> types = rhs.getTypes();
-		int size = (types == null) ? 1 : types.size();
+		int size = rhs.getType().shape();
 		Expr[] rvals = new Expr[size];
 		for (int i = 0; i != rvals.length; ++i) {
 			if (i == 0) {
@@ -562,7 +563,7 @@ public class VerificationConditionGenerator {
 		}
 		//
 		return new Pair<>(rvals, context);
-	}
+}
 
 	/**
 	 * Translate an individual assignment from one rval to one or more lvals. If
@@ -585,7 +586,7 @@ public class VerificationConditionGenerator {
 			context = translateSingleAssignment(lval[i], rval[i], context);
 		}
 		return context;
-	}
+}
 
 	/**
 	 * Translate an individual assignment from one rval to exactly one lval.
@@ -911,19 +912,23 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 */
 	private Context translateReturn(WyilFile.Stmt.Return stmt, Context context) {
-		//
-		Tuple<WyilFile.Expr> returns = stmt.getReturns();
-		//
-		if (returns.size() > 0) {
+		if (stmt.hasReturn()) {
+			WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
+					.getParent().enclosingDeclaration;
+			WyilFile.Type ret = declaration.getType().getReturn();
+			Expr[] exprs = new Expr[ret.shape()];
 			// There is at least one return value. Therefore, we need to check
 			// any preconditions for those return expressions and, potentially,
 			// ensure any postconditions of the cnlosing function/method are
 			// met.
-			Pair<Expr[], Context> p = translateExpressionsWithChecks(returns, context);
-			Expr[] exprs = p.first();
-			context = p.second();
+			for(int i=0;i!=ret.shape();++i) {
+				Integer selector = ret.shape() > 1 ? i : null;
+				Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getReturn(), selector, context);
+				exprs[i] = p.first();
+				context = p.second();
+			}
 			//
-			generateReturnTypeInvariantCheck(stmt, exprs, returns, context);
+			generateReturnTypeInvariantCheck(ret, exprs, stmt.getReturn(), context);
 			generatePostconditionChecks(stmt, exprs, context);
 		}
 		// Return null to signal that execution does not continue after this
@@ -942,38 +947,43 @@ public class VerificationConditionGenerator {
 	 * @param context
 	 * @throws ResolveError
 	 */
-	private void generateReturnTypeInvariantCheck(WyilFile.Stmt.Return stmt, Expr[] exprs, Tuple<WyilFile.Expr> returns,
+	private void generateReturnTypeInvariantCheck(Type lhs, Expr[] rhs, SyntacticItem item,
 			Context context) {
-		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
-				.getParent().enclosingDeclaration;
-		Tuple<WyilFile.Type> returnTypes = declaration.getType().getReturns();
-		//
-		for (int i = 0, k = 0; i != returns.size(); ++i) {
-			WyilFile.Expr e = returns.get(i);
-			Tuple<Type> e_types = e.getTypes();
-			if(k >= returnTypes.size()) {
-				// Ignore
-			} else if (e_types == null) {
-				WyilFile.Type returnType = returnTypes.get(k);
-				generateTypeInvariantCheck(returnType, exprs[k], e, context);
-				k = k + 1;
-			} else {
-				// NOTE: min required to handle case when insufficient returns given.
-				for (int j = 0; j < Math.min(e_types.size(), returnTypes.size() - k); ++j) {
-					WyilFile.Type returnType = returnTypes.get(k);
-					generateTypeInvariantCheck(returnType, exprs[k], e, context);
-					k = k + 1;
-				}
-			}
+		for(int i=0;i!=Math.min(lhs.shape(),rhs.length);++i) {
+			generateTypeInvariantCheck(lhs.dimension(i),rhs[i],item,context);
 		}
 	}
 
 	public void generateTypeInvariantCheck(Type lhs, Expr rhs, SyntacticItem item, Context context) {
 		if (typeMayHaveInvariant(lhs, context)) {
-			WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
-			Expr clause = new Expr.Is(rhs, typeTest);
-			context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions, clause,
-					item));
+			if(lhs.shape() > 1) {
+				// Handle multiple returns
+				if(rhs instanceof Expr.RecordInitialiser) {
+					// NOTE: this is hack to simplify generated VCs
+					Expr.RecordInitialiser rinit = (Expr.RecordInitialiser) rhs;
+					for (int i = 0; i != lhs.shape(); ++i) {
+						Expr r = rinit.getFields()[i].getSecond();
+						WyalFile.Type typeTest = convert(lhs.dimension(i), context.getEnvironment().getParent().enclosingDeclaration);
+						Expr clause = new Expr.Is(r, typeTest);
+						context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions,
+								clause, item));
+					}
+				} else {
+					for (int i = 0; i != lhs.shape(); ++i) {
+						Expr r = new Expr.RecordAccess(rhs, new Identifier("$" + i));
+						WyalFile.Type typeTest = convert(lhs.dimension(i), context.getEnvironment().getParent().enclosingDeclaration);
+						Expr clause = new Expr.Is(r, typeTest);
+						context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions,
+								clause, item));
+					}
+				}
+			} else {
+				// Handle single return
+				WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
+				Expr clause = new Expr.Is(rhs, typeTest);
+				context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions, clause,
+						item));
+			}
 		}
 	}
 
@@ -1009,7 +1019,6 @@ public class VerificationConditionGenerator {
 			}
 			// Copy over return expressions as arguments for invocation(s)
 			System.arraycopy(exprs, 0, arguments, parameters.size(), exprs.length);
-			//
 			// Finally, generate an appropriate verification condition to
 			// check each postcondition clause
 			for (int i = 0; i != postcondition.size(); ++i) {
@@ -1321,10 +1330,10 @@ public class VerificationConditionGenerator {
 				//
 				Type.Callable fmt = fm.getType();
 				Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
-				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fmt.getReturns().size());
+				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fmt.getReturn().shape());
 				//
-				for (int i = 0; i != fmt.getReturns().size(); ++i) {
-					Integer selector = fmt.getReturns().size() > 1 ? i : null;
+				for (int i = 0; i != fmt.getReturn().shape(); ++i) {
+					Integer selector = fmt.getReturn().shape() > 1 ? i : null;
 					arguments[parameters.length + i] = translateInvoke(expr, selector, context.getEnvironment());
 				}
 				//
@@ -1360,11 +1369,12 @@ public class VerificationConditionGenerator {
 		ArrayList<Expr> results = new ArrayList<>();
 		for (int i = 0; i != loc.size(); ++i) {
 			WyilFile.Expr operand = loc.get(i);
-			Tuple<Type> types = operand.getTypes();
-			if (types == null) {
+			Type type = operand.getType();
+			if (type.shape() == 1) {
 				results.add(translateExpression(loc.get(i), null, environment));
 			} else {
-				for (int j = 0; j != types.size(); ++j) {
+				for (int j = 0; j != type.shape(); ++j) {
+					// FIXME: use of selector is broken?
 					results.add(translateExpression(operand, j, environment));
 				}
 			}
@@ -1434,7 +1444,7 @@ public class VerificationConditionGenerator {
 			case EXPR_integerlessequal:
 			case EXPR_integergreaterthan:
 			case EXPR_integergreaterequal:
-			case EXPR_logiaclimplication:
+			case EXPR_logicalimplication:
 			case EXPR_logicaliff:
 				result = translateBinaryOperator((WyilFile.Expr.BinaryOperator) expr, environment);
 				break;
@@ -1466,6 +1476,9 @@ public class VerificationConditionGenerator {
 				break;
 			case EXPR_fielddereference:
 				result = translateFieldDereference((WyilFile.Expr.FieldDereference) expr, environment);
+				break;
+			case EXPR_tupleinitialiser:
+				result = translateTupleInitialiser((WyilFile.Expr.TupleInitialiser) expr, selector, environment);
 				break;
 			case EXPR_bitwiseshr:
 			case EXPR_bitwiseshl:
@@ -1580,7 +1593,7 @@ public class VerificationConditionGenerator {
 			return new Expr.GreaterThan(lhs, rhs);
 		case EXPR_integergreaterequal:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return new Expr.LogicalImplication(lhs, rhs);
 		case EXPR_logicaliff:
 			return new Expr.LogicalIff(lhs, rhs);
@@ -1682,6 +1695,23 @@ public class VerificationConditionGenerator {
 		return new Expr.RecordInitialiser(pairs);
 	}
 
+	private Expr translateTupleInitialiser(WyilFile.Expr.TupleInitialiser expr, Integer selector, LocalEnvironment environment) {
+		Tuple<WyilFile.Expr> operands = expr.getOperands();
+		if (selector != null) {
+			// oh boy ... this is ugly.  It needs to be gone!
+			return translateExpression(operands.get(selector), null, environment);
+		} else {
+			WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[operands.size()];
+			//
+			for (int i = 0; i != operands.size(); ++i) {
+				Identifier field = new WyalFile.Identifier("$" + i);
+				Expr init = translateExpression(operands.get(i), null, environment);
+				pairs[i] = new WyalFile.Pair<>(field, init);
+			}
+			return new Expr.RecordInitialiser(pairs);
+		}
+	}
+
 	/**
 	 * Translating as unknown basically means we're not representing the operation
 	 * in question at the verification level. This could be something that we'll
@@ -1692,12 +1722,12 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Expr translateAsUnknown(WyilFile.Expr expr, LocalEnvironment environment) {
-		Tuple<Type> types = expr.getTypes();
-		if(types == null) {
+		Type type = expr.getType();
+		if (type.shape() == 1) {
 			return translateAsUnknown(expr.getIndex(), expr.getType(), expr, environment);
-		} else if(types.size() > 0) {
+		} else if (type.shape() > 0) {
 			// FIXME: THIS IS BROKEN
-			return translateAsUnknown(expr.getIndex(), types.get(0), expr, environment);
+			return translateAsUnknown(expr.getIndex(), type.dimension(0), expr, environment);
 		} else {
 			// FIXME: THIS IS BROKEN
 			return translateAsUnknown(expr.getIndex(), Type.Void, expr, environment);
@@ -2466,13 +2496,13 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Union(elements);
 		} else if (type instanceof Type.Function) {
 			Type.Function ft = (Type.Function) type;
-			Tuple<WyalFile.Type> parameters = convert(ft.getParameters(), context);
-			Tuple<WyalFile.Type> returns = convert(ft.getReturns(), context);
+			Tuple<WyalFile.Type> parameters = convertAll(ft.getParameter(), context);
+			Tuple<WyalFile.Type> returns = convertAll(ft.getReturn(), context);
 			return new WyalFile.Type.Function(parameters, returns);
 		} else if (type instanceof Type.Method) {
 			Type.Method mt = (Type.Method) type;
-			Tuple<WyalFile.Type> parameters = convert(mt.getParameters(), context);
-			Tuple<WyalFile.Type> returns = convert(mt.getReturns(), context);
+			Tuple<WyalFile.Type> parameters = convertAll(mt.getParameter(), context);
+			Tuple<WyalFile.Type> returns = convertAll(mt.getReturn(), context);
 			// FIXME: this needs to be figure out!
 			return new WyalFile.Type.Function(parameters, returns);
 		} else if (type instanceof Type.Nominal) {
@@ -2491,10 +2521,10 @@ public class VerificationConditionGenerator {
 		return result;
 	}
 
-	public Tuple<WyalFile.Type> convert(Tuple<WyilFile.Type> types, SyntacticItem context) {
-		WyalFile.Type[] nTypes = new WyalFile.Type[types.size()];
-		for (int i = 0; i != types.size(); ++i) {
-			nTypes[i] = convert(types.get(i), context);
+	public Tuple<WyalFile.Type> convertAll(Type type, SyntacticItem context) {
+		WyalFile.Type[] nTypes = new WyalFile.Type[type.shape()];
+		for (int i = 0; i != nTypes.length; ++i) {
+			nTypes[i] = convert(type.dimension(i), context);
 		}
 		return new Tuple<>(nTypes);
 	}
@@ -2543,7 +2573,7 @@ public class VerificationConditionGenerator {
 			return false;
 		} else if (type instanceof Type.Callable) {
 			Type.Callable ft = (Type.Callable) type;
-			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
+			return typeMayHaveInvariant(ft.getParameter(), context) || typeMayHaveInvariant(ft.getReturn(), context);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			// HACK
@@ -2551,18 +2581,17 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Variable) {
 			// FIXME: unsure what the right solution is here?
 			return true;
+		} else if (type instanceof Type.Tuple) {
+			Type.Tuple t = (Type.Tuple) type;
+			for (int i = 0; i != t.size(); ++i) {
+				if (typeMayHaveInvariant(t.get(i), context)) {
+					return true;
+				}
+			}
+			return false;
 		} else {
 			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
-	}
-
-	private static boolean typeMayHaveInvariant(Tuple<Type> types, Context context) {
-		for (int i = 0; i != types.size(); ++i) {
-			if (typeMayHaveInvariant(types.get(i), context)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
