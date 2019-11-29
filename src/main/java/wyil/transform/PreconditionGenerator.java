@@ -97,9 +97,9 @@ public class PreconditionGenerator {
 			}
 
 			public void visitQuantifier(WyilFile.Expr.Quantifier expr, Context context) {
-				Tuple<WyilFile.Decl.Variable> parameters = expr.getParameters();
+				Tuple<WyilFile.Decl.StaticVariable> parameters = expr.getParameters();
 				for(int i=0;i!=parameters.size();++i) {
-					Decl.Variable parameter = parameters.get(i);
+					Decl.StaticVariable parameter = parameters.get(i);
 					WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) parameter.getInitialiser();
 					super.visitExpression(range, context);
 					// Now generate appropriate bounds for parameter to ensure any subsequently

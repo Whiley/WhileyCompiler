@@ -126,10 +126,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 
 	@Override
 	public void visitStaticVariable(Decl.StaticVariable decl, Context data) {
-		if(decl.hasInitialiser()) {
-			// FIXME: should also prohibit invocation of pure functions in this context?
-			visitExpression(decl.getInitialiser(), Context.PURE);
-		}
+		// FIXME: should also prohibit invocation of pure functions in this context?
+		visitExpression(decl.getInitialiser(), Context.PURE);
 	}
 
 	@Override

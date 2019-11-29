@@ -910,11 +910,11 @@ public class WhileyFileParser {
 		// variable decl: Identifier | LeftBrace | LeftCurly | Ampersand
 		// invoke       : Identifier | LeftBrace | Star
 		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
-			// Must be a variable declaration as this is the only situation in which a type
+			// Must be a statement initialiser as this is the only situation in which a type
 			// can be followed by an identifier.
 			index = start; // backtrack
 			//
-			return parseVariableDeclaration(scope);
+			return parseInitialiserStatement(scope);
 		}
 		// Must be an assignment or invocation
 		index = start; // backtrack
@@ -945,50 +945,48 @@ public class WhileyFileParser {
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
 	 *
-	 * @param parameter
-	 *            The declared type for the variable, which will have already
-	 *            been parsed when disambiguating this statement from another.
 	 * @param scope
 	 *            The enclosing scope for this statement, which determines the
 	 *            set of visible (i.e. declared) variables and also the current
 	 *            indentation level.
 	 *
-	 * @see wyc.lang.Stmt.VariableDeclaration
-	 *
 	 * @return
 	 */
-	private Decl.Variable parseVariableDeclaration(EnclosingScope scope) {
+	private Stmt.Initialiser parseInitialiserStatement(EnclosingScope scope) {
 		int start = index;
+		ArrayList<Decl.Variable> variables = new ArrayList<>();
 		//
-		Tuple<Modifier> modifiers = parseModifiers(Final);
-		Type type = parseType(scope);
-		Identifier name = parseIdentifier();
-		// Ensure at least one variable is defined by this pattern.
-		// Check that declared variables are not already defined.
-		scope.checkNameAvailable(name);
+		do {
+			Tuple<Modifier> modifiers = parseModifiers(Final);
+			Type type = parseType(scope);
+			Identifier name = parseIdentifier();
+			// Ensure at least one variable is defined by this pattern.
+			// Check that declared variables are not already defined.
+			scope.checkNameAvailable(name);
+			variables.add(new Decl.Variable(modifiers, name, type));
+		} while(tryAndMatch(true, Comma) != null);
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
+		Stmt.Initialiser stmt;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
 			initialiser = parseExpression(scope, false);
+			stmt = new Stmt.Initialiser(new Tuple<>(variables),initialiser);
+		} else {
+			stmt = new Stmt.Initialiser(new Tuple<>(variables));
 		}
 		// Now, a new line indicates the end-of-statement
 		int end = index;
 		matchEndLine();
-		//
-		Decl.Variable decl;
-		if(initialiser != null) {
-			decl = new Decl.Variable(modifiers, name, type, initialiser);
-		} else {
-			decl = new Decl.Variable(modifiers, name, type);
-		}
 		// Done.
-		decl = annotateSourceLocation(decl, start);
-		// Finally, register the new variable in the enclosing scope. This
+		stmt = annotateSourceLocation(stmt, start);
+		// Finally, register all new variables in the enclosing scope. This
 		// should be done after parsing the initialiser expression to prevent it
 		// from referring to this variable.
-		scope.declareVariable(decl);
-		return decl;
+		for(Decl.Variable decl : stmt.getVariables()) {
+			scope.declareVariable(decl);
+		}
+		return stmt;
 	}
 
 	/**
@@ -2092,7 +2090,7 @@ public class WhileyFileParser {
 		scope = scope.newEnclosingScope();
 		match(LeftCurly);
 		// Parse one or more source variables / expressions
-		Tuple<Decl.Variable> parameters = parseQuantifierParameters(scope);
+		Tuple<Decl.StaticVariable> parameters = parseQuantifierParameters(scope);
 		// Parse condition over source variables
 		Expr condition = parseLogicalExpression(scope, true);
 		//
@@ -2107,9 +2105,9 @@ public class WhileyFileParser {
 		return annotateSourceLocation(qf, start);
 	}
 
-	private Tuple<Decl.Variable> parseQuantifierParameters(EnclosingScope scope) {
+	private Tuple<Decl.StaticVariable> parseQuantifierParameters(EnclosingScope scope) {
 		boolean firstTime = true;
-		ArrayList<Decl.Variable> parameters = new ArrayList<>();
+		ArrayList<Decl.StaticVariable> parameters = new ArrayList<>();
 		do {
 			if (!firstTime) {
 				match(Comma);
@@ -2121,7 +2119,7 @@ public class WhileyFileParser {
 			match(In);
 			Expr range = parseRangeExpression(scope, true);
 			// FIXME: need to add initialiser here
-			Decl.Variable decl = new Decl.Variable(new Tuple<>(), id, new Type.Int(), range);
+			Decl.StaticVariable decl = new Decl.StaticVariable(new Tuple<>(), id, new Type.Int(), range);
 			decl = annotateSourceLocation(decl, start);
 			parameters.add(decl);
 			scope.declareVariable(decl);
@@ -3906,11 +3904,21 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Type parseBracketedType(EnclosingScope scope) {
-		int start = index;
 		match(LeftBrace);
 		Type type = parseType(scope);
-		match(RightBrace);
-		return type;
+		if (tryAndMatch(true, Comma) == null) {
+			match(RightBrace);
+			return type;
+		} else {
+			ArrayList<Type> paramTypes = new ArrayList<>();
+			paramTypes.add(type);
+			paramTypes.add(parseType(scope));
+			while (eventuallyMatch(RightBrace) == null) {
+				match(Comma);
+				paramTypes.add(parseType(scope));
+			}
+			return Type.Tuple.create(paramTypes);
+		}
 	}
 
 	/**
@@ -4129,6 +4137,19 @@ public class WhileyFileParser {
 		return new Pair<>(type, id);
 	}
 
+	private Type parseParameterTypes(EnclosingScope scope) {
+		match(LeftBrace);
+		ArrayList<Type> paramTypes = new ArrayList<>();
+		while (eventuallyMatch(RightBrace) == null) {
+			if(!paramTypes.isEmpty()) {
+				match(Comma);
+			}
+			paramTypes.add(parseType(scope));
+		}
+		return Type.Tuple.create(paramTypes);
+	}
+
+
 	public Type parseOptionalParameterTypes(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if (next < tokens.size() && tokens.get(next).kind == LeftBrace) {
@@ -4136,21 +4157,6 @@ public class WhileyFileParser {
 		} else {
 			return parseType(scope);
 		}
-	}
-
-	public Type parseParameterTypes(EnclosingScope scope) {
-		ArrayList<Type> paramTypes = new ArrayList<>();
-		match(LeftBrace);
-
-		boolean firstTime = true;
-		while (eventuallyMatch(RightBrace) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			paramTypes.add(parseType(scope));
-		}
-		return Type.Tuple.create(paramTypes);
 	}
 
 	private Name parseName(EnclosingScope scope) {

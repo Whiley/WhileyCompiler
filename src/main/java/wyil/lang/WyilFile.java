@@ -172,7 +172,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// =========================================================================
 	// Schema
 	// =========================================================================
-
 	public static final int ITEM_null = 0; // <ZERO operands, ZERO>
 	public static final int ITEM_bool = 1; // <ZERO operands, ONE>
 	public static final int ITEM_int = 2; // <ZERO operands, MANY>
@@ -251,6 +250,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int STMT_switch = 161; // <TWO operands, ZERO>
 	public static final int STMT_while = 162; // <FOUR operands, ZERO>
 	public static final int STMT_returnvoid = 163; // <ZERO operands, ZERO>
+	public static final int STMT_initialiser = 164; // <MANY operands, ZERO>
+	public static final int STMT_initialiservoid = 165; // <MANY operands, ZERO>
 	public static final int EXPR_variablecopy = 176; // <TWO operands, ZERO>
 	public static final int EXPR_variablemove = 177; // <TWO operands, ZERO>
 	public static final int EXPR_staticvariable = 179; // <TWO operands, ZERO>
@@ -1404,22 +1405,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Variable extends Named<WyilFile.Type> implements Stmt {
+		public static class Variable extends Named<WyilFile.Type> {
 			public Variable(Tuple<Modifier> modifiers, Identifier name, WyilFile.Type type) {
 				super(DECL_variable, modifiers, name, type);
 			}
 
-			public Variable(Tuple<Modifier> modifiers, Identifier name, WyilFile.Type type, Expr initialiser) {
-				super(DECL_variableinitialiser, modifiers, name, type, initialiser);
-			}
-
-			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WyilFile.Type type,
-					Expr initialiser) {
+			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WyilFile.Type type, WyilFile.Expr initialiser) {
 				super(opcode, modifiers, name, type, initialiser);
-			}
-
-			public boolean hasInitialiser() {
-				return getOpcode() == DECL_variableinitialiser;
 			}
 
 			@Override
@@ -1427,30 +1419,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (WyilFile.Type) get(2);
 			}
 
-			public Expr getInitialiser() {
-				return (Expr) get(3);
-			}
-
 			@SuppressWarnings("unchecked")
 			@Override
 			public Decl.Variable clone(SyntacticItem[] operands) {
-				if (operands.length == 3) {
-					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-							(WyilFile.Type) operands[2]);
-				} else {
-					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-							(WyilFile.Type) operands[2], (Expr) operands[3]);
-				}
+				return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(WyilFile.Type) operands[2]);
 			}
 
 			@Override
 			public String toString() {
-				String r = getType().toString();
-				r += " " + getName().toString();
-				if (hasInitialiser()) {
-					r += " = " + getInitialiser().toString();
-				}
-				return r;
+				return getType().toString() + " " + getName();
 			}
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "DECL_variable") {
@@ -1466,8 +1444,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-							(WyilFile.Type) operands[2], (Expr) operands[3]);
+					throw new UnsupportedOperationException("GOT HERE");
 				}
 			};
 		}
@@ -1499,8 +1476,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public boolean hasInitialiser() {
-				return true;
+			public WyilFile.Type getType() {
+				return (WyilFile.Type) get(2);
+			}
+
+			public Expr getInitialiser() {
+				return (Expr) get(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2263,6 +2244,68 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		/**
 		 * <p>
+		 * Represents a variable initialiser statement which declares one or more
+		 * variables with an optional initialiser.  The following illustrates:
+		 * </p>
+		 * <pre>
+		 * int x, int y = swap(1,2)
+		 * </pre>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Initialiser extends AbstractSyntacticItem implements Stmt {
+			public Initialiser(Tuple<Decl.Variable> variables) {
+				super(STMT_initialiservoid, variables);
+			}
+			public Initialiser(Tuple<Decl.Variable> variables, Expr initialiser) {
+				super(STMT_initialiser, variables, initialiser);
+			}
+
+			public boolean hasInitialiser() {
+				return opcode == STMT_initialiser;
+			}
+
+			public Tuple<Decl.Variable> getVariables() {
+				return (Tuple<Decl.Variable>) get(0);
+			}
+
+			public Expr getInitialiser() {
+				return (Expr) get(1);
+			}
+
+			public Type getType() {
+				return Type.Tuple.create(getVariables().map(v -> v.getType()));
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				if(hasInitialiser()) {
+					return new Initialiser((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				} else {
+					return new Initialiser((Tuple<Decl.Variable>) operands[0]);
+				}
+			}
+
+			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.TWO, Data.ZERO, "STMT_initialiser") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Initialiser((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.ONE, Data.ZERO, "STMT_initialiservoid") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Initialiser((Tuple<Decl.Variable>) operands[0]);
+				}
+			};
+		}
+
+		/**
+		 * <p>
 		 * Represents a return statement which has one or more optional return
 		 * expressions referred to simply as the "returns". Note that, the returned
 		 * expression (if there is one) must begin on the same line as the return
@@ -2932,11 +2975,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 */
 		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr, UnaryOperator {
-			public Quantifier(int opcode, Decl.Variable[] parameters, Expr body) {
+			public Quantifier(int opcode, Decl.StaticVariable[] parameters, Expr body) {
 				super(opcode, new Tuple<>(parameters), body);
 			}
 
-			public Quantifier(int opcode, Tuple<Decl.Variable> parameters, Expr body) {
+			public Quantifier(int opcode, Tuple<Decl.StaticVariable> parameters, Expr body) {
 				super(opcode, parameters, body);
 			}
 
@@ -2951,8 +2994,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) get(0);
+			public Tuple<Decl.StaticVariable> getParameters() {
+				return (Tuple<Decl.StaticVariable>) get(0);
 			}
 
 			@Override
@@ -2974,18 +3017,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 */
 		public static class UniversalQuantifier extends Quantifier {
-			public UniversalQuantifier(Decl.Variable[] parameters, Expr body) {
+			public UniversalQuantifier(Decl.StaticVariable[] parameters, Expr body) {
 				super(EXPR_logicaluniversal, new Tuple<>(parameters), body);
 			}
 
-			public UniversalQuantifier(Tuple<Decl.Variable> parameters, Expr body) {
+			public UniversalQuantifier(Tuple<Decl.StaticVariable> parameters, Expr body) {
 				super(EXPR_logicaluniversal, parameters, body);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				return new UniversalQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -3001,7 +3044,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+					return new UniversalQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 				}
 			};
 		}
@@ -3016,18 +3059,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 */
 		public static class ExistentialQuantifier extends Quantifier {
-			public ExistentialQuantifier(Decl.Variable[] parameters, Expr body) {
+			public ExistentialQuantifier(Decl.StaticVariable[] parameters, Expr body) {
 				super(EXPR_logicalexistential, new Tuple<>(parameters), body);
 			}
 
-			public ExistentialQuantifier(Tuple<Decl.Variable> parameters, Expr body) {
+			public ExistentialQuantifier(Tuple<Decl.StaticVariable> parameters, Expr body) {
 				super(EXPR_logicalexistential, parameters, body);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+				return new ExistentialQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -3043,7 +3086,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
+					return new ExistentialQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 				}
 			};
 		}
@@ -5653,6 +5696,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			}
 
+			/**
+			 * Create a sequence of zero or more types.
+			 *
+			 * @param types
+			 * @return
+			 */
+			public static Type create(WyilFile.Tuple<Type> types) {
+				switch(types.size()) {
+				case 0:
+					return Type.Void;
+				case 1:
+					return types.get(0);
+				default:
+					return new Type.Tuple(types.toArray(Type.class));
+				}
+			}
+
 
 			private Tuple(Type... types) {
 				super(TYPE_tuple, types);
@@ -7133,14 +7193,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		@Override
 		public void visitUniversalQuantifier(WyilFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
-			visitVariables(expr.getParameters(), used);
+			for(Decl.StaticVariable v : expr.getParameters()) {
+				visitVariable(v,used);
+			}
 			visitExpression(expr.getOperand(), used);
 			removeAllDeclared(expr.getParameters(), used);
 		}
 
 		@Override
 		public void visitExistentialQuantifier(WyilFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
-			visitVariables(expr.getParameters(), used);
+			for(Decl.StaticVariable v : expr.getParameters()) {
+				visitVariable(v,used);
+			}
 			visitExpression(expr.getOperand(), used);
 			removeAllDeclared(expr.getParameters(), used);
 		}
@@ -7150,7 +7214,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			// No need to visit types
 		}
 
-		private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+		private void removeAllDeclared(Tuple<? extends Decl.Variable> parameters, HashSet<Decl.Variable> used) {
 			for (int i = 0; i != parameters.size(); ++i) {
 				used.remove(parameters.get(i));
 			}
@@ -7198,6 +7262,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		//
 		builder.replace("STMT", "return", Stmt.Return.DESCRIPTOR_1a);
 		builder.add("STMT", "returnvoid", Stmt.Return.DESCRIPTOR_1b);
+		builder.add("STMT", "initialiser", Stmt.Initialiser.DESCRIPTOR_0a);
+		builder.add("STMT", "initialiservoid", Stmt.Initialiser.DESCRIPTOR_0b);
 		builder.replace("EXPR", "indirectinvoke", Expr.IndirectInvoke.DESCRIPTOR_1);
 		builder.replace("EXPR", "lambdaaccess", Expr.LambdaAccess.DESCRIPTOR_1);
 		builder.add("EXPR", "tupleinitialiser", Expr.TupleInitialiser.DESCRIPTOR_0);

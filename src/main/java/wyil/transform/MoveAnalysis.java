@@ -104,17 +104,8 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	}
 
 	@Override
-	public void visitVariable(Decl.Variable stmt, Boolean consumed) {
-		if (stmt.hasInitialiser()) {
-			visitExpression(stmt.getInitialiser(), true);
-		}
-	}
-
-	@Override
 	public void visitStaticVariable(Decl.StaticVariable stmt, Boolean consumed) {
-		if (stmt.hasInitialiser()) {
-			visitExpression(stmt.getInitialiser(), true);
-		}
+		visitExpression(stmt.getInitialiser(), true);
 	}
 
 	// ===========================================================================
@@ -155,6 +146,13 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 		visitStatement(stmt.getTrueBranch(), null);
 		if (stmt.hasFalseBranch()) {
 			visitStatement(stmt.getFalseBranch(), null);
+		}
+	}
+
+	@Override
+	public void visitInitialiser(Stmt.Initialiser stmt, Boolean consumed) {
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), true);
 		}
 	}
 
@@ -418,13 +416,13 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 
 	@Override
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Boolean consumed) {
-		visitVariables(expr.getParameters(), true);
+		visitStaticVariables(expr.getParameters(), true);
 		visitExpression(expr.getOperand(), false);
 	}
 
 	@Override
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Boolean consumed) {
-		visitVariables(expr.getParameters(), true);
+		visitStaticVariables(expr.getParameters(), true);
 		visitExpression(expr.getOperand(), false);
 	}
 

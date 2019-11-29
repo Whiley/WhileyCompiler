@@ -183,8 +183,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		Environment environment = new Environment();
 		// Check type is contractive
 		checkContractive(decl);
-		// Check variable declaration is not empty
-		checkVariableDeclaration(decl.getVariableDeclaration(), environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -199,7 +197,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
 		Environment environment = new Environment();
 		// Check type not void
-		checkVariableDeclaration(decl, environment);
+		Type type = checkExpression(decl.getInitialiser(), true, environment);
+		//
+		checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 	}
 
 	/**
@@ -214,10 +214,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		Environment environment = new Environment();
 		// Update environment so this within declared lifetimes
 		environment = FlowTypeUtils.declareThisWithin(d, environment);
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkVariableDeclarations(d.getParameters(), environment);
-		checkVariableDeclarations(d.getReturns(), environment);
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -258,10 +254,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkPropertyDeclaration(Decl.Property d) {
 		// Construct initial environment
 		Environment environment = new Environment();
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkVariableDeclarations(d.getParameters(), environment);
-		checkVariableDeclarations(d.getReturns(), environment);
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -311,8 +303,8 @@ public class FlowTypeCheck implements Compiler.Check {
 				// Sanity check incoming environment
 				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
-			} else if (stmt instanceof Decl.Variable) {
-				return checkVariableDeclaration((Decl.Variable) stmt, environment);
+			} else if (stmt instanceof Stmt.Initialiser) {
+				return checkInitialiser((Stmt.Initialiser) stmt, environment);
 			} else if (stmt instanceof Stmt.Assign) {
 				return checkAssign((Stmt.Assign) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Return) {
@@ -407,23 +399,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	/**
-	 * Type check a given sequence of variable declarations.
-	 *
-	 * @param decls
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            statement.
-	 * @return
-	 * @throws IOException
-	 */
-	private Environment checkVariableDeclarations(Tuple<Decl.Variable> decls, Environment environment) {
-		for (int i = 0; i != decls.size(); ++i) {
-			environment = checkVariableDeclaration(decls.get(i), environment);
-		}
-		return environment;
-	}
-
-	/**
 	 * Type check a variable declaration statement. In particular, when an
 	 * initialiser is given we must check it is well-formed and that it is a subtype
 	 * of the declared type.
@@ -435,16 +410,22 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *            block
 	 * @return
 	 */
-	private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment) {
+	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment) {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
-			Type type = checkExpression(decl.getInitialiser(), true, environment);
-			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
-			if (type != null) {
-				// Refine the declared type
-				Type refined = refine(decl.getType(), type, environment);
-				// Update the typing environment accordingly.
-				environment = environment.refineType(decl, refined);
+			Type lhs = decl.getType();
+			Type rhs = checkExpression(decl.getInitialiser(), true, environment);
+			// Extract all types from the given declarations
+			checkIsSubtype(lhs, rhs, environment, decl.getInitialiser());
+			// Apply type refinement (if applicable)
+			if (rhs != null) {
+				Tuple<Decl.Variable> vars = decl.getVariables();
+				for(int i=0;i!=lhs.shape();++i) {
+					// Refine the declared type
+					Type refined = refine(lhs.dimension(i), rhs.dimension(i), environment);
+					// Update the typing environment accordingly.
+					environment = environment.refineType(vars.get(i), refined);
+				}
 			}
 		}
 		// Done.
@@ -1132,7 +1113,7 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
 		// Check array initialisers
-		for (Decl.Variable decl : stmt.getParameters()) {
+		for (Decl.StaticVariable decl : stmt.getParameters()) {
 			checkExpression(decl.getInitialiser(), true, environment);
 		}
 		// NOTE: We throw away the returned environment from the body. This is
