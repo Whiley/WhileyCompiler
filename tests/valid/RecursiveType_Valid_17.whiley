@@ -8,7 +8,7 @@ type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {int[] err}
 function parse(int[] input) -> Expr:
     Expr e
     State st
-    e,st = parseAddSubExpr({input: input, pos: 0})
+    (e,st) = parseAddSubExpr({input: input, pos: 0})
     return e
 
 function parseAddSubExpr(State st) -> (Expr e, State nst):

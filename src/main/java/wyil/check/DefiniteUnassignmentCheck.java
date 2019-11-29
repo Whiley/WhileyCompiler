@@ -228,6 +228,14 @@ public class DefiniteUnassignmentCheck
 			visitLVal((LVal) aa.getFirstOperand(), environment);
 			break;
 		}
+		case EXPR_tupleinitialiser: {
+			Expr.TupleInitialiser ti = (Expr.TupleInitialiser) lval;
+			Tuple<Expr> operands = ti.getOperands();
+			for(int i=0;i!=operands.size();++i) {
+				visitLVal((LVal) operands.get(i), environment);
+			}
+			break;
+		}
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 			// NOTE: don't need to handle these cases

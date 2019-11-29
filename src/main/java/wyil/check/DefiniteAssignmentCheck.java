@@ -186,25 +186,40 @@ public class DefiniteAssignmentCheck
 	@Override
 	public ControlFlow visitAssign(Stmt.Assign stmt, DefinitelyAssignedSet environment) {
 		// left-hand side
-		for (Expr lval : stmt.getLeftHandSide()) {
+		visitLValExpressions(stmt.getLeftHandSide(), environment);
+		// right-hand side
+		visitExpressions(stmt.getRightHandSide(), environment);
+		// Update environment as necessary
+		environment = visitAssignedLVals(stmt.getLeftHandSide(),environment);
+		// Done
+		return new ControlFlow(environment, null);
+	}
+
+	private void visitLValExpressions(Tuple<? extends Expr> lvals, DefinitelyAssignedSet environment) {
+		for (Expr lval : lvals) {
 			if (lval instanceof Expr.VariableAccess) {
 				// Skip local variables since they are being assigned and, otherwise, could
 				// raise an error.
+			} else if(lval instanceof Expr.TupleInitialiser) {
+				Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
+				visitLValExpressions(e.getOperands(), environment);
 			} else {
 				visitExpression(lval, environment);
 			}
 		}
-		// right-hand side
-		visitExpressions(stmt.getRightHandSide(), environment);
-		// Update environment as necessary
-		for (Expr lval : stmt.getLeftHandSide()) {
+	}
+
+	private DefinitelyAssignedSet visitAssignedLVals(Tuple<? extends Expr> lvals, DefinitelyAssignedSet environment) {
+		for (Expr lval : lvals) {
 			if (lval instanceof Expr.VariableAccess) {
 				Expr.VariableAccess lv = (Expr.VariableAccess) lval;
 				environment = environment.add(lv.getVariableDeclaration());
+			} else if(lval instanceof Expr.TupleInitialiser) {
+				Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
+				environment = visitAssignedLVals(e.getOperands(), environment);
 			}
 		}
-		//
-		return new ControlFlow(environment, null);
+		return environment;
 	}
 
 	@Override
@@ -281,7 +296,9 @@ public class DefiniteAssignmentCheck
 
 	@Override
 	public ControlFlow visitReturn(Stmt.Return stmt, DefinitelyAssignedSet environment) {
-		visitExpressions(stmt.getReturns(), environment);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), environment);
+		}
 		return new ControlFlow(null,null);
 	}
 

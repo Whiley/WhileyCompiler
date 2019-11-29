@@ -2,7 +2,7 @@
 
 type MyProc is &{int position}
 
-type MyMeth is method(MyProc, int) -> int
+type MyMeth is method(MyProc, int) -> (int)
 
 method read(MyProc _this, int x) -> int:
     return x + 123

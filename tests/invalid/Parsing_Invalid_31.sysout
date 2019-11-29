@@ -1,3 +1,9 @@
 tests/invalid/Parsing_Invalid_31.whiley:5: insufficient return values
-    int a = m()
-            ^^^
+    int a1 = m()
+             ^^^
+tests/invalid/Parsing_Invalid_31.whiley:6: insufficient return values
+    int a2 = m()+1
+             ^^^
+tests/invalid/Parsing_Invalid_31.whiley:7: insufficient return values
+    int[] a3 = [m()]
+                ^^^

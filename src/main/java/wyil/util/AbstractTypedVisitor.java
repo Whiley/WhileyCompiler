@@ -111,7 +111,7 @@ public abstract class AbstractTypedVisitor {
 		environment = environment.declareWithin("this", decl.getLifetimes());
 		//
 		visitVariables(decl.getParameters(), environment);
-		visitMultiExpression(decl.getBody(), decl.getType().getReturns(), environment);
+		visitExpression(decl.getBody(), decl.getType().getReturn(), environment);
 	}
 
 	public void visitVariables(Tuple<Decl.Variable> vars, Environment environment) {
@@ -139,7 +139,7 @@ public abstract class AbstractTypedVisitor {
 	public void visitType(Decl.Type decl) {
 		Environment environment = new Environment();
 		visitVariable(decl.getVariableDeclaration(), environment);
-		visitExpressions(decl.getInvariant(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getInvariant(), Type.Bool, environment);
 	}
 
 	public void visitCallable(Decl.Callable decl) {
@@ -173,15 +173,15 @@ public abstract class AbstractTypedVisitor {
 		Environment environment = new Environment();
 		visitVariables(decl.getParameters(), environment);
 		visitVariables(decl.getReturns(), environment);
-		visitExpressions(decl.getInvariant(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getInvariant(), Type.Bool, environment);
 	}
 
 	public void visitFunction(Decl.Function decl) {
 		Environment environment = new Environment();
 		visitVariables(decl.getParameters(), environment);
 		visitVariables(decl.getReturns(), environment);
-		visitExpressions(decl.getRequires(), Type.Bool, environment);
-		visitExpressions(decl.getEnsures(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getRequires(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getEnsures(), Type.Bool, environment);
 		visitStatement(decl.getBody(), environment, new FunctionOrMethodScope(decl));
 	}
 
@@ -192,8 +192,8 @@ public abstract class AbstractTypedVisitor {
 		//
 		visitVariables(decl.getParameters(), environment);
 		visitVariables(decl.getReturns(), environment);
-		visitExpressions(decl.getRequires(), Type.Bool, environment);
-		visitExpressions(decl.getEnsures(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getRequires(), Type.Bool, environment);
+		visitHomogeneousExpressions(decl.getEnsures(), Type.Bool, environment);
 		visitStatement(decl.getBody(), environment, new FunctionOrMethodScope(decl));
 	}
 
@@ -236,7 +236,7 @@ public abstract class AbstractTypedVisitor {
 			visitIfElse((Stmt.IfElse) stmt, environment, scope);
 			break;
 		case EXPR_invoke:
-			visitInvoke((Expr.Invoke) stmt, new Tuple<>(), environment);
+			visitInvoke((Expr.Invoke) stmt, Type.Void, environment);
 			break;
 		case EXPR_indirectinvoke:
 			visitIndirectInvoke((Expr.IndirectInvoke) stmt, new Tuple<>(), environment);
@@ -245,6 +245,7 @@ public abstract class AbstractTypedVisitor {
 			visitNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
 			break;
 		case STMT_return:
+		case STMT_returnvoid:
 			visitReturn((Stmt.Return) stmt, environment, scope);
 			break;
 		case STMT_skip:
@@ -266,9 +267,12 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope) {
-		Tuple<Type> targets = stmt.getLeftHandSide().map((LVal l) -> l.getType());
-		visitLVals(stmt.getLeftHandSide(), environment, scope);
-		visitExpressions(stmt.getRightHandSide(), targets, environment);
+		Tuple<LVal> lhs = stmt.getLeftHandSide();
+		Tuple<Expr> rhs = stmt.getRightHandSide();
+		visitLVals(lhs, environment, scope);
+		for (int i = 0; i != Math.min(lhs.size(), rhs.size()); ++i) {
+			visitExpression(rhs.get(i), lhs.get(i).getType(), environment);
+		}
 	}
 
 	public void visitLVals(Tuple<LVal> lvals, Environment environment, EnclosingScope scope) {
@@ -304,7 +308,7 @@ public abstract class AbstractTypedVisitor {
 	public void visitDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		visitStatement(stmt.getBody(), environment, scope);
 		visitExpression(stmt.getCondition(), Type.Bool, environment);
-		visitExpressions(stmt.getInvariant(), Type.Bool, environment);
+		visitHomogeneousExpressions(stmt.getInvariant(), Type.Bool, environment);
 	}
 
 	public void visitFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
@@ -332,7 +336,9 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope) {
 		Decl.FunctionOrMethod enclosing = stmt.getAncestor(Decl.FunctionOrMethod.class);
-		visitExpressions(stmt.getReturns(), enclosing.getType().getReturns(), environment);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), enclosing.getType().getReturn(), environment);
+		}
 	}
 
 	public void visitSkip(Stmt.Skip stmt, Environment environment, EnclosingScope scope) {
@@ -349,50 +355,27 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitCase(Stmt.Case stmt, Type target, Environment environment, EnclosingScope scope) {
-		visitExpressions(stmt.getConditions(), target, environment);
+		visitHomogeneousExpressions(stmt.getConditions(), target, environment);
 		visitStatement(stmt.getBlock(), environment, scope);
 	}
 
 	public void visitWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		visitExpression(stmt.getCondition(), Type.Bool, environment);
-		visitExpressions(stmt.getInvariant(), Type.Bool, environment);
+		visitHomogeneousExpressions(stmt.getInvariant(), Type.Bool, environment);
 		visitStatement(stmt.getBody(), environment, scope);
 	}
 
-	public void visitExpressions(Tuple<Expr> exprs, Tuple<Type> targets, Environment environment) {
-		int j=0;
-		for (int i = 0; i != exprs.size(); ++i) {
+	public void visitHeterogeneousExpressions(Tuple<Expr> exprs, Type targets, Environment environment) {
+		for (int i = 0; i != Math.min(targets.shape(),exprs.size()); ++i) {
 			Expr e = exprs.get(i);
-			// Handle multi expressions
-			if(j >= targets.size()){
-				// Something has gone wrong somewhere
-				visitExpression(e, Type.Void, environment);
-			} else if(e.getTypes() != null) {
-				int len = e.getTypes().size();
-				Tuple<Type> types = targets.get(j,j+len);
-				visitMultiExpression(e,types,environment);
-				j = j + len;
-			} else {
-				// Default to single expression
-				visitExpression(e, targets.get(j), environment);
-				j = j + 1;
-			}
+			// Default to single expression
+			visitExpression(e, targets.dimension(i), environment);
 		}
 	}
 
-	public void visitExpressions(Tuple<Expr> exprs, Type target, Environment environment) {
+	public void visitHomogeneousExpressions(Tuple<Expr> exprs, Type target, Environment environment) {
 		for (int i = 0; i != exprs.size(); ++i) {
 			visitExpression(exprs.get(i), target, environment);
-		}
-	}
-
-	public void visitMultiExpression(Expr expr, Tuple<Type> types, Environment environment) {
-		if (expr instanceof Expr.Invoke) {
-			visitInvoke((Expr.Invoke) expr, types, environment);
-		} else if(expr instanceof Expr.IndirectInvoke) {
-			visitIndirectInvoke((Expr.IndirectInvoke) expr, types, environment);
-		} else {
-			visitExpression(expr, types.get(0), environment);
 		}
 	}
 
@@ -444,7 +427,7 @@ public abstract class AbstractTypedVisitor {
 			visitUnaryOperator((Expr.UnaryOperator) expr, target, environment);
 			break;
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -475,6 +458,7 @@ public abstract class AbstractTypedVisitor {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr, target, environment);
 			break;
 		// Ternary Operators
@@ -547,7 +531,7 @@ public abstract class AbstractTypedVisitor {
 		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr, environment);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr, environment);
 			break;
 		case EXPR_logicaliff:
@@ -648,7 +632,7 @@ public abstract class AbstractTypedVisitor {
 			visitBitwiseXor((Expr.BitwiseXor) expr, environment);
 			break;
 		case EXPR_invoke:
-			visitInvoke((Expr.Invoke) expr, new Tuple<>(target), environment);
+			visitInvoke((Expr.Invoke) expr, target, environment);
 			break;
 		case EXPR_logicaland:
 			visitLogicalAnd((Expr.LogicalAnd) expr, environment);
@@ -659,6 +643,10 @@ public abstract class AbstractTypedVisitor {
 		case EXPR_recordinitialiser:
 			Type.Record recordT = selectRecord(target, expr, environment);
 			visitRecordInitialiser((Expr.RecordInitialiser) expr, recordT, environment);
+			break;
+		case EXPR_tupleinitialiser:
+			Type.Tuple typeT = selectTuple(target, expr, environment);
+			visitTupleInitialiser((Expr.TupleInitialiser) expr, typeT, environment);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -680,7 +668,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitArrayInitialiser(Expr.ArrayInitialiser expr, Type.Array target, Environment environment) {
-		visitExpressions(expr.getOperands(), target.getElement(), environment);
+		visitHomogeneousExpressions(expr.getOperands(), target.getElement(), environment);
 	}
 
 	public void visitArrayRange(Expr.ArrayRange expr, Type.Array target, Environment environment) {
@@ -699,15 +687,15 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitBitwiseAnd(Expr.BitwiseAnd expr, Environment environment) {
-		visitExpressions(expr.getOperands(), Type.Byte, environment);
+		visitHomogeneousExpressions(expr.getOperands(), Type.Byte, environment);
 	}
 
 	public void visitBitwiseOr(Expr.BitwiseOr expr, Environment environment) {
-		visitExpressions(expr.getOperands(), Type.Byte, environment);
+		visitHomogeneousExpressions(expr.getOperands(), Type.Byte, environment);
 	}
 
 	public void visitBitwiseXor(Expr.BitwiseXor expr, Environment environment) {
-		visitExpressions(expr.getOperands(), Type.Byte, environment);
+		visitHomogeneousExpressions(expr.getOperands(), Type.Byte, environment);
 	}
 
 	public void visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, Environment environment) {
@@ -797,7 +785,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitLogicalAnd(Expr.LogicalAnd expr, Environment environment) {
-		visitExpressions(expr.getOperands(), Type.Bool, environment);
+		visitHomogeneousExpressions(expr.getOperands(), Type.Bool, environment);
 	}
 
 	public void visitLogicalImplication(Expr.LogicalImplication expr, Environment environment) {
@@ -815,7 +803,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitLogicalOr(Expr.LogicalOr expr, Environment environment) {
-		visitExpressions(expr.getOperands(), Type.Bool, environment);
+		visitHomogeneousExpressions(expr.getOperands(), Type.Bool, environment);
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Environment environment) {
@@ -836,22 +824,22 @@ public abstract class AbstractTypedVisitor {
 		visitExpression(expr.getOperand(), Type.Bool, environment);
 	}
 
-	public void visitInvoke(Expr.Invoke expr, Tuple<Type> targets, Environment environment) {
+	public void visitInvoke(Expr.Invoke expr, Type target, Environment environment) {
 		Type.Callable signature = expr.getBinding().getConcreteType();
-		Tuple<Type> parameters = signature.getParameters();
+		Type parameter = signature.getParameter();
 		// Done
 		for(SyntacticItem arg : expr.getBinding().getArguments()) {
 			if(arg instanceof Type) {
 				visitType((Type) arg);
 			}
 		}
-		visitExpressions(expr.getOperands(), parameters, environment);
+		visitHeterogeneousExpressions(expr.getOperands(), parameter, environment);
 	}
 
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Tuple<Type> targets, Environment environment) {
 		Type.Callable sourceT = expr.getSource().getType().as(Type.Callable.class);
 		visitExpression(expr.getSource(), sourceT, environment);
-		visitExpressions(expr.getArguments(), sourceT.getParameters(), environment);
+		visitHeterogeneousExpressions(expr.getArguments(), sourceT.getParameter(), environment);
 	}
 
 	public void visitLambdaAccess(Expr.LambdaAccess expr, Type type, Environment environment) {
@@ -890,18 +878,19 @@ public abstract class AbstractTypedVisitor {
 		visitExpression(expr.getSecondOperand(), target.getField(expr.getField()), environment);
 	}
 
+	public void visitTupleInitialiser(Expr.TupleInitialiser expr, Type.Tuple target, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		for(int i=0;i!=operands.size();++i) {
+			visitExpression(operands.get(i), target.get(i), environment);
+		}
+	}
+
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Type target, Environment environment) {
 
 	}
 
 	public void visitVariableAccess(Expr.VariableAccess expr, Type target, Environment environment) {
 
-	}
-
-	public void visitTypes(Tuple<Type> type) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i));
-		}
 	}
 
 	public void visitType(Type type) {
@@ -936,6 +925,9 @@ public abstract class AbstractTypedVisitor {
 		case TYPE_method:
 		case TYPE_property:
 			visitTypeCallable((Type.Callable) type);
+			break;
+		case TYPE_tuple:
+			visitTypeTuple((Type.Tuple) type);
 			break;
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
@@ -983,8 +975,8 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitTypeFunction(Type.Function type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeInt(Type.Int type) {
@@ -992,12 +984,15 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitTypeMethod(Type.Method type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeNominal(Type.Nominal type) {
-		visitTypes(type.getParameters());
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i));
+		}
 	}
 
 	public void visitTypeNull(Type.Null type) {
@@ -1005,8 +1000,7 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitTypeProperty(Type.Property type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
 	}
 
 	public void visitTypeRecord(Type.Record type) {
@@ -1025,6 +1019,12 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitTypeReference(Type.Reference type) {
 		visitType(type.getElement());
+	}
+
+	public void visitTypeTuple(Type.Tuple type) {
+		for (int i = 0; i != type.size(); ++i) {
+			visitType(type.get(i));
+		}
 	}
 
 	public void visitTypeUnion(Type.Union type) {
@@ -1113,6 +1113,12 @@ public abstract class AbstractTypedVisitor {
 		Type.Record type = expr.getType().as(Type.Record.class);
 		List<Type.Record> records = target.filter(Type.Record.class);
 		return select(records, type, environment);
+	}
+
+	public Type.Tuple selectTuple(Type target, Expr expr, Environment environment) {
+		Type.Tuple type = expr.getType().as(Type.Tuple.class);
+		List<Type.Tuple> matches = target.filter(Type.Tuple.class);
+		return select(matches, type, environment);
 	}
 
 	/**

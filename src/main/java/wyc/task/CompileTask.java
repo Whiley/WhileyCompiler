@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
 
+import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wybs.lang.Build.Meter;
 import wybs.util.AbstractBuildTask;
@@ -183,8 +184,11 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 		for (int i = 0; i != stages.length; ++i) {
 			r = r && stages[i].check(target);
 		}
-		if(verification) {
-			r = r && verifier.check(target,counterexamples);
+		if(r && verification) {
+			// NOTE: cannot generate verification conditions if WyilFile is in a bad state
+			// (e.g. has unresolved links).
+			WyalFile obligations = verifier.initialise(target);
+			r = verifier.check(obligations,counterexamples);
 		}
 		// Transforms
 		if (r) {

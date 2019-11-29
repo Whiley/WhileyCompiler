@@ -164,7 +164,7 @@ public class PreconditionGenerator {
 
 	private void checkInvokePreconditions(WyilFile.Expr.Invoke expr, Context context) {
 		WyilFile.Decl.Callable fmp = expr.getLink().getTarget();
-		WyilFile.Tuple<Type> parameterTypes = fmp.getType().getParameters();
+		Type parameterTypes = fmp.getType().getParameter();
 		//
 		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
 			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
@@ -185,8 +185,8 @@ public class PreconditionGenerator {
 						clause, expr));
 			}
 			// Perform parameter checks
-			for (int i = 0; i != parameterTypes.size(); ++i) {
-				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], expr.getOperands().get(i), context);
+			for (int i = 0; i != parameterTypes.shape(); ++i) {
+				vcg.generateTypeInvariantCheck(parameterTypes.dimension(i), arguments[i], expr.getOperands().get(i), context);
 			}
 		}
 	}

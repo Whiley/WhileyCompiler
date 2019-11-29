@@ -1,7 +1,7 @@
 
 
 type Reader is {
-  method read(int) -> int
+  method read(int)->(int)
 }
 
 method f(int amount) -> int:

@@ -103,8 +103,8 @@ function shuffle(Deck deck, Random rand, nat count) -> Deck:
     int to
     //
     while i < count:
-       from,rand = next(rand)
-       to,rand = next(rand)
+       (from,rand) = next(rand)
+       (to,rand) = next(rand)
        deck = swap(deck,from,to)
        i = i + 1
     //

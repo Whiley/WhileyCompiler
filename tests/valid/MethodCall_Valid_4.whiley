@@ -28,7 +28,7 @@ method parSum(int[] items) -> int:
     start(sum)
     return get(sum)
 
-type pst is method (int[])->int
+type pst is method (int[])->(int)
 
 method sum(pst m, int[] data) -> int:
     return m(data)

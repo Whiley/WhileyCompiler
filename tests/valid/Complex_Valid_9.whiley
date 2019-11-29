@@ -22,9 +22,9 @@ public export method test():
     int a = 1
     int b = 2
     //
-    a,b = sort2(a,b)
+    (a,b) = sort2(a,b)
     assert (a == 1) && (b == 2)
     //
-    a,b = sort2(b,a)
+    (a,b) = sort2(b,a)
     assert (a == 1) && (b == 2)
     

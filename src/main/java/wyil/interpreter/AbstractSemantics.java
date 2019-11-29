@@ -101,6 +101,13 @@ public interface AbstractSemantics {
 	public RValue.Record Record(RValue.Field... fields);
 
 	/**
+	 * Create a new record value.
+	 *
+	 * @return
+	 */
+	public RValue.Tuple Tuple(RValue... fields);
+
+	/**
 	 * Create a new lambda value from a given callable entity and a corresponding
 	 * stack frame for captured variables.
 	 *
@@ -403,6 +410,22 @@ public interface AbstractSemantics {
 			 * @return
 			 */
 			public RValue getValue();
+		}
+
+		public interface Tuple extends RValue {
+			/**
+			 * Return the number of items in this tuple.
+			 *
+			 * @return
+			 */
+			public int size();
+
+			/**
+			 * Get the ith value in this tuple
+			 * @param ith
+			 * @return
+			 */
+			public RValue get(int ith);
 		}
 
 		/**

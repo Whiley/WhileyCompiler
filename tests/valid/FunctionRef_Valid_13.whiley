@@ -1,6 +1,6 @@
 type Sized is { int value }
-type SizeGetter is function(Sized) -> int
-type SizeSetter is function(Sized,int) -> Sized
+type SizeGetter is function(Sized) ->(int)
+type SizeSetter is function(Sized,int) ->(Sized)
 
 function f((SizeSetter|SizeGetter) x) -> int:
     if x is SizeGetter:

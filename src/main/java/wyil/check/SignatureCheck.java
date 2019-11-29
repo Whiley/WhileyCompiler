@@ -140,13 +140,13 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 			// Add type mangles for non-exported symbols
 			if(!exported && decl instanceof Decl.Method) {
 				Decl.Method method = (Decl.Method) decl;
-				Tuple<Type> parameters = method.getType().getParameters();
+				Type parameter = method.getType().getParameter();
 				Tuple<Identifier> lifetimes = method.getType().getLifetimeParameters();
-				name += getMangle(parameters, lifetimes);
+				name += getMangle(parameter, lifetimes);
 			} else if(!exported && decl instanceof Decl.Callable) {
 				Decl.Callable callable = (Decl.Callable) decl;
-				Tuple<Type> parameters = callable.getType().getParameters();
-				name += getMangle(parameters, new Tuple<>());
+				Type parameter = callable.getType().getParameter();
+				name += getMangle(parameter, new Tuple<>());
 			} else if(decl instanceof Decl.Type) {
 				name += "$type";
 			} else if(decl instanceof Decl.StaticVariable) {
@@ -156,11 +156,11 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 		}
 
 
-		private String getMangle(Tuple<Type> types, Tuple<Identifier> lifetimes) {
-			if (types.size() == 0) {
+		private String getMangle(Type type, Tuple<Identifier> lifetimes) {
+			if (type.shape() == 0) {
 				return "";
 			} else {
-				return "$" + mangler.getMangle(types, lifetimes);
+				return "$" + mangler.getMangle(type, lifetimes);
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-type fun is function(int,int)->int
+type fun is function(int,int)->(int)
 
 function add(int a, int b) -> int:
     return a + b

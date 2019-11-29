@@ -223,6 +223,7 @@ public class TestUtils {
 			result = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
+			root.refresh();
 			// Check whether any syntax error produced
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
@@ -315,7 +316,7 @@ public class TestUtils {
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
 		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
-		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
+		Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);
@@ -326,16 +327,11 @@ public class TestUtils {
 			// Load the relevant WyIL module
 			stack.load(root.get(id, WyilFile.ContentType).read());
 			//
-			RValue[] returns = interpreter.execute(name, sig, stack);
+			RValue returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
-			if (returns != null) {
-				for (int i = 0; i != returns.length; ++i) {
-					if (i != 0) {
-						System.out.println(", ");
-					}
-					System.out.println(returns[i]);
-				}
-			}
+//			if (returns != null) {
+//				System.out.println(returns);
+//			}
 		} catch (Interpreter.RuntimeError e) {
 			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
 			// FIXME: this is a hack based on current available API.
