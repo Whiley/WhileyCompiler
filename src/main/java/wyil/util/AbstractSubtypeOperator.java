@@ -380,6 +380,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			assumptions.set(parameter, argument, true);
 			// Recursive case. Proceed destructuring type at given index
 			switch (parameter.getOpcode()) {
+			case TYPE_void:
 			case TYPE_null:
 			case TYPE_bool:
 			case TYPE_byte:
@@ -394,6 +395,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				break;
 			case TYPE_record:
 				constraints = bind((Type.Record) parameter, argument, constraints, assumptions);
+				break;
+			case TYPE_tuple:
+				constraints = bind((Type.Tuple) parameter, argument, constraints, assumptions);
 				break;
 			case TYPE_staticreference:
 			case TYPE_reference:
@@ -455,6 +459,21 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 					// FIXME: problem with name ordering here?
 					constraints = bind(param_fields.get(i).getType(), arg_fields.get(i).getType(), constraints,
 							assumptions);
+				}
+			}
+		}
+		return constraints;
+	}
+
+	public ConstraintSet bind(Type.Tuple parameter, Type argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
+		// Attempt to extract record type so binding can continue.
+		Type.Tuple t = argument.as(Type.Tuple.class);
+		//
+		if (t != null) {
+			if (parameter.size() == t.size()) {
+				for (int i = 0; i != t.size(); ++i) {
+					constraints = bind(parameter.get(i), t.get(i), constraints, assumptions);
 				}
 			}
 		}
