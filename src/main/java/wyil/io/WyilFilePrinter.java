@@ -230,7 +230,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		// Touch up a few
 		switch(stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 		case EXPR_indirectinvoke:
 		case EXPR_invoke:
 			out.println();

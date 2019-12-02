@@ -179,7 +179,6 @@ public abstract class AbstractConsumer<T> {
 		//
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 			visitVariable((Decl.Variable) stmt, data);
 			break;
 		case STMT_assert:

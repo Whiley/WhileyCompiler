@@ -180,7 +180,6 @@ public abstract class AbstractVisitor {
 		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 			visitVariable((Decl.Variable) stmt);
 			break;
 		case STMT_assert:

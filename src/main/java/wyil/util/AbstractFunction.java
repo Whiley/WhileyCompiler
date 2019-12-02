@@ -181,7 +181,6 @@ public abstract class AbstractFunction<P,R> {
 		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 			return visitVariable((Decl.Variable) stmt, data);
 		case STMT_assert:
 			return visitAssert((Stmt.Assert) stmt, data);

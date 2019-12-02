@@ -1311,7 +1311,6 @@ public class WhileyFileParser {
 		int end = index;
 		// First, parse the true branch, which is required
 		Stmt.Block tblk = parseBlock(scope, scope.isInLoop());
-
 		// Second, attempt to parse the false branch, which is optional.
 		Stmt.Block fblk = null;
 		if (tryAndMatchAtIndent(true, scope.getIndent(), Else) != null) {

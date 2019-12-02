@@ -285,7 +285,6 @@ public class Interpreter {
 			return executeSkip((Stmt.Skip) stmt, frame, scope);
 		case STMT_switch:
 			return executeSwitch((Stmt.Switch) stmt, frame, scope);
-		case DECL_variableinitialiser:
 		case DECL_variable:
 			return executeVariableDeclaration((Decl.Variable) stmt, frame);
 		}

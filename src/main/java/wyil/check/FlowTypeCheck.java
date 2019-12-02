@@ -41,15 +41,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Pair;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wybs.lang.*;
 import wybs.util.ResolveError;
+import wybs.util.AbstractCompilationUnit.*;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
@@ -342,6 +336,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			} else {
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
+		} catch (SyntacticException e) {
+			throw e;
 		} catch (Throwable e) {
 			return internalFailure(e.getMessage(), stmt, e);
 		}
@@ -1083,6 +1079,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Expr lhs = expr.getOperand();
 		Type lhsT = checkExpression(expr.getOperand(), true, environment);
 		Type rhsT = expr.getTestType();
+		System.out.println("CHECKING: " + lhsT + " is " + rhsT);
 		// Sanity check operands for this type test
 		checkIsSubtype(lhsT,rhsT,environment,rhsT);
 		// FIXME: need better support for detecting branch always taken.
