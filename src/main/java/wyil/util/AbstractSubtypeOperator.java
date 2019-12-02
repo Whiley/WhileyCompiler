@@ -114,7 +114,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 
 	@Override
 	public boolean isSubtype(Type t1, Type t2, LifetimeRelation lifetimes) {
-		System.out.println("*** SUBTYPE " + t1 + " :> " + t2);
 		return isSubtype(t1,t2,lifetimes,null);
 	}
 
