@@ -57,46 +57,7 @@ public class AllValidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		//  Normalisation for Method Subtyping
-		IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
-		IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
-		IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
-		// Support Captured Lifetime Parameters
-		IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
-		// Problem Type Checking Union Type
-		IGNORED.put("RecordSubtype_Valid_1", "#696");
-		IGNORED.put("RecordSubtype_Valid_2", "#696");
-		// Function Overloading for Nominal Types
-		IGNORED.put("Function_Valid_11", "#702");
-		IGNORED.put("Function_Valid_15", "#702");
-		// Redesigned Interpreter
-		IGNORED.put("Lambda_Valid_7", "908");
-		IGNORED.put("Lambda_Valid_11", "908");
-		IGNORED.put("Template_Valid_35", "908");
-		IGNORED.put("Template_Valid_36", "908");
-		// Bug with Template Inference
-		IGNORED.put("Template_Valid_38", "912");
-		// Semantics of Runtime Type Tests
-		IGNORED.put("RecursiveType_Valid_7", "936");
-		IGNORED.put("TypeEquals_Valid_61", "936");
-		IGNORED.put("TypeEquals_Valid_62", "936");
-		// FlowTyping over Logical Conditions
-		IGNORED.put("Complex_Valid_3", "936");
-		IGNORED.put("RecursiveType_Valid_12", "936");
-		IGNORED.put("RecursiveType_Valid_30", "936");
-		// Subtype Operator for Casting
-		IGNORED.put("Coercion_Valid_9", "938");
-		IGNORED.put("RecordCoercion_Valid_1", "938");
-		// Separate out branch always taken 952
-		IGNORED.put("ListAccess_Valid_6", "952");
-		IGNORED.put("While_Valid_34", "952");
-		// Lambda's and Multiple Returns
-		//IGNORED.put("Lambda_Valid_17", "973");
-		// Unclassified
-		IGNORED.put("Lifetime_Valid_8", "???");
-		IGNORED.put("Lifetime_Lambda_Valid_1", "???");
-		IGNORED.put("Lifetime_Lambda_Valid_3", "???");
-		IGNORED.put("Lifetime_Lambda_Valid_4", "???");
+		IGNORED.putAll(TestUtils.VALID_IGNORED);
 	}
 
 

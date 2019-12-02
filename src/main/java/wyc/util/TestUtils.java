@@ -21,13 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
@@ -66,6 +60,50 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class TestUtils {
+	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
+
+	static {
+		//  Normalisation for Method Subtyping
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
+		// Support Captured Lifetime Parameters
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
+		// Problem Type Checking Union Type
+		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
+		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
+		// Function Overloading for Nominal Types
+		VALID_IGNORED.put("Function_Valid_11", "#702");
+		VALID_IGNORED.put("Function_Valid_15", "#702");
+		// Redesigned Interpreter
+		VALID_IGNORED.put("Lambda_Valid_7", "908");
+		VALID_IGNORED.put("Lambda_Valid_11", "908");
+		VALID_IGNORED.put("Template_Valid_35", "908");
+		VALID_IGNORED.put("Template_Valid_36", "908");
+		// Bug with Template Inference
+		VALID_IGNORED.put("Template_Valid_38", "912");
+		// Semantics of Runtime Type Tests
+		VALID_IGNORED.put("RecursiveType_Valid_7", "936");
+		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
+		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
+		// FlowTyping over Logical Conditions
+		VALID_IGNORED.put("Complex_Valid_3", "936");
+		VALID_IGNORED.put("RecursiveType_Valid_12", "936");
+		VALID_IGNORED.put("RecursiveType_Valid_30", "936");
+		// Subtype Operator for Casting
+		VALID_IGNORED.put("Coercion_Valid_9", "938");
+		VALID_IGNORED.put("RecordCoercion_Valid_1", "938");
+		// Separate out branch always taken 952
+		VALID_IGNORED.put("ListAccess_Valid_6", "952");
+		VALID_IGNORED.put("While_Valid_34", "952");
+		// Lambda's and Multiple Returns
+		//VALID_IGNORED.put("Lambda_Valid_17", "973");
+		// Unclassified
+		VALID_IGNORED.put("Lifetime_Valid_8", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");
+	}
 
 	/**
 	 * Default implementation of a content registry. This associates whiley and
