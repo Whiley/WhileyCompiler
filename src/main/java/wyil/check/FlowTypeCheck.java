@@ -1079,7 +1079,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		Expr lhs = expr.getOperand();
 		Type lhsT = checkExpression(expr.getOperand(), true, environment);
 		Type rhsT = expr.getTestType();
-		System.out.println("CHECKING: " + lhsT + " is " + rhsT);
 		// Sanity check operands for this type test
 		checkIsSubtype(lhsT,rhsT,environment,rhsT);
 		// FIXME: need better support for detecting branch always taken.

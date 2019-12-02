@@ -5741,6 +5741,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Nominal(Decl.Link<Decl.Type> name, WyilFile.Tuple<Type> parameters) {
 				super(TYPE_nominal, name, parameters);
+				if(parameters != null) {
+					for(Type t : parameters) {
+						if(t == null) {
+							throw new IllegalArgumentException("invalid parameter types");
+						}
+					}
+				}
 			}
 
 			@Override
@@ -6522,7 +6529,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// Committed to change
 				Type[] nTypes = new Type[types.size()];
 				for (int j = 0; j != nTypes.length; ++j) {
-					nTypes[i] = types.get(i).substitute(binding);
+					nTypes[j] = types.get(j).substitute(binding);
 				}
 				return new Tuple<>(nTypes);
 			}
@@ -6586,10 +6593,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static String toString(Tuple<? extends SyntacticItem> items) {
 		String r = "";
 		for (int i = 0; i != items.size(); ++i) {
+			SyntacticItem ith = items.get(i);
 			if (i != 0) {
 				r += ",";
 			}
-			r += items.get(i).toString();
+			r += ith == null ? "?" : ith;
 		}
 		return r;
 	}

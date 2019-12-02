@@ -97,7 +97,8 @@ public class TestUtils {
 		VALID_IGNORED.put("ListAccess_Valid_6", "952");
 		VALID_IGNORED.put("While_Valid_34", "952");
 		// Lambda's and Multiple Returns
-		//VALID_IGNORED.put("Lambda_Valid_17", "973");
+		VALID_IGNORED.put("Template_Valid_46", "981");
+		VALID_IGNORED.put("Template_Valid_47", "981");
 		// Unclassified
 		VALID_IGNORED.put("Lifetime_Valid_8", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
