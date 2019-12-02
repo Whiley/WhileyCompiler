@@ -208,6 +208,9 @@ public abstract class AbstractConsumer<T> {
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt, data);
 			break;
+		case STMT_for:
+			visitFor((Stmt.For) stmt, data);
+			break;
 		case STMT_if:
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt, data);
@@ -290,6 +293,12 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitFail(Stmt.Fail stmt, T data) {
 
+	}
+
+	public void visitFor(Stmt.For stmt, T data) {
+		visitStaticVariable(stmt.getVariable(),data);
+		visitExpressions(stmt.getInvariant(),data);
+		visitStatement(stmt.getBody(),data);
 	}
 
 	public void visitIfElse(Stmt.IfElse stmt, T data) {

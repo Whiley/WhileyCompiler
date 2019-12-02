@@ -80,6 +80,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_2", "#743");
 		IGNORED.put("Reference_Valid_3", "#743");
 		IGNORED.put("Reference_Valid_6", "#743");
+		IGNORED.put("Tuple_Valid_7", "#743");
 		// Flow Typing and VerificationConditionGeneration
 		IGNORED.put("RecursiveType_Valid_3", "#781");
 		// WyTP Variable Ordering Effect
@@ -199,6 +200,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Template_Valid_43", "??");
 		IGNORED.put("Template_Valid_44", "??");
 		IGNORED.put("Template_Valid_45", "??");
+		IGNORED.put("Tuple_Valid_6", "???");
 		//
 		IGNORED.put("Tuple_Valid_1", "??");
 		IGNORED.put("Tuple_Valid_2", "??");
