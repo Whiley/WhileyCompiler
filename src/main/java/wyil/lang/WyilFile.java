@@ -4700,6 +4700,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Expr>) operands[1];
 			}
 
+			@Override
+			public String toString() {
+				String r = "";
+				//
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += ",";
+					}
+					r += get(i).toString();
+				}
+				//
+				return "(" + r + ")";
+			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_tupleinitialiser") {
 				@SuppressWarnings("unchecked")
