@@ -19,9 +19,7 @@ import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Expr;
-import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.*;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -108,17 +106,20 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitVariable(Decl.Variable decl, P data) {
 		visitType(decl.getType(), data);
-		if(decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
+		return null;
+	}
+
+	public R visitStaticVariables(Tuple<Decl.StaticVariable> vars, P data) {
+		for(int i=0;i!=vars.size();++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var, data);
 		}
 		return null;
 	}
 
 	public R visitStaticVariable(Decl.StaticVariable decl, P data) {
 		visitType(decl.getType(), data);
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
-		}
+		visitExpression(decl.getInitialiser(), data);
 		return null;
 	}
 
@@ -203,6 +204,9 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_if:
 		case STMT_ifelse:
 			return visitIfElse((Stmt.IfElse) stmt, data);
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			return visitInitialiser((Stmt.Initialiser) stmt, data);
 		case EXPR_invoke:
 			return visitInvoke((Expr.Invoke) stmt, data);
 		case EXPR_indirectinvoke:
@@ -283,6 +287,17 @@ public abstract class AbstractFunction<P,R> {
 		visitStatement(stmt.getTrueBranch(), data);
 		if(stmt.hasFalseBranch()) {
 			visitStatement(stmt.getFalseBranch(), data);
+		}
+		return null;
+	}
+
+
+	public R visitInitialiser(Stmt.Initialiser stmt, P data) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v, data);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), data);
 		}
 		return null;
 	}
@@ -711,13 +726,13 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitExistentialQuantifier(Expr.ExistentialQuantifier expr, P data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}
 
 	public R visitUniversalQuantifier(Expr.UniversalQuantifier expr, P data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}

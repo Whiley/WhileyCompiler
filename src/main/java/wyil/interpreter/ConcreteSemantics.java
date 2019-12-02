@@ -240,7 +240,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 *
 		 * @param var
 		 * @param invariant
-		 * @param instance
 		 * @return
 		 */
 		public Bool checkInvariant(Decl.Variable var, WyilFile.Tuple<Expr> invariant, Interpreter.CallStack frame) {
@@ -266,7 +265,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			private Null() {
 			}
 			@Override
-			public Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Null) {
 					return True;
 				} else {
@@ -310,7 +309,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Bool) {
 					return True;
 				} else {
@@ -326,17 +325,17 @@ public class ConcreteSemantics implements AbstractSemantics {
 				}
 			}
 			@Override
-			public Bool not() {
+			public RValue.Bool not() {
 				return this == True ? False : True;
 			}
 			@Override
-			public Bool and(AbstractSemantics.RValue.Bool _rhs) {
-				Bool rhs = (Bool) _rhs;
+			public RValue.Bool and(AbstractSemantics.RValue.Bool _rhs) {
+				RValue.Bool rhs = (RValue.Bool) _rhs;
 				return (value && rhs.value) ? True : False;
 			}
 			@Override
-			public Bool or(AbstractSemantics.RValue.Bool _rhs) {
-				Bool rhs = (Bool) _rhs;
+			public RValue.Bool or(AbstractSemantics.RValue.Bool _rhs) {
+				RValue.Bool rhs = (RValue.Bool) _rhs;
 				return (value || rhs.value) ? True : False;
 			}
 			@Override
@@ -445,7 +444,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.value = value;
 			}
 			@Override
-			public Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Int) {
 					return True;
 				} else {
@@ -462,48 +461,48 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public Int negate() {
-				return new Int(value.negate());
+			public RValue.Int negate() {
+				return new RValue.Int(value.negate());
 			}
 
 			@Override
-			public Int add(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Int add(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
-				return new Int(value.add(rhs.value));
+				return new RValue.Int(value.add(rhs.value));
 			}
 
 			@Override
-			public Int subtract(AbstractSemantics.RValue.Int _rhs)  {
+			public RValue.Int subtract(AbstractSemantics.RValue.Int _rhs)  {
 				RValue.Int rhs = (RValue.Int) _rhs;
-				return new Int(value.subtract(rhs.value));
+				return new RValue.Int(value.subtract(rhs.value));
 			}
 
 			@Override
-			public Int multiply(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Int multiply(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
-				return new Int(value.multiply(rhs.value));
+				return new RValue.Int(value.multiply(rhs.value));
 			}
 
 			@Override
-			public Int divide(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Int divide(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
-				return new Int(value.divide(rhs.value));
+				return new RValue.Int(value.divide(rhs.value));
 			}
 
 			@Override
-			public Int remainder(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Int remainder(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
-				return new Int(value.remainder(rhs.value));
+				return new RValue.Int(value.remainder(rhs.value));
 			}
 
 			@Override
-			public Bool lessThan(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Bool lessThan(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
 				return (value.compareTo(rhs.value) < 0) ? True : False;
 			}
 
 			@Override
-			public Bool lessThanOrEqual(AbstractSemantics.RValue.Int _rhs) {
+			public RValue.Bool lessThanOrEqual(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;
 				return (value.compareTo(rhs.value) <= 0) ? True : False;
 			}
@@ -515,7 +514,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				return (o instanceof Int) && value.equals(((Int)o).value);
+				return (o instanceof RValue.Int) && value.equals(((RValue.Int)o).value);
 			}
 
 			@Override
@@ -673,7 +672,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				return (o instanceof RValue.Tuple) && (Arrays.equals(elements, ((RValue.Array) o).elements));
+				return (o instanceof RValue.Tuple) && (Arrays.equals(elements, ((RValue.Tuple) o).elements));
 			}
 
 			@Override
@@ -872,7 +871,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 *
 			 * @param interpreter
 			 * @param arguments
-			 * @param item
 			 * @return
 			 */
 			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);

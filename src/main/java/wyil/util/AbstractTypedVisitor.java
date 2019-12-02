@@ -76,7 +76,7 @@ public abstract class AbstractTypedVisitor {
 			visitImport((Decl.Import) decl);
 			break;
 		case DECL_staticvar:
-			visitStaticVariable((Decl.StaticVariable) decl);
+			visitStaticVariable((Decl.StaticVariable) decl, new Environment());
 			break;
 		case DECL_type:
 			visitType((Decl.Type) decl);
@@ -117,23 +117,25 @@ public abstract class AbstractTypedVisitor {
 	public void visitVariables(Tuple<Decl.Variable> vars, Environment environment) {
 		for (int i = 0; i != vars.size(); ++i) {
 			Decl.Variable var = vars.get(i);
-			visitVariable(var, environment);
+			visitVariable(var,environment);
 		}
 	}
 
 	public void visitVariable(Decl.Variable decl, Environment environment) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), decl.getType(), environment);
+	}
+
+
+	public void visitStaticVariables(Tuple<Decl.StaticVariable> vars, Environment environment) {
+		for (int i = 0; i != vars.size(); ++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var, environment);
 		}
 	}
 
-	public void visitStaticVariable(Decl.StaticVariable decl) {
+	public void visitStaticVariable(Decl.StaticVariable decl, Environment environment) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			Environment environment = new Environment();
-			visitExpression(decl.getInitialiser(), decl.getType(), environment);
-		}
+		visitExpression(decl.getInitialiser(), decl.getType(), environment);
 	}
 
 	public void visitType(Decl.Type decl) {
@@ -235,6 +237,10 @@ public abstract class AbstractTypedVisitor {
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt, environment, scope);
 			break;
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			visitInitialiser((Stmt.Initialiser) stmt, environment, scope);
+			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) stmt, Type.Void, environment);
 			break;
@@ -321,6 +327,17 @@ public abstract class AbstractTypedVisitor {
 		if (stmt.hasFalseBranch()) {
 			visitStatement(stmt.getFalseBranch(), environment, scope);
 		}
+	}
+
+	public void visitInitialiser(Stmt.Initialiser stmt, Environment environment, EnclosingScope scope) {
+		// Extract all target types
+		Tuple<Type> types = stmt.getVariables().map(v -> v.getType());
+		if(stmt.hasInitialiser()) {
+			// Visit initialiser expression
+			visitExpression(stmt.getInitialiser(), Type.Tuple.create(types), environment);
+		}
+		// Visit all declared variables
+		visitVariables(stmt.getVariables(), environment);
 	}
 
 	public void visitNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
@@ -807,18 +824,18 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Environment environment) {
-		Tuple<Decl.Variable> parameters = expr.getParameters();
+		Tuple<Decl.StaticVariable> parameters = expr.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			Decl.Variable parameter = parameters.get(i);
+			Decl.StaticVariable parameter = parameters.get(i);
 			visitExpression(parameter.getInitialiser(), TYPE_ARRAY_INT, environment);
 		}
 		visitExpression(expr.getOperand(), Type.Bool, environment);
 	}
 
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Environment environment) {
-		Tuple<Decl.Variable> parameters = expr.getParameters();
+		Tuple<Decl.StaticVariable> parameters = expr.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			Decl.Variable parameter = parameters.get(i);
+			Decl.StaticVariable parameter = parameters.get(i);
 			visitExpression(parameter.getInitialiser(), TYPE_ARRAY_INT, environment);
 		}
 		visitExpression(expr.getOperand(), Type.Bool, environment);

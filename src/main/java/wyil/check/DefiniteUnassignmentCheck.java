@@ -133,12 +133,7 @@ public class DefiniteUnassignmentCheck
 
 	@Override
 	public ControlFlow visitVariable(Decl.Variable decl, MaybeAssignedSet environment) {
-		//
-		if (decl.hasInitialiser()) {
-			environment = environment.add(decl);
-		}
-		//
-		return new ControlFlow(environment, null);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -330,6 +325,16 @@ public class DefiniteUnassignmentCheck
 		}
 		// Now, merge all generated control-flow paths together
 		return left.merge(right);
+	}
+
+	@Override
+	public ControlFlow visitInitialiser(Stmt.Initialiser stmt, MaybeAssignedSet environment) {
+		if(stmt.hasInitialiser()) {
+			for (Decl.Variable decl : stmt.getVariables()) {
+				environment = environment.add(decl);
+			}
+		}
+		return new ControlFlow(environment, null);
 	}
 
 	@Override

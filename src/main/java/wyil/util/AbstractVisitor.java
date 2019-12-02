@@ -109,16 +109,17 @@ public abstract class AbstractVisitor {
 
 	public void visitVariable(Decl.Variable decl) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser());
-		}
 	}
 
+	public void visitStaticVariables(Tuple<Decl.StaticVariable> vars) {
+		for (int i = 0; i != vars.size(); ++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var);
+		}
+	}
 	public void visitStaticVariable(Decl.StaticVariable decl) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser());
-		}
+		visitExpression(decl.getInitialiser());
 	}
 
 	public void visitType(Decl.Type decl) {
@@ -213,6 +214,10 @@ public abstract class AbstractVisitor {
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt);
 			break;
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			visitInitialiser((Stmt.Initialiser) stmt);
+			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) stmt);
 			break;
@@ -292,6 +297,16 @@ public abstract class AbstractVisitor {
 		visitStatement(stmt.getTrueBranch());
 		if (stmt.hasFalseBranch()) {
 			visitStatement(stmt.getFalseBranch());
+		}
+	}
+
+
+	public void visitInitialiser(Stmt.Initialiser stmt) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser());
 		}
 	}
 
@@ -730,12 +745,12 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr) {
-		visitVariables(expr.getParameters());
+		visitStaticVariables(expr.getParameters());
 		visitExpression(expr.getOperand());
 	}
 
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr) {
-		visitVariables(expr.getParameters());
+		visitStaticVariables(expr.getParameters());
 		visitExpression(expr.getOperand());
 	}
 

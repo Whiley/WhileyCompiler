@@ -45,7 +45,6 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.transform.VerificationConditionGenerator.Context;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -171,27 +170,23 @@ public class VerificationConditionGenerator {
 	 * Translate a constant declaration into WyAL. At the moment, this does nothing
 	 * because constant declarations are not supported in WyAL files.
 	 *
-	 * @param declaration
+	 * @param decl
 	 *            The type declaration being translated.
-	 * @param wyalFile
-	 *            The WyAL file being constructed
 	 */
 	private void translateConstantDeclaration(WyilFile.Decl.StaticVariable decl) {
-		if (decl.hasInitialiser()) {
-			// The environments are needed to prevent clashes between variable
-			// versions across verification conditions, and also to type variables
-			// used in verification conditions.
-			GlobalEnvironment globalEnvironment = new GlobalEnvironment(decl);
-			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			List<VerificationCondition> vcs = new ArrayList<>();
-			Context context = new Context(wyalFile, AssumptionSet.ROOT, localEnvironment, localEnvironment, null, vcs);
-			//
-			Pair<Expr, Context> rp = translateExpressionWithChecks(decl.getInitialiser(), null, context);
-			generateTypeInvariantCheck(decl.getType(), rp.first(), decl.getInitialiser(), context);
-			// Translate each generated verification condition into an assertion in
-			// the underlying WyalFile.
-			createAssertions(decl, vcs, globalEnvironment);
-		}
+		// The environments are needed to prevent clashes between variable
+		// versions across verification conditions, and also to type variables
+		// used in verification conditions.
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(decl);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+		List<VerificationCondition> vcs = new ArrayList<>();
+		Context context = new Context(wyalFile, AssumptionSet.ROOT, localEnvironment, localEnvironment, null, vcs);
+		//
+		Pair<Expr, Context> rp = translateExpressionWithChecks(decl.getInitialiser(), null, context);
+		generateTypeInvariantCheck(decl.getType(), rp.first(), decl.getInitialiser(), context);
+		// Translate each generated verification condition into an assertion in
+		// the underlying WyalFile.
+		createAssertions(decl, vcs, globalEnvironment);
 	}
 
 	/**
@@ -202,8 +197,6 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param declaration
 	 *            The type declaration being translated.
-	 * @param wyalFile
-	 *            The WyAL file being constructed
 	 */
 	private void translateTypeDeclaration(WyilFile.Decl.Type declaration) {
 		WyilFile.Tuple<WyilFile.Expr> invariants = declaration.getInvariant();
@@ -257,8 +250,6 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param declaration
 	 *            The function or method declaration being translated.
-	 * @param wyalFile
-	 *            The WyAL file being constructed
 	 */
 	private void translateFunctionOrMethodDeclaration(WyilFile.Decl.FunctionOrMethod declaration) {
 		// Create the prototype for this function or method. This is the
@@ -304,8 +295,6 @@ public class VerificationConditionGenerator {
 	 * precondition of a function or method into corresponding macro declarations.
 	 *
 	 * @param declaration
-	 * @param environment
-	 * @param wyalFile
 	 */
 	private void translatePreconditionMacros(WyilFile.Decl.FunctionOrMethod declaration) {
 		Tuple<WyilFile.Expr> invariants = declaration.getRequires();
@@ -333,8 +322,6 @@ public class VerificationConditionGenerator {
 	 * postcondition of a function or method into corresponding macro declarations.
 	 *
 	 * @param declaration
-	 * @param environment
-	 * @param wyalFile
 	 */
 	private void translatePostconditionMacros(WyilFile.Decl.FunctionOrMethod declaration) {
 		Tuple<WyilFile.Expr> invariants = declaration.getEnsures();
@@ -430,48 +417,48 @@ public class VerificationConditionGenerator {
 		//
 		try {
 			switch (stmt.getOpcode()) {
-			case STMT_assert:
-				return translateAssert((WyilFile.Stmt.Assert) stmt, context);
-			case STMT_assign:
-				return translateAssign((WyilFile.Stmt.Assign) stmt, context);
-			case STMT_assume:
-				return translateAssume((WyilFile.Stmt.Assume) stmt, context);
-			case STMT_break:
-				return translateBreak((WyilFile.Stmt.Break) stmt, context);
-			case STMT_continue:
-				return translateContinue((WyilFile.Stmt.Continue) stmt, context);
-			case STMT_debug:
-				return context;
-			case STMT_dowhile:
-				return translateDoWhile((WyilFile.Stmt.DoWhile) stmt, context);
-			case STMT_fail:
-				return translateFail((WyilFile.Stmt.Fail) stmt, context);
-			case STMT_if:
-			case STMT_ifelse:
-				return translateIf((WyilFile.Stmt.IfElse) stmt, context);
-			case EXPR_indirectinvoke:
-			case EXPR_invoke: {
-				WyilFile.Expr expr = (WyilFile.Expr) stmt;
-				Pair<Expr, Context> r = translateExpressionWithChecks(expr, null, context);
-				return r.second();
-			}
-			case STMT_namedblock:
-				return translateNamedBlock((WyilFile.Stmt.NamedBlock) stmt, context);
-			case STMT_return:
-			case STMT_returnvoid:
-				return translateReturn((WyilFile.Stmt.Return) stmt, context);
-			case STMT_skip:
-				return translateSkip((WyilFile.Stmt.Skip) stmt, context);
-			case STMT_switch:
-				return translateSwitch((WyilFile.Stmt.Switch) stmt, context);
-			case STMT_while:
-				return translateWhile((WyilFile.Stmt.While) stmt, context);
-			case DECL_variable:
-			case DECL_variableinitialiser:
-				return translateVariableDeclaration((WyilFile.Decl.Variable) stmt, context);
-			default:
-				throw new SyntacticException("unknown statement encountered (" + stmt + ")",
-						((WyilFile) stmt.getHeap()).getEntry(), stmt);
+				case STMT_assert:
+					return translateAssert((WyilFile.Stmt.Assert) stmt, context);
+				case STMT_assign:
+					return translateAssign((WyilFile.Stmt.Assign) stmt, context);
+				case STMT_assume:
+					return translateAssume((WyilFile.Stmt.Assume) stmt, context);
+				case STMT_break:
+					return translateBreak((WyilFile.Stmt.Break) stmt, context);
+				case STMT_continue:
+					return translateContinue((WyilFile.Stmt.Continue) stmt, context);
+				case STMT_debug:
+					return context;
+				case STMT_dowhile:
+					return translateDoWhile((WyilFile.Stmt.DoWhile) stmt, context);
+				case STMT_fail:
+					return translateFail((WyilFile.Stmt.Fail) stmt, context);
+				case STMT_if:
+				case STMT_ifelse:
+					return translateIf((WyilFile.Stmt.IfElse) stmt, context);
+				case STMT_initialiser:
+				case STMT_initialiservoid:
+					return translateInitialiser((WyilFile.Stmt.Initialiser) stmt, context);
+				case EXPR_indirectinvoke:
+				case EXPR_invoke: {
+					WyilFile.Expr expr = (WyilFile.Expr) stmt;
+					Pair<Expr, Context> r = translateExpressionWithChecks(expr, null, context);
+					return r.second();
+				}
+				case STMT_namedblock:
+					return translateNamedBlock((WyilFile.Stmt.NamedBlock) stmt, context);
+				case STMT_return:
+				case STMT_returnvoid:
+					return translateReturn((WyilFile.Stmt.Return) stmt, context);
+				case STMT_skip:
+					return translateSkip((WyilFile.Stmt.Skip) stmt, context);
+				case STMT_switch:
+					return translateSwitch((WyilFile.Stmt.Switch) stmt, context);
+				case STMT_while:
+					return translateWhile((WyilFile.Stmt.While) stmt, context);
+				default:
+					throw new SyntacticException("unknown statement encountered (" + stmt + ")",
+							((WyilFile) stmt.getHeap()).getEntry(), stmt);
 			}
 		} catch (SyntacticException e) {
 			throw e;
@@ -485,7 +472,6 @@ public class VerificationConditionGenerator {
 	 * ensures the assert condition holds, given the current context.
 	 *
 	 * @param stmt
-	 * @param wyalFile
 	 */
 	private Context translateAssert(WyilFile.Stmt.Assert stmt, Context context) {
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, context);
@@ -504,7 +490,6 @@ public class VerificationConditionGenerator {
 	 * underlying assigned variable.
 	 *
 	 * @param stmt
-	 * @param wyalFile
 	 * @throws ResolutionError
 	 */
 	private Context translateAssign(WyilFile.Stmt.Assign stmt, Context context) {
@@ -630,7 +615,7 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param lval
 	 *            The field access expression
-	 * @param result
+	 * @param rval
 	 *            The value being assigned to the given array element
 	 * @param context
 	 *            The enclosing context
@@ -651,7 +636,7 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param lval
 	 *            The array assignment expression
-	 * @param result
+	 * @param rval
 	 *            The value being assigned to the given array element
 	 * @param context
 	 *            The enclosing context
@@ -691,7 +676,7 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param lval
 	 *            The array assignment expression
-	 * @param result
+	 * @param rval
 	 *            The value being assigned to the given array element
 	 * @param context
 	 *            The enclosing context
@@ -707,7 +692,7 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param lval
 	 *            The array assignment expression
-	 * @param result
+	 * @param rval
 	 *            The value being assigned to the given array element
 	 * @param context
 	 *            The enclosing context
@@ -759,7 +744,6 @@ public class VerificationConditionGenerator {
 	 * prove (for whatever reason).
 	 *
 	 * @param stmt
-	 * @param wyalFile
 	 */
 	private Context translateAssume(WyilFile.Stmt.Assume stmt, Context context) {
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, context);
@@ -773,7 +757,6 @@ public class VerificationConditionGenerator {
 	 * into the enclosing loop scope. It will then be extracted later and used.
 	 *
 	 * @param stmt
-	 * @param wyalFile
 	 */
 	private Context translateBreak(WyilFile.Stmt.Break stmt, Context context) {
 		LoopScope enclosingLoop = context.getEnclosingLoopScope();
@@ -786,7 +769,6 @@ public class VerificationConditionGenerator {
 	 * into the enclosing loop scope. It will then be extracted later and used.
 	 *
 	 * @param stmt
-	 * @param wyalFile
 	 */
 	private Context translateContinue(WyilFile.Stmt.Continue stmt, Context context) {
 		LoopScope enclosingLoop = context.getEnclosingLoopScope();
@@ -871,7 +853,7 @@ public class VerificationConditionGenerator {
 	 * challenging when the environments are updated independently in both branches.
 	 *
 	 * @param stmt
-	 * @param wyalFile
+	 * @param context
 	 */
 	private Context translateIf(WyilFile.Stmt.IfElse stmt, Context context) {
 		//
@@ -895,10 +877,48 @@ public class VerificationConditionGenerator {
 	}
 
 	/**
+	 * Translate a variable declaration.
+	 *
+	 * @param stmt
+	 * @param context
+	 * @return
+	 */
+	private Context translateInitialiser(Stmt.Initialiser stmt, Context context) {
+		Tuple<Decl.Variable> vars = stmt.getVariables();
+		if (stmt.hasInitialiser()) {
+			if(vars.size() == 1) {
+				Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getInitialiser(), null, context);
+				context = p.second();
+				generateTypeInvariantCheck(vars.get(0).getType(), p.first(), stmt.getInitialiser(), context);
+				context = context.write(vars.get(0), p.first());
+			} else {
+				// Handle multi-initialisers differently
+				for (int i = 0; i != vars.size(); ++i) {
+					Expr e;
+					if(i == 0) {
+						Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getInitialiser(), i, context);
+						context = p.second();
+						e = p.first();
+					} else {
+						// Second time around, don't need to regenerate the precondition
+						// checks. We also know that the selector should be non-null.
+						e = translateExpression(stmt.getInitialiser(), i, context.getEnvironment());
+					}
+					generateTypeInvariantCheck(vars.get(i).getType(), e, stmt.getInitialiser(), context);
+					context = context.write(vars.get(i), e);
+				}
+			}
+		}
+		//
+		return context;
+	}
+
+
+	/**
 	 * Translate a named block
 	 *
 	 * @param stmt
-	 * @param wyalFile
+	 * @param context
 	 */
 	private Context translateNamedBlock(WyilFile.Stmt.NamedBlock stmt, Context context) {
 		return translateStatementBlock(stmt.getBlock(), context);
@@ -909,7 +929,7 @@ public class VerificationConditionGenerator {
 	 * ensure that the post-condition of the enclosing function or method is met
 	 *
 	 * @param stmt
-	 * @param wyalFile
+	 * @param context
 	 */
 	private Context translateReturn(WyilFile.Stmt.Return stmt, Context context) {
 		if (stmt.hasReturn()) {
@@ -970,7 +990,7 @@ public class VerificationConditionGenerator {
 					}
 				} else {
 					for (int i = 0; i != lhs.shape(); ++i) {
-						Expr r = new Expr.RecordAccess(rhs, new Identifier("$" + i));
+						Expr r = new Expr.RecordAccess(rhs, new Identifier("_" + i));
 						WyalFile.Type typeTest = convert(lhs.dimension(i), context.getEnvironment().getParent().enclosingDeclaration);
 						Expr clause = new Expr.Is(r, typeTest);
 						context.emit(new VerificationCondition("type invariant may not be satisfied", context.assumptions,
@@ -1034,7 +1054,7 @@ public class VerificationConditionGenerator {
 	 * Translate a skip statement, which obviously does nothing
 	 *
 	 * @param stmt
-	 * @param wyalFile
+	 * @param context
 	 */
 	private Context translateSkip(WyilFile.Stmt.Skip stmt, Context context) {
 		return context;
@@ -1044,7 +1064,7 @@ public class VerificationConditionGenerator {
 	 * Translate a switch statement.
 	 *
 	 * @param stmt
-	 * @param wyalFile
+	 * @param context
 	 */
 	private Context translateSwitch(WyilFile.Stmt.Switch stmt, Context context) {
 		Tuple<WyilFile.Stmt.Case> cases = stmt.getCases();
@@ -1134,9 +1154,8 @@ public class VerificationConditionGenerator {
 	 * Translate the sequence of invariant expressions which constitute the loop
 	 * invariant of a loop into one or more macros
 	 *
-	 * @param loopInvariant
+	 * @param stmt
 	 *            The clauses making up the loop invariant
-	 * @param environment
 	 * @param wyalFile
 	 */
 	private void translateLoopInvariantMacros(Stmt.Loop stmt, WyilFile.Decl.FunctionOrMethod declaration,
@@ -1209,24 +1228,6 @@ public class VerificationConditionGenerator {
 			Name ident = convert(declaration.getQualifiedName(), "_loopinvariant_" + clause.getIndex(), declaration.getName());
 			Expr macroCall = new Expr.Invoke(null, ident, null, arguments);
 			context = context.assume(macroCall);
-		}
-		//
-		return context;
-	}
-
-	/**
-	 * Translate a variable declaration.
-	 *
-	 * @param stmt
-	 * @param context
-	 * @return
-	 */
-	private Context translateVariableDeclaration(WyilFile.Decl.Variable stmt, Context context) {
-		if (stmt.hasInitialiser()) {
-			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getInitialiser(), null, context);
-			context = p.second();
-			generateTypeInvariantCheck(stmt.getType(), p.first(), stmt.getInitialiser(), context);
-			context = context.write(stmt, p.first());
 		}
 		//
 		return context;
@@ -1704,7 +1705,7 @@ public class VerificationConditionGenerator {
 			WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[operands.size()];
 			//
 			for (int i = 0; i != operands.size(); ++i) {
-				Identifier field = new WyalFile.Identifier("$" + i);
+				Identifier field = new WyalFile.Identifier("_" + i);
 				Expr init = translateExpression(operands.get(i), null, environment);
 				pairs[i] = new WyalFile.Pair<>(field, init);
 			}
@@ -1758,7 +1759,7 @@ public class VerificationConditionGenerator {
 	private WyalFile.VariableDeclaration[] generateQuantifierTypePattern(WyilFile.Expr.Quantifier expr,
 			LocalEnvironment environment) {
 		//
-		Tuple<WyilFile.Decl.Variable> params = expr.getParameters();
+		Tuple<WyilFile.Decl.StaticVariable> params = expr.getParameters();
 		WyalFile.VariableDeclaration[] vardecls = new WyalFile.VariableDeclaration[params.size()];
 		for (int i = 0; i != params.size(); ++i) {
 			WyilFile.Decl.Variable var = params.get(i);
@@ -1776,9 +1777,9 @@ public class VerificationConditionGenerator {
 	 */
 	private Expr generateQuantifierRanges(WyilFile.Expr.Quantifier expr, LocalEnvironment environment) {
 		Expr ranges = null;
-		Tuple<WyilFile.Decl.Variable> parameters = expr.getParameters();
+		Tuple<WyilFile.Decl.StaticVariable> parameters = expr.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
-			WyilFile.Decl.Variable var = parameters.get(i);
+			WyilFile.Decl.StaticVariable var = parameters.get(i);
 			WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) var.getInitialiser();
 			WyalFile.VariableDeclaration varDecl = environment.read(var);
 			Expr.VariableAccess varExpr = new Expr.VariableAccess(varDecl);
@@ -2064,8 +2065,6 @@ public class VerificationConditionGenerator {
 	 *
 	 * @param declaration
 	 *            --- the function or method declaration in question
-	 * @param wyalFile
-	 *            --- the file onto which this function is created.
 	 * @return
 	 */
 	private void createFunctionOrMethodPrototype(WyilFile.Decl.FunctionOrMethod declaration) {
@@ -2106,8 +2105,6 @@ public class VerificationConditionGenerator {
 	 *            The global environment which maps all versioned variables to their
 	 *            underlying locations. This is necessary to determine the type of
 	 *            all free variables.
-	 * @param wyalFile
-	 *            The WyAL file being generated
 	 */
 	private void createAssertions(WyilFile.Decl declaration, List<VerificationCondition> vcs,
 			GlobalEnvironment environment) {
@@ -2281,8 +2278,8 @@ public class VerificationConditionGenerator {
 	 * corresponding list of type patterns. This is primarily useful for generating
 	 * declarations from functions or method.
 	 *
-	 * @param params
 	 * @param declaration
+	 * @param environment
 	 * @return
 	 */
 	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.Decl.Callable declaration,
@@ -2329,8 +2326,8 @@ public class VerificationConditionGenerator {
 	 * function or method into a type pattern. This is primarily useful for
 	 * determining the types for a loop invariant macro.
 	 *
-	 * @param params
-	 * @param declaration
+	 * @param loop
+	 * @param environment
 	 * @return
 	 */
 	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Stmt.Loop loop,
@@ -2366,14 +2363,14 @@ public class VerificationConditionGenerator {
 
 		@Override
 		public void visitUniversalQuantifier(WyilFile.Expr.UniversalQuantifier expr, HashSet<Decl.Variable> used) {
-			visitVariables(expr.getParameters(), used);
+			visitStaticVariables(expr.getParameters(), used);
 			visitExpression(expr.getOperand(), used);
 			removeAllDeclared(expr.getParameters(), used);
 		}
 
 		@Override
 		public void visitExistentialQuantifier(WyilFile.Expr.ExistentialQuantifier expr, HashSet<Decl.Variable> used) {
-			visitVariables(expr.getParameters(), used);
+			visitStaticVariables(expr.getParameters(), used);
 			visitExpression(expr.getOperand(), used);
 			removeAllDeclared(expr.getParameters(), used);
 		}
@@ -2383,7 +2380,7 @@ public class VerificationConditionGenerator {
 			// No need to visit types
 		}
 
-		private void removeAllDeclared(Tuple<Decl.Variable> parameters, HashSet<Decl.Variable> used) {
+		private void removeAllDeclared(Tuple<? extends Decl.Variable> parameters, HashSet<Decl.Variable> used) {
 			for (int i = 0; i != parameters.size(); ++i) {
 				used.remove(parameters.get(i));
 			}
@@ -2394,7 +2391,7 @@ public class VerificationConditionGenerator {
 	 * Determine the set of used variables in a given set of expressions. A used
 	 * variable is one referred to by a VariableAccess expression.
 	 *
-	 * @param expression
+	 * @param exprs
 	 * @return
 	 */
 	public Tuple<Decl.Variable> determineUsedVariables(Tuple<WyilFile.Expr> exprs) {
@@ -2627,7 +2624,7 @@ public class VerificationConditionGenerator {
 	 * comparator. For example, inverting "<=" gives ">", inverting "==" gives "!=",
 	 * etc.
 	 *
-	 * @param test
+	 * @param expr
 	 *            --- the binary comparator being inverted.
 	 * @return
 	 */
@@ -2887,7 +2884,7 @@ public class VerificationConditionGenerator {
 		 * Allocation a new versioned variable name of the form "x$1" for a given
 		 * location index
 		 *
-		 * @param index
+		 * @param var
 		 * @return
 		 */
 		public WyalFile.VariableDeclaration allocateVersion(WyilFile.Decl.Variable var) {
@@ -2919,8 +2916,8 @@ public class VerificationConditionGenerator {
 		/**
 		 * Add a new variable alias for a variable to its parent
 		 *
-		 * @param leftVar
-		 * @param rightVar
+		 * @param alias
+		 * @param parent
 		 */
 		public void addVariableAlias(WyalFile.VariableDeclaration alias, WyalFile.VariableDeclaration parent) {
 			parents.put(alias, parent);
@@ -2969,7 +2966,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Read the current versioned variable name for a given location index.
 		 *
-		 * @param index
+		 * @param var
 		 * @return
 		 */
 		public WyalFile.VariableDeclaration read(WyilFile.Decl.Variable var) {
@@ -2985,7 +2982,7 @@ public class VerificationConditionGenerator {
 		 * Create a new version for each variable in a sequence of variables. This
 		 * create a completely new local environment.
 		 *
-		 * @param index
+		 * @param vars
 		 */
 		public LocalEnvironment write(Tuple<WyilFile.Decl.Variable> vars) {
 			LocalEnvironment nenv = new LocalEnvironment(global, locals);
@@ -3132,7 +3129,7 @@ public class VerificationConditionGenerator {
 		 * Generate a new context from this one where a give condition is assumed to
 		 * hold.
 		 *
-		 * @param condition
+		 * @param conditions
 		 * @return
 		 */
 		public Context assume(WyalFile.Stmt... conditions) {
@@ -3196,7 +3193,7 @@ public class VerificationConditionGenerator {
 		 * those variables being increased. Thus, any historical references to those
 		 * variables in the set of assumptions remain valid.
 		 *
-		 * @param lhs
+		 * @param vars
 		 *            The variable accesses being havoced
 		 * @return
 		 */

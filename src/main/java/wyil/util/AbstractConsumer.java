@@ -106,15 +106,17 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitVariable(Decl.Variable decl, T data) {
 		visitType(decl.getType(), data);
-		if(decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
-		}
 	}
 
 	public void visitStaticVariable(Decl.StaticVariable decl, T data) {
 		visitType(decl.getType(), data);
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
+		visitExpression(decl.getInitialiser(), data);
+	}
+
+	public void visitStaticVariables(Tuple<Decl.StaticVariable> vars, T data) {
+		for(int i=0;i!=vars.size();++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var, data);
 		}
 	}
 
@@ -211,6 +213,10 @@ public abstract class AbstractConsumer<T> {
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt, data);
 			break;
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			visitInitialiser((Stmt.Initialiser) stmt, data);
+			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) stmt, data);
 			break;
@@ -292,6 +298,15 @@ public abstract class AbstractConsumer<T> {
 		visitStatement(stmt.getTrueBranch(), data);
 		if(stmt.hasFalseBranch()) {
 			visitStatement(stmt.getFalseBranch(), data);
+		}
+	}
+
+	public void visitInitialiser(Stmt.Initialiser stmt, T data) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v, data);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), data);
 		}
 	}
 
@@ -731,12 +746,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, T data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 	}
 
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, T data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 	}
 

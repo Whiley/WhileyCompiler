@@ -265,6 +265,9 @@ public class Interpreter {
 		case STMT_if:
 		case STMT_ifelse:
 			return executeIf((Stmt.IfElse) stmt, frame, scope);
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			return executeInitialiser((Stmt.Initialiser) stmt, frame, scope);
 		case EXPR_indirectinvoke:
 			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 			return Status.NEXT;
@@ -544,6 +547,34 @@ public class Interpreter {
 		}
 	}
 
+	private Status executeInitialiser(Stmt.Initialiser stmt, CallStack frame, EnclosingScope scope) {
+		Tuple<Decl.Variable> variables = stmt.getVariables();
+		//
+		if(!stmt.hasInitialiser()) {
+			// Do nothing as no initialiser!
+		} else if(variables.size() == 1) {
+			// Easy case --- unit assignment
+			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+			// Assign variable
+			frame.putLocal(variables.get(0).getName(), value);
+		} else {
+			// Construct lhs type
+			Type type = Type.Tuple.create(variables.map(v -> v.getType()));
+			// Harder case --- tuple assignment
+			RValue.Tuple value = executeExpression(TUPLE_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(type,value,frame,stmt.getInitialiser());
+			// Assign individual components
+			for(int i=0;i!=variables.size();++i) {
+				frame.putLocal(variables.get(i).getName(), value.get(i));
+			}
+		}
+		// Done
+		return Status.NEXT;
+	}
+
 	/**
 	 * Execute a named block which is simply a block of statements.
 	 *
@@ -681,13 +712,13 @@ public class Interpreter {
 	 */
 	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame) {
 		// We only need to do something if this has an initialiser
-		if (stmt.hasInitialiser()) {
-			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
-			// Check type invariants are established
-			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
-			//
-			frame.putLocal(stmt.getName(), value);
-		}
+//		if (stmt.hasInitialiser()) {
+//			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+//			// Check type invariants are established
+//			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+//			//
+//			frame.putLocal(stmt.getName(), value);
+//		}
 		return Status.NEXT;
 	}
 
@@ -951,7 +982,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame) {
-		Tuple<Decl.Variable> vars = expr.getParameters();
+		Tuple<Decl.StaticVariable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
 			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame);
@@ -960,7 +991,7 @@ public class Interpreter {
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Decl.Variable var = vars.get(index);
+			Decl.StaticVariable var = vars.get(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {

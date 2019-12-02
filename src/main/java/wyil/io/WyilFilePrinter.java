@@ -20,6 +20,7 @@ import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -133,10 +134,8 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
-		if(decl.hasInitialiser()) {
-			out.print(" = ");
-			visitExpression(decl.getInitialiser(), indent);
-		}
+		out.print(" = ");
+		visitExpression(decl.getInitialiser(), indent);
 		out.println();
 	}
 
@@ -213,10 +212,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
-		if (decl.hasInitialiser()) {
-			out.print(" = ");
-			visitExpression(decl.getInitialiser(), indent);
-		}
 	}
 
 	@Override
@@ -671,9 +666,9 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	public void visitQuantifier(Expr.Quantifier expr, Integer indent) {
 		out.print(quantifierKind(expr));
 		out.print(" { ");
-		Tuple<Decl.Variable> params = expr.getParameters();
+		Tuple<Decl.StaticVariable> params = expr.getParameters();
 		for (int i = 0; i != params.size(); ++i) {
-			Decl.Variable v = params.get(i);
+			Decl.StaticVariable v = params.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}
