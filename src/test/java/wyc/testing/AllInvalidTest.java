@@ -82,6 +82,8 @@ public class AllInvalidTest {
 		IGNORED.put("Type_Invalid_15", "??");
 		IGNORED.put("While_Invalid_24", "??");
 		IGNORED.put("While_Invalid_25", "#956");
+		//
+		IGNORED.put("For_Invalid_9", "#982");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

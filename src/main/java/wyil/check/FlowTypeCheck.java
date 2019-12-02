@@ -323,6 +323,8 @@ public class FlowTypeCheck implements Compiler.Check {
 				return checkAssume((Stmt.Assume) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Fail) {
 				return checkFail((Stmt.Fail) stmt, environment, scope);
+			} else if (stmt instanceof Stmt.For) {
+				return checkFor((Stmt.For) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Debug) {
 				return checkDebug((Stmt.Debug) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Skip) {
@@ -392,6 +394,32 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	private Environment checkFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
 		return FlowTypeUtils.BOTTOM;
+	}
+
+	/**
+	 * Type check a for each statement.
+	 *
+	 * @param stmt
+	 * @param environment
+	 * @param scope
+	 * @return
+	 */
+	private Environment checkFor(Stmt.For stmt, Environment environment, EnclosingScope scope) {
+		// Type loop invariant(s).
+		checkConditions(stmt.getInvariant(), true, environment);
+		// Type condition assuming its true to represent inside a loop
+		// iteration.
+		// Important if condition contains a type test, as we'll know it holds.
+		Type type = checkExpression(stmt.getVariable().getInitialiser(), true, environment);
+		//
+		checkIsSubtype(new Type.Array(Type.Int), type, environment, stmt.getVariable().getInitialiser());
+		// Type loop body using true environment
+		checkBlock(stmt.getBody(), environment, scope);
+		// Determine and update modified variables
+		Tuple<Decl.Variable> modified = FlowTypeUtils.determineModifiedVariables(stmt.getBody());
+		stmt.setModified(stmt.getHeap().allocate(modified));
+		// Return environment unchanged
+		return environment;
 	}
 
 	/**

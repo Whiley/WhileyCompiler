@@ -60,6 +60,8 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class TestUtils {
+	private final static boolean DEBUG = false;
+	//
 	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
 
 	static {
@@ -238,7 +240,7 @@ public class TestUtils {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
 			// Construct temporary build environment
-			Build.Environment environment = new Environment(root,false);
+			Build.Environment environment = new Environment(root,DEBUG);
 			// Construct build project within this environment
 			SequentialBuildProject project = new SequentialBuildProject(environment, root);
 			// Identify source files

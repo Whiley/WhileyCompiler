@@ -200,6 +200,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitDoWhile((Stmt.DoWhile) stmt, data);
 		case STMT_fail:
 			return visitFail((Stmt.Fail) stmt, data);
+		case STMT_for:
+			return visitFor((Stmt.For) stmt, data);
 		case STMT_if:
 		case STMT_ifelse:
 			return visitIfElse((Stmt.IfElse) stmt, data);
@@ -280,6 +282,14 @@ public abstract class AbstractFunction<P,R> {
 	public R visitFail(Stmt.Fail stmt, P data) {
 		return null;
 	}
+
+	public R visitFor(Stmt.For stmt, P data) {
+		visitStaticVariable(stmt.getVariable(),data);
+		visitExpressions(stmt.getInvariant(),data);
+		visitStatement(stmt.getBody(),data);
+		return null;
+	}
+
 
 	public R visitIfElse(Stmt.IfElse stmt, P data) {
 		visitExpression(stmt.getCondition(), data);

@@ -36,6 +36,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Equals;
 import static wyc.io.WhileyFileLexer.Token.Kind.EqualsEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Export;
 import static wyc.io.WhileyFileLexer.Token.Kind.Fail;
+import static wyc.io.WhileyFileLexer.Token.Kind.For;
 import static wyc.io.WhileyFileLexer.Token.Kind.Final;
 import static wyc.io.WhileyFileLexer.Token.Kind.Function;
 import static wyc.io.WhileyFileLexer.Token.Kind.GreaterEquals;
@@ -853,6 +854,8 @@ public class WhileyFileParser {
 			return parseDebugStatement(scope);
 		case Fail:
 			return parseFailStatement(scope);
+		case For:
+			return parseForStatement(scope);
 		case If:
 			return parseIfStatement(scope);
 		case Return:
@@ -1276,6 +1279,28 @@ public class WhileyFileParser {
 		matchEndLine();
 		// Done.
 		return annotateSourceLocation(new Stmt.Fail(),start,end-1);
+	}
+
+	private Stmt.For parseForStatement(EnclosingScope scope) {
+		int start = index;
+		match(For);
+		Identifier id = parseIdentifier();
+		scope.checkNameAvailable(id);
+		match(In);
+		Expr range = parseRangeExpression(scope, true);
+		// NOTE: unclear whether including final modifier here makes sense. However, it
+		// is necessary to prevent assignments to the index variable(s).
+		Decl.StaticVariable decl = new Decl.StaticVariable(new Tuple<>(new Modifier.Final()), id, new Type.Int(),
+				range);
+		// Must allocate declaration here so as to prevent it being copied.
+		decl = annotateSourceLocation(decl, start);
+		scope.declareVariable(decl);
+		// Parse the loop invariants
+		Tuple<Expr> invariants = parseInvariant(scope,Where);
+		match(Colon);
+		matchEndLine();
+		Stmt.Block block = parseBlock(scope, true);
+		return new Stmt.For(decl, invariants, new Tuple<>(), block);
 	}
 
 	/**
@@ -2184,6 +2209,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseRangeExpression(EnclosingScope scope, boolean terminated) {
+		skipWhiteSpace();
 		int start = index;
 		Expr lhs = parseAdditiveExpression(scope, true);
 		match(DotDot);

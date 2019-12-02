@@ -222,6 +222,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int STMT_continue = 153; // <ZERO operands, ZERO>
 	public static final int STMT_dowhile = 154; // <FOUR operands, ZERO>
 	public static final int STMT_fail = 155; // <ZERO operands, ZERO>
+	public static final int STMT_for = 156; // <THREE operands, ZERO>
 	public static final int STMT_if = 158; // <TWO operands, ZERO>
 	public static final int STMT_ifelse = 159; // <THREE operands, ZERO>
 	public static final int STMT_initialiser = 160; // <TWO operands, ZERO>
@@ -2131,6 +2132,61 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Fail();
+				}
+			};
+		}
+
+		/**
+		 * <p>
+		 * Represents a for statement made up of variable initialisers and a block of statements
+		 * referred to as the <i>body</i>. The following illustrates:
+		 * </p>
+		 *
+		 * <pre>
+		 * function sum(int[] xs) -> int:
+		 *   int r = 0
+		 *   for i in 0..|xs|:
+		 *     r = r + xs[i]
+		 *   return r
+		 * </pre>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class For extends AbstractSyntacticItem implements Stmt {
+			public For(Decl.StaticVariable var, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block trueBranch) {
+				super(STMT_for, var, invariant, modified, trueBranch);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
+			}
+
+			public Decl.StaticVariable getVariable() {
+				return (Decl.StaticVariable) operands[0];
+			}
+
+			public Tuple<Expr> getInvariant() {
+				return (Tuple<Expr>) operands[1];
+			}
+
+			public Tuple<Decl.Variable> getModified() {
+				return (Tuple<Decl.Variable>)operands[2];
+			}
+
+			public void setModified(Tuple<Decl.Variable> modified) {
+				operands[2] = modified;
+			}
+
+			public Stmt.Block getBody() {
+				return (Stmt.Block) operands[3];
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "STMT_for") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
 				}
 			};
 		}
@@ -7145,7 +7201,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 //			if(desc != null) {
 //				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
 //			}
-//
 //		}
 //		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 		//
@@ -7263,7 +7318,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("STMT", "continue", Stmt.Continue.DESCRIPTOR_0);
 		builder.add("STMT", "dowhile", Stmt.DoWhile.DESCRIPTOR_0);
 		builder.add("STMT", "fail", Stmt.Fail.DESCRIPTOR_0);
-		builder.add("STMT", "for", null);
+		builder.add("STMT", "for", Stmt.For.DESCRIPTOR_0);
 		builder.add("STMT", "foreach", null);
 		builder.add("STMT", "if", Stmt.IfElse.DESCRIPTOR_0a);
 		builder.add("STMT", "ifelse", Stmt.IfElse.DESCRIPTOR_0b);

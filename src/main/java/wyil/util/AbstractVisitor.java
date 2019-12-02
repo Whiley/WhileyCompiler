@@ -209,6 +209,9 @@ public abstract class AbstractVisitor {
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt);
 			break;
+		case STMT_for:
+			visitFor((Stmt.For) stmt);
+			break;
 		case STMT_if:
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt);
@@ -290,6 +293,13 @@ public abstract class AbstractVisitor {
 	public void visitFail(Stmt.Fail stmt) {
 
 	}
+
+	public void visitFor(Stmt.For stmt) {
+		visitStaticVariable(stmt.getVariable());
+		visitExpressions(stmt.getInvariant());
+		visitStatement(stmt.getBody());
+	}
+
 
 	public void visitIfElse(Stmt.IfElse stmt) {
 		visitExpression(stmt.getCondition());

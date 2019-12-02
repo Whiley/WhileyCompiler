@@ -232,6 +232,9 @@ public abstract class AbstractTypedVisitor {
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt, environment, scope);
 			break;
+		case STMT_for:
+			visitFor((Stmt.For) stmt, environment, scope);
+			break;
 		case STMT_if:
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt, environment, scope);
@@ -318,6 +321,12 @@ public abstract class AbstractTypedVisitor {
 
 	public void visitFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
 
+	}
+
+	public void visitFor(Stmt.For stmt, Environment environment, EnclosingScope scope) {
+		visitStaticVariable(stmt.getVariable(), environment);
+		visitHomogeneousExpressions(stmt.getInvariant(), Type.Bool, environment);
+		visitStatement(stmt.getBody(), environment, scope);
 	}
 
 	public void visitIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
