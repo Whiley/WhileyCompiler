@@ -6,7 +6,7 @@ ensures (x == b) && (y == a):
 
 public export method test():
     //
-    int a, int b = swap(1,2)
+    (int a, int b) = swap(1,2)
     //
     assert a == 2
     //

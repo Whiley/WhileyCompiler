@@ -909,16 +909,13 @@ public class WhileyFileParser {
 		// assignment   : Identifier | LeftBrace | Star
 		// variable decl: Identifier | LeftBrace | LeftCurly | Ampersand
 		// invoke       : Identifier | LeftBrace | Star
-		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
+		int r = isStatementInitialiser(scope);
+		if (r > 0) {
 			// Must be a statement initialiser as this is the only situation in which a type
 			// can be followed by an identifier.
-			index = start; // backtrack
-			//
-			return parseInitialiserStatement(scope);
+			return parseInitialiserStatement(scope, r > 1);
 		}
 		// Must be an assignment or invocation
-		index = start; // backtrack
-		//
 		Expr e = parseExpression(scope, false);
 		//
 		if (e instanceof Expr.Invoke || e instanceof Expr.IndirectInvoke) {
@@ -935,6 +932,31 @@ public class WhileyFileParser {
 		}
 	}
 
+	private int isStatementInitialiser(EnclosingScope scope) {
+		int result;
+		int start = index;
+		// First, try and match unit initialiser
+		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
+			// matched!
+			result = 1;
+		} else {
+			index = start; // backtrack
+			// Second, try and match multi-variable initialiser
+			if(tryAndMatch(false,LeftBrace) != null) {
+				result = isStatementInitialiser(scope);
+				index = start; // backtrack
+				if(result > 0) {
+					result = result + 1;
+				}
+			} else {
+				result = 0;
+			}
+		}
+		index = start; // backtrack
+		// Give up
+		return result;
+	}
+
 	/**
 	 * Parse a variable declaration statement which has the form:
 	 *
@@ -945,26 +967,35 @@ public class WhileyFileParser {
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
+	 * @param multi Indicates whether or not we have a multi-variable initialiser.
 	 *
 	 * @return
 	 */
-	private Stmt.Initialiser parseInitialiserStatement(EnclosingScope scope) {
+	private Stmt.Initialiser parseInitialiserStatement(EnclosingScope scope, boolean multi) {
 		int start = index;
 		ArrayList<Decl.Variable> variables = new ArrayList<>();
 		//
-		do {
+		if(multi) {
+			match(LeftBrace);
+			do {
+				Tuple<Modifier> modifiers = parseModifiers(Final);
+				Type type = parseType(scope);
+				Identifier name = parseIdentifier();
+				// Check that declared variables are not already defined.
+				scope.checkNameAvailable(name);
+				variables.add(new Decl.Variable(modifiers, name, type));
+			} while(tryAndMatch(true, Comma) != null);
+			match(RightBrace);
+		} else {
 			Tuple<Modifier> modifiers = parseModifiers(Final);
 			Type type = parseType(scope);
 			Identifier name = parseIdentifier();
-			// Ensure at least one variable is defined by this pattern.
-			// Check that declared variables are not already defined.
 			scope.checkNameAvailable(name);
 			variables.add(new Decl.Variable(modifiers, name, type));
-		} while(tryAndMatch(true, Comma) != null);
+		}
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;

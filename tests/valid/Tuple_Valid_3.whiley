@@ -1,6 +1,6 @@
 public export method test():
     //
-    int a, int b = (2,1)
+    (int a, int b) = (2,1)
     //
     assert a == 2
     //
