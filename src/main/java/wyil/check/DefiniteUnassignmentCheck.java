@@ -18,11 +18,14 @@ import static wyil.lang.WyilFile.*;
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.check.DefiniteAssignmentCheck.ControlFlow;
+import wyil.check.DefiniteAssignmentCheck.DefinitelyAssignedSet;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 
 /**
@@ -76,12 +79,23 @@ public class DefiniteUnassignmentCheck
 
 	private boolean status = true;
 
+	public DefiniteUnassignmentCheck(Build.Meter meter) {
+		super(meter.fork(DefiniteUnassignmentCheck.class.getSimpleName()));
+	}
+
 	@Override
 	public boolean check(WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
+		meter.done();
 		//
 		return status;
+	}
+
+	@Override
+	public ControlFlow visitExternalUnit(Decl.Unit unit, MaybeAssignedSet dummy) {
+		// NOTE: we override this to prevent unnecessarily traversing units
+		return null;
 	}
 
 	/**
@@ -119,12 +133,7 @@ public class DefiniteUnassignmentCheck
 
 	@Override
 	public ControlFlow visitVariable(Decl.Variable decl, MaybeAssignedSet environment) {
-		//
-		if (decl.hasInitialiser()) {
-			environment = environment.add(decl);
-		}
-		//
-		return new ControlFlow(environment, null);
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -212,6 +221,14 @@ public class DefiniteUnassignmentCheck
 		case EXPR_arrayborrow: {
 			Expr.ArrayAccess aa = (Expr.ArrayAccess) lval;
 			visitLVal((LVal) aa.getFirstOperand(), environment);
+			break;
+		}
+		case EXPR_tupleinitialiser: {
+			Expr.TupleInitialiser ti = (Expr.TupleInitialiser) lval;
+			Tuple<Expr> operands = ti.getOperands();
+			for(int i=0;i!=operands.size();++i) {
+				visitLVal((LVal) operands.get(i), environment);
+			}
 			break;
 		}
 		case EXPR_dereference:
@@ -308,6 +325,16 @@ public class DefiniteUnassignmentCheck
 		}
 		// Now, merge all generated control-flow paths together
 		return left.merge(right);
+	}
+
+	@Override
+	public ControlFlow visitInitialiser(Stmt.Initialiser stmt, MaybeAssignedSet environment) {
+		if(stmt.hasInitialiser()) {
+			for (Decl.Variable decl : stmt.getVariables()) {
+				environment = environment.add(decl);
+			}
+		}
+		return new ControlFlow(environment, null);
 	}
 
 	@Override

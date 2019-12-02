@@ -113,22 +113,17 @@ public class Activator implements Module.Activator {
 		@Override
 		public void execute(Build.Project project, Path.ID id, String method, Value... args) throws IOException {
 			// Construct method's qualified name and signature
-			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
+			Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
 			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
 			Interpreter interpreter = new Interpreter(System.out);
 			// Create the initial stack
 			Interpreter.CallStack stack = initialise(project,interpreter);;
 			// Execute the requested function
-			RValue[] returns = interpreter.execute(name, sig, stack);
+			RValue returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
 			if (returns != null) {
-				for (int i = 0; i != returns.length; ++i) {
-					if (i != 0) {
-						System.out.println(", ");
-					}
-					System.out.println(returns[i]);
-				}
+				System.out.println(returns);
 			}
 		}
 

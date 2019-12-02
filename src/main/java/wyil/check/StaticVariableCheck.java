@@ -21,8 +21,10 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
@@ -60,23 +62,31 @@ import static wyil.lang.WyilFile.*;
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Check {
 	private boolean status = true;
 
+	public StaticVariableCheck(Build.Meter meter) {
+		super(meter.fork(StaticVariableCheck.class.getSimpleName()));
+	}
+
 	@Override
 	public boolean check(WyilFile wf) {
 		visitModule(wf, null);
+		meter.done();
 		return status;
 	}
 
 	@Override
+	public void visitExternalUnit(Decl.Unit unit, Set<QualifiedName> accessed) {
+		// NOTE: we override this to prevent unnecessarily traversing units
+	}
+
+	@Override
 	public void visitStaticVariable(Decl.StaticVariable decl, Set<QualifiedName> accessed) {
-		if (decl.hasInitialiser()) {
-			Expr initialiser = decl.getInitialiser();
-			QualifiedName name = decl.getQualifiedName();
-			accessed = new HashSet<>();
-			visitExpression(initialiser, accessed);
-			if (accessed.contains(name)) {
-				// Indicates a cyclic static initialiser has been detected
-				syntaxError(initialiser, CYCLIC_STATIC_INITIALISER);
-			}
+		Expr initialiser = decl.getInitialiser();
+		QualifiedName name = decl.getQualifiedName();
+		accessed = new HashSet<>();
+		visitExpression(initialiser, accessed);
+		if (accessed.contains(name)) {
+			// Indicates a cyclic static initialiser has been detected
+			syntaxError(initialiser, CYCLIC_STATIC_INITIALISER);
 		}
 	}
 
@@ -100,7 +110,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> im
 		Decl.Link<Decl.StaticVariable> l = expr.getLink();
 		Decl.StaticVariable decl = l.getTarget();
 		QualifiedName name = decl.getQualifiedName();
-		if (decl.hasInitialiser() && !accessed.contains(name)) {
+		if (!accessed.contains(name)) {
 			accessed.add(name);
 			visitExpression(decl.getInitialiser(), accessed);
 		}

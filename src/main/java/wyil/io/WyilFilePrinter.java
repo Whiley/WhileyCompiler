@@ -20,6 +20,7 @@ import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -43,10 +44,12 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private boolean verbose = false;
 
 	public WyilFilePrinter(PrintWriter visitr) {
+		super(Build.NULL_METER);
 		this.out = visitr;
 	}
 
 	public WyilFilePrinter(OutputStream stream) {
+		super(Build.NULL_METER);
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 
@@ -63,7 +66,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	// ======================================================================
 
 	public void apply(WyilFile module) {
-		visitModule(module,0);
+		visitModule(module, 0);
 	}
 
 	@Override
@@ -131,10 +134,8 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
-		if(decl.hasInitialiser()) {
-			out.print(" = ");
-			visitExpression(decl.getInitialiser(), indent);
-		}
+		out.print(" = ");
+		visitExpression(decl.getInitialiser(), indent);
 		out.println();
 	}
 
@@ -211,10 +212,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
-		if (decl.hasInitialiser()) {
-			out.print(" = ");
-			visitExpression(decl.getInitialiser(), indent);
-		}
 	}
 
 	@Override
@@ -364,11 +361,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	@Override
 	public void visitReturn(Stmt.Return stmt, Integer indent) {
 		tabIndent(indent);
-		Tuple<Expr> returns = stmt.getReturns();
 		out.print("return");
-		if(returns.size() > 0) {
+		if(stmt.hasReturn()) {
 			out.print(" ");
-			visitExpressions(returns, indent);
+			visitExpression(stmt.getReturn(), indent);
 		}
 		out.println();
 	}
@@ -457,7 +453,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 			visitInfixLocations((Expr.BinaryOperator) expr, indent);
 			break;
@@ -670,9 +666,9 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	public void visitQuantifier(Expr.Quantifier expr, Integer indent) {
 		out.print(quantifierKind(expr));
 		out.print(" { ");
-		Tuple<Decl.Variable> params = expr.getParameters();
+		Tuple<Decl.StaticVariable> params = expr.getParameters();
 		for (int i = 0; i != params.size(); ++i) {
-			Decl.Variable v = params.get(i);
+			Decl.StaticVariable v = params.get(i);
 			if (i != 0) {
 				out.print(", ");
 			}
@@ -812,7 +808,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 			return "&&";
 		case EXPR_logicalor:
 			return "||";
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return "==>";
 		case EXPR_logicaliff:
 			return "<==>";

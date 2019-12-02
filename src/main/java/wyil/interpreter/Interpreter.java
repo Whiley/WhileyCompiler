@@ -94,7 +94,7 @@ public class Interpreter {
 	 * @param args      The supplied arguments
 	 * @return
 	 */
-	public RValue[] execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
+	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
 		return execute(name, signature, frame, args, null);
 	}
 
@@ -111,7 +111,7 @@ public class Interpreter {
 	 *                  when reporting precondition violations.
 	 * @return
 	 */
-	public RValue[] execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue[] args,
+	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue[] args,
 			SyntacticItem context) {
 		Decl.Callable lambda = frame.getCallable(name, signature);
 		if (lambda == null) {
@@ -137,7 +137,7 @@ public class Interpreter {
 	 *                when reporting precondition violations.
 	 * @return
 	 */
-	public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
+	public RValue execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
 		// Fourth, construct the stack frame for execution
 		extractParameters(frame, args, lambda);
 		// Check the precondition
@@ -156,12 +156,10 @@ public class Interpreter {
 			// Execute the method or function body
 			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm, args));
 			// Extra the return values
-			RValue[] returns = packReturns(frame, lambda);
-			//
-			return returns;
+			return packReturns(frame, lambda);
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
-			return executeMultiReturnExpression(l.getBody(), frame);
+			return executeExpression(ANY_T, l.getBody(), frame);
 		} else {
 			Decl.Property p = (Decl.Property) lambda;
 			Tuple<Expr> invariant = p.getInvariant();
@@ -171,11 +169,11 @@ public class Interpreter {
 				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame);
 				if(!retval.boolValue()) {
 					// Short circuit
-					return new RValue[] { retval };
+					return retval;
 				}
 			}
 			//
-			return new RValue[] { RValue.True };
+			return RValue.True;
 		}
 	}
 
@@ -196,16 +194,22 @@ public class Interpreter {
 	 * @param type
 	 * @return
 	 */
-	private RValue[] packReturns(CallStack frame, Decl.Callable decl) {
+	private RValue packReturns(CallStack frame, Decl.Callable decl) {
 		if (decl instanceof Decl.Property) {
-			return new RValue[] { RValue.True };
+			return RValue.True;
 		} else {
 			Tuple<Decl.Variable> returns = decl.getReturns();
-			RValue[] values = new RValue[returns.size()];
-			for (int i = 0; i != values.length; ++i) {
-				values[i] = frame.getLocal(returns.get(i).getName());
+			if(returns.size() == 1) {
+				Decl.Variable v = returns.get(0);
+				return frame.getLocal(v.getName());
+			} else {
+				RValue[] items = new RValue[returns.size()];
+				for(int i=0;i!=items.length;++i) {
+					Decl.Variable v = returns.get(i);
+					items[i] = frame.getLocal(v.getName());
+				}
+				return RValue.Tuple(items);
 			}
-			return values;
 		}
 	}
 
@@ -261,6 +265,9 @@ public class Interpreter {
 		case STMT_if:
 		case STMT_ifelse:
 			return executeIf((Stmt.IfElse) stmt, frame, scope);
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			return executeInitialiser((Stmt.Initialiser) stmt, frame, scope);
 		case EXPR_indirectinvoke:
 			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 			return Status.NEXT;
@@ -272,6 +279,7 @@ public class Interpreter {
 		case STMT_while:
 			return executeWhile((Stmt.While) stmt, frame, scope);
 		case STMT_return:
+		case STMT_returnvoid:
 			return executeReturn((Stmt.Return) stmt, frame, scope);
 		case STMT_skip:
 			return executeSkip((Stmt.Skip) stmt, frame, scope);
@@ -281,7 +289,6 @@ public class Interpreter {
 		case DECL_variable:
 			return executeVariableDeclaration((Decl.Variable) stmt, frame);
 		}
-
 		deadCode(stmt);
 		return null; // deadcode
 	}
@@ -291,16 +298,10 @@ public class Interpreter {
 		Tuple<Expr> rhs = stmt.getRightHandSide();
 		RValue[] rvals = executeExpressions(stmt.getRightHandSide(), frame);
 		//
-		int index = 0;
-		// NOTE: this loop is more complicated because of multi-expressions.
 		for (int i = 0; i != rhs.size(); ++i) {
 			Expr r = rhs.get(i);
 			// Determine width of expression
-			int width = determineExpressionWidth(r);
-			// Execute components of expression
-			for (int j = 0; j != width; ++j) {
-				executeAssignLVal(lhs.get(index), rvals[index++], frame, scope, r);
-			}
+			executeAssignLVal(lhs.get(i), rvals[i], frame, scope, r);
 		}
 		return Status.NEXT;
 	}
@@ -331,6 +332,12 @@ public class Interpreter {
 			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, scope, context);
 			break;
 		}
+		case EXPR_tupleinitialiser: {
+			executeAssignTuple((Expr.TupleInitialiser) lval, rval, frame, scope, context);
+			break;
+		}
+		default:
+			deadCode(lval);
 		}
 	}
 
@@ -380,6 +387,22 @@ public class Interpreter {
 		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, context);
 		//
 		frame.putLocal(lval.getVariableDeclaration().getName(), rval);
+	}
+
+	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, EnclosingScope scope,
+			SyntacticItem context) {
+		Tuple<Expr> operands = lval.getOperands();
+		// Check we have a tuple as expected!
+		RValue.Tuple tuple = checkType(rval, lval, TUPLE_T);
+		//
+		if(tuple.size() != operands.size()) {
+			deadCode(lval);
+		}
+		//
+		for(int i=0;i!=operands.size();++i) {
+			executeAssignLVal((LVal) operands.get(i), tuple.get(i), frame, scope, context);
+		}
+
 	}
 
 	/**
@@ -524,6 +547,34 @@ public class Interpreter {
 		}
 	}
 
+	private Status executeInitialiser(Stmt.Initialiser stmt, CallStack frame, EnclosingScope scope) {
+		Tuple<Decl.Variable> variables = stmt.getVariables();
+		//
+		if(!stmt.hasInitialiser()) {
+			// Do nothing as no initialiser!
+		} else if(variables.size() == 1) {
+			// Easy case --- unit assignment
+			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+			// Assign variable
+			frame.putLocal(variables.get(0).getName(), value);
+		} else {
+			// Construct lhs type
+			Type type = Type.Tuple.create(variables.map(v -> v.getType()));
+			// Harder case --- tuple assignment
+			RValue.Tuple value = executeExpression(TUPLE_T, stmt.getInitialiser(), frame);
+			// Check type invariants are established
+			checkTypeInvariants(type,value,frame,stmt.getInitialiser());
+			// Assign individual components
+			for(int i=0;i!=variables.size();++i) {
+				frame.putLocal(variables.get(i).getName(), value.get(i));
+			}
+		}
+		// Done
+		return Status.NEXT;
+	}
+
 	/**
 	 * Execute a named block which is simply a block of statements.
 	 *
@@ -584,18 +635,27 @@ public class Interpreter {
 		Decl.FunctionOrMethod context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
-		// Execute return expressions
-		RValue[] values = executeExpressions(stmt.getReturns(), frame);
-		// Check type invariants
-		checkTypeInvariants(type.getReturns(), values, stmt.getReturns(), frame);
-		// Configure return values
-		for (int i = 0; i != returns.size(); ++i) {
-			frame.putLocal(returns.get(i).getName(), values[i]);
+		if(stmt.hasReturn()) {
+			// Execute return expressions
+			RValue value = executeExpression(ANY_T, stmt.getReturn(), frame);
+			// Check type invariants
+			checkTypeInvariants(type.getReturn(), value, frame, stmt.getReturn());
+			// Configure return values
+			if(returns.size() > 1) {
+				RValue.Tuple t = (RValue.Tuple) value;
+				for(int i=0;i!=returns.size();++i) {
+					Decl.Variable r = returns.get(i);
+					frame.putLocal(r.getName(), t.get(i));
+				}
+			} else {
+				Decl.Variable r = returns.get(0);
+				frame.putLocal(r.getName(), value);
+			}
+			// Restore original parameter values
+			extractParameters(frame, enclosingScope.getArguments(), context);
+			// Check the postcondition holds
+			checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, context.getEnsures(), stmt);
 		}
-		// Restore original parameter values
-		extractParameters(frame, enclosingScope.getArguments(), context);
-		// Check the postcondition holds
-		checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, context.getEnsures(), stmt);
 		//
 		return Status.RETURN;
 	}
@@ -652,13 +712,13 @@ public class Interpreter {
 	 */
 	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame) {
 		// We only need to do something if this has an initialiser
-		if (stmt.hasInitialiser()) {
-			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
-			// Check type invariants are established
-			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
-			//
-			frame.putLocal(stmt.getName(), value);
-		}
+//		if (stmt.hasInitialiser()) {
+//			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+//			// Check type invariants are established
+//			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+//			//
+//			frame.putLocal(stmt.getName(), value);
+//		}
 		return Status.NEXT;
 	}
 
@@ -695,10 +755,10 @@ public class Interpreter {
 			val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 			break;
 		case EXPR_indirectinvoke:
-			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
+			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
 			break;
 		case EXPR_invoke:
-			val = executeInvoke((Expr.Invoke) expr, frame)[0];
+			val = executeInvoke((Expr.Invoke) expr, frame);
 			break;
 		case EXPR_variablemove:
 		case EXPR_variablecopy:
@@ -719,7 +779,7 @@ public class Interpreter {
 		case EXPR_logicalor:
 			val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 			break;
 		case EXPR_logicaliff:
@@ -814,6 +874,9 @@ public class Interpreter {
 		case DECL_lambda:
 			val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
 			break;
+		case EXPR_tupleinitialiser:
+			val = executeTupleInitialiser((Expr.TupleInitialiser) expr, frame);
+			break;
 		default:
 			return deadCode(expr);
 		}
@@ -894,6 +957,15 @@ public class Interpreter {
 		return semantics.Record(values);
 	}
 
+	private RValue executeTupleInitialiser(Expr.TupleInitialiser expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue[] values = new RValue[operands.size()];
+		for (int i = 0; i != values.length; ++i) {
+			values[i] = executeExpression(ANY_T, operands.get(i), frame);
+		}
+		return semantics.Tuple(values);
+	}
+
 	private RValue executeQuantifier(Expr.Quantifier expr, CallStack frame) {
 		boolean r = executeQuantifier(0, expr, frame);
 		boolean q = (expr instanceof Expr.UniversalQuantifier);
@@ -910,7 +982,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame) {
-		Tuple<Decl.Variable> vars = expr.getParameters();
+		Tuple<Decl.StaticVariable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
 			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame);
@@ -919,7 +991,7 @@ public class Interpreter {
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Decl.Variable var = vars.get(index);
+			Decl.StaticVariable var = vars.get(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
@@ -1234,48 +1306,11 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue[] executeExpressions(Tuple<Expr> expressions, CallStack frame) {
-		RValue[][] results = new RValue[expressions.size()][];
-		int count = 0;
+		RValue[] results = new RValue[expressions.size()];
 		for (int i = 0; i != expressions.size(); ++i) {
-			results[i] = executeMultiReturnExpression(expressions.get(i), frame);
-			count += results[i].length;
+			results[i] = executeExpression(ANY_T,expressions.get(i), frame);
 		}
-		RValue[] rs = new RValue[count];
-		int j = 0;
-		for (int i = 0; i != expressions.size(); ++i) {
-			Object[] r = results[i];
-			System.arraycopy(r, 0, rs, j, r.length);
-			j += r.length;
-		}
-		return rs;
-	}
-
-	/**
-	 * Execute an expression which has the potential to return more than one result.
-	 * Thus the return type must accommodate this by allowing zero or more returned
-	 * values.
-	 *
-	 * @param expr
-	 * @param frame
-	 * @return
-	 */
-	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
-		switch (expr.getOpcode()) {
-		case EXPR_indirectinvoke:
-			return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-		case EXPR_invoke:
-			return executeInvoke((Expr.Invoke) expr, frame);
-		case EXPR_constant:
-		case EXPR_cast:
-		case EXPR_recordaccess:
-		case EXPR_recordborrow:
-		case DECL_lambda:
-		case EXPR_logicalexistential:
-		case EXPR_logicaluniversal:
-		default:
-			RValue val = executeExpression(ANY_T, expr, frame);
-			return new RValue[] { val };
-		}
+		return results;
 	}
 
 	/**
@@ -1290,13 +1325,13 @@ public class Interpreter {
 	 * @param context --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private RValue[] executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
+	private RValue executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
 		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(), frame);
 		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
 		// Extract concrete type
 		Type.Callable type = src.getType();
 		// Check parameter type invariants
-		checkTypeInvariants(type.getParameters(), arguments, expr.getArguments(), frame);
+		checkTypeInvariants(type.getParameter(), arguments, expr.getArguments(), frame);
 		// Here we supply the enclosing frame when the lambda was created.
 		// The reason for this is that the lambda may try to access enclosing
 		// variables in the scope it was created.
@@ -1314,7 +1349,7 @@ public class Interpreter {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) {
+	private RValue executeInvoke(Expr.Invoke expr, CallStack frame) {
 		// Resolve function or method being invoked to a concrete declaration
 		Decl.Callable decl = expr.getLink().getTarget();
 		// Evaluate argument expressions
@@ -1322,7 +1357,7 @@ public class Interpreter {
 		// Extract the concrete type
 		Type.Callable type = expr.getBinding().getConcreteType();
 		// Check type invariants
-		checkTypeInvariants(type.getParameters(), arguments, expr.getOperands(), frame);
+		checkTypeInvariants(type.getParameter(), arguments, expr.getOperands(), frame);
 		// Invoke the function or method in question
 		// FIXME: could potentially optimise this by calling execute with decl directly.
 		// This currently fails for external symbols which are represented as
@@ -1350,16 +1385,13 @@ public class Interpreter {
 		}
 	}
 
-	public void checkTypeInvariants(Tuple<Type> variables, RValue[] values, Tuple<Expr> rvals, CallStack frame) {
+	public void checkTypeInvariants(Type variables, RValue[] values, Tuple<Expr> rvals, CallStack frame) {
 		// This is a bit tricky because we have to account for multi-expressions which,
 		// as always, are annoying.
 		int index = 0;
 		for (int i = 0; i != rvals.size(); ++i) {
 			Expr rval = rvals.get(i);
-			int width = determineExpressionWidth(rval);
-			for (int j = 0; j != width; ++j) {
-				checkTypeInvariants(variables.get(index), values[index++], frame, rval);
-			}
+			checkTypeInvariants(variables.dimension(index), values[index++], frame, rval);
 		}
 	}
 
@@ -1481,17 +1513,6 @@ public class Interpreter {
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
 
-	/**
-	 * A simple helper method to determine the width of an expression. That is
-	 *
-	 * @param e
-	 * @return
-	 */
-	private static int determineExpressionWidth(Expr e) {
-		Tuple<Type> types = e.getTypes();
-		return types == null ? 1 : types.size();
-	}
-
 	private static final Class<RValue> ANY_T = RValue.class;
 	private static final Class<RValue.Bool> BOOL_T = RValue.Bool.class;
 	private static final Class<RValue.Byte> BYTE_T = RValue.Byte.class;
@@ -1500,6 +1521,7 @@ public class Interpreter {
 	private static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
+	private static final Class<RValue.Tuple> TUPLE_T = RValue.Tuple.class;
 
 	public final static class RuntimeError extends SyntacticException {
 		private final int code;

@@ -123,7 +123,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	}
 
 	@Override
-	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Tuple<Type> types,
+	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Type types,
 			LifetimeRelation environment) {
 		// Now attempt to bind the given candidate declarations against the concrete
 		// argument types.
@@ -222,7 +222,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * </p>
 	 *
 	 * @param candidates
-	 * @param arguments
+	 * @param argument
 	 *            Inferred Argument Types
 	 * @param templateArguments
 	 *            Explicit template arguments (if provided)
@@ -231,27 +231,27 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 */
 	protected List<Binding> bindCallableCandidates(List<Decl.Callable> candidates,
-			Tuple<Type> arguments, Tuple<SyntacticItem> templateArguments,
+			Type argument, Tuple<SyntacticItem> templateArguments,
 			LifetimeRelation lifetimes) {
 		ArrayList<Binding> bindings = new ArrayList<>();
 		// Go through each candidate and generate all possible bindings.
 		for (int i = 0; i != candidates.size(); ++i) {
 			Decl.Callable candidate = candidates.get(i);
 			// Generate all potential template bindings based on template arguments
-			generateApplicableBindings(candidate, arguments, templateArguments, bindings, lifetimes);
+			generateApplicableBindings(candidate, argument, templateArguments, bindings, lifetimes);
 		}
 		// Done
 		return bindings;
 	}
 
-	protected void generateApplicableBindings(Decl.Callable candidate, Tuple<Type> arguments,
+	protected void generateApplicableBindings(Decl.Callable candidate, Type argument,
 			Tuple<SyntacticItem> templateArguments, List<Binding> bindings, LifetimeRelation lifetimes) {
 		//
 		Tuple<Template.Variable> templateParameters = candidate.getTemplate();
 		Type.Callable type = candidate.getType();
-		Tuple<Type> parameters = type.getParameters();
+		Type parameters = type.getParameter();
 		//
-		if (parameters.size() != arguments.size()
+		if (parameters.shape() != argument.shape()
 				|| (templateArguments.size() > 0 && templateArguments.size() != templateParameters.size())) {
 			// (1) Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
@@ -264,24 +264,24 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			// guessing appropriate bindings.
 			Type.Callable concreteType = WyilFile.substitute(candidate.getType(), candidate.getTemplate(), templateArguments);
 			// Add binding (if applicable)
-			if (isApplicable(concreteType, lifetimes, arguments)) {
+			if (isApplicable(concreteType, lifetimes, argument)) {
 				bindings.add(new Binding(candidate, templateArguments, concreteType));
 			}
-		} else if(parameters.size() > 0) {
+		} else if(parameters.shape() > 0) {
 			// Go through every argument attempting to form a binding.
 			BinaryRelation.HashSet<Type> relation = new BinaryRelation.HashSet<>();
 			ConstraintSet constraints = new ConstraintSet(candidate, lifetimes);
 			//
-			for(int i=0;i!=arguments.size();++i) {
-				constraints = bind(parameters.get(i), arguments.get(i), constraints, relation);
+			for(int i=0;i!=argument.shape();++i) {
+				constraints = bind(parameters.dimension(i), argument.dimension(i), constraints, relation);
 			}
 			// Expand the constraint set for each template variable to produce new bindings
-			generateApplicableBindings(0, new SyntacticItem[constraints.size()], constraints, arguments, bindings);
+			generateApplicableBindings(0, new SyntacticItem[constraints.size()], constraints, argument, bindings);
 		}
 	}
 
 	protected void generateApplicableBindings(int index, SyntacticItem[] binding, ConstraintSet constraints,
-			Tuple<Type> arguments, List<Binding> bindings) {
+			Type arguments, List<Binding> bindings) {
 		//
 		if(index == constraints.size()) {
 			// BASE CASE.
@@ -328,9 +328,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param args
 	 * @return
 	 */
-	protected boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes, Tuple<Type> args) {
-		Tuple<Type> parameters = candidate.getParameters();
-		if (parameters.size() != args.size()) {
+	protected boolean isApplicable(Type.Callable candidate, LifetimeRelation lifetimes, Type args) {
+		Type parameters = candidate.getParameter();
+		if (parameters.shape() != args.shape()) {
 			// Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
 			// more to consider.
@@ -338,9 +338,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		} else {
 			// Number of parameters matches number of arguments. Now, check that
 			// each argument is a subtype of its corresponding parameter.
-			for (int i = 0; i != args.size(); ++i) {
-				Type param = parameters.get(i);
-				if (!isSubtype(param, args.get(i), lifetimes)) {
+			for (int i = 0; i != args.shape(); ++i) {
+				Type param = parameters.dimension(i);
+				if (!isSubtype(param, args.dimension(i), lifetimes)) {
 					return false;
 				}
 			}
@@ -491,17 +491,15 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		//
 		if (t != null) {
 			// Bind against parameters and returns
-			Tuple<Type> p_parameters = parameter.getParameters();
-			Tuple<Type> t_parameters = t.getParameters();
-			Tuple<Type> p_returns = parameter.getReturns();
-			Tuple<Type> t_returns = t.getReturns();
-			if (p_parameters.size() == t_parameters.size() && p_returns.size() == t_returns.size()) {
-				for (int i = 0; i != p_parameters.size(); ++i) {
-					constraints = bind(p_parameters.get(i), t_parameters.get(i), constraints, assumptions);
+			Type p_parameters = parameter.getParameter();
+			Type t_parameters = t.getParameter();
+			Type p_return = parameter.getReturn();
+			Type t_return = t.getReturn();
+			if (p_parameters.shape() == t_parameters.shape()) {
+				for (int i = 0; i != p_parameters.shape(); ++i) {
+					constraints = bind(p_parameters.dimension(i), t_parameters.dimension(i), constraints, assumptions);
 				}
-				for (int i = 0; i != p_returns.size(); ++i) {
-					constraints = bind(p_returns.get(i), t_returns.get(i), constraints, assumptions);
-				}
+				constraints = bind(p_return, t_return, constraints, assumptions);
 			}
 		}
 		return constraints;
@@ -593,9 +591,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 */
 	protected boolean isParameterSubtype(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
-		Tuple<Type> parentParams = lhs.getParameters();
-		Tuple<Type> childParams = rhs.getParameters();
-		if (parentParams.size() != childParams.size()) {
+		Type parentParams = lhs.getParameter();
+		Type childParams = rhs.getParameter();
+		if (parentParams.shape() != childParams.shape()) {
 			// Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
 			// more to consider.
@@ -603,9 +601,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		}
 		// Number of parameters matches number of arguments. Now, check that
 		// each argument is a subtype of its corresponding parameter.
-		for (int i = 0; i != parentParams.size(); ++i) {
-			Type parentParam = parentParams.get(i);
-			Type childParam = childParams.get(i);
+		for (int i = 0; i != parentParams.shape(); ++i) {
+			Type parentParam = parentParams.dimension(i);
+			Type childParam = childParams.dimension(i);
 			if (!isSubtype(parentParam, childParam, lifetimes)) {
 				return false;
 			}
@@ -861,7 +859,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		case TYPE_bool:
 		case TYPE_int:
 		case TYPE_property:
-		case TYPE_invariant:
 		case TYPE_byte:
 		case TYPE_variable:
 		case TYPE_unknown:
@@ -972,6 +969,8 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				return true;
 			case TYPE_array:
 				return isSubtype((Type.Array) t1, (Type.Array) t2, lifetimes, cache);
+			case TYPE_tuple:
+				return isSubtype((Type.Tuple) t1, (Type.Tuple)t2, lifetimes, cache);
 			case TYPE_record:
 				return isSubtype((Type.Record) t1, (Type.Record)t2, lifetimes, cache);
 			case TYPE_nominal:
@@ -1006,6 +1005,17 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 
 	protected boolean isSubtype(Type.Array t1, Type.Array t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		return isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+	}
+
+	protected boolean isSubtype(Type.Tuple t1, Type.Tuple t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		// Check elements one-by-one
+		for(int i=0;i!=t1.size();++i) {
+			if(!isSubtype(t1.get(i),t2.get(i),lifetimes,cache)) {
+				return false;
+			}
+		}
+		// Done
+		return true;
 	}
 
 	protected boolean isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
@@ -1048,26 +1058,21 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 
 	protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
 			BinaryRelation<Type> cache) {
-		Tuple<Type> t1_params = t1.getParameters();
-		Tuple<Type> t2_params = t2.getParameters();
-		Tuple<Type> t1_returns = t1.getReturns();
-		Tuple<Type> t2_returns = t2.getReturns();
+		Type t1_params = t1.getParameter();
+		Type t2_params = t2.getParameter();
+		Type t1_return = t1.getReturn();
+		Type t2_return = t2.getReturn();
 		// Eliminate easy cases first
-		if (t1.getOpcode() != t2.getOpcode() || t1_params.size() != t2_params.size()
-				|| t1_returns.size() != t2_returns.size()) {
+		if (t1.getOpcode() != t2.getOpcode()) {
 			return false;
 		}
 		// Check parameters
-		for(int i=0;i!=t1_params.size();++i) {
-			if(!areEquivalent(t1_params.get(i),t2_params.get(i),lifetimes)) {
-				return false;
-			}
+		if(!areEquivalent(t1_params,t2_params,lifetimes)) {
+			return false;
 		}
 		// Check returns
-		for(int i=0;i!=t1_returns.size();++i) {
-			if(!areEquivalent(t1_returns.get(i),t2_returns.get(i),lifetimes)) {
-				return false;
-			}
+		if(!areEquivalent(t1_return,t2_return,lifetimes)) {
+			return false;
 		}
 		// Check lifetimes
 		if(t1 instanceof Type.Method) {
@@ -1202,11 +1207,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	}
 
 	// ===============================================================================
-	// Type Selector
+	// Type Subtraction
 	// ===============================================================================
 
 	/**
-	 * Select one type from a given type.
+	 * Subtract one type from another.
 	 *
 	 * @param lhs
 	 * @param rhs

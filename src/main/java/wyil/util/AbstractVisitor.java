@@ -15,6 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
@@ -34,14 +35,25 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractVisitor {
+	private final Build.Meter meter;
+
+	public AbstractVisitor(Build.Meter meter) {
+		this.meter = meter;
+	}
 
 	public void visitModule(WyilFile wf) {
-		for (Decl decl : wf.getModule().getUnits()) {
-			visitDeclaration(decl);
+		Decl.Module module = wf.getModule();
+		//
+		for (Decl.Unit decl : module.getUnits()) {
+			visitUnit(decl);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExternalUnit(decl);
 		}
 	}
 
 	public void visitDeclaration(Decl decl) {
+		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl);
@@ -69,9 +81,14 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitUnit(Decl.Unit unit) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl);
 		}
+	}
+
+	public void visitExternalUnit(Decl.Unit unit) {
+		visitUnit(unit);
 	}
 
 	public void visitImport(Decl.Import decl) {
@@ -92,16 +109,17 @@ public abstract class AbstractVisitor {
 
 	public void visitVariable(Decl.Variable decl) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser());
-		}
 	}
 
+	public void visitStaticVariables(Tuple<Decl.StaticVariable> vars) {
+		for (int i = 0; i != vars.size(); ++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var);
+		}
+	}
 	public void visitStaticVariable(Decl.StaticVariable decl) {
 		visitType(decl.getType());
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser());
-		}
+		visitExpression(decl.getInitialiser());
 	}
 
 	public void visitType(Decl.Type decl) {
@@ -159,6 +177,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitStatement(Stmt stmt) {
+		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -195,6 +214,10 @@ public abstract class AbstractVisitor {
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt);
 			break;
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			visitInitialiser((Stmt.Initialiser) stmt);
+			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) stmt);
 			break;
@@ -205,6 +228,7 @@ public abstract class AbstractVisitor {
 			visitNamedBlock((Stmt.NamedBlock) stmt);
 			break;
 		case STMT_return:
+		case STMT_returnvoid:
 			visitReturn((Stmt.Return) stmt);
 			break;
 		case STMT_skip:
@@ -276,12 +300,24 @@ public abstract class AbstractVisitor {
 		}
 	}
 
+
+	public void visitInitialiser(Stmt.Initialiser stmt) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser());
+		}
+	}
+
 	public void visitNamedBlock(Stmt.NamedBlock stmt) {
 		visitStatement(stmt.getBlock());
 	}
 
 	public void visitReturn(Stmt.Return stmt) {
-		visitExpressions(stmt.getReturns());
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn());
+		}
 	}
 
 	public void visitSkip(Stmt.Skip stmt) {
@@ -314,6 +350,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitExpression(Expr expr) {
+		meter.step("expression");
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -353,7 +390,7 @@ public abstract class AbstractVisitor {
 			visitUnaryOperator((Expr.UnaryOperator) expr);
 			break;
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -384,6 +421,7 @@ public abstract class AbstractVisitor {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr);
 			break;
 		// Ternary Operators
@@ -450,7 +488,7 @@ public abstract class AbstractVisitor {
 		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr);
 			break;
 		case EXPR_logicaliff:
@@ -544,6 +582,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr);
+			break;
+		case EXPR_tupleinitialiser:
+			visitTupleInitialiser((Expr.TupleInitialiser) expr);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -704,12 +745,12 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr) {
-		visitVariables(expr.getParameters());
+		visitStaticVariables(expr.getParameters());
 		visitExpression(expr.getOperand());
 	}
 
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr) {
-		visitVariables(expr.getParameters());
+		visitStaticVariables(expr.getParameters());
 		visitExpression(expr.getOperand());
 	}
 
@@ -757,17 +798,16 @@ public abstract class AbstractVisitor {
 
 	}
 
+	public void visitTupleInitialiser(Expr.TupleInitialiser expr) {
+		visitExpressions(expr.getOperands());
+	}
+
 	public void visitVariableAccess(Expr.VariableAccess expr) {
 
 	}
 
-	public void visitTypes(Tuple<Type> type) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i));
-		}
-	}
-
 	public void visitType(Type type) {
+		meter.step("type");
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			visitTypeArray((Type.Array) type);
@@ -798,6 +838,9 @@ public abstract class AbstractVisitor {
 		case TYPE_method:
 		case TYPE_property:
 			visitTypeCallable((Type.Callable) type);
+			break;
+		case TYPE_tuple:
+			visitTypeTuple((Type.Tuple) type);
 			break;
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type);
@@ -845,8 +888,8 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeFunction(Type.Function type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeInt(Type.Int type) {
@@ -854,12 +897,15 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeMethod(Type.Method type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeNominal(Type.Nominal type) {
-		visitTypes(type.getParameters());
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i));
+		}
 	}
 
 	public void visitTypeNull(Type.Null type) {
@@ -867,8 +913,8 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitTypeProperty(Type.Property type) {
-		visitTypes(type.getParameters());
-		visitTypes(type.getReturns());
+		visitType(type.getParameter());
+		visitType(type.getReturn());
 	}
 
 	public void visitTypeRecord(Type.Record type) {
@@ -889,6 +935,13 @@ public abstract class AbstractVisitor {
 	public void visitTypeReference(Type.Reference type) {
 		visitType(type.getElement());
 	}
+
+	public void visitTypeTuple(Type.Tuple type) {
+		for (int i = 0; i != type.size(); ++i) {
+			visitType(type.get(i));
+		}
+	}
+
 
 	public void visitTypeUnion(Type.Union type) {
 		for (int i = 0; i != type.size(); ++i) {

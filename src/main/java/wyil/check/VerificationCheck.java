@@ -35,42 +35,60 @@ import wyil.lang.WyilFile.Attr.CounterExample;
 import wyil.transform.VerificationConditionGenerator;
 import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
+import wytp.types.TypeSystem;
 
 public class VerificationCheck {
+	private final Build.Meter meter;
 	private final Build.Project project;
-	private Path.Entry<WyalFile> wyalTarget;
-	private Path.Entry<WyilFile> target;
+	private final Path.Entry<WyalFile> wyalTarget;
+	private final Path.Entry<WyilFile> target;
+	private final TypeSystem typeSystem;
+
 	//private final Path.Root sourceRoot;
 
-	public VerificationCheck(Build.Project project, Path.Entry<WyilFile> target) throws IOException {
+	public VerificationCheck(Build.Meter meter, Build.Project project, Path.Entry<WyilFile> target) throws IOException {
+		this.meter = meter.fork(VerificationCheck.class.getSimpleName());
 		this.project = project;
 		//
-		wyalTarget = project.getRoot().get(target.id(),WyalFile.ContentType);
-		if (wyalTarget == null) {
+		Path.Entry<WyalFile> tmp = project.getRoot().get(target.id(),WyalFile.ContentType);
+		if (tmp == null) {
 			wyalTarget = project.getRoot().create(target.id(), WyalFile.ContentType);
 			wyalTarget.write(new WyalFile(wyalTarget));
+		} else {
+			wyalTarget = tmp;
 		}
 		//
 		this.target = target;
+		this.typeSystem = new wytp.types.TypeSystem(project);
 	}
 
-	public boolean check(WyilFile target, boolean counterexamples) {
+	public WyalFile initialise(WyilFile target) {
+		try {
+			WyalFile contents = new VerificationConditionGenerator(meter,new WyalFile(wyalTarget)).translate(target);
+			// Type check translation
+			new TypeChecker(typeSystem, contents, this.target).check();
+			// Write back translation
+			wyalTarget.write(contents);
+			wyalTarget.flush();
+			// Done
+			return contents;
+		} catch(IOException e) {
+			// Something wierd happened
+			throw new RuntimeException(e);
+		}
+	}
+
+	public boolean check(WyalFile target, boolean counterexamples) {
 		// FIXME: this is really a bit of a kludge right now. The basic issue is that,
 		// in the near future, the VerificationConditionGenerator will operate directly
 		// on the WyilFile rather than creating a WyalFile. Then, the theorem prover can
 		// work on the WyilFile directly as well and, hence, this will become more like
 		// a compilation stage (as per others above).
 		try {
-			wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
-			// FIXME: this unfortunately puts it in the wrong directory.
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(wyalTarget)).translate(target);
-			new TypeChecker(typeSystem, contents, this.target).check();
-//			wyalTarget.write(contents);
-//			wyalTarget.flush();
 			// Now try to verfify it
 			AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
-			// FIXME: this is horrendous :(
-			prover.check(contents);
+			// Run the checker!
+			prover.check(target);
 			//
 			return true;
 		} catch(SyntacticException e) {
@@ -95,6 +113,8 @@ public class VerificationCheck {
 				// FIXME: enjoy debugging this when the time comes :)
 				throw new SyntacticException(message,null,item,e);
 			}
+		} finally {
+			meter.done();
 		}
 	}
 

@@ -36,10 +36,12 @@ import static wyil.lang.WyilFile.UNREACHABLE_CODE;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import wyal.util.NameResolver.ResolutionError;
+import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
@@ -51,6 +53,7 @@ import wybs.util.ResolveError;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.Environment;
+import wyil.check.FlowTypeUtils.PurityVisitor;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -60,6 +63,7 @@ import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 import wyil.util.SubtypeOperator;
+import wyil.util.TypeSelector;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -116,11 +120,13 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  *
  */
 public class FlowTypeCheck implements Compiler.Check {
+	private final Build.Meter meter;
 	//private final SubtypeOperator relaxedSubtypeOperator;
 	private final SubtypeOperator strictSubtypeOperator;
 	private boolean status = true;
 
-	public FlowTypeCheck() {
+	public FlowTypeCheck(Build.Meter meter) {
+		this.meter = meter.fork(FlowTypeCheck.class.getSimpleName());
 		//this.relaxedSubtypeOperator = null;
 		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
@@ -134,6 +140,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (Decl decl : wf.getModule().getUnits()) {
 			checkDeclaration(decl);
 		}
+		meter.done();
 		return status;
 	}
 
@@ -142,6 +149,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	public void checkDeclaration(Decl decl) {
+		meter.step("declaration");
 		if (decl instanceof Decl.Unit) {
 			checkUnit((Decl.Unit) decl);
 		} else if (decl instanceof Decl.Import) {
@@ -175,8 +183,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		Environment environment = new Environment();
 		// Check type is contractive
 		checkContractive(decl);
-		// Check variable declaration is not empty
-		checkVariableDeclaration(decl.getVariableDeclaration(), environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -191,7 +197,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
 		Environment environment = new Environment();
 		// Check type not void
-		checkVariableDeclaration(decl, environment);
+		Type type = checkExpression(decl.getInitialiser(), true, environment);
+		//
+		checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
 	}
 
 	/**
@@ -206,10 +214,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		Environment environment = new Environment();
 		// Update environment so this within declared lifetimes
 		environment = FlowTypeUtils.declareThisWithin(d, environment);
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkVariableDeclarations(d.getParameters(), environment);
-		checkVariableDeclarations(d.getReturns(), environment);
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -250,10 +254,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkPropertyDeclaration(Decl.Property d) {
 		// Construct initial environment
 		Environment environment = new Environment();
-		// Check parameters and returns are not empty (i.e. are not equivalent
-		// to void, as this is non-sensical).
-		checkVariableDeclarations(d.getParameters(), environment);
-		checkVariableDeclarations(d.getReturns(), environment);
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -296,14 +296,15 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
+		meter.step("statement");
 		try {
 			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
 				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
-			} else if (stmt instanceof Decl.Variable) {
-				return checkVariableDeclaration((Decl.Variable) stmt, environment);
+			} else if (stmt instanceof Stmt.Initialiser) {
+				return checkInitialiser((Stmt.Initialiser) stmt, environment);
 			} else if (stmt instanceof Stmt.Assign) {
 				return checkAssign((Stmt.Assign) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Return) {
@@ -333,10 +334,10 @@ public class FlowTypeCheck implements Compiler.Check {
 			} else if (stmt instanceof Stmt.Skip) {
 				return checkSkip((Stmt.Skip) stmt, environment, scope);
 			} else if (stmt instanceof Expr.Invoke) {
-				checkInvoke((Expr.Invoke) stmt, environment);
+				checkInvoke((Expr.Invoke) stmt, false, environment);
 				return environment;
 			} else if (stmt instanceof Expr.IndirectInvoke) {
-				checkIndirectInvoke((Expr.IndirectInvoke) stmt, environment);
+				checkIndirectInvoke((Expr.IndirectInvoke) stmt, false, environment);
 				return environment;
 			} else {
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
@@ -398,23 +399,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	/**
-	 * Type check a given sequence of variable declarations.
-	 *
-	 * @param decls
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            statement.
-	 * @return
-	 * @throws IOException
-	 */
-	private Environment checkVariableDeclarations(Tuple<Decl.Variable> decls, Environment environment) {
-		for (int i = 0; i != decls.size(); ++i) {
-			environment = checkVariableDeclaration(decls.get(i), environment);
-		}
-		return environment;
-	}
-
-	/**
 	 * Type check a variable declaration statement. In particular, when an
 	 * initialiser is given we must check it is well-formed and that it is a subtype
 	 * of the declared type.
@@ -426,14 +410,22 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *            block
 	 * @return
 	 */
-	private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment) {
+	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment) {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
-			Type type = checkExpression(decl.getInitialiser(), environment);
-			checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
-			if (type != null) {
-				// Update the typing environment accordingly.
-				environment = environment.refineType(decl, type);
+			Type lhs = decl.getType();
+			Type rhs = checkExpression(decl.getInitialiser(), true, environment);
+			// Extract all types from the given declarations
+			checkIsSubtype(lhs, rhs, environment, decl.getInitialiser());
+			// Apply type refinement (if applicable)
+			if (rhs != null) {
+				Tuple<Decl.Variable> vars = decl.getVariables();
+				for(int i=0;i!=lhs.shape();++i) {
+					// Refine the declared type
+					Type refined = refine(lhs.dimension(i), rhs.dimension(i), environment);
+					// Update the typing environment accordingly.
+					environment = environment.refineType(vars.get(i), refined);
+				}
 			}
 		}
 		// Done.
@@ -453,23 +445,36 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
 		Tuple<LVal> lvals = stmt.getLeftHandSide();
+		Tuple<Expr> rvals = stmt.getRightHandSide();
 		Type[] types = new Type[lvals.size()];
 		for (int i = 0; i != lvals.size(); ++i) {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
-		Type[] actuals = checkMultiExpressions(stmt.getRightHandSide(), environment, new Tuple<>(types));
-		// Update right-hand sides accordingly based on assigned types
-		for(int i=0;i!=actuals.length;++i) {
-			Type actual = actuals[i];
+		// NOTE: need to use min here for case where insufficient lvals or rvals given
+		for(int i=0;i!=Math.min(lvals.size(),rvals.size());++i) {
+			Type actual = checkExpression(rvals.get(i), true, environment);
+			// Check assigned type
+			checkIsSubtype(types[i], actual, environment, rvals.get(i));
+			// Apply type refinement (if applicable)
 			if(actual != null) {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
 				if (extraction != null) {
+					Decl.Variable decl = extraction.getFirst();
+					// Refine the declared type
+					Type type = refine(decl.getType(), extraction.getSecond(), environment);
 					// Update the typing environment accordingly.
-					environment = environment.refineType(extraction.getFirst(), extraction.getSecond());
+					environment = environment.refineType(extraction.getFirst(), type);
 				}
 			}
 		}
+		//
+		if(lvals.size() < rvals.size()) {
+			syntaxError(stmt, TOO_MANY_RETURNS);
+		} else if(lvals.size() > rvals.size()) {
+			syntaxError(stmt, INSUFFICIENT_RETURNS);
+		}
+		//
 		return environment;
 	}
 
@@ -521,7 +526,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
 		// FIXME: want to refine integer type here
 		Type std_ascii = new Type.Array(Type.Int);
-		Type type = checkExpression(stmt.getOperand(), environment);
+		Type type = checkExpression(stmt.getOperand(), true, environment);
 		checkIsSubtype(std_ascii, type, environment, stmt.getOperand());
 		return environment;
 	}
@@ -634,9 +639,21 @@ public class FlowTypeCheck implements Compiler.Check {
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
 		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
-		Tuple<Type> types = fm.getType().getReturns();
-		// Type check the operands for the return statement (if any)
-		checkMultiExpressions(stmt.getReturns(), environment, types);
+		Type type = fm.getType().getReturn();
+		// Type check the operand for the return statement (if applicable)
+		if (stmt.hasReturn()) {
+			// Type check the operands for the return statement (if any)
+			Type r = checkExpression(stmt.getReturn(), true, environment);
+			// Sanity check whether invoke actually returned something
+			if(r instanceof Type.Void) {
+				syntaxError(stmt.getReturn(),INSUFFICIENT_RETURNS);
+			}
+			// Sanity check return type matches
+			checkIsSubtype(type, r, environment, stmt.getReturn());
+		} else {
+			// Sanity check no return expected!
+			checkIsSubtype(Type.Void, type, environment, stmt);
+		}
 		// Return bottom as following environment to signal that control-flow
 		// cannot continue here. Thus, any following statements will encounter
 		// the BOTTOM environment and, hence, report an appropriate error.
@@ -708,7 +725,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
 		// Type check the expression being switched upon
-		checkExpression(stmt.getCondition(), environment);
+		checkExpression(stmt.getCondition(), true, environment);
 		// The final environment determines what flow continues after the switch
 		// statement
 		Environment finalEnv = null;
@@ -719,7 +736,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (Stmt.Case c : stmt.getCases()) {
 			// Resolve the constants
 			for (Expr e : c.getConditions()) {
-				checkExpression(e, environment);
+				checkExpression(e, true, environment);
 			}
 			// Check case block
 			Environment localEnv = environment;
@@ -918,7 +935,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			return checkLogicalConjunction((Expr.LogicalAnd) condition, sign, environment);
 		case EXPR_logicaliff:
 			return checkLogicalIff((Expr.LogicalIff) condition, sign, environment);
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return checkLogicalImplication((Expr.LogicalImplication) condition, sign, environment);
 		case EXPR_is:
 			return checkIs((Expr.Is) condition, sign, environment);
@@ -926,7 +943,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_logicalexistential:
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
-			Type t = checkExpression(condition, environment);
+			Type t = checkExpression(condition, true, environment);
 			checkIsSubtype(Type.Bool, t, environment, condition);
 			return environment;
 		}
@@ -1064,7 +1081,7 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
 		Expr lhs = expr.getOperand();
-		Type lhsT = checkExpression(expr.getOperand(), environment);
+		Type lhsT = checkExpression(expr.getOperand(), true, environment);
 		Type rhsT = expr.getTestType();
 		// Sanity check operands for this type test
 		checkIsSubtype(lhsT,rhsT,environment,rhsT);
@@ -1096,8 +1113,8 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
 		// Check array initialisers
-		for (Decl.Variable decl : stmt.getParameters()) {
-			checkExpression(decl.getInitialiser(), environment);
+		for (Decl.StaticVariable decl : stmt.getParameters()) {
+			checkExpression(decl.getInitialiser(), true, environment);
 		}
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
@@ -1143,6 +1160,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_fielddereference:
 			type = checkFieldDereferenceLVal((Expr.FieldDereference) lval, environment);
 			break;
+		case EXPR_tupleinitialiser:
+			type = checkTupleInitialiserLVal((Expr.TupleInitialiser) lval, environment);
+			break;
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
 		}
@@ -1182,14 +1202,14 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check declared type
 		if (arrT == null) {
 			// Fall back on flow type
-			src = checkExpression(lval.getFirstOperand(), environment);
+			src = checkExpression(lval.getFirstOperand(), true, environment);
 			// Extract array or fail
 			arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
 		}
 		// Sanity check extraction
 		if(arrT != null) {
 			// Check for integer subscript
-			Type subscriptT = checkExpression(lval.getSecondOperand(), environment);
+			Type subscriptT = checkExpression(lval.getSecondOperand(), true, environment);
 			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
 			// Convert to concrete type
 			return arrT.getElement();
@@ -1207,7 +1227,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check declared type
 		if (recT == null || recT.getField(lval.getField()) == null) {
 			// Fall back on flow type
-			src = checkExpression(lval.getOperand(), environment);
+			src = checkExpression(lval.getOperand(), true, environment);
 			// Extract record or fail
 			recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
 		}
@@ -1216,7 +1236,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), environment);
+		Type src = checkExpression(lval.getOperand(), true, environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Sanity check writability of reference
@@ -1226,7 +1246,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), environment);
+		Type src = checkExpression(lval.getOperand(), true, environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Extact target type
@@ -1237,100 +1257,37 @@ public class FlowTypeCheck implements Compiler.Check {
 		return extractFieldType(recT, lval.getField());
 	}
 
+	public Type checkTupleInitialiserLVal(Expr.TupleInitialiser lval, Environment environment) {
+		Tuple<Expr> operands = lval.getOperands();
+		Type[] types = new Type[operands.size()];
+		for(int i=0;i!=types.length;++i) {
+			Type type = checkLVal((LVal) operands.get(i), environment);;
+			if(type == null) {
+				return null;
+			}
+			types[i] = type;
+		}
+		return Type.Tuple.create(types);
+	}
+
 	// =========================================================================
 	// Expressions
 	// =========================================================================
 
 	/**
-	 * Type check a sequence of zero or more multi-expressions, assuming a given
-	 * initial environment. A multi-expression is one which may have multiple return
-	 * values. There are relatively few situations where this can arise, particular
-	 * assignments and return statements. This returns a sequence of one or more
-	 * pairs, each of which corresponds to a single return for a given expression.
-	 * Thus, each expression generates one or more pairs in the result.
-	 *
-	 * @param expressions
-	 * @param environment
-	 */
-	public final Type[] checkMultiExpressions(Tuple<Expr> expressions, Environment environment, Tuple<Type> expected) {
-		Type[] actuals = new Type[expected.size()];
-		for (int i = 0, j = 0; i != expressions.size(); ++i) {
-			Expr expression = expressions.get(i);
-			switch (expression.getOpcode()) {
-			case EXPR_invoke: {
-				Tuple<Type> results = checkInvoke((Expr.Invoke) expression, environment);
-				if (results == null) {
-					// Some type error occurred upstream, therefore make conservative assumption
-					j = j + 1;
-				} else {
-					// FIXME: THIS LOOP IS UGLY
-					for (int k = 0; k != results.size(); ++k) {
-						Type actual = results.get(k);
-						checkIsSubtype(expected.get(j + k), actual, environment, expression);
-						actuals[j + k] = actual;
-					}
-					j = j + results.size();
-				}
-				break;
-			}
-			case EXPR_indirectinvoke: {
-				Tuple<Type> results = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
-				if (results == null) {
-					// Some type error occurred upstream, therefore make conservative assumption
-					j = j + 1;
-				} else {
-					// FIXME: THIS LOOP IS UGLY
-					for (int k = 0; k != results.size(); ++k) {
-						Type actual = results.get(k);
-						checkIsSubtype(expected.get(j + k), actual, environment, expression);
-						actuals[j + k] = actual;
-					}
-					j = j + results.size();
-				}
-				break;
-			}
-			default:
-				Type actual = checkExpression(expression, environment);
-				//
-				if ((expected.size() - j) < 1) {
-					syntaxError(expression, TOO_MANY_RETURNS);
-				} else if ((i + 1) == expressions.size() && (expected.size() - j) > 1) {
-					syntaxError(expression, INSUFFICIENT_RETURNS);
-				} else {
-					checkIsSubtype(expected.get(j), actual, environment, expression);
-					actuals[j] = actual;
-				}
-				j = j + 1;
-			}
-		}
-		return actuals;
-	}
-
-	public final Tuple<Type> checkMultiExpression(Expr expression, Environment environment) {
-		switch (expression.getOpcode()) {
-		case EXPR_invoke:
-			return checkInvoke((Expr.Invoke) expression, environment);
-		case EXPR_indirectinvoke:
-			return checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
-		default:
-			Type type = checkExpression(expression, environment);
-			return new Tuple<>(type);
-		}
-	}
-
-	/**
 	 * Type check a given expression assuming an initial environment.
 	 *
-	 * @param expression
-	 *            The expression to be checked.
-	 * @param target
-	 *            The target type of this expression.
-	 * @param environment
-	 *            The environment in which this expression is to be typed
+	 * @param expression  The expression to be checked.
+	 *
+	 * @param required    Indicates whether expression required to return result or
+	 *                    not
+	 *
+	 * @param environment The environment in which this expression is to be typed
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type checkExpression(Expr expression, Environment environment) {
+	public Type checkExpression(Expr expression, boolean required, Environment environment) {
+		meter.step("expression");
 		Type type;
 
 		switch (expression.getOpcode()) {
@@ -1346,51 +1303,20 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_cast:
 			type = checkCast((Expr.Cast) expression, environment);
 			break;
-		case EXPR_invoke: {
-			Tuple<Type> types = checkInvoke((Expr.Invoke) expression, environment);
-			// Sanity check
-			if (types == null) {
-				// Type error occurred upstream, therefore propagate up.
-				return null;
-			} else {
-				switch (types.size()) {
-				case 0:
-					syntaxError(expression, INSUFFICIENT_RETURNS);
-					return null;
-				case 1:
-					break;
-				default:
-					syntaxError(expression, TOO_MANY_RETURNS);
-				}
-				return types.get(0);
-			}
-		}
-		case EXPR_indirectinvoke: {
-			Tuple<Type> types = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
-			// Sanity check
-			if (types == null) {
-				// Type error occurred upstream, therefore propagate up.
-				return null;
-			} else {
-				switch (types.size()) {
-				case 0:
-					syntaxError(expression, TOO_MANY_RETURNS);
-				case 1:
-					break;
-				default:
-					syntaxError(expression, INSUFFICIENT_RETURNS);
-				}
-				// NOTE: can return directly here as checkIndirectInvoke must already set the
-				// return types.
-				return types.get(0);
-			}
-		}
+		case EXPR_invoke:
+			Expr.Invoke e = (Expr.Invoke) expression;
+			// NOTE: following is needed because checkInvoke handles expression type via
+			// binding.
+			return checkInvoke(e, required, environment);
+		case EXPR_indirectinvoke:
+			type = checkIndirectInvoke((Expr.IndirectInvoke) expression, required, environment);
+			break;
 		// Conditions
 		case EXPR_logicalnot:
 		case EXPR_logicalor:
 		case EXPR_logicaland:
 		case EXPR_logicaliff:
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_is:
 		case EXPR_logicaluniversal:
 		case EXPR_logicalexistential:
@@ -1427,6 +1353,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 			type = checkBitwiseShift((Expr.BinaryOperator) expression, environment);
+			break;
+		// Tuple Expressions
+		case EXPR_tupleinitialiser:
+			type = checkTupleInitialiser((Expr.TupleInitialiser) expression, environment);
 			break;
 		// Record Expressions
 		case EXPR_recordinitialiser:
@@ -1549,17 +1479,17 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkCast(Expr.Cast expr, Environment environment) {
-		Type rhsT = checkExpression(expr.getOperand(), environment);
+		Type rhsT = checkExpression(expr.getOperand(), true, environment);
 		checkIsSubtype(expr.getType(), rhsT, environment, expr);
 		return expr.getType();
 	}
 
-	private Tuple<Type> checkInvoke(Expr.Invoke expr, Environment environment) {
+	private Type checkInvoke(Expr.Invoke expr, boolean required, Environment environment) {
 		boolean resolvable = true;
 		Tuple<Expr> arguments = expr.getOperands();
 		Type[] types = new Type[arguments.size()];
 		for (int i = 0; i != arguments.size(); ++i) {
-			Type t = checkExpression(arguments.get(i), environment);
+			Type t = checkExpression(arguments.get(i), true, environment);
 			resolvable &= (t != null);
 			types[i] = t;
 		}
@@ -1568,11 +1498,17 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Attempt to resolve this invocation (if we can).
 		if(link.isPartiallyResolved() && resolvable) {
 			// Apply type inference algorithm to resolve invocation
-			Type.Callable type = strictSubtypeOperator.bind(expr.getBinding(), new Tuple<>(types), environment);
+			Type.Callable type = strictSubtypeOperator.bind(expr.getBinding(), Type.Tuple.create(types), environment);
 			// Sanity check we found something
 			if (type != null) {
 				// Finally, return the declared returns
-				return type.getReturns();
+				Type ret = type.getReturn();
+				if(required && ret.shape() == 0) {
+					syntaxError(expr, INSUFFICIENT_RETURNS);
+					return null;
+				} else {
+					return ret;
+				}
 			}
 			// failed
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
@@ -1581,9 +1517,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		return null;
 	}
 
-	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
+	private Type checkIndirectInvoke(Expr.IndirectInvoke expr, boolean required, Environment environment) {
 		// Determine signature type from source
-		Type type = checkExpression(expr.getSource(), environment);
+		Type type = checkExpression(expr.getSource(), true, environment);
 		// Extract readable callable type
 		Type.Callable sig = extractType(Type.Callable.class, type, EXPECTED_LAMBDA, expr.getSource());
 		// Determine the argument types
@@ -1592,29 +1528,32 @@ public class FlowTypeCheck implements Compiler.Check {
 			return null;
 		} else {
 			Tuple<Expr> arguments = expr.getArguments();
-			Tuple<Type> parameters = sig.getParameters();
+			Type parameters = sig.getParameter();
 			// Sanity check number of arguments provided
-			if (parameters.size() != arguments.size()) {
+			if (parameters.shape() != arguments.size()) {
 				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
 			}
 			// Sanity check types of arguments provided
 			for (int i = 0; i != arguments.size(); ++i) {
 				// Determine argument type
-				Type arg = checkExpression(arguments.get(i), environment);
+				Type arg = checkExpression(arguments.get(i), true, environment);
 				// Check argument is subtype of parameter
-				checkIsSubtype(parameters.get(i), arg, environment, arguments.get(i));
+				checkIsSubtype(parameters.dimension(i), arg, environment, arguments.get(i));
 			}
 			//
-			Tuple<Type> returns = sig.getReturns();
+			Type ret = sig.getReturn();
 			//
-			if(sig.getReturns().size() > 0 && !contains(returns,null)) {
-				expr.setTypes(expr.getHeap().allocate(returns));
-				return returns;
-			} else {
-				// NOTE: must ignore returns if it contains null as this indicates some kind of
-				// upstream error.
-				return null;
+			if(ret != null) {
+				if(required && ret.shape() == 0) {
+					syntaxError(expr, INSUFFICIENT_RETURNS);
+				} else {
+					expr.setType(expr.getHeap().allocate(ret));
+					return ret;
+				}
 			}
+			// NOTE: must ignore returns if it contains null as this indicates some kind of
+			// upstream error.
+			return null;
 		}
 	}
 
@@ -1629,8 +1568,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
-		Type lhs = checkExpression(expr.getFirstOperand(), environment);
-		Type rhs = checkExpression(expr.getSecondOperand(), environment);
+		Type lhs = checkExpression(expr.getFirstOperand(), true, environment);
+		Type rhs = checkExpression(expr.getSecondOperand(), true, environment);
 		if (lhs != null && rhs != null) {
 			// Sanity check that the types of operands are actually comparable.
 			boolean left = strictSubtypeOperator.isSubtype(lhs, rhs, environment);
@@ -1682,9 +1621,22 @@ public class FlowTypeCheck implements Compiler.Check {
 		return Type.Byte;
 	}
 
+	private Type checkTupleInitialiser(Expr.TupleInitialiser expr, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		Type[] types = new Type[operands.size()];
+		for(int i=0;i!=types.length;++i) {
+			Type type = checkExpression(operands.get(i), true, environment);
+			if(type == null) {
+				return null;
+			}
+			types[i] = type;
+		}
+		return Type.Tuple.create(types);
+	}
+
 	private Type checkRecordAccess(Expr.RecordAccess expr, Environment environment) {
 		// Check expression against expected record types
-		Type src = checkExpression(expr.getOperand(), environment);
+		Type src = checkExpression(expr.getOperand(), true, environment);
 		// Following may produce null if field not present
 		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getOperand());
 		// Return extracted field type
@@ -1693,8 +1645,8 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
 		// Check src and value expressions
-		Type src = checkExpression(expr.getFirstOperand(), environment);
-		Type val = checkExpression(expr.getSecondOperand(), environment);
+		Type src = checkExpression(expr.getFirstOperand(), true, environment);
+		Type val = checkExpression(expr.getSecondOperand(), true, environment);
 		// Extract readable record type
 		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getFirstOperand());
 		// Extract corresponding field type
@@ -1712,7 +1664,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check field initialiser expressions one by one
 		for (int i = 0; i != operands.size(); ++i) {
 			Identifier field = fields.get(i);
-			Type fieldType = checkExpression(operands.get(i), environment);
+			Type fieldType = checkExpression(operands.get(i), true, environment);
 			if(fieldType == null) {
 				// Signals a type failure further upstream
 				return null;
@@ -1724,7 +1676,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkArrayLength(Expr.ArrayLength expr, Environment environment) {
-		Type src = checkExpression(expr.getOperand(), environment);
+		Type src = checkExpression(expr.getOperand(), true, environment);
 		// Check whether the source returns an array type or not.
 		extractType(Type.Array.class, src, EXPECTED_ARRAY, expr.getOperand());
 		//
@@ -1736,7 +1688,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Tuple<Expr> operands = expr.getOperands();
 		Type[] ts = new Type[operands.size()];
 		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.get(i), environment);
+			ts[i] = checkExpression(operands.get(i), true, environment);
 		}
 		if (ArrayUtils.firstIndexOf(ts, null) >= 0) {
 			// Upstream error
@@ -1763,7 +1715,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Expr value = expr.getFirstOperand();
 		Expr length = expr.getSecondOperand();
 		// Check generation operands
-		Type valueT = checkExpression(value, environment);
+		Type valueT = checkExpression(value, true, environment);
 		checkOperand(Type.Int, length, environment);
 		//
 		if(valueT == null) {
@@ -1778,8 +1730,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		Expr source = expr.getFirstOperand();
 		Expr subscript = expr.getSecondOperand();
 		//
-		Type sourceT = checkExpression(source, environment);
-		Type subscriptT = checkExpression(subscript, environment);
+		Type sourceT = checkExpression(source, true, environment);
+		Type subscriptT = checkExpression(subscript, true, environment);
 		// Check whether source operand yielded an array type
 		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
 		// Check subscript has int type
@@ -1789,8 +1741,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkArrayRange(Expr.ArrayRange expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getFirstOperand(), environment);
-		Type rhsT = checkExpression(expr.getSecondOperand(), environment);
+		Type lhsT = checkExpression(expr.getFirstOperand(), true, environment);
+		Type rhsT = checkExpression(expr.getSecondOperand(), true, environment);
 		// Check integer types
 		checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
 		checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
@@ -1803,9 +1755,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		Expr subscript = expr.getSecondOperand();
 		Expr value = expr.getThirdOperand();
 		// Check operand expressions
-		Type sourceT = checkExpression(source, environment);
-		Type subscriptT = checkExpression(subscript, environment);
-		Type valueT = checkExpression(value, environment);
+		Type sourceT = checkExpression(source, true, environment);
+		Type subscriptT = checkExpression(subscript, true, environment);
+		Type valueT = checkExpression(value, true, environment);
 		// Extract the determined array type
 		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
 		// Extract the array element type
@@ -1817,7 +1769,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkDereference(Expr.Dereference expr, Environment environment) {
-		Type operandT = checkExpression(expr.getOperand(), environment);
+		Type operandT = checkExpression(expr.getOperand(), true, environment);
 		// Extract an appropriate reference type form the source.
 		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
 				expr.getOperand());
@@ -1828,7 +1780,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkFieldDereference(Expr.FieldDereference expr, Environment environment) {
-		Type operandT = checkExpression(expr.getOperand(), environment);
+		Type operandT = checkExpression(expr.getOperand(), true, environment);
 		// Extract an appropriate reference type form the source.
 		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
 				expr.getOperand());
@@ -1842,7 +1794,7 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Type checkNew(Expr.New expr, Environment environment) {
 		// Check expression type against expected element types
-		Type operandT = checkExpression(expr.getOperand(), environment);
+		Type operandT = checkExpression(expr.getOperand(), true, environment);
 		//
 		if(operandT == null) {
 			// upstream error
@@ -1856,11 +1808,11 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
 		Decl.Link<Decl.Callable> link = expr.getLink();
-		Tuple<Type> types = expr.getParameterTypes();
+		Type types = expr.getParameterTypes();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
 		// exactly zero arguments were supplied.
-		if (types.size() > 0) {
+		if (types.shape() > 0) {
 			// Now attempt to bind the given candidate declarations against the concrete
 			// argument types.
 			return strictSubtypeOperator.bind(expr.getBinding(), types, environment);
@@ -1874,21 +1826,20 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
-		Tuple<Decl.Variable> parameters = expr.getParameters();
-		Tuple<Type> parameterTypes = parameters.map((Decl.Variable p) -> p.getType());
+		Type parameter = Decl.Callable.project(expr.getParameters());
 		// Type check the body of the lambda using the expected return types
-		Tuple<Type> results = checkMultiExpression(expr.getBody(), environment);
+		Type result = checkExpression(expr.getBody(), false, environment);
 		// Determine whether or not this is a pure or impure lambda.
 		Type.Callable signature;
-		if(results == null) {
+		if(result == null) {
 			// An error occurred upstream
 			return null;
-		} else if (FlowTypeUtils.isPure(expr.getBody())) {
+		} else if (isPure(expr.getBody())) {
 			// This is a pure lambda, hence it has function type.
-			signature = new Type.Function(parameterTypes, results);
+			signature = new Type.Function(parameter, result);
 		} else {
 			// This is an impure lambda, hence it has method type.
-			signature = new Type.Method(parameterTypes, results, expr.getCapturedLifetimes(),
+			signature = new Type.Method(parameter, result, expr.getCapturedLifetimes(),
 					expr.getLifetimes());
 		}
 		// Update lambda declaration with inferred signature.
@@ -1904,8 +1855,38 @@ public class FlowTypeCheck implements Compiler.Check {
 	// Helpers
 	// ==========================================================================
 
+	public Type refine(Type declared, Type selector, LifetimeRelation lifetimes) {
+		// FIXME: this method is a hack for now really, until such time as I resolve
+		// issues around subtyping and how to create proper type morphisms, etc.
+		Type.Selector s = TypeSelector.create(declared, selector, lifetimes);
+//		System.out.print("REFINING: " + declared + " is " + selector + " with " + s + " => ");
+		if (s == Type.Selector.BOTTOM) {
+//			System.out.println("FAILED");
+			// Something went wrong
+			return declared;
+		} else {
+//			System.out.println(s.apply(declared));
+			return s.apply(declared);
+		}
+	}
+
+	/**
+	 * Determine whether a given expression calls an impure method, dereferences a
+	 * reference or accesses a static variable. This is done by exploiting the
+	 * uniform nature of syntactic items. Essentially, we just traverse the entire
+	 * tree representing the syntactic item looking for expressions of any kind.
+	 *
+	 * @param item
+	 * @return
+	 */
+	private boolean isPure(Expr e) {
+		FlowTypeUtils.PurityVisitor visitor = new FlowTypeUtils.PurityVisitor(meter);
+		visitor.visitExpression(e);
+		return visitor.pure;
+	}
+
 	private void checkOperand(Type type, Expr operand, Environment environment) {
-		checkIsSubtype(type, checkExpression(operand, environment), environment, operand);
+		checkIsSubtype(type, checkExpression(operand, true, environment), environment, operand);
 	}
 
 	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {

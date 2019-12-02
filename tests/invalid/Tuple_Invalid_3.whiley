@@ -8,7 +8,7 @@ function get(pair p) -> (int f, int s):
 function min(pair p) -> int:
     int x
     int y
-    x,y = get(p)
+    (x,y) = get(p)
     if x > y:
         return y
     else:

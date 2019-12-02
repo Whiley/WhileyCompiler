@@ -873,11 +873,11 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private Domain.Big<RValue> constructGenerator(Type.Function type, ExtendedContext context) {
-		Domain.Big<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+		Domain.Big<RValue> output = constructGenerator(type.getReturn(),context);
 		RValue[] lambdas = new RValue[context.getLambdaWidth()];
 		for(int i=0;i!=context.getLambdaWidth();++i) {
 			// Apply the rotation (for i > 1)
-			Domain.Big<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			Domain.Big<RValue> tmp = i == 0 ? output : Rotate(output,i);
 			// Construct the (deterministic) lambda
 			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
@@ -892,12 +892,12 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private Domain.Big<RValue> constructGenerator(Type.Method type, ExtendedContext context) {
-		Domain.Big<RValue[]> outputs = constructGenerator(type.getReturns(),context);
+		Domain.Big<RValue> output = constructGenerator(type.getReturn(),context);
 		RValue[] lambdas = new RValue[context.getLambdaWidth()];
 		// FIXME: should make this non-deterministic!!
 		for(int i=0;i!=context.getLambdaWidth();++i) {
 			// Apply the rotation (for i > 1)
-			Domain.Big<RValue[]> tmp = i == 0 ? outputs : Rotate(outputs,i);
+			Domain.Big<RValue> tmp = i == 0 ? output : Rotate(output,i);
 			// Construct the (deterministic) lambda
 			lambdas[i] = new SynthesizedLambda(type,tmp);
 		}
@@ -955,10 +955,10 @@ public class QuickCheck implements Command {
 	private final class SynthesizedLambda extends RValue.Lambda {
 		private final Type.Callable type;
 		private final ArrayList<RValue[]> inputs;
-		private final Domain.Big<RValue[]> outputs;
+		private final Domain.Big<RValue> outputs;
 		private final long size;
 
-		public SynthesizedLambda(Type.Callable type, Domain.Big<RValue[]> outputs) {
+		public SynthesizedLambda(Type.Callable type, Domain.Big<RValue> outputs) {
 			this.type = type;
 			this.inputs = new ArrayList<>();
 			this.outputs = outputs;
@@ -966,7 +966,7 @@ public class QuickCheck implements Command {
 		}
 
 		@Override
-		public RValue[] execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+		public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
 			// Check through previous memoizations
 			for(int i=0;i!=inputs.size();++i) {
 				if(Arrays.equals(arguments, inputs.get(i))) {
@@ -991,7 +991,7 @@ public class QuickCheck implements Command {
 	}
 
 	private static <T> Domain.Big<T> applySamplingAsNecessary(Domain.Big<T> domain, Context context) {
-		if (context.getSamplingRate() != BigDecimal.ONE) {
+		if (!context.getSamplingRate().equals(BigDecimal.ONE)) {
 			// Apply sampling
 			BigInteger size = domain.bigSize();
 			int k = context.getSampleSize(size);
@@ -1024,13 +1024,13 @@ public class QuickCheck implements Command {
 		if(d instanceof Decl.Function) {
 			Type.Callable t = ((Decl.Function)d).getType();
 			kind = "function";
-			rest = d.getQualifiedName().toString() + t.getParameters() + "->" + t.getReturns();
+			rest = d.getQualifiedName().toString() + t.getParameter() + "->" + t.getReturn();
 		} else if(d instanceof Decl.Method) {
 			Decl.Method m = (Decl.Method) d;
 			Type.Method t = m.getType();
 			// FIXME: this needs to be improved!
 			kind = "method";
-			rest = m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameters() + "->" + t.getReturns();
+			rest = m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameter() + "->" + t.getReturn();
 
 		} else if(d instanceof Decl.Type) {
 			kind = "type";
@@ -1382,63 +1382,13 @@ public class QuickCheck implements Command {
 		}
 
 		@Override
-		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
+		public RValue execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
 			if (lambda instanceof Decl.Method && lambda.getBody().size() == 0) {
-				Domain.Big<RValue[]> returns = constructGenerator(lambda.getType().getReturns(), context);
+				Domain.Big<RValue> returns = constructGenerator(lambda.getType().getReturn(), context);
 				// FIXME: could return randomly here
 				return returns.iterator().next();
 			} else {
 				return super.execute(lambda, frame, args, item);
-			}
-		}
-	}
-
-	private static class CachingInterpreter extends Interpreter {
-		private final Cache cache = new Cache();
-
-		public CachingInterpreter(PrintStream debug) {
-			super(debug);
-		}
-
-		@Override
-		public RValue[] execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
-			switch (lambda.getOpcode()) {
-			// cache functions
-			case DECL_function:
-				RValue[] outputs = cache.get(lambda, args);
-				if (outputs != null) {
-//					System.out.println("*** CACHE HIT: " + lambda.getName() + " : " + lambda.getType() + ", "
-//							+ Arrays.toString(args) + " => " + Arrays.toString(outputs));
-					return outputs;
-				} else {
-					outputs = super.execute(lambda, frame, args, context);
-					cache.put(lambda, args, outputs);
-					return outputs;
-				}
-			}
-			// Default back
-			return super.execute(lambda, frame, args, context);
-		}
-
-		private static class Cache {
-			// FIXME: this is not exactly efficient.
-			private final IdentityHashMap<Decl.Callable,Map<List<RValue>,RValue[]>> cache = new IdentityHashMap<>();
-
-			public RValue[] get(Decl.Callable decl, RValue[] inputs) {
-				Map<List<RValue>,RValue[]> entry = cache.get(decl);
-				if(entry != null) {
-					return entry.get(Arrays.asList(inputs));
-				}
-				return null;
-			}
-
-			public void put(Decl.Callable decl, RValue[] inputs, RValue[] outputs) {
-				Map<List<RValue>,RValue[]> entry = cache.get(decl);
-				if(entry == null) {
-					entry = new HashMap<>();
-					cache.put(decl,entry);
-				}
-				entry.put(Arrays.asList(inputs), outputs);
 			}
 		}
 	}

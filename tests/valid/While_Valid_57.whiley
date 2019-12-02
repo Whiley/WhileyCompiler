@@ -20,7 +20,7 @@ ensures all { k in 0..len | items[matches[k]] == item }:
 
 function count(int[] items, int item) -> (int count):
     // yuk
-    item,items = count_helper(items,item)
+    (item,items) = count_helper(items,item)
     return item
 
 public export method test():

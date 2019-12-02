@@ -23,6 +23,7 @@ import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyc.util.ErrorMessages;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -79,17 +80,23 @@ import wyil.util.*;
 public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Compiler.Check {
 	private boolean status = true;
 
-	public AmbiguousCoercionCheck() {
+	public AmbiguousCoercionCheck(Build.Meter meter) {
 		// FIXME: figure out which one to use
-		super(new SubtypeOperator.Relaxed());
+		super(meter.fork(AmbiguousCoercionCheck.class.getSimpleName()),new SubtypeOperator.Relaxed());
 	}
 
 	@Override
 	public boolean check(WyilFile file) {
 		// Only proceed if no errors in earlier stages
 		visitModule(file);
+		meter.done();
 		//
 		return status;
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override
@@ -98,38 +105,6 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			// Continue recursively exploring this expression
 			super.visitExpression(expr, target, environment);
 		}
-	}
-
-	@Override
-	public void visitMultiExpression(Expr expr, Tuple<Type> targets, Environment environment) {
-		if(checkCoercion(expr, targets, environment)) {
-			// Continue recursively exploring this expression
-			super.visitMultiExpression(expr, targets, environment);
-		}
-	}
-
-	private boolean checkCoercion(Expr expr, Tuple<Type> targets, Environment environment) {
-		boolean status = true;
-		BinaryRelation.HashSet<Type> assumptions = new BinaryRelation.HashSet<>();
-		Tuple<Type> types = expr.getTypes();
-		if(types == null) {
-			Type target = targets.get(0);
-			Type source = expr.getType();
-			if (targets.size() != 1 || !checkCoercion(target, source, environment, assumptions, expr)) {
-				syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
-			}
-		} else {
-			for(int j=0;j!=targets.size();++j) {
-				Type target = targets.get(j);
-				Type source = types.get(j);
-				if (!checkCoercion(target, source, environment, assumptions, expr)) {
-					syntaxError(expr,WyilFile.AMBIGUOUS_COERCION,source,target);
-					status = false;
-				}
-			}
-		}
-		//
-		return status;
 	}
 
 	private boolean checkCoercion(Expr expr, Type target, Environment environment) {
@@ -196,6 +171,8 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			return checkCoercion((Type.Reference) target, (Type.Reference) source, environment, assumptions, item);
 		} else if (target instanceof Type.Record && source instanceof Type.Record) {
 			return checkCoercion((Type.Record) target, (Type.Record) source, environment, assumptions, item);
+		} else if (target instanceof Type.Tuple && source instanceof Type.Tuple) {
+			return checkCoercion((Type.Tuple) target, (Type.Tuple) source, environment, assumptions, item);
 		} else if (target instanceof Type.Callable && source instanceof Type.Callable) {
 			return checkCoercion((Type.Callable) target, (Type.Callable) source, environment, item);
 		} else {
@@ -227,6 +204,18 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		return true;
 	}
 
+	private boolean checkCoercion(Type.Tuple target, Type.Tuple source, Environment environment,
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
+		for (int i = 0; i != target.size(); ++i) {
+			Type element = target.get(i);
+			Type type = source.get(i);
+			if (!checkCoercion(element, type, environment, assumptions, item)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private boolean checkCoercion(Type.Callable target, Type.Callable source, Environment environment,
 			SyntacticItem item) {
 		// FIXME: this is considered safe at this point only because the subtype
@@ -246,11 +235,21 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 		if (candidate != null) {
 			// Indicates decision made easily enough. Continue traversal down the type.
 			return checkCoercion(candidate, source, environment, assumptions, item);
-		} else if (source instanceof Type.Nominal) {
+		}
+
+		switch(source.getOpcode()) {
+		case WyilFile.TYPE_void: {
+			// NOTE: void indicates an unusual case where an actual value is guaranteed
+			// impossible. Thus, any coercion is considered valid since, in practice,
+			// determination of the type tag never occurs.
+			return true;
+		}
+		case WyilFile.TYPE_nominal: {
 			// Proceed by expanding source
 			Type.Nominal s = (Type.Nominal) source;
 			return checkCoercion(target,s.getConcreteType(),environment, assumptions, item);
-		} else if (source instanceof Type.Union) {
+		}
+		case WyilFile.TYPE_union: {
 			// Proceed by expanding source
 			Type.Union su = (Type.Union) source;
 			for (int i = 0; i != su.size(); ++i) {
@@ -259,13 +258,16 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 				}
 			}
 			return true;
-		} else if (source instanceof Type.Recursive) {
+		}
+		case WyilFile.TYPE_recursive: {
 			// Proceed by expanding source
 			Type.Recursive su = (Type.Recursive) source;
 			return checkCoercion(target, su.getHead(), environment, assumptions, item);
-		} else {
+		}
+		default: {
 			// Cannot proceed
 			return false;
+		}
 		}
 	}
 

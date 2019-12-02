@@ -15,9 +15,11 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
+import wyil.lang.WyilFile.Type;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -29,18 +31,26 @@ import wyil.lang.WyilFile.Decl;
  *
  */
 public abstract class AbstractConsumer<T> {
+	protected final Build.Meter meter;
+
+	public AbstractConsumer(Build.Meter meter) {
+		this.meter = meter;
+	}
 
 	public void visitModule(WyilFile wf, T data) {
+		//
 		Decl.Module module = wf.getModule();
 		for (Decl.Unit decl : module.getUnits()) {
-			visitDeclaration(decl, data);
+			visitUnit(decl, data);
 		}
 		for (Decl.Unit decl : module.getExterns()) {
-			visitDeclaration(decl, data);
+			visitExternalUnit(decl, data);
 		}
 	}
 
 	public void visitDeclaration(Decl decl, T data) {
+		meter.step("declaration");
+		//
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl, data);
@@ -68,10 +78,16 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitUnit(Decl.Unit unit, T data) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
 	}
+
+	public void visitExternalUnit(Decl.Unit unit, T data) {
+		visitUnit(unit,data);
+	}
+
 	public void visitImport(Decl.Import decl, T data) {
 
 	}
@@ -90,15 +106,17 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitVariable(Decl.Variable decl, T data) {
 		visitType(decl.getType(), data);
-		if(decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
-		}
 	}
 
 	public void visitStaticVariable(Decl.StaticVariable decl, T data) {
 		visitType(decl.getType(), data);
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
+		visitExpression(decl.getInitialiser(), data);
+	}
+
+	public void visitStaticVariables(Tuple<Decl.StaticVariable> vars, T data) {
+		for(int i=0;i!=vars.size();++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var, data);
 		}
 	}
 
@@ -157,6 +175,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitStatement(Stmt stmt, T data) {
+		meter.step("statement");
+		//
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -193,6 +213,10 @@ public abstract class AbstractConsumer<T> {
 		case STMT_ifelse:
 			visitIfElse((Stmt.IfElse) stmt, data);
 			break;
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			visitInitialiser((Stmt.Initialiser) stmt, data);
+			break;
 		case EXPR_invoke:
 			visitInvoke((Expr.Invoke) stmt, data);
 			break;
@@ -203,6 +227,7 @@ public abstract class AbstractConsumer<T> {
 			visitNamedBlock((Stmt.NamedBlock) stmt, data);
 			break;
 		case STMT_return:
+		case STMT_returnvoid:
 			visitReturn((Stmt.Return) stmt, data);
 			break;
 		case STMT_skip:
@@ -276,12 +301,23 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
+	public void visitInitialiser(Stmt.Initialiser stmt, T data) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v, data);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), data);
+		}
+	}
+
 	public void visitNamedBlock(Stmt.NamedBlock stmt, T data) {
 		visitStatement(stmt.getBlock(), data);
 	}
 
 	public void visitReturn(Stmt.Return stmt, T data) {
-		visitExpressions(stmt.getReturns(), data);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), data);
+		}
 	}
 
 	public void visitSkip(Stmt.Skip stmt, T data) {
@@ -314,6 +350,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitExpression(Expr expr, T data) {
+		meter.step("expression");
+		//
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -353,7 +391,7 @@ public abstract class AbstractConsumer<T> {
 			visitUnaryOperator((Expr.UnaryOperator) expr, data);
 			break;
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -384,6 +422,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			visitNaryOperator((Expr.NaryOperator) expr, data);
 			break;
 		// Ternary Operators
@@ -450,7 +489,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_notequal:
 			visitNotEqual((Expr.NotEqual) expr, data);
 			break;
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			visitLogicalImplication((Expr.LogicalImplication) expr, data);
 			break;
 		case EXPR_logicaliff:
@@ -544,6 +583,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_recordinitialiser:
 			visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
+			break;
+		case EXPR_tupleinitialiser:
+			visitTupleInitialiser((Expr.TupleInitialiser) expr, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
@@ -704,12 +746,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, T data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 	}
 
 	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, T data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 	}
 
@@ -757,17 +799,17 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
+	public void visitTupleInitialiser(Expr.TupleInitialiser expr, T data) {
+		visitExpressions(expr.getOperands(), data);
+	}
+
 	public void visitVariableAccess(Expr.VariableAccess expr, T data) {
 
 	}
 
-	public void visitTypes(Tuple<Type> type, T data) {
-		for(int i=0;i!=type.size();++i) {
-			visitType(type.get(i), data);
-		}
-	}
-
 	public void visitType(Type type, T data) {
+		meter.step("type");
+		//
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			visitTypeArray((Type.Array) type, data);
@@ -798,6 +840,9 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_method:
 		case TYPE_property:
 			visitTypeCallable((Type.Callable) type, data);
+			break;
+		case TYPE_tuple:
+			visitTypeTuple((Type.Tuple) type, data);
 			break;
 		case TYPE_union:
 			visitTypeUnion((Type.Union) type, data);
@@ -845,8 +890,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeFunction(Type.Function type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeInt(Type.Int type, T data) {
@@ -854,12 +899,15 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeMethod(Type.Method type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeNominal(Type.Nominal type, T data) {
-		visitTypes(type.getParameters(), data);
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i),data);
+		}
 	}
 
 	public void visitTypeNull(Type.Null type, T data) {
@@ -867,8 +915,8 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeProperty(Type.Property type, T data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 	}
 
 	public void visitTypeRecord(Type.Record type, T data) {
@@ -890,6 +938,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitTypeUnion(Type.Union type, T data) {
+		for(int i=0;i!=type.size();++i) {
+			visitType(type.get(i), data);
+		}
+	}
+
+	public void visitTypeTuple(Type.Tuple type, T data) {
 		for(int i=0;i!=type.size();++i) {
 			visitType(type.get(i), data);
 		}

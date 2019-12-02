@@ -7,9 +7,9 @@ function g(int x) -> (bool b, int y):
 public export method test():
     int x
     bool b
-    b,x = g(1)
+    (b,x) = g(1)
     assume x == 1
     assume b == false
-    b,x = g(-1)
+    (b,x) = g(-1)
     assume x == -1
     assume b == true

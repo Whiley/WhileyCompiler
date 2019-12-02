@@ -432,7 +432,22 @@ public class ErrorMessages {
 			r = "property ";
 		}
 		Type.Callable type = decl.getType();
-		return r + decl.getQualifiedName() + bindingString(decl,binding) + type.getParameters() + "->" + type.getReturns();
+		// FIXME: temporary hack for now.
+		if(type.getReturn().shape() > 0) {
+			// non-void return
+			return r + decl.getQualifiedName() + bindingString(decl,binding) + brace(type.getParameter()) + "->" + brace(type.getReturn());
+		} else {
+			// void return
+			return r + decl.getQualifiedName() + bindingString(decl,binding) + brace(type.getParameter());
+		}
+	}
+
+	private static String brace(Type t) {
+		if(t.shape() < 2) {
+			return "(" + t + ")";
+		} else {
+			return t.toString();
+		}
 	}
 
 //	private String foundBindingsString(Collection<? extends Binding> candidates) {

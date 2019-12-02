@@ -13,6 +13,8 @@
 // limitations under the License.
 package wyil.lang;
 
+import wybs.lang.Build;
+
 public interface Compiler {
 
 	public interface Check {

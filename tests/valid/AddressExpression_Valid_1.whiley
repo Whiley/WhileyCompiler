@@ -1,4 +1,4 @@
-type fun is function(int)->int
+type fun is function(int)->(int)
 
 function suc(int i) -> int:
     return i + 1

@@ -17,11 +17,12 @@ import static wyil.lang.WyilFile.*;
 
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import wybs.lang.SyntacticItem;
+import wybs.lang.*;
 import wyc.util.ErrorMessages;
 
 /**
@@ -52,12 +53,24 @@ public class DefiniteAssignmentCheck
 		implements Compiler.Check {
 	private boolean status = true;
 
+	public DefiniteAssignmentCheck(Build.Meter meter) {
+		super(meter.fork(DefiniteAssignmentCheck.class.getSimpleName()));
+	}
+
 	@Override
 	public boolean check(WyilFile wf) {
 		//
 		visitModule(wf, null);
 		//
+		meter.done();
+		//
 		return status;
+	}
+
+	@Override
+	public ControlFlow visitExternalUnit(Decl.Unit unit, DefinitelyAssignedSet dummy) {
+		// NOTE: we override this to prevent unnecessarily traversing units
+		return null;
 	}
 
 	/**
@@ -107,22 +120,9 @@ public class DefiniteAssignmentCheck
 	public ControlFlow visitStaticVariable(Decl.StaticVariable declaration, DefinitelyAssignedSet dummy) {
 		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
 		//
-		if(declaration.hasInitialiser()) {
-			visitExpression(declaration.getInitialiser(), environment);
-		}
+		visitExpression(declaration.getInitialiser(), environment);
 		//
 		return null;
-	}
-
-	@Override
-	public ControlFlow visitVariable(Decl.Variable decl, DefinitelyAssignedSet environment) {
-		//
-		if(decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), environment);
-			environment = environment.add(decl);
-		}
-		//
-		return new ControlFlow(environment,null);
 	}
 
 	@Override
@@ -172,25 +172,40 @@ public class DefiniteAssignmentCheck
 	@Override
 	public ControlFlow visitAssign(Stmt.Assign stmt, DefinitelyAssignedSet environment) {
 		// left-hand side
-		for (Expr lval : stmt.getLeftHandSide()) {
+		visitLValExpressions(stmt.getLeftHandSide(), environment);
+		// right-hand side
+		visitExpressions(stmt.getRightHandSide(), environment);
+		// Update environment as necessary
+		environment = visitAssignedLVals(stmt.getLeftHandSide(),environment);
+		// Done
+		return new ControlFlow(environment, null);
+	}
+
+	private void visitLValExpressions(Tuple<? extends Expr> lvals, DefinitelyAssignedSet environment) {
+		for (Expr lval : lvals) {
 			if (lval instanceof Expr.VariableAccess) {
 				// Skip local variables since they are being assigned and, otherwise, could
 				// raise an error.
+			} else if(lval instanceof Expr.TupleInitialiser) {
+				Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
+				visitLValExpressions(e.getOperands(), environment);
 			} else {
 				visitExpression(lval, environment);
 			}
 		}
-		// right-hand side
-		visitExpressions(stmt.getRightHandSide(), environment);
-		// Update environment as necessary
-		for (Expr lval : stmt.getLeftHandSide()) {
+	}
+
+	private DefinitelyAssignedSet visitAssignedLVals(Tuple<? extends Expr> lvals, DefinitelyAssignedSet environment) {
+		for (Expr lval : lvals) {
 			if (lval instanceof Expr.VariableAccess) {
 				Expr.VariableAccess lv = (Expr.VariableAccess) lval;
 				environment = environment.add(lv.getVariableDeclaration());
+			} else if(lval instanceof Expr.TupleInitialiser) {
+				Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
+				environment = visitAssignedLVals(e.getOperands(), environment);
 			}
 		}
-		//
-		return new ControlFlow(environment, null);
+		return environment;
 	}
 
 	@Override
@@ -261,13 +276,26 @@ public class DefiniteAssignmentCheck
 	}
 
 	@Override
+	public ControlFlow visitInitialiser(Stmt.Initialiser stmt, DefinitelyAssignedSet environment) {
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), environment);
+			for (Decl.Variable v : stmt.getVariables()) {
+				environment = environment.add(v);
+			}
+		}
+		return new ControlFlow(environment,null);
+	}
+
+	@Override
 	public ControlFlow visitNamedBlock(Stmt.NamedBlock stmt, DefinitelyAssignedSet environment) {
 		return visitBlock(stmt.getBlock(),environment);
 	}
 
 	@Override
 	public ControlFlow visitReturn(Stmt.Return stmt, DefinitelyAssignedSet environment) {
-		visitExpressions(stmt.getReturns(), environment);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), environment);
+		}
 		return new ControlFlow(null,null);
 	}
 
@@ -326,12 +354,10 @@ public class DefiniteAssignmentCheck
 
 	@Override
 	public ControlFlow visitUniversalQuantifier(Expr.UniversalQuantifier expression, DefinitelyAssignedSet environment) {
-		Tuple<Decl.Variable> parameters = expression.getParameters();
+		Tuple<Decl.StaticVariable> parameters = expression.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable var = parameters.get(i);
-			if(var.hasInitialiser()) {
-				visitExpression(var.getInitialiser(), environment);
-			}
+			Decl.StaticVariable var = parameters.get(i);
+			visitExpression(var.getInitialiser(), environment);
 			environment = environment.add(var);
 		}
 		visitExpression(expression.getOperand(), environment);
@@ -340,12 +366,10 @@ public class DefiniteAssignmentCheck
 
 	@Override
 	public ControlFlow visitExistentialQuantifier(Expr.ExistentialQuantifier expression, DefinitelyAssignedSet environment) {
-		Tuple<Decl.Variable> parameters = expression.getParameters();
+		Tuple<Decl.StaticVariable> parameters = expression.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable var = parameters.get(i);
-			if(var.hasInitialiser()) {
-				visitExpression(var.getInitialiser(), environment);
-			}
+			Decl.StaticVariable var = parameters.get(i);
+			visitExpression(var.getInitialiser(), environment);
 			environment = environment.add(var);
 		}
 		visitExpression(expression.getOperand(), environment);
@@ -485,9 +509,17 @@ public class DefiniteAssignmentCheck
 		/**
 		 * Useful for debugging
 		 */
-		@Override
-		public String toString() {
-			return variables.toString();
+		public String toString(SyntacticHeap src) {
+			String r = "";
+			for (int i = variables.nextSetBit(0); i != -1; i = variables.nextSetBit(i + 1)) {
+				if(r.length() != 0) {
+					r = r + ",";
+				}
+				Decl.Variable v = (Decl.Variable) src.getSyntacticItem(i);
+				r = r + v.getName();
+
+			}
+			return "{" + r + "}";
 		}
 	}
 

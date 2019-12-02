@@ -1,9 +1,11 @@
 package wyil.transform;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Expr;
+import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.util.Pair;
@@ -55,14 +57,21 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class PreconditionGenerator {
+	private final Build.Meter meter;
 	private final VerificationConditionGenerator vcg;
 
-	public PreconditionGenerator(VerificationConditionGenerator vcg) {
+	public PreconditionGenerator(Build.Meter meter, VerificationConditionGenerator vcg) {
+		this.meter = meter;
 		this.vcg = vcg;
 	}
 
 	public void apply(WyilFile.Expr expr, Context context) {
-		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>() {
+		AbstractConsumer<Context> visitor = new AbstractConsumer<Context>(meter) {
+			@Override
+			public void visitExternalUnit(Decl.Unit unit, Context context) {
+				// NOTE: we override this to prevent unnecessarily traversing units
+			}
+
 			@Override
 			public void visitLogicalAnd(WyilFile.Expr.LogicalAnd expr, Context context) {
 				// In the case of a logical and condition we need to propagate
@@ -88,9 +97,9 @@ public class PreconditionGenerator {
 			}
 
 			public void visitQuantifier(WyilFile.Expr.Quantifier expr, Context context) {
-				Tuple<WyilFile.Decl.Variable> parameters = expr.getParameters();
+				Tuple<WyilFile.Decl.StaticVariable> parameters = expr.getParameters();
 				for(int i=0;i!=parameters.size();++i) {
-					Decl.Variable parameter = parameters.get(i);
+					Decl.StaticVariable parameter = parameters.get(i);
 					WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) parameter.getInitialiser();
 					super.visitExpression(range, context);
 					// Now generate appropriate bounds for parameter to ensure any subsequently
@@ -155,7 +164,7 @@ public class PreconditionGenerator {
 
 	private void checkInvokePreconditions(WyilFile.Expr.Invoke expr, Context context) {
 		WyilFile.Decl.Callable fmp = expr.getLink().getTarget();
-		WyilFile.Tuple<Type> parameterTypes = fmp.getType().getParameters();
+		Type parameterTypes = fmp.getType().getParameter();
 		//
 		if (fmp instanceof WyilFile.Decl.FunctionOrMethod) {
 			WyilFile.Decl.FunctionOrMethod fm = (WyilFile.Decl.FunctionOrMethod) fmp;
@@ -176,8 +185,8 @@ public class PreconditionGenerator {
 						clause, expr));
 			}
 			// Perform parameter checks
-			for (int i = 0; i != parameterTypes.size(); ++i) {
-				vcg.generateTypeInvariantCheck(parameterTypes.get(i), arguments[i], expr.getOperands().get(i), context);
+			for (int i = 0; i != parameterTypes.shape(); ++i) {
+				vcg.generateTypeInvariantCheck(parameterTypes.dimension(i), arguments[i], expr.getOperands().get(i), context);
 			}
 		}
 	}

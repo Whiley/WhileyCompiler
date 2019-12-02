@@ -13,9 +13,11 @@
 // limitations under the License.
 package wyil.check;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -51,10 +53,20 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 	private static final TypeMangler mangler = new TypeMangler.Default();
 	private boolean status = true;
 
+	public SignatureCheck(Build.Meter meter) {
+		super(meter.fork(SignatureCheck.class.getSimpleName()));
+	}
+
 	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file, new Context());
+		meter.done();
 		return status;
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Context data) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override
@@ -128,13 +140,13 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 			// Add type mangles for non-exported symbols
 			if(!exported && decl instanceof Decl.Method) {
 				Decl.Method method = (Decl.Method) decl;
-				Tuple<Type> parameters = method.getType().getParameters();
+				Type parameter = method.getType().getParameter();
 				Tuple<Identifier> lifetimes = method.getType().getLifetimeParameters();
-				name += getMangle(parameters, lifetimes);
+				name += getMangle(parameter, lifetimes);
 			} else if(!exported && decl instanceof Decl.Callable) {
 				Decl.Callable callable = (Decl.Callable) decl;
-				Tuple<Type> parameters = callable.getType().getParameters();
-				name += getMangle(parameters, new Tuple<>());
+				Type parameter = callable.getType().getParameter();
+				name += getMangle(parameter, new Tuple<>());
 			} else if(decl instanceof Decl.Type) {
 				name += "$type";
 			} else if(decl instanceof Decl.StaticVariable) {
@@ -144,11 +156,11 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 		}
 
 
-		private String getMangle(Tuple<Type> types, Tuple<Identifier> lifetimes) {
-			if (types.size() == 0) {
+		private String getMangle(Type type, Tuple<Identifier> lifetimes) {
+			if (type.shape() == 0) {
 				return "";
 			} else {
-				return "$" + mangler.getMangle(types, lifetimes);
+				return "$" + mangler.getMangle(type, lifetimes);
 			}
 		}
 	}

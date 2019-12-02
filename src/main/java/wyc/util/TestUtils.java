@@ -28,10 +28,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wybs.lang.Build.Meter;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -42,9 +44,12 @@ import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
+import wycc.WyMain;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Root;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
@@ -105,7 +110,7 @@ public class TestUtils {
 		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
 		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
 		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
-		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
+		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
 		return parser.parseType(scope);
 	}
 
@@ -193,7 +198,10 @@ public class TestUtils {
 		try {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			SequentialBuildProject project = new SequentialBuildProject(null, root);
+			// Construct temporary build environment
+			Build.Environment environment = new Environment(root,false);
+			// Construct build project within this environment
+			SequentialBuildProject project = new SequentialBuildProject(environment, root);
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
 			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
@@ -212,9 +220,10 @@ public class TestUtils {
 			// FIXME: this is annoying!
 			project.refresh();
 			// Actually force the project to build!
-			result = project.build(ForkJoinPool.commonPool()).get();
+			result = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
+			root.refresh();
 			// Check whether any syntax error produced
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
@@ -307,7 +316,7 @@ public class TestUtils {
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
 		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
-		Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
+		Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);
@@ -318,16 +327,11 @@ public class TestUtils {
 			// Load the relevant WyIL module
 			stack.load(root.get(id, WyilFile.ContentType).read());
 			//
-			RValue[] returns = interpreter.execute(name, sig, stack);
+			RValue returns = interpreter.execute(name, sig, stack);
 			// Print out any return values produced
-			if (returns != null) {
-				for (int i = 0; i != returns.length; ++i) {
-					if (i != 0) {
-						System.out.println(", ");
-					}
-					System.out.println(returns[i]);
-				}
-			}
+//			if (returns != null) {
+//				System.out.println(returns);
+//			}
 		} catch (Interpreter.RuntimeError e) {
 			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
 			// FIXME: this is a hack based on current available API.
@@ -377,6 +381,53 @@ public class TestUtils {
 			return false;
 		}
 		return true;
+	}
+
+	static public class Environment implements Build.Environment {
+		private final Build.Meter meter;
+		private final Logger logger;
+		private final Path.Root root;
+
+		public Environment(Path.Root root, boolean verbose) {
+			this.root = root;
+			this.logger = verbose ? new Logger.Default(System.err) : Logger.NULL;
+			this.meter = new WyMain.Meter("TestUtils", logger, verbose ? Integer.MAX_VALUE : 0);
+		}
+
+		@Override
+		public Root getRoot() {
+			return root;
+		}
+
+		@Override
+		public List<Build.Project> getProjects() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Logger getLogger() {
+			return logger;
+		}
+
+		@Override
+		public ExecutorService getExecutor() {
+			return ForkJoinPool.commonPool();
+		}
+
+		@Override
+		public wyfs.lang.Content.Registry getContentRegistry() {
+			return registry;
+		}
+
+		@Override
+		public List<Build.Platform> getBuildPlatforms() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Meter getMeter() {
+			return meter;
+		}
 	}
 
 	/**

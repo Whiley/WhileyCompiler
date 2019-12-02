@@ -87,7 +87,7 @@ public interface SubtypeOperator {
 	public boolean isEmpty(QualifiedName nid, Type type);
 
 	/**
-	 * Select one type from another to producing the result. For example, selecting
+	 * Subtract one type from another to produce the result. For example, subtracting
 	 * <code>null</code> from <code>int|null</code> produces <code>int</code>.
 	 *
 	 * @param t1
@@ -125,7 +125,7 @@ public interface SubtypeOperator {
 	 *            The enclosing lifetime relation
 	 * @return
 	 */
-	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Tuple<Type> arguments,
+	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Type arguments,
 			LifetimeRelation environment);
 
 	/**
@@ -258,26 +258,21 @@ public interface SubtypeOperator {
 		@Override
 		protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
 				BinaryRelation<Type> cache) {
-			Tuple<Type> t1_params = t1.getParameters();
-			Tuple<Type> t2_params = t2.getParameters();
-			Tuple<Type> t1_returns = t1.getReturns();
-			Tuple<Type> t2_returns = t2.getReturns();
+			Type t1_params = t1.getParameter();
+			Type t2_params = t2.getParameter();
+			Type t1_return = t1.getReturn();
+			Type t2_return = t2.getReturn();
 			// Eliminate easy cases first
-			if (t1.getOpcode() != t2.getOpcode() || t1_params.size() != t2_params.size()
-					|| t1_returns.size() != t2_returns.size()) {
+			if (t1.getOpcode() != t2.getOpcode()) {
 				return false;
 			}
 			// Check parameters (contra-variant)
-			for(int i=0;i!=t1_params.size();++i) {
-				if(!isSubtype(t2_params.get(i),t1_params.get(i),lifetimes)) {
-					return false;
-				}
+			if (!isSubtype(t2_params, t1_params, lifetimes)) {
+				return false;
 			}
 			// Check returns (co-variant)
-			for(int i=0;i!=t1_returns.size();++i) {
-				if(!isSubtype(t1_returns.get(i),t2_returns.get(i),lifetimes)) {
-					return false;
-				}
+			if (!isSubtype(t1_return, t2_return, lifetimes)) {
+				return false;
 			}
 			// Check lifetimes
 			if(t1 instanceof Type.Method) {

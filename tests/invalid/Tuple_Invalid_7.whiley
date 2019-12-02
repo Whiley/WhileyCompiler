@@ -4,5 +4,5 @@ function g() -> (bool x, int r):
 function f() -> int:
     int x
     int y
-    x,y = g()
+    (x,y) = g()
     return 1

@@ -12,7 +12,7 @@ public export method test():
     int a
     int b
     //
-    a,b = swap2(10,11)
+    (a,b) = swap2(10,11)
     //
     assume a == 11 && b == 2*10
     

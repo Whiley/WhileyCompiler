@@ -194,6 +194,16 @@ public class AllValidVerificationTest {
 		IGNORED.put("Template_Valid_30", "??");
 		IGNORED.put("Template_Valid_3", "??");
 		IGNORED.put("Template_Valid_5", "??");
+		IGNORED.put("Template_Valid_41", "??");
+		IGNORED.put("Template_Valid_42", "??");
+		IGNORED.put("Template_Valid_43", "??");
+		IGNORED.put("Template_Valid_44", "??");
+		IGNORED.put("Template_Valid_45", "??");
+		//
+		IGNORED.put("Tuple_Valid_1", "??");
+		IGNORED.put("Tuple_Valid_2", "??");
+		IGNORED.put("Tuple_Valid_4", "??");
+		IGNORED.put("Lambda_Valid_17", "??");
 	}
 
 	/**

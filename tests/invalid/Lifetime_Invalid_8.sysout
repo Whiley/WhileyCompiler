@@ -1,3 +1,4 @@
-tests/invalid/Lifetime_Invalid_8.whiley:10: ambiguous coercion required (&this:int to &this:int|&this:int)
+tests/invalid/Lifetime_Invalid_8.whiley:10: unable to resolve name (is ambiguous)
+	found method Lifetime_Invalid_8::m(&a:int|&b:bool,&a:int|&b:int)
         m(x, y)
-             ^
+        ^

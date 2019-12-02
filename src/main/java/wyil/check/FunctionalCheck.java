@@ -23,6 +23,8 @@ import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
+import java.util.HashSet;
+
 /**
  * <p>
  * Responsible for checking purity of statements and expressions in specific
@@ -74,14 +76,24 @@ import static wyil.lang.WyilFile.*;
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> implements Compiler.Check {
 	private boolean status = true;
 
+	public FunctionalCheck(Build.Meter meter) {
+		super(meter.fork(FunctionalCheck.class.getSimpleName()));
+	}
+
 	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file, null);
+		meter.done();
 		return status;
 	}
 
 	public enum Context {
 		PURE, FUNCTIONAL, IMPURE
+	}
+
+	@Override
+	public void visitExternalUnit(Decl.Unit unit, Context data) {
+		// NOTE: we override this to prevent unnecessarily traversing units
 	}
 
 	@Override
@@ -114,10 +126,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 
 	@Override
 	public void visitStaticVariable(Decl.StaticVariable decl, Context data) {
-		if(decl.hasInitialiser()) {
-			// FIXME: should also prohibit invocation of pure functions in this context?
-			visitExpression(decl.getInitialiser(), Context.PURE);
-		}
+		// FIXME: should also prohibit invocation of pure functions in this context?
+		visitExpression(decl.getInitialiser(), Context.PURE);
 	}
 
 	@Override

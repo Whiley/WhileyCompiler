@@ -15,11 +15,11 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
+import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.*;
 
 /**
  * A simple visitor over all declarations, statements, expressions and types in
@@ -31,15 +31,26 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractFunction<P,R> {
+	protected final Build.Meter meter;
+
+	public AbstractFunction(Build.Meter meter) {
+		this.meter = meter;
+	}
 
 	public R visitModule(WyilFile wf, P data) {
-		for (Decl decl : wf.getModule().getUnits()) {
-			visitDeclaration(decl, data);
+		Decl.Module module = wf.getModule();
+		//
+		for (Decl.Unit decl : module.getUnits()) {
+			visitUnit(decl, data);
+		}
+		for (Decl.Unit decl : module.getExterns()) {
+			visitExternalUnit(decl, data);
 		}
 		return null;
 	}
 
 	public R visitDeclaration(Decl decl, P data) {
+		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			return visitUnit((Decl.Unit) decl, data);
@@ -62,11 +73,18 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitUnit(Decl.Unit unit, P data) {
+		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
 		return null;
 	}
+
+	public R visitExternalUnit(Decl.Unit unit, P data) {
+		visitUnit(unit,data);
+		return null;
+	}
+
 	public R visitImport(Decl.Import decl, P data) {
 		return null;
 	}
@@ -88,17 +106,20 @@ public abstract class AbstractFunction<P,R> {
 
 	public R visitVariable(Decl.Variable decl, P data) {
 		visitType(decl.getType(), data);
-		if(decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
+		return null;
+	}
+
+	public R visitStaticVariables(Tuple<Decl.StaticVariable> vars, P data) {
+		for(int i=0;i!=vars.size();++i) {
+			Decl.StaticVariable var = vars.get(i);
+			visitStaticVariable(var, data);
 		}
 		return null;
 	}
 
 	public R visitStaticVariable(Decl.StaticVariable decl, P data) {
 		visitType(decl.getType(), data);
-		if (decl.hasInitialiser()) {
-			visitExpression(decl.getInitialiser(), data);
-		}
+		visitExpression(decl.getInitialiser(), data);
 		return null;
 	}
 
@@ -157,6 +178,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitStatement(Stmt stmt, P data) {
+		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 		case DECL_variableinitialiser:
@@ -182,6 +204,9 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_if:
 		case STMT_ifelse:
 			return visitIfElse((Stmt.IfElse) stmt, data);
+		case STMT_initialiser:
+		case STMT_initialiservoid:
+			return visitInitialiser((Stmt.Initialiser) stmt, data);
 		case EXPR_invoke:
 			return visitInvoke((Expr.Invoke) stmt, data);
 		case EXPR_indirectinvoke:
@@ -189,6 +214,7 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_namedblock:
 			return visitNamedBlock((Stmt.NamedBlock) stmt, data);
 		case STMT_return:
+		case STMT_returnvoid:
 			return visitReturn((Stmt.Return) stmt, data);
 		case STMT_skip:
 			return visitSkip((Stmt.Skip) stmt, data);
@@ -265,13 +291,26 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
+
+	public R visitInitialiser(Stmt.Initialiser stmt, P data) {
+		for (Decl.Variable v : stmt.getVariables()) {
+			visitVariable(v, data);
+		}
+		if(stmt.hasInitialiser()) {
+			visitExpression(stmt.getInitialiser(), data);
+		}
+		return null;
+	}
+
 	public R visitNamedBlock(Stmt.NamedBlock stmt, P data) {
 		visitStatement(stmt.getBlock(), data);
 		return null;
 	}
 
 	public R visitReturn(Stmt.Return stmt, P data) {
-		visitExpressions(stmt.getReturns(), data);
+		if(stmt.hasReturn()) {
+			visitExpression(stmt.getReturn(), data);
+		}
 		return null;
 	}
 
@@ -309,6 +348,7 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitExpression(Expr expr, P data) {
+		meter.step("expression");
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -341,7 +381,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_arraylength:
 			return visitUnaryOperator((Expr.UnaryOperator) expr, data);
 		// Binary Operators
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
 		case EXPR_equal:
 		case EXPR_notequal:
@@ -371,6 +411,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_bitwisexor:
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
+		case EXPR_tupleinitialiser:
 			return visitNaryOperator((Expr.NaryOperator) expr, data);
 		// Ternary Operators
 		case EXPR_arrayupdate:
@@ -421,7 +462,7 @@ public abstract class AbstractFunction<P,R> {
 			return visitEqual((Expr.Equal) expr, data);
 		case EXPR_notequal:
 			return visitNotEqual((Expr.NotEqual) expr, data);
-		case EXPR_logiaclimplication:
+		case EXPR_logicalimplication:
 			return visitLogicalImplication((Expr.LogicalImplication) expr, data);
 		case EXPR_logicaliff:
 			return visitLogicalIff((Expr.LogicalIff) expr, data);
@@ -491,6 +532,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitLogicalOr((Expr.LogicalOr) expr, data);
 		case EXPR_recordinitialiser:
 			return visitRecordInitialiser((Expr.RecordInitialiser) expr, data);
+		case EXPR_tupleinitialiser:
+			return visitTupleInitialiser((Expr.TupleInitialiser) expr, data);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
@@ -683,13 +726,13 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitExistentialQuantifier(Expr.ExistentialQuantifier expr, P data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}
 
 	public R visitUniversalQuantifier(Expr.UniversalQuantifier expr, P data) {
-		visitVariables(expr.getParameters(), data);
+		visitStaticVariables(expr.getParameters(), data);
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}
@@ -747,20 +790,17 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
+	public R visitTupleInitialiser(Expr.TupleInitialiser expr, P data) {
+		return visitExpressions(expr.getOperands(), data);
+	}
+
 	public R visitVariableAccess(Expr.VariableAccess expr, P data) {
 
 		return null;
 	}
 
-	public R visitTypes(Tuple<Type> type, P data) {
-		for (int i = 0; i != type.size(); ++i) {
-			visitType(type.get(i), data);
-			return null;
-		}
-		return null;
-	}
-
 	public R visitType(Type type, P data) {
+		meter.step("type");
 		switch (type.getOpcode()) {
 		case TYPE_array:
 			return visitTypeArray((Type.Array) type, data);
@@ -782,6 +822,8 @@ public abstract class AbstractFunction<P,R> {
 		case TYPE_method:
 		case TYPE_property:
 			return visitTypeCallable((Type.Callable) type, data);
+		case TYPE_tuple:
+			return visitTypeTuple((Type.Tuple) type, data);
 		case TYPE_union:
 			return visitTypeUnion((Type.Union) type, data);
 		case TYPE_unknown:
@@ -822,8 +864,8 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeFunction(Type.Function type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
@@ -832,13 +874,16 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeMethod(Type.Method type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
 	public R visitTypeNominal(Type.Nominal type, P data) {
-		visitTypes(type.getParameters(), data);
+		Tuple<Type> parameters = type.getParameters();
+		for(int i=0;i!=parameters.size();++i) {
+			visitType(parameters.get(i),data);
+		}
 		return null;
 	}
 
@@ -847,8 +892,8 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitTypeProperty(Type.Property type, P data) {
-		visitTypes(type.getParameters(), data);
-		visitTypes(type.getReturns(), data);
+		visitType(type.getParameter(), data);
+		visitType(type.getReturn(), data);
 		return null;
 	}
 
@@ -873,6 +918,15 @@ public abstract class AbstractFunction<P,R> {
 		visitType(type.getElement(), data);
 		return null;
 	}
+
+	public R visitTypeTuple(Type.Tuple type, P data) {
+		for (int i = 0; i != type.size(); ++i) {
+			visitType(type.get(i), data);
+			return null;
+		}
+		return null;
+	}
+
 
 	public R visitTypeUnion(Type.Union type, P data) {
 		for(int i=0;i!=type.size();++i) {

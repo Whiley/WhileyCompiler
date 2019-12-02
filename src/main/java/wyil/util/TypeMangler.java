@@ -15,7 +15,9 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wybs.util.AbstractCompilationUnit.*;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.lang.CompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -67,7 +69,7 @@ public interface TypeMangler {
 	 * @param types
 	 * @return
 	 */
-	public String getMangle(Tuple<Type> types, Tuple<Identifier> lifetimes);
+	public String getMangle(Type type, Tuple<Identifier> lifetimes);
 
 	/**
 	 * Provides a default implementation of a type mangler. This uses a standard
@@ -153,10 +155,10 @@ public interface TypeMangler {
 		}
 
 		@Override
-		public String getMangle(Tuple<Type> types, Tuple<Identifier> lifetimes) {
+		public String getMangle(Type types, Tuple<Identifier> lifetimes) {
 			StringBuilder mangle = new StringBuilder();
-			for (int i = 0; i != types.size(); ++i) {
-				writeTypeMangle(types.get(i), lifetimes, mangle);
+			for (int i = 0; i != types.shape(); ++i) {
+				writeTypeMangle(types.dimension(i), lifetimes, mangle);
 			}
 			return mangle.toString();
 		}
@@ -196,6 +198,9 @@ public interface TypeMangler {
 				break;
 			case TYPE_property:
 				writeTypeMangleFunctionOrMethod('p', (Type.Callable) t, lifetimes, mangle);
+				break;
+			case TYPE_tuple:
+				writeTypeMangleTuple((Type.Tuple) t, lifetimes, mangle);
 				break;
 			case TYPE_union:
 				writeTypeMangleUnion((Type.Union) t, lifetimes, mangle);
@@ -254,20 +259,21 @@ public interface TypeMangler {
 		private void writeTypeMangleFunctionOrMethod(char prefix, Type.Callable t, Tuple<Identifier> lifetimes,
 				StringBuilder mangle) {
 			mangle.append(prefix);
-			Tuple<Type> params = t.getParameters();
-			mangle.append(params.size());
-			for (int i = 0; i != params.size(); ++i) {
-				writeTypeMangle(params.get(i), lifetimes, mangle);
-			}
-			Tuple<Type> returns = t.getReturns();
-			mangle.append(returns.size());
-			for (int i = 0; i != returns.size(); ++i) {
-				writeTypeMangle(returns.get(i), lifetimes, mangle);
-			}
+			writeTypeMangle(t.getParameter(), lifetimes, mangle);
+			writeTypeMangle(t.getReturn(), lifetimes, mangle);
 		}
 
 		private void writeTypeMangleUnion(Type.Union t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
 			mangle.append('u');
+			mangle.append(t.size());
+			for (int i = 0; i != t.size(); ++i) {
+				writeTypeMangle(t.get(i), lifetimes, mangle);
+			}
+		}
+
+		private void writeTypeMangleTuple(Type.Tuple t, Tuple<Identifier> lifetimes,
+				StringBuilder mangle) {
+			// Tuples are the only types which may start with a digit.
 			mangle.append(t.size());
 			for (int i = 0; i != t.size(); ++i) {
 				writeTypeMangle(t.get(i), lifetimes, mangle);
