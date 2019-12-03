@@ -259,7 +259,7 @@ public class TestUtils {
 			result = false;
 		}catch (Exception e) {
 			// Print out the syntax error
-			e.printStackTrace(psyserr);
+			printStackTrace(psyserr, e);
 			result = false;
 		}
 		//
@@ -269,6 +269,24 @@ public class TestUtils {
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
 		return new Pair<>(result, output);
+	}
+
+	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
+		}
 	}
 
 	/**

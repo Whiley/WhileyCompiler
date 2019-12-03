@@ -2795,7 +2795,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -2975,7 +2977,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3155,7 +3159,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3201,7 +3207,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3246,7 +3254,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3297,7 +3307,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3347,7 +3359,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3391,7 +3405,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3441,7 +3457,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3492,7 +3510,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3543,7 +3563,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3594,7 +3616,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3645,7 +3669,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4324,7 +4350,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4910,6 +4938,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
+		public static final Array IntArray = new Array(Int);
 		public static final Null Null = new Null();
 
 		/**

@@ -177,7 +177,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			// Flow Type Checking
 			// ========================================================================
 			// Instantiate type checker
-			FlowTypeCheck checker = new FlowTypeCheck(meter);
+			NewFlowTypeCheck checker = new NewFlowTypeCheck(meter);
 			r = r && checker.check(target);
 			// ========================================================================
 			// Compiler Checks
@@ -214,7 +214,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			for(int i=0;i!=sources.length;++i) {
 				WhileyFile wf = sources[i];
 				String n = new Name(wf.getEntry().id()).toString();
-				if(n.endsWith(unit.getName().toString())) {
+				if(unit != null && n.endsWith(unit.getName().toString())) {
 					throw new SyntacticException(e.getMessage(),wf.getEntry(),item,e.getCause());
 				}
 			}
