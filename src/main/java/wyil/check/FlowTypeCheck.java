@@ -18,21 +18,6 @@ import static wybs.util.AbstractCompilationUnit.ITEM_byte;
 import static wybs.util.AbstractCompilationUnit.ITEM_int;
 import static wybs.util.AbstractCompilationUnit.ITEM_null;
 import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
-import static wyil.lang.WyilFile.AMBIGUOUS_CALLABLE;
-import static wyil.lang.WyilFile.BRANCH_ALWAYS_TAKEN;
-import static wyil.lang.WyilFile.EMPTY_TYPE;
-import static wyil.lang.WyilFile.EXPECTED_ARRAY;
-import static wyil.lang.WyilFile.EXPECTED_LAMBDA;
-import static wyil.lang.WyilFile.EXPECTED_RECORD;
-import static wyil.lang.WyilFile.EXPECTED_REFERENCE;
-import static wyil.lang.WyilFile.INCOMPARABLE_OPERANDS;
-import static wyil.lang.WyilFile.INSUFFICIENT_ARGUMENTS;
-import static wyil.lang.WyilFile.INSUFFICIENT_RETURNS;
-import static wyil.lang.WyilFile.INVALID_FIELD;
-import static wyil.lang.WyilFile.MISSING_RETURN_STATEMENT;
-import static wyil.lang.WyilFile.SUBTYPE_ERROR;
-import static wyil.lang.WyilFile.TOO_MANY_RETURNS;
-import static wyil.lang.WyilFile.UNREACHABLE_CODE;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
@@ -144,17 +129,28 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	public void checkDeclaration(Decl decl) {
 		meter.step("declaration");
-		if (decl instanceof Decl.Unit) {
+		switch(decl.getOpcode()) {
+		case DECL_unit:
 			checkUnit((Decl.Unit) decl);
-		} else if (decl instanceof Decl.Import) {
-			// Can ignore
-		} else if (decl instanceof Decl.StaticVariable) {
+			break;
+		case DECL_importwith:
+		case DECL_importfrom:
+		case DECL_import:
+			// can ignore
+			break;
+		case DECL_staticvar:
 			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
-		} else if (decl instanceof Decl.Type) {
+			break;
+		case DECL_type:
+		case DECL_rectype:
 			checkTypeDeclaration((Decl.Type) decl);
-		} else if (decl instanceof Decl.FunctionOrMethod) {
+			break;
+		case DECL_function:
+		case DECL_method:
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
-		} else {
+			break;
+		default:
+		case DECL_property:
 			checkPropertyDeclaration((Decl.Property) decl);
 		}
 	}
@@ -292,50 +288,56 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
 		meter.step("statement");
 		try {
-			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
 				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
-			} else if (stmt instanceof Stmt.Initialiser) {
-				return checkInitialiser((Stmt.Initialiser) stmt, environment);
-			} else if (stmt instanceof Stmt.Assign) {
-				return checkAssign((Stmt.Assign) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Return) {
-				return checkReturn((Stmt.Return) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.IfElse) {
-				return checkIfElse((Stmt.IfElse) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.NamedBlock) {
-				return checkNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.While) {
-				return checkWhile((Stmt.While) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Switch) {
-				return checkSwitch((Stmt.Switch) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.DoWhile) {
-				return checkDoWhile((Stmt.DoWhile) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Break) {
-				return checkBreak((Stmt.Break) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Continue) {
-				return checkContinue((Stmt.Continue) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Assert) {
+			}
+			switch(stmt.getOpcode()) {
+			case STMT_assert:
 				return checkAssert((Stmt.Assert) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Assume) {
+			case STMT_assign:
+				return checkAssign((Stmt.Assign) stmt, environment, scope);
+			case STMT_assume:
 				return checkAssume((Stmt.Assume) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Fail) {
-				return checkFail((Stmt.Fail) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.For) {
-				return checkFor((Stmt.For) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Debug) {
+			case STMT_block:
+				return checkBlock((Stmt.Block) stmt, environment, scope);
+			case STMT_break:
+				return checkBreak((Stmt.Break) stmt, environment, scope);
+			case STMT_continue:
+				return checkContinue((Stmt.Continue) stmt, environment, scope);
+			case STMT_debug:
 				return checkDebug((Stmt.Debug) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Skip) {
-				return checkSkip((Stmt.Skip) stmt, environment, scope);
-			} else if (stmt instanceof Expr.Invoke) {
+			case STMT_dowhile:
+				return checkDoWhile((Stmt.DoWhile) stmt, environment, scope);
+			case STMT_fail:
+				return checkFail((Stmt.Fail) stmt, environment, scope);
+			case STMT_for:
+				return checkFor((Stmt.For) stmt, environment, scope);
+			case STMT_if:
+			case STMT_ifelse:
+				return checkIfElse((Stmt.IfElse) stmt, environment, scope);
+			case STMT_initialiser:
+			case STMT_initialiservoid:
+				return checkInitialiser((Stmt.Initialiser) stmt, environment, scope);
+			case EXPR_invoke:
 				checkInvoke((Expr.Invoke) stmt, false, environment);
 				return environment;
-			} else if (stmt instanceof Expr.IndirectInvoke) {
+			case EXPR_indirectinvoke:
 				checkIndirectInvoke((Expr.IndirectInvoke) stmt, false, environment);
 				return environment;
-			} else {
+			case STMT_namedblock:
+				return checkNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
+			case STMT_return:
+			case STMT_returnvoid:
+				return checkReturn((Stmt.Return) stmt, environment, scope);
+			case STMT_skip:
+				return checkSkip((Stmt.Skip) stmt, environment, scope);
+			case STMT_switch:
+				return checkSwitch((Stmt.Switch) stmt, environment, scope);
+			case STMT_while:
+				return checkWhile((Stmt.While) stmt, environment, scope);
+			default:
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
 		} catch (SyntacticException e) {
@@ -434,7 +436,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *            block
 	 * @return
 	 */
-	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment) {
+	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment, EnclosingScope scope) {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
 			Type lhs = decl.getType();

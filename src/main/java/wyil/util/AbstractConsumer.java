@@ -178,9 +178,6 @@ public abstract class AbstractConsumer<T> {
 		meter.step("statement");
 		//
 		switch (stmt.getOpcode()) {
-		case DECL_variable:
-			visitVariable((Decl.Variable) stmt, data);
-			break;
 		case STMT_assert:
 			visitAssert((Stmt.Assert) stmt, data);
 			break;
