@@ -378,8 +378,13 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			return constraints;
 		} else {
 			assumptions.set(parameter, argument, true);
-			// Recursive case. Proceed destructuring type at given index
-			switch (parameter.getOpcode()) {
+		};
+		//
+		int p = parameter.getOpcode();
+		int a = argument.getOpcode();
+		// Recursive case. Proceed destructuring type at given index
+		if(p == a) {
+			switch (p) {
 			case TYPE_void:
 			case TYPE_null:
 			case TYPE_bool:
@@ -388,45 +393,54 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				// do nothing!
 				break;
 			case TYPE_variable:
-				constraints = bind((Type.Variable) parameter, argument, constraints, assumptions);
+				constraints = bindVariable((Type.Variable) parameter, argument, constraints, assumptions);
 				break;
 			case TYPE_array:
-				constraints = bind((Type.Array) parameter, argument, constraints, assumptions);
+				constraints = bindArray((Type.Array) parameter, (Type.Array) argument, constraints, assumptions);
 				break;
 			case TYPE_record:
-				constraints = bind((Type.Record) parameter, argument, constraints, assumptions);
+				constraints = bindRecord((Type.Record) parameter, (Type.Record)argument, constraints, assumptions);
 				break;
 			case TYPE_tuple:
-				constraints = bind((Type.Tuple) parameter, argument, constraints, assumptions);
+				constraints = bindTuple((Type.Tuple) parameter, (Type.Tuple) argument, constraints, assumptions);
 				break;
 			case TYPE_staticreference:
 			case TYPE_reference:
-				constraints = bind((Type.Reference) parameter, argument, constraints, assumptions);
+				constraints = bindReference((Type.Reference) parameter, (Type.Reference) argument, constraints, assumptions);
 				break;
 			case TYPE_function:
 			case TYPE_property:
 			case TYPE_method:
-				constraints = bind((Type.Callable) parameter, argument, constraints, assumptions);
+				constraints = bindCallable((Type.Callable) parameter, (Type.Callable) argument, constraints, assumptions);
 				break;
 			case TYPE_nominal:
-				constraints = bind((Type.Nominal) parameter, argument, constraints, assumptions);
+				constraints = bindNominal((Type.Nominal) parameter, argument, constraints, assumptions);
 				break;
 			case TYPE_union:
-				constraints = bind((Type.Union) parameter, argument, constraints, assumptions);
+				constraints = bindUnion((Type.Union) parameter, argument, constraints, assumptions);
 				break;
 			default:
 				throw new IllegalArgumentException("Unknown type encountered: " + parameter);
 			}
-			// Unset the assumptions from this traversal. The benefit of this is that, after
-			// the method has completed, everything is as it was. Therefore, we can reuse
-			// the relation.
-			assumptions.set(parameter, argument, false);
-			//
-			return constraints;
+		} else if(p == TYPE_variable){
+			constraints = bindVariable((Type.Variable) parameter, argument, constraints, assumptions);
+		} else if(p == TYPE_nominal) {
+			constraints = bindNominal((Type.Nominal) parameter, argument, constraints, assumptions);
+		} else if(a == TYPE_nominal) {
+			constraints = bindNominal(parameter, (Type.Nominal) argument, constraints, assumptions);
+		} else if(p == TYPE_union) {
+			constraints = bindUnion((Type.Union) parameter, argument, constraints, assumptions);
+		} else if(a == TYPE_union) {
+			constraints = bindUnion(parameter, (Type.Union) argument, constraints, assumptions);
 		}
+		// Unset the assumptions from this traversal. The benefit of this is that, after
+		// the method has completed, everything is as it was. Therefore, we can reuse
+		// the relation.
+		assumptions.set(parameter, argument, false);
+		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Variable parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindVariable(Type.Variable parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		LifetimeRelation lifetimes = constraints.getLifetimes();
 		// Simple case, bind directly against type variable.
@@ -434,108 +448,98 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		return constraints.intersect(parameter.getOperand(), argument);
 	}
 
-	public ConstraintSet bind(Type.Array parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindArray(Type.Array parameter, Type.Array argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
-		// Attempt to extract an array type so binding can continue.
-		Type.Array t = argument.as(Type.Array.class);
-		if (t != null) {
-			// Array type extracted successfully, therefore continue binding.
-			return bind(parameter.getElement(), t.getElement(), constraints, assumptions);
-		}
-		return constraints;
+		// Array type extracted successfully, therefore continue binding.
+		return bind(parameter.getElement(), argument.getElement(), constraints, assumptions);
 	}
 
-	public ConstraintSet bind(Type.Record parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindRecord(Type.Record parameter, Type.Record argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract record type so binding can continue.
-		Type.Record t = argument.as(Type.Record.class);
-		//
-		if (t != null) {
-			Tuple<Type.Field> param_fields = parameter.getFields();
-			Tuple<Type.Field> arg_fields = t.getFields();
-			if (param_fields.size() == arg_fields.size()) {
-				// FIXME: problems with open records here?
-				for (int i = 0; i != param_fields.size(); ++i) {
-					// FIXME: problem with name ordering here?
-					constraints = bind(param_fields.get(i).getType(), arg_fields.get(i).getType(), constraints,
-							assumptions);
-				}
+		Tuple<Type.Field> param_fields = parameter.getFields();
+		Tuple<Type.Field> arg_fields = argument.getFields();
+		if (param_fields.size() == arg_fields.size()) {
+			// FIXME: problems with open records here?
+			for (int i = 0; i != param_fields.size(); ++i) {
+				// FIXME: problem with name ordering here?
+				constraints = bind(param_fields.get(i).getType(), arg_fields.get(i).getType(), constraints,
+						assumptions);
 			}
 		}
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Tuple parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindTuple(Type.Tuple parameter, Type.Tuple argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
-		// Attempt to extract record type so binding can continue.
-		Type.Tuple t = argument.as(Type.Tuple.class);
-		//
-		if (t != null) {
-			if (parameter.size() == t.size()) {
-				for (int i = 0; i != t.size(); ++i) {
-					constraints = bind(parameter.get(i), t.get(i), constraints, assumptions);
-				}
+		if (parameter.size() == argument.size()) {
+			for (int i = 0; i != argument.size(); ++i) {
+				constraints = bind(parameter.get(i), argument.get(i), constraints, assumptions);
 			}
 		}
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Reference parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindReference(Type.Reference parameter, Type.Reference  argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
-		// Attempt to extract reference type so binding can continue.
-		Type.Reference t = argument.as(Type.Reference.class);
-		//
-		if (t != null) {
-			// Bind against element type
-			constraints = bind(parameter.getElement(), t.getElement(), constraints, assumptions);
-			// Bind against lifetime (if applicable)
-			if (parameter.hasLifetime()) {
-				Identifier p_lifetime = parameter.getLifetime();
-				if (t.hasLifetime()) {
-					constraints = constraints.intersect(p_lifetime, t.getLifetime());
-				} else {
-					// FIXME: unsure what to do here? Need to bind p against the static lifetime
-					// somehow.
-					// constraints = constraints.intersect(p_lifetime, item);
-				}
+		// Bind against element type
+		constraints = bind(parameter.getElement(), argument.getElement(), constraints, assumptions);
+		// Bind against lifetime (if applicable)
+		if (parameter.hasLifetime()) {
+			Identifier p_lifetime = parameter.getLifetime();
+			if (argument.hasLifetime()) {
+				constraints = constraints.intersect(p_lifetime, argument.getLifetime());
+			} else {
+				// FIXME: unsure what to do here? Need to bind p against the static lifetime
+				// somehow.
+				// constraints = constraints.intersect(p_lifetime, item);
 			}
 		}
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Callable parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindCallable(Type.Callable parameter, Type.Callable argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
-		// Attempt to extract callable type so binding can continue.
-		Type.Callable t = argument.as(Type.Callable.class);
-		//
-		if (t != null) {
-			// Bind against parameters and returns
-			Type p_parameters = parameter.getParameter();
-			Type t_parameters = t.getParameter();
-			Type p_return = parameter.getReturn();
-			Type t_return = t.getReturn();
-			if (p_parameters.shape() == t_parameters.shape()) {
-				for (int i = 0; i != p_parameters.shape(); ++i) {
-					constraints = bind(p_parameters.dimension(i), t_parameters.dimension(i), constraints, assumptions);
-				}
-				constraints = bind(p_return, t_return, constraints, assumptions);
+		// Bind against parameters and returns
+		Type p_parameters = parameter.getParameter();
+		Type t_parameters = argument.getParameter();
+		Type p_return = parameter.getReturn();
+		Type t_return = argument.getReturn();
+		if (p_parameters.shape() == t_parameters.shape()) {
+			for (int i = 0; i != p_parameters.shape(); ++i) {
+				constraints = bind(p_parameters.dimension(i), t_parameters.dimension(i), constraints, assumptions);
 			}
+			constraints = bind(p_return, t_return, constraints, assumptions);
 		}
 		return constraints;
 	}
 
-	public ConstraintSet bind(Type.Nominal parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindNominal(Type.Nominal parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
-		// Recursively bind against the body of the nominal
 		return bind(parameter.getConcreteType(), argument, constraints, assumptions);
 	}
 
-	public ConstraintSet bind(Type.Union parameter, Type argument, ConstraintSet constraints,
+	public ConstraintSet bindNominal(Type parameter, Type.Nominal argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
+		return bind(parameter, argument.getConcreteType(), constraints, assumptions);
+	}
+
+	public ConstraintSet bindUnion(Type.Union parameter, Type argument, ConstraintSet constraints,
 			BinaryRelation<Type> assumptions) {
 		ConstraintSet results = bind(parameter.get(0), argument, constraints, assumptions);
 		//
 		for (int i = 1; i != parameter.size(); ++i) {
 			results = results.union(bind(parameter.get(i), argument, constraints, assumptions));
+		}
+		return results;
+	}
+
+	public ConstraintSet bindUnion(Type parameter, Type.Union argument, ConstraintSet constraints,
+			BinaryRelation<Type> assumptions) {
+		ConstraintSet results = bind(parameter, argument.get(0), constraints, assumptions);
+		//
+		for (int i = 1; i != argument.size(); ++i) {
+			results = results.union(bind(parameter, argument.get(i), constraints, assumptions));
 		}
 		return results;
 	}

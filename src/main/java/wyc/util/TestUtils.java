@@ -170,8 +170,6 @@ public class TestUtils {
 	 */
 	public static Collection<Object[]> findTestNames(String srcDir) {
 		final String suffix = ".whiley";
-		String containsFilter = System.getProperty("test.name.contains");
-
 		ArrayList<Object[]> testcases = new ArrayList<>();
 		for (File f : new File(srcDir).listFiles()) {
 			// Check it's a file
@@ -185,10 +183,6 @@ public class TestUtils {
 			}
 			// Get rid of ".whiley" extension
 			String testName = name.substring(0, name.length() - suffix.length());
-			// If there's a filter, check the name matches
-			if (containsFilter != null && !testName.contains(containsFilter)) {
-				continue;
-			}
 			testcases.add(new Object[] { testName });
 		}
 		// Sort the result by filename
@@ -202,21 +196,6 @@ public class TestUtils {
 	}
 
 	/**
-	 * Identifies which whiley source files should be considered for compilation. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-	/**
-	 * Identifies which WyIL source files should be considered for verification. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-	/**
-	 * Identifies which WyAL source files should be considered for verification. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
-	/**
 	 * A simple default registry which knows about whiley files and wyil files.
 	 */
 	private static final Content.Registry registry = new Registry();
@@ -224,7 +203,7 @@ public class TestUtils {
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.
 	 *
-	 * @param args --- list of tests to compile.
+	 * @param whileydir --- list of tests to compile.
 	 * @return
 	 * @throws IOException
 	 */
@@ -292,7 +271,6 @@ public class TestUtils {
 	 * tell when a build has failed.
 	 *
 	 * @param item
-	 * @param items
 	 * @param visited
 	 * @return
 	 */
@@ -322,7 +300,7 @@ public class TestUtils {
 	 * root.
 	 *
 	 * @param root
-	 * @param args
+	 * @param arg
 	 * @return
 	 * @throws IOException
 	 */
@@ -348,7 +326,7 @@ public class TestUtils {
 	/**
 	 * Execute a given WyIL file using the default interpreter.
 	 *
-	 * @param wyilDir
+	 * @param wyildir
 	 *            The root directory to look for the WyIL file.
 	 * @param id
 	 *            The name of the WyIL file
