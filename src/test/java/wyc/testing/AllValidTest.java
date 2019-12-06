@@ -60,27 +60,6 @@ public class AllValidTest {
 		IGNORED.putAll(TestUtils.VALID_IGNORED);
 	}
 
-
-	/**
-	 * The directory where compiler libraries are stored. This is necessary
-	 * since it will contain the Whiley Runtime.
-	 */
-	public final static String WYC_LIB_DIR = "../../lib/".replace('/', File.separatorChar);
-
-	static {
-
-		// The purpose of this is to figure out what the proper name for the
-		// wyrt file is. Since there can be multiple versions of this file,
-		// we're not sure which one to pick.
-
-		File file = new File(WYC_LIB_DIR);
-//		for(String f : file.list()) {
-//			if(f.startsWith("wyrt-v")) {
-//				WYRT_PATH = WYC_LIB_DIR + f;
-//			}
-//		}
-	}
-
 	// ======================================================================
 	// Test Harness
 	// ======================================================================
@@ -90,7 +69,7 @@ public class AllValidTest {
 	 * expectation is that compilation should fail with an error and, hence, the
 	 * test fails if compilation does not.
 	 *
-	 * @param name
+	 * @param testName
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 */
@@ -139,9 +118,6 @@ public class AllValidTest {
 
 	@Test
 	public void valid() throws IOException {
-		if (new File("../../running_on_travis").exists()) {
-			System.out.println(".");
-		}
 		runTest(this.testName);
 	}
 }
