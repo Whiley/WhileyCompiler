@@ -1560,7 +1560,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
 			}
 			// Sanity check types of arguments provided
-			for (int i = 0; i != arguments.size(); ++i) {
+			for (int i = 0; i != Math.min(parameters.shape(), arguments.size()); ++i) {
 				// Determine argument type
 				Type arg = checkExpression(arguments.get(i), true, environment);
 				// Check argument is subtype of parameter
