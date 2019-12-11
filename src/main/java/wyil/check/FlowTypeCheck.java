@@ -1826,9 +1826,9 @@ public class FlowTypeCheck implements Compiler.Check {
 			// upstream error
 			return null;
 		} else if (expr.hasLifetime()) {
-			return new Type.Reference(operandT, false, expr.getLifetime());
+			return new Type.Reference(operandT, expr.getLifetime());
 		} else {
-			return new Type.Reference(operandT, false);
+			return new Type.Reference(operandT);
 		}
 	}
 
@@ -1927,9 +1927,9 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference lhs;
 			// Construct writeable variant
 			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+				lhs = new Type.Reference(rhs.getElement(), rhs.getLifetime());
 			} else {
-				lhs = new Type.Reference(rhs.getElement(), false);
+				lhs = new Type.Reference(rhs.getElement());
 			}
 			// Perform the subtype test
 			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
@@ -1944,9 +1944,9 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference lhs;
 			// Construct writeable variant
 			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
+				lhs = new Type.Reference(rhs.getElement(), rhs.getLifetime());
 			} else {
-				lhs = new Type.Reference(rhs.getElement(), false);
+				lhs = new Type.Reference(rhs.getElement());
 			}
 			// Perform the subtype test
 			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {

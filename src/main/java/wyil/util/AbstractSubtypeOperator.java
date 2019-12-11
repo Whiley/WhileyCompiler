@@ -1071,12 +1071,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		String l1 = extractLifetime(t1);
 		String l2 = extractLifetime(t2);
 		//
-		if (t1.isUnknown()) {
-			// Under this circumstance, can apply subtyping.
-			return lifetimes.isWithin(l1, l2) && isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
-		} else {
-			return !t2.isUnknown() && lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
-		}
+//		if IS DYNAMICALLY SIZED {
+//			// Under this circumstance, can apply subtyping.
+//			return lifetimes.isWithin(l1, l2) && isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+//		} else {
+		return lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
 	}
 
 	protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,

@@ -5356,28 +5356,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Reference extends AbstractType implements Atom {
-			public Reference(Type element, boolean unknown) {
-				super(TYPE_staticreference, element, new Value.Bool(unknown));
+			public Reference(Type element) {
+				super(TYPE_staticreference, element);
 			}
 
-			public Reference(Type element, Value.Bool unknown) {
-				super(TYPE_staticreference, element, unknown);
-			}
-
-			public Reference(Type element, boolean unknown, Identifier lifetime) {
-				super(TYPE_reference, element, new Value.Bool(unknown), lifetime);
-			}
-
-			public Reference(Type element, Value.Bool unknown, Identifier lifetime) {
-				super(TYPE_reference, element, unknown, lifetime);
+			public Reference(Type element, Identifier lifetime) {
+				super(TYPE_reference, element, lifetime);
 			}
 
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
-			}
-
-			public boolean isUnknown() {
-				return ((Value.Bool)get(1)).get();
 			}
 
 			public Type getElement() {
@@ -5385,7 +5373,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(2);
+				return (Identifier) get(1);
 			}
 
 			@Override
@@ -5393,12 +5381,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Reference(elementAfter, isUnknown());
+					return new Reference(elementAfter);
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Reference(elementAfter, isUnknown(), (Identifier) lifetime);
+						return new Reference(elementAfter, (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -5406,20 +5394,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 2) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+				if (operands.length == 1) {
+					return new Reference((Type) operands[0]);
 				} else {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
 				}
 			}
 
 			@Override
 			public String toString() {
-				String modifier = isUnknown() ? "?" : "";
 				if (hasLifetime()) {
-					return "&" + getLifetime() + ":" + modifier + braceAsNecessary(getElement());
+					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&" + modifier + braceAsNecessary(getElement());
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 
@@ -5435,14 +5422,29 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "TYPE_reference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Identifier) operands[2]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+					return new Reference((Type) operands[0]);
+				}
+			};
+
+
+			public static final Descriptor DESCRIPTOR_1a = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_reference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0]);
 				}
 			};
 		}
@@ -7193,8 +7195,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	private static Schema createSchema() {
 		SectionedSchema v1_1 = createSchema_1_1();
+		SectionedSchema v1_2 = createSchema_1_2(v1_1);
 		//
-		Schema current = v1_1;
+		Schema current = v1_2;
 		//
 //		for(int i=0;i<=255;++i) {
 //			Descriptor desc = current.getDescriptor(i);
@@ -7205,6 +7208,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 //		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 		//
 		return current;
+	}
+
+	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
+		builder.replace("TYPE", "staticreference", Type.Reference.DESCRIPTOR_1b);
+		return builder.done();
+
 	}
 
 	/**

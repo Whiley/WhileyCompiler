@@ -3,7 +3,7 @@ type Point is {int x, int y}
 public export method test():
     &Point p = new Point{x:1,y:2}
     // Declare an unknown reference
-    &?{int x, ...} q = p
+    &{int x, ...} q = p
     //
     assume p->x == 1
     assume p->y == 2

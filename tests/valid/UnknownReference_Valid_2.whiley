@@ -3,7 +3,7 @@ type OpenPoint is {int x, int y, ...}
 public export method test():
     &OpenPoint p = new (OpenPoint) {x:1,y:2,z:3}
     // Declare an unknown reference
-    &?{int x, ...} q = p
+    &{int x, ...} q = p
     //
     assume p->x == 1
     assume p->y == 2
