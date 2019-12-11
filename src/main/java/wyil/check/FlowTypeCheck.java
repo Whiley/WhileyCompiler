@@ -1265,10 +1265,13 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type src = checkExpression(lval.getOperand(), true, environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
-		// Sanity check writability of reference
-		checkIsWritable(refT, environment, lval.getOperand());
-		// Sanity check extraction
-		return refT == null ? null : refT.getElement();
+		// Sanity check type is statically sized
+		if(refT != null) {
+			checkIsWritable(refT.getElement(), environment, lval.getOperand());
+			return refT.getElement();
+		} else {
+			return null;
+		}
 	}
 
 	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
@@ -1800,9 +1803,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
 				expr.getOperand());
 		// Sanity check readability of reference
-		checkIsReadable(refT, environment,expr.getOperand());
-		// Done
-		return refT == null ? null : refT.getElement();
+		if(refT != null) {
+			checkIsReadable(refT.getElement(), environment,expr.getOperand());
+			return refT.getElement();
+		} else {
+			return null;
+		}
 	}
 
 	private Type checkFieldDereference(Expr.FieldDereference expr, Environment environment) {
@@ -1922,37 +1928,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkIsWritable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (rhs != null) {
-			Type.Reference lhs;
-			// Construct writeable variant
-			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), rhs.getLifetime());
-			} else {
-				lhs = new Type.Reference(rhs.getElement());
-			}
-			// Perform the subtype test
-			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-				// FIXME: better error message?
-				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
-			}
+	private void checkIsWritable(Type type, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (type != null && !type.isWriteable()) {
+			syntaxError(element, DEREFERENCED_DYNAMICALLY_SIZED, element);
 		}
 	}
 
-	private void checkIsReadable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (rhs != null) {
-			Type.Reference lhs;
-			// Construct writeable variant
-			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), rhs.getLifetime());
-			} else {
-				lhs = new Type.Reference(rhs.getElement());
-			}
-			// Perform the subtype test
-			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-				// FIXME: better error message?
-				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
-			}
+	private void checkIsReadable(Type type, LifetimeRelation lifetimes, SyntacticItem element) {
+		if (type != null && !type.isReadable()) {
+			syntaxError(element, DEREFERENCED_UNKNOWN_TYPE, element);
 		}
 	}
 

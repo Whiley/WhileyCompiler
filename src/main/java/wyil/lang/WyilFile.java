@@ -4928,6 +4928,22 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public Type dimension(int nth);
 
 		/**
+		 * Determine whether or not this type can be written. This is equivalent to
+		 * asking whether or not it has a known static size.
+		 *
+		 * @return
+		 */
+		public boolean isWriteable();
+
+		/**
+		 * Determine whether or not this type can be read. Types with an "unknown"
+		 * component cannot be read.
+		 *
+		 * @return
+		 */
+		public boolean isReadable();
+
+		/**
 		 * Substitute for lifetime or type parameters
 		 *
 		 * @param binding A function which returns
@@ -5024,6 +5040,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return this;
 				}
 			}
+
+			@Override
+			public boolean isWriteable() {
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return true;
+			}
+
 
 			@Override
 			public <T extends Type> T as(Class<T> kind) {
@@ -5309,6 +5336,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
 			public Type.Array substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
@@ -5469,6 +5501,38 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isWriteable()) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+
+			@Override
+			public boolean isReadable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isReadable()) {
+							return false;
+						}
+					}
+					return true;
+				}
 			}
 
 			public boolean isOpen() {
@@ -5729,6 +5793,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return get(nth);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
 
 			@Override
 			public Type get(int ith) {
@@ -5842,6 +5925,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isWriteable() {
+				return getConcreteType().isWriteable();
+			}
+
+			@Override
+			public boolean isReadable() {
+				return getConcreteType().isReadable();
+			}
+
+			@Override
 			public Decl.Link<Decl.Type> getLink() {
 				return (Decl.Link<Decl.Type>) get(0);
 			}
@@ -5946,6 +6039,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
+
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
 
 			@Override
 			public Type get(int i) {
@@ -6301,9 +6415,24 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(TYPE_variable, name);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
 			public Identifier getOperand() {
 				return (Identifier) get(0);
 			}
+
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
@@ -6347,6 +6476,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Recursive(Ref<Type> reference) {
 				super(TYPE_recursive, reference);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return false;
 			}
 
 			public Type getHead() {
@@ -7082,6 +7221,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
+	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
+	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7215,7 +7356,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
 		builder.replace("TYPE", "staticreference", Type.Reference.DESCRIPTOR_1b);
 		return builder.done();
-
 	}
 
 	/**

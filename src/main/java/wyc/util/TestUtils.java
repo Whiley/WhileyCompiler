@@ -101,6 +101,11 @@ public class TestUtils {
 		// Lambda's and Multiple Returns
 		VALID_IGNORED.put("Template_Valid_46", "981");
 		VALID_IGNORED.put("Template_Valid_47", "981");
+		//
+		VALID_IGNORED.put("Reference_Valid_12", "986");
+		VALID_IGNORED.put("Reference_Valid_14", "986");
+		VALID_IGNORED.put("Reference_Valid_17", "986");
+		VALID_IGNORED.put("Reference_Valid_18", "986");
 		// Unclassified
 		VALID_IGNORED.put("Lifetime_Valid_8", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
