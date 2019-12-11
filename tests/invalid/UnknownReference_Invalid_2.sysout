@@ -1,3 +1,3 @@
-tests/invalid/UnknownReference_Invalid_2.whiley:5: expected type &{int x, ...}, found &?{int x, ...}
+tests/invalid/UnknownReference_Invalid_2.whiley:5: cannot dereference dynamically sized type
     *q = {x:1}
      ^

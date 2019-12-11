@@ -1,6 +1,6 @@
-method main(&?{int x, ...} q):
+method main(&{int x, ...} q):
     // Following not safe
-    &?{int x, int y, ... } p = q
+    &{int x, int y, ... } p = q
 
 
 public export method test():

@@ -3933,20 +3933,16 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, Colon) != null && !isAtEOL()) {
 				// Now we know that there is an annotated lifetime
 				scope.mustBeLifetime(lifetimeIdentifier);
-				// Check whether this is an unknown reference or not
-				boolean unknown = tryAndMatch(true, QuestionMark) != null;
 				// Parse bound
 				Type element = parseArrayType(scope);
-				Type type = new Type.Reference(element, unknown, lifetimeIdentifier);
+				Type type = new Type.Reference(element, lifetimeIdentifier);
 				return annotateSourceLocation(type, start);
 			}
 		}
 		index = backtrack;
-		// Check whether this is an unknown reference or not
-		boolean unknown = tryAndMatch(true, QuestionMark) != null;
 		// Parse bound
 		Type element = parseArrayType(scope);
-		Type type = new Type.Reference(element, unknown);
+		Type type = new Type.Reference(element);
 		return annotateSourceLocation(type, start);
 	}
 

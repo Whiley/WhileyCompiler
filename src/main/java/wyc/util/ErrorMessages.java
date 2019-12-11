@@ -182,6 +182,8 @@ public class ErrorMessages {
 	public static final Message TOO_MANY_RETURNS = new StaticMessage("too many return values");
 	public static final Message INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");
 	public static final Message INVALID_LVAL_EXPRESSION = new StaticMessage("invalid assignment expression");
+	public static final Message DEREFERENCED_DYNAMICALLY_SIZED = new StaticMessage("cannot dereference dynamically sized type");
+	public static final Message DEREFERENCED_UNKNOWN_TYPE = new StaticMessage("cannot dereference unknown type");
 
 	// ========================================================================
 	// Definite (Un)Assignment
@@ -343,6 +345,8 @@ public class ErrorMessages {
 			METHODCALL_NOT_PERMITTED,   // 608;
 			REFERENCE_ACCESS_NOT_PERMITTED,   // 609;
 			INVALID_LVAL_EXPRESSION,   // 610;
+			DEREFERENCED_DYNAMICALLY_SIZED,   // 611;
+			DEREFERENCED_UNKNOWN_TYPE,   // 612;
 		},
 		{
 			// Verification

@@ -1,4 +1,4 @@
-tests/invalid/UnknownReference_Invalid_4.whiley:5: expected type &{int x, ...}, found &?{int x, ...}
+tests/invalid/UnknownReference_Invalid_4.whiley:5: cannot dereference unknown type
     {int x} r = *q
                  ^
 tests/invalid/UnknownReference_Invalid_4.whiley:5: expected type {int x}, found {int x, ...}

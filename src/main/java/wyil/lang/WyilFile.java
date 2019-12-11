@@ -4928,6 +4928,22 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public Type dimension(int nth);
 
 		/**
+		 * Determine whether or not this type can be written. This is equivalent to
+		 * asking whether or not it has a known static size.
+		 *
+		 * @return
+		 */
+		public boolean isWriteable();
+
+		/**
+		 * Determine whether or not this type can be read. Types with an "unknown"
+		 * component cannot be read.
+		 *
+		 * @return
+		 */
+		public boolean isReadable();
+
+		/**
 		 * Substitute for lifetime or type parameters
 		 *
 		 * @param binding A function which returns
@@ -5024,6 +5040,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return this;
 				}
 			}
+
+			@Override
+			public boolean isWriteable() {
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return true;
+			}
+
 
 			@Override
 			public <T extends Type> T as(Class<T> kind) {
@@ -5309,6 +5336,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
 			public Type.Array substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
@@ -5356,28 +5388,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Reference extends AbstractType implements Atom {
-			public Reference(Type element, boolean unknown) {
-				super(TYPE_staticreference, element, new Value.Bool(unknown));
+			public Reference(Type element) {
+				super(TYPE_staticreference, element);
 			}
 
-			public Reference(Type element, Value.Bool unknown) {
-				super(TYPE_staticreference, element, unknown);
-			}
-
-			public Reference(Type element, boolean unknown, Identifier lifetime) {
-				super(TYPE_reference, element, new Value.Bool(unknown), lifetime);
-			}
-
-			public Reference(Type element, Value.Bool unknown, Identifier lifetime) {
-				super(TYPE_reference, element, unknown, lifetime);
+			public Reference(Type element, Identifier lifetime) {
+				super(TYPE_reference, element, lifetime);
 			}
 
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
-			}
-
-			public boolean isUnknown() {
-				return ((Value.Bool)get(1)).get();
 			}
 
 			public Type getElement() {
@@ -5385,7 +5405,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(2);
+				return (Identifier) get(1);
 			}
 
 			@Override
@@ -5393,12 +5413,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Reference(elementAfter, isUnknown());
+					return new Reference(elementAfter);
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Reference(elementAfter, isUnknown(), (Identifier) lifetime);
+						return new Reference(elementAfter, (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -5406,20 +5426,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 2) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+				if (operands.length == 1) {
+					return new Reference((Type) operands[0]);
 				} else {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
 				}
 			}
 
 			@Override
 			public String toString() {
-				String modifier = isUnknown() ? "?" : "";
 				if (hasLifetime()) {
-					return "&" + getLifetime() + ":" + modifier + braceAsNecessary(getElement());
+					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&" + modifier + braceAsNecessary(getElement());
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 
@@ -5435,14 +5454,29 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "TYPE_reference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Identifier) operands[2]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+					return new Reference((Type) operands[0]);
+				}
+			};
+
+
+			public static final Descriptor DESCRIPTOR_1a = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_reference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0]);
 				}
 			};
 		}
@@ -5467,6 +5501,38 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isWriteable()) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+
+			@Override
+			public boolean isReadable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isReadable()) {
+							return false;
+						}
+					}
+					return true;
+				}
 			}
 
 			public boolean isOpen() {
@@ -5727,6 +5793,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return get(nth);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
 
 			@Override
 			public Type get(int ith) {
@@ -5840,6 +5925,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public boolean isWriteable() {
+				return getConcreteType().isWriteable();
+			}
+
+			@Override
+			public boolean isReadable() {
+				return getConcreteType().isReadable();
+			}
+
+			@Override
 			public Decl.Link<Decl.Type> getLink() {
 				return (Decl.Link<Decl.Type>) get(0);
 			}
@@ -5944,6 +6039,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
+
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
 
 			@Override
 			public Type get(int i) {
@@ -6299,9 +6415,24 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(TYPE_variable, name);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
 			public Identifier getOperand() {
 				return (Identifier) get(0);
 			}
+
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
@@ -6345,6 +6476,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Recursive(Ref<Type> reference) {
 				super(TYPE_recursive, reference);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return false;
 			}
 
 			public Type getHead() {
@@ -7080,6 +7221,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
+	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
+	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7193,8 +7336,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	private static Schema createSchema() {
 		SectionedSchema v1_1 = createSchema_1_1();
+		SectionedSchema v1_2 = createSchema_1_2(v1_1);
 		//
-		Schema current = v1_1;
+		Schema current = v1_2;
 		//
 //		for(int i=0;i<=255;++i) {
 //			Descriptor desc = current.getDescriptor(i);
@@ -7205,6 +7349,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 //		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 		//
 		return current;
+	}
+
+	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
+		builder.replace("TYPE", "staticreference", Type.Reference.DESCRIPTOR_1b);
+		return builder.done();
 	}
 
 	/**

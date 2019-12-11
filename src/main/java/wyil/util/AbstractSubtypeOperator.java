@@ -1071,12 +1071,48 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		String l1 = extractLifetime(t1);
 		String l2 = extractLifetime(t2);
 		//
-		if (t1.isUnknown()) {
-			// Under this circumstance, can apply subtyping.
-			return lifetimes.isWithin(l1, l2) && isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+		if(!lifetimes.isWithin(l1,l2)) {
+			// Definitely unsafe
+			return false;
+		} else if(areEquivalent(t1.getElement(),t2.getElement(),lifetimes,cache)) {
+			// Definitely safe
+			return true;
 		} else {
-			return !t2.isUnknown() && lifetimes.isWithin(l1, l2) && areEquivalent(t1.getElement(), t2.getElement(), lifetimes);
+			// Last chance
+			return isWidthSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
 		}
+	}
+
+	protected boolean isWidthSubtype(Type t1, Type t2, LifetimeRelation lifetimes,
+			BinaryRelation<Type> cache) {
+		// NOTE: this method could be significantly improved by allowing recursive width
+		// subtyping.
+		if (t1 instanceof Type.Nominal) {
+			Type.Nominal n1 = (Type.Nominal) t1;
+			return isWidthSubtype(n1.getConcreteType(), t2, lifetimes, cache);
+		} else if (t2 instanceof Type.Nominal) {
+			Type.Nominal n2 = (Type.Nominal) t2;
+			return isWidthSubtype(t1, n2.getConcreteType(), lifetimes, cache);
+		} else if(t1 instanceof Type.Record && t2 instanceof Type.Record) {
+			Type.Record r1 = (Type.Record) t1;
+			Type.Record r2 = (Type.Record) t2;
+			Tuple<Type.Field> r1_fields = r1.getFields();
+			Tuple<Type.Field> r2_fields = r2.getFields();
+			if(r1.isOpen() && r1_fields.size() <= r2_fields.size()) {
+				for(int i=0;i!=r1_fields.size();++i) {
+					Type.Field f1 = r1_fields.get(i);
+					Type.Field f2 = r2_fields.get(i);
+					if (!f1.getName().equals(f2.getName())) {
+						// Fields have differing names
+						return false;
+					} else if (!areEquivalent(f1.getType(), f2.getType(), lifetimes, cache)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+		return false;
 	}
 
 	protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
@@ -1090,11 +1126,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			return false;
 		}
 		// Check parameters
-		if(!areEquivalent(t1_params,t2_params,lifetimes)) {
+		if(!areEquivalent(t1_params,t2_params,lifetimes, cache)) {
 			return false;
 		}
 		// Check returns
-		if(!areEquivalent(t1_return,t2_return,lifetimes)) {
+		if(!areEquivalent(t1_return,t2_return,lifetimes, cache)) {
 			return false;
 		}
 		// Check lifetimes
@@ -1224,9 +1260,9 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param lifetimes
 	 * @return
 	 */
-	protected boolean areEquivalent(Type t1, Type t2, LifetimeRelation lifetimes) {
+	protected boolean areEquivalent(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		// NOTE: this is a temporary solution.
-		return isSubtype(t1, t2, lifetimes, null) && isSubtype(t2, t1, lifetimes, null);
+		return isSubtype(t1, t2, lifetimes, cache) && isSubtype(t2, t1, lifetimes, cache);
 	}
 
 	// ===============================================================================
