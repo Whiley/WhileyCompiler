@@ -33,20 +33,15 @@ public class FlowTyping {
 	 *
 	 */
 	public static interface Constraints {
-
 		/**
-		 * Determine whether any valid typings still exist
+		 * Return the number of valid typings. If this is zero, then there are no valid
+		 * typings and the original expression cannot be typed. On the other hand, if
+		 * there is more than one valid typing (at the end) then the original expression
+		 * is ambiguous.
 		 *
 		 * @return
 		 */
-		public boolean empty();
-
-		/**
-		 * Return the number of valid typings
-		 *
-		 * @return
-		 */
-		public int count();
+		public int size();
 
 		/**
 		 * Access the last variable on the stack.
@@ -54,20 +49,6 @@ public class FlowTyping {
 		 * @return
 		 */
 		public Variable top();
-
-		/**
-		 * Construct a fresh variable which assumes no initial type.
-		 *
-		 * @return
-		 */
-		public Constraints push(Expr expression);
-
-		/**
-		 * Construct a fresh variable of given type.
-		 *
-		 * @return
-		 */
-		public Constraints push(Expr expression, Type type);
 
 		/**
 		 * Get the number of type variables managed by this typing. This is largely
@@ -86,13 +67,39 @@ public class FlowTyping {
 		public Type[] types(Variable var);
 
 		/**
-		 * Constrain a given variable to have a given kind.
+		 * Create a new type variable with a given initial type. The index of this
+		 * variable is given by <code>last()</code>. If the initial type is
+		 * <code>null</code>, then all rows are invalidated.
 		 *
-		 * @param kind
-		 * @param src
 		 * @return
 		 */
-		public <T extends Type> Constraints constrain(Class<T> kind, Variable src);
+		public Constraints add(Expr expression, Type type);
+
+		/**
+		 * Create a new type variable as a projection of another variable. The index of
+		 * this variable is given by <code>last()</code>. The projection function
+		 * <code>fn</code> may return <code>null</code> to indicate no projection is
+		 * possible for the source on this row (which, in turn, invalidates that row).
+		 *
+		 * @param kind
+		 * @param fn
+		 * @param child
+		 * @return
+		 */
+		public Constraints project(Function<Type, Type> fn, Expr expr, Variable src);
+
+		/**
+		 * Create a new variable as a projection of zero or more other variables. The
+		 * index of this variable is given by <code>last()</code>. The projection
+		 * function <code>fn</code> may return <code>null</code> to indicate no
+		 * projection is possible from source(s) on this the row (which, in turn,
+		 * invalidates that row).
+		 *
+		 * @param fn
+		 * @param children
+		 * @return
+		 */
+		public Constraints project(Function<Type[], Type> fn, Expr expr, Variable... children);
 
 		/**
 		 * Constrain the type of the given expression to <i>at most</i> a given type.
@@ -106,25 +113,6 @@ public class FlowTyping {
 		 * @return
 		 */
 		public Constraints constrain(Type upperBound, Variable variable);
-
-		/**
-		 * Push a new variable as a projection of another variable.
-		 *
-		 * @param kind
-		 * @param fn
-		 * @param child
-		 * @return
-		 */
-		public <T extends Type> Constraints project(Class<T> kind, Function<T, Type> fn, Expr expr, Variable src);
-
-		/**
-		 * Push a new variable as a projection of zero or more variables.
-		 *
-		 * @param fn
-		 * @param children
-		 * @return
-		 */
-		public Constraints project(Function<Type[], Type> fn, Expr expr, Variable... children);
 
 		/**
 		 * Apply this typing to the underlying expressions as best as possible. If we
@@ -176,11 +164,6 @@ public class FlowTyping {
 		public int width() {
 			return size;
 		}
-
-		@Override
-		public boolean empty() {
-			return count() == 0;
-		}
 	}
 
 	public static class TypeCombinator extends AbstractTyping implements FlowTyping.Constraints {
@@ -209,7 +192,7 @@ public class FlowTyping {
 				for (int j = 0; j != args.length; ++j) {
 					t = t.constrain(c.getParameter().dimension(j), args[j]);
 				}
-				forks[i] = t.push(src, c.getReturn());
+				forks[i] = t.add(src, c.getReturn());
 			}
 		}
 
@@ -238,10 +221,10 @@ public class FlowTyping {
 		}
 
 		@Override
-		public int count() {
+		public int size() {
 			int r = 0;
 			for(int i=0;i!=forks.length;++i) {
-				r = r + forks[i].count();
+				r = r + forks[i].size();
 			}
 			return r;
 		}
@@ -256,37 +239,19 @@ public class FlowTyping {
 		}
 
 		@Override
-		public Constraints push(Expr expression) {
-			Constraints[] nForks = new Constraints[forks.length];
-			for(int i=0;i!=forks.length;++i) {
-				nForks[i] = forks[i].push(expression);
-			}
-			return new TypeCombinator(this,nForks);
-		}
-
-		@Override
-		public Constraints push(Expr expression, Type type) {
+		public Constraints add(Expr expression, Type type) {
 			Constraints[] nForks = new Constraints[forks.length];
 			for (int i = 0; i != forks.length; ++i) {
-				nForks[i] = forks[i].push(expression, type);
+				nForks[i] = forks[i].add(expression, type);
 			}
 			return new TypeCombinator(this, nForks);
 		}
 
 		@Override
-		public <T extends Type> Constraints constrain(Class<T> kind, Variable src) {
+		public Constraints project(Function<Type, Type> fn, Expr expr, Variable src) {
 			Constraints[] nForks = new Constraints[forks.length];
 			for (int i = 0; i != forks.length; ++i) {
-				nForks[i] = forks[i].constrain(kind, src);
-			}
-			return new TypeCombinator(this, nForks);
-		}
-
-		@Override
-		public <T extends Type> Constraints project(Class<T> kind, Function<T, Type> fn, Expr expr, Variable src) {
-			Constraints[] nForks = new Constraints[forks.length];
-			for (int i = 0; i != forks.length; ++i) {
-				nForks[i] = forks[i].project(kind, fn, expr, src);
+				nForks[i] = forks[i].project(fn, expr, src);
 			}
 			return new TypeCombinator(this, nForks);
 		}
@@ -313,7 +278,7 @@ public class FlowTyping {
 		public void apply() {
 			for (int i = 0; i != forks.length; ++i) {
 				Constraints fork = forks[i];
-				if (fork.count() == 1) {
+				if (fork.size() == 1) {
 					fork.apply();
 					Decl.Link<Decl.Callable> link;
 					// TODO: this is a little ugly
@@ -409,23 +374,12 @@ public class FlowTyping {
 		}
 
 		@Override
-		public int count() {
+		public int size() {
 			return empty ? 0 : 1;
 		}
 
 		@Override
-		public TypeSequence push(Expr expression) {
-			int index = size;
-			// Create new typing to ensure functional semantics
-			TypeSequence n = new TypeSequence(this, size + 1, empty);
-			// Allocate new variable
-			n.expressions[index] = expression;
-			//
-			return n;
-		}
-
-		@Override
-		public TypeSequence push(Expr expression, Type type) {
+		public TypeSequence add(Expr expression, Type type) {
 			int index = size;
 			// Create new typing to ensure functional semantics
 			TypeSequence n = new TypeSequence(this, size+1, empty);
@@ -438,32 +392,15 @@ public class FlowTyping {
 		}
 
 		@Override
-		public <T extends Type> Constraints constrain(Class<T> kind, FlowTyping.Variable src) {
+		public Constraints project(Function<Type, Type> fn, Expr expr, FlowTyping.Variable src) {
 			// Determine source index
 			int from = src.index;
 			// Apply the projection
 			Type t = typing[from];
-			Type k = (t == null) ? null : t.as(kind);
+			Type k = (t == null) ? null : fn.apply(t);
 			//
-			if (k != null) {
-				return this;
-			} else {
-				// Done!
-				return new TypeSequence(this, size, true);
-			}
-		}
-
-		@Override
-		public <T extends Type> Constraints project(Class<T> kind, Function<T, Type> fn, Expr expr, FlowTyping.Variable src) {
-			// Determine source index
-			int from = src.index;
-			// Apply the projection
-			Type t = typing[from];
-			Type k = (t == null) ? null : t.as(kind);
-			Type j = (k == null) ? null : fn.apply((T) k);
-			//
-			if(j != null) {
-				return push(expr,j);
+			if(k != null) {
+				return add(expr,k);
 			} else {
 				// Done!
 				TypeSequence n = new TypeSequence(this, size + 1, true);
@@ -484,7 +421,7 @@ public class FlowTyping {
 			}
 			// Apply the project only if have successfully typed all children
 			if(ArrayUtils.firstIndexOf(ts, null) < 0) {
-				return push(expr,fn.apply(ts));
+				return add(expr,fn.apply(ts));
 			} else {
 				// Done!
 				TypeSequence n = new TypeSequence(this, size+1, empty);
