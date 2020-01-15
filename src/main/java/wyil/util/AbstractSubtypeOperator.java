@@ -554,7 +554,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param args
 	 * @return
 	 */
-	protected Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
+	public Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
 		Binding best = null;
 		Type.Callable bestType = null;
 		boolean bestValidWinner = false;
@@ -825,7 +825,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @author David J. Pearce
 	 *
 	 */
-	protected static class Binding  {
+	public static class Binding  {
 		private final Tuple<SyntacticItem> arguments;
 		private final Decl.Callable candidate;
 		private final Type.Callable concreteType;

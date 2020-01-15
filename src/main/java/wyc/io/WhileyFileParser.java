@@ -3188,6 +3188,7 @@ public class WhileyFileParser {
 	 */
 	private Expr parseInvokeExpression(EnclosingScope scope, int start, Identifier name, boolean terminated,
 			Tuple<? extends SyntacticItem> templateArguments) {
+		int nameEnd = start + name.get().length() - 1;
 		// First, parse the arguments to this invocation.
 		Tuple<Expr> args = parseInvocationArguments(scope);
 		// Second, determine what kind of invocation we have. If the name of the
@@ -3205,7 +3206,8 @@ public class WhileyFileParser {
 			}
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
-			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start);
+			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start,
+					nameEnd);
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation

@@ -1,6 +1,3 @@
-tests/invalid/FunctionRef_Invalid_6.whiley:8: expected type int, found bool
+tests/invalid/FunctionRef_Invalid_6.whiley:8: expected int, found bool
     return read(arg)
                 ^^^
-tests/invalid/FunctionRef_Invalid_6.whiley:8: expected type bool, found int
-    return read(arg)
-           ^^^^^^^^^

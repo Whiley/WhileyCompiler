@@ -24,16 +24,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.*;
 import wybs.util.ResolveError;
-import wybs.util.AbstractCompilationUnit.*;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
-import wyil.util.FlowTyping.*;
+import wyil.util.Typing;
+import wyil.util.AbstractSubtypeOperator.Binding;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -42,7 +43,9 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Decl.Link;
 import wyil.lang.WyilFile.Type.Array;
+import wyil.lang.WyilFile.Type.Existential;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -100,13 +103,13 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  */
 public class NewFlowTypeCheck implements Compiler.Check {
 	private final Build.Meter meter;
-	//private final SubtypeOperator relaxedSubtypeOperator;
-	private final SubtypeOperator strictSubtypeOperator;
+	// private final SubtypeOperator relaxedSubtypeOperator;
+	private final AbstractSubtypeOperator strictSubtypeOperator;
 	private boolean status = true;
 
 	public NewFlowTypeCheck(Build.Meter meter) {
 		this.meter = meter.fork(NewFlowTypeCheck.class.getSimpleName());
-		//this.relaxedSubtypeOperator = null;
+		// this.relaxedSubtypeOperator = null;
 		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
 
@@ -129,7 +132,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 
 	public void checkDeclaration(Decl decl) {
 		meter.step("declaration");
-		switch(decl.getOpcode()) {
+		switch (decl.getOpcode()) {
 		case DECL_unit:
 			checkUnit((Decl.Unit) decl);
 			break;
@@ -165,8 +168,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * Resolve types for a given type declaration. If an invariant expression is
 	 * given, then we have to check and resolve types throughout the expression.
 	 *
-	 * @param decl
-	 *            Type declaration to check.
+	 * @param decl Type declaration to check.
 	 * @throws IOException
 	 */
 	public void checkTypeDeclaration(Decl.Type decl) {
@@ -180,8 +182,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * check and check types for a given constant declaration.
 	 *
-	 * @param decl
-	 *            Constant declaration to check.
+	 * @param decl Constant declaration to check.
 	 * @throws IOException
 	 */
 	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
@@ -193,8 +194,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a given function or method declaration.
 	 *
-	 * @param decl
-	 *            Function or method declaration to check.
+	 * @param decl Function or method declaration to check.
 	 * @throws IOException
 	 */
 	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod decl) {
@@ -254,11 +254,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * check type information in a flow-sensitive fashion through a block of
 	 * statements, whilst type checking each statement and expression.
 	 *
-	 * @param block
-	 *            Block of statements to flow sensitively type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param block       Block of statements to flow sensitively type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkBlock(Stmt.Block block, Environment environment, EnclosingScope scope) {
@@ -276,11 +274,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * information through them as well.
 	 *
 	 *
-	 * @param stmt
-	 *            Statement to flow-sensitively type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to flow-sensitively type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
@@ -291,7 +287,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
 			}
-			switch(stmt.getOpcode()) {
+			switch (stmt.getOpcode()) {
 			case STMT_assert:
 				return checkAssert((Stmt.Assert) stmt, environment, scope);
 			case STMT_assign:
@@ -352,11 +348,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * is assert. For example, after <code>assert x is int</code> the environment
 	 * will regard <code>x</code> as having type <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope) {
@@ -370,11 +364,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * is assert. For example, after <code>assert x is int</code> the environment
 	 * will regard <code>x</code> as having type <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope) {
@@ -385,11 +377,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * Type check a fail statement. The environment after a fail statement is
 	 * "bottom" because that represents an unreachable program point.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
@@ -423,11 +413,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * initialiser is given we must check it is well-formed and that it is a subtype
 	 * of the declared type.
 	 *
-	 * @param decl
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param decl        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment, EnclosingScope scope) {
@@ -438,7 +426,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			// Apply type refinement (if applicable)
 			if (rhs != null) {
 				Tuple<Decl.Variable> vars = decl.getVariables();
-				for(int i=0;i!=Math.min(lhs.shape(),rhs.shape());++i) {
+				for (int i = 0; i != Math.min(lhs.shape(), rhs.shape()); ++i) {
 					// Refine the declared type
 					Type refined = refine(lhs.dimension(i), rhs.dimension(i), environment);
 					// Update the typing environment accordingly.
@@ -453,11 +441,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check an assignment statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope)
@@ -469,10 +455,10 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
 		// NOTE: need to use min here for case where insufficient lvals or rvals given
-		for(int i=0;i!=Math.min(lvals.size(),rvals.size());++i) {
+		for (int i = 0; i != Math.min(lvals.size(), rvals.size()); ++i) {
 			Type actual = checkExpression(rvals.get(i), types[i], environment);
 			// Apply type refinement (if applicable)
-			if(actual != null) {
+			if (actual != null) {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
 				if (extraction != null) {
@@ -485,9 +471,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			}
 		}
 		//
-		if(lvals.size() < rvals.size()) {
+		if (lvals.size() < rvals.size()) {
 			syntaxError(stmt, TOO_MANY_RETURNS);
-		} else if(lvals.size() > rvals.size()) {
+		} else if (lvals.size() > rvals.size()) {
 			syntaxError(stmt, INSUFFICIENT_RETURNS);
 		}
 		//
@@ -499,11 +485,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * environment to the block destination, to ensure that the actual types of all
 	 * variables at that point are precise.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkBreak(Stmt.Break stmt, Environment environment, EnclosingScope scope) {
@@ -516,11 +500,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * environment to the block destination, to ensure that the actual types of all
 	 * variables at that point are precise.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkContinue(Stmt.Continue stmt, Environment environment, EnclosingScope scope) {
@@ -532,11 +514,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * Type check an assume statement. This requires checking that the expression
 	 * being printed is well-formed and has string type.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
@@ -547,15 +527,12 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a do-while statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		// Type check loop body
@@ -603,15 +580,12 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * <code>x</code> at the end of each block is <code>int</code> and, hence, its
 	 * type after the if-statement is <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
 		// Check condition and apply variable retypings.
@@ -634,17 +608,13 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * function or method's declared return type. The environment after a return
 	 * statement is "bottom" because that represents an unreachable program point.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
-	 * @param scope
-	 *            The stack of enclosing scopes
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
+	 * @param scope       The stack of enclosing scopes
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
@@ -671,11 +641,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * Type check a <code>skip</code> statement, which has no effect on the
 	 * environment.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkSkip(Stmt.Skip stmt, Environment environment, EnclosingScope scope) {
@@ -722,11 +690,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * three different environments. Finally, each of these is joined back together
 	 * to produce the environment going into the <code>return</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope)
@@ -772,11 +738,9 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a <code>NamedBlock</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
@@ -792,15 +756,12 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a <code>whiley</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		// Type loop invariant(s).
@@ -924,12 +885,10 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * this without actually rewriting the source code.
 	 * </p>
 	 *
-	 * @param condition
-	 *            The condition being type checked
-	 * @param sign
-	 *            The assumed outcome of the condition (either true or false).
-	 * @param environment
-	 *            The environment going into the condition
+	 * @param condition   The condition being type checked
+	 * @param sign        The assumed outcome of the condition (either true or
+	 *                    false).
+	 * @param environment The environment going into the condition
 	 * @return The (potentially updated) typing environment for this statement.
 	 */
 	public Environment checkCondition(Expr condition, boolean sign, Environment environment) {
@@ -1090,7 +1049,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		Type lhsT = checkExpression(expr.getOperand(), (Type) null, environment);
 		Type rhsT = expr.getTestType();
 		// Sanity check operands for this type test
-		checkIsSubtype(lhsT,rhsT,environment,rhsT);
+		checkIsSubtype(lhsT, rhsT, environment, rhsT);
 		// Extract variable being tested
 		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
 		if (extraction != null) {
@@ -1099,7 +1058,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			if (!sign) {
 				refinementT = strictSubtypeOperator.subtract(environment.getType(var), refinementT);
 				// Sanity check for definite branch taken
-				if(refinementT instanceof Type.Void)  {
+				if (refinementT instanceof Type.Void) {
 					// DEFINITE FALSE CASE
 					syntaxError(expr, BRANCH_ALWAYS_TAKEN);
 				}
@@ -1199,8 +1158,15 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		Type src = checkLVal((LVal) lval.getFirstOperand(), environment);
 		// Attempt to view src as array
 		Type.Array arrT = src.as(Type.Array.class);
+		// Check declared type
+		if (arrT == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getFirstOperand(), null, environment);
+			// Extract array or fail
+			arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
+		}
 		// Sanity check extraction
-		if(arrT != null) {
+		if (arrT != null) {
 			// Check for integer subscript
 			checkExpression(lval.getSecondOperand(), Type.Int, environment);
 			// Convert to concrete type
@@ -1216,6 +1182,13 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		Type src = checkLVal((LVal) lval.getOperand(), environment);
 		// Attempt to view src as a record
 		Type.Record recT = src.as(Type.Record.class);
+		// Check declared type
+		if (recT == null || recT.getField(lval.getField()) == null) {
+			// Fall back on flow type
+			src = checkExpression(lval.getOperand(), null, environment);
+			// Extract record or fail
+			recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
+		}
 		// Extract the field type
 		return extractFieldType(recT, lval.getField());
 	}
@@ -1225,9 +1198,12 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Sanity check writability of reference
-		checkIsWritable(refT, environment, lval.getOperand());
-		// Sanity check extraction
-		return refT == null ? null : refT.getElement();
+		if(refT != null) {
+			checkIsWritable(refT.getElement(), environment, lval.getOperand());
+			return refT.getElement();
+		} else {
+			return null;
+		}
 	}
 
 	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
@@ -1245,9 +1221,10 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	public Type checkTupleInitialiserLVal(Expr.TupleInitialiser lval, Environment environment) {
 		Tuple<Expr> operands = lval.getOperands();
 		Type[] types = new Type[operands.size()];
-		for(int i=0;i!=types.length;++i) {
-			Type type = checkLVal((LVal) operands.get(i), environment);;
-			if(type == null) {
+		for (int i = 0; i != types.length; ++i) {
+			Type type = checkLVal((LVal) operands.get(i), environment);
+			;
+			if (type == null) {
 				return null;
 			}
 			types[i] = type;
@@ -1272,77 +1249,170 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * @throws ResolutionError
 	 */
 	public Type checkExpression(Expr expression, Type target, Environment environment) {
-		// Construct empty typing to use
-		Constraints typing = new TypeSequence(strictSubtypeOperator, environment);
+		// Construct empty typing to start with
+		Typing typing = Typing.Relaxed(expression, strictSubtypeOperator, environment, meter);
 		// Apply backwards type generation
 		typing = checkBackwardsExpression(target, expression, typing, environment);
+		// Concretize typing and eliminate all existentials
+		typing.concretize();
 		//
-		System.out.println(typing);
-		// Apply forward type propagation
-		//checkForwardsExpression(expression, target, typing, environment);
-		// Apply typing constraints
-		if(status == false || typing.size() != 1) {
-			checkAmbiguousNames(typing);
-			return null;
-		} else {
-			typing.apply();
+		System.out.println("TYPING: " + typing);
+		// Done
+		if (typing.height() == 1) {
+			// Apply typing constraints
+			apply(expression, typing, environment);
 			// Finally done. By this point, we need all links to have been resolved to be
 			// sure the following makes sense.
 			return expression.getType();
+		} else if (typing.height() > 1) {
+			// Multiple typings have been identified, hence we have some form of ambiguity.
+			// Therefore, need to identify ambiguity and report error accordingly.
+			status = false;
+			// Apply as much as possible
+			apply(expression, typing, environment);
 		}
+		// Return null to indicate unknown type.
+		return null;
 	}
 
-	/**
-	 * Attempt to determine ambiguous invocations, etc.
-	 * @param typing
-	 */
-	public void checkAmbiguousNames(Constraints typing) {
-		if(typing instanceof TypeCombinator) {
-			TypeCombinator c = (TypeCombinator) typing;
-			Decl.Link<Decl.Callable> link = c.getLink();
-			Constraints next = null;
-			for(int i=0;i!=c.height();++i) {
-				Constraints child = c.get(i);
-				if(child.size() > 0) {
-					if(next == null) {
-						next = child;
+	public void apply(Expr expression, Typing typing, LifetimeRelation lifetimes) {
+		SyntacticHeap heap = expression.getHeap();
+		// First, concretize pivots
+		for (int i = 0; i != typing.width(); ++i) {
+			Expr ith = typing.getExpression(i);
+			// See what we've got left
+			if (ith instanceof Expr.Invoke) {
+				Expr.Invoke e = (Expr.Invoke) ith;
+				// Now, resolve template bindings (if applicable)
+				Tuple<SyntacticItem> arguments = e.getBinding().getArguments();
+				//
+				if(arguments.size() == 0) {
+					Link<Decl.Callable> link = e.getLink();
+					// Right, binding is being inferred
+					List<Binding> candidates = extractCallableCandidates(e, typing);
+					//
+					Binding selected = strictSubtypeOperator.selectCallableCandidate(e.getLink().getName(), candidates, lifetimes);
+					//
+					if (selected != null) {
+						// Assign descriptor to this expression
+						link.resolve(selected.getCandidateDeclaration());
+						// Set inferred lifetime parameters as well
+						e.getBinding().setArguments(heap.allocate(selected.getArguments()));
 					} else {
 						syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
-						break;
+						return;
 					}
 				}
+			} else if (ith instanceof Expr.LambdaAccess) {
+				Expr.LambdaAccess e = (Expr.LambdaAccess) ith;
+				Link<Decl.Callable> link = e.getLink();
+				Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
+				if(types.length > 1) {
+					syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+					return;
+				} else {
+					// Extract embedded selector
+					Type.Callable selector = (Type.Callable) types[0];
+					// 	Resolve link based on selector
+					e.getLink().resolve(selectCallableCandidate(selector, e));
+				}
 			}
-			if(next != null) {
-				checkAmbiguousNames(next);
-			} else {
-				// No typings found. This could mean an error here, or an error upstream. Hard
-				// to say which though.
-				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+		}
+		if(typing.height() > 1) {
+			throw new IllegalArgumentException("This should be impossible");
+		}
+		// Finally, concretize remainder
+		for (int i = 0; i != typing.width(); ++i) {
+			Expr ith = typing.getExpression(i);
+			// Strip out all duplicate types to identify any form of ambiguity.
+			Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
+			//
+			if(ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
+
+			} else if(types[0] != null){
+				ith.setType(heap.allocate(types[0]));
 			}
 		}
 	}
 
-	public void checkBackwardsExpressions(Tuple<Expr> expressions, Constraints typing, Environment environment) {
+	private Decl.Callable selectCallableCandidate(Type.Callable type, Bindable expr) {
+		@SuppressWarnings("unchecked")
+		Link<Decl.Callable> link = (Link<Decl.Callable>) expr.getLink();
+		List<Decl.Callable> candidates = link.getCandidates();
+		for (int i = 0; i != candidates.size(); ++i) {
+			Decl.Callable ith = candidates.get(i);
+			if (ith.getType().equals(type)) {
+				return ith;
+			}
+		}
+		// NOTE: we should be unable to get here because the selector should match one
+		// of the candidates since it was originally taken from the same list of
+		// candidates!
+		return internalFailure("deadcode reached", expr);
+	}
+
+	private List<Binding> extractCallableCandidates(Expr.Invoke expr, Typing typing) {
+		int v_expr = typing.indexOf(expr);
+		//
+		ArrayList<Binding> candidates = new ArrayList<>();
+		for(int i=0;i!=typing.height();++i) {
+			// Identify signature this row corresponds with.
+			Typing.Environment ith = typing.getEnvironment(i);
+			Type.Callable type = (Type.Callable) ith.get(v_expr+1);
+			// Identify corresponding declaration.
+			Decl.Callable decl = selectCallableCandidate(type,expr);
+			// Determine whether arguments need to be inferred?
+			Tuple<Template.Variable> template = decl.getTemplate();
+			Tuple<SyntacticItem> arguments = expr.getBinding().getArguments();
+			if(template.size() > 0) {
+				// Template needs to be inferred.
+				Type[] args = new Type[template.size()];
+				for(int j=0;j!=args.length;++j) {
+					args[j] = ith.get(v_expr + j + 3);
+				}
+				arguments = new Tuple<>(args);
+				type = WyilFile.substitute(type, template, arguments);
+			}
+			//
+			candidates.add(new Binding(decl,arguments,type));
+		}
+		//
+		return candidates;
+	}
+
+	public Typing checkBackwardsExpressions(Tuple<Expr> expressions, Typing typing, Environment environment) {
 		for (int i = 0; i != expressions.size(); ++i) {
 			typing = checkBackwardsExpression(expressions.get(i), typing, environment);
 		}
+		return typing;
 	}
 
-	public Constraints checkBackwardsExpression(Type target, Expr expression, Constraints typing, Environment environment) {
+	public Typing checkBackwardsExpression(Type target, Expr expression, Typing typing,
+			Environment environment) {
 		// Type the given expression
 		typing = checkBackwardsExpression(expression, typing, environment);
 		// Constraint type to a given target
 		if (target != null) {
 			// Get variable associated with expression
-			FlowTyping.Variable var = typing.top();
-			// Apply given constraint to variable
-			typing = typing.constrain(target, var);
+			int v_expr = typing.indexOf(expression);
+			// Apply bind target type against variable
+			Typing nTyping = typing.project(row -> row.bind(target, row.get(v_expr)));
+			// Check whether typing invalidated
+			if (!typing.empty() && nTyping.empty()) {
+				// Concretize to eliminate existentials
+				typing = typing.concretize();
+				// No valid typings remain!
+				syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(target), new Tuple<>(typing.types(expression)));
+			}
+			return nTyping;
+		} else {
+			return typing;
 		}
-		return typing;
 	}
 
-	public Constraints checkBackwardsExpressions(Type target, Tuple<Expr> expressions, Constraints typing, Environment environment) {
-		for(int i=0;i!=expressions.size();++i) {
+	public Typing checkBackwardsExpressions(Type target, Tuple<Expr> expressions, Typing typing,
+			Environment environment) {
+		for (int i = 0; i != expressions.size(); ++i) {
 			Expr ith = expressions.get(i);
 			// Generate ith type
 			typing = checkBackwardsExpression(target, ith, typing, environment);
@@ -1350,8 +1420,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		return typing;
 	}
 
-
-	public Constraints checkBackwardsExpression(Expr expression, Constraints typing, Environment environment) {
+	public Typing checkBackwardsExpression(Expr expression, Typing typing, Environment environment) {
 		meter.step("expression");
 		//
 		switch (expression.getOpcode()) {
@@ -1367,7 +1436,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			return checkBackwardsInvoke((Expr.Invoke) expression, typing, environment);
 		case EXPR_indirectinvoke:
 			return checkBackwardsIndirectInvoke((Expr.IndirectInvoke) expression, typing, environment);
-		// Conditions
 		case EXPR_logicalnot:
 		case EXPR_logicalor:
 		case EXPR_logicaland:
@@ -1377,7 +1445,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		case EXPR_logicaluniversal:
 		case EXPR_logicalexistential:
 			return checkBackwardsConditionExpression(expression, typing, environment);
-		// Comparators
 		case EXPR_equal:
 		case EXPR_notequal:
 			return checkBackwardsEqualityOperator((Expr.BinaryOperator) expression, typing, environment);
@@ -1386,7 +1453,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
 			return checkBackwardsIntegerComparator((Expr.BinaryOperator) expression, typing, environment);
-		// Arithmetic Operators
 		case EXPR_integernegation:
 			return checkBackwardsIntegerOperator((Expr.UnaryOperator) expression, typing, environment);
 		case EXPR_integeraddition:
@@ -1395,7 +1461,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
 			return checkBackwardsIntegerOperator((Expr.BinaryOperator) expression, typing, environment);
-		// Bitwise expressions
 		case EXPR_bitwisenot:
 			return checkBackwardsBitwiseOperator((Expr.UnaryOperator) expression, typing, environment);
 		case EXPR_bitwiseand:
@@ -1405,18 +1470,13 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 			return checkBackwardsBitwiseShift((Expr.BinaryOperator) expression, typing, environment);
-//		// Tuple Expressions
 		case EXPR_tupleinitialiser:
 			return checkBackwardsTupleInitialiser((Expr.TupleInitialiser) expression, typing, environment);
-//		// Record Expressions
 		case EXPR_recordinitialiser:
 			return checkBackwardsRecordInitialiser((Expr.RecordInitialiser) expression, typing, environment);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return checkBackwardsRecordAccess((Expr.RecordAccess) expression, typing, environment);
-//		case EXPR_recordupdate:
-//			return checkRecordUpdate((Expr.RecordUpdate) expression, environment);
-//		// Array expressions
 		case EXPR_arraylength:
 			return checkBackwardsArrayLength((Expr.ArrayLength) expression, typing, environment);
 		case EXPR_arrayinitialiser:
@@ -1428,9 +1488,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			return checkBackwardsArrayAccess((Expr.ArrayAccess) expression, typing, environment);
 		case EXPR_arrayrange:
 			return checkBackwardsArrayRange((Expr.ArrayRange) expression, typing, environment);
-//		case EXPR_arrayupdate:
-//			return checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
-//		// Reference expressions
 		case EXPR_dereference:
 			return checkBackwardsDereference((Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
@@ -1446,117 +1503,125 @@ public class NewFlowTypeCheck implements Compiler.Check {
 				expression);
 	}
 
-	private Constraints checkBackwardsArrayLength(Expr.ArrayLength expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsArrayLength(Expr.ArrayLength expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_operand = typing.indexOf(expr.getOperand());
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
-		// FIXME: force array type of any kind
-
+		// Force source to have array type
+		Typing nTyping = typing.map(row -> row.set(v_operand, row.get(v_operand).as(Type.Array.class)));
+		// Check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			syntaxError(expr.getOperand(), EXPECTED_ARRAY);
+		}
 		// Array length always returns integer
-		return typing.add(expr, Type.Int);
+		return nTyping.map(row -> row.set(v_expr, Type.Int));
 	}
 
-	private Constraints checkBackwardsArrayInitialiser(Expr.ArrayInitialiser expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsArrayInitialiser(Expr.ArrayInitialiser expr, Typing typing,
+			Environment environment) {
 		Tuple<Expr> operands = expr.getOperands();
-		FlowTyping.Variable[] vs = new FlowTyping.Variable[operands.size()];
-		//
-		for(int i=0;i!=vs.length;++i) {
-			typing = checkBackwardsExpression(operands.get(i),typing,environment);
-			// Determine operand type variable(s)
-			vs[i] = typing.top();
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int[] v_operands = typing.indexOf(operands);
+		// Recursively check operands
+		for (int i = 0; i != v_operands.length; ++i) {
+			typing = checkBackwardsExpression(operands.get(i), typing, environment);
 		}
 		// Compute least upper bound of element types
-		return typing.project(ts -> new Type.Array(leastUpperBound(ts)), expr, vs);
+		return typing.map(row -> row.set(v_expr, createArray(leastUpperBound(row, v_operands))));
 	}
 
-	/**
-	 * Compute the least upper bound of a bunch of types.
-	 *
-	 * @param ts
-	 * @return
-	 */
-	private static Type leastUpperBound(Type[] ts) {
-		ts = ArrayUtils.removeDuplicates(ts);
-		switch (ts.length) {
-		case 0:
-			return Type.Void;
-		case 1:
-			return ts[0];
-		default: {
-			return new Type.Union(ts);
-		}
-		}
-	}
-
-	private Constraints checkBackwardsArrayGenerator(Expr.ArrayGenerator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsArrayGenerator(Expr.ArrayGenerator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_element = typing.indexOf(expr.getFirstOperand());
 		// Recursively check element operand
-		typing = checkBackwardsExpression(expr.getFirstOperand(),typing,environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
+		typing = checkBackwardsExpression(expr.getFirstOperand(), typing, environment);
 		// Recursively check length operand
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Perform projection
-		return typing.project(t -> new Type.Array(t), expr, v);
+		return typing.map(row -> row.set(v_expr, createArray(row.get(v_element))));
 	}
 
-	private Constraints checkBackwardsArrayAccess(Expr.ArrayAccess expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsArrayAccess(Expr.ArrayAccess expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_source = typing.indexOf(expr.getFirstOperand());
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getFirstOperand(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
 		// Recursively check index operand
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Perform projection
-		return typing.project(t -> getArrayElement(t), expr, v);
+		Typing nTyping = typing.map(row -> row.set(v_expr, getArrayElement(row.get(v_source))));
+		// Finally, check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			syntaxError(expr.getFirstOperand(), EXPECTED_ARRAY);
+		}
+		// Done
+		return nTyping;
 	}
 
-	private Type getArrayElement(Type type) {
-		Type.Array t = type.as(Type.Array.class);
-		return (t == null) ? null : t.getElement();
-	}
-
-	private Constraints checkBackwardsArrayRange(Expr.ArrayRange expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsArrayRange(Expr.ArrayRange expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check start operand
 		typing = checkBackwardsExpression(Type.Int, expr.getFirstOperand(), typing, environment);
 		// Recursively check end operand
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Done
-		return typing.add(expr, Type.IntArray);
+		return typing.map(row -> row.set(v_expr, Type.IntArray));
 	}
 
-	private Constraints checkBackwardsBitwiseOperator(Expr.UnaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsBitwiseOperator(Expr.UnaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check children
 		typing = checkBackwardsExpression(Type.Byte, expr.getOperand(), typing, environment);
 		// Always return a byte
-		return typing.add(expr, Type.Byte);
+		return typing.map(row -> row.set(v_expr, Type.Byte));
 	}
 
-	private Constraints checkBackwardsBitwiseOperator(Expr.NaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsBitwiseOperator(Expr.NaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check children
 		typing = checkBackwardsExpressions(Type.Byte, expr.getOperands(), typing, environment);
 		// Always return a byte
-		return typing.add(expr, Type.Byte);
+		return typing.map(row -> row.set(v_expr, Type.Byte));
 	}
 
-	private Constraints checkBackwardsBitwiseShift(Expr.BinaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsBitwiseShift(Expr.BinaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check children
 		typing = checkBackwardsExpression(Type.Byte, expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Always return an integer
-		return typing.add(expr, Type.Byte);
+		return typing.map(row -> row.set(v_expr, Type.Byte));
 	}
 
-	private Constraints checkBackwardsCast(Expr.Cast expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsCast(Expr.Cast expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getType(), expr.getOperand(), typing, environment);
 		// FIXME apply subtype check
-		return typing.add(expr, expr.getType());
+		return typing.map(row -> row.set(v_expr, expr.getType()));
 	}
 
-	private Constraints checkBackwardsConditionExpression(Expr expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsConditionExpression(Expr expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Check condition
 		checkCondition(expr, true, environment);
 		// Always return bool
-		return typing.add(expr, Type.Bool);
+		return typing.map(row -> row.set(v_expr, Type.Bool));
 	}
 
 	/**
@@ -1566,80 +1631,125 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private Constraints checkBackwardsConstant(Expr.Constant expr, Constraints typing, Environment env) {
-		Value item = expr.getValue();
-		switch (item.getOpcode()) {
+	private Typing checkBackwardsConstant(Expr.Constant expr, Typing typing, Environment env) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		//
+		Type type;
+		switch (expr.getValue().getOpcode()) {
 		case ITEM_null:
-			return typing.add(expr, Type.Null);
+			type = Type.Null;
+			break;
 		case ITEM_bool:
-			return typing.add(expr, Type.Bool);
+			type = Type.Bool;
+			break;
 		case ITEM_byte:
-			return typing.add(expr, Type.Byte);
+			type = Type.Byte;
+			break;
 		case ITEM_int:
-			return typing.add(expr, Type.Int);
+			type = Type.Int;
+			break;
 		case ITEM_utf8:
-			return typing.add(expr, Type.IntArray);
-			// break;
+			type = Type.IntArray;
+			break;
+		// break;
 		default:
 			return internalFailure("unknown constant encountered: " + expr, expr);
 		}
+		//
+		return typing.map(row -> row.set(v_expr, type));
 	}
 
-	private Constraints checkBackwardsDereference(Expr.Dereference expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsDereference(Expr.Dereference expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_operand = typing.indexOf(expr.getOperand());
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
-		// FIXME: Sanity check readability of reference(s)
-		// checkIsReadable(elements, environment,expr.getOperand());
 		// Perform projection
-		return typing.project(t -> getReferenceElement(t), expr, v);
+		Typing nTyping = typing.map(row -> row.set(v_expr, getReadableReferenceElement(row.get(v_operand))));
+		// Finally, check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			// Some error occurred, now disambiguate
+			Typing c1 = typing.map(row -> row.set(v_operand, row.get(v_operand).as(Type.Reference.class)));
+			if(c1.empty()) {
+				syntaxError(expr.getOperand(), EXPECTED_REFERENCE);
+			} else {
+				syntaxError(expr, DEREFERENCED_UNKNOWN_TYPE);
+			}
+		}
+		// Done
+		return nTyping;
 	}
 
-	private Type getReferenceElement(Type type) {
-		Type.Reference t = type.as(Type.Reference.class);
-		return (t == null) ? null : t.getElement();
-	}
-
-	private Constraints checkBackwardsEqualityOperator(Expr.BinaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsEqualityOperator(Expr.BinaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_lhs = typing.indexOf(expr.getFirstOperand());
+		int v_rhs = typing.indexOf(expr.getSecondOperand());
 		// Construct fresh variable representing equality type
 		typing = checkBackwardsExpression(expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(expr.getSecondOperand(), typing, environment);
-		// FIXME: some kind of type check required here
+		// Sanity check operands are comparable
+		Typing nTyping = typing.map(row -> nonDisjoint(row, v_lhs, v_rhs, environment));
+		// Check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			// Concretize to eliminate existentials
+			typing = typing.concretize();
+			//
+			syntaxError(expr, INCOMPARABLE_OPERANDS, new Tuple<>(typing.types(expr.getFirstOperand())), new Tuple<>(typing.types(expr.getSecondOperand())));
+		}
 		// Always return a boolean
-		return typing.add(expr, Type.Bool);
+		return typing.map(row -> row.set(v_expr, Type.Bool));
 	}
 
-	private Constraints checkBackwardsFieldDereference(Expr.FieldDereference expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsFieldDereference(Expr.FieldDereference expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_source = typing.indexOf(expr.getOperand());
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
 		// Perform projection
-		return typing.project(t -> getReferenceField(t,expr.getField()), expr, v);
+		Typing nTyping = typing.map(row -> row.set(v_expr, getReferenceField(row.get(v_source), expr.getField())));
+		// Finally, check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			// An error has occurred, but need to disambiguate where the problem is.
+			Typing c1 = typing.map(row -> row.set(v_source, row.get(v_source).as(Type.Record.class)));
+			Typing c2 = typing.map(row -> row.set(v_source, getReferenceRecord(row.get(v_source))));
+			// Check whether this was the problem or not
+			if (c1.empty()) {
+				syntaxError(expr.getOperand(), EXPECTED_REFERENCE);
+			} else if (c2.empty()) {
+				syntaxError(expr.getOperand(), EXPECTED_RECORD);
+			} else {
+				syntaxError(expr.getField(), INVALID_FIELD);
+			}
+		}
+		// Done
+		return nTyping;
 	}
 
-	private Type getReferenceField(Type type, Identifier field) {
-		Type.Reference t = type.as(Type.Reference.class);
-		Type.Record r = (t == null) ? null : t.as(Type.Record.class);
-		return (r == null) ? null : r.getField(field);
-	}
-
-
-	private Constraints checkBackwardsIntegerComparator(Expr.BinaryOperator expr, Constraints typing,
+	private Typing checkBackwardsIntegerComparator(Expr.BinaryOperator expr, Typing typing,
 			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check children
 		typing = checkBackwardsExpression(Type.Int, expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Always return a boolean
-		return typing.add(expr, Type.Bool);
+		return typing.map(row -> row.set(v_expr, Type.Bool));
 	}
 
-	private Constraints checkBackwardsIntegerOperator(Expr.UnaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsIntegerOperator(Expr.UnaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check child
 		typing = checkBackwardsExpression(Type.Int, expr.getOperand(), typing, environment);
 		// Always return an integer
-		return typing.add(expr, Type.Int);
+		return typing.map(row -> row.set(v_expr, Type.Int));
 	}
 
 	/**
@@ -1649,164 +1759,255 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private Constraints checkBackwardsIntegerOperator(Expr.BinaryOperator expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsIntegerOperator(Expr.BinaryOperator expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		// Recursively check children
 		typing = checkBackwardsExpression(Type.Int, expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Always return an integer
-		return typing.add(expr, Type.Int);
+		return typing.map(row -> row.set(v_expr, Type.Int));
 	}
 
-	private Constraints checkBackwardsIndirectInvoke(Expr.IndirectInvoke expr, Constraints typing,
+	private Typing checkBackwardsIndirectInvoke(Expr.IndirectInvoke expr, Typing typing,
 			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_source = typing.indexOf(expr.getSource());
+		int[] v_operands = typing.indexOf(expr.getArguments());
+		// Save argument expressions for later
 		Tuple<Expr> arguments = expr.getArguments();
 		// Type source operand
 		typing = checkBackwardsExpression(expr.getSource(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
 		// Sanity check types of arguments provided
-		for (int i = 0; i != arguments.size(); ++i) {
-			// Check argument type
-			typing = checkBackwardsExpression(arguments.get(i), typing, environment);
-			// FIXME: need to sanity check arg against corresponding parameter type
-			FlowTyping.Variable arg = typing.top();
+		typing = checkBackwardsExpressions(arguments,typing,environment);
+		// Perform projection from source to its return type
+		Typing nTyping = typing.map(row -> row.set(v_expr, getCallableReturn(row.get(v_source), v_operands.length)));
+		// Finally, check for errors. This is tricky because there are lots of corner
+		// cases.
+		if (!typing.empty() && nTyping.empty()) {
+			// Some kind of problem, but need to disambiguate first. To do this, we try to
+			// project the source type into a callable. If this succeeds then we know a
+			// different problem was the cause.
+			Typing c1 = typing.map(row -> row.set(v_source, row.get(v_source).as(Type.Callable.class)));
+			// Check whether have lambda
+			if (c1.empty()) {
+				syntaxError(expr.getSource(), EXPECTED_LAMBDA);
+			} else {
+				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
+			}
+		} else {
+			// Sanity check lambda parameters against arguments
+			nTyping = checkInvocationParameters(nTyping,arguments,v_source);
 		}
-		// Perform projection
-		return typing.project(t -> getCallableReturn(t), expr, v);
-
+		// Done
+		return nTyping;
 	}
 
-	private static Type getCallableReturn(Type type) {
-		Type.Callable t = type.as(Type.Callable.class);
-		return (t == null) ? null : t.getReturn();
-	}
-
-	private Constraints checkBackwardsInvoke(Expr.Invoke expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsInvoke(Expr.Invoke expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_concrete = v_expr + 2;
+		// Save argument expressions for later
 		Tuple<Expr> arguments = expr.getOperands();
-		FlowTyping.Variable[] vars = new FlowTyping.Variable[arguments.size()];
-		for (int i = 0; i != arguments.size(); ++i) {
-			// Type ith argument
-			typing = checkBackwardsExpression(arguments.get(i),typing,environment);
-			// Save handle for later
-			vars[i] = typing.top();
-		}
+		// Sanity check types of arguments provided
+		typing = checkBackwardsExpressions(arguments,typing,environment);
 		// Return type to be completed
 		Decl.Link<Decl.Callable> link = expr.getLink();
 		// Attempt to resolve this invocation (if we can).
 		if (link.isPartiallyResolved()) {
-			return new TypeCombinator(expr, typing, vars);
+			// Harder case. No signature given by user, so must fork constraints at this
+			// point for each sensible candidate.
+			List<Decl.Callable> candidates = link.getCandidates();
+			Typing nTyping = typing
+					.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_expr)));
+			// Sanity check for errors
+			if (!typing.empty() && nTyping.empty()) {
+				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			}
+			// Sanity check parameters against arguments
+			return checkInvocationParameters(nTyping, arguments, v_concrete);
 		} else {
-			return typing.add(expr, null);
+			// NOTE: don't need to report syntax error since this is already done in
+			// NameResolution.
+			return typing.invalidate();
 		}
 	}
 
-	private Constraints checkBackwardsLambdaAccess(Expr.LambdaAccess expr, Constraints typing, Environment environment) {
+	/**
+	 * Check the arguments for a given invocation (indirect or direct) can be bound
+	 * to the expected parameter types.
+	 *
+	 * @param typing     The current typing
+	 * @param arguments  The set of expressions which constitute the parameter types
+	 * @param v_callable The type variable in typing which identifies the invocation
+	 *                   signature. This is necessary to extract the expected
+	 *                   parameter types. The challenge is that this is located in
+	 *                   different places for a direct invocation versus an indirect
+	 *                   invocation.
+	 * @return
+	 */
+	private Typing checkInvocationParameters(Typing typing, Tuple<Expr> arguments, int v_callable) {
+		// Save handle(s) for later
+		int[] v_operands = typing.indexOf(arguments);
+		// Sanity check parameters against arguments
+		for (int i = 0; i != v_operands.length; ++i) {
+			final int _i = i;
+			int ith = v_operands[i];
+			// Save current typing to enable identification of an error.
+			Typing oTyping = typing;
+			// Bind ith parameter type with ith argument type
+			typing = typing.project(row -> row.bind(getCallableArgument(row.get(v_callable), _i), row.get(ith)));
+			// Sanity check for errors
+			if (!oTyping.empty() && typing.empty()) {
+				// Concretize to eliminate existentials
+				oTyping = oTyping.concretize();
+				// An error has arisen as a direct result of binding this variable, therefore it
+				// must be problematic.
+				Tuple<Type> targs = new Tuple<>(map(oTyping.types(v_callable), t -> getCallableArgument(t, _i)));
+				// A type error has arisen directly as a result of this argument position.
+				syntaxError(arguments.get(i), SUBTYPE_ERROR, targs, new Tuple<>(oTyping.types(arguments.get(i))));
+			}
+		}
+		return typing;
+	}
+
+	private Typing checkBackwardsLambdaAccess(Expr.LambdaAccess expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		//
 		Decl.Link<Decl.Callable> link = expr.getLink();
 		Type types = expr.getParameterTypes();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
 		// exactly zero arguments were supplied.
 		if (types.shape() > 0) {
-			FlowTyping.Variable[] vars = new FlowTyping.Variable[types.shape()];
-			for (int i = 0; i != vars.length; ++i) {
-				typing = typing.add(null,types.dimension(i));
-				// Save handle for later
-				vars[i] = typing.top();
+			// Easy case. Signature given by user, so just need to select and find it.
+			List<Decl.Callable> candidates = link.getCandidates();
+			// Select match
+			for (int i = 0; i != candidates.size(); ++i) {
+				Decl.Callable ith = candidates.get(i);
+				Type p = ith.getType().getParameter();
+				if (p.equals(types)) {
+					// Matched!
+					link.resolve(ith);
+					return typing.map(row -> row.set(v_expr, link.getTarget().getType()));
+				}
 			}
-			return new TypeCombinator(expr,typing,vars);
+			//
+		} else if (link.isPartiallyResolved()) {
+			// Harder case. No signature given by user, so must fork constraints at this
+			// point for each sensible candidate.
+			final List<Decl.Callable> candidates = link.getCandidates();
+			return typing.project(row -> fork(candidates, c -> row.set(v_expr, c.getType())));
 		} else if (link.isResolved()) {
-			return typing.add(expr,link.getTarget().getType());
-		} else {
-			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
-			return typing.add(expr,null);
+			// Link already resolved (e.g. because was only one candidate).
+			return typing.map(row -> row.set(v_expr, link.getTarget().getType()));
 		}
+		// Error case
+		syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+		return typing.invalidate();
 	}
 
-	private Constraints checkBackwardsLambdaDeclaration(Decl.Lambda expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsLambdaDeclaration(Decl.Lambda expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_body = typing.indexOf(expr.getBody());
+		//
 		Type parameter = Decl.Callable.project(expr.getParameters());
 		// Type check the body of the lambda using the expected return types
 		typing = checkBackwardsExpression(expr.getBody(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
 		// Determine whether or not this is a pure or impure lambda.
-		boolean pure = isPure(expr.getBody());
-		// Done
-		return typing.project(t -> createLambda(pure, parameter, t), expr, v);
-	}
-
-	private Type.Callable createLambda(boolean pure, Type parameter, Type ret) {
-		if (pure) {
-			return new Type.Function(parameter, ret);
+		if (isPure(expr.getBody())) {
+			return typing.map(row -> row.set(v_expr, createFunction(parameter, row.get(v_body))));
 		} else {
-			return new Type.Method(parameter, ret, new Tuple<>(), new Tuple<>());
+			return typing.map(row -> row.set(v_expr,
+					createMethod(parameter, row.get(v_body), expr.getCapturedLifetimes(), expr.getLifetimes())));
 		}
 	}
 
-	private Constraints checkBackwardsNew(Expr.New expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsNew(Expr.New expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_operand = typing.indexOf(expr.getOperand());
 		// Recursively check operand
-		typing = checkBackwardsExpression(expr.getOperand(),typing,environment);
-		// Save variable handle for later
-		FlowTyping.Variable v = typing.top();
+		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
 		// Done
-		return typing.project(t -> new Type.Reference(t), expr, v);
+		if (expr.hasLifetime()) {
+			return typing.map(row -> row.set(v_expr, createReference(row.get(v_operand), expr.getLifetime())));
+		} else {
+			return typing.map(row -> row.set(v_expr, createReference(row.get(v_operand), null)));
+		}
 	}
 
-	private Constraints checkBackwardsRecordAccess(Expr.RecordAccess expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsRecordAccess(Expr.RecordAccess expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int v_operand = typing.indexOf(expr.getOperand());
 		// Recursively check source operand
 		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
-		// Save variable handle for later
-		FlowTyping.Variable src = typing.top();
 		// Perform projection
-		return typing.project(t -> getRecordField(t,expr.getField()), expr, src);
+		Typing nTyping = typing.map(row -> row.set(v_expr, getRecordField(row.get(v_operand), expr.getField())));
+		// Finally, check for errors
+		if (!typing.empty() && nTyping.empty()) {
+			// An error has occurred, but need to disambiguate where the problem is.
+			Typing c1 = typing.map(row -> row.set(v_operand, row.get(v_operand).as(Type.Record.class)));
+			// Check whether this was the problem or not
+			if (c1.empty()) {
+				syntaxError(expr.getOperand(), EXPECTED_RECORD);
+			} else {
+				syntaxError(expr.getField(), INVALID_FIELD);
+			}
+		}
+		// Done
+		return nTyping;
 	}
 
-	private Type getRecordField(Type type, Identifier field) {
-		Type.Record t = type.as(Type.Record.class);
-		return (t == null) ? null : t.getField(field);
-	}
-
-	private Constraints checkBackwardsRecordInitialiser(Expr.RecordInitialiser expr, Constraints typing, Environment environment) {
-		Tuple<Expr> operands = expr.getOperands();
-		FlowTyping.Variable[] vs = new FlowTyping.Variable[operands.size()];
+	private Typing checkBackwardsRecordInitialiser(Expr.RecordInitialiser expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int[] v_operands = typing.indexOf(expr.getOperands());
 		//
-		for(int i=0;i!=vs.length;++i) {
+		Tuple<Expr> operands = expr.getOperands();
+		//
+		for (int i = 0; i != v_operands.length; ++i) {
 			// Type field initialiser
-			typing = checkBackwardsExpression(operands.get(i),typing,environment);
-			// Save handle for later
-			vs[i] = typing.top();
+			typing = checkBackwardsExpression(operands.get(i), typing, environment);
 		}
 		// Construct a tuple variable
-		return typing.project(ts->createRecord(expr.getFields(),ts), expr, vs);
+		return typing.map(row -> row.set(v_expr, createRecord(expr.getFields(), row.getAll(v_operands))));
 	}
 
-	private Type.Record createRecord(Tuple<Identifier> fields, Type... types) {
-		Type.Field[] fs = new Type.Field[fields.size()];
-		for(int i=0;i!=fs.length;++i) {
-			fs[i] = new Type.Field(fields.get(i), types[i]);
-		}
-		return new Type.Record(false, new Tuple<>(fs));
-	}
-
-	private Constraints checkBackwardsStaticVariable(Expr.StaticVariableAccess expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsStaticVariable(Expr.StaticVariableAccess expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		// Extract variable link
 		Decl.Link<Decl.StaticVariable> l = expr.getLink();
 		// Extract type if applicable
 		Type type = l.isResolved() ? l.getTarget().getType() : null;
 		// Done
-		return typing.add(expr, type);
+		return typing.map(row -> row.set(v_expr, type));
 	}
 
-	private Constraints checkBackwardsTupleInitialiser(Expr.TupleInitialiser expr, Constraints typing, Environment environment) {
-		Tuple<Expr> operands = expr.getOperands();
-		FlowTyping.Variable[] vs = new FlowTyping.Variable[operands.size()];
+	private Typing checkBackwardsTupleInitialiser(Expr.TupleInitialiser expr, Typing typing,
+			Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
+		int[] v_operands = typing.indexOf(expr.getOperands());
 		//
-		for (int i = 0; i != vs.length; ++i) {
+		Tuple<Expr> operands = expr.getOperands();
+		//
+		for (int i = 0; i != v_operands.length; ++i) {
 			// Determine operand type(s)
 			typing = checkBackwardsExpression(operands.get(i), typing, environment);
-			// Save handle for later
-			vs[i] = typing.top();
 		}
 		// Construct a tuple variable
-		return typing.project(ts -> Type.Tuple.create(ts), expr, vs);
+		return typing.map(row -> row.set(v_expr, Type.Tuple.create(row.getAll(v_operands))));
 	}
 
 	/**
@@ -1817,15 +2018,221 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private Constraints checkBackwardsVariable(Expr.VariableAccess expr, Constraints typing, Environment environment) {
+	private Typing checkBackwardsVariable(Expr.VariableAccess expr, Typing typing, Environment environment) {
+		// Save handle(s) for later
+		int v_expr = typing.indexOf(expr);
 		Decl.Variable var = expr.getVariableDeclaration();
 		// Always return natural type
-		return typing.add(expr, environment.getType(var));
+		return typing.map(row -> row.set(v_expr, environment.getType(var)));
 	}
 
 	// ==========================================================================
 	// Helpers
 	// ==========================================================================
+
+	/**
+	 * Apply a given forking function to produce an array of forked environments.
+	 *
+	 * @param candidates The list of candidates for which the environment is forked
+	 *                   where each candidate is forked into a new environment.
+	 * @param fn         The forking function which takes a given callable
+	 *                   declaration and produces a forked environment. This may
+	 *                   return <code>null</code> to indicate no valid environment
+	 *                   exists for the given declaration.
+	 * @return
+	 */
+	public Typing.Environment[] fork(List<Decl.Callable> candidates, Function<Decl.Callable, Typing.Environment> fn) {
+		Typing.Environment[] environments = new Typing.Environment[candidates.size()];
+		for(int i=0;i!=candidates.size();++i) {
+			environments[i] = fn.apply(candidates.get(i));
+		}
+		// Remove any invalid environments which have arisen.
+		return ArrayUtils.removeAll(environments,null);
+	}
+
+	public Typing.Environment initialiseCallableFrame(Typing.Environment environment, Expr.Invoke expr,
+			Decl.Callable candidate, int v_expr) {
+		// Save handle(s) for later
+		int v_callable = v_expr + 1;
+		int v_concrete = v_expr + 2;
+		int v_meta = v_expr+3;
+		//
+		Type.Callable type = candidate.getType();
+		// Sanity callable is even applicable
+		if(type.getParameter().shape() != expr.getOperands().size()) {
+			// Declaration is not applicable as it doesn't accept the right number of
+			// arguments.
+			return null;
+		} else {
+			Tuple<Template.Variable> template = candidate.getTemplate();
+			Tuple<SyntacticItem> templateArguments = expr.getBinding().getArguments();
+			// Check whether need to infer template arguments
+			if (template.size() > 0 && templateArguments.size() == 0) {
+				// Template required, but no explicit arguments given. Therefore, we create
+				// fresh (extenstial) type for each position and subsityte them through.
+				SyntacticItem[] targs = new SyntacticItem[template.size()];
+				for (int i = 0; i != template.size(); ++i) {
+					targs[i] = new Type.Existential(v_meta + i);
+					// Initialise type variables with void.
+					environment = environment.set(v_meta+i, Type.Void);
+				}
+				templateArguments = new Tuple<>(targs);
+			}
+			// Construct the concrete type.
+			Type.Callable concreteType = WyilFile.substitute(type, template, templateArguments);
+			// Configure first meta-variable to hold actual signature
+			environment = environment.set(v_callable, type);
+			// Configure second meta-variable to hold concrete signature
+			environment = environment.set(v_concrete, concreteType);
+			// Done
+			return environment.set(v_expr, concreteType.getReturn());
+		}
+	}
+
+	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, LifetimeRelation lifetimes) {
+		Type left = typing.get(lhs);
+		Type right = typing.get(rhs);
+		if (strictSubtypeOperator.isSubtype(left, right, lifetimes)
+				|| strictSubtypeOperator.isSubtype(right, left, lifetimes)) {
+			return typing;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Compute the least upper bound of a bunch of types.
+	 *
+	 * @param row
+	 * @return
+	 */
+	private static Type leastUpperBound(Typing.Environment row, int[] children) {
+		Type[] types = ArrayUtils.removeDuplicates(row.getAll(children));
+		switch (types.length) {
+		case 0:
+			return Type.Void;
+		case 1:
+			return types[0];
+		default: {
+			return new Type.Union(types);
+		}
+		}
+	}
+
+	/**
+	 * Extract the type of the ith argument from a type expected to be a Callable.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private static Type getCallableArgument(Type type, int i) {
+		Type.Callable t = type.as(Type.Callable.class);
+		// Check whether its a callable
+		if (t != null) {
+			// Yes, but does it have enough parameters?
+			Type p = t.getParameter();
+			if (p.shape() > i) {
+				// Yes it does!
+				return p.dimension(i);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Extract the return type of a type expected to be a Callable.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private static Type getCallableReturn(Type type, int nargs) {
+		Type.Callable t = type.as(Type.Callable.class);
+		if (t != null && t.getParameter().shape() == nargs) {
+			return t.getReturn();
+		} else {
+			return null;
+		}
+	}
+
+	private static Type getArrayElement(Type type) {
+		Type.Array t = type.as(Type.Array.class);
+		return (t == null) ? null : t.getElement();
+	}
+
+	private static Type getReadableReferenceElement(Type type) {
+		Type.Reference t = type.as(Type.Reference.class);
+		if(t != null && t.getElement().isReadable()) {
+			return t.getElement();
+		} else {
+			return null;
+		}
+	}
+
+	private Type.Array createArray(Type element) {
+		return (element == null) ? null : new Type.Array(element);
+	}
+
+	private Type.Reference createReference(Type element, Identifier lifetime) {
+		if(element == null) {
+			return null;
+		} else if(lifetime == null) {
+			return new Type.Reference(element);
+		} else {
+			return new Type.Reference(element,lifetime);
+		}
+	}
+
+	private Type.Record createRecord(Tuple<Identifier> fields, Type[] types) {
+		Type.Field[] fs = new Type.Field[fields.size()];
+		for (int i = 0; i != fs.length; ++i) {
+			Type ith = types[i];
+			if (ith == null) {
+				return null;
+			}
+			fs[i] = new Type.Field(fields.get(i), ith);
+		}
+		return new Type.Record(false, new Tuple<>(fs));
+	}
+
+	private Type.Callable createFunction(Type parameter, Type ret) {
+		if (parameter == null || ret == null) {
+			return null;
+		} else {
+			return new Type.Function(parameter, ret);
+		}
+	}
+
+	private Type.Callable createMethod(Type parameter, Type ret, Tuple<Identifier> captured, Tuple<Identifier> lifetimes) {
+		if (parameter == null || ret == null) {
+			return null;
+		} else {
+			return new Type.Method(parameter, ret, captured, lifetimes);
+		}
+	}
+
+	private static Type getRecordField(Type type, Identifier field) {
+		Type.Record t = type.as(Type.Record.class);
+		return (t == null) ? null : t.getField(field);
+	}
+
+	private static Type getReferenceRecord(Type type) {
+		Type.Reference t = type.as(Type.Reference.class);
+		return (t == null) ? null : t.getElement().as(Type.Record.class);
+	}
+
+	private static Type getReferenceField(Type type, Identifier field) {
+		Type.Reference t = type.as(Type.Reference.class);
+		Type.Record r = (t == null) ? null : t.getElement().as(Type.Record.class);
+		return (r == null) ? null : r.getField(field);
+	}
+
+	public static <T> T[] map(T[] items, Function<T, T> fn) {
+		T[] nitems = Arrays.copyOf(items, items.length);
+		for (int i = 0; i != items.length; ++i) {
+			nitems[i] = fn.apply(items[i]);
+		}
+		return nitems;
+	}
 
 	public Type refine(Type declared, Type selector, LifetimeRelation lifetimes) {
 		// FIXME: this method is a hack for now really, until such time as I resolve
@@ -1860,12 +2267,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkIsReadable(Type type, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (type != null && !type.isReadable()) {
-			syntaxError(element, DEREFERENCED_UNKNOWN_TYPE, element);
-		}
-	}
-
 	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
@@ -1880,15 +2281,6 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
-	}
-
-	private static <T extends SyntacticItem> boolean contains(Tuple<T> items, T item) {
-		for (int i = 0; i != items.size(); ++i) {
-			if (items.get(i) == item) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -1917,7 +2309,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	public <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
-		if(type == null) {
+		if (type == null) {
 			// indicates failure upstream
 			return null;
 		} else if (kind.isInstance(type)) {

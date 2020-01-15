@@ -1,3 +1,3 @@
-tests/invalid/Tuple_Invalid_7.whiley:7: expected type (int,int), found (bool,int)
+tests/invalid/Tuple_Invalid_7.whiley:7: expected (int,int), found (bool,int)
     (x,y) = g()
             ^^^

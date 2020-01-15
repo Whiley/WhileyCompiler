@@ -210,6 +210,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_byte = 97; // <ZERO operands, ZERO>
 	public static final int TYPE_recursive = 106; // <ONE operands, ZERO>
 	public static final int TYPE_variable = 107; // <ONE operands, ZERO>
+	public static final int TYPE_existential = 108; // <ZERO operands, MANY>
 	public static final int STMT_block = 144; // <MANY operands, ZERO>
 	public static final int STMT_namedblock = 145; // <TWO operands, ZERO>
 	public static final int STMT_caseblock = 146; // <TWO operands, ZERO>
@@ -5056,6 +5057,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(opcode, operands);
 			}
 
+			AbstractType(int opcode, byte[] bytes) {
+				super(opcode, bytes);
+			}
+
 			@Override
 			public int shape() {
 				return 1;
@@ -5848,6 +5853,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
+			}
+
+			@Override
 			public Tuple substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
 				for(int i=0;i!=size();++i) {
 					Type before = get(i);
@@ -6435,6 +6445,57 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Unknown();
+				}
+			};
+		}
+
+		public static class Existential extends AbstractType implements Atom {
+			public Existential(int index) {
+				super(TYPE_existential, BigInteger.valueOf(index).toByteArray());
+			}
+
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			public int get() {
+				return new BigInteger(data).intValue();
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Existential(new BigInteger(data).intValue());
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+				return this;
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return toString();
+			}
+
+			@Override
+			public String toString() {
+				return "?" + Integer.toString(get());
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.MANY, "TYPE_existential") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Existential(new BigInteger(data).intValue());
 				}
 			};
 		}
@@ -7366,20 +7427,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	private static Schema createSchema() {
 		SectionedSchema v1_1 = createSchema_1_1();
 		SectionedSchema v1_2 = createSchema_1_2(v1_1);
+		SectionedSchema v1_3 = createSchema_1_3(v1_2);
 		//
-		Schema current = v1_2;
+		return v1_3;
 		//
-//		for(int i=0;i<=255;++i) {
-//			Descriptor desc = current.getDescriptor(i);
-//			if(desc != null) {
-//				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
-//			}
-//		}
-//		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
-		//
-		return current;
 	}
 
+	private static SectionedSchema createSchema_1_3(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.add("TYPE", "skolem", Type.Existential.DESCRIPTOR_0);
+		return builder.done();
+	}
 	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
 		SectionedSchema.Builder builder = schema.extend();
 		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
@@ -7593,11 +7651,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	public static void main(String[] args) {
-		Type r = new Type.Record(false, new Tuple<>(new Type.Field(new Identifier("f"), Type.Int),new Type.Field(new Identifier("g"), Type.Int),new Type.Field(new Identifier("h"), Type.Int)));
-		Type.Selector s = new Type.Selector(Type.Selector.BOTTOM, Type.Selector.BOTTOM, Type.Selector.TOP);
-		System.out.println("T: " + r);
-		System.out.println("S: " + s);
-		System.out.println("T o S: " + s.apply(r));
-		System.out.println("T o S: " + s.toString(r));
+		Schema current = createSchema();
+		for (int i = 0; i <= 255; ++i) {
+			Descriptor desc = current.getDescriptor(i);
+			if (desc != null) {
+				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
+			}
+		}
+		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 	}
 }
