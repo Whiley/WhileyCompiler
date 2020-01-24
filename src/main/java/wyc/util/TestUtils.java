@@ -106,8 +106,18 @@ public class TestUtils {
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
-		// Unclassified
+		// Lifetime inference
+		VALID_IGNORED.put("Lifetime_Valid_3", "???");
+		VALID_IGNORED.put("Lifetime_Valid_4", "???");
+		VALID_IGNORED.put("Lifetime_Valid_5", "???");
+		VALID_IGNORED.put("Lifetime_Valid_6", "???");
+		VALID_IGNORED.put("Lifetime_Valid_7", "???");
 		VALID_IGNORED.put("Lifetime_Valid_8", "???");
+		VALID_IGNORED.put("Lifetime_Valid_9", "???");
+		VALID_IGNORED.put("Lifetime_Valid_10", "???");
+		VALID_IGNORED.put("Lifetime_Valid_11", "???");
+		VALID_IGNORED.put("Lifetime_Valid_12", "???");
+		VALID_IGNORED.put("Lifetime_Valid_13", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");

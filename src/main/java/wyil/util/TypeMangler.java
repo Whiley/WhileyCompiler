@@ -291,7 +291,7 @@ public interface TypeMangler {
 					return i;
 				}
 			}
-			throw new IllegalArgumentException("invalid lifetime");
+			throw new IllegalArgumentException("invalid lifetime " + lifetime + " in " + lifetimes);
 		}
 	}
 }

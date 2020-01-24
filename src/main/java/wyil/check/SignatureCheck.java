@@ -144,7 +144,7 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 				Type parameter = method.getType().getParameter();
 				Tuple<Identifier> lifetimes = method.getType().getLifetimeParameters();
 				name += getMangle(parameter, lifetimes);
-				name += getMangle(ret, new Tuple<>());
+				name += getMangle(ret, lifetimes);
 			} else if(!exported && decl instanceof Decl.Callable) {
 				Decl.Callable callable = (Decl.Callable) decl;
 				Type ret = callable.getType().getReturn();

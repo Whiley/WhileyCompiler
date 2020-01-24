@@ -1256,7 +1256,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		// Concretize typing and eliminate all existentials
 		typing.concretize();
 		//
-		System.out.println("TYPING: " + typing);
+		//System.out.println("TYPING: " + typing);
 		// Done
 		if (typing.height() == 1) {
 			// Apply typing constraints
@@ -1353,12 +1353,14 @@ public class NewFlowTypeCheck implements Compiler.Check {
 
 	private List<Binding> extractCallableCandidates(Expr.Invoke expr, Typing typing) {
 		int v_expr = typing.indexOf(expr);
+		int v_callable = v_expr+1;
+		int v_meta = v_expr + 3;
 		//
 		ArrayList<Binding> candidates = new ArrayList<>();
 		for(int i=0;i!=typing.height();++i) {
 			// Identify signature this row corresponds with.
 			Typing.Environment ith = typing.getEnvironment(i);
-			Type.Callable type = (Type.Callable) ith.get(v_expr+1);
+			Type.Callable type = (Type.Callable) ith.get(v_callable);
 			// Identify corresponding declaration.
 			Decl.Callable decl = selectCallableCandidate(type,expr);
 			// Determine whether arguments need to be inferred?
@@ -1368,7 +1370,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 				// Template needs to be inferred.
 				Type[] args = new Type[template.size()];
 				for(int j=0;j!=args.length;++j) {
-					args[j] = ith.get(v_expr + j + 3);
+					args[j] = ith.get(v_meta + j);
 				}
 				arguments = new Tuple<>(args);
 				type = WyilFile.substitute(type, template, arguments);
@@ -1701,7 +1703,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			syntaxError(expr, INCOMPARABLE_OPERANDS, new Tuple<>(typing.types(expr.getFirstOperand())), new Tuple<>(typing.types(expr.getSecondOperand())));
 		}
 		// Always return a boolean
-		return typing.map(row -> row.set(v_expr, Type.Bool));
+		return nTyping.map(row -> row.set(v_expr, Type.Bool));
 	}
 
 	private Typing checkBackwardsFieldDereference(Expr.FieldDereference expr, Typing typing,
@@ -2090,8 +2092,11 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	}
 
 	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, LifetimeRelation lifetimes) {
-		Type left = typing.get(lhs);
-		Type right = typing.get(rhs);
+		// FIXME: this needs to be fixed. Possibly by doing the check during forward
+		// propagation, or perhaps using an existential.
+		Typing.Environment tmp = typing.concretize();
+		Type left = tmp.get(lhs);
+		Type right = tmp.get(rhs);
 		if (strictSubtypeOperator.isSubtype(left, right, lifetimes)
 				|| strictSubtypeOperator.isSubtype(right, left, lifetimes)) {
 			return typing;

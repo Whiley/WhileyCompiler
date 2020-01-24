@@ -301,6 +301,13 @@ public interface Typing {
 	 */
 	public interface Set {
 		/**
+		 * Check whether this is the empty set or not.
+		 *
+		 * @return
+		 */
+		public boolean empty();
+
+		/**
 		 * Union two constraint sets together. This combines all constraints from both
 		 * sets.
 		 *

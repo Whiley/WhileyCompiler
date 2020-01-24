@@ -282,6 +282,11 @@ public class AbstractTyping implements Typing {
 			this.lifetimes = lifetimes;
 		}
 
+		@Override
+		public boolean empty() {
+			return false;
+		}
+
 		/**
 		 * Return the "width" of this environment (i.e. the number of allocated
 		 * variables).
@@ -463,6 +468,11 @@ public class AbstractTyping implements Typing {
 			this.environments = environments;
 		}
 
+		@Override
+		public boolean empty() {
+			return environments.length == 0;
+		}
+
 		/**
 		 * Union two constraint sets together. This combines all constraints from both
 		 * sets.
@@ -528,6 +538,18 @@ public class AbstractTyping implements Typing {
 			return environments;
 		}
 
+		@Override
+		public String toString() {
+			if (environments.length == 0) {
+				return "_|_";
+			} else {
+				String r = "";
+				for (Typing.Environment row : environments) {
+					r = r + row;
+				}
+				return r;
+			}
+		}
 	}
 
 	// ===============================================================================================================
@@ -581,6 +603,9 @@ public class AbstractTyping implements Typing {
 			case TYPE_variable:
 				constraints = bindVariable((Type.Variable) parameter, (Type.Variable) argument, constraints, assumptions);
 				break;
+			case TYPE_existential:
+				constraints = bindExistential((Type.Existential) parameter, argument, constraints, assumptions);
+				break;
 			case TYPE_array:
 				constraints = bindArray((Type.Array) parameter, (Type.Array) argument, constraints, assumptions);
 				break;
@@ -608,6 +633,8 @@ public class AbstractTyping implements Typing {
 			default:
 				throw new IllegalArgumentException("Unknown type encountered: " + parameter);
 			}
+		} else if(a == TYPE_void) {
+			// fall through
 		} else if(p == TYPE_nominal) {
 			constraints = bindNominal((Type.Nominal) parameter, argument, constraints, assumptions);
 		} else if(a == TYPE_nominal) {
@@ -682,17 +709,38 @@ public class AbstractTyping implements Typing {
 		return bind(parameter.getElement(), argument.getElement(), constraints, assumptions);
 	}
 
-	public static Typing.Set bindRecord(Type.Record parameter, Type.Record argument, Typing.Set constraints,
+	public static Typing.Set bindRecord(Type.Record t1, Type.Record t2, Typing.Set constraints,
 			BinaryRelation<Type> assumptions) {
 		// Attempt to extract record type so binding can continue.
-		Tuple<Type.Field> param_fields = parameter.getFields();
-		Tuple<Type.Field> arg_fields = argument.getFields();
-		if (param_fields.size() == arg_fields.size()) {
-			// FIXME: problems with open records here?
-			for (int i = 0; i != param_fields.size(); ++i) {
-				// FIXME: problem with name ordering here?
-				constraints = bind(param_fields.get(i).getType(), arg_fields.get(i).getType(), constraints,
-						assumptions);
+		Tuple<Type.Field> t1_fields = t1.getFields();
+		Tuple<Type.Field> t2_fields = t2.getFields();
+		// Sanity check number of fields are reasonable.
+		// Sanity check number of fields are reasonable.
+		if (t1_fields.size() > t2_fields.size()) {
+			return EMPTY_SET;
+		} else if (t2.isOpen() && !t1.isOpen()) {
+			return EMPTY_SET;
+		} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
+			return EMPTY_SET;
+		}
+		// NOTE: the following is O(n^2) but, in reality, will be faster than the
+		// alternative (sorting fields into an array). That's because we expect a very
+		// small number of fields in practice.
+		for (int i = 0; i != t1_fields.size(); ++i) {
+			Type.Field f1 = t1_fields.get(i);
+			boolean matched = false;
+			for (int j = 0; j != t2_fields.size(); ++j) {
+				Type.Field f2 = t2_fields.get(j);
+				if (f1.getName().equals(f2.getName())) {
+					// Matched field
+					constraints = bind(f1.getType(), f2.getType(), constraints,
+							assumptions);
+					matched = true;
+				}
+			}
+			// Check we actually matched the field!
+			if (!matched) {
+				return EMPTY_SET;
 			}
 		}
 		return constraints;
@@ -704,8 +752,10 @@ public class AbstractTyping implements Typing {
 			for (int i = 0; i != argument.size(); ++i) {
 				constraints = bind(parameter.get(i), argument.get(i), constraints, assumptions);
 			}
+			return constraints;
+		} else {
+			return EMPTY_SET;
 		}
-		return constraints;
 	}
 
 	public static Typing.Set bindReference(Type.Reference parameter, Type.Reference  argument, Typing.Set constraints,
@@ -734,19 +784,13 @@ public class AbstractTyping implements Typing {
 		}
 	}
 
-	public static Typing.Set bindCallable(Type.Callable parameter, Type.Callable argument, Typing.Set constraints,
+	public static Typing.Set bindCallable(Type.Callable lhs, Type.Callable rhs, Typing.Set constraints,
 			BinaryRelation<Type> assumptions) {
-		// Bind against parameters and returns
-		Type p_parameters = parameter.getParameter();
-		Type t_parameters = argument.getParameter();
-		Type p_return = parameter.getReturn();
-		Type t_return = argument.getReturn();
-		if (p_parameters.shape() == t_parameters.shape()) {
-			for (int i = 0; i != p_parameters.shape(); ++i) {
-				constraints = bind(p_parameters.dimension(i), t_parameters.dimension(i), constraints, assumptions);
-			}
-			constraints = bind(p_return, t_return, constraints, assumptions);
-		}
+		// Parameter binding is contra-variant
+		constraints = bind(rhs.getParameter(), lhs.getParameter(), constraints, assumptions);
+		// Return binding is co-variant.
+		constraints = bind(lhs.getReturn(), rhs.getReturn(), constraints, assumptions);
+		// Done.
 		return constraints;
 	}
 
@@ -762,22 +806,23 @@ public class AbstractTyping implements Typing {
 
 	public static Typing.Set bindUnion(Type.Union parameter, Type argument, Typing.Set constraints,
 			BinaryRelation<Type> assumptions) {
-		Typing.Set results = bind(parameter.get(0), argument, constraints, assumptions);
+		Typing.Set results = null;
 		//
-		for (int i = 1; i != parameter.size(); ++i) {
-			results = results.union(bind(parameter.get(i), argument, constraints, assumptions));
+		for (int i = 0; i != parameter.size(); ++i) {
+			Typing.Set tmp = bind(parameter.get(i), argument, constraints, assumptions);
+			if(tmp != constraints && !tmp.empty()) {
+				results = (results == null) ? tmp : results.union(tmp);
+			}
 		}
-		return results;
+		return (results == null) ? constraints : results;
 	}
 
 	public static Typing.Set bindUnion(Type parameter, Type.Union argument, Typing.Set constraints,
 			BinaryRelation<Type> assumptions) {
-		Typing.Set results = bind(parameter, argument.get(0), constraints, assumptions);
-		//
-		for (int i = 1; i != argument.size(); ++i) {
-			results = results.union(bind(parameter, argument.get(i), constraints, assumptions));
+		for (int i = 0; i != argument.size(); ++i) {
+			constraints = bind(parameter, argument.get(i), constraints, assumptions);
 		}
-		return results;
+		return constraints;
 	}
 
 	// ==========================================================================================
