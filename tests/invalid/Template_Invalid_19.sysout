@@ -1,5 +1,3 @@
-tests/invalid/Template_Invalid_19.whiley:5: unable to resolve name (is ambiguous)
-	found function Template_Invalid_19::f(int)->(int)
-	found method Template_Invalid_19::f(T)->(bool)
+tests/invalid/Template_Invalid_19.whiley:5: method invocation not permitted
 requires f(x):
-         ^
+         ^^^^

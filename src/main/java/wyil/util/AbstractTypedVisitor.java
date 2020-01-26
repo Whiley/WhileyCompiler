@@ -1230,7 +1230,7 @@ public abstract class AbstractTypedVisitor {
 		T candidate = null;
 		for (int i = 0; i != candidates.size(); ++i) {
 			T next = candidates.get(i);
-			if (subtypeOperator.isSubtype(next, actual, environment)) {
+			if (subtypeOperator.isSatisfiableSubtype(next, actual, environment)) {
 				if (candidate == null) {
 					candidate = next;
 				} else {
@@ -1256,8 +1256,8 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public <T extends Type> T select(T candidate, T next, T actual, Environment environment) {
 		// Found a viable candidate
-		boolean left = subtypeOperator.isSubtype(candidate, next, environment);
-		boolean right = subtypeOperator.isSubtype(next, candidate, environment);
+		boolean left = subtypeOperator.isSatisfiableSubtype(candidate, next, environment);
+		boolean right = subtypeOperator.isSatisfiableSubtype(next, candidate, environment);
 		if (left && !right) {
 			// Yes, is better than current candidate
 			return next;

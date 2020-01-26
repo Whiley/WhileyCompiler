@@ -29,12 +29,13 @@ import java.util.function.Function;
 import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.*;
 import wybs.util.ResolveError;
+import wybs.util.AbstractCompilationUnit.Name;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
 import wyil.util.Typing;
-import wyil.util.AbstractSubtypeOperator.Binding;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -42,10 +43,9 @@ import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Decl.Link;
-import wyil.lang.WyilFile.Type.Array;
-import wyil.lang.WyilFile.Type.Existential;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
@@ -1253,29 +1253,22 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		Typing typing = Typing.Relaxed(expression, strictSubtypeOperator, environment, meter);
 		// Apply backwards type generation
 		typing = checkBackwardsExpression(target, expression, typing, environment);
-		// Concretize typing and eliminate all existentials
-		typing.concretize();
-		//
-		//System.out.println("TYPING: " + typing);
+		System.out.println("TYPING: " + typing);
 		// Done
-		if (typing.height() == 1) {
+		if (typing.height() >= 1) {
 			// Apply typing constraints
-			apply(expression, typing, environment);
+			boolean ok = apply(expression, typing, environment);
 			// Finally done. By this point, we need all links to have been resolved to be
 			// sure the following makes sense.
-			return expression.getType();
-		} else if (typing.height() > 1) {
-			// Multiple typings have been identified, hence we have some form of ambiguity.
-			// Therefore, need to identify ambiguity and report error accordingly.
+			return ok ? expression.getType() : null;
+		} else {
 			status = false;
-			// Apply as much as possible
-			apply(expression, typing, environment);
+			// Return null to indicate unknown type.
+			return null;
 		}
-		// Return null to indicate unknown type.
-		return null;
 	}
 
-	public void apply(Expr expression, Typing typing, LifetimeRelation lifetimes) {
+	public boolean apply(Expr expression, Typing typing, LifetimeRelation lifetimes) {
 		SyntacticHeap heap = expression.getHeap();
 		// First, concretize pivots
 		for (int i = 0; i != typing.width(); ++i) {
@@ -1286,22 +1279,24 @@ public class NewFlowTypeCheck implements Compiler.Check {
 				// Now, resolve template bindings (if applicable)
 				Tuple<SyntacticItem> arguments = e.getBinding().getArguments();
 				//
-				if(arguments.size() == 0) {
-					Link<Decl.Callable> link = e.getLink();
-					// Right, binding is being inferred
-					List<Binding> candidates = extractCallableCandidates(e, typing);
-					//
-					Binding selected = strictSubtypeOperator.selectCallableCandidate(e.getLink().getName(), candidates, lifetimes);
-					//
-					if (selected != null) {
-						// Assign descriptor to this expression
-						link.resolve(selected.getCandidateDeclaration());
+				Link<Decl.Callable> link = e.getLink();
+				// Right, binding is being inferred
+				List<Binding> candidates = extractCallableCandidates(e, typing);
+				// Select best option
+				Binding selected = selectCallableCandidate(e.getLink().getName(), candidates, lifetimes);
+				//
+				if (selected != null) {
+					Decl.Callable decl = selected.getCandidateDeclaration();
+					// Assign descriptor to this expression
+					link.resolve(decl);
+					// Set inferred arguments (if applicable)
+					if(arguments.size() == 0 && decl.getTemplate().size() > 0) {
 						// Set inferred lifetime parameters as well
 						e.getBinding().setArguments(heap.allocate(selected.getArguments()));
-					} else {
-						syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
-						return;
 					}
+				} else {
+					syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+					return false;
 				}
 			} else if (ith instanceof Expr.LambdaAccess) {
 				Expr.LambdaAccess e = (Expr.LambdaAccess) ith;
@@ -1309,7 +1304,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 				Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
 				if(types.length > 1) {
 					syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
-					return;
+					return false;
 				} else {
 					// Extract embedded selector
 					Type.Callable selector = (Type.Callable) types[0];
@@ -1319,7 +1314,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			}
 		}
 		if(typing.height() > 1) {
-			throw new IllegalArgumentException("This should be impossible");
+			throw new IllegalArgumentException("This should be impossible?");
 		}
 		// Finally, concretize remainder
 		for (int i = 0; i != typing.width(); ++i) {
@@ -1329,10 +1324,15 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			//
 			if(ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
 
-			} else if(types[0] != null){
+			} else if(types.length == 1 && types[0] != null){
 				ith.setType(heap.allocate(types[0]));
+			} else {
+				syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(Type.Any), new Tuple<>(types));
+				return false;
 			}
 		}
+		//
+		return true;
 	}
 
 	private Decl.Callable selectCallableCandidate(Type.Callable type, Bindable expr) {
@@ -1351,32 +1351,175 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		return internalFailure("deadcode reached", expr);
 	}
 
+
+	/**
+	 * Given a list of candidate function or method declarations, determine the most
+	 * precise match for the supplied argument types. The given argument types must
+	 * be applicable to this function or macro declaration, and it must be a subtype
+	 * of all other applicable candidates.
+	 *
+	 * @param candidates
+	 * @param args
+	 * @return
+	 */
+	public Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
+		Binding best = null;
+		Type.Callable bestType = null;
+		boolean bestValidWinner = false;
+		//
+		for (int i = 0; i != candidates.size(); ++i) {
+			Binding candidate = candidates.get(i);
+			Type.Callable candidateType = candidate.getConcreteType();
+			if (best == null) {
+				// No other candidates are applicable so far. Hence, this
+				// one is automatically promoted to the best seen so far.
+				best = candidate;
+				bestType = candidateType;
+				bestValidWinner = true;
+			} else {
+				boolean csubb = isParameterSubtype(bestType, candidateType, lifetimes);
+				boolean bsubc = isParameterSubtype(candidateType, bestType, lifetimes);
+				//
+				if (csubb && !bsubc) {
+					// This candidate is a subtype of the best seen so far. Hence, it is now the
+					// best seen so far.
+					best = candidate;
+					bestType = candidate.getConcreteType();
+					bestValidWinner = true;
+				} else if (bsubc && !csubb) {
+					// This best so far is a subtype of this candidate. Therefore, we can simply
+					// discard this candidate from consideration since it's definitely not the best.
+				} else if (!csubb && !bsubc) {
+					// This is the awkward case. Neither the best so far, nor the candidate, are
+					// subtypes of each other. In this case, we report an error. NOTE: must perform
+					// an explicit equality check above due to the present of type invariants.
+					// Specifically, without this check, the system will treat two declarations with
+					// identical raw types (though non-identical actual types) as the same.
+					return null;
+				} else {
+					// This is a tricky case. We have two types after instantiation which are
+					// considered identical under the raw subtype test. As such, they may not be
+					// actually identical (e.g. if one has a type invariant). Furthermore, we cannot
+					// stop at this stage as, in principle, we could still find an outright winner.
+					bestValidWinner = false;
+				}
+			}
+		}
+		return bestValidWinner ? best : null;
+	}
+
+
+	/**
+	 * Check whether the type signature for a given function or method declaration
+	 * is a super type of a given child declaration.
+	 *
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	protected boolean isParameterSubtype(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
+		Type parentParams = lhs.getParameter();
+		Type childParams = rhs.getParameter();
+		if (parentParams.shape() != childParams.shape()) {
+			// Differing number of parameters / arguments. Since we don't
+			// support variable-length argument lists (yet), there is nothing
+			// more to consider.
+			return false;
+		}
+		// Number of parameters matches number of arguments. Now, check that
+		// each argument is a subtype of its corresponding parameter.
+		for (int i = 0; i != parentParams.shape(); ++i) {
+			Type parentParam = parentParams.dimension(i);
+			Type childParam = childParams.dimension(i);
+			if (!strictSubtypeOperator.isSatisfiableSubtype(parentParam, childParam, lifetimes)) {
+				return false;
+			}
+		}
+		//
+		return true;
+	}
+
+	/**
+	 * Represents a candidate binding between a callable type and declaration.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Binding  {
+		private final Tuple<SyntacticItem> arguments;
+		private final Decl.Callable candidate;
+		private final Type.Callable concreteType;
+
+		public Binding(Decl.Callable candidate, Tuple<SyntacticItem> arguments, Type.Callable concreteType) {
+			this.candidate = candidate;
+			this.arguments = arguments;
+			this.concreteType = concreteType;
+		}
+
+		public Decl.Callable getCandidateDeclaration() {
+			return candidate;
+		}
+
+		public Type.Callable getConcreteType() {
+			return concreteType;
+		}
+
+		public Tuple<SyntacticItem> getArguments() {
+			return arguments;
+		}
+
+		@Override
+		public String toString() {
+			Tuple<Template.Variable> variables = candidate.getTemplate();
+			String r = "";
+			for(int i=0;i!=variables.size();++i) {
+				if(i != 0) {
+					r = r + ",";
+				}
+				r += variables.get(i);
+				r += "=";
+				r += arguments.get(i);
+			}
+			return "{" + r + "}:" + candidate.getType();
+		}
+	}
+
+	/**
+	 * For a given pivot (e.g. invocation) and typing, extract the set of possible
+	 * bindings to select from. This is done by taking the given binding from each
+	 * row in the typing.
+	 *
+	 * @param expr
+	 * @param typing
+	 * @return
+	 */
 	private List<Binding> extractCallableCandidates(Expr.Invoke expr, Typing typing) {
 		int v_expr = typing.indexOf(expr);
-		int v_callable = v_expr+1;
-		int v_meta = v_expr + 3;
+		int v_signature = v_expr+1;
+		int v_concrete = v_expr+2;
+		int v_template = v_expr+3;
 		//
 		ArrayList<Binding> candidates = new ArrayList<>();
 		for(int i=0;i!=typing.height();++i) {
 			// Identify signature this row corresponds with.
 			Typing.Environment ith = typing.getEnvironment(i);
-			Type.Callable type = (Type.Callable) ith.get(v_callable);
+			Type.Callable type = (Type.Callable) ith.get(v_signature);
+			Type.Callable concrete = (Type.Callable) ith.get(v_concrete);
+			Type template = ith.get(v_template);
 			// Identify corresponding declaration.
 			Decl.Callable decl = selectCallableCandidate(type,expr);
 			// Determine whether arguments need to be inferred?
-			Tuple<Template.Variable> template = decl.getTemplate();
 			Tuple<SyntacticItem> arguments = expr.getBinding().getArguments();
-			if(template.size() > 0) {
-				// Template needs to be inferred.
-				Type[] args = new Type[template.size()];
-				for(int j=0;j!=args.length;++j) {
-					args[j] = ith.get(v_meta + j);
+			// Extract inferred arguments (if applicable)
+			if(arguments.size() == 0 && template.shape() > 0) {
+				if(template.shape() == 1) {
+					arguments = new Tuple<>(template);
+				} else {
+					arguments = new Tuple<>(template.getAll());
 				}
-				arguments = new Tuple<>(args);
-				type = WyilFile.substitute(type, template, arguments);
 			}
-			//
-			candidates.add(new Binding(decl,arguments,type));
+			// Done
+			candidates.add(new Binding(decl,arguments,concrete));
 		}
 		//
 		return candidates;
@@ -1398,18 +1541,23 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			// Get variable associated with expression
 			int v_expr = typing.indexOf(expression);
 			// Apply bind target type against variable
-			Typing nTyping = typing.project(row -> row.bind(target, row.get(v_expr)));
+			Typing nTyping = typing.map(row -> row.bind(target, row.get(v_expr)));
 			// Check whether typing invalidated
 			if (!typing.empty() && nTyping.empty()) {
 				// Concretize to eliminate existentials
-				typing = typing.concretize();
+				typing = typing.concretise();
 				// No valid typings remain!
 				syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(target), new Tuple<>(typing.types(expression)));
 			}
-			return nTyping;
-		} else {
-			return typing;
+			typing = nTyping;
 		}
+		// Finalise typing
+		Typing nTyping = typing.concretise();
+		if (!typing.empty() && nTyping.empty()) {
+			// No valid typings remain!
+			syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(target), new Tuple<>(typing.types(expression)));
+		}
+		return nTyping;
 	}
 
 	public Typing checkBackwardsExpressions(Type target, Tuple<Expr> expressions, Typing typing,
@@ -1529,7 +1677,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		int[] v_operands = typing.indexOf(operands);
 		// Recursively check operands
 		for (int i = 0; i != v_operands.length; ++i) {
-			typing = checkBackwardsExpression(operands.get(i), typing, environment);
+			typing = checkBackwardsExpression(Type.Any, operands.get(i), typing, environment);
 		}
 		// Compute least upper bound of element types
 		return typing.map(row -> row.set(v_expr, createArray(leastUpperBound(row, v_operands))));
@@ -1698,7 +1846,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 		// Check for errors
 		if (!typing.empty() && nTyping.empty()) {
 			// Concretize to eliminate existentials
-			typing = typing.concretize();
+			typing = typing.concretise();
 			//
 			syntaxError(expr, INCOMPARABLE_OPERANDS, new Tuple<>(typing.types(expr.getFirstOperand())), new Tuple<>(typing.types(expr.getSecondOperand())));
 		}
@@ -1860,11 +2008,11 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			// Save current typing to enable identification of an error.
 			Typing oTyping = typing;
 			// Bind ith parameter type with ith argument type
-			typing = typing.project(row -> row.bind(getCallableArgument(row.get(v_callable), _i), row.get(ith)));
+			typing = typing.map(row -> row.bind(getCallableArgument(row.get(v_callable), _i), row.get(ith)));
 			// Sanity check for errors
 			if (!oTyping.empty() && typing.empty()) {
 				// Concretize to eliminate existentials
-				oTyping = oTyping.concretize();
+				oTyping = oTyping.concretise();
 				// An error has arisen as a direct result of binding this variable, therefore it
 				// must be problematic.
 				Tuple<Type> targs = new Tuple<>(map(oTyping.types(v_callable), t -> getCallableArgument(t, _i)));
@@ -1916,17 +2064,16 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	private Typing checkBackwardsLambdaDeclaration(Decl.Lambda expr, Typing typing, Environment environment) {
 		// Save handle(s) for later
 		int v_expr = typing.indexOf(expr);
-		int v_body = typing.indexOf(expr.getBody());
 		//
-		Type parameter = Decl.Callable.project(expr.getParameters());
+		Type params = Decl.Callable.project(expr.getParameters());
 		// Type check the body of the lambda using the expected return types
-		typing = checkBackwardsExpression(expr.getBody(), typing, environment);
+		Type returns = checkExpression(expr.getBody(), null, environment);
 		// Determine whether or not this is a pure or impure lambda.
 		if (isPure(expr.getBody())) {
-			return typing.map(row -> row.set(v_expr, createFunction(parameter, row.get(v_body))));
+			return typing.map(row -> row.set(v_expr, createFunction(params, returns)));
 		} else {
 			return typing.map(row -> row.set(v_expr,
-					createMethod(parameter, row.get(v_body), expr.getCapturedLifetimes(), expr.getLifetimes())));
+					createMethod(params, returns, expr.getCapturedLifetimes(), expr.getLifetimes())));
 		}
 	}
 
@@ -2055,50 +2202,48 @@ public class NewFlowTypeCheck implements Compiler.Check {
 	public Typing.Environment initialiseCallableFrame(Typing.Environment environment, Expr.Invoke expr,
 			Decl.Callable candidate, int v_expr) {
 		// Save handle(s) for later
-		int v_callable = v_expr + 1;
+		int v_signature = v_expr + 1;
 		int v_concrete = v_expr + 2;
-		int v_meta = v_expr+3;
+		int v_template = v_expr + 3;
 		//
-		Type.Callable type = candidate.getType();
+		Type.Callable signatureType = candidate.getType();
 		// Sanity callable is even applicable
-		if(type.getParameter().shape() != expr.getOperands().size()) {
+		if(signatureType.getParameter().shape() != expr.getOperands().size()) {
 			// Declaration is not applicable as it doesn't accept the right number of
 			// arguments.
 			return null;
 		} else {
 			Tuple<Template.Variable> template = candidate.getTemplate();
 			Tuple<SyntacticItem> templateArguments = expr.getBinding().getArguments();
+			Type templateType = Type.Void;
 			// Check whether need to infer template arguments
 			if (template.size() > 0 && templateArguments.size() == 0) {
 				// Template required, but no explicit arguments given. Therefore, we create
-				// fresh (extenstial) type for each position and subsityte them through.
-				SyntacticItem[] targs = new SyntacticItem[template.size()];
-				for (int i = 0; i != template.size(); ++i) {
-					targs[i] = new Type.Existential(v_meta + i);
-					// Initialise type variables with void.
-					environment = environment.set(v_meta+i, Type.Void);
-				}
-				templateArguments = new Tuple<>(targs);
+				// fresh (existential) type for each position and subsitute them through.
+				wycc.util.Pair<Typing.Environment, Type.Existential[]> p = environment.allocate(template.size());
+				environment = p.first();
+				templateArguments = new Tuple<>(p.second());
+				templateType = Type.Tuple.create(p.second());
 			}
 			// Construct the concrete type.
-			Type.Callable concreteType = WyilFile.substitute(type, template, templateArguments);
+			Type.Callable concreteType = WyilFile.substitute(signatureType, template, templateArguments);
 			// Configure first meta-variable to hold actual signature
-			environment = environment.set(v_callable, type);
+			environment = environment.set(v_signature, signatureType);
 			// Configure second meta-variable to hold concrete signature
 			environment = environment.set(v_concrete, concreteType);
+			// Configure third meta-variable to hold template arguments
+			environment = environment.set(v_template, templateType);
 			// Done
 			return environment.set(v_expr, concreteType.getReturn());
 		}
 	}
 
 	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, LifetimeRelation lifetimes) {
-		// FIXME: this needs to be fixed. Possibly by doing the check during forward
-		// propagation, or perhaps using an existential.
-		Typing.Environment tmp = typing.concretize();
-		Type left = tmp.get(lhs);
-		Type right = tmp.get(rhs);
-		if (strictSubtypeOperator.isSubtype(left, right, lifetimes)
-				|| strictSubtypeOperator.isSubtype(right, left, lifetimes)) {
+		// FIXME: this needs to be fixed using an existential or similar.
+		Type left = typing.get(lhs);
+		Type right = typing.get(rhs);
+		if (strictSubtypeOperator.isSatisfiableSubtype(left, right, lifetimes)
+				|| strictSubtypeOperator.isSatisfiableSubtype(right, left, lifetimes)) {
 			return typing;
 		} else {
 			return null;
@@ -2277,7 +2422,7 @@ public class NewFlowTypeCheck implements Compiler.Check {
 			// A type error of some kind has occurred which has produced null instead of a
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
-		} else if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+		} else if (!strictSubtypeOperator.isSatisfiableSubtype(lhs, rhs, lifetimes)) {
 			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}

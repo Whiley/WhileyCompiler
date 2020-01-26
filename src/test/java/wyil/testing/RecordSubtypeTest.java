@@ -1789,18 +1789,17 @@ public class RecordSubtypeTest {
 	@Test public void test_5775() { checkNotSubtype("{int f2}|int","{int f1}|int"); }
 	@Test public void test_5776() { checkIsSubtype("{int f2}|int","{int f2}|int"); }
 
-
 	private void checkIsSubtype(String from, String to) {
 		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
+		assertTrue(subtypeOperator.isSatisfiableSubtype(ft, tt, null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
 		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertFalse(subtypeOperator.isSubtype(ft, tt, null));
+		assertFalse(subtypeOperator.isSatisfiableSubtype(ft, tt, null));
 	}
 }

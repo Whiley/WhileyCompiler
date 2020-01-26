@@ -284,13 +284,13 @@ public class ArraySubtypeTest {
 		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
+		assertTrue(subtypeOperator.isSatisfiableSubtype(ft, tt, null));
 	}
 
 	private void checkNotSubtype(String from, String to) {
 		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertFalse(subtypeOperator.isSubtype(ft, tt, null));
+		assertFalse(subtypeOperator.isSatisfiableSubtype(ft, tt, null));
 	}
 }

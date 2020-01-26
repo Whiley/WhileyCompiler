@@ -193,6 +193,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_counterexample = 69; // <ONE operands, ZERO>
 	public static final int TYPE_unknown = 80; // <ZERO operands, ZERO>
 	public static final int TYPE_void = 81; // <ZERO operands, ZERO>
+	public static final int TYPE_any = 82; // <ZERO operands, ZERO>
 	public static final int TYPE_null = 83; // <ZERO operands, ZERO>
 	public static final int TYPE_bool = 84; // <ZERO operands, ZERO>
 	public static final int TYPE_int = 85; // <ZERO operands, ZERO>
@@ -4935,6 +4936,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public static interface Type extends SyntacticItem {
 
+		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
@@ -4979,7 +4981,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @param binding A function which returns
 		 * @return
 		 */
-		public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+		public Type substitute(java.util.function.Function<Object, SyntacticItem> binding);
 
 		/**
 		 * Expose the underlying type of this type. For example, consider this:
@@ -5122,7 +5124,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type getReturn();
 
 			@Override
-			public Type.Callable substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+			public Type.Callable substitute(java.util.function.Function<Object, SyntacticItem> binding);
 		}
 
 		/**
@@ -5141,7 +5143,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5179,6 +5181,58 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
+		 * An any type represents the type of all possible values. This type is not
+		 * currently permited in the syntax of Whiley, but is used internally within the
+		 * subtyping algorithm. <b>NOTE:</b> the any type is a supertype of everything;
+		 * that is, it is top in the type lattice.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Any extends AbstractType implements Primitive {
+			public Any() {
+				super(TYPE_any);
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				return this;
+			}
+
+			@Override
+			public Any clone(SyntacticItem[] operands) {
+				return new Any();
+			}
+
+			@Override
+			public int shape() {
+				return 1;
+			}
+
+			@Override
+			public Type dimension(int nth) {
+				return this;
+			}
+
+			@Override
+			public String toString() {
+				return "any";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return "any";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_any") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Any();
+				}
+			};
+		}
+
+		/**
 		 * The null type is a special type which should be used to show the absence of
 		 * something. It is distinct from void, since variables can hold the special
 		 * <code>null</code> value (where as there is no special "void" value). With all
@@ -5197,7 +5251,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5236,7 +5290,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5279,7 +5333,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5320,7 +5374,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5375,7 +5429,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Array substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Array substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
 				if (before == after) {
@@ -5443,7 +5497,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Reference substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Reference substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
@@ -5592,7 +5646,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Record substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Record substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type.Field> before = getFields();
 				WyilFile.Tuple<Type.Field> after = substitute(before, binding);
 				if (before == after) {
@@ -5615,7 +5669,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * @return
 			 */
 			private static WyilFile.Tuple<Type.Field> substitute(WyilFile.Tuple<Type.Field> fields,
-					java.util.function.Function<Identifier, SyntacticItem> binding) {
+					java.util.function.Function<Object, SyntacticItem> binding) {
 				//
 				for (int i = 0; i != fields.size(); ++i) {
 					Type.Field field = fields.get(i);
@@ -5858,7 +5912,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Tuple substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Tuple substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				for(int i=0;i!=size();++i) {
 					Type before = get(i);
 					Type after = before.substitute(binding);
@@ -6016,7 +6070,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Nominal substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Nominal substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type> o_parameters = getParameters();
 				WyilFile.Tuple<Type> n_parameters = WyilFile.substitute(o_parameters, binding);
 				if (o_parameters == n_parameters) {
@@ -6111,7 +6165,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Union substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Union substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type[] before = getAll();
 				Type[] after = WyilFile.substitute(before, binding);
 				if (before == after) {
@@ -6198,7 +6252,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Function substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Function substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parameterBefore = getParameter();
 				Type parameterAfter = parameterBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6276,7 +6330,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Method substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Method substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				// Sanity check the binding being used here. Specifically, any binding which is
 				// declared in this method cannot be subsitituted.
 				WyilFile.Tuple<Identifier> lifetimes = getLifetimeParameters();
@@ -6368,7 +6422,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Property substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Property substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parametersBefore = getParameter();
 				Type parametersAfter = parametersBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6422,7 +6476,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Unknown substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Unknown substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -6478,8 +6532,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
-				return this;
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				SyntacticItem i = binding.apply(get());
+				if(i instanceof Type) {
+					return (Type) i;
+				} else {
+					return this;
+				}
 			}
 
 			@Override
@@ -6530,7 +6589,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				SyntacticItem expanded = binding.apply(getOperand());
 				if (expanded instanceof Type) {
 					return (Type) expanded;
@@ -6588,7 +6647,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Recursive substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Recursive substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -6698,6 +6757,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			public String toString(Type type) {
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6765,6 +6825,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type apply(Type type) {
 				// FIXME: need to support infinite selectors
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6821,7 +6882,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	private static Tuple<Type> substitute(Tuple<Type> types,
-			java.util.function.Function<Identifier, SyntacticItem> binding) {
+			java.util.function.Function<Object, SyntacticItem> binding) {
 		for (int i = 0; i != types.size(); ++i) {
 			Type before = types.get(i);
 			Type after = before.substitute(binding);
@@ -6838,7 +6899,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return types;
 	}
 
-	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
+	private static Type[] substitute(Type[] types, java.util.function.Function<Object, SyntacticItem> binding) {
 		Type[] nTypes = types;
 		for (int i = 0; i != nTypes.length; ++i) {
 			Type before = types[i];
@@ -6866,7 +6927,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	public static Type.Callable substitute(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
 			Tuple<SyntacticItem> templateArguments) {
-		Function<Identifier,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
+		Function<Object,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
 		// Proceed with the potentially updated binding
 		Type parameters = fmp.getParameter().substitute(binding);
 		Type ret = fmp.getReturn().substitute(binding);
@@ -7080,11 +7141,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static <T extends SyntacticItem> java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static <T extends SyntacticItem> java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Tuple<T> arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -7101,11 +7163,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Type.Tuple arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -7123,9 +7186,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param variables
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> removeFromBinding(
-			java.util.function.Function<Identifier, SyntacticItem> binding, Tuple<Identifier> variables) {
-		return (Identifier var) -> {
+	public static java.util.function.Function<Object, SyntacticItem> removeFromBinding(
+			java.util.function.Function<Object, SyntacticItem> binding, Tuple<Identifier> variables) {
+		return (Object var) -> {
 			// Sanity check whether this is a variable which is being removed
 			for (int i = 0; i != variables.size(); ++i) {
 				if (var.equals(variables.get(i))) {
@@ -7517,7 +7580,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// Types
 		builder.add("TYPE", "unknown", Type.Unknown.DESCRIPTOR_0);
 		builder.add("TYPE", "void", Type.Void.DESCRIPTOR_0);
-		builder.add("TYPE", "any", null);
+		builder.add("TYPE", "any", Type.Any.DESCRIPTOR_0);
 		builder.add("TYPE", "null", Type.Null.DESCRIPTOR_0);
 		builder.add("TYPE", "bool", Type.Bool.DESCRIPTOR_0);
 		builder.add("TYPE", "int", Type.Int.DESCRIPTOR_0);

@@ -18,6 +18,7 @@ import java.util.function.Function;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.util.Pair;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 import wyil.util.SubtypeOperator.LifetimeRelation;
@@ -158,10 +159,11 @@ public interface Typing {
 	public Typing invalidate();
 
 	/**
-	 * Concretize all existential types. Rows where no valid concretisation exists
-	 * for some variable are immediately invalidated.
+	 * Attempt to resolve all outstanding existential types into concrete types.
+	 *
+	 * @return
 	 */
-	public Typing concretize();
+	public Typing concretise();
 
 	/**
 	 * Apply a given function to all rows of the typing matrix producing a
@@ -195,7 +197,7 @@ public interface Typing {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Environment extends Set, LifetimeRelation {
+	public interface Environment extends LifetimeRelation {
 		/**
 		 * Return the "width" of this environment (i.e. the number of allocated
 		 * variables).
@@ -221,44 +223,6 @@ public interface Typing {
 		public Type[] getAll(int... variables);
 
 		/**
-		 * <p>
-		 * Determine whether the <code>rhs</code> type is a <i>subtype</i> of the
-		 * <code>lhs</code> (denoted <code>lhs :> rhs</code>). In the presence of type
-		 * invariants, this operation is undecidable. Therefore, a <i>three-valued</i>
-		 * logic is employed. Either it was concluded that the subtype relation
-		 * <i>definitely holds</i>, or that it <i>definitely does not hold</i> that it
-		 * is <i>unknown</i> whether it holds or not.
-		 * </p>
-		 *
-		 * <p>
-		 * For example, <code>int|null :> int</code> definitely holds. Likewise,
-		 * <code>int :> int|null</code> definitely does not hold. However, whether or
-		 * not <code>nat :> pos</code> holds depends on the type invariants given for
-		 * <code>nat</code> and <code>pos</code> which this operator cannot reason
-		 * about. Observe that, in some cases, we do get effective reasoning about types
-		 * with invariants. For example, <code>null|nat :> nat</code> will be determined
-		 * to definitely hold, despite the fact that <code>nat</code> has a type
-		 * invariant.
-		 * </p>
-		 *
-		 * <p>
-		 * Depending on the exact language of types involved, this can be a surprisingly
-		 * complex operation. For example, in the presence of <i>union</i>,
-		 * <i>intersection</i> and <i>negation</i> types, the subtype algorithm is
-		 * surprisingly intricate.
-		 * </p>
-		 *
-		 * @param lhs
-		 *            The candidate "supertype". That is, lhs's raw type may be a
-		 *            supertype of <code>rhs</code>'s raw type.
-		 * @param rhs
-		 *            The candidate "subtype". That is, rhs's raw type may be a subtype
-		 *            of <code>lhs</code>'s raw type.
-		 * @return
-		 */
-		public boolean isSubtype(Type lhs, Type rhs);
-
-		/**
 		 * Bind two types together in this environment assuming the <code>lhs</code> is
 		 * the supertype of the <code>rhs</code>. For ease of use in the type checker,
 		 * we permit either lhs or rhs to be null and, in such case, an empty array of
@@ -270,14 +234,14 @@ public interface Typing {
 		 *            of <code>lhs</code>'s raw type.
 		 * @return
 		 */
-		public Environment[] bind(Type lhs, Type rhs);
+		public Environment bind(Type lhs, Type rhs);
 
 		/**
-		 * Concretize all types in this environment.
+		 * Attempt to resolve all outstanding existential types into concrete types.
 		 *
 		 * @return
 		 */
-		public Environment concretize();
+		public Environment[] concretise();
 
 		/**
 		 * Update the type of a given variable in the environment. Observe that if the
@@ -289,52 +253,15 @@ public interface Typing {
 		 * @return
 		 */
 		public Environment set(int variable, Type type);
-	}
-
-	/**
-	 * Represents a set of typing environments which can be combined in various
-	 * ways. This is similar, though not identical, to the notion of a typing. A key
-	 * difference is the lack of any connection with expressions.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Set {
-		/**
-		 * Check whether this is the empty set or not.
-		 *
-		 * @return
-		 */
-		public boolean empty();
 
 		/**
-		 * Union two constraint sets together. This combines all constraints from both
-		 * sets.
+		 * Allocate a given number of existential type variables for use within this
+		 * environment.
 		 *
-		 * @param other
+		 * @param n
 		 * @return
 		 */
-		public Set union(Set other);
-
-		/**
-		 * Access the environments internal to this typing.
-		 *
-		 * @return
-		 */
-		public Typing.Environment[] toArray();
-
-		/**
-		 * Apply a given function to all rows of the set producing a potentially updated
-		 * set of constraints. As part of this process, rows may be invalidated if they
-		 * fail to meet some criteria.
-		 *
-		 * @param fn The mapping function which is applied to each row. This returns
-		 *           either an updated row, or <code>null</code>, if the row is
-		 *           invalidated.
-		 * @return
-		 */
-		public Typing.Set map(Function<Typing.Environment,Typing.Environment> fn);
-
+		public Pair<Environment,Type.Existential[]> allocate(int n);
 	}
 
 	/**
@@ -344,9 +271,10 @@ public interface Typing {
 	 * @param expression
 	 * @return
 	 */
-	public static Typing Relaxed(Expr expression, SubtypeOperator subtyping, LifetimeRelation lifetimes,
+	public static Typing Relaxed(Expr expression, AbstractSubtypeOperator subtyping, LifetimeRelation lifetimes,
 			Build.Meter meter) {
 		Expr[] schema = AbstractTyping.flattern(expression, meter);
-		return new AbstractTyping(schema, new AbstractTyping.Environment(subtyping,lifetimes));
+		return new AbstractTyping(schema,
+				new AbstractTyping.Environment(subtyping, lifetimes, AbstractSubtypeOperator.TOP, 0));
 	}
 }
