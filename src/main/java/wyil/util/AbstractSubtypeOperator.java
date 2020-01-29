@@ -16,17 +16,13 @@ package wyil.util;
 import static wyil.lang.WyilFile.*;
 
 import java.util.*;
-import java.util.function.Function;
 
-import wybs.lang.SyntacticItem;
+import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticHeap;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.*;
-import wyil.lang.WyilFile.Type.Union;
-import wyil.util.SubtypeOperator.Constraints;
 
 /**
  * <p>
@@ -116,13 +112,12 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 
 	@Override
 	public boolean isSatisfiableSubtype(Type t1, Type t2, LifetimeRelation lifetimes) {
-		ConstraintSet constraints = isSubtype(t1,t2,lifetimes);
-		// FIXME: clearly this is broken!
+		AbstractConstraints constraints = isSubtype(t1,t2,lifetimes);
 		return !constraints.isEmpty();
 	}
 
 	@Override
-	public ConstraintSet isSubtype(Type t1, Type t2, LifetimeRelation lifetimes) {
+	public AbstractConstraints isSubtype(Type t1, Type t2, LifetimeRelation lifetimes) {
 		return isSubtype(t1,t2,lifetimes,null);
 	}
 
@@ -130,10 +125,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public boolean isEmpty(QualifiedName nid, Type type) {
 		return isContractive(nid, type, null);
 	}
-
-	// ===========================================================================================
-	// Reference Helpers
-	// ===========================================================================================
 
 	// ===========================================================================
 	// Contractivity
@@ -154,7 +145,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		case TYPE_int:
 		case TYPE_property:
 		case TYPE_byte:
-		case TYPE_variable:
+		case TYPE_universal:
 		case TYPE_unknown:
 		case TYPE_function:
 		case TYPE_method:
@@ -239,7 +230,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @author David J. Pearce
 	 *
 	 */
-	protected ConstraintSet isSubtype(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		// FIXME: only need to check for coinductive case when both types are recursive.
 		// If either is not recursive, then are guaranteed to eventually terminate.
 		if (cache != null && cache.get(t1, t2)) {
@@ -279,17 +270,17 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			case TYPE_function:
 			case TYPE_property:
 				return isSubtype((Type.Callable) t1, (Type.Callable) t2, lifetimes, cache);
-			case TYPE_variable:
-				return isSubtype((Type.Variable) t1, (Type.Variable) t2, lifetimes, cache);
+			case TYPE_universal:
+				return isSubtype((Type.UniversalVariable) t1, (Type.UniversalVariable) t2, lifetimes, cache);
 			case TYPE_existential:
-				return isSubtype(t1, (Type.Existential) t2, lifetimes, cache);
+				return isSubtype(t1, (Type.ExistentialVariable) t2, lifetimes, cache);
 			default:
 				throw new IllegalArgumentException("unexpected type encountered: " + t1);
 			}
 		} else if(t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
 			return TOP;
 		} else if (t2_opcode == TYPE_existential) {
-			return isSubtype(t1, (Type.Existential) t2, lifetimes, cache);
+			return isSubtype(t1, (Type.ExistentialVariable) t2, lifetimes, cache);
 		} else if (t2_opcode == TYPE_nominal) {
 			return isSubtype(t1, (Type.Nominal) t2, lifetimes, cache);
 		} else if (t2_opcode == TYPE_union) {
@@ -299,35 +290,35 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		} else if (t1_opcode == TYPE_nominal) {
 			return isSubtype((Type.Nominal) t1, (Type.Atom) t2, lifetimes, cache);
 		} else if (t1_opcode == TYPE_existential) {
-				return isSubtype((Type.Existential) t1, (Type.Atom) t2, lifetimes, cache);
+				return isSubtype((Type.ExistentialVariable) t1, (Type.Atom) t2, lifetimes, cache);
 		} else {
 			// Nothing else works except void
 			return BOTTOM;
 		}
 	}
 
-	protected ConstraintSet isSubtype(Type.Array t1, Type.Array t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type.Array t1, Type.Array t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		return isSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
 	}
 
-	protected ConstraintSet isSubtype(Type.Tuple t1, Type.Tuple t2, LifetimeRelation lifetimes,
+	protected AbstractConstraints isSubtype(Type.Tuple t1, Type.Tuple t2, LifetimeRelation lifetimes,
 			BinaryRelation<Type> cache) {
-		ConstraintSet constraints = TOP;
+		AbstractConstraints constraints = TOP;
 		// Check elements one-by-one
 		for (int i = 0; i != t1.size(); ++i) {
-			ConstraintSet ith = isSubtype(t1.get(i), t2.get(i), lifetimes, cache);
+			AbstractConstraints ith = isSubtype(t1.get(i), t2.get(i), lifetimes, cache);
 			if (ith == null || constraints == null) {
 				return BOTTOM;
 			} else {
-				constraints = constraints.intersect(ith);
+				constraints = constraints.intersect(ith,lifetimes);
 			}
 		}
 		// Done
 		return constraints;
 	}
 
-	protected ConstraintSet isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		ConstraintSet constraints = TOP;
+	protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		AbstractConstraints constraints = TOP;
 		Tuple<Type.Field> t1_fields = t1.getFields();
 		Tuple<Type.Field> t2_fields = t2.getFields();
 		// Sanity check number of fields are reasonable.
@@ -345,18 +336,18 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				return BOTTOM;
 			}
 			// Check whether fields are subtypes or not
-			ConstraintSet other = isSubtype(f1.getType(), f2.getType(), lifetimes, cache);
+			AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), lifetimes, cache);
 			if(other == null || constraints == null) {
 				return BOTTOM;
 			} else {
-				constraints = constraints.intersect(other);
+				constraints = constraints.intersect(other,lifetimes);
 			}
 		}
 		// Done
 		return constraints;
 	}
 
-	protected ConstraintSet isSubtype(Type.Reference t1, Type.Reference t2, LifetimeRelation lifetimes,
+	protected AbstractConstraints isSubtype(Type.Reference t1, Type.Reference t2, LifetimeRelation lifetimes,
 			BinaryRelation<Type> cache) {
 		String l1 = extractLifetime(t1);
 		String l2 = extractLifetime(t2);
@@ -365,13 +356,13 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			// Definitely unsafe
 			return BOTTOM;
 		}
-		ConstraintSet first = areEquivalent(t1.getElement(), t2.getElement(), lifetimes, cache);
-		ConstraintSet second = isWidthSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
+		AbstractConstraints first = areEquivalent(t1.getElement(), t2.getElement(), lifetimes, cache);
+		AbstractConstraints second = isWidthSubtype(t1.getElement(), t2.getElement(), lifetimes, cache);
 		// Join them together
 		return first.union(second);
 	}
 
-	protected ConstraintSet isWidthSubtype(Type t1, Type t2, LifetimeRelation lifetimes,
+	protected AbstractConstraints isWidthSubtype(Type t1, Type t2, LifetimeRelation lifetimes,
 			BinaryRelation<Type> cache) {
 		// NOTE: this method could be significantly improved by allowing recursive width
 		// subtyping.
@@ -382,7 +373,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			Type.Nominal n2 = (Type.Nominal) t2;
 			return isWidthSubtype(t1, n2.getConcreteType(), lifetimes, cache);
 		} else if(t1 instanceof Type.Record && t2 instanceof Type.Record) {
-			ConstraintSet constraints = TOP;
+			AbstractConstraints constraints = TOP;
 			Type.Record r1 = (Type.Record) t1;
 			Type.Record r2 = (Type.Record) t2;
 			Tuple<Type.Field> r1_fields = r1.getFields();
@@ -395,8 +386,8 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 						// Fields have differing names
 						return BOTTOM;
 					}
-					ConstraintSet other = areEquivalent(f1.getType(), f2.getType(), lifetimes, cache);
-					constraints = constraints.intersect(other);
+					AbstractConstraints other = areEquivalent(f1.getType(), f2.getType(), lifetimes, cache);
+					constraints = constraints.intersect(other,lifetimes);
 				}
 				return constraints;
 			}
@@ -404,7 +395,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		return BOTTOM;
 	}
 
-	protected ConstraintSet isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
+	protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
 			BinaryRelation<Type> cache) {
 		Type t1_params = t1.getParameter();
 		Type t2_params = t2.getParameter();
@@ -415,8 +406,8 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			return BOTTOM;
 		}
 		// Check parameters
-		ConstraintSet c_params = areEquivalent(t1_params, t2_params, lifetimes, cache);
-		ConstraintSet c_returns = areEquivalent(t1_return, t2_return, lifetimes, cache);
+		AbstractConstraints c_params = areEquivalent(t1_params, t2_params, lifetimes, cache);
+		AbstractConstraints c_returns = areEquivalent(t1_return, t2_return, lifetimes, cache);
 		//
 		if (t1 instanceof Type.Method) {
 			Type.Method m1 = (Type.Method) t1;
@@ -434,10 +425,10 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			}
 		}
 		// Done
-		return c_params.intersect(c_returns);
+		return c_params.intersect(c_returns,lifetimes);
 	}
 
-	protected ConstraintSet isSubtype(Type.Variable t1, Type.Variable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type.UniversalVariable t1, Type.UniversalVariable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		if(t1.getOperand().equals(t2.getOperand())) {
 			return TOP;
 		} else {
@@ -445,33 +436,33 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected ConstraintSet isSubtype(Type.Existential t1, Type.Atom t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		return new ConstraintSet(t1, t2, lifetimes, this);
+	protected AbstractConstraints isSubtype(Type.ExistentialVariable t1, Type.Atom t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		return new AbstractConstraints(t1, t2);
 	}
 
-	protected ConstraintSet isSubtype(Type t1, Type.Existential t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		return new ConstraintSet(t1, t2, lifetimes, this);
+	protected AbstractConstraints isSubtype(Type t1, Type.ExistentialVariable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		return new AbstractConstraints(t1, t2);
 	}
 
-	protected ConstraintSet isSubtype(Type t1, Type.Union t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		ConstraintSet constraints = TOP;
+	protected AbstractConstraints isSubtype(Type t1, Type.Union t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		AbstractConstraints constraints = TOP;
 		for(int i=0;i!=t2.size();++i) {
-			ConstraintSet other = isSubtype(t1, t2.get(i), lifetimes, cache);
-			constraints = constraints.intersect(other);
+			AbstractConstraints other = isSubtype(t1, t2.get(i), lifetimes, cache);
+			constraints = constraints.intersect(other,lifetimes);
 		}
 		return constraints;
 	}
 
-	protected ConstraintSet isSubtype(Type.Union t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		ConstraintSet constraints = BOTTOM;
+	protected AbstractConstraints isSubtype(Type.Union t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+		AbstractConstraints constraints = BOTTOM;
 		for (int i = 0; i != t1.size(); ++i) {
-			ConstraintSet ith = isSubtype(t1.get(i), t2, lifetimes, cache);
+			AbstractConstraints ith = isSubtype(t1.get(i), t2, lifetimes, cache);
 			constraints = constraints.union(ith);
 		}
 		return constraints;
 	}
 
-	protected ConstraintSet isSubtype(Type.Nominal t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type.Nominal t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		Decl.Type d1 = t1.getLink().getTarget();
 		Decl.Type d2 = t2.getLink().getTarget();
 		//
@@ -479,13 +470,28 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		Tuple<Expr> t2_invariant = d2.getInvariant();
 		// Dispatch easy cases
 		if (d1 == d2) {
-			ConstraintSet constraints = TOP;
-			Tuple<Type> t1s = t1.getParameters();
-			Tuple<Type> t2s = t2.getParameters();
-			// FIXME: broken for contra-variant positions #989!!
-			for (int i = 0; i != t1s.size(); ++i) {
-				ConstraintSet other = isSubtype(t1s.get(i), t2s.get(i), lifetimes, cache);
-				constraints = constraints.intersect(other);
+			// NOTE: at this point it is possible to only consider the template arguments
+			// provided. However, doing this requires knowledge of the variance requirements
+			// for each template parameter position. Such information is currently
+			// unavailable though, in principle, could be inferred.
+			Tuple<Template.Variable> template = d1.getTemplate();
+			Tuple<Type> t1_params = t1.getParameters();
+			Tuple<Type> t2_params = t2.getParameters();
+			AbstractConstraints constraints = TOP;
+			for (int i = 0; i != template.size(); ++i) {
+				Template.Variable ith = template.get(i);
+				Template.Variance v = ith.getVariance();
+				Type t1_ith_param = t1_params.get(i);
+				Type t2_ith_param = t2_params.get(i);
+				// Apply constraints
+				if (v == Template.Variance.COVARIANT || v == Template.Variance.INVARIANT) {
+					constraints = constraints.intersect(isSubtype(t1_ith_param, t2_ith_param, lifetimes, cache),
+							lifetimes);
+				}
+				if (v == Template.Variance.CONTRAVARIANT || v == Template.Variance.INVARIANT) {
+					constraints = constraints.intersect(isSubtype(t2_ith_param, t1_ith_param, lifetimes, cache),
+							lifetimes);
+				}
 			}
 			return constraints;
 		} else {
@@ -512,7 +518,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param lifetimes
 	 * @return
 	 */
-	protected ConstraintSet isSubtype(Type t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		return isSubtype(t1, t2.getConcreteType(), lifetimes, cache);
 	}
 
@@ -527,12 +533,12 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param lifetimes
 	 * @return
 	 */
-	protected ConstraintSet isSubtype(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints isSubtype(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		//
 		Decl.Type d1 = t1.getLink().getTarget();
 		Tuple<Expr> t1_invariant = d1.getInvariant();
 		// Dispatch easy cases
-		if (isSubtype(t1_invariant, EMPTY_INVARIANT)) {
+		if (isSubtype(t1_invariant,EMPTY_INVARIANT)) {
 			return isSubtype(t1.getConcreteType(), t2, lifetimes, cache);
 		} else {
 			return BOTTOM;
@@ -557,12 +563,12 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	 * @param lifetimes
 	 * @return
 	 */
-	protected ConstraintSet areEquivalent(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	protected AbstractConstraints areEquivalent(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		// NOTE: this is a temporary solution.
-		ConstraintSet left = isSubtype(t1, t2, lifetimes, cache);
-		ConstraintSet right = isSubtype(t2, t1, lifetimes, cache);
+		AbstractConstraints left = isSubtype(t1, t2, lifetimes, cache);
+		AbstractConstraints right = isSubtype(t2, t1, lifetimes, cache);
 		//
-		return left.intersect(right);
+		return left.intersect(right,lifetimes);
 	}
 
 	// ===============================================================================
@@ -719,56 +725,64 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			types[i] = subtract(t1.get(i),t2,cache);
 		}
 		// Remove any selected cases
-		types = ArrayUtils.removeAll(types, Type.Void);
-		//
-		switch(types.length) {
-		case 0:
-			return Type.Void;
-		case 1:
-			return types[0];
-		default:
-			return new Type.Union(types);
-		}
+		return Type.Union.create(ArrayUtils.removeAll(types, Type.Void));
 	}
 
 	// ===============================================================================
-	// ConstraintSet
+	// AbstractConstraints
 	// ===============================================================================
 
 	/**
+	 * An empty solution to a set of concrete constraints
+	 */
+	private final ConcreteSolution EMPTY_CONCRETE_SOLUTION = new ConcreteSolution();
+	/**
+	 * A simple constant to avoid unnecessary allocations.
+	 */
+	private final ConcreteSolution[] EMPTY_CONCRETE_SOLUTIONS = new ConcreteSolution[0];
+	/**
+	 * An empty set of (potentially symbolic) constraints.
+	 */
+	private final AbstractSolution EMPTY_SYMBOLIC_SOLUTION = new AbstractSolution();
+	/**
+	 * A simple constant to avoid unnecessary allocations.
+	 */
+	private final AbstractSolution[] EMPTY_SYMBOLIC_SOLUTIONS = new AbstractSolution[0];
+	/**
 	 * A minimal implementation of the constraints interface.
 	 */
-	public static final ConstraintSet TOP = new ConstraintSet(true);
-
+	public final AbstractConstraints TOP = new AbstractConstraints(true);
 	/**
 	 * The empty constraint set which is, by construction, invalid.
 	 */
-	public static final ConstraintSet BOTTOM = new ConstraintSet(false);
+	public final AbstractConstraints BOTTOM = new AbstractConstraints(false);
 
-	public static class ConstraintSet implements SubtypeOperator.Constraints {
-		private final LifetimeRelation lifetimes;
-		private final AbstractSubtypeOperator subtyping;
-		private final Row[] rows;
+	/**
+	 * Represents a set of <i>satisfiable</i> subtyping constraints. Satisfiability
+	 * is understood through the presence of concrete solutions for the constraints.
+	 * When constraint sets are intersected, new constraints are added which may
+	 * invalidate active solutions. When the number of active solutions reaches
+	 * zero, the entire constraint set is said to be <i>unsatisfiable</i> (which may
+	 * mean, for example, that the original source program is untypable).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	protected class AbstractConstraints implements SubtypeOperator.Constraints {
+		private final AbstractSolution[] rows;
 
-		public ConstraintSet(boolean top) {
-			this.rows = top ? new Row[] { new Row() } : new Row[0];
-			this.lifetimes = null;
-			this.subtyping = null;
+		public AbstractConstraints(boolean top) {
+			this.rows = top ? new AbstractSolution[] { EMPTY_SYMBOLIC_SOLUTION }
+					: EMPTY_SYMBOLIC_SOLUTIONS;
 		}
 
-		public ConstraintSet(Type.Existential lhs, Type.Atom rhs, LifetimeRelation lifetimes, AbstractSubtypeOperator subtyping) {
-			this.lifetimes = lifetimes;
-			this.subtyping = subtyping;
-			this.rows = new Row[] { new Row(lhs,rhs) };
+		public AbstractConstraints(Type.ExistentialVariable lhs, Type.Atom rhs) {
+			this.rows = new AbstractSolution[] { new AbstractSolution(lhs,rhs) };
 		}
-		public ConstraintSet(Type lhs, Type.Existential rhs, LifetimeRelation lifetimes, AbstractSubtypeOperator subtyping) {
-			this.lifetimes = lifetimes;
-			this.subtyping = subtyping;
-			this.rows = new Row[] { new Row(lhs,rhs) };
+		public AbstractConstraints(Type lhs, Type.ExistentialVariable rhs) {
+			this.rows = new AbstractSolution[] { new AbstractSolution(lhs,rhs) };
 		}
-		private ConstraintSet(Row[] rows, LifetimeRelation lifetimes, AbstractSubtypeOperator subtyping) {
-			this.lifetimes = lifetimes;
-			this.subtyping = subtyping;
+		private AbstractConstraints(AbstractSolution[] rows) {
 			this.rows = rows;
 		}
 
@@ -783,7 +797,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		}
 
 		@Override
-		public Row get(int i) {
+		public AbstractSolution get(int i) {
 			return rows[i];
 		}
 
@@ -794,7 +808,7 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		 * @param other
 		 * @return
 		 */
-		public ConstraintSet intersect(ConstraintSet other) {
+		public AbstractConstraints intersect(AbstractConstraints other, LifetimeRelation lifetimes) {
 			if(this == TOP) {
 				return other;
 			} else if(other == TOP) {
@@ -803,26 +817,24 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			// NOTE: at this point, other could be top
 			final int n = rows.length;
 			final int m = other.rows.length;
-			Row[] nrows = new Row[n * m];
+			ArrayList<Solution> nrows = new ArrayList<>();
 			for (int i = 0; i != n; ++i) {
-				Row ith = rows[i];
+				AbstractSolution ith = rows[i];
 				for (int j = 0; j != m; ++j) {
-					Row jth = other.rows[j];
-					nrows[(i * m) + j] = ith.intersect(jth);
+					AbstractSolution jth = other.rows[j];
+					ArrayUtils.addAll(ith.intersect(jth,lifetimes), nrows);
 				}
 			}
-			// Remove all rows which have been invalidated
-			nrows = ArrayUtils.removeAll(nrows, null);
 			// Sanity check what we have left
-			if (nrows.length == 0) {
+			if (nrows.size() == 0) {
 				return BOTTOM;
 			} else {
 				// NOTE: could optimise for common case where result equivalent to this.
-				return new ConstraintSet(nrows, lifetimes, subtyping);
+				return new AbstractConstraints(nrows.toArray(new AbstractSolution[nrows.size()]));
 			}
 		}
 
-		public ConstraintSet union(ConstraintSet other) {
+		public AbstractConstraints union(AbstractConstraints other) {
 			if(this == BOTTOM) {
 				return other;
 			} else if(other == BOTTOM) {
@@ -830,11 +842,11 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			}
 			final int n = rows.length;
 			final int m = other.rows.length;
-			Row[] nrows = new Row[n + m];
+			AbstractSolution[] nrows = new AbstractSolution[n + m];
 			System.arraycopy(rows, 0, nrows, 0, n);
 			System.arraycopy(other.rows, 0, nrows, n, m);
 			nrows = ArrayUtils.removeDuplicates(nrows);
-			return new ConstraintSet(nrows, lifetimes, subtyping);
+			return new AbstractConstraints(nrows);
 		}
 
 		@Override
@@ -852,173 +864,677 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				return r;
 			}
 		}
+	}
 
-		private class Row implements Constraints.Row {
-			private final Type[] upperBounds;
-			private final Type[] lowerBounds;
-			public Row() {
-				this.upperBounds = new Type[0];
-				this.lowerBounds = new Type[0];
-			}
-			public Row(Type.Existential lhs, Type.Atom rhs) {
-				int n = lhs.get()+1;
-				this.lowerBounds = fill(n,Type.Void);
-				this.upperBounds = fill(n,Type.Any);
-				lowerBounds[n-1] = rhs;
-			}
-			public Row(Type lhs, Type.Existential rhs) {
-				int n = rhs.get()+1;
-				this.lowerBounds = fill(n,Type.Void);
-				this.upperBounds = fill(n,Type.Any);
-				upperBounds[n-1] = lhs;
-			}
-			private Row(Type[] upperBounds, Type[] lowerBounds) {
-				this.upperBounds = upperBounds;
-				this.lowerBounds = lowerBounds;
-			}
-			private Row intersect(Row row) {
-				return intersect(this, row);
-			}
+	/**
+	 * Represents a set of constraints of the form <code>? :> T</code> or
+	 * <code>T :> ?</code> and a valid solution. <i>symbolic constraints</i> are
+	 * those where <code>T</code> itself contains existential variables. In
+	 * contrast, <i>concrete constraints</i> are those where <code>T</code> itself
+	 * is concrete. In the current implementation, symbolic constraints are kept as
+	 * is whilst concrete constraints are immediately applied to the active
+	 * solution.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private class AbstractSolution implements AbstractConstraints.Solution {
+		private final ConcreteSolution solution;
+		private final SymbolicConstraint[] constraints;
 
-			private Row intersect(Row lhs, Row rhs) {
-				// Choose largest to work with
-				if(lhs.upperBounds.length < rhs.upperBounds.length) {
-					Row tmp = rhs;
-					rhs = lhs;
-					lhs = tmp;
+		public AbstractSolution() {
+			this.solution = EMPTY_CONCRETE_SOLUTION;
+			this.constraints = new SymbolicConstraint[0];
+		}
+
+		public AbstractSolution(Type.ExistentialVariable var, Type.Atom lower) {
+			if (isConcrete(lower)) {
+				this.solution = new ConcreteSolution(var.get(), Type.Any, lower);
+				this.constraints = new SymbolicConstraint[0];
+			} else {
+				this.solution = EMPTY_CONCRETE_SOLUTION;
+				this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(var, lower) };
+			}
+		}
+
+		public AbstractSolution(Type upper, Type.ExistentialVariable var) {
+			if (isConcrete(upper)) {
+				this.solution = new ConcreteSolution(var.get(), upper, Type.Void);
+				this.constraints = new SymbolicConstraint[0];
+			} else {
+				this.solution = EMPTY_CONCRETE_SOLUTION;
+				this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(upper, var) };
+			}
+		}
+
+		private AbstractSolution(ConcreteSolution solution, SymbolicConstraint[] constraints) {
+			this.solution = solution;
+			this.constraints = constraints;
+		}
+
+		private AbstractSolution[] intersect(AbstractSolution row, LifetimeRelation lifetimes) {
+			ConcreteSolution s = solution.intersect(row.solution, lifetimes);
+			SymbolicConstraint[] c = union(constraints, row.constraints);
+			if (s == solution && c == constraints) {
+				// Handle common case
+				return new AbstractSolution[] { this };
+			} else if (s != null) {
+				// Apply closure over these constraints
+				ConcreteSolution[] solutions = close(s, c, lifetimes);
+				AbstractSolution[] rows = new AbstractSolution[solutions.length];
+				for (int i = 0; i != rows.length; ++i) {
+					rows[i] = new AbstractSolution(solutions[i], c);
 				}
-				// Intersect individual types
-				Type[] lhsLowerBounds = lhs.lowerBounds;
-				Type[] lhsUpperBounds = lhs.upperBounds;
-				Type[] rhsLowerBounds = rhs.lowerBounds;
-				Type[] rhsUpperBounds = rhs.upperBounds;
-				Type[] nLowerBounds = lub(lhsLowerBounds,rhsLowerBounds);
-				Type[] nUpperBounds = glb(lhsUpperBounds,rhsUpperBounds);
-				// Check whether anything changed
-				if(nLowerBounds == lhsLowerBounds && nUpperBounds == rhsUpperBounds) {
-					// Nothing has actually changed, hence, just return as is.
-					return lhs;
-				}
-				// Sanity check any updated bounds
-				for(int i=0;i!=nLowerBounds.length;++i) {
-					// FIXME: could improve performance here by not repeating the subtype test for cases where neither bound has actually changed.
-					Type lower = nLowerBounds[i];
-					Type upper = nUpperBounds[i];
-					// FIXME: need proper lifetime relation!
-					ConstraintSet cs = subtyping.isSubtype(upper, lower, lifetimes);
-					//
-					if (cs.isEmpty()) {
-						// The bounds are no longer viable, hence the overall constraint set is no
-						// longer viable.
-						return null;
-					} else {
-						// FIXME: what to do here? The constraints could actually be telling us
-						// something useful, no?
-					}
-				}
-				return new Row(nUpperBounds,nLowerBounds);
+				return rows;
+			} else {
+				return EMPTY_SYMBOLIC_SOLUTIONS;
 			}
+		}
 
-			@Override
-			public int hashCode() {
-				return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
+		@Override
+		public int hashCode() {
+			return solution.hashCode() ^ Arrays.hashCode(constraints);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof AbstractSolution) {
+				AbstractSolution r = (AbstractSolution) o;
+				return solution.equals(r.solution) && Arrays.equals(constraints, r.constraints);
+			} else {
+				return false;
 			}
+		}
 
-			@Override
-			public boolean equals(Object o) {
-				if(o instanceof Row) {
-					Row r = (Row) o;
-					return Arrays.equals(upperBounds, r.upperBounds) && Arrays.equals(lowerBounds, r.lowerBounds);
-				} else {
-					return false;
-				}
-			}
-
-			@Override
-			public Map<Integer, Type> solve(int n) {
-//				if(n > lowerBounds.length) {
-//					return null;
-//				}
-				HashMap<Integer,Type> map = new HashMap<>();
-				for(int i=0;i!=lowerBounds.length;++i) {
-					Type t = solve(upperBounds[i],lowerBounds[i]);
-					if(t == null) {
-						return null;
-					} else {
-						map.put(i, t);
-					}
-				}
-				for(int i=lowerBounds.length;i<n;++i) {
-					map.put(i, Type.Void);
-
-				}
-				return map;
-			}
-
-			private Type solve(Type upper, Type lower) {
-				// FIXME: this method is very dodgy
+		@Override
+		public Map<Integer, Type> solve(int n) {
+			HashMap<Integer, Type> map = new HashMap<>();
+			for (int i = 0; i != n; ++i) {
+				Type upper = solution.ceil(i);
+				Type lower = solution.floor(i);
+				// Check whether a solution was found or not
 				if (upper instanceof Type.Any && lower instanceof Type.Void) {
 					return null;
 				} else if (upper instanceof Type.Any) {
-					return lower;
+					map.put(i, lower);
 				} else {
-					return upper;
+					map.put(i, upper);
 				}
 			}
+			return map;
+		}
 
-			@Override
-			public String toString() {
-				String r = "{";
-				for(int i=0;i!=lowerBounds.length;++i) {
-					if(i != 0) {
-						r += ",";
-					}
-					Type lb = lowerBounds[i];
-					Type ub = upperBounds[i];
-					r += ub + " :> #" + i + " :> " + lb;
+		@Override
+		public String toString() {
+			String r = "";
+			for (SymbolicConstraint constraint : constraints) {
+				if (!r.equals("")) {
+					r += ",";
 				}
-				return r + "}";
+				r += constraint.first() + " :> " + constraint.second();
+			}
+			return "{" + r + "}" + solution;
+		}
+
+		private SymbolicConstraint[] union(SymbolicConstraint[] lhs, SymbolicConstraint[] rhs) {
+			SymbolicConstraint[] cs = ArrayUtils.append(lhs, rhs);
+			// Remove any duplicate items
+			cs = ArrayUtils.removeDuplicates(cs);
+			// NOTE: we could do better here by maintaining constraints in sorted order or
+			// something.
+			if (cs.length == lhs.length) {
+				return lhs;
+			} else if (cs.length == rhs.length) {
+				return rhs;
+			} else {
+				return cs;
+			}
+		}
+	}
+
+	/**
+	 * A simple implementation of a single symboling subtyping constraint.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class SymbolicConstraint extends wycc.util.Pair<Type, Type> {
+		public SymbolicConstraint(Type lhs, Type rhs) {
+			super(lhs, rhs);
+		}
+
+		@Override
+		public String toString() {
+			return first() + ":>" + second();
+		}
+	}
+
+	/**
+	 * Contains current best solution for a given typing problem. Observe that every
+	 * tpe within the lower and upper bounds are concrete (i.e. do not contain
+	 * existentials).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private class ConcreteSolution {
+		private final Type[] upperBounds;
+		private final Type[] lowerBounds;
+
+		public ConcreteSolution() {
+			this.upperBounds = new Type[0];
+			this.lowerBounds = new Type[0];
+		}
+
+		public ConcreteSolution(int var, Type upper, Type lower) {
+			this.upperBounds = fill(var+1,Type.Any);
+			this.lowerBounds = fill(var+1,Type.Void);
+			this.upperBounds[var] = upper;
+			this.lowerBounds[var] = lower;
+		}
+
+		private ConcreteSolution(Type[] upperBounds, Type[] lowerBounds) {
+			this.upperBounds = upperBounds;
+			this.lowerBounds = lowerBounds;
+		}
+
+		public Type floor(int i) {
+			if(i >= lowerBounds.length) {
+				return Type.Void;
+			} else {
+				return lowerBounds[i];
 			}
 		}
 
+		public Type ceil(int i) {
+			if(i >= upperBounds.length) {
+				return Type.Any;
+			} else {
+				return upperBounds[i];
+			}
+		}
+
+		public ConcreteSolution intersect(ConcreteSolution other, LifetimeRelation lifetimes) {
+			final int n = lowerBounds.length;
+			final int m = other.lowerBounds.length;
+			if (n < m) {
+				return other.intersect(this, lifetimes);
+			} else {
+				Type[] nLowerBounds = lub(lowerBounds,other.lowerBounds,lifetimes);
+				Type[] nUpperBounds = glb(upperBounds,other.upperBounds,lifetimes);
+				//
+				if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
+					return this;
+				} else {
+					// Sanity check new bounds
+					for (int i = 0; i != m; ++i) {
+						Type lower = nLowerBounds[i];
+						Type upper = nUpperBounds[i];
+						if (!isSatisfiableSubtype(upper, lower, lifetimes)
+								// Upper bound cannot be void
+								|| isSatisfiableSubtype(Type.Void, upper, lifetimes)
+								// Lower bound cannot be any
+								|| isSatisfiableSubtype(lower, Type.Any, lifetimes)) {
+							// Solution is invalid
+							return null;
+						}
+					}
+					//
+					return new ConcreteSolution(nUpperBounds,nLowerBounds);
+				}
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof ConcreteSolution) {
+				ConcreteSolution s = (ConcreteSolution) o;
+				return Arrays.equals(lowerBounds, s.lowerBounds) && Arrays.equals(upperBounds, s.upperBounds);
+			} else {
+				return false;
+			}
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
+		}
+
+		@Override
+		public String toString() {
+			String r = "[";
+			for(int i=0;i!=lowerBounds.length;++i) {
+				if(i != 0) {
+					r += ";";
+				}
+				Type lower = lowerBounds[i];
+				Type upper = upperBounds[i];
+				if(!(upper instanceof Type.Any)) {
+					r += upper + " :> ";
+				}
+				r += "?" + i;
+				if(!(lower instanceof Type.Void)) {
+					r += " :> " + lower;
+				}
+			}
+			return r + "]";
+		}
+
+		private Type[] lub(Type[] lhs, Type[] rhs, LifetimeRelation lifetimes) {
+			final int n = lhs.length;
+			final int m = rhs.length;
+			Type[] ts = lhs;
+			for (int i = 0; i != m; ++i) {
+				Type l = lhs[i];
+				Type r = rhs[i];
+				if (!isSatisfiableSubtype(l, r, lifetimes)) {
+					// Refined already subsumed
+					if(ts == lhs) {
+						ts = Arrays.copyOf(lhs, n);
+					}
+					ts[i] = AbstractSubtypeOperator.lub(l,r);
+				}
+			}
+			return ts;
+		}
+
+		private Type[] glb(Type[] lhs, Type[] rhs, LifetimeRelation lifetimes) {
+			final int n = lhs.length;
+			final int m = rhs.length;
+			Type[] ts = lhs;
+			for (int i = 0; i != m; ++i) {
+				Type l = lhs[i];
+				Type r = rhs[i];
+				if (!isSatisfiableSubtype(r, l, lifetimes)) {
+					// Refined already subsumed
+					if (ts == lhs) {
+						ts = Arrays.copyOf(lhs, n);
+					}
+					ts[i] = AbstractSubtypeOperator.glb(l, r);
+				}
+			}
+			return ts;
+		}
 	}
 
 	// ===============================================================================
-	// Helpers
+	// isConcrete
 	// ===============================================================================
+
+	/**
+	 * Check whether a given type is "concrete" or not. That is, whether or not it
+	 * contains a nested existential type variable. For example, the type
+	 * <code>int</code> does not contain an existential variable! In contrast, the
+	 * type <code>{?1 f}</code> does. This method performs a fairly straightforward
+	 * recursive descent through the type tree search for existentiuals.
+	 *
+	 * @param type The type being tested for the presence of existential variables.
+	 * @return
+	 */
+	public static boolean isConcrete(Type type) {
+		switch (type.getOpcode()) {
+		case TYPE_any:
+		case TYPE_bool:
+		case TYPE_byte:
+		case TYPE_int:
+		case TYPE_null:
+		case TYPE_void:
+		case TYPE_universal:
+			return true;
+		case TYPE_existential:
+			return false;
+		case TYPE_array: {
+			Type.Array t = (Type.Array) type;
+			return isConcrete(t.getElement());
+		}
+		case TYPE_staticreference:
+		case TYPE_reference: {
+			Type.Reference t = (Type.Reference) type;
+			return isConcrete(t.getElement());
+		}
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property: {
+			Type.Callable t = (Type.Callable) type;
+			return isConcrete(t.getParameter()) && isConcrete(t.getReturn());
+		}
+		case TYPE_nominal: {
+			Type.Nominal t = (Type.Nominal) type;
+			return isConcrete(t.getParameters());
+		}
+		case TYPE_tuple: {
+			Type.Tuple t = (Type.Tuple) type;
+			return isConcrete(t.getAll());
+		}
+		case TYPE_union: {
+			Type.Union t = (Type.Union) type;
+			return isConcrete(t.getAll());
+		}
+		case TYPE_record: {
+			Type.Record t = (Type.Record) type;
+			Tuple<Type.Field> fields = t.getFields();
+			for(int i=0;i!=fields.size();++i) {
+				if(!isConcrete(fields.get(i).getType())) {
+					return false;
+				}
+			}
+			return true;
+		}
+		default:
+			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
+		}
+	}
+
+	private static boolean isConcrete(Tuple<Type> types) {
+		for(int i=0;i!=types.size();++i) {
+			if(!isConcrete(types.get(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static boolean isConcrete(Type[] types) {
+		for(int i=0;i!=types.length;++i) {
+			if(!isConcrete(types[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	// ===============================================================================
+	// Constraint Closure
+	// ===============================================================================
+
+	/**
+	 * <p>
+	 * Apply a given set of symbolic constraints to a given solution until a
+	 * fixpoint is reached. For example, consider this set of constraints and
+	 * solution:
+	 * </p>
+	 *
+	 * <pre>
+	 * { #0 :> #1 }[int|bool :> #0; #1 :> int]
+	 * </pre>
+	 *
+	 * <p>
+	 * For each constraint, there are two directions of flow: <i>upwards</i> and
+	 * <i>downwards</i>. In this case, <code>int|bool</code> flows downwards from
+	 * <code>#0</code> to <code>#1</code>. Likewise, <code>int</code> flows upwards
+	 * from <code>#1</code> to <code>#0</code>.
+	 * </p>
+	 *
+	 * <p>
+	 * To implement flow in a given direction we employ substitution. For example,
+	 * to flow downwards through <code>#0 :> #1</code> we substitute <code>#0</code>
+	 * for its current upper bound (i.e. <code>int|bool</code>). We then employ the
+	 * subtype operator to generate appropriate constraints (or not). In this case,
+	 * after substitution we'd have <code>int|bool :> #1</code> which, in fact, is
+	 * the constraint that will be reported.
+	 * </p>
+	 *
+	 * @param solution
+	 * @param constraints
+	 * @param subtyping
+	 * @param lifetimes
+	 * @return
+	 */
+	public ConcreteSolution[] close(ConcreteSolution solution, SymbolicConstraint[] constraints,
+			LifetimeRelation lifetimes) {
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			for (int i = 0; i != constraints.length; ++i) {
+				if(solution == null) {
+					// NOTE: we can get here either from a previous iteration which invalidated this
+					// solution, or from a prior invocation with solution being null on entry.
+					return EMPTY_CONCRETE_SOLUTIONS;
+				} else {
+					final ConcreteSolution s = solution;
+					SymbolicConstraint ith = constraints[i];
+					Type upper = ith.first();
+					Type lower = ith.second();
+					Type cUpper = substitute(upper, solution, true);
+					Type cLower = substitute(lower, solution, false);
+					// Generate new constraints
+					AbstractConstraints left = isSubtype(cUpper, lower, lifetimes);
+					AbstractConstraints right = isSubtype(upper, cLower, lifetimes);
+					// Combine constraints
+					AbstractConstraints cs = left.intersect(right,lifetimes);
+					final int n = cs.size();
+					//
+					switch(n) {
+					case 0:
+						// Zero solutions arising
+						return EMPTY_CONCRETE_SOLUTIONS;
+					case 1:
+						// NOTE: ignoring constraints from solution is reasonable as, by construction,
+						// there cannot be any of them.
+						solution = solution.intersect(cs.get(0).solution, lifetimes);
+						break;
+					default: {
+						// Multiple solutions arising, therefore we have to "split" our results
+						// accordingly.
+						ArrayList<ConcreteSolution> solutions = new ArrayList<>();
+						for(int j=0;j!=n;++j) {
+							ConcreteSolution jthSol = solution.intersect(cs.get(j).solution, lifetimes);
+							// NOTE: ignoring constraints from jthSol is reasonable as, by construction,
+							// there cannot be any of them.
+							ArrayUtils.addAll(close(jthSol,constraints,lifetimes), solutions);
+						}
+						// FIXME: can we have duplicates here?
+						return solutions.toArray(new ConcreteSolution[solutions.size()]);
+					}
+					}
+					// Update changed status
+					changed |= (s != solution);
+				}
+			}
+		}
+		return new ConcreteSolution[] {solution};
+	}
+
+	// ================================================================================
+	// Substitute
+	// ================================================================================
+
+	/**
+	 * Substitute all existential type variables in a given a type in either an
+	 * upper or lower bound position. For example, consider substituting into
+	 * <code>{?0 f}</code> with a solution <code>int|bool :> ?0 :> int</code>. In
+	 * the upper position, we end up with <code>{int|bool f}</code> and in the lower
+	 * position we have <code>{int f}</code>. A key issue is that positional
+	 * variance must be observed. This applies, for example, to lambda types where
+	 * parameters are <i>contravariant</i>. Thus, consider substituting into
+	 * <code>function(?0)->(?0)</code> with a solution
+	 * <code>int|bool :> ?0 :> int</code>. In the upper bound position we get
+	 * <code>function(int)->(int|bool)</code>, whilst in the lower bound position we
+	 * have <code>function(int|bool)->(int)</code>.
+	 *
+	 * @param type     The type being substituted into.
+	 * @param solution The solution being used for substitution.
+	 * @param sign     Indicates the upper (<code>true</code>) or lower bound
+	 *                 (<code>false</code>) position.
+	 * @return
+	 */
+	private static Type substitute(Type type, ConcreteSolution solution, boolean sign) {
+		switch (type.getOpcode()) {
+		case TYPE_any:
+		case TYPE_bool:
+		case TYPE_byte:
+		case TYPE_int:
+		case TYPE_null:
+		case TYPE_void:
+		case TYPE_universal:
+			return type;
+		case TYPE_existential: {
+			Type.ExistentialVariable t = (Type.ExistentialVariable) type;
+			int var = t.get();
+			return sign ? solution.ceil(var) : solution.floor(var);
+		}
+		case TYPE_array: {
+			Type.Array t = (Type.Array) type;
+			Type element = t.getElement();
+			Type nElement = substitute(element,solution,sign);
+			if(element == nElement) {
+				return type;
+			} else {
+				return new Type.Array(nElement);
+			}
+		}
+		case TYPE_staticreference:
+		case TYPE_reference: {
+			Type.Reference t = (Type.Reference) type;
+			Type element = t.getElement();
+			// NOTE: this substitution is effectively a co-variant substitution. Whilst this
+			// may seem problematic, it isn't because we'll always eliminate variables whose
+			// bounds are not subtypes of each other. For example, <code>&(int|bool) :> ?1
+			// :> &(int)</code> is not satisfiable.
+			Type nElement = substitute(element,solution,sign);
+			if(element == nElement) {
+				return type;
+			} else {
+				return new Type.Reference(nElement);
+			}
+		}
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property: {
+			Type.Callable t = (Type.Callable) type;
+			Type parameters = t.getParameter();
+			Type returns = t.getReturn();
+			// NOTE: invert sign to account for contra-variance
+			Type nParameters = substitute(parameters,solution,!sign);
+			Type nReturns = substitute(returns,solution,sign);
+			if(nParameters == parameters && nReturns == returns) {
+				return type;
+			} else if(type instanceof Type.Function) {
+				return new Type.Function(nParameters, nReturns);
+			} else if(type instanceof Type.Property) {
+				return new Type.Property(nParameters, nReturns);
+			} else {
+				Type.Method m = (Type.Method) type;
+				return new Type.Method(nParameters, nReturns, m.getCapturedLifetimes(), m.getLifetimeParameters());
+			}
+		}
+		case TYPE_nominal: {
+			Type.Nominal t = (Type.Nominal) type;
+			Tuple<Type> parameters = t.getParameters();
+			// NOTE: the following is problematic in the presence of contra-variant
+			// parameter positions. However, this is not unsound per se. Rather it will just
+			// mean some variables are eliminated because their bounds are considered
+			// unsatisfiable.
+			Tuple<Type> nParameters = substitute(parameters,solution,sign);
+			if(parameters == nParameters) {
+				return type;
+			} else {
+				return new Type.Nominal(t.getLink(), nParameters);
+			}
+		}
+		case TYPE_tuple: {
+			Type.Tuple t = (Type.Tuple) type;
+			Type[] elements = t.getAll();
+			Type[] nElements = substitute(elements,solution,sign);
+			if(elements == nElements) {
+				return type;
+			} else {
+				return Type.Tuple.create(nElements);
+			}
+		}
+		case TYPE_union: {
+			Type.Union t = (Type.Union) type;
+			Type[] elements = t.getAll();
+			Type[] nElements = substitute(elements,solution,sign);
+			if(elements == nElements) {
+				return type;
+			} else {
+				return new Type.Union(nElements);
+			}
+		}
+		case TYPE_record: {
+			Type.Record t = (Type.Record) type;
+			Tuple<Type.Field> fields = t.getFields();
+			Tuple<Type.Field> nFields = substituteFields(fields,solution,sign);
+			if(fields == nFields) {
+				return type;
+			} else {
+				return new Type.Record(t.isOpen(),nFields);
+			}
+		}
+		default:
+			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
+		}
+	}
+
+	private static Tuple<Type> substitute(Tuple<Type> types, ConcreteSolution solution, boolean sign) {
+		for (int i = 0; i != types.size(); ++i) {
+			Type t = types.get(i);
+			Type n = substitute(t, solution, sign);
+			if (t != n) {
+				// Committed to change
+				Type[] nTypes = new Type[types.size()];
+				// Copy all visited so far over
+				System.arraycopy(types.getAll(), 0, nTypes, 0, i + 1);
+				// Continue substitution
+				for (; i < nTypes.length; ++i) {
+					nTypes[i] = substitute(types.get(i), solution, sign);
+				}
+				// Done
+				return new Tuple<>(nTypes);
+			}
+		}
+		return types;
+	}
+
+	private static Tuple<Type.Field> substituteFields(Tuple<Type.Field> fields, ConcreteSolution solution, boolean sign) {
+		for(int i=0;i!=fields.size();++i) {
+			Type.Field t = fields.get(i);
+			Type.Field n = substituteField(t,solution,sign);
+			if(t != n) {
+				// Committed to change
+				Type.Field[] nFields = new Type.Field[fields.size()];
+				// Copy all visited so far over
+				System.arraycopy(fields.getAll(), 0, nFields, 0, i + 1);
+				// Continue substitution
+				for(;i<nFields.length;++i) {
+					nFields[i] = substituteField(fields.get(i),solution,sign);
+				}
+				// Done
+				return new Tuple<>(nFields);
+			}
+		}
+		return fields;
+	}
+
+	private static Type.Field substituteField(Type.Field field, ConcreteSolution solution, boolean sign) {
+		Type type = field.getType();
+		Type nType = substitute(type,solution,sign);
+		if(type == nType) {
+			return field;
+		} else {
+			return new Type.Field(field.getName(), nType);
+		}
+	}
+
+	private static Type[] substitute(Type[] types, ConcreteSolution solution, boolean sign) {
+		Type[] nTypes = types;
+		for(int i=0;i!=nTypes.length;++i) {
+			Type t = types[i];
+			Type n = substitute(t,solution,sign);
+			if(t != n && nTypes == types) {
+				nTypes = Arrays.copyOf(types, types.length);
+			}
+			nTypes[i] = n;
+		}
+		return nTypes;
+	}
+
+	// ================================================================================
+	// Helpers
+	// ================================================================================
 
 	private static final Tuple<Expr> EMPTY_INVARIANT = new Tuple<>();
-
-
-	private static Type[] glb(Type[] lhs, Type[] rhs) {
-		// REQUIRES: lhs.length >= rhs.length
-		Type[] result = lhs;
-		//
-		for(int i=0;i!=rhs.length;++i) {
-			Type lhs_ith = lhs[i];
-			Type glb = glb(lhs_ith,rhs[i]);
-			if(glb != lhs_ith && result == lhs) {
-				result = Arrays.copyOf(lhs, lhs.length);
-			}
-			result[i] = glb;
-		}
-		return result;
-	}
-
-	private static Type[] lub(Type[] lhs, Type[] rhs) {
-		// REQUIRES: lhs.length >= rhs.length
-		Type[] result = lhs;
-		//
-		for(int i=0;i!=rhs.length;++i) {
-			Type lhs_ith = lhs[i];
-			Type lub = lub(lhs_ith,rhs[i]);
-			if(lub != lhs_ith && result == lhs) {
-				result = Arrays.copyOf(lhs, lhs.length);
-			}
-			result[i] = lub;
-		}
-		return result;
-	}
 
 	/**
 	 * Determine the <i>Greatest Lower Bound</i> between two competing upper bounds
@@ -1066,49 +1582,30 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		} else if(u1 && u2) {
 			Type.Union l = (Type.Union) lhs;
 			Type.Union r = (Type.Union) rhs;
-			return union(ArrayUtils.append(l.getAll(),r.getAll()));
+			return Type.Union.create(ArrayUtils.append(l.getAll(),r.getAll()));
 		} else if(u1) {
 			Type.Union l = (Type.Union) lhs;
-			return union(ArrayUtils.append(l.getAll(),rhs));
+			return Type.Union.create(ArrayUtils.append(l.getAll(),rhs));
 		} else if(u2) {
 			Type.Union r = (Type.Union) rhs;
-			return union(ArrayUtils.append(lhs,r.getAll()));
+			return Type.Union.create(ArrayUtils.append(lhs,r.getAll()));
 		} else {
 			return new Type.Union(lhs,rhs);
 		}
 	}
 
-	private static Type union(Type[] types) {
-		types = ArrayUtils.removeDuplicates(types);
-		switch(types.length) {
-		case 0:
-			return Type.Void;
-		case 1:
-			return types[0];
-		default:
-			return new Type.Union(types);
-		}
-	}
-
 	public static Type intersect(Type[] lhs, Type... rhs) {
 		ArrayList<Type> types = new ArrayList<>();
-		for(int i=0;i!=lhs.length;++i) {
+		for (int i = 0; i != lhs.length; ++i) {
 			Type ith = lhs[i];
-			for(int j=0;j!=rhs.length;++j) {
+			for (int j = 0; j != rhs.length; ++j) {
 				Type jth = rhs[j];
-				if(ith.equals(jth)) {
+				if (ith.equals(jth)) {
 					types.add(ith);
 				}
 			}
 		}
-		switch(types.size()) {
-		case 0:
-			return Type.Void;
-		case 1:
-			return types.get(0);
-		default:
-			return new Type.Union(types.toArray(new Type[types.size()]));
-		}
+		return Type.Union.create(types.toArray(new Type[types.size()]));
 	}
 
 	/**
@@ -1136,6 +1633,21 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 	public static Type[] fill(int n, Type t) {
 		Type[] ts = new Type[n];
 		Arrays.fill(ts, t);
+		return ts;
+	}
+
+	/**
+	 * Create an array of a given sized filled with a given initial type.
+	 *
+	 * @param n
+	 * @param t
+	 * @return
+	 */
+	public static Type[] expand(Type[] types, int n, Type t) {
+		Type[] ts = Arrays.copyOf(types, n);
+		for(int i=types.length;i < n;++i) {
+			ts[i] = t;
+		}
 		return ts;
 	}
 

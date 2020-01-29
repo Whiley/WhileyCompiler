@@ -27,7 +27,7 @@ import static wyil.lang.WyilFile.TYPE_reference;
 import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_union;
 import static wyil.lang.WyilFile.TYPE_tuple;
-import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.TYPE_universal;
 import static wyil.lang.WyilFile.TYPE_void;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -94,8 +94,8 @@ public abstract class TypeSelector {
 			case TYPE_function:
 			case TYPE_property:
 				return create((Type.Callable) t1, (Type.Callable) t2, lifetimes, cache);
-			case TYPE_variable:
-				return create((Type.Variable) t1, (Type.Variable) t2, lifetimes, cache);
+			case TYPE_universal:
+				return create((Type.UniversalVariable) t1, (Type.UniversalVariable) t2, lifetimes, cache);
 			default:
 				throw new IllegalArgumentException("unexpected type encountered: " + t1);
 			}
@@ -230,7 +230,7 @@ public abstract class TypeSelector {
 		return Type.Selector.TOP;
 	}
 
-	private static Type.Selector create(Type.Variable t1, Type.Variable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.UniversalVariable t1, Type.UniversalVariable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
 		return t1.equals(t2) ? Type.Selector.TOP : Type.Selector.BOTTOM;
 	}
 

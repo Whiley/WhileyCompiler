@@ -261,7 +261,7 @@ public interface Typing {
 		 * @param n
 		 * @return
 		 */
-		public Pair<Environment,Type.Existential[]> allocate(int n);
+		public Pair<Environment,Type.ExistentialVariable[]> allocate(int n);
 	}
 
 	/**
@@ -275,6 +275,6 @@ public interface Typing {
 			Build.Meter meter) {
 		Expr[] schema = AbstractTyping.flattern(expression, meter);
 		return new AbstractTyping(schema,
-				new AbstractTyping.Environment(subtyping, lifetimes, AbstractSubtypeOperator.TOP, 0));
+				new AbstractTyping.Environment(subtyping, lifetimes, subtyping.TOP, 0));
 	}
 }

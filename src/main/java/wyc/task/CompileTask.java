@@ -174,10 +174,14 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				throw new RuntimeException(e);
 			}
 			// ========================================================================
+			// Recursive Type Check
+			// ========================================================================
+			new RecursiveTypeCheck(meter).check(target);
+			// ========================================================================
 			// Flow Type Checking
 			// ========================================================================
 			// Instantiate type checker
-			NewFlowTypeCheck checker = new NewFlowTypeCheck(meter);
+			FlowTypeCheck checker = new FlowTypeCheck(meter);
 			r = r && checker.check(target);
 			// ========================================================================
 			// Compiler Checks

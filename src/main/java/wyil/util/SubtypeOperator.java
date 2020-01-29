@@ -95,7 +95,7 @@ public interface SubtypeOperator {
 		 * @param i
 		 * @return
 		 */
-		public Row get(int i);
+		public Solution get(int i);
 
 		/**
 		 * Access a given row within a constraint set.
@@ -103,7 +103,7 @@ public interface SubtypeOperator {
 		 * @author David J. Pearce
 		 *
 		 */
-		public interface Row {
+		public interface Solution {
 			/**
 			 * Extract solution to this row of constraints.
 			 *
@@ -232,7 +232,7 @@ public interface SubtypeOperator {
 		}
 
 		@Override
-		protected ConstraintSet isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes,
+		protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes,
 				BinaryRelation<Type> cache) {
 			Tuple<Type.Field> t1_fields = t1.getFields();
 			Tuple<Type.Field> t2_fields = t2.getFields();
@@ -244,7 +244,7 @@ public interface SubtypeOperator {
 			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
 				return BOTTOM;
 			}
-			ConstraintSet constraints = TOP;
+			AbstractConstraints constraints = TOP;
 			// NOTE: the following is O(n^2) but, in reality, will be faster than the
 			// alternative (sorting fields into an array). That's because we expect a very
 			// small number of fields in practice.
@@ -254,10 +254,10 @@ public interface SubtypeOperator {
 				for (int j = 0; j != t2_fields.size(); ++j) {
 					Type.Field f2 = t2_fields.get(j);
 					if (f1.getName().equals(f2.getName())) {
-						ConstraintSet other = isSubtype(f1.getType(), f2.getType(), lifetimes, cache);
+						AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), lifetimes, cache);
 						// Matched field
 						matched = true;
-						constraints = constraints.intersect(other);
+						constraints = constraints.intersect(other,lifetimes);
 					}
 				}
 				// Check we actually matched the field!
@@ -270,9 +270,8 @@ public interface SubtypeOperator {
 		}
 
 		@Override
-		protected ConstraintSet isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
+		protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
 				BinaryRelation<Type> cache) {
-			//System.out.println("STAGE 1");
 			Type t1_params = t1.getParameter();
 			Type t2_params = t2.getParameter();
 			Type t1_return = t1.getReturn();
@@ -282,10 +281,9 @@ public interface SubtypeOperator {
 				return BOTTOM;
 			}
 			// Check parameters (contra-variant)
-			ConstraintSet c_params = isSubtype(t2_params, t1_params, lifetimes, cache);
+			AbstractConstraints c_params = isSubtype(t2_params, t1_params, lifetimes, cache);
 			// Check returns (co-variant)
-			ConstraintSet c_returns = isSubtype(t1_return, t2_return, lifetimes, cache);
-			//System.out.println("STAGE 2 " + c_params + " & " + c_returns + " = " + c_params.intersect(c_returns));
+			AbstractConstraints c_returns = isSubtype(t1_return, t2_return, lifetimes, cache);
 			//
 			if(t1 instanceof Type.Method) {
 				// Check lifetimes
@@ -304,7 +302,7 @@ public interface SubtypeOperator {
 				}
 			}
 			// Done
-			return c_params.intersect(c_returns);
+			return c_params.intersect(c_returns, lifetimes);
 		}
 	}
 }

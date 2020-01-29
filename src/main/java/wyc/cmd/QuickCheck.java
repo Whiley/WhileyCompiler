@@ -700,8 +700,8 @@ public class QuickCheck implements Command {
 			case TYPE_union:
 				result = constructGenerator((Type.Union) type, context);
 				break;
-			case TYPE_variable:
-				result = constructGenerator((Type.Variable) type, context);
+			case TYPE_universal:
+				result = constructGenerator((Type.UniversalVariable) type, context);
 				break;
 			case TYPE_staticreference:
 			case TYPE_reference:
@@ -922,7 +922,7 @@ public class QuickCheck implements Command {
 		return Domains.Product(generators);
 	}
 
-	private Domain.Big<RValue> constructGenerator(Type.Variable type, ExtendedContext context) {
+	private Domain.Big<RValue> constructGenerator(Type.UniversalVariable type, ExtendedContext context) {
 		return Domains.Adaptor(Domains.Int(context.getIntegerMinimum(), context.getIntegerMaximum()),
 				(i) -> RValue.Int(BigInteger.valueOf(i)));
 	}

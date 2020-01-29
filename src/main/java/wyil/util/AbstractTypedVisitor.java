@@ -963,8 +963,8 @@ public abstract class AbstractTypedVisitor {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
 			break;
-		case TYPE_variable:
-			visitTypeVariable((Type.Variable) type);
+		case TYPE_universal:
+			visitTypeVariable((Type.UniversalVariable) type);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
@@ -1066,7 +1066,7 @@ public abstract class AbstractTypedVisitor {
 
 	}
 
-	public void visitTypeVariable(Type.Variable type) {
+	public void visitTypeVariable(Type.UniversalVariable type) {
 	}
 
 	public Type.Int selectInt(Type target, Expr expr, Environment environment) {

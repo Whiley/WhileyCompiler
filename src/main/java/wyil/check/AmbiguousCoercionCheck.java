@@ -152,7 +152,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		if (source instanceof Type.Void || target instanceof Type.Primitive || target instanceof Type.Variable) {
+		if (source instanceof Type.Void || target instanceof Type.Primitive || target instanceof Type.UniversalVariable) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;
@@ -191,8 +191,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 	}
 
 	private boolean checkCoercion(Type.Record target, Type.Record source, Environment environment,
-			BinaryRelation<Type> assumptions, SyntacticItem item)
-			{
+			BinaryRelation<Type> assumptions, SyntacticItem item) {
 		Tuple<Type.Field> fields = target.getFields();
 		for (int i = 0; i != fields.size(); ++i) {
 			Type.Field field = fields.get(i);
@@ -225,6 +224,15 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Nominal target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
+		if(source instanceof Type.Nominal) {
+			Type.Nominal sn = (Type.Nominal) source;
+			Decl.Type t = target.getLink().getTarget();
+			Decl.Type s = sn.getLink().getTarget();
+			// Handle simple case
+			if(t == s && target.getParameters().equals(sn.getParameters())) {
+				return true;
+			}
+		}
 		return checkCoercion(target.getConcreteType(), source, environment, assumptions, item);
 	}
 
@@ -236,7 +244,6 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 			// Indicates decision made easily enough. Continue traversal down the type.
 			return checkCoercion(candidate, source, environment, assumptions, item);
 		}
-
 		switch(source.getOpcode()) {
 		case WyilFile.TYPE_void: {
 			// NOTE: void indicates an unusual case where an actual value is guaranteed

@@ -1,1 +1,3 @@
-stuff goes here
+tests/invalid/Template_Invalid_29.whiley:8: expected (Option<int>,Option<bool>), found 
+    (Option<int> i, Option<bool> j) = empty()
+                                      ^^^^^^^

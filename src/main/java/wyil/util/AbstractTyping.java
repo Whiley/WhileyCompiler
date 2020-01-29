@@ -28,7 +28,7 @@ import static wyil.lang.WyilFile.TYPE_reference;
 import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_union;
-import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.TYPE_universal;
 import static wyil.lang.WyilFile.TYPE_void;
 
 import java.util.*;
@@ -41,7 +41,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wycc.util.Pair;
 import wyil.lang.WyilFile.*;
-import wyil.lang.WyilFile.Type.Existential;
+import wyil.lang.WyilFile.Type.ExistentialVariable;
 import wyil.util.SubtypeOperator.Constraints;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
@@ -271,7 +271,7 @@ public class AbstractTyping implements Typing {
 		/**
 		 * Active Typing Constraints
 		 */
-		private final AbstractSubtypeOperator.ConstraintSet constraints;
+		private final AbstractSubtypeOperator.AbstractConstraints constraints;
 		/**
 		 * Mapping of type variable indices to their current types.
 		 */
@@ -283,7 +283,7 @@ public class AbstractTyping implements Typing {
 		private final int existentials;
 
 		public Environment(AbstractSubtypeOperator subtyping, LifetimeRelation lifetimes,
-				AbstractSubtypeOperator.ConstraintSet constraints, int n, Type... types) {
+				AbstractSubtypeOperator.AbstractConstraints constraints, int n, Type... types) {
 			if(constraints == null) {
 				throw new IllegalArgumentException();
 			}
@@ -333,9 +333,9 @@ public class AbstractTyping implements Typing {
 
 		@Override
 		public Environment bind(Type lhs, Type rhs) {
-			AbstractSubtypeOperator.ConstraintSet cs = subtyping.isSubtype(lhs, rhs, lifetimes);
+			AbstractSubtypeOperator.AbstractConstraints cs = subtyping.isSubtype(lhs, rhs, lifetimes);
 			// Intersect with our constraints
-			cs = constraints.intersect(cs);
+			cs = constraints.intersect(cs,lifetimes);
 			// Sanity check whether subtyping possible
 			if (cs.isEmpty() || rhs instanceof Type.Void) {
 				// NOTE: check against void above is required to protect against "void flows".
@@ -356,9 +356,10 @@ public class AbstractTyping implements Typing {
 				Environment[] nenvs = new Environment[constraints.size()];
 				// There are constraints over this environment, therefore at least one row has
 				// to have a solution.
+				outer:
 				for (int i = 0; i != constraints.size(); ++i) {
-					Constraints.Row row = constraints.get(i);
-					Map<Integer, Type> solution = row.solve(existentials);
+					Constraints.Solution ith = constraints.get(i);
+					Map<Integer, Type> solution = ith.solve(existentials);
 					// Check for applicable solution.
 					if (solution != null) {
 						// Creating the necessary binding function for substitution
@@ -367,9 +368,15 @@ public class AbstractTyping implements Typing {
 						// Apply the substitution
 						Type[] nTypes = new Type[types.length];
 						for (int j = 0; j != nTypes.length; ++j) {
-							nTypes[j] = types[j].substitute(binder);
+							Type jth = types[j].substitute(binder);
+							// NOTE: the substitution process can result in void types in some cases. If
+							// this happens then we can rule out this particular concretisation.
+							if(jth == null) {
+								break outer;
+							}
+							nTypes[j] = jth;
 						}
-						nenvs[i] = new Environment(subtyping, lifetimes, AbstractSubtypeOperator.TOP, 0, nTypes);
+						nenvs[i] = new Environment(subtyping, lifetimes, subtyping.TOP, 0, nTypes);
 					}
 				}
 				// Done
@@ -399,11 +406,11 @@ public class AbstractTyping implements Typing {
 		}
 
 		@Override
-		public Pair<Typing.Environment,Type.Existential[]> allocate(int n) {
+		public Pair<Typing.Environment,Type.ExistentialVariable[]> allocate(int n) {
 			Environment nenv = new Environment(subtyping, lifetimes, constraints, existentials + n, types);
-			Type.Existential[] vars = new Type.Existential[n];
+			Type.ExistentialVariable[] vars = new Type.ExistentialVariable[n];
 			for(int i=0;i!=n;++i) {
-				vars[i] = new Type.Existential(existentials+i);
+				vars[i] = new Type.ExistentialVariable(existentials+i);
 			}
 			return new Pair<>(nenv,vars);
 		}

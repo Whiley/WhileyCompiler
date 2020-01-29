@@ -205,8 +205,8 @@ public interface TypeMangler {
 			case TYPE_union:
 				writeTypeMangleUnion((Type.Union) t, lifetimes, mangle);
 				break;
-			case TYPE_variable:
-				writeTypeMangleVariable((Type.Variable) t, lifetimes, mangle);
+			case TYPE_universal:
+				writeTypeMangleVariable((Type.UniversalVariable) t, lifetimes, mangle);
 				break;
 			default:
 				throw new IllegalArgumentException("unknown type encountered: " + t.getClass().getName());
@@ -280,7 +280,7 @@ public interface TypeMangler {
 			}
 		}
 
-		private void writeTypeMangleVariable(Type.Variable t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleVariable(Type.UniversalVariable t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
 			String name = t.getOperand().toString();
 			mangle.append("v" + name.length() + name);
 		}
