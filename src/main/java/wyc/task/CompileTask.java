@@ -174,6 +174,10 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				throw new RuntimeException(e);
 			}
 			// ========================================================================
+			// Recursive Type Check
+			// ========================================================================
+			new RecursiveTypeCheck(meter).check(target);
+			// ========================================================================
 			// Flow Type Checking
 			// ========================================================================
 			// Instantiate type checker
@@ -214,7 +218,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 			for(int i=0;i!=sources.length;++i) {
 				WhileyFile wf = sources[i];
 				String n = new Name(wf.getEntry().id()).toString();
-				if(n.endsWith(unit.getName().toString())) {
+				if(unit != null && n.endsWith(unit.getName().toString())) {
 					throw new SyntacticException(e.getMessage(),wf.getEntry(),item,e.getCause());
 				}
 			}

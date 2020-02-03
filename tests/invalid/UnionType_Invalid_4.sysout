@@ -1,10 +1,9 @@
-tests/invalid/UnionType_Invalid_4.whiley:8: expected array type
+tests/invalid/UnionType_Invalid_4.whiley:8: expected array
     x[0] = false
     ^
-tests/invalid/UnionType_Invalid_4.whiley:10: expected type int, found bool
+tests/invalid/UnionType_Invalid_4.whiley:10: expected int, found bool
     y[0] = false
            ^^^^^
-tests/invalid/UnionType_Invalid_4.whiley:11: unable to resolve name (is ambiguous)
-	found function UnionType_Invalid_4::f(int[])->(int[])
+tests/invalid/UnionType_Invalid_4.whiley:11: expected int[], found IntBoolList
     return f(x)
-           ^
+             ^

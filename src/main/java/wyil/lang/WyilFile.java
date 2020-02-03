@@ -193,6 +193,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_counterexample = 69; // <ONE operands, ZERO>
 	public static final int TYPE_unknown = 80; // <ZERO operands, ZERO>
 	public static final int TYPE_void = 81; // <ZERO operands, ZERO>
+	public static final int TYPE_any = 82; // <ZERO operands, ZERO>
 	public static final int TYPE_null = 83; // <ZERO operands, ZERO>
 	public static final int TYPE_bool = 84; // <ZERO operands, ZERO>
 	public static final int TYPE_int = 85; // <ZERO operands, ZERO>
@@ -209,7 +210,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_union = 96; // <MANY operands, ZERO>
 	public static final int TYPE_byte = 97; // <ZERO operands, ZERO>
 	public static final int TYPE_recursive = 106; // <ONE operands, ZERO>
-	public static final int TYPE_variable = 107; // <ONE operands, ZERO>
+	public static final int TYPE_universal = 107; // <ONE operands, ZERO>
+	public static final int TYPE_existential = 108; // <ZERO operands, MANY>
 	public static final int STMT_block = 144; // <MANY operands, ZERO>
 	public static final int STMT_namedblock = 145; // <TWO operands, ZERO>
 	public static final int STMT_caseblock = 146; // <TWO operands, ZERO>
@@ -1614,22 +1616,49 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Template
 	// ============================================================
 	public interface Template {
+		public enum Variance {
+			UNKNOWN, INVARIANT, COVARIANT, CONTRAVARIANT
+		}
 		public static abstract class Variable extends AbstractSyntacticItem {
-			public Variable(int opcode, Identifier name) {
-				super(opcode,name);
+			public Variable(int opcode, Identifier name, Variance variance) {
+				super(opcode, new byte[] { (byte) variance.ordinal() }, name);
 			}
+
 			public Identifier getName() {
 				return (Identifier) get(0);
 			}
+
+			public Variance getVariance() {
+				return getVariance(data[0]);
+			}
+
+			public void setVariance(Variance v) {
+				data[0] = (byte) v.ordinal();
+			}
+
+			protected static Variance getVariance(byte b) {
+				switch (b) {
+				case 0:
+					return Variance.UNKNOWN;
+				case 1:
+					return Variance.INVARIANT;
+				case 2:
+					return Variance.COVARIANT;
+				case 3:
+					return Variance.CONTRAVARIANT;
+				default:
+					throw new IllegalArgumentException("Invalid variance modifier");
+				}
+			}
 		}
 		public static class Type extends Variable {
-			public Type(Identifier name) {
-				super(TEMPLATE_type,name);
+			public Type(Identifier name, Variance variance) {
+				super(TEMPLATE_type, name, variance);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Type((Identifier) operands[0]);
+				return new Type((Identifier) operands[0], getVariance());
 			}
 
 			@Override
@@ -1641,19 +1670,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Template.Type((Identifier) operands[0]);
+					return new Template.Type((Identifier) operands[0], Variance.COVARIANT);
+				}
+			};
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.ONE, Data.ONE, "TEMPLATE_type") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Type((Identifier) operands[0], getVariance(data[0]));
 				}
 			};
 		}
 
 		public static class Lifetime extends Variable {
-			public Lifetime(Identifier name) {
-				super(TEMPLATE_lifetime,name);
+			public Lifetime(Identifier name, Variance variance) {
+				super(TEMPLATE_lifetime,name,variance);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Lifetime((Identifier) operands[0]);
+				return new Lifetime((Identifier) operands[0],getVariance());
 			}
 
 			@Override
@@ -1665,7 +1701,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Template.Lifetime((Identifier) operands[0]);
+					return new Template.Lifetime((Identifier) operands[0], Variance.INVARIANT);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.ONE, Data.ONE, "TEMPLATE_lifetime") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Lifetime((Identifier) operands[0], getVariance(data[0]));
 				}
 			};
 		}
@@ -2795,7 +2839,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -2975,7 +3021,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3155,7 +3203,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3201,7 +3251,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3246,7 +3298,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3297,7 +3351,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3347,7 +3403,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3391,7 +3449,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3441,7 +3501,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3492,7 +3554,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3543,7 +3607,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3594,7 +3660,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3645,7 +3713,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4324,7 +4394,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4906,10 +4978,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public static interface Type extends SyntacticItem {
 
+		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
+		public static final Array IntArray = new Array(Int);
 		public static final Null Null = new Null();
 
 		/**
@@ -4949,7 +5023,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @param binding A function which returns
 		 * @return
 		 */
-		public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+		public Type substitute(java.util.function.Function<Object, SyntacticItem> binding);
 
 		/**
 		 * Expose the underlying type of this type. For example, consider this:
@@ -5027,6 +5101,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(opcode, operands);
 			}
 
+			AbstractType(int opcode, byte[] bytes) {
+				super(opcode, bytes);
+			}
+
 			@Override
 			public int shape() {
 				return 1;
@@ -5088,7 +5166,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type getReturn();
 
 			@Override
-			public Type.Callable substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+			public Type.Callable substitute(java.util.function.Function<Object, SyntacticItem> binding);
 		}
 
 		/**
@@ -5107,7 +5185,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5145,6 +5223,58 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
+		 * An any type represents the type of all possible values. This type is not
+		 * currently permited in the syntax of Whiley, but is used internally within the
+		 * subtyping algorithm. <b>NOTE:</b> the any type is a supertype of everything;
+		 * that is, it is top in the type lattice.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Any extends AbstractType implements Primitive {
+			public Any() {
+				super(TYPE_any);
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				return this;
+			}
+
+			@Override
+			public Any clone(SyntacticItem[] operands) {
+				return new Any();
+			}
+
+			@Override
+			public int shape() {
+				return 1;
+			}
+
+			@Override
+			public Type dimension(int nth) {
+				return this;
+			}
+
+			@Override
+			public String toString() {
+				return "any";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return "any";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_any") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Any();
+				}
+			};
+		}
+
+		/**
 		 * The null type is a special type which should be used to show the absence of
 		 * something. It is distinct from void, since variables can hold the special
 		 * <code>null</code> value (where as there is no special "void" value). With all
@@ -5163,7 +5293,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5202,7 +5332,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5245,7 +5375,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5286,7 +5416,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5341,11 +5471,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Array substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Array substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
 				if (before == after) {
 					return this;
+				} else if (after == null) {
+					return null;
 				} else {
 					return new Array(after);
 				}
@@ -5409,11 +5541,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Reference substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Reference substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Reference(elementAfter);
+					if(elementAfter == null) {
+						return null;
+					} else {
+						return new Reference(elementAfter);
+					}
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
@@ -5558,11 +5694,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Record substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Record substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type.Field> before = getFields();
 				WyilFile.Tuple<Type.Field> after = substitute(before, binding);
 				if (before == after) {
 					return this;
+				} else if(after == null) {
+					return null;
 				} else {
 					return new Record(isOpen(), after);
 				}
@@ -5581,13 +5719,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * @return
 			 */
 			private static WyilFile.Tuple<Type.Field> substitute(WyilFile.Tuple<Type.Field> fields,
-					java.util.function.Function<Identifier, SyntacticItem> binding) {
+					java.util.function.Function<Object, SyntacticItem> binding) {
 				//
 				for (int i = 0; i != fields.size(); ++i) {
 					Type.Field field = fields.get(i);
 					Type before = field.getType();
 					Type after = before.substitute(binding);
-					if (before != after) {
+					if(after == null) {
+						return null;
+					} else if (before != after) {
 						// Now committed to a change
 						Type.Field[] nFields = fields.toArray(Type.Field.class);
 						nFields[i] = new Field(field.getName(), after);
@@ -5595,7 +5735,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 							field = fields.get(j);
 							before = field.getType();
 							after = before.substitute(binding);
-							if (before != after) {
+							if(after == null) {
+								return null;
+							} else if (before != after) {
 								nFields[j] = new Field(field.getName(), after);
 							}
 						}
@@ -5819,11 +5961,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Tuple substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
+			}
+
+			@Override
+			public Type.Tuple substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				for(int i=0;i!=size();++i) {
 					Type before = get(i);
 					Type after = before.substitute(binding);
-					if(before != after) {
+					if(after == null) {
+						return null;
+					} else if(before != after) {
 						// Committed to change
 						Type[] types = new Type[size()];
 						for(int j=0;j!=types.length;++j) {
@@ -5977,10 +6126,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Nominal substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Nominal substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type> o_parameters = getParameters();
 				WyilFile.Tuple<Type> n_parameters = WyilFile.substitute(o_parameters, binding);
-				if (o_parameters == n_parameters) {
+				if(n_parameters == null) {
+					return null;
+				} else if (o_parameters == n_parameters) {
 					return this;
 				} else {
 					return new Nominal(getLink(), n_parameters);
@@ -6036,6 +6187,37 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Union extends AbstractType implements Type {
+			/**
+			 * Create a sequence of zero or more types.
+			 *
+			 * @param types
+			 * @return
+			 */
+			public static Type create(Type... types) {
+				for (int i = 0; i != types.length; ++i) {
+					Type ith = types[i];
+					if (ith instanceof Type.Union) {
+						Type.Union u = (Type.Union) ith;
+						Type[] nTypes = new Type[types.length + u.size() - 1];
+						System.arraycopy(types, 0, nTypes, 0, i);
+						System.arraycopy(u.getAll(), 0, nTypes, i, u.size());
+						System.arraycopy(types, i + 1, nTypes, i + u.size(), (types.length - i - 1));
+						return create(nTypes);
+					}
+				}
+				//
+				types = ArrayUtils.removeDuplicates(types);
+				//
+				switch (types.length) {
+				case 0:
+					return Type.Void;
+				case 1:
+					return types[0];
+				default:
+					return new Type.Union(types);
+				}
+			}
+
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
@@ -6072,13 +6254,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Union substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type[] before = getAll();
 				Type[] after = WyilFile.substitute(before, binding);
-				if (before == after) {
+				if(after == null) {
+					return null;
+				} else if (before == after) {
 					return this;
 				} else {
-					return new Union(after);
+					return create(after);
 				}
 			}
 
@@ -6159,12 +6343,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Function substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Function substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parameterBefore = getParameter();
 				Type parameterAfter = parameterBefore.substitute(binding);
 				Type returnBefore = getReturn();
 				Type returnAfter = returnBefore.substitute(binding);
-				if (parameterBefore == parameterAfter && returnBefore == returnAfter) {
+				if(parameterAfter == null || returnAfter == null) {
+					return null;
+				} else if (parameterBefore == parameterAfter && returnBefore == returnAfter) {
 					return this;
 				} else {
 					return new Function(parameterAfter, returnAfter);
@@ -6237,7 +6423,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Method substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Method substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				// Sanity check the binding being used here. Specifically, any binding which is
 				// declared in this method cannot be subsitituted.
 				WyilFile.Tuple<Identifier> lifetimes = getLifetimeParameters();
@@ -6329,7 +6515,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Property substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Property substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parametersBefore = getParameter();
 				Type parametersAfter = parametersBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6383,7 +6569,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Unknown substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Unknown substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -6410,9 +6596,65 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			};
 		}
 
-		public static class Variable extends AbstractType implements Atom {
-			public Variable(Identifier name) {
-				super(TYPE_variable, name);
+		public static class ExistentialVariable extends AbstractType implements Atom {
+			public ExistentialVariable(int index) {
+				super(TYPE_existential, BigInteger.valueOf(index).toByteArray());
+			}
+
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			public int get() {
+				return new BigInteger(data).intValue();
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new ExistentialVariable(new BigInteger(data).intValue());
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				SyntacticItem i = binding.apply(get());
+				if(i instanceof Type) {
+					return (Type) i;
+				} else {
+					return this;
+				}
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return toString();
+			}
+
+			@Override
+			public String toString() {
+				return "?" + Integer.toString(get());
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.MANY, "TYPE_existential") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new ExistentialVariable(new BigInteger(data).intValue());
+				}
+			};
+		}
+
+		public static class UniversalVariable extends AbstractType implements Atom {
+			public UniversalVariable(Identifier name) {
+				super(TYPE_universal, name);
 			}
 
 			@Override
@@ -6436,11 +6678,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Variable((Identifier) operands[0]);
+				return new UniversalVariable((Identifier) operands[0]);
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				SyntacticItem expanded = binding.apply(getOperand());
 				if (expanded instanceof Type) {
 					return (Type) expanded;
@@ -6459,10 +6701,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return getOperand().toString();
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_variable") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_universal") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Variable((Identifier) operands[0]);
+					return new UniversalVariable((Identifier) operands[0]);
 				}
 			};
 		}
@@ -6498,7 +6740,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Recursive substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Recursive substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -6608,6 +6850,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			public String toString(Type type) {
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6675,6 +6918,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type apply(Type type) {
 				// FIXME: need to support infinite selectors
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6731,7 +6975,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	private static Tuple<Type> substitute(Tuple<Type> types,
-			java.util.function.Function<Identifier, SyntacticItem> binding) {
+			java.util.function.Function<Object, SyntacticItem> binding) {
 		for (int i = 0; i != types.size(); ++i) {
 			Type before = types.get(i);
 			Type after = before.substitute(binding);
@@ -6739,7 +6983,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// Committed to change
 				Type[] nTypes = new Type[types.size()];
 				for (int j = 0; j != nTypes.length; ++j) {
-					nTypes[j] = types.get(j).substitute(binding);
+					after = types.get(j).substitute(binding);
+					if(after == null) {
+						return null;
+					}
+					nTypes[j] = after;
 				}
 				return new Tuple<>(nTypes);
 			}
@@ -6748,12 +6996,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return types;
 	}
 
-	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
+	private static Type[] substitute(Type[] types, java.util.function.Function<Object, SyntacticItem> binding) {
 		Type[] nTypes = types;
 		for (int i = 0; i != nTypes.length; ++i) {
 			Type before = types[i];
 			Type after = before.substitute(binding);
-			if (before != after) {
+			if(after == null) {
+				return null;
+			} else if (before != after) {
 				if (nTypes == types) {
 					nTypes = Arrays.copyOf(types, types.length);
 				}
@@ -6776,7 +7026,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	public static Type.Callable substitute(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
 			Tuple<SyntacticItem> templateArguments) {
-		Function<Identifier,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
+		Function<Object,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
 		// Proceed with the potentially updated binding
 		Type parameters = fmp.getParameter().substitute(binding);
 		Type ret = fmp.getReturn().substitute(binding);
@@ -6990,11 +7240,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static <T extends SyntacticItem> java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static <T extends SyntacticItem> java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Tuple<T> arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -7011,11 +7262,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Type.Tuple arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -7033,9 +7285,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param variables
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> removeFromBinding(
-			java.util.function.Function<Identifier, SyntacticItem> binding, Tuple<Identifier> variables) {
-		return (Identifier var) -> {
+	public static java.util.function.Function<Object, SyntacticItem> removeFromBinding(
+			java.util.function.Function<Object, SyntacticItem> binding, Tuple<Identifier> variables) {
+		return (Object var) -> {
 			// Sanity check whether this is a variable which is being removed
 			for (int i = 0; i != variables.size(); ++i) {
 				if (var.equals(variables.get(i))) {
@@ -7337,20 +7589,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	private static Schema createSchema() {
 		SectionedSchema v1_1 = createSchema_1_1();
 		SectionedSchema v1_2 = createSchema_1_2(v1_1);
+		SectionedSchema v1_3 = createSchema_1_3(v1_2);
 		//
-		Schema current = v1_2;
+		return v1_3;
 		//
-//		for(int i=0;i<=255;++i) {
-//			Descriptor desc = current.getDescriptor(i);
-//			if(desc != null) {
-//				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
-//			}
-//		}
-//		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
-		//
-		return current;
 	}
 
+	private static SectionedSchema createSchema_1_3(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("TEMPLATE", "type", Template.Type.DESCRIPTOR_1);
+		builder.replace("TEMPLATE", "lifetime", Template.Lifetime.DESCRIPTOR_1);
+		builder.add("TYPE", "existential", Type.ExistentialVariable.DESCRIPTOR_0);
+		return builder.done();
+	}
 	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
 		SectionedSchema.Builder builder = schema.extend();
 		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
@@ -7430,7 +7681,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// Types
 		builder.add("TYPE", "unknown", Type.Unknown.DESCRIPTOR_0);
 		builder.add("TYPE", "void", Type.Void.DESCRIPTOR_0);
-		builder.add("TYPE", "any", null);
+		builder.add("TYPE", "any", Type.Any.DESCRIPTOR_0);
 		builder.add("TYPE", "null", Type.Null.DESCRIPTOR_0);
 		builder.add("TYPE", "bool", Type.Bool.DESCRIPTOR_0);
 		builder.add("TYPE", "int", Type.Int.DESCRIPTOR_0);
@@ -7455,7 +7706,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", "recursive", Type.Recursive.DESCRIPTOR_0);
-		builder.add("TYPE", "variable", Type.Variable.DESCRIPTOR_0);
+		builder.add("TYPE", "universal", Type.UniversalVariable.DESCRIPTOR_0);
 		// Statements
 		builder.add("STMT", "block", Stmt.Block.DESCRIPTOR_0);
 		builder.add("STMT", "namedblock", Stmt.NamedBlock.DESCRIPTOR_0);
@@ -7564,11 +7815,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	public static void main(String[] args) {
-		Type r = new Type.Record(false, new Tuple<>(new Type.Field(new Identifier("f"), Type.Int),new Type.Field(new Identifier("g"), Type.Int),new Type.Field(new Identifier("h"), Type.Int)));
-		Type.Selector s = new Type.Selector(Type.Selector.BOTTOM, Type.Selector.BOTTOM, Type.Selector.TOP);
-		System.out.println("T: " + r);
-		System.out.println("S: " + s);
-		System.out.println("T o S: " + s.apply(r));
-		System.out.println("T o S: " + s.toString(r));
+		Schema current = createSchema();
+		for (int i = 0; i <= 255; ++i) {
+			Descriptor desc = current.getDescriptor(i);
+			if (desc != null) {
+				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
+			}
+		}
+		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 	}
 }

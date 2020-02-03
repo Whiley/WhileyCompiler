@@ -13,35 +13,33 @@
 // limitations under the License.
 package wyil.check;
 
+import wybs.lang.*;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Pair;
 
 import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.check.DefiniteAssignmentCheck.ControlFlow;
-import wyil.check.DefiniteAssignmentCheck.DefinitelyAssignedSet;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Array;
 import wyil.lang.WyilFile.Type.Field;
+import wyil.lang.WyilFile.Type.Record;
+import wyil.lang.WyilFile.Type.Union;
 import wyil.util.AbstractVisitor;
+import wyil.util.BinaryRelation;
 import wyil.util.SubtypeOperator.LifetimeRelation;
+import wyil.util.Typing;
 
 /**
  * This is an overflow class for <code>FlowTypeCheck</code>. It provides various

@@ -97,6 +97,43 @@ public class ErrorMessages {
 		}
 	}
 
+	private static final class TypingErrorMessage implements Message {
+		private final String[] parts;
+
+		public TypingErrorMessage(String... parts) {
+			this.parts = parts;
+		}
+
+		@Override
+		public String getMessage(Tuple<SyntacticItem> context) {
+			String output = "";
+			for(int i=0;i!=parts.length;++i) {
+				output += parts[i];
+				if(i < context.size()) {
+					output += toString(context.get(i));
+				}
+			}
+			return output;
+		}
+
+		private String toString(SyntacticItem context) {
+			if(context instanceof Tuple<?>) {
+				String r = "";
+				Tuple<?> t = (Tuple) context;
+				for(int i=0;i!=t.size();++i) {
+					if(i != 0) {
+						r += " or ";
+					}
+					r = r + toString(t.get(i));
+				}
+				return r;
+			} else {
+				return context.toString();
+			}
+		}
+	}
+
+
 	/**
 	 * A multi-part message is a dynamic message which is created based upon the
 	 * context in which it exists.
@@ -167,17 +204,17 @@ public class ErrorMessages {
 	// ========================================================================
 	// Type Checking
 	// ========================================================================
-	public static final MultiPartMessage SUBTYPE_ERROR = new MultiPartMessage("expected type ",", found ");
+	public static final Message SUBTYPE_ERROR = new TypingErrorMessage("expected ",", found ");
 	public static final Message EMPTY_TYPE  = new StaticMessage("empty type encountered");
-	public static final Message EXPECTED_ARRAY  = new StaticMessage("expected array type");
-	public static final Message EXPECTED_RECORD  = new StaticMessage("expected record type");
-	public static final Message EXPECTED_REFERENCE  = new StaticMessage("expected reference type");
+	public static final Message EXPECTED_ARRAY  = new StaticMessage("expected array");
+	public static final Message EXPECTED_RECORD  = new StaticMessage("expected record");
+	public static final Message EXPECTED_REFERENCE  = new StaticMessage("expected reference");
 	public static final Message EXPECTED_LAMBDA  = new StaticMessage("expected lambda");
 	public static final Message INVALID_FIELD  = new StaticMessage("invalid field access");
 	public static final Message MISSING_RETURN_STATEMENT = new StaticMessage("missing return statement");
 	public static final Message UNREACHABLE_CODE = new StaticMessage("unreachable code encountered (i.e. execution can never reach this statement)");
 	public static final Message BRANCH_ALWAYS_TAKEN = new StaticMessage("branch always taken");
-	public static final MultiPartMessage INCOMPARABLE_OPERANDS = new MultiPartMessage("incomparable operands: "," and ");
+	public static final Message INCOMPARABLE_OPERANDS = new TypingErrorMessage("incomparable operands "," and ");
     public static final Message INSUFFICIENT_ARGUMENTS = new StaticMessage("insufficient arguments for function or method invocation");
 	public static final Message TOO_MANY_RETURNS = new StaticMessage("too many return values");
 	public static final Message INSUFFICIENT_RETURNS = new StaticMessage("insufficient return values");

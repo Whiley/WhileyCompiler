@@ -124,6 +124,7 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Template;
+import wyil.lang.WyilFile.Template.Variance;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -734,11 +735,11 @@ public class WhileyFileParser {
 			// lifetime variable
 			match(Ampersand);
 			Identifier name = parseIdentifier();
-			return annotateSourceLocation(new Template.Lifetime(name), start);
+			return annotateSourceLocation(new Template.Lifetime(name, Variance.INVARIANT), start);
 		} else {
 			// type variable
 			Identifier name = parseIdentifier();
-			return annotateSourceLocation(new Template.Type(name), start);
+			return annotateSourceLocation(new Template.Type(name, Template.Variance.UNKNOWN), start);
 		}
 	}
 
@@ -3188,6 +3189,7 @@ public class WhileyFileParser {
 	 */
 	private Expr parseInvokeExpression(EnclosingScope scope, int start, Identifier name, boolean terminated,
 			Tuple<? extends SyntacticItem> templateArguments) {
+		int nameEnd = start + name.get().length() - 1;
 		// First, parse the arguments to this invocation.
 		Tuple<Expr> args = parseInvocationArguments(scope);
 		// Second, determine what kind of invocation we have. If the name of the
@@ -3205,7 +3207,8 @@ public class WhileyFileParser {
 			}
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
-			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start);
+			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start,
+					nameEnd);
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
@@ -3807,7 +3810,11 @@ public class WhileyFileParser {
 			ArrayList<Type> types = new ArrayList<>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionType(scope));
+				Type type = parseIntersectionType(scope);
+				if(types.contains(type)) {
+					syntaxError(WyilFile.EMPTY_TYPE, type);
+				}
+				types.add(type);
 			} while (tryAndMatch(true, VerticalBar) != null);
 			//
 			Type[] bounds = types.toArray(new Type[types.size()]);
@@ -4036,7 +4043,7 @@ public class WhileyFileParser {
 		int start = index;
 		Name name = parseName(scope);
 		if (name.size() == 1 && scope.isTypeVariable(name.get(0))) {
-			return annotateSourceLocation(new Type.Variable(name.get(0)), start);
+			return annotateSourceLocation(new Type.UniversalVariable(name.get(0)), start);
 		} else {
 			Tuple<Type> types = parseTypeParameters(scope);
 			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name),types), start);

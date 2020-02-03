@@ -77,15 +77,7 @@ public class TestUtils {
 		// Function Overloading for Nominal Types
 		VALID_IGNORED.put("Function_Valid_11", "#702");
 		VALID_IGNORED.put("Function_Valid_15", "#702");
-		// Redesigned Interpreter
-		VALID_IGNORED.put("Lambda_Valid_7", "908");
-		VALID_IGNORED.put("Lambda_Valid_11", "908");
-		VALID_IGNORED.put("Template_Valid_35", "908");
-		VALID_IGNORED.put("Template_Valid_36", "908");
-		// Bug with Template Inference
-		VALID_IGNORED.put("Template_Valid_38", "912");
 		// Semantics of Runtime Type Tests
-		VALID_IGNORED.put("RecursiveType_Valid_7", "936");
 		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
 		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
 		// FlowTyping over Logical Conditions
@@ -98,19 +90,34 @@ public class TestUtils {
 		// Separate out branch always taken 952
 		VALID_IGNORED.put("ListAccess_Valid_6", "952");
 		VALID_IGNORED.put("While_Valid_34", "952");
-		// Lambda's and Multiple Returns
-		VALID_IGNORED.put("Template_Valid_46", "981");
-		VALID_IGNORED.put("Template_Valid_47", "981");
+		// Type Refinement via Assignment
+		VALID_IGNORED.put("Template_Valid_35", "977");
+		VALID_IGNORED.put("Template_Valid_36", "977");
+		VALID_IGNORED.put("Coercion_Valid_16", "977");
 		//
 		VALID_IGNORED.put("Reference_Valid_12", "986");
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
-		// Unclassified
+		// Lifetime inference
+		VALID_IGNORED.put("Lifetime_Valid_3", "???");
+		VALID_IGNORED.put("Lifetime_Valid_4", "???");
+		VALID_IGNORED.put("Lifetime_Valid_5", "???");
+		VALID_IGNORED.put("Lifetime_Valid_6", "???");
+		VALID_IGNORED.put("Lifetime_Valid_7", "???");
 		VALID_IGNORED.put("Lifetime_Valid_8", "???");
+		VALID_IGNORED.put("Lifetime_Valid_9", "???");
+		VALID_IGNORED.put("Lifetime_Valid_10", "???");
+		VALID_IGNORED.put("Lifetime_Valid_11", "???");
+		VALID_IGNORED.put("Lifetime_Valid_12", "???");
+		VALID_IGNORED.put("Lifetime_Valid_13", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
 		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");
+		// Interpreter handling of tagged unions
+		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
+		// Binding Against Union Types
+		VALID_IGNORED.put("Template_Valid_19", "994");
 	}
 
 	/**
@@ -259,7 +266,7 @@ public class TestUtils {
 			result = false;
 		}catch (Exception e) {
 			// Print out the syntax error
-			e.printStackTrace(psyserr);
+			printStackTrace(psyserr, e);
 			result = false;
 		}
 		//
@@ -269,6 +276,24 @@ public class TestUtils {
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
 		return new Pair<>(result, output);
+	}
+
+	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
+		}
 	}
 
 	/**

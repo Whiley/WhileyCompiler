@@ -16,10 +16,12 @@ package wyil.util;
 import static wyil.lang.WyilFile.*;
 
 import java.util.HashSet;
+import java.util.Map;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.*;
+import wyil.util.SubtypeOperator.Constraints;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 
 public interface SubtypeOperator {
@@ -52,19 +54,64 @@ public interface SubtypeOperator {
 	 * surprisingly intricate.
 	 * </p>
 	 *
-	 * @param lhs
-	 *            The candidate "supertype". That is, lhs's raw type may be a
-	 *            supertype of <code>rhs</code>'s raw type.
-	 * @param rhs
-	 *            The candidate "subtype". That is, rhs's raw type may be a subtype
-	 *            of <code>lhs</code>'s raw type.
-	 * @param lifetimes
-	 *            The within relation between lifetimes that should be used when
-	 *            determine whether the <code>rhs</code> is a subtype of the
-	 *            <code>lhs</code>.
-	 * @return
+	 * @param lhs       The candidate "supertype". That is, lhs's raw type may be a
+	 *                  supertype of <code>rhs</code>'s raw type.
+	 * @param rhs       The candidate "subtype". That is, rhs's raw type may be a
+	 *                  subtype of <code>lhs</code>'s raw type.
+	 * @param lifetimes The within relation between lifetimes that should be used
+	 *                  when determine whether the <code>rhs</code> is a subtype of
+	 *                  the <code>lhs</code>.
+	 * @return A given constraints set which may or may not be satisfiable. If the
+	 *         constraints are not satisfiable then the relation does not hold.
 	 */
-	public boolean isSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes);
+	public Constraints isSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes);
+
+	public boolean isSatisfiableSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes);
+
+	/**
+	 * represents a set of subtyping constraints which must be satisfiable for a
+	 * given subtyping relationship to hold.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Constraints {
+		/**
+		 * Determine whether constraints satisfiable or not
+		 *
+		 * @return
+		 */
+		public boolean isEmpty();
+		/**
+		 * Determine the number of rows within this constraint set.
+		 *
+		 * @return
+		 */
+		public int size();
+
+		/**
+		 * Get the ith row of this constraint set.
+		 *
+		 * @param i
+		 * @return
+		 */
+		public Solution get(int i);
+
+		/**
+		 * Access a given row within a constraint set.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface Solution {
+			/**
+			 * Extract solution to this row of constraints.
+			 *
+			 * @return
+			 */
+			Map<Integer, Type> solve(int n);
+		}
+	}
 
 	/**
 	 * <p>
@@ -95,38 +142,6 @@ public interface SubtypeOperator {
 	 * @return
 	 */
 	public Type subtract(Type t1, Type t2);
-
-	/**
-	 * Bind a sequence of argument types against a given function, method or
-	 * property declaration to produce a binding which maps type & lifetime
-	 * variables to concrete types / lifetimes. Or, if not binding exists, return
-	 * <code>null</code>.  For example:
-	 *
-	 * <pre>
-	 * method f<a>(&a:int ptr):
-	 *    ...
-	 *
-	 * method g() -> int:
-	 *    &this:int ptr = this::new(1)
-	 *    f(ptr)
-	 *    return *ptr
-	 * </pre>
-	 *
-	 * Here, the invocation <code>f(ptr)</code> needs to bind the parameter type
-	 * <code>&a:int</code> with the concrete argument type <code>&this:int</code> by
-	 * mapping lifetime parameter <code>a</code> to lifetime argument
-	 * <code>this</code>.
-	 *
-	 * @param binding
-	 *            Binding being resolved
-	 * @param arguments
-	 *            Argument types being used for inference
-	 * @param environment
-	 *            The enclosing lifetime relation
-	 * @return
-	 */
-	public Type.Callable bind(Decl.Binding<Type.Callable, Decl.Callable> binding, Type arguments,
-			LifetimeRelation environment);
 
 	/**
 	 * <p>
@@ -217,18 +232,19 @@ public interface SubtypeOperator {
 		}
 
 		@Override
-		protected boolean isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes,
+		protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes,
 				BinaryRelation<Type> cache) {
 			Tuple<Type.Field> t1_fields = t1.getFields();
 			Tuple<Type.Field> t2_fields = t2.getFields();
 			// Sanity check number of fields are reasonable.
 			if (t1_fields.size() > t2_fields.size()) {
-				return false;
+				return BOTTOM;
 			} else if (t2.isOpen() && !t1.isOpen()) {
-				return false;
+				return BOTTOM;
 			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
-				return false;
+				return BOTTOM;
 			}
+			AbstractConstraints constraints = TOP;
 			// NOTE: the following is O(n^2) but, in reality, will be faster than the
 			// alternative (sorting fields into an array). That's because we expect a very
 			// small number of fields in practice.
@@ -238,25 +254,23 @@ public interface SubtypeOperator {
 				for (int j = 0; j != t2_fields.size(); ++j) {
 					Type.Field f2 = t2_fields.get(j);
 					if (f1.getName().equals(f2.getName())) {
+						AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), lifetimes, cache);
 						// Matched field
-						if (!isSubtype(f1.getType(), f2.getType(), lifetimes, cache)) {
-							return false;
-						} else {
-							matched = true;
-						}
+						matched = true;
+						constraints = constraints.intersect(other,lifetimes);
 					}
 				}
 				// Check we actually matched the field!
 				if (!matched) {
-					return false;
+					return BOTTOM;
 				}
 			}
 			// Done
-			return true;
+			return constraints;
 		}
 
 		@Override
-		protected boolean isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
+		protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes,
 				BinaryRelation<Type> cache) {
 			Type t1_params = t1.getParameter();
 			Type t2_params = t2.getParameter();
@@ -264,18 +278,15 @@ public interface SubtypeOperator {
 			Type t2_return = t2.getReturn();
 			// Eliminate easy cases first
 			if (t1.getOpcode() != t2.getOpcode()) {
-				return false;
+				return BOTTOM;
 			}
 			// Check parameters (contra-variant)
-			if (!isSubtype(t2_params, t1_params, lifetimes)) {
-				return false;
-			}
+			AbstractConstraints c_params = isSubtype(t2_params, t1_params, lifetimes, cache);
 			// Check returns (co-variant)
-			if (!isSubtype(t1_return, t2_return, lifetimes)) {
-				return false;
-			}
-			// Check lifetimes
+			AbstractConstraints c_returns = isSubtype(t1_return, t2_return, lifetimes, cache);
+			//
 			if(t1 instanceof Type.Method) {
+				// Check lifetimes
 				Type.Method m1 = (Type.Method) t1;
 				Type.Method m2 = (Type.Method) t2;
 				Tuple<Identifier> m1_lifetimes = m1.getLifetimeParameters();
@@ -291,7 +302,7 @@ public interface SubtypeOperator {
 				}
 			}
 			// Done
-			return true;
+			return c_params.intersect(c_returns, lifetimes);
 		}
 	}
 }

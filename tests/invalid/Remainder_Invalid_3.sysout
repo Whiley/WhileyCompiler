@@ -1,6 +1,3 @@
-tests/invalid/Remainder_Invalid_3.whiley:2: expected type int, found bool
+tests/invalid/Remainder_Invalid_3.whiley:2: expected int, found bool
     return x % y
            ^
-tests/invalid/Remainder_Invalid_3.whiley:2: expected type int, found bool
-    return x % y
-               ^

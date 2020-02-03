@@ -2554,7 +2554,7 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			QualifiedName nid = nt.getLink().getTarget().getQualifiedName();
 			result = new WyalFile.Type.Nominal(convert(nid, type));
-		} else if (type instanceof Type.Variable) {
+		} else if (type instanceof Type.UniversalVariable) {
 			result = new WyalFile.Type.Any();
 		} else {
 			throw new SyntacticException("unknown type encountered (" + type.getClass().getName() + ")",
@@ -2623,7 +2623,7 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			// HACK
 			return true;
-		} else if (type instanceof Type.Variable) {
+		} else if (type instanceof Type.UniversalVariable) {
 			// FIXME: unsure what the right solution is here?
 			return true;
 		} else if (type instanceof Type.Tuple) {

@@ -1,7 +1,6 @@
-tests/invalid/Template_Invalid_12.whiley:2: expected type int, found T
+tests/invalid/Template_Invalid_12.whiley:2: expected int, found T
     return x
            ^
-tests/invalid/Template_Invalid_12.whiley:5: unable to resolve name (is ambiguous)
-	found function Template_Invalid_12::f(T)->(int)
+tests/invalid/Template_Invalid_12.whiley:5: expected bool, found 
     bool x = f(1)
-             ^
+             ^^^^
