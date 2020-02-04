@@ -353,34 +353,20 @@ public class AbstractTyping implements Typing {
 				// No constraints over this environment, hence nothing to do.
 				return new Environment[] {this};
 			} else {
-				Environment[] nenvs = new Environment[constraints.size()];
-				// There are constraints over this environment, therefore at least one row has
-				// to have a solution.
-				outer:
-				for (int i = 0; i != constraints.size(); ++i) {
-					Constraints.Solution ith = constraints.get(i);
-					Map<Integer, Type> solution = ith.solve(existentials);
-					// Check for applicable solution.
-					if (solution != null) {
-						// Creating the necessary binding function for substitution
-						Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution.get(o)
-								: null;
-						// Apply the substitution
-						Type[] nTypes = new Type[types.length];
-						for (int j = 0; j != nTypes.length; ++j) {
-							Type jth = types[j].substitute(binder);
-							// NOTE: the substitution process can result in void types in some cases. If
-							// this happens then we can rule out this particular concretisation.
-							if(jth == null) {
-								break outer;
-							}
-							nTypes[j] = jth;
-						}
-						nenvs[i] = new Environment(subtyping, lifetimes, subtyping.TOP, 0, nTypes);
-					}
+				Type[][] solutions = constraints.solve(existentials,lifetimes);
+				Environment[] nenvs = new Environment[solutions.length];
+				// Apply substitution to every winner
+				for(int i=0;i!=nenvs.length;++i) {
+					final Type[] ith = solutions[i];
+					// Creating the necessary binding function for substitution
+					Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? ith[(Integer)o] : null;
+					// Apply the substitution
+					Type[] nTypes = substitute(types,binder);
+					//
+					nenvs[i] = new Environment(subtyping, lifetimes, subtyping.TOP, 0, nTypes);
 				}
 				// Done
-				return ArrayUtils.removeAll(nenvs, null);
+				return nenvs;
 			}
 		}
 
@@ -456,6 +442,21 @@ public class AbstractTyping implements Typing {
 	// ==========================================================================================
 	// Helpers
 	// ==========================================================================================
+
+
+	private static Type[] substitute(Type[] types, Function<Object,SyntacticItem> binder) {
+		// NOTE: optimisation to prevent allocation
+		Type[] nTypes = types;
+		for (int j = 0; j != nTypes.length; ++j) {
+			Type before = types[j];
+			Type after = before.substitute(binder);
+			if(before != after && nTypes == types) {
+				nTypes = Arrays.copyOf(types, types.length);
+			}
+			nTypes[j] = after;
+		}
+		return nTypes;
+	}
 
 	/**
 	 * Flattern an expression tree into a left-to-right linear sequence. For

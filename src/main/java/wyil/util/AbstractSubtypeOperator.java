@@ -23,6 +23,7 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Type;
 
 /**
  * <p>
@@ -850,6 +851,37 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 		}
 
 		@Override
+		public Type[][] solve(int n, LifetimeRelation lifetimes) {
+			// First compute all solutions
+			Type[][] candidates = new Type[rows.length][];
+			for (int i = 0; i != rows.length; ++i) {
+				candidates[i] = rows[i].solve(n);
+			}
+			// Second identify clear winners (whilst ignoring nulls)
+			for (int i = 0; i != candidates.length; ++i) {
+				Type[] ith = candidates[i];
+				if (ith != null) {
+					for (int j = i + 1; j != candidates.length; ++j) {
+						Type[] jth = candidates[j];
+						if (jth == null) {
+							continue;
+						} else if (isSubsumedBy(ith, jth, lifetimes)) {
+							// ith subsumed by jth
+							candidates[i] = null;
+							break;
+						} else if (isSubsumedBy(jth, ith, lifetimes)) {
+							// jth subsumed by ith
+							candidates[j] = null;
+							continue;
+						}
+					}
+				}
+			}
+			// Finally, remove any losers
+			return ArrayUtils.removeAll(candidates, null);
+		}
+
+		@Override
 		public String toString() {
 			if (rows.length == 0) {
 				return "⊥";
@@ -863,6 +895,23 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				}
 				return r;
 			}
+		}
+
+		/**
+		 * Check whether or not lhs is subsumed by the rhs.
+		 *
+		 * @param lhs
+		 * @param rhs
+		 * @param lifetimes
+		 * @return
+		 */
+		private boolean isSubsumedBy(Type[] lhs, Type[] rhs, LifetimeRelation lifetimes) {
+			for (int i = 0; i != lhs.length; ++i) {
+				if (!isSatisfiableSubtype(lhs[i], rhs[i], lifetimes)) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 
@@ -946,22 +995,21 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			}
 		}
 
-		@Override
-		public Map<Integer, Type> solve(int n) {
-			HashMap<Integer, Type> map = new HashMap<>();
+		public Type[] solve(int n) {
+			Type[] solutions = new Type[n];
 			for (int i = 0; i != n; ++i) {
 				Type upper = solution.ceil(i);
 				Type lower = solution.floor(i);
 				// Check whether a solution was found or not
 				if (upper instanceof Type.Any && lower instanceof Type.Void) {
 					return null;
-				} else if (upper instanceof Type.Any) {
-					map.put(i, lower);
+				} else if (lower instanceof Type.Void) {
+					solutions[i] = upper;
 				} else {
-					map.put(i, upper);
+					solutions[i] = lower;
 				}
 			}
-			return map;
+			return solutions;
 		}
 
 		@Override
@@ -1379,6 +1427,10 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			Type nElement = substitute(element,solution,sign);
 			if(element == nElement) {
 				return type;
+			} else if(nElement instanceof Type.Void) {
+				return Type.Void;
+			} else if(nElement instanceof Type.Any) {
+				return Type.Any;
 			} else {
 				return new Type.Array(nElement);
 			}
@@ -1394,6 +1446,10 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			Type nElement = substitute(element,solution,sign);
 			if(element == nElement) {
 				return type;
+			} else if(nElement instanceof Type.Void) {
+				return Type.Void;
+			} else if(nElement instanceof Type.Any) {
+				return Type.Any;
 			} else {
 				return new Type.Reference(nElement);
 			}
@@ -1409,6 +1465,10 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			Type nReturns = substitute(returns,solution,sign);
 			if(nParameters == parameters && nReturns == returns) {
 				return type;
+			} else if(nReturns instanceof Type.Void || nParameters instanceof Type.Any) {
+				return Type.Void;
+			} else if(nReturns instanceof Type.Any || nParameters instanceof Type.Void) {
+				return Type.Any;
 			} else if(type instanceof Type.Function) {
 				return new Type.Function(nParameters, nReturns);
 			} else if(type instanceof Type.Property) {
@@ -1429,6 +1489,15 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			if(parameters == nParameters) {
 				return type;
 			} else {
+				// Sanity check substitution makes sense
+				for(int i=0;i!=parameters.size();++i) {
+					Type ith = parameters.get(i);
+					if (ith instanceof Type.Void) {
+						return Type.Void;
+					} else if (ith instanceof Type.Any) {
+						return Type.Any;
+					}
+				}
 				return new Type.Nominal(t.getLink(), nParameters);
 			}
 		}
@@ -1439,6 +1508,16 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			if(elements == nElements) {
 				return type;
 			} else {
+				// Sanity check substitution makes sense
+				for(int i=0;i!=nElements.length;++i) {
+					Type ith = nElements[i];
+					if (ith instanceof Type.Void) {
+						return Type.Void;
+					} else if (ith instanceof Type.Any) {
+						return Type.Any;
+					}
+				}
+				// Done
 				return Type.Tuple.create(nElements);
 			}
 		}
@@ -1449,6 +1528,16 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			if(elements == nElements) {
 				return type;
 			} else {
+				// Sanity check substitution makes sense
+				for(int i=0;i!=nElements.length;++i) {
+					Type ith = nElements[i];
+					if (ith instanceof Type.Void) {
+						return Type.Void;
+					} else if (ith instanceof Type.Any) {
+						return Type.Any;
+					}
+				}
+				// Done
 				return new Type.Union(nElements);
 			}
 		}
@@ -1459,6 +1548,15 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			if(fields == nFields) {
 				return type;
 			} else {
+				// Sanity check substitution makes sense
+				for(int i=0;i!=nFields.size();++i) {
+					Type ith = nFields.get(i).getType();
+					if (ith instanceof Type.Void) {
+						return Type.Void;
+					} else if (ith instanceof Type.Any) {
+						return Type.Any;
+					}
+				}
 				return new Type.Record(t.isOpen(),nFields);
 			}
 		}

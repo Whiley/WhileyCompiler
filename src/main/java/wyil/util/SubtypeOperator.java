@@ -98,18 +98,21 @@ public interface SubtypeOperator {
 		public Solution get(int i);
 
 		/**
+		 * Extract best possible solutions.
+		 *
+		 * @param n
+		 * @return
+		 */
+		public Type[][] solve(int n, LifetimeRelation lifetimes);
+
+		/**
 		 * Access a given row within a constraint set.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public interface Solution {
-			/**
-			 * Extract solution to this row of constraints.
-			 *
-			 * @return
-			 */
-			Map<Integer, Type> solve(int n);
+
 		}
 	}
 
