@@ -15,6 +15,7 @@ package wyil.check;
 
 import wybs.lang.*;
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Pair;
 
 import static wyc.util.ErrorMessages.syntaxError;
@@ -26,11 +27,13 @@ import java.util.function.Predicate;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
+import wyil.check.FlowTypeUtils.Binding;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Array;
 import wyil.lang.WyilFile.Type.Field;
@@ -38,6 +41,7 @@ import wyil.lang.WyilFile.Type.Record;
 import wyil.lang.WyilFile.Type.Union;
 import wyil.util.AbstractVisitor;
 import wyil.util.BinaryRelation;
+import wyil.util.SubtypeOperator;
 import wyil.util.SubtypeOperator.LifetimeRelation;
 import wyil.util.Typing;
 
@@ -167,7 +171,7 @@ public class FlowTypeUtils {
 			case STMT_assign: {
 				Stmt.Assign s = (Stmt.Assign) stmt;
 				for (LVal lval : s.getLeftHandSide()) {
-					addAssignedVariables(lval,modified);
+					addAssignedVariables(lval, modified);
 					// FIXME: this is not an ideal solution long term. In
 					// particular, we really need this method to detect not
 					// just modified variables, but also modified locations
@@ -232,7 +236,7 @@ public class FlowTypeUtils {
 		} else if (lval instanceof Expr.TupleInitialiser) {
 			Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
 			Tuple<Expr> operands = e.getOperands();
-			for(int i=0;i!=operands.size();++i) {
+			for (int i = 0; i != operands.size(); ++i) {
 				addAssignedVariables((LVal) operands.get(i), modified);
 			}
 		} else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
@@ -300,7 +304,7 @@ public class FlowTypeUtils {
 		@Override
 		public void visitIndirectInvoke(Expr.IndirectInvoke expr) {
 			Type.Callable sourceType = expr.getSource().getType().as(Type.Callable.class);
-			if(sourceType instanceof Type.Method) {
+			if (sourceType instanceof Type.Method) {
 				pure = false;
 			}
 		}
@@ -354,7 +358,7 @@ public class FlowTypeUtils {
 		}
 
 		public Environment refineType(Decl.Variable var, Type refinement) {
-			if(getType(var).equals(refinement)) {
+			if (getType(var).equals(refinement)) {
 				// No refinement necessary
 				return this;
 			} else {
@@ -381,11 +385,11 @@ public class FlowTypeUtils {
 			}
 			r = r + "}{";
 			firstTime = true;
-			for(Map.Entry<String, String[]> w : withins.entrySet()) {
-				if(!firstTime) {
+			for (Map.Entry<String, String[]> w : withins.entrySet()) {
+				if (!firstTime) {
 					r += ", ";
 				}
-				firstTime=false;
+				firstTime = false;
 				r = r + w.getKey() + " < " + Arrays.toString(w.getValue());
 			}
 			return r + "}";
@@ -424,5 +428,140 @@ public class FlowTypeUtils {
 			nenv.withins.put(inner, outers);
 			return nenv;
 		}
+	}
+
+	// ===============================================================================================================
+	// Binding
+	// ===============================================================================================================
+
+	/**
+	 * Represents a candidate binding between a lambda type and declaration. For
+	 * example, consider this:
+	 * 
+	 * <pre>
+	 * function id<T>(T x) -> (T x):
+	 *    return 1
+	 * </pre>
+	 * 
+	 * Typing an invocation <code>id(1)</code> which will generate at least one
+	 * binding. The <i>candidate</i> type will be
+	 * <code>function(T)->(T)<code>, whilst the concrete type is <code>function(int)->(int)</code>.
+	 * This binding additionally clarifies how the concrete type is derived from the
+	 * candidate type using a mapping from template variables to types (e.g. in this
+	 * case <code>{T=>int}</code>).
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Binding {
+		private final Tuple<SyntacticItem> arguments;
+		private final Decl.Callable candidate;
+		private final Type.Callable concreteType;
+
+		public Binding(Decl.Callable candidate, Tuple<SyntacticItem> arguments, Type.Callable concreteType) {
+			this.candidate = candidate;
+			this.arguments = arguments;
+			this.concreteType = concreteType;
+		}
+
+		public Decl.Callable getCandidateDeclaration() {
+			return candidate;
+		}
+
+		public Type.Callable getConcreteType() {
+			return concreteType;
+		}
+
+		public Tuple<SyntacticItem> getArguments() {
+			return arguments;
+		}
+
+		@Override
+		public String toString() {
+			Tuple<Template.Variable> variables = candidate.getTemplate();
+			String r = "";
+			for (int i = 0; i != variables.size(); ++i) {
+				if (i != 0) {
+					r = r + ",";
+				}
+				r += variables.get(i);
+				r += "=";
+				r += arguments.get(i);
+			}
+			return "{" + r + "}:" + candidate.getType();
+		}
+	}
+
+	/**
+	 * <p>
+	 * Given a list of candidate bindings, determine the most precise match for the
+	 * supplied argument types. The winning candidate must be a subtype of all
+	 * candidates. For example, consider this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * function f(int|bool x) -> (int r):
+	 *    ...
+	 *    
+	 * function f(int x) -> (int r):
+	 *    ...
+	 * </pre>
+	 * 
+	 * <p>
+	 * Typing an invocation <code>f(1)</code> will generate two candidate bindings
+	 * (i.e. one for each declaration above). The candidate corresponding to
+	 * <code>function(int)->(int)</code> will be chosen over the other because its
+	 * signature is a subtype of the other.
+	 * </p>
+	 *  
+	 * @param candidates
+	 * @param args
+	 * @return
+	 */
+	public static Binding selectCallableCandidate(List<Binding> candidates, SubtypeOperator subtyping,
+			LifetimeRelation lifetimes) {
+		Binding best = null;
+		Type.Callable bestType = null;
+		boolean bestValidWinner = false;
+		//
+		for (int i = 0; i != candidates.size(); ++i) {
+			Binding candidate = candidates.get(i);
+			Type.Callable candidateType = candidate.getConcreteType();
+			if (best == null) {
+				// No other candidates are applicable so far. Hence, this
+				// one is automatically promoted to the best seen so far.
+				best = candidate;
+				bestType = candidateType;
+				bestValidWinner = true;
+			} else {
+				boolean csubb = subtyping.isSatisfiableSubtype(bestType, candidateType, lifetimes);
+				boolean bsubc = subtyping.isSatisfiableSubtype(candidateType, bestType, lifetimes);
+				//
+				if (csubb && !bsubc) {
+					// This candidate is a subtype of the best seen so far. Hence, it is now the
+					// best seen so far.
+					best = candidate;
+					bestType = candidate.getConcreteType();
+					bestValidWinner = true;
+				} else if (bsubc && !csubb) {
+					// This best so far is a subtype of this candidate. Therefore, we can simply
+					// discard this candidate from consideration since it's definitely not the best.
+				} else if (!csubb && !bsubc) {
+					// This is the awkward case. Neither the best so far, nor the candidate, are
+					// subtypes of each other. In this case, we report an error. NOTE: must perform
+					// an explicit equality check above due to the present of type invariants.
+					// Specifically, without this check, the system will treat two declarations with
+					// identical raw types (though non-identical actual types) as the same.
+					return null;
+				} else {
+					// This is a tricky case. We have two types after instantiation which are
+					// considered identical under the raw subtype test. As such, they may not be
+					// actually identical (e.g. if one has a type invariant). Furthermore, we cannot
+					// stop at this stage as, in principle, we could still find an outright winner.
+					bestValidWinner = false;
+				}
+			}
+		}
+		return bestValidWinner ? best : null;
 	}
 }

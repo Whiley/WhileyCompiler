@@ -1476,7 +1476,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @param <T>
 		 */
-		public static class Link<T extends SyntacticItem> extends AbstractSyntacticItem {
+		public static class Link<T extends Decl.Named<?>> extends AbstractSyntacticItem {
 			public Link(Name name) {
 				super(DECL_link,name);
 			}
@@ -1514,6 +1514,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return candidates;
 			}
 
+			public T lookup(WyilFile.Type type) {
+				for (int i = 1; i != operands.length; ++i) {
+					Ref<T> candidate = (Ref<T>) operands[i];
+					Decl.Named<?> n = candidate.get();
+					if(n.getType().equals(type)) {
+						return (T) n;
+					}
+				}
+				throw new IllegalArgumentException("unable to find candidate declaration");
+			}
+			
 			@SuppressWarnings("unchecked")
 			public void resolve(T... items) {
 				SyntacticHeap heap = getHeap();

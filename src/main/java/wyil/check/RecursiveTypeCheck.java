@@ -25,14 +25,14 @@ import wyil.lang.WyilFile.Decl.Link;
 import wyil.util.AbstractVisitor;
 
 /**
- * Determine the positional variance of template parameters in all declared
- * types. For example:
+ * Determine the <i>positional variance</i> of template parameters in all
+ * declared types. For example:
  *
  * <pre>
  * type Box<T> is { T value }
  * </pre>
  *
- * In this case, template variable <code>T</code> is considered to
+ * In this case, template variable <code>T</code> is considered to be
  * <i>covariant</i>, meaning that <code>Box&lt;int&gt;</code> is a subtype of
  * <code>Box&lt;int|bool&gt;</code>. In contrast, consider:
  *
@@ -40,7 +40,7 @@ import wyil.util.AbstractVisitor;
  * type Box<T> is { &T value }
  * </pre>
  *
- * In this case, template variable <code>T</code> is considered to
+ * In this case, template variable <code>T</code> is considered to be
  * <i>invariant</i>, meaning that <code>Box&lt;int&gt;</code> is not a subtype
  * of <code>Box&lt;int|bool&gt;</code> and neither is
  * <code>Box&lt;int|bool&gt;</code> is not a subtype of
@@ -50,7 +50,7 @@ import wyil.util.AbstractVisitor;
  * type pred_t<T> is function(T)->(bool)
  * </pre>
  *
- * In this case, template variable <code>T</code> is considered to
+ * In this case, template variable <code>T</code> is considered to be
  * <i>contravariant</i>, meaning that <code>pred_t&lt;int|bool&gt;</code> is a
  * subtype of <code>pred_t&lt;int&gt;</code>.
  *

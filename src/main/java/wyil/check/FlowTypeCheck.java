@@ -1285,9 +1285,9 @@ public class FlowTypeCheck implements Compiler.Check {
 				//
 				Link<Decl.Callable> link = e.getLink();
 				// Right, binding is being inferred
-				List<Binding> candidates = extractCallableCandidates(e, typing);
+				List<Binding> candidates = extractBindings(e, typing);
 				// Select best option
-				Binding selected = selectCallableCandidate(e.getLink().getName(), candidates, lifetimes);
+				Binding selected = FlowTypeUtils.selectCallableCandidate(candidates, strictSubtypeOperator, lifetimes);
 				//
 				if (selected != null) {
 					Decl.Callable decl = selected.getCandidateDeclaration();
@@ -1313,7 +1313,7 @@ public class FlowTypeCheck implements Compiler.Check {
 					// Extract embedded selector
 					Type.Callable selector = (Type.Callable) types[0];
 					// 	Resolve link based on selector
-					e.getLink().resolve(selectCallableCandidate(selector, e));
+					e.getLink().resolve(link.lookup(selector));
 				}
 			}
 		}
@@ -1326,9 +1326,9 @@ public class FlowTypeCheck implements Compiler.Check {
 			// Strip out all duplicate types to identify any form of ambiguity.
 			Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
 			//
-			if(ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
+			if (ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
 
-			} else if(types.length == 1 && types[0] != null){
+			} else if (types.length == 1 && types[0] != null) {
 				ith.setType(heap.allocate(types[0]));
 			} else {
 				syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(Type.Any), new Tuple<>(types));
@@ -1337,155 +1337,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		//
 		return true;
-	}
-
-	private Decl.Callable selectCallableCandidate(Type.Callable type, Bindable expr) {
-		@SuppressWarnings("unchecked")
-		Link<Decl.Callable> link = (Link<Decl.Callable>) expr.getLink();
-		List<Decl.Callable> candidates = link.getCandidates();
-		for (int i = 0; i != candidates.size(); ++i) {
-			Decl.Callable ith = candidates.get(i);
-			if (ith.getType().equals(type)) {
-				return ith;
-			}
-		}
-		// NOTE: we should be unable to get here because the selector should match one
-		// of the candidates since it was originally taken from the same list of
-		// candidates!
-		return internalFailure("deadcode reached", expr);
-	}
-
-
-	/**
-	 * Given a list of candidate function or method declarations, determine the most
-	 * precise match for the supplied argument types. The given argument types must
-	 * be applicable to this function or macro declaration, and it must be a subtype
-	 * of all other applicable candidates.
-	 *
-	 * @param candidates
-	 * @param args
-	 * @return
-	 */
-	public Binding selectCallableCandidate(Name name, List<Binding> candidates, LifetimeRelation lifetimes) {
-		Binding best = null;
-		Type.Callable bestType = null;
-		boolean bestValidWinner = false;
-		//
-		for (int i = 0; i != candidates.size(); ++i) {
-			Binding candidate = candidates.get(i);
-			Type.Callable candidateType = candidate.getConcreteType();
-			if (best == null) {
-				// No other candidates are applicable so far. Hence, this
-				// one is automatically promoted to the best seen so far.
-				best = candidate;
-				bestType = candidateType;
-				bestValidWinner = true;
-			} else {
-				boolean csubb = isParameterSubtype(bestType, candidateType, lifetimes);
-				boolean bsubc = isParameterSubtype(candidateType, bestType, lifetimes);
-				//
-				if (csubb && !bsubc) {
-					// This candidate is a subtype of the best seen so far. Hence, it is now the
-					// best seen so far.
-					best = candidate;
-					bestType = candidate.getConcreteType();
-					bestValidWinner = true;
-				} else if (bsubc && !csubb) {
-					// This best so far is a subtype of this candidate. Therefore, we can simply
-					// discard this candidate from consideration since it's definitely not the best.
-				} else if (!csubb && !bsubc) {
-					// This is the awkward case. Neither the best so far, nor the candidate, are
-					// subtypes of each other. In this case, we report an error. NOTE: must perform
-					// an explicit equality check above due to the present of type invariants.
-					// Specifically, without this check, the system will treat two declarations with
-					// identical raw types (though non-identical actual types) as the same.
-					return null;
-				} else {
-					// This is a tricky case. We have two types after instantiation which are
-					// considered identical under the raw subtype test. As such, they may not be
-					// actually identical (e.g. if one has a type invariant). Furthermore, we cannot
-					// stop at this stage as, in principle, we could still find an outright winner.
-					bestValidWinner = false;
-				}
-			}
-		}
-		return bestValidWinner ? best : null;
-	}
-
-
-	/**
-	 * Check whether the type signature for a given function or method declaration
-	 * is a super type of a given child declaration.
-	 *
-	 * @param lhs
-	 * @param rhs
-	 * @return
-	 */
-	protected boolean isParameterSubtype(Type.Callable lhs, Type.Callable rhs, LifetimeRelation lifetimes) {
-		Type parentParams = lhs.getParameter();
-		Type childParams = rhs.getParameter();
-		if (parentParams.shape() != childParams.shape()) {
-			// Differing number of parameters / arguments. Since we don't
-			// support variable-length argument lists (yet), there is nothing
-			// more to consider.
-			return false;
-		}
-		// Number of parameters matches number of arguments. Now, check that
-		// each argument is a subtype of its corresponding parameter.
-		for (int i = 0; i != parentParams.shape(); ++i) {
-			Type parentParam = parentParams.dimension(i);
-			Type childParam = childParams.dimension(i);
-			if (!strictSubtypeOperator.isSatisfiableSubtype(parentParam, childParam, lifetimes)) {
-				return false;
-			}
-		}
-		//
-		return true;
-	}
-
-	/**
-	 * Represents a candidate binding between a callable type and declaration.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Binding  {
-		private final Tuple<SyntacticItem> arguments;
-		private final Decl.Callable candidate;
-		private final Type.Callable concreteType;
-
-		public Binding(Decl.Callable candidate, Tuple<SyntacticItem> arguments, Type.Callable concreteType) {
-			this.candidate = candidate;
-			this.arguments = arguments;
-			this.concreteType = concreteType;
-		}
-
-		public Decl.Callable getCandidateDeclaration() {
-			return candidate;
-		}
-
-		public Type.Callable getConcreteType() {
-			return concreteType;
-		}
-
-		public Tuple<SyntacticItem> getArguments() {
-			return arguments;
-		}
-
-		@Override
-		public String toString() {
-			Tuple<Template.Variable> variables = candidate.getTemplate();
-			String r = "";
-			for(int i=0;i!=variables.size();++i) {
-				if(i != 0) {
-					r = r + ",";
-				}
-				r += variables.get(i);
-				r += "=";
-				r += arguments.get(i);
-			}
-			return "{" + r + "}:" + candidate.getType();
-		}
 	}
 
 	/**
@@ -1497,7 +1348,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param typing
 	 * @return
 	 */
-	private List<Binding> extractCallableCandidates(Expr.Invoke expr, Typing typing) {
+	private List<Binding> extractBindings(Expr.Invoke expr, Typing typing) {
+		Link<Decl.Callable> link = expr.getLink(); 
 		int v_expr = typing.indexOf(expr);
 		int v_signature = v_expr+1;
 		int v_concrete = v_expr+2;
@@ -1511,7 +1363,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable concrete = (Type.Callable) ith.get(v_concrete);
 			Type template = ith.get(v_template);
 			// Identify corresponding declaration.
-			Decl.Callable decl = selectCallableCandidate(type,expr);
+			Decl.Callable decl = link.lookup(type);
 			// Determine whether arguments need to be inferred?
 			Tuple<SyntacticItem> arguments = expr.getBinding().getArguments();
 			// Extract inferred arguments (if applicable)
