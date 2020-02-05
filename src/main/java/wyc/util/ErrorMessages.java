@@ -245,7 +245,7 @@ public class ErrorMessages {
 	// ========================================================================
 	// Ambiguous Coercion Check
 	// ========================================================================
-	public static final MultiPartMessage AMBIGUOUS_COERCION = new MultiPartMessage("ambiguous coercion required ("," to ",")");
+	public static final Message AMBIGUOUS_COERCION = new TypingErrorMessage("ambiguous coercion from "," to ");
 
 	// ========================================================================
 	// Verification

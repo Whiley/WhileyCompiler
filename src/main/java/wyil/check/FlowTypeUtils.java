@@ -437,19 +437,19 @@ public class FlowTypeUtils {
 	/**
 	 * Represents a candidate binding between a lambda type and declaration. For
 	 * example, consider this:
-	 * 
+	 *
 	 * <pre>
 	 * function id<T>(T x) -> (T x):
 	 *    return 1
 	 * </pre>
-	 * 
+	 *
 	 * Typing an invocation <code>id(1)</code> which will generate at least one
 	 * binding. The <i>candidate</i> type will be
 	 * <code>function(T)->(T)<code>, whilst the concrete type is <code>function(int)->(int)</code>.
 	 * This binding additionally clarifies how the concrete type is derived from the
 	 * candidate type using a mapping from template variables to types (e.g. in this
 	 * case <code>{T=>int}</code>).
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -498,22 +498,22 @@ public class FlowTypeUtils {
 	 * supplied argument types. The winning candidate must be a subtype of all
 	 * candidates. For example, consider this:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * function f(int|bool x) -> (int r):
 	 *    ...
-	 *    
+	 *
 	 * function f(int x) -> (int r):
 	 *    ...
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Typing an invocation <code>f(1)</code> will generate two candidate bindings
 	 * (i.e. one for each declaration above). The candidate corresponding to
 	 * <code>function(int)->(int)</code> will be chosen over the other because its
 	 * signature is a subtype of the other.
 	 * </p>
-	 *  
+	 *
 	 * @param candidates
 	 * @param args
 	 * @return

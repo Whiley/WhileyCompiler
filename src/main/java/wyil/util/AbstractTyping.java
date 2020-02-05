@@ -40,7 +40,9 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wycc.util.Pair;
+import wyil.check.FlowTypeUtils.Binding;
 import wyil.lang.WyilFile.*;
+import wyil.lang.WyilFile.Decl.Link;
 import wyil.lang.WyilFile.Type.ExistentialVariable;
 import wyil.util.SubtypeOperator.Constraints;
 import wyil.util.SubtypeOperator.LifetimeRelation;
@@ -146,6 +148,49 @@ public class AbstractTyping implements Typing {
 		}
 		// Done
 		return types;
+	}
+
+	/**
+	 * For a given pivot (e.g. invocation) and typing, extract the set of possible
+	 * bindings to select from. This is done by taking the given binding from each
+	 * row in the typing.
+	 *
+	 * @param expr
+	 * @param typing
+	 * @return
+	 */
+	@Override
+	public List<Binding> bindings(Expr.Invoke expr) {
+		Link<Decl.Callable> link = expr.getLink();
+		int v_expr = indexOf(expr);
+		int v_signature = v_expr + 1;
+		int v_concrete = v_expr + 2;
+		int v_template = v_expr + 3;
+		//
+		ArrayList<Binding> candidates = new ArrayList<>();
+		for (int i = 0; i != height(); ++i) {
+			// Identify signature this row corresponds with.
+			Typing.Environment ith = getEnvironment(i);
+			Type.Callable type = (Type.Callable) ith.get(v_signature);
+			Type.Callable concrete = (Type.Callable) ith.get(v_concrete);
+			Type template = ith.get(v_template);
+			// Identify corresponding declaration.
+			Decl.Callable decl = link.lookup(type);
+			// Determine whether arguments need to be inferred?
+			Tuple<SyntacticItem> arguments = expr.getBinding().getArguments();
+			// Extract inferred arguments (if applicable)
+			if (arguments.size() == 0 && template.shape() > 0) {
+				if (template.shape() == 1) {
+					arguments = new Tuple<>(template);
+				} else {
+					arguments = new Tuple<>(template.getAll());
+				}
+			}
+			// Done
+			candidates.add(new Binding(decl, arguments, concrete));
+		}
+		//
+		return candidates;
 	}
 
 	@Override
@@ -442,7 +487,6 @@ public class AbstractTyping implements Typing {
 	// ==========================================================================================
 	// Helpers
 	// ==========================================================================================
-
 
 	private static Type[] substitute(Type[] types, Function<Object,SyntacticItem> binder) {
 		// NOTE: optimisation to prevent allocation
