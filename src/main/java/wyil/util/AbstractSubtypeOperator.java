@@ -815,7 +815,6 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 			} else if(other == TOP) {
 				return this;
 			}
-			// NOTE: at this point, other could be top
 			final int n = rows.length;
 			final int m = other.rows.length;
 			ArrayList<Solution> nrows = new ArrayList<>();
@@ -863,16 +862,21 @@ public abstract class AbstractSubtypeOperator implements SubtypeOperator {
 				if (ith != null) {
 					for (int j = i + 1; j != candidates.length; ++j) {
 						Type[] jth = candidates[j];
-						if (jth == null) {
+						if(jth == null) {
 							continue;
-						} else if (isSubsumedBy(ith, jth, lifetimes)) {
-							// ith subsumed by jth
-							candidates[i] = null;
-							break;
-						} else if (isSubsumedBy(jth, ith, lifetimes)) {
-							// jth subsumed by ith
-							candidates[j] = null;
-							continue;
+						} else {
+							boolean left = isSubsumedBy(ith, jth, lifetimes);
+							boolean right = isSubsumedBy(jth, ith, lifetimes);
+							//
+							if (left && !right) {
+								// ith strictly subsumed by jth
+								candidates[i] = null;
+								break;
+							} else if (!left && right) {
+								// jth strictly subsumed by ith
+								candidates[j] = null;
+								continue;
+							}
 						}
 					}
 				}

@@ -1,3 +1,3 @@
-tests/invalid/Coercion_Invalid_4.whiley:6: ambiguous coercion required (nat[] to pos[]|neg[])
+tests/invalid/Coercion_Invalid_4.whiley:6: ambiguous coercion from nat[] to pos[]|neg[]
     return p
            ^

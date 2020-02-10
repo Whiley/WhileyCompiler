@@ -207,7 +207,7 @@ public interface SubtypeOperator {
 		@Override
 		protected boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs) {
 			// NOTE: in principle, we could potentially do more here.
-			return lhs.size() == 0;
+			return lhs.size() == 0 || lhs.equals(rhs);
 		}
 
 	}
@@ -231,7 +231,7 @@ public interface SubtypeOperator {
 	public static class Relaxed extends AbstractSubtypeOperator {
 		@Override
 		protected boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs) {
-			return true;
+			 return true;
 		}
 
 		@Override

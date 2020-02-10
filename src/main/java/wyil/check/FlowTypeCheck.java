@@ -1285,7 +1285,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				//
 				Link<Decl.Callable> link = e.getLink();
 				// Right, binding is being inferred
-				List<Binding> candidates = extractBindings(e, typing);
+				List<Binding> candidates = typing.bindings(e);
 				// Select best option
 				Binding selected = FlowTypeUtils.selectCallableCandidate(candidates, strictSubtypeOperator, lifetimes);
 				//
@@ -1317,68 +1317,27 @@ public class FlowTypeCheck implements Compiler.Check {
 				}
 			}
 		}
-		if(typing.height() > 1) {
-			throw new IllegalArgumentException("This should be impossible?");
-		}
+//		if(typing.height() > 1) {
+//			throw new IllegalArgumentException("This should be impossible?");
+//		}
 		// Finally, concretize remainder
 		for (int i = 0; i != typing.width(); ++i) {
 			Expr ith = typing.getExpression(i);
 			// Strip out all duplicate types to identify any form of ambiguity.
-			Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
+//			Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
+			Type[] types = typing.types(ith);
 			//
 			if (ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
 
 			} else if (types.length == 1 && types[0] != null) {
 				ith.setType(heap.allocate(types[0]));
 			} else {
-				syntaxError(expression, SUBTYPE_ERROR, new Tuple<>(Type.Any), new Tuple<>(types));
+				syntaxError(expression, WyilFile.AMBIGUOUS_COERCION, new Tuple<>(Type.Any), new Tuple<>(types));
 				return false;
 			}
 		}
 		//
 		return true;
-	}
-
-	/**
-	 * For a given pivot (e.g. invocation) and typing, extract the set of possible
-	 * bindings to select from. This is done by taking the given binding from each
-	 * row in the typing.
-	 *
-	 * @param expr
-	 * @param typing
-	 * @return
-	 */
-	private List<Binding> extractBindings(Expr.Invoke expr, Typing typing) {
-		Link<Decl.Callable> link = expr.getLink(); 
-		int v_expr = typing.indexOf(expr);
-		int v_signature = v_expr+1;
-		int v_concrete = v_expr+2;
-		int v_template = v_expr+3;
-		//
-		ArrayList<Binding> candidates = new ArrayList<>();
-		for(int i=0;i!=typing.height();++i) {
-			// Identify signature this row corresponds with.
-			Typing.Environment ith = typing.getEnvironment(i);
-			Type.Callable type = (Type.Callable) ith.get(v_signature);
-			Type.Callable concrete = (Type.Callable) ith.get(v_concrete);
-			Type template = ith.get(v_template);
-			// Identify corresponding declaration.
-			Decl.Callable decl = link.lookup(type);
-			// Determine whether arguments need to be inferred?
-			Tuple<SyntacticItem> arguments = expr.getBinding().getArguments();
-			// Extract inferred arguments (if applicable)
-			if(arguments.size() == 0 && template.shape() > 0) {
-				if(template.shape() == 1) {
-					arguments = new Tuple<>(template);
-				} else {
-					arguments = new Tuple<>(template.getAll());
-				}
-			}
-			// Done
-			candidates.add(new Binding(decl,arguments,concrete));
-		}
-		//
-		return candidates;
 	}
 
 	public Typing checkBackwardsExpressions(Tuple<Expr> expressions, Typing typing, Environment environment) {

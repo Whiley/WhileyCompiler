@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyil.util;
 
-import java.util.function.BiFunction;
+import java.util.List;
 import java.util.function.Function;
 
 import wybs.lang.Build;
@@ -22,7 +22,7 @@ import wycc.util.Pair;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 import wyil.util.SubtypeOperator.LifetimeRelation;
-
+import wyil.check.FlowTypeUtils.Binding;
 
 /**
  * <p>
@@ -150,6 +150,8 @@ public interface Typing {
 	 * @return
 	 */
 	public Type[] types(int variable);
+
+	public List<Binding> bindings(Expr.Invoke expression);
 
 	/**
 	 * Invalidate this typing entirely.
