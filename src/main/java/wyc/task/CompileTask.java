@@ -234,7 +234,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				new FunctionalCheck(m),
 				new SignatureCheck(m),
 				new StaticVariableCheck(m),
-				new AmbiguousCoercionCheck(m)
+				//new AmbiguousCoercionCheck(m)
 		};
 	}
 

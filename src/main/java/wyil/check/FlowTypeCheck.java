@@ -1447,6 +1447,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			return checkBackwardsDereference((Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
 			return checkBackwardsFieldDereference((Expr.FieldDereference) expression, typing, environment);
+		case EXPR_staticnew:
 		case EXPR_new:
 			return checkBackwardsNew((Expr.New) expression, typing, environment);
 		case EXPR_lambdaaccess:
@@ -1471,7 +1472,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			syntaxError(expr.getOperand(), EXPECTED_ARRAY);
 		}
 		// Array length always returns integer
-		return nTyping.map(row -> row.set(v_expr, Type.Int));
+		return nTyping.map(row -> createExistential(row, v_expr, Type.Int));
 	}
 
 	private Typing checkBackwardsArrayInitialiser(Expr.ArrayInitialiser expr, Typing typing,
@@ -1485,7 +1486,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			typing = checkBackwardsExpression(Type.Any, operands.get(i), typing, environment);
 		}
 		// Compute least upper bound of element types
-		return typing.map(row -> row.set(v_expr, createArray(leastUpperBound(row, v_operands))));
+		return typing.map(row -> createExistential(row, v_expr, createArray(leastUpperBound(row, v_operands))));
 	}
 
 	private Typing checkBackwardsArrayGenerator(Expr.ArrayGenerator expr, Typing typing,
@@ -1565,8 +1566,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Save handle(s) for later
 		int v_expr = typing.indexOf(expr);
 		// Recursively check source operand
-		typing = checkBackwardsExpression(expr.getType(), expr.getOperand(), typing, environment);
-		// FIXME apply subtype check
+		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
+		// FIXME: apply subtype check
 		return typing.map(row -> row.set(v_expr, expr.getType()));
 	}
 
@@ -1590,29 +1591,36 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Save handle(s) for later
 		int v_expr = typing.indexOf(expr);
 		//
-		Type type;
+		Type upperBound;
 		switch (expr.getValue().getOpcode()) {
 		case ITEM_null:
-			type = Type.Null;
+			upperBound = Type.Null;
 			break;
 		case ITEM_bool:
-			type = Type.Bool;
+			upperBound = Type.Bool;
 			break;
 		case ITEM_byte:
-			type = Type.Byte;
+			upperBound = Type.Byte;
 			break;
 		case ITEM_int:
-			type = Type.Int;
+			upperBound = Type.Int;
 			break;
 		case ITEM_utf8:
-			type = Type.IntArray;
+			upperBound = Type.IntArray;
 			break;
 		// break;
 		default:
 			return internalFailure("unknown constant encountered: " + expr, expr);
 		}
-		//
-		return typing.map(row -> row.set(v_expr, type));
+		// Construct appropriate type variable
+		return typing.map(row -> createExistential(row, v_expr, upperBound));
+	}
+
+	private Typing.Environment createExistential(Typing.Environment env, int v_expr, Type upperBound) {
+		// Allocate a single existential variable on the stack
+		wycc.util.Pair<Typing.Environment, Type.ExistentialVariable[]> p = env.allocate(1);
+		Type.ExistentialVariable v = p.second()[0];
+		return p.first().set(v_expr, v).bind(upperBound, v);
 	}
 
 	private Typing checkBackwardsDereference(Expr.Dereference expr, Typing typing, Environment environment) {
@@ -1704,7 +1712,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Recursively check child
 		typing = checkBackwardsExpression(Type.Int, expr.getOperand(), typing, environment);
 		// Always return an integer
-		return typing.map(row -> row.set(v_expr, Type.Int));
+		return typing.map(row -> createExistential(row, v_expr, Type.Int));
 	}
 
 	/**
@@ -1722,7 +1730,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = checkBackwardsExpression(Type.Int, expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(Type.Int, expr.getSecondOperand(), typing, environment);
 		// Always return an integer
-		return typing.map(row -> row.set(v_expr, Type.Int));
+		return typing.map(row -> createExistential(row, v_expr, Type.Int));
 	}
 
 	private Typing checkBackwardsIndirectInvoke(Expr.IndirectInvoke expr, Typing typing,
@@ -1875,9 +1883,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type returns = checkExpression(expr.getBody(), null, environment);
 		// Determine whether or not this is a pure or impure lambda.
 		if (isPure(expr.getBody())) {
-			return typing.map(row -> row.set(v_expr, createFunction(params, returns)));
+			return typing.map(row -> createExistential(row, v_expr, createFunction(params, returns)));
 		} else {
-			return typing.map(row -> row.set(v_expr,
+			return typing.map(row -> createExistential(row, v_expr,
 					createMethod(params, returns, expr.getCapturedLifetimes(), expr.getLifetimes())));
 		}
 	}
@@ -1890,9 +1898,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = checkBackwardsExpression(expr.getOperand(), typing, environment);
 		// Done
 		if (expr.hasLifetime()) {
-			return typing.map(row -> row.set(v_expr, createReference(row.get(v_operand), expr.getLifetime())));
+			return typing.map(row -> createExistential(row, v_expr, createReference(row.get(v_operand), expr.getLifetime())));
 		} else {
-			return typing.map(row -> row.set(v_expr, createReference(row.get(v_operand), null)));
+			return typing.map(row -> createExistential(row, v_expr, createReference(row.get(v_operand), null)));
 		}
 	}
 
@@ -1933,7 +1941,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			typing = checkBackwardsExpression(operands.get(i), typing, environment);
 		}
 		// Construct a tuple variable
-		return typing.map(row -> row.set(v_expr, createRecord(expr.getFields(), row.getAll(v_operands))));
+		return typing.map(row -> createExistential(row, v_expr, createRecord(expr.getFields(), row.getAll(v_operands))));
 	}
 
 	private Typing checkBackwardsStaticVariable(Expr.StaticVariableAccess expr, Typing typing,

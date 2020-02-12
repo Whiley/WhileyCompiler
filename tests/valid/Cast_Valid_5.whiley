@@ -44,7 +44,7 @@ public function toUnsignedByte(u8 v) -> byte:
     return r
 
 public export method test() :
-    int i = 32
+    u8 i = 32
     while i < 127 where i >= 0:
         int c = toUnsignedInt(toUnsignedByte(i))
         assume c == i

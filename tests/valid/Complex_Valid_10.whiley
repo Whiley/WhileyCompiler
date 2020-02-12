@@ -195,9 +195,9 @@ requires all { i in 0..|sequence| | sequence[i] < 52 }:
 function next(Random r) -> (nat index, Random nr)
 ensures index < 52:
     // Get item from random sequence
-    int result = r.sequence[r.index]
+    nat result = r.sequence[r.index]
     // Move to next item
-    int tmp = r.index + 1
+    nat tmp = r.index + 1
     // Check for overflow
     if tmp == |r.sequence|:
         tmp = 0
@@ -225,8 +225,8 @@ requires from < 52 && to < 52:
 function shuffle(Deck deck, Random rand, nat count) -> Deck:
     //
     nat i = 0
-    int from
-    int to
+    nat from
+    nat to
     //
     while i < count:
        (from,rand) = next(rand)

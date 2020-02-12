@@ -899,6 +899,7 @@ public class Interpreter {
 		case EXPR_arrayrange:
 			val = executeArrayRange((Expr.ArrayRange) expr, frame);
 			break;
+		case EXPR_staticnew:
 		case EXPR_new:
 			val = executeNew((Expr.New) expr, frame);
 			break;

@@ -184,20 +184,6 @@ public interface Subtyping {
 		 * @return
 		 */
 		public boolean isEmpty();
-		/**
-		 * Determine the number of rows within this constraint set.
-		 *
-		 * @return
-		 */
-		public int size();
-
-		/**
-		 * Get the ith row of this constraint set.
-		 *
-		 * @param i
-		 * @return
-		 */
-		public Solution get(int i);
 
 		/**
 		 * Extract best possible solutions.
@@ -205,7 +191,7 @@ public interface Subtyping {
 		 * @param n
 		 * @return
 		 */
-		public Type[][] solve(int n);
+		public Type[] solve(int n);
 
 		/**
 		 * Access a given row within a constraint set.
@@ -550,9 +536,10 @@ public interface Subtyping {
 				return BOTTOM;
 			}
 			AbstractConstraints first = areEquivalent(t1.getElement(), t2.getElement(), cache);
-			AbstractConstraints second = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
+			// FIXME: need to fix this
+			//AbstractConstraints second = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
 			// Join them together
-			return first.union(second);
+			return first;
 		}
 
 		protected AbstractConstraints isWidthSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
@@ -646,12 +633,14 @@ public interface Subtyping {
 		}
 
 		protected AbstractConstraints isSubtype(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
-			AbstractConstraints constraints = BOTTOM;
 			for (int i = 0; i != t1.size(); ++i) {
 				AbstractConstraints ith = isSubtype(t1.get(i), t2, cache);
-				constraints = constraints.union(ith);
+				// Check whether we found a match or not
+				if(ith != BOTTOM) {
+					return ith;
+				}
 			}
-			return constraints;
+			return BOTTOM;
 		}
 
 		protected AbstractConstraints isSubtype(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
@@ -684,6 +673,8 @@ public interface Subtyping {
 					}
 				}
 				return constraints;
+			} else if(isAncestorOf(d1,d2)) {
+				return isSubtype(t1.getConcreteType(), t2.getConcreteType());
 			} else {
 				boolean left = isSubtype(t1_invariant, t2_invariant);
 				boolean right = isSubtype(t2_invariant, t1_invariant);
@@ -761,6 +752,43 @@ public interface Subtyping {
 			return left.intersect(right);
 		}
 
+		// ===============================================================================
+		// Ancestor Calculation
+		// ===============================================================================
+
+		/**
+		 * Determine whether one declaration is an "ancestor" of another. This happens
+		 * in a very specific situation where the child is given the type of the
+		 * ancestor with additional constraints. For example:
+		 * 
+		 * <pre>
+		 * type nat is (int n) where n >= 0
+		 * type pos1 is (nat p) where p > 0
+		 * type pos2 is (int p) where p > 0
+		 * </pre>
+		 * 
+		 * Here, we'd say that <code>nat</code> is an ancestor of <code>pos1</code> but
+		 * not <code>pos2</code>.
+		 * 
+		 * @param parent
+		 * @param child
+		 * @return
+		 */
+		private boolean isAncestorOf(Decl.Type parent, Decl.Type child) {
+			//
+			if(parent == child) {
+				return true;
+			} else if(child != null) {
+				Type body = child.getType();
+				if(body instanceof Type.Nominal) {
+					// Continue descent
+					Type.Nominal b = (Type.Nominal) body;
+					return isAncestorOf(parent,b.getLink().getTarget());
+				}
+			} 
+			return false;
+		}
+		
 		// ===============================================================================
 		// Type Subtraction
 		// ===============================================================================
@@ -936,17 +964,13 @@ public interface Subtyping {
 		 */
 		private final AbstractSolution EMPTY_SYMBOLIC_SOLUTION = new AbstractSolution();
 		/**
-		 * A simple constant to avoid unnecessary allocations.
-		 */
-		private final AbstractSolution[] EMPTY_SYMBOLIC_SOLUTIONS = new AbstractSolution[0];
-		/**
 		 * A minimal implementation of the constraints interface.
 		 */
-		public final AbstractConstraints TOP = new AbstractConstraints(true);
+		public final AbstractConstraints TOP = new AbstractConstraints(EMPTY_SYMBOLIC_SOLUTION);
 		/**
 		 * The empty constraint set which is, by construction, invalid.
 		 */
-		public final AbstractConstraints BOTTOM = new AbstractConstraints(false);
+		public final AbstractConstraints BOTTOM = new AbstractConstraints(null);
 
 		/**
 		 * Represents a set of <i>satisfiable</i> subtyping constraints. Satisfiability
@@ -960,37 +984,23 @@ public interface Subtyping {
 		 *
 		 */
 		protected class AbstractConstraints implements Subtyping.Constraints {
-			private final AbstractSolution[] rows;
-
-			public AbstractConstraints(boolean top) {
-				this.rows = top ? new AbstractSolution[] { EMPTY_SYMBOLIC_SOLUTION } : EMPTY_SYMBOLIC_SOLUTIONS;
-			}
+			private final AbstractSolution row;
 
 			public AbstractConstraints(Type.ExistentialVariable lhs, Type.Atom rhs) {
-				this.rows = new AbstractSolution[] { new AbstractSolution(lhs, rhs) };
+				this.row = new AbstractSolution(lhs, rhs);
 			}
 
 			public AbstractConstraints(Type lhs, Type.ExistentialVariable rhs) {
-				this.rows = new AbstractSolution[] { new AbstractSolution(lhs, rhs) };
+				this.row = new AbstractSolution(lhs, rhs);
 			}
 
-			private AbstractConstraints(AbstractSolution[] rows) {
-				this.rows = rows;
+			public AbstractConstraints(AbstractSolution row) {
+				this.row = row;
 			}
 
 			@Override
 			public boolean isEmpty() {
-				return rows.length == 0;
-			}
-
-			@Override
-			public int size() {
-				return rows.length;
-			}
-
-			@Override
-			public AbstractSolution get(int i) {
-				return rows[i];
+				return row == null;
 			}
 
 			/**
@@ -1001,112 +1011,30 @@ public interface Subtyping {
 			 * @return
 			 */
 			public AbstractConstraints intersect(AbstractConstraints other) {
-				if (this == TOP) {
+				if (this == TOP || other.row == null) {
 					return other;
-				} else if (other == TOP) {
+				} else if (other == TOP || row == null) {
 					return this;
 				}
-				final int n = rows.length;
-				final int m = other.rows.length;
-				ArrayList<Solution> nrows = new ArrayList<>();
-				for (int i = 0; i != n; ++i) {
-					AbstractSolution ith = rows[i];
-					for (int j = 0; j != m; ++j) {
-						AbstractSolution jth = other.rows[j];
-						ArrayUtils.addAll(ith.intersect(jth), nrows);
-					}
-				}
-				// Sanity check what we have left
-				if (nrows.size() == 0) {
-					return BOTTOM;
-				} else {
-					// NOTE: could optimise for common case where result equivalent to this.
-					return new AbstractConstraints(nrows.toArray(new AbstractSolution[nrows.size()]));
-				}
-			}
-
-			public AbstractConstraints union(AbstractConstraints other) {
-				if (this == BOTTOM) {
-					return other;
-				} else if (other == BOTTOM) {
-					return this;
-				}
-				final int n = rows.length;
-				final int m = other.rows.length;
-				AbstractSolution[] nrows = new AbstractSolution[n + m];
-				System.arraycopy(rows, 0, nrows, 0, n);
-				System.arraycopy(other.rows, 0, nrows, n, m);
-				nrows = ArrayUtils.removeDuplicates(nrows);
-				return new AbstractConstraints(nrows);
+				return new AbstractConstraints(row.intersect(other.row));
 			}
 
 			@Override
-			public Type[][] solve(int n) {
-				// First compute all solutions
-				Type[][] candidates = new Type[rows.length][];
-				for (int i = 0; i != rows.length; ++i) {
-					candidates[i] = rows[i].solve(n);
+			public Type[] solve(int n) {
+				if(row == null) {
+					return null;
+				} else {
+					return row.solve(n);
 				}
-				// Second identify clear winners (whilst ignoring nulls)
-				for (int i = 0; i != candidates.length; ++i) {
-					Type[] ith = candidates[i];
-					if (ith != null) {
-						for (int j = i + 1; j != candidates.length; ++j) {
-							Type[] jth = candidates[j];
-							if (jth == null) {
-								continue;
-							} else {
-								boolean left = isSubsumedBy(ith, jth);
-								boolean right = isSubsumedBy(jth, ith);
-								//
-								if (left && !right) {
-									// ith strictly subsumed by jth
-									candidates[i] = null;
-									break;
-								} else if (!left && right) {
-									// jth strictly subsumed by ith
-									candidates[j] = null;
-									continue;
-								}
-							}
-						}
-					}
-				}
-				// Finally, remove any losers
-				return ArrayUtils.removeAll(candidates, null);
 			}
 
 			@Override
 			public String toString() {
-				if (rows.length == 0) {
+				if (row == null) {
 					return "⊥";
 				} else {
-					String r = "";
-					for (int i = 0; i != rows.length; ++i) {
-						if (i != 0) {
-							r += ",";
-						}
-						r += rows[i];
-					}
-					return r;
+					return row.toString();
 				}
-			}
-
-			/**
-			 * Check whether or not lhs is subsumed by the rhs.
-			 *
-			 * @param lhs
-			 * @param rhs
-			 * @param lifetimes
-			 * @return
-			 */
-			private boolean isSubsumedBy(Type[] lhs, Type[] rhs) {
-				for (int i = 0; i != lhs.length; ++i) {
-					if (!isSatisfiableSubtype(lhs[i], rhs[i])) {
-						return false;
-					}
-				}
-				return true;
 			}
 		}
 
@@ -1156,22 +1084,22 @@ public interface Subtyping {
 				this.constraints = constraints;
 			}
 
-			private AbstractSolution[] intersect(AbstractSolution row) {
+			private AbstractSolution intersect(AbstractSolution row) {
 				ConcreteSolution s = solution.intersect(row.solution);
 				SymbolicConstraint[] c = union(constraints, row.constraints);
 				if (s == solution && c == constraints) {
 					// Handle common case
-					return new AbstractSolution[] { this };
+					return this;
 				} else if (s != null) {
 					// Apply closure over these constraints
-					ConcreteSolution[] solutions = close(s, c);
-					AbstractSolution[] rows = new AbstractSolution[solutions.length];
-					for (int i = 0; i != rows.length; ++i) {
-						rows[i] = new AbstractSolution(solutions[i], c);
+					ConcreteSolution cs = close(s, c);
+					if (cs == solution) {
+						return this;
+					} else {
+						return new AbstractSolution(cs, c);
 					}
-					return rows;
 				} else {
-					return EMPTY_SYMBOLIC_SOLUTIONS;
+					return null;
 				}
 			}
 
@@ -1346,35 +1274,56 @@ public interface Subtyping {
 			@Override
 			public String toString() {
 				String r = "[";
-				for (int i = 0; i != lowerBounds.length; ++i) {
+				int n = Math.max(lowerBounds.length, upperBounds.length);
+				for (int i = 0; i != n; ++i) {
 					if (i != 0) {
 						r += ";";
 					}
-					Type lower = lowerBounds[i];
-					Type upper = upperBounds[i];
-					if (!(upper instanceof Type.Any)) {
-						r += upper + " :> ";
+					if(i < upperBounds.length) {
+						Type upper = upperBounds[i];
+						if (!(upper instanceof Type.Any)) {
+							r += upper + " :> ";
+						}
 					}
 					r += "?" + i;
-					if (!(lower instanceof Type.Void)) {
-						r += " :> " + lower;
+					if(i < lowerBounds.length) {
+						Type lower = lowerBounds[i];
+						if (!(lower instanceof Type.Void)) {
+							r += " :> " + lower;
+						}
 					}
 				}
 				return r + "]";
 			}
 
 			private Type[] lub(Type[] lhs, Type[] rhs) {
+				// NOTE: this could definitely be improved. The key difficult is that we *must*
+				// return either the lhs or the rhs if they are already the glb. Could
+				// potentially help by insuring lowerbounds and upperbounds have same length.
 				final int n = lhs.length;
 				final int m = rhs.length;
-				Type[] ts = lhs;
+				// ASSERT n >= m
+				boolean leftToRight = true;
+				boolean rightToLeft = true;
+				for (int i = 0; i != Math.min(n, m); ++i) {
+					Type l = lhs[i];
+					Type r = rhs[i];
+					leftToRight &= isSatisfiableSubtype(l,r);
+					rightToLeft &= isSatisfiableSubtype(r,l);
+				}
+				if(leftToRight) {
+					return lhs;
+				} else if(rightToLeft && n == m) {
+					// NOTE: n == m check needed for termination!
+					return rhs;
+				}
+				Type[] ts = Arrays.copyOf(lhs, n);
 				for (int i = 0; i != m; ++i) {
 					Type l = lhs[i];
 					Type r = rhs[i];
-					if (!isSatisfiableSubtype(l, r)) {
-						// Refined already subsumed
-						if (ts == lhs) {
-							ts = Arrays.copyOf(lhs, n);
-						}
+					if(isSatisfiableSubtype(r, l)) {
+						ts[i] = r;
+					} else if (!isSatisfiableSubtype(l,r)) {
 						ts[i] = AbstractEnvironment.lub(l, r);
 					}
 				}
@@ -1382,17 +1331,34 @@ public interface Subtyping {
 			}
 
 			private Type[] glb(Type[] lhs, Type[] rhs) {
+				System.out.println("GOT: " + Arrays.toString(lhs) + " /\\ " + Arrays.toString(rhs));
+				// NOTE: this could definitely be improved. The key difficult is that we *must*
+				// return either the lhs or the rhs if they are already the glb. Could
+				// potentially help by insuring lowerbounds and upperbounds have same length.
 				final int n = lhs.length;
 				final int m = rhs.length;
-				Type[] ts = lhs;
+				// ASSERT n >= m
+				boolean leftToRight = true;
+				boolean rightToLeft = true;
+				for (int i = 0; i != Math.min(n, m); ++i) {
+					Type l = lhs[i];
+					Type r = rhs[i];
+					leftToRight &= isSatisfiableSubtype(l,r);
+					rightToLeft &= isSatisfiableSubtype(r,l);
+				}
+				if(rightToLeft) {
+					return lhs;
+				} else if(leftToRight && n == m) {
+					// NOTE: n == m check needed for termination!
+					return rhs;
+				} 
+				Type[] ts = Arrays.copyOf(lhs, n);
 				for (int i = 0; i != m; ++i) {
 					Type l = lhs[i];
 					Type r = rhs[i];
-					if (!isSatisfiableSubtype(r, l)) {
-						// Refined already subsumed
-						if (ts == lhs) {
-							ts = Arrays.copyOf(lhs, n);
-						}
+					if(isSatisfiableSubtype(l, r)) {
+						ts[i] = r;
+					} else if (!isSatisfiableSubtype(r, l)) {
 						ts[i] = AbstractEnvironment.glb(l, r);
 					}
 				}
@@ -1523,15 +1489,16 @@ public interface Subtyping {
 		 * @param lifetimes
 		 * @return
 		 */
-		public ConcreteSolution[] close(ConcreteSolution solution, SymbolicConstraint[] constraints) {
+		public ConcreteSolution close(ConcreteSolution solution, SymbolicConstraint[] constraints) {
 			boolean changed = true;
 			while (changed) {
+				System.out.println("GOT: " + solution);
 				changed = false;
 				for (int i = 0; i != constraints.length; ++i) {
 					if (solution == null) {
 						// NOTE: we can get here either from a previous iteration which invalidated this
 						// solution, or from a prior invocation with solution being null on entry.
-						return EMPTY_CONCRETE_SOLUTIONS;
+						return EMPTY_CONCRETE_SOLUTION;
 					} else {
 						final ConcreteSolution s = solution;
 						SymbolicConstraint ith = constraints[i];
@@ -1544,37 +1511,13 @@ public interface Subtyping {
 						AbstractConstraints right = isSubtype(upper, cLower);
 						// Combine constraints
 						AbstractConstraints cs = left.intersect(right);
-						final int n = cs.size();
-						//
-						switch (n) {
-						case 0:
-							// Zero solutions arising
-							return EMPTY_CONCRETE_SOLUTIONS;
-						case 1:
-							// NOTE: ignoring constraints from solution is reasonable as, by construction,
-							// there cannot be any of them.
-							solution = solution.intersect(cs.get(0).solution);
-							break;
-						default: {
-							// Multiple solutions arising, therefore we have to "split" our results
-							// accordingly.
-							ArrayList<ConcreteSolution> solutions = new ArrayList<>();
-							for (int j = 0; j != n; ++j) {
-								ConcreteSolution jthSol = solution.intersect(cs.get(j).solution);
-								// NOTE: ignoring constraints from jthSol is reasonable as, by construction,
-								// there cannot be any of them.
-								ArrayUtils.addAll(close(jthSol, constraints), solutions);
-							}
-							// FIXME: can we have duplicates here?
-							return solutions.toArray(new ConcreteSolution[solutions.size()]);
-						}
-						}
+						solution = solution.intersect(cs.row.solution);
 						// Update changed status
 						changed |= (s != solution);
 					}
 				}
 			}
-			return new ConcreteSolution[] { solution };
+			return solution;
 		}
 
 		// ================================================================================

@@ -607,9 +607,12 @@ public interface Typing {
 
 			@Override
 			public Environment bind(Type lhs, Type rhs) {
+				System.out.println("BINDING: " + lhs + " :> " + rhs + " : " +this);
 				Subtyping.AbstractEnvironment.AbstractConstraints cs = subtyping.isSubtype(lhs, rhs);
+				System.out.println("GOT HERE: " + cs);
 				// Intersect with our constraints
 				cs = constraints.intersect(cs);
+				System.out.println("AND HERE: " + cs);
 				// Sanity check whether subtyping possible
 				if (cs.isEmpty() || rhs instanceof Type.Void) {
 					// NOTE: check against void above is required to protect against "void flows".
@@ -623,24 +626,22 @@ public interface Typing {
 
 			@Override
 			public Environment[] concretise() {
-				if (constraints.size() == 0) {
+				if (constraints.isEmpty()) {
 					// No constraints over this environment, hence nothing to do.
 					return new Environment[] { this };
 				} else {
-					Type[][] solutions = constraints.solve(existentials);
-					Environment[] nenvs = new Environment[solutions.length];
-					// Apply substitution to every winner
-					for (int i = 0; i != nenvs.length; ++i) {
-						final Type[] ith = solutions[i];
+					Type[] solution = constraints.solve(existentials);
+					//
+					if (solution == null) {
+						return new Environment[0];
+					} else {
 						// Creating the necessary binding function for substitution
-						Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? ith[(Integer) o] : null;
+						Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution[(Integer) o]
+								: null;
 						// Apply the substitution
 						Type[] nTypes = substitute(types, binder);
-						//
-						nenvs[i] = new Environment(subtyping, subtyping.TOP, 0, nTypes);
+						return new Environment[] { new Environment(subtyping, subtyping.TOP, 0, nTypes) };
 					}
-					// Done
-					return nenvs;
 				}
 			}
 

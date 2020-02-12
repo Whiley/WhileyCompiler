@@ -22,7 +22,7 @@ requires all { i in 0..|coins| | coins[i] < |Value| }:
         nat coin = coins[i]
         cash[coin] = cash[coin] + 1
         i = i + 1
-    return cash
+    return (Cash) cash
 
 public export method test() :
     Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])

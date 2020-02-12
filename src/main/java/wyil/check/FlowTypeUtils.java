@@ -370,8 +370,7 @@ public class FlowTypeUtils {
 		@Override
 		protected boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs) {
 			// NOTE: in principle, we could potentially do more here.
-			// return lhs.size() == 0 || lhs.equals(rhs);
-			return true;
+			return lhs.size() == 0 || lhs.equals(rhs);
 		}
 
 		@Override

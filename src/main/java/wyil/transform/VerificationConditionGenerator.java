@@ -1536,6 +1536,7 @@ public class VerificationConditionGenerator {
 			case EXPR_bitwisexor:
 			case EXPR_bitwisenot:
 			case EXPR_new:
+			case EXPR_staticnew:
 				result = translateAsUnknown(expr, environment);
 				break;
 			default:

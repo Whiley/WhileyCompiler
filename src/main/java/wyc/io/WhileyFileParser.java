@@ -3077,13 +3077,17 @@ public class WhileyFileParser {
 		if (lifetime != null) {
 			scope.mustBeLifetime(lifetime);
 			match(Colon);
-		} else {
-			// FIXME: this should really be null
-			lifetime = new Identifier("*");
 		}
 		match(New);
 		Expr e = parseExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.New(Type.Void, e, lifetime), start);
+		// Construct correct expression form
+		if(lifetime != null) {
+			e = new Expr.New(Type.Void, e, lifetime);
+		} else {
+			e = new Expr.New(Type.Void, e);
+		}
+		// Done
+		return annotateSourceLocation(e, start);
 	}
 
 	/**

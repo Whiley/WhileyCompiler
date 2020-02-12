@@ -10,9 +10,9 @@ ensures (result is int) ==> items[result] == item
 // If the answer is null, then the item must not be contained
 ensures (result == null) ==> all { i in 0..|items| | items[i] != item }:
     //
-    int i = 0
+    nat i = 0
     while i < |items|
-        where i >= 0 && i <= |items|
+        where i <= |items|
         where all { j in 0 .. i | items[j] != item }:
         //
         if items[i] == item:

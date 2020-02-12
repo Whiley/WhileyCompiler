@@ -1524,7 +1524,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				throw new IllegalArgumentException("unable to find candidate declaration");
 			}
-			
+
 			@SuppressWarnings("unchecked")
 			public void resolve(T... items) {
 				SyntacticHeap heap = getHeap();
@@ -4365,7 +4365,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				if(hasLifetime()) {
+					return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				} else {
+					return new New((Type) operands[0], (Expr) operands[1]);
+				}
 			}
 
 			@Override
@@ -4878,20 +4882,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// however, the parser constructs multiple initialisers during parsing (even
 				// when only one is present). This causes subsequent problems down the track.
 				super(EXPR_recordinitialiser, type, fields, operands);
-			}
-
-			@Override
-			public Type.Record getType() {
-				return (Type.Record) super.getType();
-			}
-
-			@Override
-			public void setType(Type type) {
-				if (type instanceof Type.Record) {
-					super.setType(type);
-				} else {
-					throw new IllegalArgumentException("invalid record initialiser type");
-				}
 			}
 
 			public Tuple<Identifier> getFields() {
@@ -5573,10 +5563,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Reference((Type) operands[0]);
-				} else {
+				if (hasLifetime()) {
 					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				} else {
+					return new Reference((Type) operands[0]);
 				}
 			}
 
