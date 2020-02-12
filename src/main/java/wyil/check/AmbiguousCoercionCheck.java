@@ -23,6 +23,7 @@ import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.task.CompileTask;
 import wyc.util.ErrorMessages;
+import wyil.check.FlowTypeUtils.Environment;
 import wyil.check.FunctionalCheck.Context;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
@@ -82,7 +83,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	public AmbiguousCoercionCheck(Build.Meter meter) {
 		// FIXME: figure out which one to use
-		super(meter.fork(AmbiguousCoercionCheck.class.getSimpleName()),new SubtypeOperator.Relaxed());
+		super(meter.fork(AmbiguousCoercionCheck.class.getSimpleName()));
 	}
 
 	@Override

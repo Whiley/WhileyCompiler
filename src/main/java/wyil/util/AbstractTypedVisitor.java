@@ -19,7 +19,6 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 
 import static wyil.lang.WyilFile.*;
 
@@ -29,6 +28,7 @@ import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.check.FlowTypeUtils.Environment;
 
 /**
  * A more complex visitor over all declarations, statements, expressions and
@@ -45,12 +45,10 @@ import wybs.util.AbstractCompilationUnit.Tuple;
  *
  */
 public abstract class AbstractTypedVisitor {
-	protected final SubtypeOperator subtypeOperator;
 	protected final Build.Meter meter;
 
-	public AbstractTypedVisitor(Build.Meter meter, SubtypeOperator subtypeOperator) {
+	public AbstractTypedVisitor(Build.Meter meter) {
 		this.meter = meter;
-		this.subtypeOperator = subtypeOperator;
 	}
 
 	public void visitModule(WyilFile wf) {
@@ -1230,7 +1228,7 @@ public abstract class AbstractTypedVisitor {
 		T candidate = null;
 		for (int i = 0; i != candidates.size(); ++i) {
 			T next = candidates.get(i);
-			if (subtypeOperator.isSatisfiableSubtype(next, actual, environment)) {
+			if (environment.isSatisfiableSubtype(next, actual)) {
 				if (candidate == null) {
 					candidate = next;
 				} else {
@@ -1256,8 +1254,8 @@ public abstract class AbstractTypedVisitor {
 	 */
 	public <T extends Type> T select(T candidate, T next, T actual, Environment environment) {
 		// Found a viable candidate
-		boolean left = subtypeOperator.isSatisfiableSubtype(candidate, next, environment);
-		boolean right = subtypeOperator.isSatisfiableSubtype(next, candidate, environment);
+		boolean left = environment.isSatisfiableSubtype(candidate, next);
+		boolean right = environment.isSatisfiableSubtype(next, candidate);
 		if (left && !right) {
 			// Yes, is better than current candidate
 			return next;
@@ -1306,58 +1304,6 @@ public abstract class AbstractTypedVisitor {
 	}
 
 	private static final Type.Array TYPE_ARRAY_INT = new Type.Array(Type.Int);
-
-	/**
-	 * Provides a very simple environment for tracking the current declared lifetime
-	 * relationships.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Environment implements LifetimeRelation {
-		private final Map<String, String[]> withins;
-
-		public Environment() {
-			this.withins = new HashMap<>();
-		}
-
-		public Environment(Map<String, String[]> withins) {
-			this.withins = new HashMap<>(withins);
-		}
-
-		@Override
-		public boolean isWithin(String inner, String outer) {
-			//
-			if (outer.equals("*") || inner.equals(outer)) {
-				// Cover easy cases first
-				return true;
-			} else {
-				String[] outers = withins.get(inner);
-				return outers != null && (ArrayUtils.firstIndexOf(outers, outer) >= 0);
-			}
-		}
-
-		public Environment declareWithin(String inner, Tuple<Identifier> outers) {
-			String[] outs = new String[outers.size()];
-			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers.get(i).get();
-			}
-			return declareWithin(inner, outs);
-		}
-		public Environment declareWithin(String inner, Identifier... outers) {
-			String[] outs = new String[outers.length];
-			for (int i = 0; i != outs.length; ++i) {
-				outs[i] = outers[i].get();
-			}
-			return declareWithin(inner, outs);
-		}
-
-		public Environment declareWithin(String inner, String... outers) {
-			Environment nenv = new Environment(withins);
-			nenv.withins.put(inner, outers);
-			return nenv;
-		}
-	}
 
 	// ==========================================================================
 	// Enclosing Scope
