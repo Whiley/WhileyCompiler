@@ -46,7 +46,6 @@ import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Decl.Link;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -103,14 +102,10 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  */
 public class FlowTypeCheck implements Compiler.Check {
 	private final Build.Meter meter;
-	// private final SubtypeOperator relaxedSubtypeOperator;
-	private final AbstractSubtypeOperator strictSubtypeOperator;
 	private boolean status = true;
 
 	public FlowTypeCheck(Build.Meter meter) {
 		this.meter = meter.fork(FlowTypeCheck.class.getSimpleName());
-		// this.relaxedSubtypeOperator = null;
-		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
 
 	// =========================================================================
@@ -174,7 +169,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkTypeDeclaration(Decl.Type decl) {
 		Environment environment = new Environment();
 		// Check type is contractive
-		checkContractive(decl);
+		checkContractive(decl, environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -428,7 +423,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				Tuple<Decl.Variable> vars = decl.getVariables();
 				for (int i = 0; i != Math.min(lhs.shape(), rhs.shape()); ++i) {
 					// Refine the declared type
-					Type refined = refine(lhs.dimension(i), rhs.dimension(i), environment);
+					Type refined = refine(lhs.dimension(i), rhs.dimension(i));
 					// Update the typing environment accordingly.
 					environment = environment.refineType(vars.get(i), refined);
 				}
@@ -464,7 +459,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				if (extraction != null) {
 					Decl.Variable decl = extraction.getFirst();
 					// Refine the declared type
-					Type type = refine(decl.getType(), extraction.getSecond(), environment);
+					Type type = refine(decl.getType(), extraction.getSecond());
 					// Update the typing environment accordingly.
 					environment = environment.refineType(extraction.getFirst(), type);
 				}
@@ -1056,7 +1051,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Decl.Variable var = extraction.getFirst();
 			Type refinementT = extraction.getSecond();
 			if (!sign) {
-				refinementT = strictSubtypeOperator.subtract(environment.getType(var), refinementT);
+				refinementT = environment.subtract(environment.getType(var), refinementT);
 				// Sanity check for definite branch taken
 				if (refinementT instanceof Type.Void) {
 					// DEFINITE FALSE CASE
@@ -1199,7 +1194,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Sanity check writability of reference
 		if(refT != null) {
-			checkIsWritable(refT.getElement(), environment, lval.getOperand());
+			checkIsWritable(refT.getElement(), lval.getOperand());
 			return refT.getElement();
 		} else {
 			return null;
@@ -1250,7 +1245,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 */
 	public Type checkExpression(Expr expression, Type target, Environment environment) {
 		// Construct empty typing to start with
-		Typing typing = Typing.Relaxed(expression, strictSubtypeOperator, environment, meter);
+		Typing typing = Typing.Relaxed(expression, environment, meter);
 		// Apply backwards type generation
 		typing = checkBackwardsExpression(target, expression, typing, environment);
 		// Finalise typing
@@ -1272,7 +1267,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		return null;
 	}
 
-	public boolean apply(Expr expression, Typing typing, LifetimeRelation lifetimes) {
+	public boolean apply(Expr expression, Typing typing, Environment environment) {
 		SyntacticHeap heap = expression.getHeap();
 		// First, concretize pivots
 		for (int i = 0; i != typing.width(); ++i) {
@@ -1287,7 +1282,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				// Right, binding is being inferred
 				List<Binding> candidates = typing.bindings(e);
 				// Select best option
-				Binding selected = FlowTypeUtils.selectCallableCandidate(candidates, strictSubtypeOperator, lifetimes);
+				Binding selected = FlowTypeUtils.selectCallableCandidate(candidates, environment);
 				//
 				if (selected != null) {
 					Decl.Callable decl = selected.getCandidateDeclaration();
@@ -2048,12 +2043,11 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, LifetimeRelation lifetimes) {
+	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, Subtyping.Environment subtyping) {
 		// FIXME: this needs to be fixed using an existential or similar.
 		Type left = typing.get(lhs);
 		Type right = typing.get(rhs);
-		if (strictSubtypeOperator.isSatisfiableSubtype(left, right, lifetimes)
-				|| strictSubtypeOperator.isSatisfiableSubtype(right, left, lifetimes)) {
+		if (subtyping.isSatisfiableSubtype(left, right) || subtyping.isSatisfiableSubtype(right, left)) {
 			return typing;
 		} else {
 			return null;
@@ -2186,10 +2180,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		return nitems;
 	}
 
-	public Type refine(Type declared, Type selector, LifetimeRelation lifetimes) {
+	public Type refine(Type declared, Type selector) {
 		// FIXME: this method is a hack for now really, until such time as I resolve
 		// issues around subtyping and how to create proper type morphisms, etc.
-		Type.Selector s = TypeSelector.create(declared, selector, lifetimes);
+		Type.Selector s = TypeSelector.create(declared, selector);
 		if (s == Type.Selector.BOTTOM) {
 			// Something went wrong
 			return declared;
@@ -2213,24 +2207,24 @@ public class FlowTypeCheck implements Compiler.Check {
 		return visitor.pure;
 	}
 
-	private void checkIsWritable(Type type, LifetimeRelation lifetimes, SyntacticItem element) {
+	private void checkIsWritable(Type type, SyntacticItem element) {
 		if (type != null && !type.isWriteable()) {
 			syntaxError(element, DEREFERENCED_DYNAMICALLY_SIZED, element);
 		}
 	}
 
-	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+	private void checkIsSubtype(Type lhs, Type rhs, Subtyping.Environment subtyping, SyntacticItem element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
-		} else if (!strictSubtypeOperator.isSatisfiableSubtype(lhs, rhs, lifetimes)) {
+		} else if (!subtyping.isSatisfiableSubtype(lhs, rhs)) {
 			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}
 
-	private void checkContractive(Decl.Type d) {
-		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
+	private void checkContractive(Decl.Type d, Subtyping.Environment subtyping) {
+		if (!subtyping.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
 	}

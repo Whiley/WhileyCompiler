@@ -39,11 +39,7 @@ import wyil.lang.WyilFile.Type.Array;
 import wyil.lang.WyilFile.Type.Field;
 import wyil.lang.WyilFile.Type.Record;
 import wyil.lang.WyilFile.Type.Union;
-import wyil.util.AbstractVisitor;
-import wyil.util.BinaryRelation;
-import wyil.util.SubtypeOperator;
-import wyil.util.SubtypeOperator.LifetimeRelation;
-import wyil.util.Typing;
+import wyil.util.*;
 
 /**
  * This is an overflow class for <code>FlowTypeCheck</code>. It provides various
@@ -334,7 +330,7 @@ public class FlowTypeUtils {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Environment implements LifetimeRelation {
+	public static class Environment extends Subtyping.AbstractEnvironment {
 		private final Map<Decl.Variable, Type> refinements;
 		private final Map<String, String[]> withins;
 
@@ -371,7 +367,85 @@ public class FlowTypeUtils {
 		public Set<Decl.Variable> getRefinedVariables() {
 			return refinements.keySet();
 		}
+		@Override
+		protected boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs) {
+			// NOTE: in principle, we could potentially do more here.
+			// return lhs.size() == 0 || lhs.equals(rhs);
+			return true;
+		}
 
+		@Override
+		protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2,
+				BinaryRelation<Type> cache) {
+			Tuple<Type.Field> t1_fields = t1.getFields();
+			Tuple<Type.Field> t2_fields = t2.getFields();
+			// Sanity check number of fields are reasonable.
+			if (t1_fields.size() > t2_fields.size()) {
+				return BOTTOM;
+			} else if (t2.isOpen() && !t1.isOpen()) {
+				return BOTTOM;
+			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
+				return BOTTOM;
+			}
+			AbstractConstraints constraints = TOP;
+			// NOTE: the following is O(n^2) but, in reality, will be faster than the
+			// alternative (sorting fields into an array). That's because we expect a very
+			// small number of fields in practice.
+			for (int i = 0; i != t1_fields.size(); ++i) {
+				Type.Field f1 = t1_fields.get(i);
+				boolean matched = false;
+				for (int j = 0; j != t2_fields.size(); ++j) {
+					Type.Field f2 = t2_fields.get(j);
+					if (f1.getName().equals(f2.getName())) {
+						AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), cache);
+						// Matched field
+						matched = true;
+						constraints = constraints.intersect(other);
+					}
+				}
+				// Check we actually matched the field!
+				if (!matched) {
+					return BOTTOM;
+				}
+			}
+			// Done
+			return constraints;
+		}
+
+		@Override
+		protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
+			Type t1_params = t1.getParameter();
+			Type t2_params = t2.getParameter();
+			Type t1_return = t1.getReturn();
+			Type t2_return = t2.getReturn();
+			// Eliminate easy cases first
+			if (t1.getOpcode() != t2.getOpcode()) {
+				return BOTTOM;
+			}
+			// Check parameters (contra-variant)
+			AbstractConstraints c_params = isSubtype(t2_params, t1_params, cache);
+			// Check returns (co-variant)
+			AbstractConstraints c_returns = isSubtype(t1_return, t2_return, cache);
+			//
+			if(t1 instanceof Type.Method) {
+				// Check lifetimes
+				Type.Method m1 = (Type.Method) t1;
+				Type.Method m2 = (Type.Method) t2;
+				Tuple<Identifier> m1_lifetimes = m1.getLifetimeParameters();
+				Tuple<Identifier> m2_lifetimes = m2.getLifetimeParameters();
+				Tuple<Identifier> m1_captured = m1.getCapturedLifetimes();
+				Tuple<Identifier> m2_captured = m2.getCapturedLifetimes();
+				// FIXME: it's not clear to me what we need to do here. I think one problem is
+				// that we must normalise lifetimes somehow.
+				if (m1_lifetimes.size() > 0 || m2_lifetimes.size() > 0) {
+					throw new RuntimeException("must implement this!");
+				} else if (m1_captured.size() > 0 || m2_captured.size() > 0) {
+					throw new RuntimeException("must implement this!");
+				}
+			}
+			// Done
+			return c_params.intersect(c_returns);
+		}
 		@Override
 		public String toString() {
 			String r = "{";
@@ -518,8 +592,7 @@ public class FlowTypeUtils {
 	 * @param args
 	 * @return
 	 */
-	public static Binding selectCallableCandidate(List<Binding> candidates, SubtypeOperator subtyping,
-			LifetimeRelation lifetimes) {
+	public static Binding selectCallableCandidate(List<Binding> candidates, Subtyping.Environment subtyping) {
 		Binding best = null;
 		Type.Callable bestType = null;
 		boolean bestValidWinner = false;
@@ -534,8 +607,8 @@ public class FlowTypeUtils {
 				bestType = candidateType;
 				bestValidWinner = true;
 			} else {
-				boolean csubb = subtyping.isSatisfiableSubtype(bestType, candidateType, lifetimes);
-				boolean bsubc = subtyping.isSatisfiableSubtype(candidateType, bestType, lifetimes);
+				boolean csubb = subtyping.isSatisfiableSubtype(bestType, candidateType);
+				boolean bsubc = subtyping.isSatisfiableSubtype(candidateType, bestType);
 				//
 				if (csubb && !bsubc) {
 					// This candidate is a subtype of the best seen so far. Hence, it is now the
