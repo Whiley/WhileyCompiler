@@ -20,6 +20,7 @@ import java.util.*;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
+import wyil.lang.WyilFile.Type.*;
 
 public interface Subtyping {
 
@@ -139,6 +140,82 @@ public interface Subtyping {
 
 		/**
 		 * <p>
+		 * Return the greatest lower bound of two types. That is, for any given types
+		 * <code>T1</code> and <code>T2</code> return <code>T3</code> where
+		 * <code>T1 :> T3</code> and <code>T2 :> T3</code> such that no
+		 * <code>T4 :> T3</code> exists which is also a lower bound of <code>T1</code>
+		 * and <code>T2</code>. Observe that such a lower bound always exists, as
+		 * <code>void</code> is a lower bound of any two types. The following
+		 * illustrates some examples:
+		 * </p>
+		 *
+		 * <pre>
+		 * int /\ int ============> int
+		 * nat /\ pos ============> void
+		 * bool /\ int ===========> void
+		 * int|null /\ int =======> int
+		 * int|null /\ nat =======> nat
+		 * int|null /\ bool|nat ==> nat
+		 * </pre>
+		 *
+		 * <p>
+		 * Here, <code>nat</code> is <code>(int n) where n >= 0</code> and
+		 * <code>pos</code> is <code>(int n) where n > 0</code>. Observe that, if
+		 * <code>pos</code> was declared as <code>(nat n) where n >= 0</code> then
+		 * <code>nat /\ pos ==> pos</code>.
+		 * </p>
+		 * <p>
+		 * <b>NOTE:</b> If the result equals either of the parameters, then that
+		 * parameter must be returned to allow reference equality to be used to
+		 * determine whether the result matches either parameter.
+		 * </p>
+		 *
+		 * @param lhs
+		 * @param rhs
+		 * @return
+		 */
+		public Type greatestLowerBound(Type lhs, Type rhs);
+
+		/**
+		 * <p>
+		 * Return the least upper bound of two types. That is, for any given types
+		 * <code>T2</code> and <code>T3</code> return <code>T1</code> where
+		 * <code>T1 :> T3</code> and <code>T1 :> T2</code> such that no
+		 * <code>T1 :> T0</code> exists which is also an upper bound of <code>T2</code>
+		 * and <code>T3</code>. Observe that such an upper bound always exists, as
+		 * <code>any</code> is an upper bound of any two types. The following
+		 * illustrates some examples:
+		 * </p>
+		 *
+		 * <pre>
+		 * int \/ int ============> int
+		 * int \/ nat ============> int
+		 * nat \/ pos ============> nat|pos
+		 * int \/ null ===========> int|null
+		 * int|null \/ nat =======> null|nat
+		 * int|null \/ bool|nat ==> null|bool|nat
+		 * </pre>
+		 *
+		 * <p>
+		 * Here, <code>nat</code> is <code>(int n) where n >= 0</code> and
+		 * <code>pos</code> is <code>(int n) where n > 0</code>. Observe that, if
+		 * <code>pos</code> was declared as <code>(nat n) where n >= 0</code> then
+		 * <code>nat \/ pos ==> nat</code>.
+		 * </p>
+		 * <p>
+		 * <b>NOTE:</b> If the result equals either of the parameters, then that
+		 * parameter must be returned to allow reference equality to be used to
+		 * determine whether the result matches either parameter.
+		 * </p>
+		 *
+		 * @param lhs
+		 * @param rhs
+		 * @return
+		 */
+		public Type leastUpperBound(Type lhs, Type rhs);
+
+		/**
+		 * <p>
 		 * Determine, for any two lifetimes <code>l</code> and <code>m</code>, whether
 		 * <code>l</code> is contained within <code>m</code> or not. This information is
 		 * critical for subtype checking of reference types. Consider this minimal
@@ -206,9 +283,9 @@ public interface Subtyping {
 
 	/**
 	 * <p>
-	 * Provides default implementations for <code>isSubtype</code> and
-	 * <code>bind</code>. The intention is that these be overriden to provide
-	 * different variants (e.g. relaxed subtype operators, etc).
+	 * Provides default implementations for <code>Subtyping.Environment</code>. The
+	 * intention is that these be overriden to provide different variants (e.g.
+	 * relaxed subtype operators, etc).
 	 * </p>
 	 * <p>
 	 * <b>(Subtyping)</b> The default subtype operator checks whether one type is a
@@ -452,26 +529,26 @@ public interface Subtyping {
 				case TYPE_property:
 					return isSubtype((Type.Callable) t1, (Type.Callable) t2, cache);
 				case TYPE_universal:
-					return isSubtype((Type.UniversalVariable) t1, (Type.UniversalVariable) t2, cache);
+					return isSubtype((Type.Universal) t1, (Type.Universal) t2, cache);
 				case TYPE_existential:
-					return isSubtype(t1, (Type.ExistentialVariable) t2, cache);
+					return isSubtype(t1, (Type.Existential) t2, cache);
 				default:
 					throw new IllegalArgumentException("unexpected type encountered: " + t1);
 				}
 			} else if (t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
 				return TOP;
 			} else if (t2_opcode == TYPE_existential) {
-				return isSubtype(t1, (Type.ExistentialVariable) t2, cache);
-			} else if (t2_opcode == TYPE_nominal) {
-				return isSubtype(t1, (Type.Nominal) t2, cache);
+				return isSubtype(t1, (Type.Existential) t2, cache);
 			} else if (t2_opcode == TYPE_union) {
 				return isSubtype(t1, (Type.Union) t2, cache);
 			} else if (t1_opcode == TYPE_union) {
 				return isSubtype((Type.Union) t1, t2, cache);
 			} else if (t1_opcode == TYPE_nominal) {
 				return isSubtype((Type.Nominal) t1, (Type.Atom) t2, cache);
-			} else if (t1_opcode == TYPE_existential) {
-				return isSubtype((Type.ExistentialVariable) t1, (Type.Atom) t2, cache);
+			} else if (t2_opcode == TYPE_nominal) {
+				return isSubtype(t1, (Type.Nominal) t2, cache);
+			}  else if (t1_opcode == TYPE_existential) {
+				return isSubtype((Type.Existential) t1, (Type.Atom) t2, cache);
 			} else {
 				// Nothing else works except void
 				return BOTTOM;
@@ -606,7 +683,7 @@ public interface Subtyping {
 			return c_params.intersect(c_returns);
 		}
 
-		protected AbstractConstraints isSubtype(Type.UniversalVariable t1, Type.UniversalVariable t2,
+		protected AbstractConstraints isSubtype(Type.Universal t1, Type.Universal t2,
 				BinaryRelation<Type> cache) {
 			if (t1.getOperand().equals(t2.getOperand())) {
 				return TOP;
@@ -615,11 +692,11 @@ public interface Subtyping {
 			}
 		}
 
-		protected AbstractConstraints isSubtype(Type.ExistentialVariable t1, Type.Atom t2, BinaryRelation<Type> cache) {
+		protected AbstractConstraints isSubtype(Type.Existential t1, Type.Atom t2, BinaryRelation<Type> cache) {
 			return new AbstractConstraints(t1, t2);
 		}
 
-		protected AbstractConstraints isSubtype(Type t1, Type.ExistentialVariable t2, BinaryRelation<Type> cache) {
+		protected AbstractConstraints isSubtype(Type t1, Type.Existential t2, BinaryRelation<Type> cache) {
 			return new AbstractConstraints(t1, t2);
 		}
 
@@ -635,6 +712,7 @@ public interface Subtyping {
 		protected AbstractConstraints isSubtype(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
 			for (int i = 0; i != t1.size(); ++i) {
 				AbstractConstraints ith = isSubtype(t1.get(i), t2, cache);
+				System.out.println("IS SUBTYPE: " + t1.get(i) + " :> " + t2 + " = " + ith);
 				// Check whether we found a match or not
 				if(ith != BOTTOM) {
 					return ith;
@@ -673,7 +751,7 @@ public interface Subtyping {
 					}
 				}
 				return constraints;
-			} else if(isAncestorOf(d1,d2)) {
+			} else if(isAncestorOf(t1,t2)) {
 				return isSubtype(t1.getConcreteType(), t2.getConcreteType());
 			} else {
 				boolean left = isSubtype(t1_invariant, t2_invariant);
@@ -752,43 +830,511 @@ public interface Subtyping {
 			return left.intersect(right);
 		}
 
-		// ===============================================================================
-		// Ancestor Calculation
-		// ===============================================================================
+		// ===========================================================================
+		// Greatest Lower Bound
+		// ===========================================================================
+
+		@Override
+		public Type greatestLowerBound(Type t1, Type t2) {
+			System.out.println("GLB: " + t1 + " /\\ " + t2);
+			//
+			int t1_opcode = normalise(t1.getOpcode());
+			int t2_opcode = normalise(t2.getOpcode());
+			//
+			if(t1_opcode == t2_opcode) {
+				switch(t1_opcode) {
+				case TYPE_void:
+				case TYPE_any:
+				case TYPE_null:
+				case TYPE_bool:
+				case TYPE_byte:
+				case TYPE_int:
+					return t1;
+				case TYPE_array:
+					return greatestLowerBound((Type.Array) t1,(Type.Array) t2);
+				case TYPE_tuple:
+					return greatestLowerBound((Type.Tuple) t1,(Type.Tuple) t2);
+				case TYPE_record:
+					return greatestLowerBound((Type.Record) t1,(Type.Record) t2);
+				case TYPE_reference:
+					return greatestLowerBound((Type.Reference) t1,(Type.Reference) t2);
+				case TYPE_universal:
+					return greatestLowerBound((Type.Universal) t1,(Type.Universal) t2);
+				case TYPE_nominal:
+					return greatestLowerBound((Type.Nominal) t1,(Type.Nominal) t2);
+				case TYPE_method:
+				case TYPE_function:
+				case TYPE_property:
+					return greatestLowerBound((Type.Callable) t1,(Type.Callable) t2);
+				case TYPE_union:
+					return greatestLowerBound((Type.Union) t1, (Type.Union) t2);
+				}
+			}
+			// Handle special forms for t1
+			if(t1_opcode == TYPE_void || t2_opcode == TYPE_any) {
+				return t1;
+			} else if(t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
+				return t2;
+			} else if(t1_opcode == TYPE_union) {
+				return greatestLowerBound((Type.Union) t1, t2);
+			} else if(t2_opcode == TYPE_union) {
+				return greatestLowerBound(t1, (Type.Union) t2);
+			} else if(t1_opcode == TYPE_nominal) {
+				return greatestLowerBound((Type.Nominal) t1, t2);
+			} else if(t2_opcode == TYPE_nominal) {
+				return greatestLowerBound(t1, (Type.Nominal) t2);
+			}
+			// Default case, nothing else fits.
+			return Type.Void;
+		}
+
+		public Type greatestLowerBound(Type.Array t1, Type.Array t2) {
+			Type e1 = t1.getElement();
+			Type e2 = t2.getElement();
+			Type glb = greatestLowerBound(e1,e2);
+			//
+			if (e1 == glb) {
+				return t1;
+			} else if (e2 == glb) {
+				return t2;
+			} else if (glb instanceof Type.Void) {
+				return Type.Void;
+			} else {
+				return new Type.Array(glb);
+			}
+		}
+
+		public Type greatestLowerBound(Type.Tuple t1, Type.Tuple t2) {
+			if (t1.size() == t2.size()) {
+				boolean left = true;
+				boolean right = true;
+				Type[] types = new Type[t1.size()];
+				for (int i = 0; i != t1.size(); ++i) {
+					Type l = t1.get(i);
+					Type r = t2.get(i);
+					Type glb = types[i] = greatestLowerBound(l, r);
+					left &= (l == glb);
+					right &= (r == glb);
+				}
+				//
+				if (left) {
+					return t1;
+				} else if (right) {
+					return t2;
+				} else {
+					return Type.Tuple.create(types);
+				}
+			}
+			return Type.Void;
+		}
+
+		public Type greatestLowerBound(Type.Record t1, Type.Record t2) {
+			final Tuple<Type.Field> t1_fields = t1.getFields();
+			final Tuple<Type.Field> t2_fields = t2.getFields();
+			//
+			final int n = t1_fields.size();
+			final int m = t2_fields.size();
+			// Santise input for simplicity
+			if(n > m) {
+				return greatestLowerBound(t2,t1);
+			}
+			// Sanity check sufficient fields.
+			if(!t1.isOpen() && n != m) {
+				return Type.Void;
+			}
+			// Check matching fields
+			boolean left = true;
+			boolean right = true;
+			Type[] types = new Type[n];
+			for(int i=0;i!=types.length;++i) {
+				Type.Field f = t1_fields.get(i);
+				Type t1f = f.getType();
+				Type t2f = t2.getField(f.getName());
+				if(t2f == null) {
+					// FIXME: broken when both are open records with matching numbers of fields
+					// which are different.
+					return Type.Void;
+				} else {
+					Type glb = types[i] = greatestLowerBound(t1f, t2f);
+					// NOTE: following check could be pushed into creation of Type.Record
+					if(glb instanceof Type.Void) {
+						return Type.Void;
+					}
+					left &= (glb == t1f);
+					right &= (glb == t2f);
+				}
+			}
+			//
+			if(left) {
+				return t1;
+			} else if(right && m == n) {
+				return t2;
+			}
+			// Create record
+			Type.Field[] nFields = new Type.Field[n];
+			for(int i=0;i!=nFields.length;++i) {
+				Type.Field f = t1_fields.get(i);
+				nFields[i] = new Type.Field(f.getName(),types[i]);
+			}
+			// FIXME: following broken when intersection open record with closed record.
+			return new Type.Record(t1.isOpen(),new Tuple<>(nFields));
+		}
+
+		public Type greatestLowerBound(Type.Reference t1, Type.Reference t2) {
+			Type e1 = t1.getElement();
+			Type e2 = t2.getElement();
+			if(isSatisfiableSubtype(e1,e2) && isSatisfiableSubtype(e2,e1)) {
+				return t1;
+			} else {
+				return Type.Void;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Universal t1, Type.Universal t2) {
+			if (t1.getOperand().get().equals(t2.getOperand().get())) {
+				return t1;
+			} else {
+				return Type.Void;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Callable t1, Type.Callable t2) {
+			int t1_opcode = t1.getOpcode();
+			Type t1_param = t1.getParameter();
+			Type t1_return = t1.getReturn();
+			int t2_opcode = t2.getOpcode();
+			Type t2_param = t2.getParameter();
+			Type t2_return = t2.getReturn();
+			//
+			Type param = leastUpperBound(t1_param,t2_param);
+			Type ret = greatestLowerBound(t1_return,t2_return);
+			int opcode = greatestLowerBound(t1_opcode, t2_opcode);
+			//
+			if(t1_param == param && t1_return == ret && t1_opcode == opcode) {
+				return t1;
+			} else if(t2_param == param && t2_return == ret && t2_opcode == opcode) {
+				return t2;
+			} else if(param instanceof Type.Void || ret instanceof Type.Void) {
+				return Type.Void;
+			} else if(opcode == TYPE_property){
+				return new Type.Property(param, ret);
+			} else if(opcode == TYPE_function) {
+				return new Type.Function(param, ret);
+			} else if(t1 instanceof Type.Method && t2 instanceof Type.Method) {
+				throw new IllegalArgumentException("IMPLEMENT ME");
+			} else {
+				return Type.Void;
+			}
+		}
+
+		private static int greatestLowerBound(int lhs, int rhs) {
+			if(lhs == TYPE_method || rhs == TYPE_method) {
+				return TYPE_method;
+			} else if(lhs == TYPE_function || rhs == TYPE_function) {
+				return TYPE_function;
+			} else {
+				return TYPE_property;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Union t1, Type.Union t2) {
+			// NOTE: this could be made more efficient. For example, by sorting bounds.
+			Type t = greatestLowerBound(t1, (Type) t2);
+			// FIXME: what an ugly solution :(
+			if (t.equals(t1)) {
+				return t1;
+			} else if (t.equals(t2)) {
+				return t2;
+			} else {
+				return t;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Nominal t1, Type.Nominal t2) {
+			Decl.Type d1 = t1.getLink().getTarget();
+			Decl.Type d2 = t2.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean d1_alias = (d1.getInvariant().size() == 0);
+			final boolean d2_alias = (d2.getInvariant().size() == 0);
+			//
+			if (isAncestorOf(t2, t1)) {
+				return t1;
+			} else if (isAncestorOf(t1, t2)) {
+				return t2;
+			} else if (d1_alias) {
+				return greatestLowerBound(t1.getConcreteType(), t2);
+			} else if (d2_alias) {
+				return greatestLowerBound(t1, t2.getConcreteType());
+			} else {
+				return Type.Void;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Union t1, Type t2) {
+			Type[] bounds = new Type[t1.size()];
+			boolean changed = false;
+			for (int i = 0; i != bounds.length; ++i) {
+				Type before = t1.get(i);
+				Type after = greatestLowerBound(before, t2);
+				bounds[i] = after;
+				changed |= (before != after);
+			}
+			if(changed) {
+				return Type.Union.create(bounds);
+			} else {
+				return t1;
+			}
+		}
+
+		public Type greatestLowerBound(Type t1, Type.Union t2) {
+			Type[] bounds = new Type[t2.size()];
+			boolean changed = false;
+			for (int i = 0; i != bounds.length; ++i) {
+				Type before = t2.get(i);
+				Type after = greatestLowerBound(t1, before);
+				bounds[i] = after;
+				changed |= (before != after);
+			}
+			if (changed) {
+				return Type.Union.create(bounds);
+			} else {
+				return t2;
+			}
+		}
+
+		public Type greatestLowerBound(Type.Nominal t1, Type t2) {
+			// REQUIRES: !(t2 instanceof Type.Nominal) && !(t2 instanceof Type.Union)
+			Decl.Type d1 = t1.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean alias = (d1.getInvariant().size() == 0);
+			//
+			if(isAncestorOf(t2, t1)) {
+				return t1;
+			} else if (alias) {
+				return greatestLowerBound(t1.getConcreteType(), t2);
+			} else {
+				return Type.Void;
+			}
+		}
+
+		public Type greatestLowerBound(Type t1, Type.Nominal t2) {
+			// REQUIRES: !(t1 instanceof Type.Nominal) && !(t1 instanceof Type.Union)
+			Decl.Type d2 = t2.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean alias = (d2.getInvariant().size() == 0);
+			//
+			if (isAncestorOf(t1, t2)) {
+				return t2;
+			} else if (alias) {
+				return greatestLowerBound(t1, t2.getConcreteType());
+			} else {
+				return Type.Void;
+			}
+		}
+
+		// ===========================================================================
+		// Least Upper Bound
+		// ===========================================================================
+
+		@Override
+		public Type leastUpperBound(Type t1, Type t2) {
+			int t1_opcode = normalise(t1.getOpcode());
+			int t2_opcode = normalise(t2.getOpcode());
+			//
+			if(t1_opcode == t2_opcode) {
+				switch(t1_opcode) {
+				case TYPE_void:
+				case TYPE_any:
+				case TYPE_null:
+				case TYPE_bool:
+				case TYPE_byte:
+				case TYPE_int:
+					return t1;
+				case TYPE_array:
+					return leastUpperBound((Type.Array) t1,(Type.Array) t2);
+				case TYPE_tuple:
+					return leastUpperBound((Type.Tuple) t1,(Type.Tuple) t2);
+				case TYPE_record:
+					return leastUpperBound((Type.Record) t1,(Type.Record) t2);
+				case TYPE_reference:
+					return leastUpperBound((Type.Reference) t1,(Type.Reference) t2);
+				case TYPE_universal:
+					return leastUpperBound((Type.Universal) t1,(Type.Universal) t2);
+				case TYPE_nominal:
+					return leastUpperBound((Type.Nominal) t1,(Type.Nominal) t2);
+				case TYPE_method:
+				case TYPE_function:
+				case TYPE_property:
+					return leastUpperBound((Type.Callable) t1,(Type.Callable) t2);
+				case TYPE_union:
+					return leastUpperBound((Type.Union) t1,(Type.Union) t2);
+				}
+			}
+			// Handle special forms for t1
+			switch(t1_opcode) {
+			case TYPE_void:
+				return t2;
+			case TYPE_any:
+				return t1;
+			case TYPE_nominal:
+				return leastUpperBound((Type.Nominal) t1, t2);
+			case TYPE_union:
+				return leastUpperBound((Type.Union) t1, t2);
+			}
+			// Handle special forms for t1
+			switch(t2_opcode) {
+			case TYPE_void:
+				return t1;
+			case TYPE_any:
+				return t2;
+			case TYPE_nominal:
+				return leastUpperBound(t1, (Type.Nominal) t2);
+			case TYPE_union:
+				return leastUpperBound(t1, (Type.Union) t2);
+			}
+			// Default case, nothing else fits.
+			return Type.Void;
+		}
+
+		public Type leastUpperBound(Type.Array t1, Type.Array t2) {
+			Type e1 = t1.getElement();
+			Type e2 = t2.getElement();
+			Type lub = leastUpperBound(e1,e2);
+			//
+			if (e1 == lub) {
+				return t1;
+			} else if (e2 == lub) {
+				return t2;
+			} else {
+				return new Type.Array(lub);
+			}
+		}
+
+		public Type leastUpperBound(Type.Tuple t1, Type.Tuple t2) {
+			if (t1.size() != t2.size()) {
+				return new Type.Union(t1, t2);
+			} else {
+				boolean left = true;
+				boolean right = true;
+				Type[] types = new Type[t1.size()];
+				for (int i = 0; i != t1.size(); ++i) {
+					Type l = t1.get(i);
+					Type r = t2.get(i);
+					Type lub = types[i] = leastUpperBound(l, r);
+					left &= (l == lub);
+					right &= (r == lub);
+				}
+				//
+				if (left) {
+					return t1;
+				} else if (right) {
+					return t2;
+				} else {
+					return Type.Tuple.create(types);
+				}
+			}
+		}
+
+		public Type leastUpperBound(Type.Record t1, Type.Record t2) {
+			Tuple<Type.Field> t1_fields = t1.getFields();
+			Tuple<Type.Field> t2_fields = t2.getFields();
+			// Order fields for simplicity
+			if(t1_fields.size() > t2_fields.size()) {
+				return leastUpperBound(t2,t1);
+			} else if(!subset(t2,t1)) {
+				// Some fields in t1 not in t2
+				return new Type.Union(t1,t2);
+			} else if(!subset(t1,t2)) {
+				// Some fields in t1 not in t2
+				return new Type.Union(t1,t2);
+			}
+			// ASSERT: |t1_fields| == |t2_fields|
+			Type.Field[] fields = new Type.Field[t1_fields.size()];
+			boolean left = true;
+			boolean right = true;
+			for(int i=0;i!=t1_fields.size();++i) {
+				Type.Field f = t1_fields.get(i);
+				Type t1f = f.getType();
+				Type t2f = t2.getField(f.getName());
+				Type lub = leastUpperBound(t1f,t2f);
+				fields[i] = new Type.Field(f.getName(),lub);
+				left &= (t1f == lub);
+				right &= (t2f == lub);
+			}
+			if(left) {
+				return t1;
+			} else if(right) {
+				return t2;
+			} else {
+				boolean isOpen = t1.isOpen() | t2.isOpen();
+				return new Type.Record(isOpen,new Tuple<>(fields));
+			}
+		}
 
 		/**
-		 * Determine whether one declaration is an "ancestor" of another. This happens
-		 * in a very specific situation where the child is given the type of the
-		 * ancestor with additional constraints. For example:
-		 * 
-		 * <pre>
-		 * type nat is (int n) where n >= 0
-		 * type pos1 is (nat p) where p > 0
-		 * type pos2 is (int p) where p > 0
-		 * </pre>
-		 * 
-		 * Here, we'd say that <code>nat</code> is an ancestor of <code>pos1</code> but
-		 * not <code>pos2</code>.
-		 * 
-		 * @param parent
-		 * @param child
+		 * Check that lhs fields are a subset of rhs fields
+		 *
+		 * @param lhs
+		 * @param rhs
 		 * @return
 		 */
-		private boolean isAncestorOf(Decl.Type parent, Decl.Type child) {
-			//
-			if(parent == child) {
-				return true;
-			} else if(child != null) {
-				Type body = child.getType();
-				if(body instanceof Type.Nominal) {
-					// Continue descent
-					Type.Nominal b = (Type.Nominal) body;
-					return isAncestorOf(parent,b.getLink().getTarget());
+		public boolean subset(Type.Record lhs, Type.Record rhs) {
+			Tuple<Type.Field> lhs_fields = lhs.getFields();
+			for(int i=0;i!=lhs_fields.size();++i) {
+				Type.Field ith = lhs_fields.get(i);
+				if(rhs.getField(ith.getName()) == null) {
+					return false;
 				}
-			} 
-			return false;
+			}
+			return true;
 		}
-		
+
+		public Type leastUpperBound(Type.Reference t1, Type.Reference t2) {
+			Type e1 = t1.getElement();
+			Type e2 = t2.getElement();
+			if(isSatisfiableSubtype(e1,e2) && isSatisfiableSubtype(e2,e1)) {
+				return t1;
+			} else {
+				return new Type.Union(t1,t2);
+			}
+		}
+
+		public Type leastUpperBound(Type.Universal t1, Type.Universal t2) {
+			if (t1.getOperand().get().equals(t2.getOperand().get())) {
+				return t1;
+			} else {
+				return new Type.Union(t1, t2);
+			}
+		}
+
+		public Type leastUpperBound(Type.Callable t1, Type.Callable t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type.Union t1, Type.Union t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type.Nominal t1, Type.Nominal t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type.Nominal t1, Type t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type.Union t1, Type t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type t1, Type.Nominal t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
+		public Type leastUpperBound(Type t1, Type.Union t2) {
+			throw new IllegalArgumentException("implement me");
+		}
+
 		// ===============================================================================
 		// Type Subtraction
 		// ===============================================================================
@@ -956,10 +1502,6 @@ public interface Subtyping {
 		 */
 		private final ConcreteSolution EMPTY_CONCRETE_SOLUTION = new ConcreteSolution();
 		/**
-		 * A simple constant to avoid unnecessary allocations.
-		 */
-		private final ConcreteSolution[] EMPTY_CONCRETE_SOLUTIONS = new ConcreteSolution[0];
-		/**
 		 * An empty set of (potentially symbolic) constraints.
 		 */
 		private final AbstractSolution EMPTY_SYMBOLIC_SOLUTION = new AbstractSolution();
@@ -986,11 +1528,11 @@ public interface Subtyping {
 		protected class AbstractConstraints implements Subtyping.Constraints {
 			private final AbstractSolution row;
 
-			public AbstractConstraints(Type.ExistentialVariable lhs, Type.Atom rhs) {
+			public AbstractConstraints(Type.Existential lhs, Type.Atom rhs) {
 				this.row = new AbstractSolution(lhs, rhs);
 			}
 
-			public AbstractConstraints(Type lhs, Type.ExistentialVariable rhs) {
+			public AbstractConstraints(Type lhs, Type.Existential rhs) {
 				this.row = new AbstractSolution(lhs, rhs);
 			}
 
@@ -1059,7 +1601,7 @@ public interface Subtyping {
 				this.constraints = new SymbolicConstraint[0];
 			}
 
-			public AbstractSolution(Type.ExistentialVariable var, Type.Atom lower) {
+			public AbstractSolution(Type.Existential var, Type.Atom lower) {
 				if (isConcrete(lower)) {
 					this.solution = new ConcreteSolution(var.get(), Type.Any, lower);
 					this.constraints = new SymbolicConstraint[0];
@@ -1069,7 +1611,7 @@ public interface Subtyping {
 				}
 			}
 
-			public AbstractSolution(Type upper, Type.ExistentialVariable var) {
+			public AbstractSolution(Type upper, Type.Existential var) {
 				if (isConcrete(upper)) {
 					this.solution = new ConcreteSolution(var.get(), upper, Type.Void);
 					this.constraints = new SymbolicConstraint[0];
@@ -1093,7 +1635,8 @@ public interface Subtyping {
 				} else if (s != null) {
 					// Apply closure over these constraints
 					ConcreteSolution cs = close(s, c);
-					if (cs == solution) {
+					if (cs == solution && c == constraints) {
+						System.out.println("<<<<<<<<<<<<<<< AM TAKEN");
 						return this;
 					} else {
 						return new AbstractSolution(cs, c);
@@ -1226,33 +1769,34 @@ public interface Subtyping {
 			}
 
 			public ConcreteSolution intersect(ConcreteSolution other) {
-				final int n = lowerBounds.length;
-				final int m = other.lowerBounds.length;
-				if (n < m) {
-					return other.intersect(this);
+				Type[] nLowerBounds = leastUpperBounds(AbstractEnvironment.this, lowerBounds, other.lowerBounds);
+				Type[] nUpperBounds = greatestLowerBounds(AbstractEnvironment.this, upperBounds, other.upperBounds);
+				System.out.println("GOT: " + Arrays.toString(lowerBounds) + " \\/ " + Arrays.toString(other.lowerBounds) + " = " + Arrays.toString(nLowerBounds) + " : " + (lowerBounds == nLowerBounds) + " : " + (other.lowerBounds == nLowerBounds));
+				System.out.println("GOT: " + Arrays.toString(upperBounds) + " /\\ " + Arrays.toString(other.upperBounds) + " = " + Arrays.toString(nUpperBounds) + " : " + (upperBounds == nUpperBounds) + " : " + (other.upperBounds == nUpperBounds));
+				//
+				if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
+					return this;
 				} else {
-					Type[] nLowerBounds = lub(lowerBounds, other.lowerBounds);
-					Type[] nUpperBounds = glb(upperBounds, other.upperBounds);
-					//
-					if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
-						return this;
-					} else {
-						// Sanity check new bounds
-						for (int i = 0; i != m; ++i) {
-							Type lower = nLowerBounds[i];
-							Type upper = nUpperBounds[i];
-							if (!isSatisfiableSubtype(upper, lower)
-									// Upper bound cannot be void
-									|| isSatisfiableSubtype(Type.Void, upper)
-									// Lower bound cannot be any
-									|| isSatisfiableSubtype(lower, Type.Any)) {
-								// Solution is invalid
-								return null;
-							}
+					final int n = Math.min(nLowerBounds.length, nUpperBounds.length);
+					// Sanity check new bounds make sense. For example, <code>int|null :> x :>
+					// int</code> is fine. However, <code>int :> x :> null</code> is definitely not.
+					// Similarly, <code>void :> x</code> is not considered viable either.
+					for (int i = 0; i != n; ++i) {
+						Type lower = nLowerBounds[i];
+						Type upper = nUpperBounds[i];
+						// NOTE: potential performance improvement here to avoid unnecessary subtype
+						// checks by only testing bounds which have actually changed.
+						if (!isSatisfiableSubtype(upper, lower)
+								// Upper bound cannot be void
+								|| isSatisfiableSubtype(Type.Void, upper)
+								// Lower bound cannot be any
+								|| isSatisfiableSubtype(lower, Type.Any)) {
+							// Solution is invalid
+							return null;
 						}
-						//
-						return new ConcreteSolution(nUpperBounds, nLowerBounds);
 					}
+					//
+					return new ConcreteSolution(nUpperBounds, nLowerBounds);
 				}
 			}
 
@@ -1296,74 +1840,7 @@ public interface Subtyping {
 				return r + "]";
 			}
 
-			private Type[] lub(Type[] lhs, Type[] rhs) {
-				// NOTE: this could definitely be improved. The key difficult is that we *must*
-				// return either the lhs or the rhs if they are already the glb. Could
-				// potentially help by insuring lowerbounds and upperbounds have same length.
-				final int n = lhs.length;
-				final int m = rhs.length;
-				// ASSERT n >= m
-				boolean leftToRight = true;
-				boolean rightToLeft = true;
-				for (int i = 0; i != Math.min(n, m); ++i) {
-					Type l = lhs[i];
-					Type r = rhs[i];
-					leftToRight &= isSatisfiableSubtype(l,r);
-					rightToLeft &= isSatisfiableSubtype(r,l);
-				}
-				if(leftToRight) {
-					return lhs;
-				} else if(rightToLeft && n == m) {
-					// NOTE: n == m check needed for termination!
-					return rhs;
-				}
-				Type[] ts = Arrays.copyOf(lhs, n);
-				for (int i = 0; i != m; ++i) {
-					Type l = lhs[i];
-					Type r = rhs[i];
-					if(isSatisfiableSubtype(r, l)) {
-						ts[i] = r;
-					} else if (!isSatisfiableSubtype(l,r)) {
-						ts[i] = AbstractEnvironment.lub(l, r);
-					}
-				}
-				return ts;
-			}
 
-			private Type[] glb(Type[] lhs, Type[] rhs) {
-				System.out.println("GOT: " + Arrays.toString(lhs) + " /\\ " + Arrays.toString(rhs));
-				// NOTE: this could definitely be improved. The key difficult is that we *must*
-				// return either the lhs or the rhs if they are already the glb. Could
-				// potentially help by insuring lowerbounds and upperbounds have same length.
-				final int n = lhs.length;
-				final int m = rhs.length;
-				// ASSERT n >= m
-				boolean leftToRight = true;
-				boolean rightToLeft = true;
-				for (int i = 0; i != Math.min(n, m); ++i) {
-					Type l = lhs[i];
-					Type r = rhs[i];
-					leftToRight &= isSatisfiableSubtype(l,r);
-					rightToLeft &= isSatisfiableSubtype(r,l);
-				}
-				if(rightToLeft) {
-					return lhs;
-				} else if(leftToRight && n == m) {
-					// NOTE: n == m check needed for termination!
-					return rhs;
-				} 
-				Type[] ts = Arrays.copyOf(lhs, n);
-				for (int i = 0; i != m; ++i) {
-					Type l = lhs[i];
-					Type r = rhs[i];
-					if(isSatisfiableSubtype(l, r)) {
-						ts[i] = r;
-					} else if (!isSatisfiableSubtype(r, l)) {
-						ts[i] = AbstractEnvironment.glb(l, r);
-					}
-				}
-				return ts;
-			}
 		}
 
 		// ===============================================================================
@@ -1491,8 +1968,8 @@ public interface Subtyping {
 		 */
 		public ConcreteSolution close(ConcreteSolution solution, SymbolicConstraint[] constraints) {
 			boolean changed = true;
+			System.out.println("CLOSING: " + solution);
 			while (changed) {
-				System.out.println("GOT: " + solution);
 				changed = false;
 				for (int i = 0; i != constraints.length; ++i) {
 					if (solution == null) {
@@ -1512,6 +1989,7 @@ public interface Subtyping {
 						// Combine constraints
 						AbstractConstraints cs = left.intersect(right);
 						solution = solution.intersect(cs.row.solution);
+						System.out.println("*** SOLUTION: " + solution + " : " + (s!=solution));
 						// Update changed status
 						changed |= (s != solution);
 					}
@@ -1554,7 +2032,7 @@ public interface Subtyping {
 			case TYPE_universal:
 				return type;
 			case TYPE_existential: {
-				Type.ExistentialVariable t = (Type.ExistentialVariable) type;
+				Type.Existential t = (Type.Existential) type;
 				int var = t.get();
 				return sign ? solution.ceil(var) : solution.floor(var);
 			}
@@ -1675,7 +2153,7 @@ public interface Subtyping {
 						}
 					}
 					// Done
-					return new Type.Union(nElements);
+					return Type.Union.create(nElements);
 				}
 			}
 			case TYPE_record: {
@@ -1767,82 +2245,252 @@ public interface Subtyping {
 		}
 
 		// ================================================================================
+		// isAncestorOf
+		// ================================================================================
+
+		/**
+		 * Determine whether one declaration is an "ancestor" of another. This happens
+		 * in a very specific situation where the child is given the type of the
+		 * ancestor with additional constraints. For example:
+		 *
+		 * <pre>
+		 * type nat is (int n) where n >= 0
+		 * type pos1 is (nat p) where p > 0
+		 * type pos2 is (int p) where p > 0
+		 * </pre>
+		 *
+		 * Here, we'd say that <code>nat</code> is an ancestor of <code>pos1</code> but
+		 * not <code>pos2</code>.
+		 *
+		 * @param parent
+		 * @param child
+		 * @return
+		 */
+		private static boolean isAncestorOf(Type parent, Type child) {
+			System.out.println("*** ANCESTOROF: " + parent + " ~> " + child);
+			int t1_opcode = normalise(parent.getOpcode());
+			int t2_opcode = normalise(child.getOpcode());
+			if(parent.equals(child)) {
+				// NOTE: seems a bit inefficient as can perform the equality check during this
+				// traversal.
+				return true;
+			} else if (t1_opcode == t2_opcode) {
+				switch (child.getOpcode()) {
+				case TYPE_void:
+				case TYPE_null:
+				case TYPE_bool:
+				case TYPE_byte:
+				case TYPE_int:
+				case TYPE_any:
+					return true;
+				case TYPE_array: {
+					Type.Array p = (Type.Array) parent;
+					Type.Array c = (Type.Array) child;
+					return isAncestorOf(p.getElement(), c.getElement());
+				}
+				case TYPE_staticreference:
+				case TYPE_reference:{
+					Type.Reference p = (Type.Reference) parent;
+					Type.Reference c = (Type.Reference) child;
+					// FIXME: what about lifetimes?
+					return p.getElement().equals(c.getElement());
+				}
+				case TYPE_record: {
+					Type.Record p = (Type.Record) parent;
+					Type.Record c = (Type.Record) child;
+					Tuple<Type.Field> p_fields = p.getFields();
+					Tuple<Type.Field> c_fields = c.getFields();
+					// FIXME: support open records
+					if (p_fields.size() == c_fields.size()) {
+						for (int i = 0; i != p_fields.size(); ++i) {
+							Type.Field f = p_fields.get(i);
+							Type pt = f.getType();
+							Type ct = c.getField(f.getName());
+							if (ct == null || !isAncestorOf(pt, ct)) {
+								return false;
+							}
+						}
+						return true;
+					}
+					break;
+				}
+				case TYPE_tuple: {
+					Type.Tuple p = (Type.Tuple) parent;
+					Type.Tuple c = (Type.Tuple) child;
+					//
+					if (p.size() == c.size()) {
+						for (int i = 0; i != p.size(); ++i) {
+							if (!isAncestorOf(p.get(i), c.get(i))) {
+								return false;
+							}
+						}
+						return true;
+					}
+					break;
+				}
+				case TYPE_function: {
+					Type.Function p = (Type.Function) parent;
+					Type.Function c = (Type.Function) child;
+					return isAncestorOf(c.getParameter(), p.getParameter())
+							&& isAncestorOf(p.getReturn(), c.getReturn());
+				}
+				case TYPE_method: {
+					Type.Method p = (Type.Method) parent;
+					Type.Method c = (Type.Method) child;
+					// FIXME: what about lifetimes?
+					return isAncestorOf(c.getParameter(), p.getParameter())
+							&& isAncestorOf(p.getReturn(), c.getReturn());
+				}
+				case TYPE_property: {
+					Type.Property p = (Type.Property) parent;
+					Type.Property c = (Type.Property) child;
+					return isAncestorOf(c.getParameter(), p.getParameter())
+							&& isAncestorOf(p.getReturn(), c.getReturn());
+				}
+				case TYPE_nominal: {
+					Type.Nominal n = (Type.Nominal) child;
+					return isAncestorOf(parent, n.getConcreteType());
+				}
+				}
+			} else if (t2_opcode == TYPE_nominal) {
+				Type.Nominal n = (Type.Nominal) child;
+				return isAncestorOf(parent, n.getConcreteType());
+			}
+			return false;
+		}
+
+		// ================================================================================
 		// Helpers
 		// ================================================================================
 
 		private static final Tuple<Expr> EMPTY_INVARIANT = new Tuple<>();
 
 		/**
-		 * Determine the <i>Greatest Lower Bound</i> between two competing upper bounds
-		 * for some variable. For example, if we have <code>int|null :> x</code> and
-		 * <code>int :> x</code> then the glb is <code>int</code> since it is the
-		 * largest type below both bounds.
+		 * <p>
+		 * Computer the greatest lower bound of two arrays of types which may have
+		 * different sizes. In the case of a smaller array, all elements are assumed to
+		 * be <code>Type.Any</code>. Example calculations are thus:
+		 * </p>
 		 *
+		 * <pre>
+		 * [] /\ [int] ==========> [int]
+		 * [int] /\ [int] =======> [int]
+		 * [int] /\ [bool] ======> [void]
+		 * [int,bool] /\ [nat] ==> [nat,bool]
+		 * [int] /\ [nat,bool] ==> [nat,bool]
+		 * </pre>
+		 *
+		 * <p>
+		 * A key requirement for this method is that, if the result equals either of the
+		 * parameters, then it must return that parameter. The allows termination for
+		 * <code>close()</code> to be established using reference equality.
+		 * </p>
+		 *
+		 * @param env
 		 * @param lhs
 		 * @param rhs
 		 * @return
 		 */
-		private static Type glb(Type lhs, Type rhs) {
-			boolean u1 = lhs instanceof Type.Union;
-			boolean u2 = rhs instanceof Type.Union;
-			if (lhs instanceof Type.Any) {
-				return rhs;
-			} else if (rhs instanceof Type.Any) {
-				return lhs;
-			} else if (lhs.equals(rhs)) {
-				return lhs;
-			} else if (u1 && u2) {
-				Type.Union l = (Type.Union) lhs;
-				Type.Union r = (Type.Union) rhs;
-				return intersect(l.getAll(), r.getAll());
-			} else if (u1) {
-				Type.Union l = (Type.Union) lhs;
-				return intersect(l.getAll(), rhs);
-			} else if (u2) {
-				Type.Union r = (Type.Union) rhs;
-				return intersect(r.getAll(), lhs);
-			} else {
-				return Type.Void;
+		private static Type[] greatestLowerBounds(Subtyping.Environment env, Type[] lhs, Type[] rhs) {
+			// NOTE: this could definitely be improved. The key difficult is that we *must*
+			// return either the lhs or the rhs if they are already the glb. Could
+			// potentially help by insuring lowerbounds and upperbounds have same length.
+			final int n = lhs.length;
+			final int m = rhs.length;
+			//
+			boolean leftMatch = true;
+			boolean rightMatch = true;
+			for (int i = 0; i != Math.min(n, m) && (leftMatch || rightMatch); ++i) {
+				Type l = lhs[i];
+				Type r = rhs[i];
+				Type glb = env.greatestLowerBound(l, r);
+				leftMatch &= (l == glb);
+				rightMatch &= (r == glb);
 			}
-		}
-
-		private static Type lub(Type lhs, Type rhs) {
-			boolean u1 = lhs instanceof Type.Union;
-			boolean u2 = rhs instanceof Type.Union;
-			if (lhs instanceof Type.Void) {
+			// Sanity check whether we're done.
+			if(leftMatch && n >= m) {
+				return lhs;
+			} else if(rightMatch && n <= m) {
 				return rhs;
-			} else if (rhs instanceof Type.Void) {
-				return lhs;
-			} else if (lhs.equals(rhs)) {
-				return lhs;
-			} else if (u1 && u2) {
-				Type.Union l = (Type.Union) lhs;
-				Type.Union r = (Type.Union) rhs;
-				return Type.Union.create(ArrayUtils.append(l.getAll(), r.getAll()));
-			} else if (u1) {
-				Type.Union l = (Type.Union) lhs;
-				return Type.Union.create(ArrayUtils.append(l.getAll(), rhs));
-			} else if (u2) {
-				Type.Union r = (Type.Union) rhs;
-				return Type.Union.create(ArrayUtils.append(lhs, r.getAll()));
-			} else {
-				return new Type.Union(lhs, rhs);
 			}
-		}
-
-		public static Type intersect(Type[] lhs, Type... rhs) {
-			ArrayList<Type> types = new ArrayList<>();
-			for (int i = 0; i != lhs.length; ++i) {
-				Type ith = lhs[i];
-				for (int j = 0; j != rhs.length; ++j) {
-					Type jth = rhs[j];
-					if (ith.equals(jth)) {
-						types.add(ith);
-					}
+			// Result doesn't match either parameter. Therefore, construct a fresh solution
+			if(n > m) {
+				Type[] ts = Arrays.copyOf(lhs, n);
+				for (int i = 0; i != m; ++i) {
+					ts[i] = env.greatestLowerBound(lhs[i], rhs[i]);
 				}
+				return ts;
+			} else {
+				Type[] ts = Arrays.copyOf(rhs, m);
+				for (int i = 0; i != n; ++i) {
+					ts[i] = env.greatestLowerBound(lhs[i], rhs[i]);
+				}
+				return ts;
 			}
-			return Type.Union.create(types.toArray(new Type[types.size()]));
 		}
+
+		/**
+		 * <p>
+		 * Computer the least upper bound of two arrays of types which may have
+		 * different sizes. In the case of a smaller array, all elements are assumed to
+		 * be <code>Type.Void</code>. Example calculations are thus:
+		 * </p>
+		 *
+		 * <pre>
+		 * [] \/ [int] ==========> [int]
+		 * [int] \/ [int] =======> [int]
+		 * [int] \/ [bool] ======> [int|bool]
+		 * [int,bool] \/ [nat] ==> [nat,bool]
+		 * [int] \/ [nat,bool] ==> [nat,bool]
+		 * </pre>
+		 *
+		 * <p>
+		 * A key requirement for this method is that, if the result equals either of the
+		 * parameters, then it must return that parameter. The allows termination for
+		 * <code>close()</code> to be established using reference equality.
+		 * </p>
+		 *
+		 * @param env
+		 * @param lhs
+		 * @param rhs
+		 * @return
+		 */
+		private static Type[] leastUpperBounds(Subtyping.Environment env, Type[] lhs, Type[] rhs) {
+			// NOTE: this could definitely be improved. The key difficult is that we *must*
+			// return either the lhs or the rhs if they are already the glb. Could
+			// potentially help by insuring lowerbounds and upperbounds have same length.
+			final int n = lhs.length;
+			final int m = rhs.length;
+			//
+			boolean leftMatch = true;
+			boolean rightMatch = true;
+			for (int i = 0; i != Math.min(n, m) && (leftMatch || rightMatch); ++i) {
+				Type l = lhs[i];
+				Type r = rhs[i];
+				Type lub = env.leastUpperBound(l, r);
+				leftMatch &= (l == lub);
+				rightMatch &= (r == lub);
+			}
+			// Sanity check whether we're done.
+			if(leftMatch && n >= m) {
+				return lhs;
+			} else if(rightMatch && n <= m) {
+				return rhs;
+			} else if(n > m) {
+				Type[] ts = Arrays.copyOf(lhs, n);
+				for (int i = 0; i != m; ++i) {
+					ts[i] = env.leastUpperBound(lhs[i], rhs[i]);
+				}
+				return ts;
+			} else {
+				Type[] ts = Arrays.copyOf(rhs, m);
+				for (int i = 0; i != n; ++i) {
+					ts[i] = env.leastUpperBound(lhs[i], rhs[i]);
+				}
+				return ts;
+			}
+		}
+
 
 		/**
 		 * Extract the lifetime from a given reference type.
@@ -1865,24 +2513,9 @@ public interface Subtyping {
 		 * @param t
 		 * @return
 		 */
-		public static Type[] fill(int n, Type t) {
+		private static Type[] fill(int n, Type t) {
 			Type[] ts = new Type[n];
 			Arrays.fill(ts, t);
-			return ts;
-		}
-
-		/**
-		 * Create an array of a given sized filled with a given initial type.
-		 *
-		 * @param n
-		 * @param t
-		 * @return
-		 */
-		public static Type[] expand(Type[] types, int n, Type t) {
-			Type[] ts = Arrays.copyOf(types, n);
-			for (int i = types.length; i < n; ++i) {
-				ts[i] = t;
-			}
 			return ts;
 		}
 
@@ -1893,7 +2526,7 @@ public interface Subtyping {
 		 * @param opcode
 		 * @return
 		 */
-		protected int normalise(int opcode) {
+		private static int normalise(int opcode) {
 			switch (opcode) {
 			case TYPE_reference:
 			case TYPE_staticreference:

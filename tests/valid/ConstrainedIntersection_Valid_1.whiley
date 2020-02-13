@@ -1,10 +1,9 @@
 type nat is (int x) where x >= 0
-type l10 is (int x) where x < 10
 
 function f(int v) -> (int r)
 ensures r >= 0:
     //
-    if v is nat && v is l10:
+    if v is nat && v < 10:
         return 1
     //
     return 0

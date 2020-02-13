@@ -76,7 +76,7 @@ import wyil.lang.WyilFile.Decl.Link;
  * <pre>
  * function extract(int|null x) -> int:
  *    if x is int:
- *        return y
+ *        return x
  *    else:
  *        return 0
  * </pre>
@@ -1250,6 +1250,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = checkBackwardsExpression(target, expression, typing, environment);
 		// Finalise typing
 		Typing nTyping = typing.concretise();
+
+		System.out.println("BEFORE: " + typing);
+		System.out.println("AFTER : " + nTyping);
 		// Check for errors
 		if (!typing.empty() && nTyping.empty()) {
 			// No valid typings remain!
@@ -1319,7 +1322,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (int i = 0; i != typing.width(); ++i) {
 			Expr ith = typing.getExpression(i);
 			// Strip out all duplicate types to identify any form of ambiguity.
-//			Type[] types = ArrayUtils.removeDuplicates(typing.types(ith));
 			Type[] types = typing.types(ith);
 			//
 			if (ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
@@ -1616,13 +1618,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		return typing.map(row -> createExistential(row, v_expr, upperBound));
 	}
 
-	private Typing.Environment createExistential(Typing.Environment env, int v_expr, Type upperBound) {
-		// Allocate a single existential variable on the stack
-		wycc.util.Pair<Typing.Environment, Type.ExistentialVariable[]> p = env.allocate(1);
-		Type.ExistentialVariable v = p.second()[0];
-		return p.first().set(v_expr, v).bind(upperBound, v);
-	}
-
 	private Typing checkBackwardsDereference(Expr.Dereference expr, Typing typing, Environment environment) {
 		// Save handle(s) for later
 		int v_expr = typing.indexOf(expr);
@@ -1655,16 +1650,21 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = checkBackwardsExpression(expr.getFirstOperand(), typing, environment);
 		typing = checkBackwardsExpression(expr.getSecondOperand(), typing, environment);
 		// Sanity check operands are comparable
-		Typing nTyping = typing.map(row -> nonDisjoint(row, v_lhs, v_rhs, environment));
-		// Check for errors
-		if (!typing.empty() && nTyping.empty()) {
-			// Concretize to eliminate existentials
-			typing = typing.concretise();
-			//
-			syntaxError(expr, INCOMPARABLE_OPERANDS, new Tuple<>(typing.types(expr.getFirstOperand())), new Tuple<>(typing.types(expr.getSecondOperand())));
-		}
+
+		// FIXME: put back check for incompatible operands. This is tricky because it
+		// requires some concept of "intersection" between two types. It's unclear what
+		// this even means in the context of type variables unfortunately.
+
+//		Typing nTyping = typing.map(row -> nonDisjoint(row, v_lhs, v_rhs, environment));
+//		// Check for errors
+//		if (!typing.empty() && nTyping.empty()) {
+//			// Concretize to eliminate existentials
+//			typing = typing.concretise();
+//			//
+//			syntaxError(expr, INCOMPARABLE_OPERANDS, new Tuple<>(typing.types(expr.getFirstOperand())), new Tuple<>(typing.types(expr.getSecondOperand())));
+//		}
 		// Always return a boolean
-		return nTyping.map(row -> row.set(v_expr, Type.Bool));
+		return typing.map(row -> row.set(v_expr, Type.Bool));
 	}
 
 	private Typing checkBackwardsFieldDereference(Expr.FieldDereference expr, Typing typing,
@@ -1821,7 +1821,12 @@ public class FlowTypeCheck implements Compiler.Check {
 			// Save current typing to enable identification of an error.
 			Typing oTyping = typing;
 			// Bind ith parameter type with ith argument type
+			typing.map(row -> {
+				System.out.println("BINDING: " + getCallableArgument(row.get(v_concrete), _i) + " :> " + row.get(ith));
+				return row;
+			});
 			typing = typing.map(row -> row.bind(getCallableArgument(row.get(v_concrete), _i), row.get(ith)));
+			System.out.println("TYPING AFTER " + i + "th: " + typing);
 			// Sanity check for errors
 			if (!oTyping.empty() && typing.empty()) {
 				// Concretize to eliminate existentials
@@ -1993,6 +1998,33 @@ public class FlowTypeCheck implements Compiler.Check {
 	// ==========================================================================
 
 	/**
+	 * <p>
+	 * Type a given expression with a fresh type variable and given upperbound. For
+	 * example, consider this:
+	 * </p>
+	 *
+	 * <pre>
+	 * nat x = 1
+	 * </pre>
+	 *
+	 * <p>
+	 * The right-hand side should be typed as <code>?1 <: int</code> in order to
+	 * allow the final type to be determined as <code>nat</code>.
+	 * </p>
+	 *
+	 * @param env
+	 * @param v_expr
+	 * @param upperBound
+	 * @return
+	 */
+	private static Typing.Environment createExistential(Typing.Environment env, int v_expr, Type upperBound) {
+		// Allocate a single existential variable on the stack
+		wycc.util.Pair<Typing.Environment, Type.Existential[]> p = env.allocate(1);
+		Type.Existential v = p.second()[0];
+		return p.first().set(v_expr, v).bind(upperBound, v);
+	}
+
+	/**
 	 * Apply a given forking function to produce an array of forked environments.
 	 *
 	 * @param candidates The list of candidates for which the environment is forked
@@ -2033,7 +2065,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			if (template.size() > 0 && templateArguments.size() == 0) {
 				// Template required, but no explicit arguments given. Therefore, we create
 				// fresh (existential) type for each position and subsitute them through.
-				wycc.util.Pair<Typing.Environment, Type.ExistentialVariable[]> p = environment.allocate(template.size());
+				wycc.util.Pair<Typing.Environment, Type.Existential[]> p = environment.allocate(template.size());
 				environment = p.first();
 				templateArguments = new Tuple<>(p.second());
 				templateType = Type.Tuple.create(p.second());
@@ -2048,17 +2080,6 @@ public class FlowTypeCheck implements Compiler.Check {
 			environment = environment.set(v_template, templateType);
 			// Done
 			return environment.set(v_expr, concreteType.getReturn());
-		}
-	}
-
-	private Typing.Environment nonDisjoint(Typing.Environment typing, int lhs, int rhs, Subtyping.Environment subtyping) {
-		// FIXME: this needs to be fixed using an existential or similar.
-		Type left = typing.get(lhs);
-		Type right = typing.get(rhs);
-		if (subtyping.isSatisfiableSubtype(left, right) || subtyping.isSatisfiableSubtype(right, left)) {
-			return typing;
-		} else {
-			return null;
 		}
 	}
 

@@ -264,7 +264,7 @@ public interface Typing {
 		 * @param n
 		 * @return
 		 */
-		public Pair<Environment,Type.ExistentialVariable[]> allocate(int n);
+		public Pair<Environment,Type.Existential[]> allocate(int n);
 	}
 
 	/**
@@ -607,12 +607,12 @@ public interface Typing {
 
 			@Override
 			public Environment bind(Type lhs, Type rhs) {
-				System.out.println("BINDING: " + lhs + " :> " + rhs + " : " +this);
 				Subtyping.AbstractEnvironment.AbstractConstraints cs = subtyping.isSubtype(lhs, rhs);
-				System.out.println("GOT HERE: " + cs);
+				//
+				System.out.println("GOT(1): " + cs);
 				// Intersect with our constraints
 				cs = constraints.intersect(cs);
-				System.out.println("AND HERE: " + cs);
+				System.out.println("GOT(2): " + cs);
 				// Sanity check whether subtyping possible
 				if (cs.isEmpty() || rhs instanceof Type.Void) {
 					// NOTE: check against void above is required to protect against "void flows".
@@ -667,11 +667,11 @@ public interface Typing {
 			}
 
 			@Override
-			public Pair<Typing.Environment, Type.ExistentialVariable[]> allocate(int n) {
+			public Pair<Typing.Environment, Type.Existential[]> allocate(int n) {
 				Environment nenv = new Environment(subtyping, constraints, existentials + n, types);
-				Type.ExistentialVariable[] vars = new Type.ExistentialVariable[n];
+				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != n; ++i) {
-					vars[i] = new Type.ExistentialVariable(existentials + i);
+					vars[i] = new Type.Existential(existentials + i);
 				}
 				return new Pair<>(nenv, vars);
 			}

@@ -94,7 +94,7 @@ public abstract class TypeSelector {
 			case TYPE_property:
 				return create((Type.Callable) t1, (Type.Callable) t2, cache);
 			case TYPE_universal:
-				return create((Type.UniversalVariable) t1, (Type.UniversalVariable) t2, cache);
+				return create((Type.Universal) t1, (Type.Universal) t2, cache);
 			default:
 				throw new IllegalArgumentException("unexpected type encountered: " + t1);
 			}
@@ -229,7 +229,7 @@ public abstract class TypeSelector {
 		return Type.Selector.TOP;
 	}
 
-	private static Type.Selector create(Type.UniversalVariable t1, Type.UniversalVariable t2, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Universal t1, Type.Universal t2, BinaryRelation<Type> cache) {
 		return t1.equals(t2) ? Type.Selector.TOP : Type.Selector.BOTTOM;
 	}
 

@@ -4047,7 +4047,7 @@ public class WhileyFileParser {
 		int start = index;
 		Name name = parseName(scope);
 		if (name.size() == 1 && scope.isTypeVariable(name.get(0))) {
-			return annotateSourceLocation(new Type.UniversalVariable(name.get(0)), start);
+			return annotateSourceLocation(new Type.Universal(name.get(0)), start);
 		} else {
 			Tuple<Type> types = parseTypeParameters(scope);
 			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name),types), start);

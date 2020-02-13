@@ -1,6 +1,6 @@
-int Red = 1
-int Blue = 2
-int Green = 3
+RGB Red = 1
+RGB Blue = 2
+RGB Green = 3
 
 type RGB is (int x) where x == Red || x == Blue || x == Green
 

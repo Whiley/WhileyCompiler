@@ -153,7 +153,7 @@ public class AmbiguousCoercionCheck extends AbstractTypedVisitor implements Comp
 
 	private boolean checkCoercion(Type.Atom target, Type source, Environment environment,
 			BinaryRelation<Type> assumptions, SyntacticItem item) {
-		if (source instanceof Type.Void || target instanceof Type.Primitive || target instanceof Type.UniversalVariable) {
+		if (source instanceof Type.Void || target instanceof Type.Primitive || target instanceof Type.Universal) {
 			return true;
 		} else if(source instanceof Type.Nominal) {
 			Type.Nominal s = (Type.Nominal) source;

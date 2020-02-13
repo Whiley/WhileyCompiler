@@ -2,7 +2,7 @@
 
 type nat is (int n) where n >= 0
 
-type pos is (int p) where p > 0
+type pos is (nat p) where p > 0
 
 type expr is nat | {expr rhs, expr lhs}
 

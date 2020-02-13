@@ -859,7 +859,7 @@ public abstract class AbstractConsumer<T> {
 			visitTypeVoid((Type.Void) type, data);
 			break;
 		case TYPE_universal:
-			visitTypeVariable((Type.UniversalVariable) type, data);
+			visitTypeVariable((Type.Universal) type, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
@@ -958,7 +958,7 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
-	public void visitTypeVariable(Type.UniversalVariable type, T data) {
+	public void visitTypeVariable(Type.Universal type, T data) {
 
 	}
 

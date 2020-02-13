@@ -112,7 +112,7 @@ public class RecursiveTypeCheck extends AbstractVisitor implements Compiler.Chec
 		case TYPE_void:
 			return Template.Variance.UNKNOWN;
 		case TYPE_universal: {
-			Type.UniversalVariable t = (Type.UniversalVariable) type;
+			Type.Universal t = (Type.Universal) type;
 			if (t.getOperand().equals(variable)) {
 				return Template.Variance.COVARIANT;
 			} else {

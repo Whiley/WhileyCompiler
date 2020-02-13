@@ -828,7 +828,7 @@ public abstract class AbstractVisitor {
 			visitTypeByte((Type.Byte) type);
 			break;
 		case TYPE_existential:
-			visitTypeExistential((Type.ExistentialVariable) type);
+			visitTypeExistential((Type.Existential) type);
 			break;
 		case TYPE_int:
 			visitTypeInt((Type.Int) type);
@@ -864,7 +864,7 @@ public abstract class AbstractVisitor {
 			visitTypeVoid((Type.Void) type);
 			break;
 		case TYPE_universal:
-			visitTypeVariable((Type.UniversalVariable) type);
+			visitTypeVariable((Type.Universal) type);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
@@ -904,7 +904,7 @@ public abstract class AbstractVisitor {
 		visitType(type.getReturn());
 	}
 
-	public void visitTypeExistential(Type.ExistentialVariable type) {
+	public void visitTypeExistential(Type.Existential type) {
 
 	}
 
@@ -973,6 +973,6 @@ public abstract class AbstractVisitor {
 
 	}
 
-	public void visitTypeVariable(Type.UniversalVariable type) {
+	public void visitTypeVariable(Type.Universal type) {
 	}
 }
