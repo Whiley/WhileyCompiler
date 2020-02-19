@@ -24,6 +24,7 @@ import wycc.util.Pair;
 import wyil.check.FlowTypeUtils.Binding;
 import wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile.Decl.Link;
+import wyil.util.Subtyping.Constraints;
 
 /**
  * <p>
@@ -202,6 +203,13 @@ public interface Typing {
 	 */
 	public interface Environment {
 		/**
+		 * Access the subtyping environment (for convenience)
+		 *
+		 * @return
+		 */
+		public Subtyping.Environment getSubtyping();
+
+		/**
 		 * Return the "width" of this environment (i.e. the number of allocated
 		 * variables).
 		 *
@@ -240,6 +248,15 @@ public interface Typing {
 		public Environment bind(Type lhs, Type rhs);
 
 		/**
+		 * Bind a batch of subtyping constraints within this environment. This allows
+		 * for multiple binding operations to take place as a single atomic action.
+		 *
+		 * @param constraints
+		 * @return
+		 */
+		public Environment bind(Subtyping.Constraints constraints);
+
+		/**
 		 * Attempt to resolve all outstanding existential types into concrete types.
 		 *
 		 * @return
@@ -257,11 +274,19 @@ public interface Typing {
 		 */
 		public Environment set(int variable, Type type);
 
+		public Environment set(Expr variable, Type type);
+
+		/**
+		 * Allocate an existential type variables for use within this environment.
+		 *
+		 * @return
+		 */
+		public Pair<Environment,Type.Existential> allocate();
+
 		/**
 		 * Allocate a given number of existential type variables for use within this
 		 * environment.
 		 *
-		 * @param n
 		 * @return
 		 */
 		public Pair<Environment,Type.Existential[]> allocate(int n);
@@ -546,7 +571,7 @@ public interface Typing {
 			/**
 			 * Active Typing Constraints
 			 */
-			private final Subtyping.AbstractEnvironment.AbstractConstraints constraints;
+			private final Subtyping.Constraints constraints;
 			/**
 			 * Mapping of type variable indices to their current types.
 			 */
@@ -558,7 +583,7 @@ public interface Typing {
 			private final int existentials;
 
 			public Environment(Subtyping.AbstractEnvironment subtyping,
-					Subtyping.AbstractEnvironment.AbstractConstraints constraints, int n, Type... types) {
+					Subtyping.Constraints constraints, int n, Type... types) {
 				if (constraints == null) {
 					throw new IllegalArgumentException();
 				}
@@ -566,6 +591,11 @@ public interface Typing {
 				this.constraints = constraints;
 				this.existentials = n;
 				this.types = types;
+			}
+
+			@Override
+			public Subtyping.Environment getSubtyping() {
+				return subtyping;
 			}
 
 			/**
@@ -607,17 +637,15 @@ public interface Typing {
 
 			@Override
 			public Environment bind(Type lhs, Type rhs) {
-				Subtyping.AbstractEnvironment.AbstractConstraints cs = subtyping.isSubtype(lhs, rhs);
-				//
-				System.out.println("GOT(1): " + cs);
+				return bind(subtyping.isSubtype(lhs, rhs));
+			}
+
+			@Override
+			public Environment bind(Subtyping.Constraints cs) {
 				// Intersect with our constraints
 				cs = constraints.intersect(cs);
-				System.out.println("GOT(2): " + cs);
 				// Sanity check whether subtyping possible
-				if (cs.isEmpty() || rhs instanceof Type.Void) {
-					// NOTE: check against void above is required to protect against "void flows".
-					// That is where a function with no return type is e.g. assigned to a variable.
-					// Such void flows passed subtyping as above, but are non-sensical.
+				if (!cs.isSatisfiable()) {
 					return null;
 				} else {
 					return new Environment(subtyping, cs, existentials, types);
@@ -626,17 +654,17 @@ public interface Typing {
 
 			@Override
 			public Environment[] concretise() {
-				if (constraints.isEmpty()) {
+				if (!constraints.isSatisfiable()) {
 					// No constraints over this environment, hence nothing to do.
 					return new Environment[] { this };
 				} else {
-					Type[] solution = constraints.solve(existentials);
+					Constraints.Solution solution = constraints.solve(existentials);
 					//
-					if (solution == null) {
+					if (solution.isUnsatisfiable() || !solution.isComplete(existentials)) {
 						return new Environment[0];
 					} else {
 						// Creating the necessary binding function for substitution
-						Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution[(Integer) o]
+						Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution.get((Integer) o)
 								: null;
 						// Apply the substitution
 						Type[] nTypes = substitute(types, binder);
@@ -664,6 +692,12 @@ public interface Typing {
 					ntypes[variable] = type;
 					return new Environment(subtyping, constraints, existentials, ntypes);
 				}
+			}
+
+			@Override
+			public Pair<Typing.Environment, Type.Existential> allocate() {
+				Environment nenv = new Environment(subtyping, constraints, existentials + 1, types);
+				return new Pair<>(nenv, new Type.Existential(existentials));
 			}
 
 			@Override

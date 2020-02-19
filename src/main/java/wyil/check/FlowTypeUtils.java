@@ -40,6 +40,7 @@ import wyil.lang.WyilFile.Type.Field;
 import wyil.lang.WyilFile.Type.Record;
 import wyil.lang.WyilFile.Type.Union;
 import wyil.util.*;
+import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
 
 /**
  * This is an overflow class for <code>FlowTypeCheck</code>. It provides various
@@ -374,19 +375,19 @@ public class FlowTypeUtils {
 		}
 
 		@Override
-		protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2,
+		protected Subtyping.Constraints isSubtype(Type.Record t1, Type.Record t2,
 				BinaryRelation<Type> cache) {
 			Tuple<Type.Field> t1_fields = t1.getFields();
 			Tuple<Type.Field> t2_fields = t2.getFields();
 			// Sanity check number of fields are reasonable.
 			if (t1_fields.size() > t2_fields.size()) {
-				return BOTTOM;
+				return IncrementalSubtypeConstraints.BOTTOM;
 			} else if (t2.isOpen() && !t1.isOpen()) {
-				return BOTTOM;
+				return IncrementalSubtypeConstraints.BOTTOM;
 			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
-				return BOTTOM;
+				return IncrementalSubtypeConstraints.BOTTOM;
 			}
-			AbstractConstraints constraints = TOP;
+			Subtyping.Constraints constraints = TOP;
 			// NOTE: the following is O(n^2) but, in reality, will be faster than the
 			// alternative (sorting fields into an array). That's because we expect a very
 			// small number of fields in practice.
@@ -396,7 +397,7 @@ public class FlowTypeUtils {
 				for (int j = 0; j != t2_fields.size(); ++j) {
 					Type.Field f2 = t2_fields.get(j);
 					if (f1.getName().equals(f2.getName())) {
-						AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), cache);
+						Subtyping.Constraints other = isSubtype(f1.getType(), f2.getType(), cache);
 						// Matched field
 						matched = true;
 						constraints = constraints.intersect(other);
@@ -404,7 +405,7 @@ public class FlowTypeUtils {
 				}
 				// Check we actually matched the field!
 				if (!matched) {
-					return BOTTOM;
+					return IncrementalSubtypeConstraints.BOTTOM;
 				}
 			}
 			// Done
@@ -412,19 +413,19 @@ public class FlowTypeUtils {
 		}
 
 		@Override
-		protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
 			Type t1_params = t1.getParameter();
 			Type t2_params = t2.getParameter();
 			Type t1_return = t1.getReturn();
 			Type t2_return = t2.getReturn();
 			// Eliminate easy cases first
 			if (t1.getOpcode() != t2.getOpcode()) {
-				return BOTTOM;
+				return IncrementalSubtypeConstraints.BOTTOM;
 			}
 			// Check parameters (contra-variant)
-			AbstractConstraints c_params = isSubtype(t2_params, t1_params, cache);
+			Subtyping.Constraints c_params = isSubtype(t2_params, t1_params, cache);
 			// Check returns (co-variant)
-			AbstractConstraints c_returns = isSubtype(t1_return, t2_return, cache);
+			Subtyping.Constraints c_returns = isSubtype(t1_return, t2_return, cache);
 			//
 			if(t1 instanceof Type.Method) {
 				// Check lifetimes

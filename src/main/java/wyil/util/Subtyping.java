@@ -20,7 +20,9 @@ import java.util.*;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.lang.WyilFile.Type.*;
+import wyil.lang.WyilFile.Type;
+
+import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
 
 public interface Subtyping {
 
@@ -247,6 +249,7 @@ public interface Subtyping {
 		 */
 		public boolean isWithin(String inner, String outer);
 	}
+
 	/**
 	 * represents a set of subtyping constraints which must be satisfiable for a
 	 * given subtyping relationship to hold.
@@ -260,7 +263,38 @@ public interface Subtyping {
 		 *
 		 * @return
 		 */
-		public boolean isEmpty();
+		public boolean isSatisfiable();
+
+		/**
+		 * Get the number of constraints in this set.
+		 *
+		 * @return
+		 */
+		public int size();
+
+		/**
+		 * Get the largest constraint variable referenced in this constraint set, or
+		 * <code>-1</code> if none.
+		 *
+		 * @return
+		 */
+		public int max();
+
+		/**
+		 * Get the ith constraint in this set.
+		 *
+		 * @param ith
+		 * @return
+		 */
+		public Constraint get(int ith);
+
+		/**
+		 * Intersect two sets of subtyping constraints.
+		 *
+		 * @param other
+		 * @return
+		 */
+		public Constraints intersect(Constraints other);
 
 		/**
 		 * Extract best possible solutions.
@@ -268,7 +302,7 @@ public interface Subtyping {
 		 * @param n
 		 * @return
 		 */
-		public Type[] solve(int n);
+		public Solution solve(int n);
 
 		/**
 		 * Access a given row within a constraint set.
@@ -277,8 +311,78 @@ public interface Subtyping {
 		 *
 		 */
 		public interface Solution {
+			/**
+			 * Check whether a given solution is fully satisfied or not. In short, whether
+			 * or not any variables remain which have neither an upper or lower bound. Such
+			 * variables are problematic because we cannot determine a valid type for them
+			 * (i.e. as neither <code>any</code> nor <code>void</code> are valid types). If
+			 * the solution is satisfiable but not yet satisfied, then it means we need to
+			 * continue atttempt to find a solution. Note, however, than an unsatisfiable
+			 * solution is considered to be satisfied for simplicity.
+			 *
+			 * @param n
+			 * @return
+			 */
+			public boolean isComplete(int n);
 
+			/**
+			 * Check whether the given solution is satisfiable or not. That is, whether or
+			 * not there are any bounds which definitely cannot be satisfied. For example,
+			 * <code>{?0 :> int}</code> is satisfiable with <code>?0=int</code>. However,
+			 * <code>{bool :> ?0 :> int}</code> is not satisfiable.
+			 *
+			 * @param n
+			 * @param env
+			 * @return
+			 */
+			public boolean isUnsatisfiable();
+
+			public Type get(int i);
+
+			/**
+			 * Get lower bound for given variable.
+			 *
+			 * @param i
+			 * @return
+			 */
+			public Type floor(int i);
+
+			/**
+			 * Get upper bound for given variable.
+			 *
+			 * @param i
+			 * @return
+			 */
+			public Type ceil(int i);
 		}
+	}
+
+	/**
+	 * Represents a single subtyping constraint of the form <code>T1 :> T2</code>.
+	 * Such constraints can be concrete whether neither bound contains an
+	 * existential variable; or, either bound can contain an existential. For
+	 * example, <code>int|null :> int</code> is a concrete constraint which holds.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Constraint {
+		/**
+		 * For a given constraint of the form <code>T1 :> T2</code> get the <i>upper</i>
+		 * bound (in this case <code>T1</code>).
+		 *
+		 * @return
+		 */
+		public Type getUpperBound();
+
+		/**
+		 * For a given constraint of the form <code>T1 :> T2</code> get the <i>lower</i>
+		 * bound (in this case <code>T2</code>).
+		 *
+		 * @return
+		 */
+		public Type getLowerBound();
+
 	}
 
 	/**
@@ -366,15 +470,19 @@ public interface Subtyping {
 	 *
 	 */
 	public abstract static class AbstractEnvironment implements Subtyping.Environment {
+		/**
+		 * A constant representing the set of empty constraints.
+		 */
+		public final IncrementalSubtypeConstraints TOP = new IncrementalSubtypeConstraints(this);
 
 		@Override
 		public boolean isSatisfiableSubtype(Type t1, Type t2) {
-			AbstractConstraints constraints = isSubtype(t1, t2);
-			return !constraints.isEmpty();
+			Subtyping.Constraints constraints = isSubtype(t1, t2);
+			return constraints.isSatisfiable();
 		}
 
 		@Override
-		public AbstractConstraints isSubtype(Type t1, Type t2) {
+		public Subtyping.Constraints isSubtype(Type t1, Type t2) {
 			return isSubtype(t1, t2, null);
 		}
 
@@ -488,7 +596,7 @@ public interface Subtyping {
 		 * @author David J. Pearce
 		 *
 		 */
-		protected AbstractConstraints isSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
 			// FIXME: only need to check for coinductive case when both types are recursive.
 			// If either is not recursive, then are guaranteed to eventually terminate.
 			if (cache != null && cache.get(t1, t2)) {
@@ -537,6 +645,8 @@ public interface Subtyping {
 				}
 			} else if (t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
 				return TOP;
+			} else if (t1_opcode == TYPE_existential) {
+				return isSubtype((Type.Existential) t1, t2, cache);
 			} else if (t2_opcode == TYPE_existential) {
 				return isSubtype(t1, (Type.Existential) t2, cache);
 			} else if (t2_opcode == TYPE_union) {
@@ -547,23 +657,21 @@ public interface Subtyping {
 				return isSubtype((Type.Nominal) t1, (Type.Atom) t2, cache);
 			} else if (t2_opcode == TYPE_nominal) {
 				return isSubtype(t1, (Type.Nominal) t2, cache);
-			}  else if (t1_opcode == TYPE_existential) {
-				return isSubtype((Type.Existential) t1, (Type.Atom) t2, cache);
 			} else {
 				// Nothing else works except void
 				return BOTTOM;
 			}
 		}
 
-		protected AbstractConstraints isSubtype(Type.Array t1, Type.Array t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Array t1, Type.Array t2, BinaryRelation<Type> cache) {
 			return isSubtype(t1.getElement(), t2.getElement(), cache);
 		}
 
-		protected AbstractConstraints isSubtype(Type.Tuple t1, Type.Tuple t2, BinaryRelation<Type> cache) {
-			AbstractConstraints constraints = TOP;
+		protected Subtyping.Constraints isSubtype(Type.Tuple t1, Type.Tuple t2, BinaryRelation<Type> cache) {
+			Subtyping.Constraints constraints = TOP;
 			// Check elements one-by-one
 			for (int i = 0; i != t1.size(); ++i) {
-				AbstractConstraints ith = isSubtype(t1.get(i), t2.get(i), cache);
+				Subtyping.Constraints ith = isSubtype(t1.get(i), t2.get(i), cache);
 				if (ith == null || constraints == null) {
 					return BOTTOM;
 				} else {
@@ -574,8 +682,8 @@ public interface Subtyping {
 			return constraints;
 		}
 
-		protected AbstractConstraints isSubtype(Type.Record t1, Type.Record t2, BinaryRelation<Type> cache) {
-			AbstractConstraints constraints = TOP;
+		protected Subtyping.Constraints isSubtype(Type.Record t1, Type.Record t2, BinaryRelation<Type> cache) {
+			Subtyping.Constraints constraints = TOP;
 			Tuple<Type.Field> t1_fields = t1.getFields();
 			Tuple<Type.Field> t2_fields = t2.getFields();
 			// Sanity check number of fields are reasonable.
@@ -593,7 +701,7 @@ public interface Subtyping {
 					return BOTTOM;
 				}
 				// Check whether fields are subtypes or not
-				AbstractConstraints other = isSubtype(f1.getType(), f2.getType(), cache);
+				Subtyping.Constraints other = isSubtype(f1.getType(), f2.getType(), cache);
 				if (other == null || constraints == null) {
 					return BOTTOM;
 				} else {
@@ -604,22 +712,25 @@ public interface Subtyping {
 			return constraints;
 		}
 
-		protected AbstractConstraints isSubtype(Type.Reference t1, Type.Reference t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Reference t1, Type.Reference t2, BinaryRelation<Type> cache) {
 			String l1 = extractLifetime(t1);
 			String l2 = extractLifetime(t2);
 			//
 			if (!isWithin(l1, l2)) {
 				// Definitely unsafe
 				return BOTTOM;
+			} else {
+				Subtyping.Constraints first = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
+				// Sanity check what's going on
+				if (first.isSatisfiable()) {
+					return first;
+				} else {
+					return areEquivalent(t1.getElement(), t2.getElement(), cache);
+				}
 			}
-			AbstractConstraints first = areEquivalent(t1.getElement(), t2.getElement(), cache);
-			// FIXME: need to fix this
-			//AbstractConstraints second = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
-			// Join them together
-			return first;
 		}
 
-		protected AbstractConstraints isWidthSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isWidthSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
 			// NOTE: this method could be significantly improved by allowing recursive width
 			// subtyping.
 			if (t1 instanceof Type.Nominal) {
@@ -629,7 +740,7 @@ public interface Subtyping {
 				Type.Nominal n2 = (Type.Nominal) t2;
 				return isWidthSubtype(t1, n2.getConcreteType(), cache);
 			} else if (t1 instanceof Type.Record && t2 instanceof Type.Record) {
-				AbstractConstraints constraints = TOP;
+				Subtyping.Constraints constraints = TOP;
 				Type.Record r1 = (Type.Record) t1;
 				Type.Record r2 = (Type.Record) t2;
 				Tuple<Type.Field> r1_fields = r1.getFields();
@@ -642,7 +753,7 @@ public interface Subtyping {
 							// Fields have differing names
 							return BOTTOM;
 						}
-						AbstractConstraints other = areEquivalent(f1.getType(), f2.getType(), cache);
+						Subtyping.Constraints other = areEquivalent(f1.getType(), f2.getType(), cache);
 						constraints = constraints.intersect(other);
 					}
 					return constraints;
@@ -651,7 +762,7 @@ public interface Subtyping {
 			return BOTTOM;
 		}
 
-		protected AbstractConstraints isSubtype(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
 			Type t1_params = t1.getParameter();
 			Type t2_params = t2.getParameter();
 			Type t1_return = t1.getReturn();
@@ -661,8 +772,8 @@ public interface Subtyping {
 				return BOTTOM;
 			}
 			// Check parameters
-			AbstractConstraints c_params = areEquivalent(t1_params, t2_params, cache);
-			AbstractConstraints c_returns = areEquivalent(t1_return, t2_return, cache);
+			Subtyping.Constraints c_params = areEquivalent(t1_params, t2_params, cache);
+			Subtyping.Constraints c_returns = areEquivalent(t1_return, t2_return, cache);
 			//
 			if (t1 instanceof Type.Method) {
 				Type.Method m1 = (Type.Method) t1;
@@ -683,7 +794,7 @@ public interface Subtyping {
 			return c_params.intersect(c_returns);
 		}
 
-		protected AbstractConstraints isSubtype(Type.Universal t1, Type.Universal t2,
+		protected Subtyping.Constraints isSubtype(Type.Universal t1, Type.Universal t2,
 				BinaryRelation<Type> cache) {
 			if (t1.getOperand().equals(t2.getOperand())) {
 				return TOP;
@@ -692,27 +803,26 @@ public interface Subtyping {
 			}
 		}
 
-		protected AbstractConstraints isSubtype(Type.Existential t1, Type.Atom t2, BinaryRelation<Type> cache) {
-			return new AbstractConstraints(t1, t2);
+		protected Subtyping.Constraints isSubtype(Type.Existential t1, Type t2, BinaryRelation<Type> cache) {
+			return new IncrementalSubtypeConstraints(t1, t2, this);
 		}
 
-		protected AbstractConstraints isSubtype(Type t1, Type.Existential t2, BinaryRelation<Type> cache) {
-			return new AbstractConstraints(t1, t2);
+		protected Subtyping.Constraints isSubtype(Type t1, Type.Existential t2, BinaryRelation<Type> cache) {
+			return new IncrementalSubtypeConstraints(t1, t2, this);
 		}
 
-		protected AbstractConstraints isSubtype(Type t1, Type.Union t2, BinaryRelation<Type> cache) {
-			AbstractConstraints constraints = TOP;
+		protected Subtyping.Constraints isSubtype(Type t1, Type.Union t2, BinaryRelation<Type> cache) {
+			Subtyping.Constraints constraints = TOP;
 			for (int i = 0; i != t2.size(); ++i) {
-				AbstractConstraints other = isSubtype(t1, t2.get(i), cache);
+				Subtyping.Constraints other = isSubtype(t1, t2.get(i), cache);
 				constraints = constraints.intersect(other);
 			}
 			return constraints;
 		}
 
-		protected AbstractConstraints isSubtype(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
 			for (int i = 0; i != t1.size(); ++i) {
-				AbstractConstraints ith = isSubtype(t1.get(i), t2, cache);
-				System.out.println("IS SUBTYPE: " + t1.get(i) + " :> " + t2 + " = " + ith);
+				Subtyping.Constraints ith = isSubtype(t1.get(i), t2, cache);
 				// Check whether we found a match or not
 				if(ith != BOTTOM) {
 					return ith;
@@ -721,7 +831,7 @@ public interface Subtyping {
 			return BOTTOM;
 		}
 
-		protected AbstractConstraints isSubtype(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
 			Decl.Type d1 = t1.getLink().getTarget();
 			Decl.Type d2 = t2.getLink().getTarget();
 			//
@@ -736,7 +846,7 @@ public interface Subtyping {
 				Tuple<Template.Variable> template = d1.getTemplate();
 				Tuple<Type> t1_params = t1.getParameters();
 				Tuple<Type> t2_params = t2.getParameters();
-				AbstractConstraints constraints = TOP;
+				Subtyping.Constraints constraints = TOP;
 				for (int i = 0; i != template.size(); ++i) {
 					Template.Variable ith = template.get(i);
 					Template.Variance v = ith.getVariance();
@@ -777,7 +887,7 @@ public interface Subtyping {
 		 * @param lifetimes
 		 * @return
 		 */
-		protected AbstractConstraints isSubtype(Type t1, Type.Nominal t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type t1, Type.Nominal t2, BinaryRelation<Type> cache) {
 			return isSubtype(t1, t2.getConcreteType(), cache);
 		}
 
@@ -792,7 +902,7 @@ public interface Subtyping {
 		 * @param lifetimes
 		 * @return
 		 */
-		protected AbstractConstraints isSubtype(Type.Nominal t1, Type t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Nominal t1, Type t2, BinaryRelation<Type> cache) {
 			//
 			Decl.Type d1 = t1.getLink().getTarget();
 			Tuple<Expr> t1_invariant = d1.getInvariant();
@@ -822,12 +932,356 @@ public interface Subtyping {
 		 * @param lifetimes
 		 * @return
 		 */
-		protected AbstractConstraints areEquivalent(Type t1, Type t2, BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints areEquivalent(Type t1, Type t2, BinaryRelation<Type> cache) {
 			// NOTE: this is a temporary solution.
-			AbstractConstraints left = isSubtype(t1, t2, cache);
-			AbstractConstraints right = isSubtype(t2, t1, cache);
+			Subtyping.Constraints left = isSubtype(t1, t2, cache);
+			Subtyping.Constraints right = isSubtype(t2, t1, cache);
 			//
 			return left.intersect(right);
+		}
+
+
+		// ===========================================================================
+		// Solution
+		// ===========================================================================
+
+		/**
+		 * A constant representing an invalid solution to a set of subtyping
+		 * constraints. For example, given a solution <code>[?0 :> int]</code> if we
+		 * then constrain <code>bool :> ?0</code> we end up with an invalid solution.
+		 */
+		public final ConcreteSolution INVALID_SOLUTION = new ConcreteSolution(this,null,null);
+
+		/**
+		 * Represents a current best solution for a given typing problem. Specifically,
+		 * for a given set of <code>n</code> type variables, each variable has given
+		 * concrete <i>upper</i> and <i>lower</i> bounds. For example, we might have
+		 * <code>[?0 :> int, int :> ?01]</code>.
+		 *
+		 * Observe that every type within the lower and upper bounds are concrete (i.e.
+		 * do not contain existentials).
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class ConcreteSolution implements Constraints.Solution {
+			/**
+			 * The environment is needed in order to determine when this solution becomes
+			 * invalid, and also to combine upper and lower bounds using the
+			 * <code>leastUpperBound</code> and <code>greatestLowerBound</code> operators.
+			 */
+			private final AbstractEnvironment environment;
+			/**
+			 * The current set of upper bounds for given all known type variables.
+			 */
+			private final Type[] upperBounds;
+			/**
+			 * The current set of lower bounds for given all known type variables.
+			 */
+			private final Type[] lowerBounds;
+
+			public ConcreteSolution(AbstractEnvironment environment) {
+				this.environment = environment;
+				this.upperBounds = new Type[0];
+				this.lowerBounds = new Type[0];
+			}
+
+			private ConcreteSolution(AbstractEnvironment environment, Type[] upperBounds, Type[] lowerBounds) {
+				this.environment = environment;
+				this.upperBounds = upperBounds;
+				this.lowerBounds = lowerBounds;
+			}
+
+			@Override
+			public Type get(int i) {
+				Type f = floor(i);
+				if(f instanceof Type.Void) {
+					return ceil(i);
+				} else {
+					return f;
+				}
+			}
+
+			@Override
+			public Type floor(int i) {
+				if (lowerBounds == null || i >= lowerBounds.length) {
+					return Type.Void;
+				} else {
+					return lowerBounds[i];
+				}
+			}
+
+			@Override
+			public Type ceil(int i) {
+				if (upperBounds == null || i >= upperBounds.length) {
+					return Type.Any;
+				} else {
+					return upperBounds[i];
+				}
+			}
+
+			/**
+			 * Check whether a given solution is fully satisfied or not. In short, whether
+			 * or not any variables remain which have neither an upper or lower bound. Such
+			 * variables are problematic because we cannot determine a valid type for them
+			 * (i.e. as neither <code>any</code> nor <code>void</code> are valid types). If
+			 * the solution is satisfiable but not yet satisfied, then it means we need to
+			 * continue atttempt to find a solution. Note, however, than an unsatisfiable
+			 * solution is considered to be satisfied for simplicity.
+			 *
+			 * @param n
+			 * @return
+			 */
+			@Override
+			public boolean isComplete(int n) {
+				if(lowerBounds == null) {
+					return true;
+				} else {
+					for (int i = 0; i < n; ++i) {
+						Type upper = ceil(i);
+						Type lower = floor(i);
+						// NOTE: potential performance improvement here to avoid unnecessary subtype
+						// checks by only testing bounds which have actually changed.
+						if (upper instanceof Type.Any && lower instanceof Type.Void) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+
+			/**
+			 * Check whether the given solution is satisfiable or not. That is, whether or
+			 * not there are any bounds which definitely cannot be satisfied. For example,
+			 * <code>{?0 :> int}</code> is satisfiable with <code>?0=int</code>. However,
+			 * <code>{bool :> ?0 :> int}</code> is not satisfiable.
+			 *
+			 * @param n
+			 * @param env
+			 * @return
+			 */
+			@Override
+			public boolean isUnsatisfiable() {
+				return lowerBounds == null;
+			}
+
+			/**
+			 * Constrain the solution of a given variable with a given (concrete) lower
+			 * bound. If the solution becomes invalid, return BOTTOM.
+			 *
+			 * @param i           Variable to be constrained
+			 * @param nLowerBound New lowerbound to constrain with
+			 * @return
+			 */
+			public ConcreteSolution constrain(int i, Type nLowerBound) {
+				if(!isConcrete(nLowerBound)) {
+					throw new IllegalArgumentException("Upper bound should be concrete");
+				} else if(lowerBounds == null) {
+					// Intersecting an invalid solution always returns an invalid solution
+					return this;
+				}
+				Type[] nUpperBounds = upperBounds;
+				Type[] nLowerBounds = lowerBounds;
+				Type lub;
+				// Sanity check enough space
+				if(i >= nLowerBounds.length) {
+					nUpperBounds = expand(nUpperBounds, i+1, Type.Any);
+					nLowerBounds = expand(nLowerBounds, i+1, Type.Void);
+					// Lowerbound easy as nothing to do
+					lub = nLowerBound;
+				} else {
+					// Compute lower bound
+					Type lowerBound = nLowerBounds[i];
+					lub = environment.leastUpperBound(lowerBound,nLowerBound);
+					// Check whether anything actually changed
+					if(lub == lowerBound) {
+						// No change in lower bound. Therefore, if solution valid before, it is still
+						// valid now.
+						return this;
+					}
+					// Clone lower bounds as will definitely update them
+					nLowerBounds = Arrays.copyOf(nLowerBounds, nLowerBounds.length);
+				}
+				// Sanity check updated solution is still valid
+				if (!environment.isSatisfiableSubtype(nUpperBounds[i], lub) && lub instanceof Type.Any) {
+					return environment.INVALID_SOLUTION;
+				} else {
+					nLowerBounds[i] = lub;
+					return new ConcreteSolution(environment, nUpperBounds, nLowerBounds);
+				}
+			}
+
+			/**
+			 * Constraint the solution of a given variable with a given (concrete) upper
+			 * bound. If the solution becomes invalid, return BOTTOM.
+			 *
+			 * @param nUpperBound New upperbound to constrain with
+			 * @param i           Variable to be constrained
+			 * @return
+			 */
+			public ConcreteSolution constrain(Type nUpperBound, int i) {
+				if(!isConcrete(nUpperBound)) {
+					throw new IllegalArgumentException("Upper bound should be concrete");
+				} else if(lowerBounds == null) {
+					// Intersecting an invalid solution always returns an invalid solution
+					return this;
+				}
+				Type[] nUpperBounds = upperBounds;
+				Type[] nLowerBounds = lowerBounds;
+				Type glb;
+				// Sanity check enough space
+				if(i >= nLowerBounds.length) {
+					nUpperBounds = expand(nUpperBounds, i+1, Type.Any);
+					nLowerBounds = expand(nLowerBounds, i+1, Type.Void);
+					// Lowerbound easy as nothing to do
+					glb = nUpperBound;
+				} else {
+					// Compute lower bound
+					Type upperBound = nUpperBounds[i];
+					glb = environment.greatestLowerBound(upperBound,nUpperBound);
+					// Check whether anything actually changed
+					if(glb == upperBound) {
+						// No change in lower bound. Therefore, if solution valid before, it is still
+						// valid now.
+						return this;
+					}
+					// Clone lower bounds as will definitely update them
+					nUpperBounds = Arrays.copyOf(nUpperBounds, nUpperBounds.length);
+				}
+				// Sanity check updated solution is still valid
+				if(!environment.isSatisfiableSubtype(glb,nLowerBounds[i]) || glb instanceof Type.Void) {
+					return environment.INVALID_SOLUTION;
+				} else {
+					nUpperBounds[i] = glb;
+					return new ConcreteSolution(environment, nUpperBounds, nLowerBounds);
+				}
+			}
+
+			/**
+			 * Intersect this concrete solution with a set of semi-concrete subtyping
+			 * constraints. That is, all constraints have an existential on one side, and a
+			 * concrete bound on the other. The goal here is twofold. Firstly, to make sure
+			 * the runtime is proportional to the number of constraints. Secondly, to
+			 * minimise allocations as much as possible.
+			 *
+			 * @param other
+			 * @return
+			 */
+			public ConcreteSolution intersect(Subtyping.Constraints other) {
+				if(lowerBounds == null) {
+					// Intersecting an invalid solution always returns an invalid solution
+					return this;
+				} else {
+					final int m = other.max();
+					Type[] nLowerBounds = lowerBounds;
+					Type[] nUpperBounds = upperBounds;
+					//
+					if(m >= lowerBounds.length) {
+						nLowerBounds = expand(lowerBounds,m+1,Type.Void);
+						nUpperBounds = expand(upperBounds,m+1,Type.Any);
+					} else {
+						nLowerBounds = lowerBounds;
+						nUpperBounds = upperBounds;
+					}
+					//
+					for (int i = 0; i != other.size(); ++i) {
+						Subtyping.Constraint c = other.get(i);
+						Type lb = c.getLowerBound();
+						Type ub = c.getUpperBound();
+						//
+						if (lb instanceof Type.Existential) {
+							int k = ((Type.Existential) lb).get();
+							Type upper = nUpperBounds[k];
+							Type glb = environment.greatestLowerBound(upper, ub);
+							if (glb != upper && nUpperBounds == upperBounds) {
+								nUpperBounds = Arrays.copyOf(nUpperBounds, nUpperBounds.length);
+							}
+							nUpperBounds[k] = glb;
+						} else {
+							int k = ((Type.Existential) ub).get();
+							Type lower = nLowerBounds[k];
+							Type lub = environment.leastUpperBound(lower, lb);
+							if (lub != lower && nLowerBounds == lowerBounds) {
+								nLowerBounds = Arrays.copyOf(nLowerBounds, nLowerBounds.length);
+							}
+							nLowerBounds[k] = lub;
+						}
+					}
+					// Did anything change?
+					if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
+						return this;
+					} else {
+						// Have generated a new solution. However, still need to sanity check that it's
+						// satisfiable
+						for (int i = 0; i != other.size(); ++i) {
+							Subtyping.Constraint c = other.get(i);
+							Type lb = c.getLowerBound();
+							Type ub = c.getUpperBound();
+							int k;
+							// Extract the affect variable
+							if (lb instanceof Type.Existential) {
+								k = ((Type.Existential) lb).get();
+							} else {
+								k = ((Type.Existential) ub).get();
+							}
+							Type lower = nLowerBounds[k];
+							Type upper = nUpperBounds[k];
+							//
+							if (!environment.isSatisfiableSubtype(upper, lower) || upper instanceof Type.Void
+									|| lower instanceof Type.Any) {
+								// Uh oh, this is no longer satisfiable.
+								return environment.INVALID_SOLUTION;
+							}
+						}
+						// Done, it's satisfiable.
+						return new ConcreteSolution(environment, nUpperBounds, nLowerBounds);
+					}
+				}
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof ConcreteSolution) {
+					ConcreteSolution s = (ConcreteSolution) o;
+					return Arrays.equals(lowerBounds, s.lowerBounds) && Arrays.equals(upperBounds, s.upperBounds);
+				} else {
+					return false;
+				}
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
+			}
+
+			@Override
+			public String toString() {
+				if(lowerBounds == null) {
+					return "⊥";
+				} else {
+					String r = "[";
+					int n = Math.max(lowerBounds.length, upperBounds.length);
+					for (int i = 0; i != n; ++i) {
+						if (i != 0) {
+							r += ";";
+						}
+						if (i < upperBounds.length) {
+							Type upper = upperBounds[i];
+							if (!(upper instanceof Type.Any)) {
+								r += upper + " :> ";
+							}
+						}
+						r += "?" + i;
+						if (i < lowerBounds.length) {
+							Type lower = lowerBounds[i];
+							if (!(lower instanceof Type.Void)) {
+								r += " :> " + lower;
+							}
+						}
+					}
+					return r + "]";
+				}
+			}
 		}
 
 		// ===========================================================================
@@ -836,8 +1290,6 @@ public interface Subtyping {
 
 		@Override
 		public Type greatestLowerBound(Type t1, Type t2) {
-			System.out.println("GLB: " + t1 + " /\\ " + t2);
-			//
 			int t1_opcode = normalise(t1.getOpcode());
 			int t2_opcode = normalise(t2.getOpcode());
 			//
@@ -935,11 +1387,11 @@ public interface Subtyping {
 			final int n = t1_fields.size();
 			final int m = t2_fields.size();
 			// Santise input for simplicity
-			if(n > m) {
+			if(n < m) {
 				return greatestLowerBound(t2,t1);
-			}
-			// Sanity check sufficient fields.
-			if(!t1.isOpen() && n != m) {
+			} else if(!subset(t2,t2)) {
+				return Type.Void;
+			} else if (!t2.isOpen() && n != m) {
 				return Type.Void;
 			}
 			// Check matching fields
@@ -950,16 +1402,13 @@ public interface Subtyping {
 				Type.Field f = t1_fields.get(i);
 				Type t1f = f.getType();
 				Type t2f = t2.getField(f.getName());
-				if(t2f == null) {
-					// FIXME: broken when both are open records with matching numbers of fields
-					// which are different.
+				// NOTE: for open records t2f can be null
+				Type glb = (t2f == null) ? t1f : greatestLowerBound(t1f, t2f);
+				//
+				if(glb instanceof Type.Void) {
 					return Type.Void;
 				} else {
-					Type glb = types[i] = greatestLowerBound(t1f, t2f);
-					// NOTE: following check could be pushed into creation of Type.Record
-					if(glb instanceof Type.Void) {
-						return Type.Void;
-					}
+					types[i] = glb;
 					left &= (glb == t1f);
 					right &= (glb == t2f);
 				}
@@ -976,8 +1425,7 @@ public interface Subtyping {
 				Type.Field f = t1_fields.get(i);
 				nFields[i] = new Type.Field(f.getName(),types[i]);
 			}
-			// FIXME: following broken when intersection open record with closed record.
-			return new Type.Record(t1.isOpen(),new Tuple<>(nFields));
+			return new Type.Record(t1.isOpen() & t2.isOpen(),new Tuple<>(nFields));
 		}
 
 		public Type greatestLowerBound(Type.Reference t1, Type.Reference t2) {
@@ -1057,9 +1505,9 @@ public interface Subtyping {
 			final boolean d1_alias = (d1.getInvariant().size() == 0);
 			final boolean d2_alias = (d2.getInvariant().size() == 0);
 			//
-			if (isAncestorOf(t2, t1)) {
+			if (isSatisfiableSubtype(t2, t1)) {
 				return t1;
-			} else if (isAncestorOf(t1, t2)) {
+			} else if (isSatisfiableSubtype(t1, t2)) {
 				return t2;
 			} else if (d1_alias) {
 				return greatestLowerBound(t1.getConcreteType(), t2);
@@ -1108,7 +1556,7 @@ public interface Subtyping {
 			// Determine whether alias or not.
 			final boolean alias = (d1.getInvariant().size() == 0);
 			//
-			if(isAncestorOf(t2, t1)) {
+			if(isSatisfiableSubtype(t2, t1)) {
 				return t1;
 			} else if (alias) {
 				return greatestLowerBound(t1.getConcreteType(), t2);
@@ -1123,7 +1571,7 @@ public interface Subtyping {
 			// Determine whether alias or not.
 			final boolean alias = (d2.getInvariant().size() == 0);
 			//
-			if (isAncestorOf(t1, t2)) {
+			if (isSatisfiableSubtype(t1, t2)) {
 				return t2;
 			} else if (alias) {
 				return greatestLowerBound(t1, t2.getConcreteType());
@@ -1170,30 +1618,26 @@ public interface Subtyping {
 					return leastUpperBound((Type.Union) t1,(Type.Union) t2);
 				}
 			}
-			// Handle special forms for t1
-			switch(t1_opcode) {
-			case TYPE_void:
+
+			if (t1_opcode == TYPE_void || t2_opcode == TYPE_any) {
 				return t2;
-			case TYPE_any:
+			} else if (t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
 				return t1;
-			case TYPE_nominal:
-				return leastUpperBound((Type.Nominal) t1, t2);
-			case TYPE_union:
+			} else if(t1_opcode == TYPE_union && t2_opcode == TYPE_union) {
+				return leastUpperBound((Type.Union) t1, (Type.Union) t2);
+			} else if(t1_opcode == TYPE_union) {
 				return leastUpperBound((Type.Union) t1, t2);
-			}
-			// Handle special forms for t1
-			switch(t2_opcode) {
-			case TYPE_void:
-				return t1;
-			case TYPE_any:
-				return t2;
-			case TYPE_nominal:
-				return leastUpperBound(t1, (Type.Nominal) t2);
-			case TYPE_union:
+			} else if(t2_opcode == TYPE_union) {
 				return leastUpperBound(t1, (Type.Union) t2);
+			} else if(t1_opcode == TYPE_nominal && t2_opcode == TYPE_nominal) {
+				return leastUpperBound((Type.Nominal) t1, (Type.Nominal) t2);
+			} else if(t1_opcode == TYPE_nominal) {
+				return leastUpperBound((Type.Nominal) t1, t2);
+			} else if(t2_opcode == TYPE_nominal) {
+				return leastUpperBound(t1, (Type.Nominal) t2);
 			}
 			// Default case, nothing else fits.
-			return Type.Void;
+			return new Type.Union(t1,t2);
 		}
 
 		public Type leastUpperBound(Type.Array t1, Type.Array t2) {
@@ -1308,31 +1752,122 @@ public interface Subtyping {
 		}
 
 		public Type leastUpperBound(Type.Callable t1, Type.Callable t2) {
-			throw new IllegalArgumentException("implement me");
+			if(t1.getOpcode() != t2.getOpcode()) {
+				return new Type.Union(t1,t2);
+			} else {
+				Type t1_param = t1.getParameter();
+				Type t1_return = t1.getReturn();
+				Type t2_param = t2.getParameter();
+				Type t2_return = t2.getReturn();
+				Type glb_param = leastUpperBound(t1_param,t2_param);
+				Type glb_return = leastUpperBound(t1_return,t2_return);
+				//
+				if(glb_param == t1_param && glb_return == t1_return) {
+					return t1;
+				} else if(glb_param == t2_param && glb_return == t2_return) {
+					return t2;
+				} else if(t1 instanceof Type.Function) {
+					return new Type.Function(glb_param, glb_return);
+				} else if(t1 instanceof Type.Property) {
+					return new Type.Property(glb_param, glb_return);
+				} else  {
+					Type.Method m1 = (Type.Method) t1;
+					Type.Method m2 = (Type.Method) t2;
+					// FIXME: this is broken
+					return new Type.Method(glb_param, glb_return, m1.getCapturedLifetimes(),
+							m1.getLifetimeParameters());
+				}
+			}
 		}
 
 		public Type leastUpperBound(Type.Union t1, Type.Union t2) {
-			throw new IllegalArgumentException("implement me");
+			Type[] types = new Type[t1.size() * t2.size()];
+			int k = 0;
+			for(int i=0;i!=t1.size();++i) {
+				Type ith = t1.get(i);
+				for(int j=0;j!=t2.size();++j) {
+					types[k++] = leastUpperBound(ith,t2.get(j));
+				}
+			}
+			// NOTE: this is needed to adhere to the contract for lub
+			Type r = Type.Union.create(types);
+			if (r.equals(t1)) {
+				return t1;
+			} else if (r.equals(t2)) {
+				return t2;
+			} else {
+				//
+				return r;
+			}
 		}
 
 		public Type leastUpperBound(Type.Nominal t1, Type.Nominal t2) {
-			throw new IllegalArgumentException("implement me");
+			Decl.Type d1 = t1.getLink().getTarget();
+			Decl.Type d2 = t2.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean d1_alias = (d1.getInvariant().size() == 0);
+			final boolean d2_alias = (d2.getInvariant().size() == 0);
+			//
+			if (isSatisfiableSubtype(t2, t1)) {
+				return t2;
+			} else if (isSatisfiableSubtype(t1, t2)) {
+				return t1;
+			} else if (d1_alias) {
+				return leastUpperBound(t1.getConcreteType(), t2);
+			} else if (d2_alias) {
+				return leastUpperBound(t1, t2.getConcreteType());
+			} else {
+				return new Type.Union(t1, t2);
+			}
 		}
 
 		public Type leastUpperBound(Type.Nominal t1, Type t2) {
-			throw new IllegalArgumentException("implement me");
+			Decl.Type d1 = t1.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean d1_alias = (d1.getInvariant().size() == 0);
+			//
+			if (isSatisfiableSubtype(t2, t1)) {
+				return t2;
+			}  else if (d1_alias) {
+				return leastUpperBound(t1.getConcreteType(), t2);
+			} else {
+				return new Type.Union(t1, t2);
+			}
 		}
 
 		public Type leastUpperBound(Type.Union t1, Type t2) {
-			throw new IllegalArgumentException("implement me");
+			// FIXME: this is freakin' broken
+			Type[] types = ArrayUtils.removeDuplicates(ArrayUtils.append(t1.getAll(), t2));
+			if(types.length == t1.size()) {
+				return t1;
+			} else {
+				return new Type.Union(types);
+			}
 		}
 
 		public Type leastUpperBound(Type t1, Type.Nominal t2) {
-			throw new IllegalArgumentException("implement me");
+			Decl.Type d2 = t2.getLink().getTarget();
+			// Determine whether alias or not.
+			final boolean d2_alias = (d2.getInvariant().size() == 0);
+			//
+			if (isSatisfiableSubtype(t1, t2)) {
+				return t2;
+			}  else if (d2_alias) {
+				return leastUpperBound(t1,t2.getConcreteType());
+			} else {
+				return new Type.Union(t1, t2);
+			}
+
 		}
 
 		public Type leastUpperBound(Type t1, Type.Union t2) {
-			throw new IllegalArgumentException("implement me");
+			// FIXME: this is freakin' broken
+			Type[] types = ArrayUtils.removeDuplicates(ArrayUtils.append(t1, t2.getAll()));
+			if (types.length == t2.size()) {
+				return t2;
+			} else {
+				return new Type.Union(types);
+			}
 		}
 
 		// ===============================================================================
@@ -1493,757 +2028,6 @@ public interface Subtyping {
 			return Type.Union.create(ArrayUtils.removeAll(types, Type.Void));
 		}
 
-		// ===============================================================================
-		// AbstractConstraints
-		// ===============================================================================
-
-		/**
-		 * An empty solution to a set of concrete constraints
-		 */
-		private final ConcreteSolution EMPTY_CONCRETE_SOLUTION = new ConcreteSolution();
-		/**
-		 * An empty set of (potentially symbolic) constraints.
-		 */
-		private final AbstractSolution EMPTY_SYMBOLIC_SOLUTION = new AbstractSolution();
-		/**
-		 * A minimal implementation of the constraints interface.
-		 */
-		public final AbstractConstraints TOP = new AbstractConstraints(EMPTY_SYMBOLIC_SOLUTION);
-		/**
-		 * The empty constraint set which is, by construction, invalid.
-		 */
-		public final AbstractConstraints BOTTOM = new AbstractConstraints(null);
-
-		/**
-		 * Represents a set of <i>satisfiable</i> subtyping constraints. Satisfiability
-		 * is understood through the presence of concrete solutions for the constraints.
-		 * When constraint sets are intersected, new constraints are added which may
-		 * invalidate active solutions. When the number of active solutions reaches
-		 * zero, the entire constraint set is said to be <i>unsatisfiable</i> (which may
-		 * mean, for example, that the original source program is untypable).
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		protected class AbstractConstraints implements Subtyping.Constraints {
-			private final AbstractSolution row;
-
-			public AbstractConstraints(Type.Existential lhs, Type.Atom rhs) {
-				this.row = new AbstractSolution(lhs, rhs);
-			}
-
-			public AbstractConstraints(Type lhs, Type.Existential rhs) {
-				this.row = new AbstractSolution(lhs, rhs);
-			}
-
-			public AbstractConstraints(AbstractSolution row) {
-				this.row = row;
-			}
-
-			@Override
-			public boolean isEmpty() {
-				return row == null;
-			}
-
-			/**
-			 * Intersect this constraint set with another. This essentially determines the
-			 * cross-product of rows in the two constraint sets.
-			 *
-			 * @param other
-			 * @return
-			 */
-			public AbstractConstraints intersect(AbstractConstraints other) {
-				if (this == TOP || other.row == null) {
-					return other;
-				} else if (other == TOP || row == null) {
-					return this;
-				}
-				return new AbstractConstraints(row.intersect(other.row));
-			}
-
-			@Override
-			public Type[] solve(int n) {
-				if(row == null) {
-					return null;
-				} else {
-					return row.solve(n);
-				}
-			}
-
-			@Override
-			public String toString() {
-				if (row == null) {
-					return "⊥";
-				} else {
-					return row.toString();
-				}
-			}
-		}
-
-		/**
-		 * Represents a set of constraints of the form <code>? :> T</code> or
-		 * <code>T :> ?</code> and a valid solution. <i>symbolic constraints</i> are
-		 * those where <code>T</code> itself contains existential variables. In
-		 * contrast, <i>concrete constraints</i> are those where <code>T</code> itself
-		 * is concrete. In the current implementation, symbolic constraints are kept as
-		 * is whilst concrete constraints are immediately applied to the active
-		 * solution.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		private class AbstractSolution implements AbstractConstraints.Solution {
-			private final ConcreteSolution solution;
-			private final SymbolicConstraint[] constraints;
-
-			public AbstractSolution() {
-				this.solution = EMPTY_CONCRETE_SOLUTION;
-				this.constraints = new SymbolicConstraint[0];
-			}
-
-			public AbstractSolution(Type.Existential var, Type.Atom lower) {
-				if (isConcrete(lower)) {
-					this.solution = new ConcreteSolution(var.get(), Type.Any, lower);
-					this.constraints = new SymbolicConstraint[0];
-				} else {
-					this.solution = EMPTY_CONCRETE_SOLUTION;
-					this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(var, lower) };
-				}
-			}
-
-			public AbstractSolution(Type upper, Type.Existential var) {
-				if (isConcrete(upper)) {
-					this.solution = new ConcreteSolution(var.get(), upper, Type.Void);
-					this.constraints = new SymbolicConstraint[0];
-				} else {
-					this.solution = EMPTY_CONCRETE_SOLUTION;
-					this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(upper, var) };
-				}
-			}
-
-			private AbstractSolution(ConcreteSolution solution, SymbolicConstraint[] constraints) {
-				this.solution = solution;
-				this.constraints = constraints;
-			}
-
-			private AbstractSolution intersect(AbstractSolution row) {
-				ConcreteSolution s = solution.intersect(row.solution);
-				SymbolicConstraint[] c = union(constraints, row.constraints);
-				if (s == solution && c == constraints) {
-					// Handle common case
-					return this;
-				} else if (s != null) {
-					// Apply closure over these constraints
-					ConcreteSolution cs = close(s, c);
-					if (cs == solution && c == constraints) {
-						System.out.println("<<<<<<<<<<<<<<< AM TAKEN");
-						return this;
-					} else {
-						return new AbstractSolution(cs, c);
-					}
-				} else {
-					return null;
-				}
-			}
-
-			@Override
-			public int hashCode() {
-				return solution.hashCode() ^ Arrays.hashCode(constraints);
-			}
-
-			@Override
-			public boolean equals(Object o) {
-				if (o instanceof AbstractSolution) {
-					AbstractSolution r = (AbstractSolution) o;
-					return solution.equals(r.solution) && Arrays.equals(constraints, r.constraints);
-				} else {
-					return false;
-				}
-			}
-
-			public Type[] solve(int n) {
-				Type[] solutions = new Type[n];
-				for (int i = 0; i != n; ++i) {
-					Type upper = solution.ceil(i);
-					Type lower = solution.floor(i);
-					// Check whether a solution was found or not
-					if (upper instanceof Type.Any && lower instanceof Type.Void) {
-						return null;
-					} else if (lower instanceof Type.Void) {
-						solutions[i] = upper;
-					} else {
-						solutions[i] = lower;
-					}
-				}
-				return solutions;
-			}
-
-			@Override
-			public String toString() {
-				String r = "";
-				for (SymbolicConstraint constraint : constraints) {
-					if (!r.equals("")) {
-						r += ",";
-					}
-					r += constraint.first() + " :> " + constraint.second();
-				}
-				return "{" + r + "}" + solution;
-			}
-
-			private SymbolicConstraint[] union(SymbolicConstraint[] lhs, SymbolicConstraint[] rhs) {
-				SymbolicConstraint[] cs = ArrayUtils.append(lhs, rhs);
-				// Remove any duplicate items
-				cs = ArrayUtils.removeDuplicates(cs);
-				// NOTE: we could do better here by maintaining constraints in sorted order or
-				// something.
-				if (cs.length == lhs.length) {
-					return lhs;
-				} else if (cs.length == rhs.length) {
-					return rhs;
-				} else {
-					return cs;
-				}
-			}
-		}
-
-		/**
-		 * A simple implementation of a single symboling subtyping constraint.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		private static class SymbolicConstraint extends wycc.util.Pair<Type, Type> {
-			public SymbolicConstraint(Type lhs, Type rhs) {
-				super(lhs, rhs);
-			}
-
-			@Override
-			public String toString() {
-				return first() + ":>" + second();
-			}
-		}
-
-		/**
-		 * Contains current best solution for a given typing problem. Observe that every
-		 * tpe within the lower and upper bounds are concrete (i.e. do not contain
-		 * existentials).
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		private class ConcreteSolution {
-			private final Type[] upperBounds;
-			private final Type[] lowerBounds;
-
-			public ConcreteSolution() {
-				this.upperBounds = new Type[0];
-				this.lowerBounds = new Type[0];
-			}
-
-			public ConcreteSolution(int var, Type upper, Type lower) {
-				this.upperBounds = fill(var + 1, Type.Any);
-				this.lowerBounds = fill(var + 1, Type.Void);
-				this.upperBounds[var] = upper;
-				this.lowerBounds[var] = lower;
-			}
-
-			private ConcreteSolution(Type[] upperBounds, Type[] lowerBounds) {
-				this.upperBounds = upperBounds;
-				this.lowerBounds = lowerBounds;
-			}
-
-			public Type floor(int i) {
-				if (i >= lowerBounds.length) {
-					return Type.Void;
-				} else {
-					return lowerBounds[i];
-				}
-			}
-
-			public Type ceil(int i) {
-				if (i >= upperBounds.length) {
-					return Type.Any;
-				} else {
-					return upperBounds[i];
-				}
-			}
-
-			public ConcreteSolution intersect(ConcreteSolution other) {
-				Type[] nLowerBounds = leastUpperBounds(AbstractEnvironment.this, lowerBounds, other.lowerBounds);
-				Type[] nUpperBounds = greatestLowerBounds(AbstractEnvironment.this, upperBounds, other.upperBounds);
-				System.out.println("GOT: " + Arrays.toString(lowerBounds) + " \\/ " + Arrays.toString(other.lowerBounds) + " = " + Arrays.toString(nLowerBounds) + " : " + (lowerBounds == nLowerBounds) + " : " + (other.lowerBounds == nLowerBounds));
-				System.out.println("GOT: " + Arrays.toString(upperBounds) + " /\\ " + Arrays.toString(other.upperBounds) + " = " + Arrays.toString(nUpperBounds) + " : " + (upperBounds == nUpperBounds) + " : " + (other.upperBounds == nUpperBounds));
-				//
-				if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
-					return this;
-				} else {
-					final int n = Math.min(nLowerBounds.length, nUpperBounds.length);
-					// Sanity check new bounds make sense. For example, <code>int|null :> x :>
-					// int</code> is fine. However, <code>int :> x :> null</code> is definitely not.
-					// Similarly, <code>void :> x</code> is not considered viable either.
-					for (int i = 0; i != n; ++i) {
-						Type lower = nLowerBounds[i];
-						Type upper = nUpperBounds[i];
-						// NOTE: potential performance improvement here to avoid unnecessary subtype
-						// checks by only testing bounds which have actually changed.
-						if (!isSatisfiableSubtype(upper, lower)
-								// Upper bound cannot be void
-								|| isSatisfiableSubtype(Type.Void, upper)
-								// Lower bound cannot be any
-								|| isSatisfiableSubtype(lower, Type.Any)) {
-							// Solution is invalid
-							return null;
-						}
-					}
-					//
-					return new ConcreteSolution(nUpperBounds, nLowerBounds);
-				}
-			}
-
-			@Override
-			public boolean equals(Object o) {
-				if (o instanceof ConcreteSolution) {
-					ConcreteSolution s = (ConcreteSolution) o;
-					return Arrays.equals(lowerBounds, s.lowerBounds) && Arrays.equals(upperBounds, s.upperBounds);
-				} else {
-					return false;
-				}
-			}
-
-			@Override
-			public int hashCode() {
-				return Arrays.hashCode(lowerBounds) ^ Arrays.hashCode(upperBounds);
-			}
-
-			@Override
-			public String toString() {
-				String r = "[";
-				int n = Math.max(lowerBounds.length, upperBounds.length);
-				for (int i = 0; i != n; ++i) {
-					if (i != 0) {
-						r += ";";
-					}
-					if(i < upperBounds.length) {
-						Type upper = upperBounds[i];
-						if (!(upper instanceof Type.Any)) {
-							r += upper + " :> ";
-						}
-					}
-					r += "?" + i;
-					if(i < lowerBounds.length) {
-						Type lower = lowerBounds[i];
-						if (!(lower instanceof Type.Void)) {
-							r += " :> " + lower;
-						}
-					}
-				}
-				return r + "]";
-			}
-
-
-		}
-
-		// ===============================================================================
-		// isConcrete
-		// ===============================================================================
-
-		/**
-		 * Check whether a given type is "concrete" or not. That is, whether or not it
-		 * contains a nested existential type variable. For example, the type
-		 * <code>int</code> does not contain an existential variable! In contrast, the
-		 * type <code>{?1 f}</code> does. This method performs a fairly straightforward
-		 * recursive descent through the type tree search for existentiuals.
-		 *
-		 * @param type The type being tested for the presence of existential variables.
-		 * @return
-		 */
-		public static boolean isConcrete(Type type) {
-			switch (type.getOpcode()) {
-			case TYPE_any:
-			case TYPE_bool:
-			case TYPE_byte:
-			case TYPE_int:
-			case TYPE_null:
-			case TYPE_void:
-			case TYPE_universal:
-				return true;
-			case TYPE_existential:
-				return false;
-			case TYPE_array: {
-				Type.Array t = (Type.Array) type;
-				return isConcrete(t.getElement());
-			}
-			case TYPE_staticreference:
-			case TYPE_reference: {
-				Type.Reference t = (Type.Reference) type;
-				return isConcrete(t.getElement());
-			}
-			case TYPE_function:
-			case TYPE_method:
-			case TYPE_property: {
-				Type.Callable t = (Type.Callable) type;
-				return isConcrete(t.getParameter()) && isConcrete(t.getReturn());
-			}
-			case TYPE_nominal: {
-				Type.Nominal t = (Type.Nominal) type;
-				return isConcrete(t.getParameters());
-			}
-			case TYPE_tuple: {
-				Type.Tuple t = (Type.Tuple) type;
-				return isConcrete(t.getAll());
-			}
-			case TYPE_union: {
-				Type.Union t = (Type.Union) type;
-				return isConcrete(t.getAll());
-			}
-			case TYPE_record: {
-				Type.Record t = (Type.Record) type;
-				Tuple<Type.Field> fields = t.getFields();
-				for (int i = 0; i != fields.size(); ++i) {
-					if (!isConcrete(fields.get(i).getType())) {
-						return false;
-					}
-				}
-				return true;
-			}
-			default:
-				throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
-			}
-		}
-
-		private static boolean isConcrete(Tuple<Type> types) {
-			for (int i = 0; i != types.size(); ++i) {
-				if (!isConcrete(types.get(i))) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private static boolean isConcrete(Type[] types) {
-			for (int i = 0; i != types.length; ++i) {
-				if (!isConcrete(types[i])) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		// ===============================================================================
-		// Constraint Closure
-		// ===============================================================================
-
-		/**
-		 * <p>
-		 * Apply a given set of symbolic constraints to a given solution until a
-		 * fixpoint is reached. For example, consider this set of constraints and
-		 * solution:
-		 * </p>
-		 *
-		 * <pre>
-		 * { #0 :> #1 }[int|bool :> #0; #1 :> int]
-		 * </pre>
-		 *
-		 * <p>
-		 * For each constraint, there are two directions of flow: <i>upwards</i> and
-		 * <i>downwards</i>. In this case, <code>int|bool</code> flows downwards from
-		 * <code>#0</code> to <code>#1</code>. Likewise, <code>int</code> flows upwards
-		 * from <code>#1</code> to <code>#0</code>.
-		 * </p>
-		 *
-		 * <p>
-		 * To implement flow in a given direction we employ substitution. For example,
-		 * to flow downwards through <code>#0 :> #1</code> we substitute <code>#0</code>
-		 * for its current upper bound (i.e. <code>int|bool</code>). We then employ the
-		 * subtype operator to generate appropriate constraints (or not). In this case,
-		 * after substitution we'd have <code>int|bool :> #1</code> which, in fact, is
-		 * the constraint that will be reported.
-		 * </p>
-		 *
-		 * @param solution
-		 * @param constraints
-		 * @param subtyping
-		 * @param lifetimes
-		 * @return
-		 */
-		public ConcreteSolution close(ConcreteSolution solution, SymbolicConstraint[] constraints) {
-			boolean changed = true;
-			System.out.println("CLOSING: " + solution);
-			while (changed) {
-				changed = false;
-				for (int i = 0; i != constraints.length; ++i) {
-					if (solution == null) {
-						// NOTE: we can get here either from a previous iteration which invalidated this
-						// solution, or from a prior invocation with solution being null on entry.
-						return EMPTY_CONCRETE_SOLUTION;
-					} else {
-						final ConcreteSolution s = solution;
-						SymbolicConstraint ith = constraints[i];
-						Type upper = ith.first();
-						Type lower = ith.second();
-						Type cUpper = substitute(upper, solution, true);
-						Type cLower = substitute(lower, solution, false);
-						// Generate new constraints
-						AbstractConstraints left = isSubtype(cUpper, lower);
-						AbstractConstraints right = isSubtype(upper, cLower);
-						// Combine constraints
-						AbstractConstraints cs = left.intersect(right);
-						solution = solution.intersect(cs.row.solution);
-						System.out.println("*** SOLUTION: " + solution + " : " + (s!=solution));
-						// Update changed status
-						changed |= (s != solution);
-					}
-				}
-			}
-			return solution;
-		}
-
-		// ================================================================================
-		// Substitute
-		// ================================================================================
-
-		/**
-		 * Substitute all existential type variables in a given a type in either an
-		 * upper or lower bound position. For example, consider substituting into
-		 * <code>{?0 f}</code> with a solution <code>int|bool :> ?0 :> int</code>. In
-		 * the upper position, we end up with <code>{int|bool f}</code> and in the lower
-		 * position we have <code>{int f}</code>. A key issue is that positional
-		 * variance must be observed. This applies, for example, to lambda types where
-		 * parameters are <i>contravariant</i>. Thus, consider substituting into
-		 * <code>function(?0)->(?0)</code> with a solution
-		 * <code>int|bool :> ?0 :> int</code>. In the upper bound position we get
-		 * <code>function(int)->(int|bool)</code>, whilst in the lower bound position we
-		 * have <code>function(int|bool)->(int)</code>.
-		 *
-		 * @param type     The type being substituted into.
-		 * @param solution The solution being used for substitution.
-		 * @param sign     Indicates the upper (<code>true</code>) or lower bound
-		 *                 (<code>false</code>) position.
-		 * @return
-		 */
-		private static Type substitute(Type type, ConcreteSolution solution, boolean sign) {
-			switch (type.getOpcode()) {
-			case TYPE_any:
-			case TYPE_bool:
-			case TYPE_byte:
-			case TYPE_int:
-			case TYPE_null:
-			case TYPE_void:
-			case TYPE_universal:
-				return type;
-			case TYPE_existential: {
-				Type.Existential t = (Type.Existential) type;
-				int var = t.get();
-				return sign ? solution.ceil(var) : solution.floor(var);
-			}
-			case TYPE_array: {
-				Type.Array t = (Type.Array) type;
-				Type element = t.getElement();
-				Type nElement = substitute(element, solution, sign);
-				if (element == nElement) {
-					return type;
-				} else if (nElement instanceof Type.Void) {
-					return Type.Void;
-				} else if (nElement instanceof Type.Any) {
-					return Type.Any;
-				} else {
-					return new Type.Array(nElement);
-				}
-			}
-			case TYPE_staticreference:
-			case TYPE_reference: {
-				Type.Reference t = (Type.Reference) type;
-				Type element = t.getElement();
-				// NOTE: this substitution is effectively a co-variant substitution. Whilst this
-				// may seem problematic, it isn't because we'll always eliminate variables whose
-				// bounds are not subtypes of each other. For example, <code>&(int|bool) :> ?1
-				// :> &(int)</code> is not satisfiable.
-				Type nElement = substitute(element, solution, sign);
-				if (element == nElement) {
-					return type;
-				} else if (nElement instanceof Type.Void) {
-					return Type.Void;
-				} else if (nElement instanceof Type.Any) {
-					return Type.Any;
-				} else {
-					return new Type.Reference(nElement);
-				}
-			}
-			case TYPE_function:
-			case TYPE_method:
-			case TYPE_property: {
-				Type.Callable t = (Type.Callable) type;
-				Type parameters = t.getParameter();
-				Type returns = t.getReturn();
-				// NOTE: invert sign to account for contra-variance
-				Type nParameters = substitute(parameters, solution, !sign);
-				Type nReturns = substitute(returns, solution, sign);
-				if (nParameters == parameters && nReturns == returns) {
-					return type;
-				} else if (nReturns instanceof Type.Void || nParameters instanceof Type.Any) {
-					return Type.Void;
-				} else if (nReturns instanceof Type.Any || nParameters instanceof Type.Void) {
-					return Type.Any;
-				} else if (type instanceof Type.Function) {
-					return new Type.Function(nParameters, nReturns);
-				} else if (type instanceof Type.Property) {
-					return new Type.Property(nParameters, nReturns);
-				} else {
-					Type.Method m = (Type.Method) type;
-					return new Type.Method(nParameters, nReturns, m.getCapturedLifetimes(), m.getLifetimeParameters());
-				}
-			}
-			case TYPE_nominal: {
-				Type.Nominal t = (Type.Nominal) type;
-				Tuple<Type> parameters = t.getParameters();
-				// NOTE: the following is problematic in the presence of contra-variant
-				// parameter positions. However, this is not unsound per se. Rather it will just
-				// mean some variables are eliminated because their bounds are considered
-				// unsatisfiable.
-				Tuple<Type> nParameters = substitute(parameters, solution, sign);
-				if (parameters == nParameters) {
-					return type;
-				} else {
-					// Sanity check substitution makes sense
-					for (int i = 0; i != parameters.size(); ++i) {
-						Type ith = parameters.get(i);
-						if (ith instanceof Type.Void) {
-							return Type.Void;
-						} else if (ith instanceof Type.Any) {
-							return Type.Any;
-						}
-					}
-					return new Type.Nominal(t.getLink(), nParameters);
-				}
-			}
-			case TYPE_tuple: {
-				Type.Tuple t = (Type.Tuple) type;
-				Type[] elements = t.getAll();
-				Type[] nElements = substitute(elements, solution, sign);
-				if (elements == nElements) {
-					return type;
-				} else {
-					// Sanity check substitution makes sense
-					for (int i = 0; i != nElements.length; ++i) {
-						Type ith = nElements[i];
-						if (ith instanceof Type.Void) {
-							return Type.Void;
-						} else if (ith instanceof Type.Any) {
-							return Type.Any;
-						}
-					}
-					// Done
-					return Type.Tuple.create(nElements);
-				}
-			}
-			case TYPE_union: {
-				Type.Union t = (Type.Union) type;
-				Type[] elements = t.getAll();
-				Type[] nElements = substitute(elements, solution, sign);
-				if (elements == nElements) {
-					return type;
-				} else {
-					// Sanity check substitution makes sense
-					for (int i = 0; i != nElements.length; ++i) {
-						Type ith = nElements[i];
-						if (ith instanceof Type.Void) {
-							return Type.Void;
-						} else if (ith instanceof Type.Any) {
-							return Type.Any;
-						}
-					}
-					// Done
-					return Type.Union.create(nElements);
-				}
-			}
-			case TYPE_record: {
-				Type.Record t = (Type.Record) type;
-				Tuple<Type.Field> fields = t.getFields();
-				Tuple<Type.Field> nFields = substituteFields(fields, solution, sign);
-				if (fields == nFields) {
-					return type;
-				} else {
-					// Sanity check substitution makes sense
-					for (int i = 0; i != nFields.size(); ++i) {
-						Type ith = nFields.get(i).getType();
-						if (ith instanceof Type.Void) {
-							return Type.Void;
-						} else if (ith instanceof Type.Any) {
-							return Type.Any;
-						}
-					}
-					return new Type.Record(t.isOpen(), nFields);
-				}
-			}
-			default:
-				throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
-			}
-		}
-
-		private static Tuple<Type> substitute(Tuple<Type> types, ConcreteSolution solution, boolean sign) {
-			for (int i = 0; i != types.size(); ++i) {
-				Type t = types.get(i);
-				Type n = substitute(t, solution, sign);
-				if (t != n) {
-					// Committed to change
-					Type[] nTypes = new Type[types.size()];
-					// Copy all visited so far over
-					System.arraycopy(types.getAll(), 0, nTypes, 0, i + 1);
-					// Continue substitution
-					for (; i < nTypes.length; ++i) {
-						nTypes[i] = substitute(types.get(i), solution, sign);
-					}
-					// Done
-					return new Tuple<>(nTypes);
-				}
-			}
-			return types;
-		}
-
-		private static Tuple<Type.Field> substituteFields(Tuple<Type.Field> fields, ConcreteSolution solution,
-				boolean sign) {
-			for (int i = 0; i != fields.size(); ++i) {
-				Type.Field t = fields.get(i);
-				Type.Field n = substituteField(t, solution, sign);
-				if (t != n) {
-					// Committed to change
-					Type.Field[] nFields = new Type.Field[fields.size()];
-					// Copy all visited so far over
-					System.arraycopy(fields.getAll(), 0, nFields, 0, i + 1);
-					// Continue substitution
-					for (; i < nFields.length; ++i) {
-						nFields[i] = substituteField(fields.get(i), solution, sign);
-					}
-					// Done
-					return new Tuple<>(nFields);
-				}
-			}
-			return fields;
-		}
-
-		private static Type.Field substituteField(Type.Field field, ConcreteSolution solution, boolean sign) {
-			Type type = field.getType();
-			Type nType = substitute(type, solution, sign);
-			if (type == nType) {
-				return field;
-			} else {
-				return new Type.Field(field.getName(), nType);
-			}
-		}
-
-		private static Type[] substitute(Type[] types, ConcreteSolution solution, boolean sign) {
-			Type[] nTypes = types;
-			for (int i = 0; i != nTypes.length; ++i) {
-				Type t = types[i];
-				Type n = substitute(t, solution, sign);
-				if (t != n && nTypes == types) {
-					nTypes = Arrays.copyOf(types, types.length);
-				}
-				nTypes[i] = n;
-			}
-			return nTypes;
-		}
-
 		// ================================================================================
 		// isAncestorOf
 		// ================================================================================
@@ -2267,7 +2051,6 @@ public interface Subtyping {
 		 * @return
 		 */
 		private static boolean isAncestorOf(Type parent, Type child) {
-			System.out.println("*** ANCESTOROF: " + parent + " ~> " + child);
 			int t1_opcode = normalise(parent.getOpcode());
 			int t2_opcode = normalise(child.getOpcode());
 			if(parent.equals(child)) {
@@ -2359,6 +2142,7 @@ public interface Subtyping {
 			return false;
 		}
 
+
 		// ================================================================================
 		// Helpers
 		// ================================================================================
@@ -2366,131 +2150,22 @@ public interface Subtyping {
 		private static final Tuple<Expr> EMPTY_INVARIANT = new Tuple<>();
 
 		/**
-		 * <p>
-		 * Computer the greatest lower bound of two arrays of types which may have
-		 * different sizes. In the case of a smaller array, all elements are assumed to
-		 * be <code>Type.Any</code>. Example calculations are thus:
-		 * </p>
+		 * Expand a given array whilst using a given element to fill the new spaces.
 		 *
-		 * <pre>
-		 * [] /\ [int] ==========> [int]
-		 * [int] /\ [int] =======> [int]
-		 * [int] /\ [bool] ======> [void]
-		 * [int,bool] /\ [nat] ==> [nat,bool]
-		 * [int] /\ [nat,bool] ==> [nat,bool]
-		 * </pre>
-		 *
-		 * <p>
-		 * A key requirement for this method is that, if the result equals either of the
-		 * parameters, then it must return that parameter. The allows termination for
-		 * <code>close()</code> to be established using reference equality.
-		 * </p>
-		 *
-		 * @param env
-		 * @param lhs
-		 * @param rhs
+		 * @param src
+		 * @param n
+		 * @param t
 		 * @return
 		 */
-		private static Type[] greatestLowerBounds(Subtyping.Environment env, Type[] lhs, Type[] rhs) {
-			// NOTE: this could definitely be improved. The key difficult is that we *must*
-			// return either the lhs or the rhs if they are already the glb. Could
-			// potentially help by insuring lowerbounds and upperbounds have same length.
-			final int n = lhs.length;
-			final int m = rhs.length;
-			//
-			boolean leftMatch = true;
-			boolean rightMatch = true;
-			for (int i = 0; i != Math.min(n, m) && (leftMatch || rightMatch); ++i) {
-				Type l = lhs[i];
-				Type r = rhs[i];
-				Type glb = env.greatestLowerBound(l, r);
-				leftMatch &= (l == glb);
-				rightMatch &= (r == glb);
+		private static Type[] expand(Type[] src, int n, Type t) {
+			final int m = src.length;
+			Type[] nSrc = new Type[n];
+			System.arraycopy(src, 0, nSrc, 0, m);
+			for(int i=m;i<n;++i) {
+				nSrc[i] = t;
 			}
-			// Sanity check whether we're done.
-			if(leftMatch && n >= m) {
-				return lhs;
-			} else if(rightMatch && n <= m) {
-				return rhs;
-			}
-			// Result doesn't match either parameter. Therefore, construct a fresh solution
-			if(n > m) {
-				Type[] ts = Arrays.copyOf(lhs, n);
-				for (int i = 0; i != m; ++i) {
-					ts[i] = env.greatestLowerBound(lhs[i], rhs[i]);
-				}
-				return ts;
-			} else {
-				Type[] ts = Arrays.copyOf(rhs, m);
-				for (int i = 0; i != n; ++i) {
-					ts[i] = env.greatestLowerBound(lhs[i], rhs[i]);
-				}
-				return ts;
-			}
+			return nSrc;
 		}
-
-		/**
-		 * <p>
-		 * Computer the least upper bound of two arrays of types which may have
-		 * different sizes. In the case of a smaller array, all elements are assumed to
-		 * be <code>Type.Void</code>. Example calculations are thus:
-		 * </p>
-		 *
-		 * <pre>
-		 * [] \/ [int] ==========> [int]
-		 * [int] \/ [int] =======> [int]
-		 * [int] \/ [bool] ======> [int|bool]
-		 * [int,bool] \/ [nat] ==> [nat,bool]
-		 * [int] \/ [nat,bool] ==> [nat,bool]
-		 * </pre>
-		 *
-		 * <p>
-		 * A key requirement for this method is that, if the result equals either of the
-		 * parameters, then it must return that parameter. The allows termination for
-		 * <code>close()</code> to be established using reference equality.
-		 * </p>
-		 *
-		 * @param env
-		 * @param lhs
-		 * @param rhs
-		 * @return
-		 */
-		private static Type[] leastUpperBounds(Subtyping.Environment env, Type[] lhs, Type[] rhs) {
-			// NOTE: this could definitely be improved. The key difficult is that we *must*
-			// return either the lhs or the rhs if they are already the glb. Could
-			// potentially help by insuring lowerbounds and upperbounds have same length.
-			final int n = lhs.length;
-			final int m = rhs.length;
-			//
-			boolean leftMatch = true;
-			boolean rightMatch = true;
-			for (int i = 0; i != Math.min(n, m) && (leftMatch || rightMatch); ++i) {
-				Type l = lhs[i];
-				Type r = rhs[i];
-				Type lub = env.leastUpperBound(l, r);
-				leftMatch &= (l == lub);
-				rightMatch &= (r == lub);
-			}
-			// Sanity check whether we're done.
-			if(leftMatch && n >= m) {
-				return lhs;
-			} else if(rightMatch && n <= m) {
-				return rhs;
-			} else if(n > m) {
-				Type[] ts = Arrays.copyOf(lhs, n);
-				for (int i = 0; i != m; ++i) {
-					ts[i] = env.leastUpperBound(lhs[i], rhs[i]);
-				}
-				return ts;
-			} else {
-				Type[] ts = Arrays.copyOf(rhs, m);
-				for (int i = 0; i != n; ++i) {
-					ts[i] = env.leastUpperBound(lhs[i], rhs[i]);
-				}
-				return ts;
-			}
-		}
-
 
 		/**
 		 * Extract the lifetime from a given reference type.
@@ -2504,19 +2179,6 @@ public interface Subtyping {
 			} else {
 				return "*";
 			}
-		}
-
-		/**
-		 * Create an array of a given sized filled with a given initial type.
-		 *
-		 * @param n
-		 * @param t
-		 * @return
-		 */
-		private static Type[] fill(int n, Type t) {
-			Type[] ts = new Type[n];
-			Arrays.fill(ts, t);
-			return ts;
 		}
 
 		/**
@@ -2539,5 +2201,92 @@ public interface Subtyping {
 			//
 			return opcode;
 		}
+	}
+
+
+	// ===============================================================================
+	// isConcrete
+	// ===============================================================================
+
+	/**
+	 * Check whether a given type is "concrete" or not. That is, whether or not it
+	 * contains a nested existential type variable. For example, the type
+	 * <code>int</code> does not contain an existential variable! In contrast, the
+	 * type <code>{?1 f}</code> does. This method performs a fairly straightforward
+	 * recursive descent through the type tree search for existentiuals.
+	 *
+	 * @param type The type being tested for the presence of existential variables.
+	 * @return
+	 */
+	public static boolean isConcrete(Type type) {
+		switch (type.getOpcode()) {
+		case TYPE_any:
+		case TYPE_bool:
+		case TYPE_byte:
+		case TYPE_int:
+		case TYPE_null:
+		case TYPE_void:
+		case TYPE_universal:
+			return true;
+		case TYPE_existential:
+			return false;
+		case TYPE_array: {
+			Type.Array t = (Type.Array) type;
+			return isConcrete(t.getElement());
+		}
+		case TYPE_staticreference:
+		case TYPE_reference: {
+			Type.Reference t = (Type.Reference) type;
+			return isConcrete(t.getElement());
+		}
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property: {
+			Type.Callable t = (Type.Callable) type;
+			return isConcrete(t.getParameter()) && isConcrete(t.getReturn());
+		}
+		case TYPE_nominal: {
+			Type.Nominal t = (Type.Nominal) type;
+			return isConcrete(t.getParameters());
+		}
+		case TYPE_tuple: {
+			Type.Tuple t = (Type.Tuple) type;
+			return isConcrete(t.getAll());
+		}
+		case TYPE_union: {
+			Type.Union t = (Type.Union) type;
+			return isConcrete(t.getAll());
+		}
+		case TYPE_record: {
+			Type.Record t = (Type.Record) type;
+			Tuple<Type.Field> fields = t.getFields();
+			for (int i = 0; i != fields.size(); ++i) {
+				if (!isConcrete(fields.get(i).getType())) {
+					return false;
+				}
+			}
+			return true;
+		}
+		default:
+			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
+		}
+	}
+
+	public static boolean isConcrete(Tuple<Type> types) {
+		for (int i = 0; i != types.size(); ++i) {
+			if (!isConcrete(types.get(i))) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public static boolean isConcrete(Type[] types) {
+		for (int i = 0; i != types.length; ++i) {
+			if (!isConcrete(types[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 }
