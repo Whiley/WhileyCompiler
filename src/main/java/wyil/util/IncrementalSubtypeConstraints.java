@@ -212,7 +212,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 				}
 				r += constraint;
 			}
-			return "{" + r + "}";
+			return "{" + r + "}" + candidate;
 		}
 	}
 
@@ -261,13 +261,13 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 				// for solving some constraint forms.
 				if(!u && l) {
 //					System.out.println("*** CONSTRAINING " + i + " :> " + upper);
-					ConcreteSolution guess = solve(solution.constrain(i, upper), n);
+					ConcreteSolution guess = solve(solution.constrain(i, upper), 0);
 					if(guess.isComplete(nVariables) && !guess.isUnsatisfiable()) {
 						return guess;
 					}
 				} else if(u && !l) {
 //					System.out.println("*** CONSTRAINING " + i + " <: " + lower);
-					ConcreteSolution guess = solve(solution.constrain(lower, i), n);
+					ConcreteSolution guess = solve(solution.constrain(lower, i), 0);
 					if(guess.isComplete(nVariables) && !guess.isUnsatisfiable()) {
 						return guess;
 					}
@@ -343,7 +343,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	 * @return
 	 */
 	private static ConcreteSolution close(ConcreteSolution solution, SymbolicConstraint[] constraints, int n, Subtyping.Environment env) {
-//		System.out.println(">>> CLOSING: " + solution + " " + Arrays.toString(constraints));
+//		System.out.println(">>> CLOSING(" + n + "): " + solution + " " + Arrays.toString(constraints));
 		boolean changed = true;
 		int k = 0;
 		// NOTE: this is a very HOT loop on benchmarks with large array initialisers.
@@ -376,6 +376,8 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 			}
 			// Update changed status
 			changed |= (s != solution);
+			// If stuff has changed we need to go around again with everything.
+			n = 0;
 			k++;
 		}
 //		System.out.println("<<< CLOSING : " + solution);

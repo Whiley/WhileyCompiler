@@ -16,10 +16,13 @@ package wyil.util;
 import static wyil.lang.WyilFile.*;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
+import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
 
 import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
@@ -355,6 +358,128 @@ public interface Subtyping {
 			 */
 			public Type ceil(int i);
 		}
+
+
+		/**
+		 * <p>
+		 * Represents a matrix of possible typings under consideration. Each environment
+		 * (row) in this matrix represents one possible typing, whilst each column
+		 * represents the possible types for a given (sub)expression. If no rows remain,
+		 * then there are no possible typings and, hence, the original expression is
+		 * untypeable. On the other hand if, at the end, we have more than one possible
+		 * typing then the original expression is ambiguous. For example, consider
+		 * typing this statement:
+		 * </p>
+		 *
+		 * <pre>
+		 * int x = ...
+		 * bool y = f(x) == 1
+		 * </pre>
+		 *
+		 * <p>
+		 * The expression <code>f(x) + 1</code> gives rise to typing matrices with four
+		 * columns. One possible matrix might be:
+		 * </p>
+		 *
+		 * <pre>
+		 *  |0   |1   |2   |3   |
+		 * -+----+----+----+----+
+		 * 0|int |bool|int |bool|
+		 * -+----+----+----+----+
+		 * 1|int |int |int |bool|
+		 * -+----+----+----+----+
+		 * </pre>
+		 *
+		 * <p>
+		 * The first column corresponds to the type for subexpression <code>x</code>.
+		 * Since <code>x</code> is declared as having <code>int</code>, every entry is
+		 * <code>int</code>. The second column corresponds to the type of expression
+		 * <code>f(x)</code>. In this case, function <code>f()</code> must be overloaded
+		 * to return <code>bool</code> in one case and <code>int</code> in another. The
+		 * third column represents subexpression <code>1</code> and the fourth column
+		 * represents the complete expression.
+		 * </p>
+		 * <p>
+		 * In the above, it should be clear that the first row is invalid since we
+		 * cannot compare a boolean with an integer. As such, at some point during
+		 * typing, this row will be "invalidated" (i.e. removed from the set of typings
+		 * under consideration).
+		 * </p>
+		 *
+		 * @author David J Pearce
+		 *
+		 */
+		public interface Set {
+
+			/**
+			 * Return flag indicating whether there are no valid typings remaining, or not.
+			 * This is equivalent to <code>height() == 0</code>.
+			 *
+			 * @return
+			 */
+			public boolean empty();
+
+			/**
+			 * Return the number of typings that remain under consideration. If this is
+			 * zero, then there are no valid typings and the original expression cannot be
+			 * typed. On the other hand, if there is more than one valid typing (at the end)
+			 * then the original expression is ambiguous.
+			 *
+			 * @return
+			 */
+			public int height();
+
+			/**
+			 * Get the ith row of this typing.
+			 *
+			 * @param ith
+			 * @return
+			 */
+			public Subtyping.Constraints get(int ith);
+
+			/**
+			 * Attempt to collapse all rows down together using a given comparator. This may
+			 * or may not result in a typing which can be finalised.
+			 *
+			 * @param fn
+			 * @return
+			 */
+			public Set fold(Comparator<Subtyping.Constraints> fn);
+
+			/**
+			 * Apply a given function to all rows of the typing matrix producing a
+			 * potentially updated set of typing constraints. As part of this process, rows
+			 * may be invalidated if they fail to meet some criteria.
+			 *
+			 * @param fn The mapping function which is applied to each row. This returns
+			 *           either an updated row, or <code>null</code>, if the row is
+			 *           invalidated.
+			 * @return
+			 */
+			public Set map(Function<Subtyping.Constraints, Subtyping.Constraints> fn);
+
+			/**
+			 * Project each row of the typing matrix into zero or more rows, thus producing
+			 * a potentially updated constraint set. As part of this process, rows may be
+			 * added or removed based on various criteria.
+			 *
+			 * @param fn The mapping function which is applied to each row. This returns
+			 *           zero or more updated rows. Note that it should not return
+			 *           <code>null</code>.
+			 * @return
+			 */
+			public Set project(Function<Subtyping.Constraints, Subtyping.Constraints[]> fn);
+
+			/**
+			 * Apply a function to each row of the typing matrix, producing an array of
+			 * results
+			 *
+			 * @param fn The mapping function which is applied to each row. This returns
+			 *           some element for each row.
+			 * @return
+			 */
+			public void foreach(Consumer<Subtyping.Constraints> fn);
+		}
 	}
 
 	/**
@@ -382,7 +507,6 @@ public interface Subtyping {
 		 * @return
 		 */
 		public Type getLowerBound();
-
 	}
 
 	/**
@@ -474,6 +598,16 @@ public interface Subtyping {
 		 * A constant representing the set of empty constraints.
 		 */
 		public final IncrementalSubtypeConstraints TOP = new IncrementalSubtypeConstraints(this);
+
+		/**
+		 * A constant representing the set of empty constraint sets.
+		 */
+		public final AbstractConstraintsSet EMPTY_CONSTRAINT_SET = new AbstractConstraintsSet(TOP);
+
+		/**
+		 * A constant representing an invalidated set of constraints
+		 */
+		public final AbstractConstraintsSet BOTTOM_CONSTRAINT_SET = new AbstractConstraintsSet(BOTTOM);
 
 		@Override
 		public boolean isSatisfiableSubtype(Type t1, Type t2) {
@@ -940,6 +1074,146 @@ public interface Subtyping {
 			return left.intersect(right);
 		}
 
+		// ===========================================================================
+		// AbstractConstraintsSet
+		// ===========================================================================
+
+		/**
+		 * Provides a straightforward implementation of <code>Typing</code>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class AbstractConstraintsSet implements Constraints.Set {
+			/**
+			 * Square matrix of typing environments
+			 */
+			private final Subtyping.Constraints[] rows;
+
+			public AbstractConstraintsSet(Subtyping.Constraints... rows) {
+				this.rows = rows;
+			}
+
+			/**
+			 * Return flag indicating whether there are no valid typings remaining, or not.
+			 * This is equivalent to <code>height() == 0</code>.
+			 *
+			 * @return
+			 */
+			@Override
+			public boolean empty() {
+				return rows.length == 0;
+			}
+
+			/**
+			 * Return the number of typings that remain under consideration. If this is
+			 * zero, then there are no valid typings and the original expression cannot be
+			 * typed. On the other hand, if there is more than one valid typing (at the end)
+			 * then the original expression is ambiguous.
+			 *
+			 * @return
+			 */
+			@Override
+			public int height() {
+				return rows.length;
+			}
+
+			@Override
+			public Subtyping.Constraints get(int ith) {
+				return rows[ith];
+			}
+
+			@Override
+			public Constraints.Set fold(Comparator<Subtyping.Constraints> comparator) {
+				if (rows.length <= 1) {
+					return this;
+				} else {
+					throw new IllegalArgumentException("Implement Me");
+				}
+			}
+
+			/**
+			 * Apply a given function to all rows of the typing matrix producing a
+			 * potentially updated set of typing constraints. As part of this process, rows
+			 * may be invalidated if they fail to meet some criteria.
+			 *
+			 * @param fn The mapping function which is applied to each row. This returns
+			 *           either an updated row, or <code>null</code>, if the row is
+			 *           invalidated.
+			 * @return
+			 */
+			@Override
+			public Constraints.Set map(Function<Subtyping.Constraints, Subtyping.Constraints> fn) {
+				Subtyping.Constraints[] nrows = rows;
+				//
+				for (int i = 0; i < rows.length; i = i + 1) {
+					final Subtyping.Constraints before = nrows[i];
+					Subtyping.Constraints after = fn.apply(before);
+					if (before == after) {
+						// No change, so do nothing
+						continue;
+					} else if (nrows == rows) {
+						// something changed, so clone
+						nrows = Arrays.copyOf(rows, rows.length);
+					}
+					nrows[i] = after.isSatisfiable() ? after : null;
+				}
+				// Remove all invalid rows
+				nrows = ArrayUtils.removeAll(nrows, null);
+				// Create new typing
+				return new AbstractConstraintsSet(nrows);
+			}
+
+			/**
+			 * Project each row of the typing matrix into zero or more rows, thus producing
+			 * a potentially updated constraint set. As part of this process, rows may be
+			 * added or removed based on various criteria.
+			 *
+			 * @param fn The mapping function which is applied to each row. This returns
+			 *           zero or more updated rows. Note that it should not return
+			 *           <code>null</code>.
+			 * @return
+			 */
+			@Override
+			public Constraints.Set project(Function<Subtyping.Constraints, Subtyping.Constraints[]> fn) {
+				ArrayList<Subtyping.Constraints> nrows = new ArrayList<>();
+				//
+				for (int i = 0; i < rows.length; i = i + 1) {
+					final Subtyping.Constraints before = rows[i];
+					Subtyping.Constraints[] after = fn.apply(before);
+					for (int j = 0; j != after.length; ++j) {
+						Subtyping.Constraints jth = after[j];
+						if (jth.isSatisfiable()) {
+							nrows.add(jth);
+						}
+					}
+				}
+				//
+				Subtyping.Constraints[] arr = nrows.toArray(new Subtyping.Constraints[nrows.size()]);
+				// Create new typing
+				return new AbstractConstraintsSet(arr);
+			}
+
+			@Override
+			public void foreach(Consumer<Subtyping.Constraints> fn) {
+				for (int i = 0; i != rows.length; ++i) {
+					fn.accept(rows[i]);
+				}
+			}
+
+			@Override
+			public String toString() {
+				if (rows.length == 0) {
+					return "_|_";
+				} else {
+					String r = "";
+					for (Subtyping.Constraints row : rows) {
+						r = r + row;
+					}
+					return r;
+				}
+			}
+		}
 
 		// ===========================================================================
 		// Solution
@@ -1042,7 +1316,7 @@ public interface Subtyping {
 						Type lower = floor(i);
 						// NOTE: potential performance improvement here to avoid unnecessary subtype
 						// checks by only testing bounds which have actually changed.
-						if (upper instanceof Type.Any && lower instanceof Type.Void) {
+						if (upper instanceof Type.Any || lower instanceof Type.Void) {
 							return false;
 						}
 					}
@@ -1103,7 +1377,7 @@ public interface Subtyping {
 					nLowerBounds = Arrays.copyOf(nLowerBounds, nLowerBounds.length);
 				}
 				// Sanity check updated solution is still valid
-				if (!environment.isSatisfiableSubtype(nUpperBounds[i], lub) && lub instanceof Type.Any) {
+				if (!environment.isSatisfiableSubtype(nUpperBounds[i], lub) || lub instanceof Type.Any) {
 					return environment.INVALID_SOLUTION;
 				} else {
 					nLowerBounds[i] = lub;
@@ -1265,17 +1539,21 @@ public interface Subtyping {
 						if (i != 0) {
 							r += ";";
 						}
-						if (i < upperBounds.length) {
-							Type upper = upperBounds[i];
-							if (!(upper instanceof Type.Any)) {
-								r += upper + " :> ";
+						if(i < upperBounds.length && i < lowerBounds.length && upperBounds[i].equals(lowerBounds[i])) {
+							r += "?" + i + "=" + upperBounds[i];
+						} else {
+							if (i < upperBounds.length) {
+								Type upper = upperBounds[i];
+								if (!(upper instanceof Type.Any)) {
+									r += upper + " :> ";
+								}
 							}
-						}
-						r += "?" + i;
-						if (i < lowerBounds.length) {
-							Type lower = lowerBounds[i];
-							if (!(lower instanceof Type.Void)) {
-								r += " :> " + lower;
+							r += "?" + i;
+							if (i < lowerBounds.length) {
+								Type lower = lowerBounds[i];
+								if (!(lower instanceof Type.Void)) {
+									r += " :> " + lower;
+								}
 							}
 						}
 					}
@@ -2157,7 +2435,7 @@ public interface Subtyping {
 		 * @param t
 		 * @return
 		 */
-		private static Type[] expand(Type[] src, int n, Type t) {
+		public static Type[] expand(Type[] src, int n, Type t) {
 			final int m = src.length;
 			Type[] nSrc = new Type[n];
 			System.arraycopy(src, 0, nSrc, 0, m);

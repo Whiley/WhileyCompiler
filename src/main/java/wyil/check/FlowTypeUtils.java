@@ -27,7 +27,7 @@ import java.util.function.Predicate;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.check.FlowTypeUtils.Binding;
+import wyil.check.FlowTypeUtils.*;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -36,10 +36,13 @@ import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Array;
+import wyil.lang.WyilFile.Type.Existential;
 import wyil.lang.WyilFile.Type.Field;
 import wyil.lang.WyilFile.Type.Record;
 import wyil.lang.WyilFile.Type.Union;
 import wyil.util.*;
+import wyil.util.Subtyping.Constraints;
+
 import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
 
 /**
@@ -368,6 +371,7 @@ public class FlowTypeUtils {
 		public Set<Decl.Variable> getRefinedVariables() {
 			return refinements.keySet();
 		}
+
 		@Override
 		protected boolean isSubtype(Tuple<Expr> lhs, Tuple<Expr> rhs) {
 			// NOTE: in principle, we could potentially do more here.
@@ -375,8 +379,7 @@ public class FlowTypeUtils {
 		}
 
 		@Override
-		protected Subtyping.Constraints isSubtype(Type.Record t1, Type.Record t2,
-				BinaryRelation<Type> cache) {
+		protected Subtyping.Constraints isSubtype(Type.Record t1, Type.Record t2, BinaryRelation<Type> cache) {
 			Tuple<Type.Field> t1_fields = t1.getFields();
 			Tuple<Type.Field> t2_fields = t2.getFields();
 			// Sanity check number of fields are reasonable.
@@ -384,7 +387,7 @@ public class FlowTypeUtils {
 				return IncrementalSubtypeConstraints.BOTTOM;
 			} else if (t2.isOpen() && !t1.isOpen()) {
 				return IncrementalSubtypeConstraints.BOTTOM;
-			} else if(!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
+			} else if (!t1.isOpen() && t1_fields.size() != t2.getFields().size()) {
 				return IncrementalSubtypeConstraints.BOTTOM;
 			}
 			Subtyping.Constraints constraints = TOP;
@@ -427,7 +430,7 @@ public class FlowTypeUtils {
 			// Check returns (co-variant)
 			Subtyping.Constraints c_returns = isSubtype(t1_return, t2_return, cache);
 			//
-			if(t1 instanceof Type.Method) {
+			if (t1 instanceof Type.Method) {
 				// Check lifetimes
 				Type.Method m1 = (Type.Method) t1;
 				Type.Method m2 = (Type.Method) t2;
@@ -446,6 +449,7 @@ public class FlowTypeUtils {
 			// Done
 			return c_params.intersect(c_returns);
 		}
+
 		@Override
 		public String toString() {
 			String r = "{";
@@ -501,6 +505,177 @@ public class FlowTypeUtils {
 			Environment nenv = new Environment(refinements, withins);
 			nenv.withins.put(inner, outers);
 			return nenv;
+		}
+	}
+
+	// ===============================================================================================================
+	// Typing
+	// ===============================================================================================================
+
+	/**
+	 * Represents the high-level data structure used in typing expressions.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Typing {
+		private final Subtyping.AbstractEnvironment subtyping;
+		private final ArrayList<Frame> frames;
+		private final Constraints.Set matrix;
+		private final int nVariables;
+
+		public Typing(Subtyping.AbstractEnvironment subtyping) {
+			this.subtyping = subtyping;
+			this.frames = new ArrayList<>();
+			this.matrix = subtyping.EMPTY_CONSTRAINT_SET;
+			this.nVariables = 0;
+		}
+
+		private Typing(Subtyping.AbstractEnvironment subtyping, ArrayList<Frame> frames, Constraints.Set matrix,
+				int n) {
+			this.subtyping = subtyping;
+			this.frames = frames;
+			this.matrix = matrix;
+			this.nVariables = n;
+		}
+
+		public boolean empty() {
+			return matrix.empty();
+		}
+
+		public int height() {
+			return matrix.height();
+		}
+
+		public Type.Existential top() {
+			return new Type.Existential(nVariables - 1);
+		}
+
+		public Typing invalidate() {
+			return new Typing(subtyping, frames, subtyping.BOTTOM_CONSTRAINT_SET, 0);
+		}
+
+		public Typing push(Expr expr) {
+			ArrayList<Frame> nFrames = new ArrayList<>(frames);
+			nFrames.add(new Frame(expr, nVariables, nVariables));
+			return new Typing(subtyping, nFrames, matrix, nVariables + 1);
+		}
+
+		/**
+		 * Allocate a new type variable with a given upper bound.
+		 *
+		 * @param expr
+		 * @param upper
+		 * @return
+		 */
+		public Typing push(Type upper, Expr expr) {
+			// Allocate new variable
+			Type.Existential var = new Type.Existential(nVariables);
+			// Apply upper bound constraint
+			Subtyping.Constraints first = subtyping.isSubtype(upper, var);
+			return bind(expr, nVariables, nVariables, first);
+		}
+
+		public Typing push(Type upper1, Type upper2, Expr expr) {
+			// Allocate new variable
+			Type.Existential var = new Type.Existential(nVariables);
+			// Apply upper bound constraint
+			Subtyping.Constraints first = subtyping.isSubtype(upper1, var);
+			Subtyping.Constraints second = subtyping.isSubtype(upper2, var);
+			return bind(expr, nVariables, nVariables, first.intersect(second));
+		}
+
+		public Typing push(Type upper, Expr expr, Type lower) {
+			// Allocate new variable
+			Type.Existential var = new Type.Existential(nVariables);
+			// Apply upper bound constraint
+			Subtyping.Constraints first = subtyping.isSubtype(upper, var);
+			Subtyping.Constraints second = subtyping.isSubtype(var, lower);
+			return bind(expr, nVariables, nVariables, first.intersect(second));
+		}
+
+		private Typing bind(Expr expr, int first, int last, Subtyping.Constraints constraints) {
+			ArrayList<Frame> nFrames = new ArrayList<>(frames);
+			nFrames.add(new Frame(expr, first, last));
+			//
+			Constraints.Set nMatrix = matrix.map(row -> row.intersect(constraints));
+			// Done
+			return new Typing(subtyping, nFrames, nMatrix, last + 1);
+		}
+//
+//		public Typing bind(Type u1, Type l1) {
+//			Subtyping.Constraints first = subtyping.isSubtype(u1, l1);
+//			return new Typing(subtyping, frames, matrix.map(row -> row.intersect(first)));
+//		}
+//
+//		public Typing bind(Type u1, Type l1, Type u2, Type l2) {
+//			Subtyping.Constraints first = subtyping.isSubtype(u1, l1);
+//			Subtyping.Constraints second = subtyping.isSubtype(u2, l2);
+//			return new Typing(subtyping, frames, matrix.map(row -> row.intersect(first.intersect(second))));
+//		}
+
+		public Typing project(Function<Subtyping.Constraints, Subtyping.Constraints[]> fn) {
+			return new Typing(subtyping, frames, matrix.project(fn), nVariables);
+		}
+
+		/**
+		 * Attempt to finalise the typing by giving a type to all expressions. This
+		 * requires that we can boil all valid typings down to a single winning typing.
+		 *
+		 * @param typing
+		 * @param environment
+		 * @return
+		 */
+		public boolean finalise(Expr expression) {
+			SyntacticHeap heap = expression.getHeap();
+			// Attempt to collapse all valid typings down to a single "best" typing. If this
+			// succeeds then we can continue with the finalisation process. Otherwise, we
+			// have some form of ambiguity.
+			Constraints.Set nMatrix = matrix.fold((cs1, cs2) -> {
+				throw new IllegalArgumentException("Implement me");
+			});
+			// Sanity check what we have left (i.e. whether we acutally have a winner or
+			// not).
+			if (height() == 0) {
+				// Typing was already invalid. In this case, a syntax error must have already
+				// been raised upstream.
+				return false;
+			} else if (height() > 1) {
+				// Typing is ambiguous. In this case, we need to report a syntax error.
+				return false;
+			}
+			// Extract winning solution to all known type variables.
+			Subtyping.Constraints winner = nMatrix.get(0);
+			Subtyping.Constraints.Solution solution = winner.solve(nVariables);
+			//
+			System.out.println("GOT SOLUTION: " + solution);
+			// Finally, give a type to each expression
+			for (Typing.Frame f : frames) {
+				Expr ith = f.expression;
+				if (ith instanceof Expr.Invoke || ith instanceof Expr.LambdaAccess) {
+					// FIXME: this is broken
+				} else if (ith != null) {
+					// FIXME: do we need null check?
+					Type type = solution.get(f.first);
+					ith.setType(heap.allocate(type));
+				}
+			}
+			//
+			return true;
+		}
+
+		public static class Frame {
+			private final Expr expression;
+			private final int first;
+			private final int last;
+			private final Object data;
+
+			public Frame(Expr expression, int n, int m) {
+				this.expression = expression;
+				this.first = n;
+				this.last = m;
+				this.data = null;
+			}
 		}
 	}
 

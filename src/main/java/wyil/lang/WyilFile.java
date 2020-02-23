@@ -4989,6 +4989,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
 		public static final Array IntArray = new Array(Int);
+		public static final Array AnyArray = new Array(Any);
 		public static final Null Null = new Null();
 
 		/**
