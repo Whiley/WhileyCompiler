@@ -57,71 +57,79 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	 * The empty constraint set which is, by construction, invalid.
 	 */
 	public static final IncrementalSubtypeConstraints BOTTOM = new IncrementalSubtypeConstraints(0,
-			(ConcreteSolution) null, 0, null, null);
-
+			(ConcreteSolution) null, true, null, null);
+	/**
+	 * A parent pointer to the enclosing environment. This is necessary for access
+	 * to the subtype operator.
+	 */
 	private final Subtyping.AbstractEnvironment environment;
+	/**
+	 * The set of subtyping constraints that this class embodies. The key is that we
+	 * want to able to solve these constraints easily to determine whether or not
+	 * they are satisfiable.
+	 */
+	private Subtyping.Constraint[] constraints;
+	/**
+	 * A cache of the maximum number of variables used in any of the constraints.
+	 * This just helps us know when we have a complete solution or not.
+	 */
 	private final int nVariables;
-	private SymbolicConstraint[] constraints;
-	private ConcreteSolution candidate;
-	private int index;
+	/**
+	 * The best current (valid) solution to the given set of constraints. This can
+	 * be <code>null</code> if none computed yet. It can also be out-of-date with
+	 * respect to the given set of constraints.
+	 */
+	private Subtyping.Constraints.Solution candidate;
+	/**
+	 * Dirty flag indicates whether or not the candidate solution is up to date with
+	 * the given constraints. This allows us to be lazy in closing over constraints
+	 * whilst they are being accumulated through intersection operations prior to an
+	 * satisfiability query.
+	 */
+	private boolean dirty;
 
-	public IncrementalSubtypeConstraints(Subtyping.AbstractEnvironment environment) {
+	public IncrementalSubtypeConstraints(Subtyping.AbstractEnvironment environment, Subtyping.Constraint... constraints) {
 		this.environment = environment;
-		this.constraints = new SymbolicConstraint[0];
+		this.constraints = ArrayUtils.removeDuplicates(constraints);
 		this.candidate = null;
-		this.index = 0;
-		this.nVariables = 0 ;
+		this.nVariables = Subtyping.numberOfVariables(constraints);
 	}
 
-	public IncrementalSubtypeConstraints(Type.Existential lhs, Type rhs, Subtyping.AbstractEnvironment environment) {
-		this.environment = environment;
-		this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(lhs, rhs) };
-		this.candidate = null;
-		this.nVariables = lhs.get()+1;
-	}
-
-	public IncrementalSubtypeConstraints(Type lhs, Type.Existential rhs, Subtyping.AbstractEnvironment environment) {
-		this.environment = environment;
-		this.constraints = new SymbolicConstraint[] { new SymbolicConstraint(lhs, rhs) };
-		this.candidate = null;
-		this.index = 0;
-		this.nVariables = rhs.get()+1;
-	}
-
-	private IncrementalSubtypeConstraints(int n, ConcreteSolution candidate, int index,
-			SymbolicConstraint[] constraints, Subtyping.AbstractEnvironment environment) {
+	private IncrementalSubtypeConstraints(int n, Subtyping.Constraints.Solution candidate, boolean dirty,
+			Subtyping.Constraint[] constraints, Subtyping.AbstractEnvironment environment) {
 		this.environment = environment;
 		this.constraints = constraints;
 		this.candidate = candidate;
-		this.index = index;
+		this.dirty = dirty;
 		this.nVariables = n;
 	}
+	private static int COUNTER = 0;
 	@Override
 	public boolean isSatisfiable() {
 //		System.out.println("===========================================================");
-//		System.out.println("SATISFIABLE? " + Arrays.toString(constraints) + "(" + index + "): " + candidate);
+//		System.out.println("SATISFIABLE?" + (++COUNTER) + " " + Arrays.toString(constraints) + "(" + dirty + "," + nVariables +"): " + candidate);
 //		System.out.println("===========================================================");
 		if (constraints == null) {
 			return false;
 		} else if (candidate == null) {
-			this.candidate = initialise(new ConcreteSolution(environment),constraints,0);
-			this.candidate = solve(candidate,0);
-			this.index = constraints.length;
+			this.candidate = solve(environment.EMPTY_SOLUTION);
+			this.dirty = false;
 		} else {
-			if (index < constraints.length) {
-				this.candidate = initialise(candidate,constraints,index);
-				this.candidate = solve(candidate,index);
-				this.index = constraints.length;
+			if (dirty) {
+				this.candidate = solve(candidate);
+				this.dirty = false;
 			}
 			if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
 				// NOTE: we must attempt a restart here because the incremental solution may
 				// have got stuck in a local minima during the propagation process.
-				this.candidate = initialise(new ConcreteSolution(environment),constraints,0);
-				this.candidate = solve(candidate,0);
-				this.index = constraints.length;
+				this.candidate = solve(environment.EMPTY_SOLUTION);
+				this.dirty = false;
 			}
 		}
 		if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
+//			System.out.println("===========================================================");
+//			System.out.println("UNSATISFIABLE " + (++COUNTER) + " " + Arrays.toString(constraints) + "(" + dirty + "," + nVariables +"): " + candidate);
+//			System.out.println("===========================================================");
 			// Failed
 			constraints = null;
 			return false;
@@ -140,13 +148,33 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	}
 
 	@Override
-	public int max() {
+	public int maxVariable() {
 		return nVariables - 1;
 	}
 
 	@Override
-	public SymbolicConstraint get(int ith) {
+	public Subtyping.Constraint get(int ith) {
 		return constraints[ith];
+	}
+
+	@Override
+	public IncrementalSubtypeConstraints intersect(Subtyping.Constraint... oconstraints) {
+		if (constraints == null) {
+			return BOTTOM;
+		} else {
+			// NOTE: performance optimisation possible here
+			Subtyping.Constraint[] nconstraints = ArrayUtils.append(constraints, oconstraints);
+			// Remove all duplicates
+			nconstraints = ArrayUtils.removeDuplicates(nconstraints);
+			// Check what happened
+			if (nconstraints.length == constraints.length) {
+				// Nothing changed!
+				return this;
+			} else {
+				int max = Math.max(nVariables, Subtyping.numberOfVariables(oconstraints));
+				return new IncrementalSubtypeConstraints(max, candidate, true, nconstraints, environment);
+			}
+		}
 	}
 
 	@Override
@@ -167,21 +195,24 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 			return BOTTOM;
 		} else {
 			// NOTE: performance optimisation possible here
-			SymbolicConstraint[] nconstraints = ArrayUtils.append(constraints, other.constraints);
-			//
+			Subtyping.Constraint[] nconstraints = ArrayUtils.append(constraints, other.constraints);
+			// Remove all duplicates
+			nconstraints = ArrayUtils.removeDuplicates(nconstraints);
+			// Check what happened
 			if (nconstraints.length == constraints.length) {
-				// Nothing changed
+				// Nothing changed!
 				return this;
 			} else {
-				// FIXME: could attempt to update solution here
-				return new IncrementalSubtypeConstraints(Math.max(nVariables, other.nVariables), candidate, index,
+				// FIXME: could attempt to update solution here which might provide some
+				// performance gains.
+				return new IncrementalSubtypeConstraints(Math.max(nVariables, other.nVariables), candidate, true,
 						nconstraints, environment);
 			}
 		}
 	}
 
 	@Override
-	public ConcreteSolution solve(int n) {
+	public Subtyping.Constraints.Solution solve(int n) {
 		return candidate;
 	}
 
@@ -206,53 +237,39 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 			return "⊥";
 		} else {
 			String r = "";
-			for (SymbolicConstraint constraint : constraints) {
+			for (Subtyping.Constraint constraint : constraints) {
 				if (!r.equals("")) {
 					r += ",";
 				}
 				r += constraint;
 			}
-			return "{" + r + "}" + candidate;
+			String c = (candidate == null) ? "_" : candidate.toString();
+			return "{" + r + "}" + c;
 		}
 	}
 
-	/**
-	 * Update a given solution with all semi-concrete constraints. Such constraints
-	 * do not need to be closed over, since they imply concrete bounds on their
-	 * respective variables.
-	 *
-	 * @param solution
-	 * @param constraints
-	 * @param start
-	 * @return
-	 */
-	private static ConcreteSolution initialise(ConcreteSolution solution, SymbolicConstraint[] constraints, int start) {
-		for (int i = start; i < constraints.length; ++i) {
-			SymbolicConstraint ith = constraints[i];
-			Type upper = ith.first();
-			Type lower = ith.second();
-			// Only consider fully symbolic constraints?
-			if (Subtyping.isConcrete(upper)) {
-				Type.Existential e = (Type.Existential) lower;
-				solution = solution.constrain(upper, e.get());
-			} else if (Subtyping.isConcrete(lower)) {
-				Type.Existential e = (Type.Existential) upper;
-				solution = solution.constrain(e.get(), lower);
-			}
+	public static String tab(int t) {
+		String r = "";
+		for(int i=0;i<t;++i) {
+			r = r + "\t";
 		}
-		return solution;
+		return r;
 	}
-
-	private ConcreteSolution solve(ConcreteSolution solution, int n) {
-//		System.out.println(">>>>>>>>>>>>> SOLVING : " + solution);
-		solution = close(solution, constraints, n, environment);
+	private static int sCounter = 0;
+	private static int sTab = 0;
+	private Subtyping.Constraints.Solution solve(Subtyping.Constraints.Solution solution) {
+//		System.out.println(tab(sTab) + "**************************************************************");
+//		System.out.println(tab(sTab) + "**** SOLVING(" + sCounter++ + "): " + nVariables + " : " + solution);
+//		System.out.println(tab(sTab) + "**************************************************************");
+		sTab++;
+		solution = close(solution, constraints, environment);
 		// Sanity check whether we've finished or not
 		if (!solution.isComplete(nVariables)) {
 			// Solution not satisfiable yet. This maybe because there are unsolved
 			// variables. To resolve these, we have to find "half-open" variables and close
 			// them. Unfortunately, the order in which we do this matters. Therefore, in the
 			// worst case, we may have to try all possible orderings.
-			for(int i=(nVariables-1);i>=0;--i) {
+			for(int i=0;i<nVariables;i++) {
 				Type upper = solution.ceil(i);
 				Type lower = solution.floor(i);
 				boolean u = (upper instanceof Type.Any);
@@ -260,49 +277,27 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 				// Check for half-open cases which allow an obvious guess. Guessing is critical
 				// for solving some constraint forms.
 				if(!u && l) {
-//					System.out.println("*** CONSTRAINING " + i + " :> " + upper);
-					ConcreteSolution guess = solve(solution.constrain(i, upper), 0);
+//					System.out.println(tab(sTab) + "*** CONSTRAINING " + i + " :> " + upper);
+					Subtyping.Constraints.Solution guess = solve(solution.constrain(i, upper));
 					if(guess.isComplete(nVariables) && !guess.isUnsatisfiable()) {
+						sTab--;
 						return guess;
 					}
+//					System.out.println(tab(sTab) + "!!! IGNORING GUESS");
 				} else if(u && !l) {
-//					System.out.println("*** CONSTRAINING " + i + " <: " + lower);
-					ConcreteSolution guess = solve(solution.constrain(lower, i), 0);
+//					System.out.println(tab(sTab) + "*** CONSTRAINING " + i + " <: " + lower);
+					Subtyping.Constraints.Solution guess = solve(solution.constrain(lower, i));
 					if(guess.isComplete(nVariables) && !guess.isUnsatisfiable()) {
+						sTab--;
 						return guess;
 					}
+//					System.out.println(tab(sTab) + "!!! IGNORING GUESS");
 				}
 			}
 		}
-//		System.out.println("<<<<<<<<<<< SOLVING : " + solution);
+		sTab--;
+//		System.out.println(tab(sTab) + "<<<<<<<<<<< SOLVING : " + solution);
 		return solution;
-	}
-
-	/**
-	 * A simple implementation of a single symboling subtyping constraint.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	private static class SymbolicConstraint extends wycc.util.Pair<Type, Type> implements Subtyping.Constraint {
-		public SymbolicConstraint(Type upper, Type lower) {
-			super(upper, lower);
-		}
-
-		@Override
-		public String toString() {
-			return first() + ":>" + second();
-		}
-
-		@Override
-		public Type getUpperBound() {
-			return first();
-		}
-
-		@Override
-		public Type getLowerBound() {
-			return second();
-		}
 	}
 
 	// ===============================================================================
@@ -342,45 +337,28 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	 * @param lifetimes
 	 * @return
 	 */
-	private static ConcreteSolution close(ConcreteSolution solution, SymbolicConstraint[] constraints, int n, Subtyping.Environment env) {
-//		System.out.println(">>> CLOSING(" + n + "): " + solution + " " + Arrays.toString(constraints));
+	private static int CLOSING_COUNT=0;
+	private static Subtyping.Constraints.Solution close(Subtyping.Constraints.Solution solution,
+			Subtyping.Constraint[] constraints, Subtyping.Environment env) {
+//		System.out.println(tab(sTab) + ">>> CLOSING(" + CLOSING_COUNT++ +"): " + solution + " " + Arrays.toString(constraints));
 		boolean changed = true;
 		int k = 0;
-		// NOTE: this is a very HOT loop on benchmarks with large array initialisers.
+		// NOTE: this is a very HOT loop on benchmarks with large array initialCLOSINGisers.
 		// The bound is introduced to prevent against infinite loops.
 		while (changed && k < 10) {
 			changed = false;
-			final ConcreteSolution s = solution;
+			final Subtyping.Constraints.Solution s = solution;
 			//
-			for (int i = n; i < constraints.length; ++i) {
-				SymbolicConstraint ith = constraints[i];
-				Type upper = ith.first();
-				Type lower = ith.second();
-				// NOTE: this could be optimised
-				if(!Subtyping.isConcrete(upper) && !Subtyping.isConcrete(lower)) {
-					Type cUpper = substitute(upper, solution, true);
-					Type cLower = substitute(lower, solution, false);
-//					System.out.println("BEFORE: " + upper + ":>" + lower + " : " + solution);
-					// NOTE: constraints generated in the following are all guaranteed to have one
-					// bound as an existential and one as a concrete type.
-					if(!(cUpper instanceof Type.Any)) {
-//						System.out.println("AFTER(1): " + cUpper + ":>" + lower);
-						solution = solution.intersect(env.isSubtype(cUpper, lower));
-					}
-					if(!(cLower instanceof Type.Void)) {
-//						System.out.println("AFTER(2): " + upper + ":>" + cLower);
-						solution = solution.intersect(env.isSubtype(upper, cLower));
-					}
-//					System.out.println("SOLUTION[" + k + "](" + i + "/" + constraints.length + "): " + ith + " & " + solution + " : " + (s!=solution));
-				}
+			for (int i = 0; i < constraints.length; ++i) {
+				Subtyping.Constraint ith = constraints[i];
+				solution = ith.apply(solution);
+//				System.out.println(tab(sTab) + "SOLUTION[" + k + "](" + i + "/" + constraints.length + "): " + ith + " & " + solution + " : " + (s!=solution));
 			}
 			// Update changed status
 			changed |= (s != solution);
-			// If stuff has changed we need to go around again with everything.
-			n = 0;
 			k++;
 		}
-//		System.out.println("<<< CLOSING : " + solution);
+//		System.out.println(tab(sTab) + "<<< CLOSING : " + solution);
 		return solution;
 	}
 
@@ -407,7 +385,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	 *                 (<code>false</code>) position.
 	 * @return
 	 */
-	private static Type substitute(Type type, ConcreteSolution solution, boolean sign) {
+	public static Type substitute(Type type, Subtyping.Constraints.Solution solution, boolean sign) {
 		switch (type.getOpcode()) {
 		case TYPE_any:
 		case TYPE_bool:
@@ -566,7 +544,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 		}
 	}
 
-	private static Tuple<Type> substitute(Tuple<Type> types, ConcreteSolution solution, boolean sign) {
+	private static Tuple<Type> substitute(Tuple<Type> types, Subtyping.Constraints.Solution solution, boolean sign) {
 		for (int i = 0; i != types.size(); ++i) {
 			Type t = types.get(i);
 			Type n = substitute(t, solution, sign);
@@ -586,7 +564,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 		return types;
 	}
 
-	private static Tuple<Type.Field> substituteFields(Tuple<Type.Field> fields, ConcreteSolution solution,
+	private static Tuple<Type.Field> substituteFields(Tuple<Type.Field> fields, Subtyping.Constraints.Solution solution,
 			boolean sign) {
 		for (int i = 0; i != fields.size(); ++i) {
 			Type.Field t = fields.get(i);
@@ -607,7 +585,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 		return fields;
 	}
 
-	private static Type.Field substituteField(Type.Field field, ConcreteSolution solution, boolean sign) {
+	private static Type.Field substituteField(Type.Field field, Subtyping.Constraints.Solution solution, boolean sign) {
 		Type type = field.getType();
 		Type nType = substitute(type, solution, sign);
 		if (type == nType) {
@@ -617,7 +595,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 		}
 	}
 
-	private static Type[] substitute(Type[] types, ConcreteSolution solution, boolean sign) {
+	private static Type[] substitute(Type[] types, Subtyping.Constraints.Solution solution, boolean sign) {
 		Type[] nTypes = types;
 		for (int i = 0; i != nTypes.length; ++i) {
 			Type t = types[i];

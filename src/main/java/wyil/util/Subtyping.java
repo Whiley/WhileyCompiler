@@ -24,6 +24,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
+import wyil.util.Subtyping.Constraints.Solution;
 
 import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
 
@@ -281,7 +282,7 @@ public interface Subtyping {
 		 *
 		 * @return
 		 */
-		public int max();
+		public int maxVariable();
 
 		/**
 		 * Get the ith constraint in this set.
@@ -290,6 +291,14 @@ public interface Subtyping {
 		 * @return
 		 */
 		public Constraint get(int ith);
+
+		/**
+		 * Intersect against one or more subtype constraints.
+		 *
+		 * @param other
+		 * @return
+		 */
+		public Constraints intersect(Subtyping.Constraint... other);
 
 		/**
 		 * Intersect two sets of subtyping constraints.
@@ -308,12 +317,23 @@ public interface Subtyping {
 		public Solution solve(int n);
 
 		/**
-		 * Access a given row within a constraint set.
+		 * Represents a solution to a set of subtyping constraints. Each type variable
+		 * has a given lower and upper bound. As the solution evolves, these bounds are
+		 * narrowed done. If we end up where the lower bound is not a subtype of the
+		 * upper bound for some variable, then the solution is invalid.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public interface Solution {
+			/**
+			 * Return the number of variables which are currently considered in this
+			 * solution.
+			 *
+			 * @return
+			 */
+			public int size();
+
 			/**
 			 * Check whether a given solution is fully satisfied or not. In short, whether
 			 * or not any variables remain which have neither an upper or lower bound. Such
@@ -340,6 +360,12 @@ public interface Subtyping {
 			 */
 			public boolean isUnsatisfiable();
 
+			/**
+			 * Get current solution for ith variable.
+			 *
+			 * @param i
+			 * @return
+			 */
 			public Type get(int i);
 
 			/**
@@ -357,6 +383,26 @@ public interface Subtyping {
 			 * @return
 			 */
 			public Type ceil(int i);
+
+			/**
+			 * Constrain the solution of a given variable with a given (concrete) lower
+			 * bound. If the solution becomes invalid, return BOTTOM.
+			 *
+			 * @param i           Variable to be constrained
+			 * @param nLowerBound New lowerbound to constrain with
+			 * @return
+			 */
+			public Solution constrain(int i, Type nLowerBound);
+
+			/**
+			 * Constraint the solution of a given variable with a given (concrete) upper
+			 * bound. If the solution becomes invalid, return BOTTOM.
+			 *
+			 * @param nUpperBound New upperbound to constrain with
+			 * @param i           Variable to be constrained
+			 * @return
+			 */
+			public Solution constrain(Type nUpperBound, int i);
 		}
 
 
@@ -493,20 +539,323 @@ public interface Subtyping {
 	 */
 	public interface Constraint {
 		/**
-		 * For a given constraint of the form <code>T1 :> T2</code> get the <i>upper</i>
-		 * bound (in this case <code>T1</code>).
+		 * Return the largest constraint variable referenced in this constraint, or
+		 * <code>-1</code> if none present.
 		 *
 		 * @return
 		 */
-		public Type getUpperBound();
-
+		public int maxVariable();
 		/**
-		 * For a given constraint of the form <code>T1 :> T2</code> get the <i>lower</i>
-		 * bound (in this case <code>T2</code>).
+		 * Apply this constraint to a given solution producing a potentially updated
+		 * solution.
 		 *
+		 * @param solution
 		 * @return
 		 */
-		public Type getLowerBound();
+		public Constraints.Solution apply(Constraints.Solution solution);
+	}
+
+	// ===========================================================================
+	// Constraints
+	// ===========================================================================
+
+	/**
+	 * A simple implementation of a single symboling subtyping constraint.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class LowerBoundConstraint implements Subtyping.Constraint {
+		private final Subtyping.AbstractEnvironment environment;
+		private final int variable;
+		private final Type lowerBound;
+
+		public LowerBoundConstraint(Subtyping.AbstractEnvironment environment, Type.Existential variable, Type lower) {
+			if(lower == null || lower instanceof Type.Void) {
+				throw new IllegalArgumentException("invalid lower bound (" + lower + ")");
+			}
+			this.environment = environment;
+			this.variable = variable.get();
+			this.lowerBound = lower;
+		}
+
+		@Override
+		public int maxVariable() {
+			return Math.max(variable, Subtyping.maxVariable(lowerBound));
+		}
+
+		@Override
+		public Constraints.Solution apply(Constraints.Solution solution) {
+			Type cUpper = solution.ceil(variable);
+			if(!(cUpper instanceof Type.Any || cUpper instanceof Type.Void)) {
+				Subtyping.Constraints cs = environment.isSubtype(cUpper, lowerBound);
+				// Propagate information downwards
+				for(int i=0;i!=cs.size();++i) {
+					solution = cs.get(i).apply(solution);
+				}
+			}
+			if (lowerBound instanceof Type.Void) {
+				return solution;
+			} else {
+				// Propagate information upwards
+				Type cLower = IncrementalSubtypeConstraints.substitute(lowerBound, solution, false);
+				// Here, cLower.isConcrete() guaranteed true
+				return solution.constrain(variable, cLower);
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof LowerBoundConstraint) {
+				LowerBoundConstraint c = (LowerBoundConstraint) o;
+				return variable == c.variable && lowerBound.equals(c.lowerBound);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return variable ^ lowerBound.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return "?" + variable + ":>" + lowerBound;
+		}
+	}
+
+	public static class UpperBoundConstraint implements Subtyping.Constraint {
+		private final Subtyping.AbstractEnvironment environment;
+		private final Type upperBound;
+		private final int variable;
+
+		public UpperBoundConstraint(Subtyping.AbstractEnvironment environment, Type upper, Type.Existential variable) {
+			if(upper == null || upper instanceof Type.Any) {
+				throw new IllegalArgumentException("invalid upper bound");
+			}
+			this.environment = environment;
+			this.upperBound = upper;
+			this.variable = variable.get();
+		}
+
+		@Override
+		public int maxVariable() {
+			return Math.max(variable, Subtyping.maxVariable(upperBound));
+		}
+
+		@Override
+		public Constraints.Solution apply(Constraints.Solution solution) {
+			Type cLower = solution.floor(variable);
+			if(!(cLower instanceof Type.Void || cLower instanceof Type.Any)) {
+				Subtyping.Constraints cs = environment.isSubtype(upperBound,cLower);
+				// Propagate information upwards
+				for(int i=0;i!=cs.size();++i) {
+					solution = cs.get(i).apply(solution);
+				}
+			}
+			if (upperBound instanceof Type.Any) {
+				return solution;
+			} else {
+				// Propagate information downwards
+				Type cUpper = IncrementalSubtypeConstraints.substitute(upperBound, solution, true);
+				//
+				return solution.constrain(cUpper, variable);
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof UpperBoundConstraint) {
+				UpperBoundConstraint c = (UpperBoundConstraint) o;
+				return variable == c.variable && upperBound.equals(c.upperBound);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return variable ^ upperBound.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return upperBound + ":>?" + variable;
+		}
+	}
+
+	public class ProjectionConstraint implements Subtyping.Constraint {
+		private final Subtyping.AbstractEnvironment environment;
+		private final Type.Existential upper;
+		private final Type.Existential lower;
+		private final Function<Type, Type> downwards;
+		private final Function<Type, Type> upwards;
+
+		public ProjectionConstraint(Subtyping.AbstractEnvironment environment, Type.Existential upper,
+				Function<Type, Type> downwards, Function<Type, Type> upwards, Type.Existential lower) {
+			this.environment = environment;
+			this.upper = upper;
+			this.lower = lower;
+			this.upwards = upwards;
+			this.downwards = downwards;
+		}
+
+		@Override
+		public int maxVariable() {
+			return Math.max(upper.get(), lower.get());
+		}
+
+		@Override
+		public Solution apply(Solution solution) {
+			// Project upper and lower bounds
+			Type vUpper = downwards.apply(solution.ceil(upper.get()));
+			Type vLower = upwards.apply(solution.floor(lower.get()));
+			// Generate appropriate constraints for the projection
+			Subtyping.Constraints first = environment.isSubtype(upper, vLower);
+			Subtyping.Constraints second = environment.isSubtype(vUpper, lower);
+			// Sanity check solution
+			if (first == BOTTOM || second == BOTTOM) {
+				return environment.INVALID_SOLUTION;
+			} else {
+				// Apply all generated constraints
+				for (int i = 0; i != first.size(); ++i) {
+					solution = first.get(i).apply(solution);
+				}
+				for (int i = 0; i != second.size(); ++i) {
+					solution = second.get(i).apply(solution);
+				}
+				return solution;
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof ProjectionConstraint) {
+				ProjectionConstraint c = (ProjectionConstraint) o;
+				return upper.equals(c.upper) && lower.equals(c.lower) && upwards.equals(c.upwards)
+						&& downwards.equals(c.downwards);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return upper.hashCode() ^ lower.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return upper + downwards.toString() + ":>" + upwards + lower;
+		}
+	}
+
+	public class UpwardsProjectionConstraint implements Subtyping.Constraint {
+		private final Subtyping.AbstractEnvironment environment;
+		private final Type upperBound;
+		private final Function<Solution,Type> projection;
+
+		public UpwardsProjectionConstraint(Subtyping.AbstractEnvironment environment,
+				Type lhs, Function<Solution, Type> projection) {
+			this.environment = environment;
+			this.projection = projection;
+			this.upperBound = lhs;
+		}
+
+		@Override
+		public int maxVariable() {
+			return Subtyping.maxVariable(upperBound);
+		}
+
+		@Override
+		public Solution apply(Solution solution) {
+			// Project upper and lower bounds
+			Type vLower = projection.apply(solution);
+			// Generate appropriate constraints for the projection
+			Subtyping.Constraints first = environment.isSubtype(upperBound,vLower);
+			//
+			if(first == BOTTOM) {
+				return environment.INVALID_SOLUTION;
+			} else {
+				// Apply all generated constraints
+				for(int i=0;i!=first.size();++i) {
+					solution = first.get(i).apply(solution);
+				}
+				return solution;
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof UpwardsProjectionConstraint) {
+				UpwardsProjectionConstraint c = (UpwardsProjectionConstraint) o;
+				return upperBound.equals(c.upperBound) && projection == c.projection;
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return upperBound.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return upperBound + ":>" + projection;
+		}
+	}
+
+
+	public class DownwardsProjectionConstraint implements Subtyping.Constraint {
+		private final Subtyping.AbstractEnvironment environment;
+		private final Function<Solution,Type> projection;
+		private final Type lowerBound;
+
+		public DownwardsProjectionConstraint(Subtyping.AbstractEnvironment environment,
+				Function<Solution, Type> projection, Type rhs) {
+			this.environment = environment;
+			this.projection = projection;
+			this.lowerBound = rhs;
+		}
+
+		@Override
+		public int maxVariable() {
+			return Subtyping.maxVariable(lowerBound);
+		}
+
+		@Override
+		public Solution apply(Solution solution) {
+			// Project upper and lower bounds
+			Type vUpper = projection.apply(solution);
+			// Generate appropriate constraints for the projection
+			Subtyping.Constraints first = environment.isSubtype(vUpper,lowerBound);
+			if(first == BOTTOM) {
+				return environment.INVALID_SOLUTION;
+			} else {
+				// Apply all generated constraints
+				for(int i=0;i!=first.size();++i) {
+					solution = first.get(i).apply(solution);
+				}
+				return solution;
+			}
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof DownwardsProjectionConstraint) {
+				DownwardsProjectionConstraint c = (DownwardsProjectionConstraint) o;
+				return lowerBound.equals(c.lowerBound) && projection == c.projection;
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return lowerBound.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return projection + ":>" + lowerBound;
+		}
 	}
 
 	/**
@@ -938,11 +1287,19 @@ public interface Subtyping {
 		}
 
 		protected Subtyping.Constraints isSubtype(Type.Existential t1, Type t2, BinaryRelation<Type> cache) {
-			return new IncrementalSubtypeConstraints(t1, t2, this);
+			if(t2 instanceof Type.Void) {
+				return TOP;
+			} else {
+				return new IncrementalSubtypeConstraints(this, new LowerBoundConstraint(this, t1, t2));
+			}
 		}
 
 		protected Subtyping.Constraints isSubtype(Type t1, Type.Existential t2, BinaryRelation<Type> cache) {
-			return new IncrementalSubtypeConstraints(t1, t2, this);
+			if(t1 instanceof Type.Any) {
+				return TOP;
+			} else {
+				return new IncrementalSubtypeConstraints(this, new UpperBoundConstraint(this, t1, t2));
+			}
 		}
 
 		protected Subtyping.Constraints isSubtype(Type t1, Type.Union t2, BinaryRelation<Type> cache) {
@@ -1128,7 +1485,27 @@ public interface Subtyping {
 				if (rows.length <= 1) {
 					return this;
 				} else {
-					throw new IllegalArgumentException("Implement Me");
+					Subtyping.Constraints[] nrows = Arrays.copyOf(rows, rows.length);
+					for (int i = 0; i != nrows.length; ++i) {
+						Subtyping.Constraints ith = nrows[i];
+						if (ith == null) {
+							continue;
+						}
+						for (int j = i + 1; j < nrows.length; ++j) {
+							Subtyping.Constraints jth = nrows[j];
+							if (jth == null) {
+								continue;
+							}
+							int c = comparator.compare(ith, jth);
+							if (c < 0) {
+								nrows[j] = null;
+							} else if (c > 0) {
+								nrows[i] = null;
+							}
+						}
+					}
+					nrows = ArrayUtils.removeAll(nrows, null);
+					return new AbstractConstraintsSet(nrows);
 				}
 			}
 
@@ -1227,6 +1604,11 @@ public interface Subtyping {
 		public final ConcreteSolution INVALID_SOLUTION = new ConcreteSolution(this,null,null);
 
 		/**
+		 * A constant representing an empty solution to a set of subtyping constraints.
+		 */
+		public final ConcreteSolution EMPTY_SOLUTION = new ConcreteSolution(this);
+
+		/**
 		 * Represents a current best solution for a given typing problem. Specifically,
 		 * for a given set of <code>n</code> type variables, each variable has given
 		 * concrete <i>upper</i> and <i>lower</i> bounds. For example, we might have
@@ -1294,6 +1676,11 @@ public interface Subtyping {
 				}
 			}
 
+			@Override
+			public int size() {
+				return lowerBounds == null ? 0 : lowerBounds.length;
+			}
+
 			/**
 			 * Check whether a given solution is fully satisfied or not. In short, whether
 			 * or not any variables remain which have neither an upper or lower bound. Such
@@ -1347,6 +1734,7 @@ public interface Subtyping {
 			 * @param nLowerBound New lowerbound to constrain with
 			 * @return
 			 */
+			@Override
 			public ConcreteSolution constrain(int i, Type nLowerBound) {
 				if(!isConcrete(nLowerBound)) {
 					throw new IllegalArgumentException("Upper bound should be concrete");
@@ -1393,6 +1781,7 @@ public interface Subtyping {
 			 * @param i           Variable to be constrained
 			 * @return
 			 */
+			@Override
 			public ConcreteSolution constrain(Type nUpperBound, int i) {
 				if(!isConcrete(nUpperBound)) {
 					throw new IllegalArgumentException("Upper bound should be concrete");
@@ -1428,88 +1817,6 @@ public interface Subtyping {
 				} else {
 					nUpperBounds[i] = glb;
 					return new ConcreteSolution(environment, nUpperBounds, nLowerBounds);
-				}
-			}
-
-			/**
-			 * Intersect this concrete solution with a set of semi-concrete subtyping
-			 * constraints. That is, all constraints have an existential on one side, and a
-			 * concrete bound on the other. The goal here is twofold. Firstly, to make sure
-			 * the runtime is proportional to the number of constraints. Secondly, to
-			 * minimise allocations as much as possible.
-			 *
-			 * @param other
-			 * @return
-			 */
-			public ConcreteSolution intersect(Subtyping.Constraints other) {
-				if(lowerBounds == null) {
-					// Intersecting an invalid solution always returns an invalid solution
-					return this;
-				} else {
-					final int m = other.max();
-					Type[] nLowerBounds = lowerBounds;
-					Type[] nUpperBounds = upperBounds;
-					//
-					if(m >= lowerBounds.length) {
-						nLowerBounds = expand(lowerBounds,m+1,Type.Void);
-						nUpperBounds = expand(upperBounds,m+1,Type.Any);
-					} else {
-						nLowerBounds = lowerBounds;
-						nUpperBounds = upperBounds;
-					}
-					//
-					for (int i = 0; i != other.size(); ++i) {
-						Subtyping.Constraint c = other.get(i);
-						Type lb = c.getLowerBound();
-						Type ub = c.getUpperBound();
-						//
-						if (lb instanceof Type.Existential) {
-							int k = ((Type.Existential) lb).get();
-							Type upper = nUpperBounds[k];
-							Type glb = environment.greatestLowerBound(upper, ub);
-							if (glb != upper && nUpperBounds == upperBounds) {
-								nUpperBounds = Arrays.copyOf(nUpperBounds, nUpperBounds.length);
-							}
-							nUpperBounds[k] = glb;
-						} else {
-							int k = ((Type.Existential) ub).get();
-							Type lower = nLowerBounds[k];
-							Type lub = environment.leastUpperBound(lower, lb);
-							if (lub != lower && nLowerBounds == lowerBounds) {
-								nLowerBounds = Arrays.copyOf(nLowerBounds, nLowerBounds.length);
-							}
-							nLowerBounds[k] = lub;
-						}
-					}
-					// Did anything change?
-					if (nLowerBounds == lowerBounds && nUpperBounds == upperBounds) {
-						return this;
-					} else {
-						// Have generated a new solution. However, still need to sanity check that it's
-						// satisfiable
-						for (int i = 0; i != other.size(); ++i) {
-							Subtyping.Constraint c = other.get(i);
-							Type lb = c.getLowerBound();
-							Type ub = c.getUpperBound();
-							int k;
-							// Extract the affect variable
-							if (lb instanceof Type.Existential) {
-								k = ((Type.Existential) lb).get();
-							} else {
-								k = ((Type.Existential) ub).get();
-							}
-							Type lower = nLowerBounds[k];
-							Type upper = nUpperBounds[k];
-							//
-							if (!environment.isSatisfiableSubtype(upper, lower) || upper instanceof Type.Void
-									|| lower instanceof Type.Any) {
-								// Uh oh, this is no longer satisfiable.
-								return environment.INVALID_SOLUTION;
-							}
-						}
-						// Done, it's satisfiable.
-						return new ConcreteSolution(environment, nUpperBounds, nLowerBounds);
-					}
 				}
 			}
 
@@ -2155,8 +2462,8 @@ public interface Subtyping {
 		/**
 		 * Subtract one type from another.
 		 *
-		 * @param lhs
-		 * @param rhs
+		 * @param variable
+		 * @param lowerBound
 		 * @return
 		 */
 		@Override
@@ -2481,6 +2788,82 @@ public interface Subtyping {
 		}
 	}
 
+
+	// ===============================================================================
+	// maxVariable
+	// ===============================================================================
+
+	public static int numberOfVariables(Subtyping.Constraint... constraints) {
+		int n = 0;
+		for (int i = 0; i != constraints.length; ++i) {
+			n = Math.max(constraints[i].maxVariable() + 1, n);
+		}
+		return n;
+	}
+	/**
+	 * Determine the maximum (existential) type variable used in this type, or <code>-1</code> if none present.
+	 *
+	 * @param type The type being tested for the presence of existential variables.
+	 * @return
+	 */
+	public static int maxVariable(Type type) {
+		switch (type.getOpcode()) {
+		case TYPE_any:
+		case TYPE_bool:
+		case TYPE_byte:
+		case TYPE_int:
+		case TYPE_null:
+		case TYPE_void:
+		case TYPE_universal:
+			return -1;
+		case TYPE_existential:
+			return ((Type.Existential)type).get();
+		case TYPE_array:
+			return maxVariable(((Type.Array)type).getElement());
+		case TYPE_staticreference:
+		case TYPE_reference:
+			return maxVariable(((Type.Reference)type).getElement());
+		case TYPE_function:
+		case TYPE_method:
+		case TYPE_property: {
+			Type.Callable t = (Type.Callable) type;
+			return Math.max(maxVariable(t.getParameter()), maxVariable(t.getReturn()));
+		}
+		case TYPE_nominal:
+			return maxVariable(((Type.Nominal)type).getParameters());
+		case TYPE_tuple:
+			return maxVariable(((Type.Tuple)type).getAll());
+		case TYPE_union:
+			return maxVariable(((Type.Union)type).getAll());
+		case TYPE_record: {
+			Type.Record t = (Type.Record) type;
+			Tuple<Type.Field> fields = t.getFields();
+			int m = -1;
+			for (int i = 0; i != fields.size(); ++i) {
+				m = Math.max(m, maxVariable(fields.get(i).getType()));
+			}
+			return m;
+		}
+		default:
+			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
+		}
+	}
+
+	public static int maxVariable(Tuple<Type> types) {
+		int m = -1;
+		for (int i = 0; i != types.size(); ++i) {
+			m = Math.max(m, maxVariable(types.get(i)));
+		}
+		return m;
+	}
+
+	public static int maxVariable(Type[] types) {
+		int m = -1;
+		for (int i = 0; i != types.length; ++i) {
+			m = Math.max(m, maxVariable(types[i]));
+		}
+		return m;
+	}
 
 	// ===============================================================================
 	// isConcrete

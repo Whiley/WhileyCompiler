@@ -6625,6 +6625,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Existential extends AbstractType implements Atom {
 			public Existential(int index) {
 				super(TYPE_existential, BigInteger.valueOf(index).toByteArray());
+				if(index < 0) {
+					throw new IllegalArgumentException("invalid existential type index");
+				}
 			}
 
 			@Override
