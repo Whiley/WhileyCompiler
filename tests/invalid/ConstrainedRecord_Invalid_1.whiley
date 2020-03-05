@@ -8,4 +8,4 @@ function f(point p) -> point:
 
 public export method test(): 
     tup z = {y: -2, x: 1}
-    point p = f(z)
+    point p = f((point) z)

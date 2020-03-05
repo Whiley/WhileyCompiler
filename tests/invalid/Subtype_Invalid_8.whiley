@@ -9,4 +9,4 @@ function f(scf8tup[] xs) -> int:
 public export method test() :
     {int f, int g}[] x = [{f: 1, g: 2}, {f: 4, g: 8}]
     x[0].f = 2
-    f(x)
+    f((scf8tup[]) x)

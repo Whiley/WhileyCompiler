@@ -106,36 +106,39 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	private static int COUNTER = 0;
 	@Override
 	public boolean isSatisfiable() {
-//		System.out.println("===========================================================");
-//		System.out.println("SATISFIABLE?" + (++COUNTER) + " " + Arrays.toString(constraints) + "(" + dirty + "," + nVariables +"): " + candidate);
-//		System.out.println("===========================================================");
-		if (constraints == null) {
+//		if (constraints == null) {
+//			return false;
+//		} else if (candidate == null) {
+//			this.candidate = solve(environment.EMPTY_SOLUTION);
+//			this.dirty = false;
+//		} else {
+//			if (dirty) {
+//				this.candidate = solve(candidate);
+//				this.dirty = false;
+//			}
+//			if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
+//				// NOTE: we must attempt a restart here because the incremental solution may
+//				// have got stuck in a local minima during the propagation process.
+//				this.candidate = solve(environment.EMPTY_SOLUTION);
+//				this.dirty = false;
+//			}
+//		}
+//		if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
+//			// Failed
+//			constraints = null;
+//			return false;
+//		} else {
+//			return true;
+//		}
+		// NOTE: this is a very simple and largely broken forumlation.
+		if(constraints == null) {
 			return false;
-		} else if (candidate == null) {
-			this.candidate = solve(environment.EMPTY_SOLUTION);
+		} else if(dirty || candidate == null) {
+			// NOTE: this is a hack
+			this.candidate = close(environment.EMPTY_SOLUTION, constraints, environment);
 			this.dirty = false;
-		} else {
-			if (dirty) {
-				this.candidate = solve(candidate);
-				this.dirty = false;
-			}
-			if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
-				// NOTE: we must attempt a restart here because the incremental solution may
-				// have got stuck in a local minima during the propagation process.
-				this.candidate = solve(environment.EMPTY_SOLUTION);
-				this.dirty = false;
-			}
 		}
-		if(candidate.isUnsatisfiable() || !candidate.isComplete(nVariables)) {
-//			System.out.println("===========================================================");
-//			System.out.println("UNSATISFIABLE " + (++COUNTER) + " " + Arrays.toString(constraints) + "(" + dirty + "," + nVariables +"): " + candidate);
-//			System.out.println("===========================================================");
-			// Failed
-			constraints = null;
-			return false;
-		} else {
-			return true;
-		}
+		return !candidate.isUnsatisfiable();
 	}
 
 	@Override
@@ -150,6 +153,10 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 	@Override
 	public int maxVariable() {
 		return nVariables - 1;
+	}
+
+	public IncrementalSubtypeConstraints fresh(int n) {
+		return new IncrementalSubtypeConstraints(nVariables + n, candidate, dirty, constraints, environment);
 	}
 
 	@Override
@@ -213,7 +220,7 @@ public class IncrementalSubtypeConstraints implements Subtyping.Constraints {
 
 	@Override
 	public Subtyping.Constraints.Solution solve(int n) {
-		return candidate;
+		return (candidate != null) ? candidate : environment.EMPTY_SOLUTION;
 	}
 
 	@Override

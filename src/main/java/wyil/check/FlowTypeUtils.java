@@ -23,6 +23,7 @@ import static wyil.lang.WyilFile.*;
 
 import java.sql.Types;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -31,7 +32,6 @@ import org.apache.tools.ant.types.Environment;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
-import wyil.check.FlowTypeUtils.*;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -426,7 +426,7 @@ public class FlowTypeUtils {
 			Type t1_return = t1.getReturn();
 			Type t2_return = t2.getReturn();
 			// Eliminate easy cases first
-			if (t1.getOpcode() != t2.getOpcode()) {
+			if(!isCallableSubtype(t1.getOpcode(),t2.getOpcode())) {
 				return IncrementalSubtypeConstraints.BOTTOM;
 			}
 			// Check parameters (contra-variant)
@@ -434,7 +434,7 @@ public class FlowTypeUtils {
 			// Check returns (co-variant)
 			Subtyping.Constraints c_returns = isSubtype(t1_return, t2_return, cache);
 			//
-			if (t1 instanceof Type.Method) {
+			if (t1 instanceof Type.Method && t2 instanceof Type.Method) {
 				// Check lifetimes
 				Type.Method m1 = (Type.Method) t1;
 				Type.Method m2 = (Type.Method) t2;
@@ -512,6 +512,17 @@ public class FlowTypeUtils {
 		}
 	}
 
+	private static boolean isCallableSubtype(int lhs, int rhs) {
+		switch(lhs) {
+		case TYPE_method:
+			return true;
+		case TYPE_function:
+			return rhs == TYPE_function || rhs == TYPE_property;
+		default:
+			return rhs == TYPE_property;
+		}
+	}
+
 	// ===============================================================================================================
 	// Typing
 	// ===============================================================================================================
@@ -531,135 +542,208 @@ public class FlowTypeUtils {
 		 */
 		private final ArrayList<Finaliser> frames;
 		/**
-		 * Tracks the number of allocated type variables so we can allocate fresh
+		 * Tracks the number of allocated typing variables so we can allocate fresh
 		 * variables as necessary.
 		 */
-		private final int nVariables;
-		/**
-		 * The current stack of unprocessed constraints. The typing is necessarily lazy
-		 * to allow certain tricks to be played (i.e. delaying of constraints known to
-		 * fail until we explore the children of some expression). When this stack is
-		 * empty, the matrix is up-to-date.
-		 */
-		private Subtyping.Constraint[] stack;
-		/**
-		 * The current typing matrix which determines whether or not a valid typing
-		 * exists.
-		 */
-		private Constraints.Set matrix;
+		private int nVariables;
+
+		private Row[] matrix;
 
 		public Typing(Subtyping.AbstractEnvironment subtyping) {
 			this.subtyping = subtyping;
 			this.frames = new ArrayList<>();
-			this.stack = new Subtyping.Constraint[0];
-			this.matrix = subtyping.EMPTY_CONSTRAINT_SET;
-			this.nVariables = 0;
+			this.nVariables = 1;
+			this.matrix = new Row[] { new Row(subtyping.TOP) };
 		}
 
-		private Typing(Subtyping.AbstractEnvironment subtyping, ArrayList<Finaliser> frames, int nVars, Subtyping.Constraint[] stack,
-				Constraints.Set matrix) {
+		private Typing(Subtyping.AbstractEnvironment subtyping, List<Finaliser> frames, int nVariables, Row[] matrix) {
 			this.subtyping = subtyping;
-			this.frames = frames;
-			this.nVariables = nVars;
+			this.frames = new ArrayList<>(frames);
+			this.nVariables = nVariables;
 			this.matrix = matrix;
-			this.stack = stack;
 		}
 
 		public boolean isEmpty() {
-			if(stack.length > 0) {
-				matrix = matrix.map(row -> row.intersect(stack));
-				this.stack = new Subtyping.Constraint[0];
-			}
-			// Done
-			return matrix.empty();
+			return matrix.length == 0;
 		}
 
 		public int height() {
-			return matrix.height();
+			return matrix.length;
 		}
 
-		public Type.Existential top() {
-			return new Type.Existential(nVariables - 1);
-		}
-
-		public Type.Existential[] top(int n) {
-			final int base = nVariables - n;
-			Type.Existential[] vars = new Type.Existential[n];
-			for(int i=0;i!=n;++i) {
-				vars[i] = new Type.Existential(base+i);
+		public Tuple<Type> types(int index) {
+			Type[] types = new Type[matrix.length];
+			for(int i=0;i!=matrix.length;++i) {
+				types[i] = matrix[i].get(index);
 			}
-			return vars;
+			return new Tuple<>(types);
+		}
+
+		public Tuple<Tuple<Type>> types(int[] indices) {
+			Tuple<Type>[] types = new Tuple[matrix.length];
+			for(int i=0;i!=matrix.length;++i) {
+				Type[] ith = new Type[indices.length];
+				for(int j=0;j!=ith.length;++j) {
+					ith[j] = matrix[i].get(indices[j]);
+				}
+				types[i] = new Tuple<>(ith);
+			}
+			return new Tuple<>(types);
+		}
+
+		public int top() {
+			return nVariables-1;
+		}
+
+		public int[] top(int n) {
+			return ArrayUtils.range(nVariables - n, nVariables);
 		}
 
 		public Typing invalidate() {
-			return new Typing(subtyping, frames, 0, new Subtyping.Constraint[0], subtyping.BOTTOM_CONSTRAINT_SET);
+			return new Typing(subtyping, frames, nVariables, new Row[0]);
 		}
 
-		public Typing push(int n) {
-			return new Typing(subtyping, frames, nVariables + n, stack, matrix);
+		public void register(Predicate<Row[]> finaliser) {
+			frames.add(new Finaliser(finaliser));
 		}
 
-		public Typing allocate(Consumer<Type[]> finaliser, Type.Existential... variables) {
-			ArrayList<Finaliser> nFrames = new ArrayList<>(frames);
-			nFrames.add(new Finaliser(finaliser,variables));
-			return new Typing(subtyping, nFrames, nVariables, stack, matrix);
+		public Typing push(Type type) {
+			return map(row -> row.add(type));
 		}
 
-		public Typing bind(Type upper, Type.Existential var) {
-			if(upper == null || upper instanceof Type.Any) {
-				return this;
+		public Typing pushAll(int n, BiFunction<Row,Integer,Type[]> projection) {
+			return project(row -> row.addAll(n,projection));
+		}
+
+		public Typing pull(int lhs, Function<Row, Type> projection) {
+			return map(row -> {
+				Type upper = row.get(lhs);
+				Type lower = projection.apply(row);
+				//
+				if (upper instanceof Type.Void && lower instanceof Type.Void) {
+					// Target happy to accept void, and we have void.
+					return row;
+				} else if (upper instanceof Type.Void) {
+					// Indicates target happy to accept anything. Therefore, back propagate what we
+					// have.
+					return row.set(lhs, lower);
+				} else if (lower instanceof Type.Void) {
+					return null;
+				} else {
+					row = row.set(lhs, lower);
+					// Target requires something, source has something. Hence, check they are
+					// compatible.
+					Subtyping.Constraints constraints = subtyping.isSubtype(upper, lower);
+					// Done
+					return row.intersect(constraints);
+				}
+			});
+		}
+
+		public Typing pull(int lhs, int rhs, Function<Type, Type> projection) {
+			return map(row -> {
+				Type upper = row.get(lhs);
+				Type lower = projection.apply(row.get(rhs));
+				//
+				if (upper instanceof Type.Void && lower instanceof Type.Void) {
+					// Target happy to accept void, and we have void.
+					return row;
+				} else if (lower instanceof Type.Void || lower == null) {
+					return null;
+				} else if (upper instanceof Type.Void) {
+					// Indicates target happy to accept anything. Therefore, back propagate what we
+					// have.
+					return row.set(lhs, lower);
+				} else {
+					row = row.set(lhs, lower);
+					// Target requires something, source has something. Hence, check they are
+					// compatible.
+					Subtyping.Constraints constraints = subtyping.isSubtype(upper, lower);
+					// Done
+					return row.intersect(constraints);
+				}
+			});
+		}
+
+		public Typing project(Function<Row,Row[]> projection) {
+			ArrayList<Row> nRows = new ArrayList<>();
+			// Sanity check existing rows
+			for (int i = 0; i != matrix.length; ++i) {
+				Row ith = matrix[i];
+				Row[] nith = projection.apply(ith);
+				//
+				for(int j=0;j!=nith.length;++j) {
+					nRows.add(nith[j]);
+				}
+			}
+			// Remove any invalid rows
+			Row[] arr = nRows.toArray(new Row[nRows.size()]);
+			// Recalculate number of variables
+			int nVariables = arr.length > 0 ? arr[0].size() : 0;
+			// Create new typing
+			return new Typing(subtyping, frames, nVariables, arr);
+		}
+
+		public Typing map(Function<Row,Row> fn) {
+			Row[] nRows = matrix;
+			// Sanity check existing rows
+			for (int i = 0; i != nRows.length; ++i) {
+				Row ith = nRows[i];
+				Row nith = fn.apply(ith);
+				// Sanity check current type
+				if(ith != nith && matrix == nRows) {
+					nRows = Arrays.copyOf(nRows,nRows.length);
+				}
+				nRows[i] = nith;
+			}
+			if(matrix == nRows) {
+				return Typing.this;
 			} else {
-				Subtyping.Constraint first = new Subtyping.UpperBoundConstraint(subtyping, upper, var);
-				return apply(first);
+				// Remove any invalid rows
+				nRows = ArrayUtils.removeAll(nRows, null);
+				// Recalculate number of variables
+				int nVariables = nRows.length > 0 ? nRows[0].size() : 0;
+				// Create new typing
+				return new Typing(subtyping, frames, nVariables, nRows);
 			}
 		}
 
-		public Typing bind(Type.Existential var, Type lower) {
-			if(lower instanceof Type.Void) {
+		public Typing fold(Comparator<Row> comparator)  {
+			if (matrix.length <= 1) {
 				return this;
 			} else {
-				Subtyping.Constraint first = new Subtyping.LowerBoundConstraint(subtyping, var, lower);
-				return apply(first);
+				Row[] nrows = Arrays.copyOf(matrix, matrix.length);
+				for (int i = 0; i != nrows.length; ++i) {
+					Row ith = nrows[i];
+					if (ith == null) {
+						continue;
+					}
+					for (int j = i + 1; j < nrows.length; ++j) {
+						Row jth = nrows[j];
+						if (jth == null) {
+							continue;
+						}
+						int c = comparator.compare(ith, jth);
+						if (c < 0) {
+							nrows[j] = null;
+						} else if (c > 0) {
+							nrows[i] = null;
+						}
+					}
+				}
+				nrows = ArrayUtils.removeAll(nrows, null);
+				return new Typing(subtyping, frames, nVariables, nrows);
 			}
-		}
-
-		public Typing bindUnderlying(Type.Existential var, Type lower) {
-			Class<? extends Type> kind = lower.getClass();
-			Function<Subtyping.Constraints.Solution, Type> projection = new FlowTypeCheck.TypeProjection(var,kind);;
-			Subtyping.Constraint first = new Subtyping.DownwardsProjectionConstraint(subtyping, projection, lower);
-			return apply(first);
-		}
-
-		public Typing apply(Subtyping.Constraint... constraints) {
-			return new Typing(subtyping, frames, nVariables, ArrayUtils.append(stack, constraints), matrix);
-		}
-
-		public Typing map(Function<Subtyping.Constraints, Subtyping.Constraints> fn) {
-			// NOTE: must flush the stack here otherwise resulting constraints will be invalid.
-			Subtyping.Constraints.Set nMatrix = matrix.map(row -> fn.apply(row).intersect(stack));
-			return new Typing(subtyping, frames, nVariables, new Subtyping.Constraint[0], nMatrix);
-		}
-
-		public Typing project(Function<Subtyping.Constraints, Subtyping.Constraints[]> fn) {
-			// NOTE: must flush the stack here otherwise resulting constraints will be invalid.
-			Function<Subtyping.Constraints, Subtyping.Constraints[]> f = row -> fn.apply(row.intersect(stack));
-			return new Typing(subtyping, frames, nVariables, new Subtyping.Constraint[0], matrix.project(f));
 		}
 
 		/**
-		 * Get the set of possible types for a given type variable.
+		 * Concretise every type within this typing by substitution each type variable
+		 * for its current best solution.
 		 *
-		 * @param var
 		 * @return
 		 */
-		public Tuple<Type> typesOf(Type.Existential var) {
-			Type[] types = new Type[matrix.height()];
-			for(int i=0;i!=matrix.height();++i) {
-				Subtyping.Constraints ith = matrix.get(i);
-				Subtyping.Constraints.Solution sol = ith.solve(nVariables);
-				types[i] = sol.get(var.get());
-			}
-			return new Tuple<>(types);
+		public Typing concretise() {
+			return map(r -> r.concretise(subtyping));
 		}
 
 		/**
@@ -671,85 +755,238 @@ public class FlowTypeUtils {
 		 * @return
 		 */
 		public boolean finalise() {
-			// Attempt to collapse all valid typings down to a single "best" typing. If this
-			// succeeds then we can continue with the finalisation process. Otherwise, we
-			// have some form of ambiguity.
-			Constraints.Set nMatrix = matrix.fold((cs1, cs2) -> {
-				for(int i=0;i!=frames.size();++i) {
-					Subtyping.Constraints.Solution s1 = cs1.solve(nVariables);
-					Subtyping.Constraints.Solution s2 = cs2.solve(nVariables);
-					int c = frames.get(i).compareTo(s1,s2);
-					if(c < 0 || c > 0) {
-						return c;
-					}
-				}
-				return 0;
-			});
-			// Sanity check what we have left (i.e. whether we acutally have a winner or
-			// not).
-			if (nMatrix.height() == 0) {
-				// Typing was already invalid. In this case, a syntax error must have already
-				// been raised upstream.
-				return false;
-			} else if (nMatrix.height() > 1) {
-				// Typing is ambiguous. In this case, we need to report a syntax error.
-				return false;
-			}
-			System.out.println("BEFORE: " + matrix);
-			System.out.println(" AFTER: " + nMatrix);
-			// Extract winning solution to all known type variables.
-			Subtyping.Constraints winner = nMatrix.get(0);
-			Subtyping.Constraints.Solution solution = winner.solve(nVariables);
-			System.out.println("WINNING SOLUTION: " + solution + " : " + nVariables);
+			boolean r = true;
 			// Finally, run every registered finaliser.
 			for (Finaliser f : frames) {
-				f.finalise(solution);
+				r &= f.finalise(matrix);
 			}
-			//
-			return true;
+			return r;
 		}
 
 		@Override
 		public String toString() {
-			return frames.toString() + ":" + nVariables + ":" + Arrays.toString(stack) + ":" + matrix.toString();
+			return nVariables + ":" + Arrays.toString(matrix);
 		}
 
-		private class Finaliser {
-			private final Consumer<Type[]> fn;
-			private final Type.Existential[] variables;
+		public final static class Row {
+			/**
+			 * Default comparator for typing rows.
+			 */
+			public static Comparator<Row> COMPARATOR(Subtyping.Environment env) {
+				return new Comparator<Row>() {
 
-			public Finaliser(Consumer<Type[]> fn, Type.Existential[] variables) {
-				this.fn = fn;
-				this.variables = variables;
-			}
-
-			public void finalise(Subtyping.Constraints.Solution solution) {
-				Type[] types = new Type[variables.length];
-				for(int i=0;i<types.length;++i) {
-					types[i] = solution.get(variables[i].get());
-				}
-				fn.accept(types);
-			}
-
-			public int compareTo(Subtyping.Constraints.Solution s1, Subtyping.Constraints.Solution s2) {
-				for(int i=0;i<variables.length;++i) {
-					int ith = variables[i].get();
-					Type t1 = s1.get(ith);
-					Type t2 = s2.get(ith);
-					if(subtyping.isSatisfiableSubtype(t1,t2)) {
-						return 1;
-					} else if(subtyping.isSatisfiableSubtype(t2,t1)) {
-						return -1;
+					@Override
+					public int compare(Row o1, Row o2) {
+						Type[] o1_types = o1.types;
+						Type[] o2_types = o2.types;
+						if(o1_types.length < o2_types.length) {
+							return -1;
+						} else if(o1_types.length > o2_types.length) {
+							return 1;
+						}
+						//
+						for(int i=0;i!=o1_types.length;++i) {
+							Type t1 = o1_types[i];
+							Type t2 = o2_types[i];
+							boolean left = env.isSatisfiableSubtype(t1, t2);
+							boolean right = env.isSatisfiableSubtype(t2, t1);
+							//
+							if(left && !right) {
+								return -1;
+							} else if(!left && right) {
+								return 1;
+							}
+						}
+						return 0;
 					}
+				};
+			}
+
+			private Subtyping.Constraints constraints;
+			private Type[] types;
+
+			public Row(Subtyping.Constraints constraints, Type... types) {
+				this.constraints = constraints;
+				this.types = types;
+			}
+
+			public Type get(int index) {
+				return types[index];
+			}
+
+			public Type[] getAll(int... indices) {
+				Type[] ts = new Type[indices.length];
+				for (int i = 0; i != indices.length; ++i) {
+					ts[i] = types[indices[i]];
 				}
-				return 0;
+				return ts;
+			}
+
+			public int size() {
+				return types.length;
+			}
+
+			/**
+			 * Allocate a given number of fresh type variables within this typing
+			 * environment.
+			 *
+			 * @param n
+			 * @return
+			 */
+			public wycc.util.Pair<Row,Type.Existential[]> fresh(int n) {
+				int m = constraints.maxVariable() + 1;
+				Type.Existential[] vars = new Type.Existential[n];
+				for (int i = 0; i != vars.length; ++i) {
+					vars[i] = new Type.Existential(m + i);
+				}
+				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
+				return new wycc.util.Pair<>(nrow,vars);
+			}
+
+			public Row set(int index, Type type) {
+				if(type == null || type instanceof Type.Void) {
+					return null;
+				} else {
+					Type[] nTypes = Arrays.copyOf(types, types.length);
+					nTypes[index] = type;
+					return new Row(constraints, nTypes);
+				}
+			}
+
+			public Row add(Type type) {
+				Type[] nTypes = Arrays.copyOf(types, types.length + 1);
+				nTypes[types.length] = type;
+				return new Row(constraints, nTypes);
+			}
+
+			public Row addAll(int n, Type type) {
+				Type[] nTypes = Arrays.copyOf(types, types.length + n);
+				for(int i=0;i<n;++i) {
+					nTypes[i+types.length] = type;
+				}
+				return new Row(constraints, nTypes);
+			}
+
+			public Row[] addAll(int n, BiFunction<Row, Integer, Type[]> fn) {
+				if(n == 0) {
+					return new Row[] {this};
+				} else {
+					int m = 0;
+					Type[][] nTypes = new Type[n][];
+					for (int i = 0; i < n; ++i) {
+						nTypes[i] = fn.apply(this, i);
+						m = Math.max(m, nTypes[i].length);
+					}
+					Row[] nRows = new Row[m];
+					for (int i = 0; i != m; ++i) {
+						Type[] ith = Arrays.copyOf(types, types.length + n);
+						for (int j = 0; j < n; ++j) {
+							ith[types.length + j] = nTypes[j][i];
+						}
+						nRows[i] = new Row(constraints, ith);
+					}
+					return nRows;
+				}
+			}
+
+			public Row intersect(Subtyping.Constraints constraints) {
+				Subtyping.Constraints cs = this.constraints.intersect(constraints);
+				if (!cs.isSatisfiable()) {
+					return null;
+				} else {
+					return new Row(cs, types);
+				}
+			}
+
+			public Row concretise(Subtyping.AbstractEnvironment subtyping) {
+				int n = constraints.maxVariable();
+				Subtyping.Constraints.Solution solution = constraints.solve(n);
+				// Creating the necessary binding function for substitution
+				Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution.get((Integer) o) : null;
+				Type[] nTypes = substitute(types,binder);
+				// Create new row only if something changes
+				if(nTypes == types) {
+					return this;
+				} else {
+					return new Row(subtyping.TOP,nTypes);
+				}
 			}
 
 			@Override
 			public String toString() {
-				return Arrays.toString(variables);
+				return constraints + ":" + Arrays.toString(types);
 			}
 		}
+
+		private class Finaliser {
+			private final Predicate<Row[]> fn;
+
+			public Finaliser(Predicate<Row[]> fn) {
+				this.fn = fn;
+			}
+
+			public boolean finalise(Row[] solution) {
+				return fn.test(solution);
+			}
+
+			@Override
+			public String toString() {
+				return fn.toString();
+			}
+		}
+
+		private static List<Type.Tuple> filterApplicableTuples(int n, Type type) {
+			List<Type.Tuple> ts = type.filter(Type.Tuple.class);
+			for (int i = 0; i != ts.size(); ++i) {
+				Type.Tuple r = ts.get(0);
+				if (r.size() != n) {
+					ts.remove(i--);
+				}
+			}
+			return ts;
+		}
+
+		private static List<Type.Record> filterApplicableRecords(Tuple<Identifier> fields, Type type) {
+			List<Type.Record> ts = type.filter(Type.Record.class);
+			for(int i=0;i!=ts.size();++i) {
+				Type.Record r = ts.get(0);
+				if(!hasFields(r,fields)) {
+					ts.remove(i--);
+				}
+			}
+			return ts;
+		}
+
+		public static boolean hasFields(Type.Record rec, Tuple<Identifier> fields) {
+			Tuple<Type.Field> fs = rec.getFields();
+			if (!rec.isOpen() && fs.size() != fields.size()) {
+				return false;
+			} else if (rec.isOpen() && fs.size() > fields.size()) {
+				return false;
+			} else {
+				for (int i = 0; i != fields.size(); ++i) {
+					Identifier ith = fields.get(i);
+					if (rec.getField(ith) == null) {
+						return false;
+					}
+				}
+				return true;
+			}
+		}
+	}
+
+	private static Type[] substitute(Type[] types, Function<Object, SyntacticItem> binder) {
+		// NOTE: optimisation to prevent allocation
+		Type[] nTypes = types;
+		for (int j = 0; j != nTypes.length; ++j) {
+			Type before = types[j];
+			Type after = before.substitute(binder);
+			if (before != after && nTypes == types) {
+				nTypes = Arrays.copyOf(types, types.length);
+			}
+			nTypes[j] = after;
+		}
+		return nTypes;
 	}
 
 	// ===============================================================================================================

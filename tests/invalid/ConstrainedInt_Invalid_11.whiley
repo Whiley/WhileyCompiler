@@ -1,10 +1,10 @@
+type nat is (int x) where x >= 0
+type pos is (int x) where x > 0
 
-type frf1nat is (int x) where x >= 0
-
-function f(frf1nat y) :
+function f(nat y) :
     debug "F(NAT)"
 
-function f(int x) :
+function f(pos x) :
     debug "F(INT)"
 
 public export method test() :

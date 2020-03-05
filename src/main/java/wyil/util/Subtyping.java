@@ -24,6 +24,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.Type.Array;
 import wyil.util.Subtyping.Constraints.Solution;
 
 import static wyil.util.IncrementalSubtypeConstraints.BOTTOM;
@@ -293,6 +294,14 @@ public interface Subtyping {
 		public Constraint get(int ith);
 
 		/**
+		 * Allocate zero or more variables to this constraint set.
+		 *
+		 * @param n
+		 * @return
+		 */
+		public Constraints fresh(int n);
+
+		/**
 		 * Intersect against one or more subtype constraints.
 		 *
 		 * @param other
@@ -545,6 +554,7 @@ public interface Subtyping {
 		 * @return
 		 */
 		public int maxVariable();
+
 		/**
 		 * Apply this constraint to a given solution producing a potentially updated
 		 * solution.
@@ -683,180 +693,6 @@ public interface Subtyping {
 		}
 	}
 
-	public class ProjectionConstraint implements Subtyping.Constraint {
-		private final Subtyping.AbstractEnvironment environment;
-		private final Type.Existential upper;
-		private final Type.Existential lower;
-		private final Function<Type, Type> downwards;
-		private final Function<Type, Type> upwards;
-
-		public ProjectionConstraint(Subtyping.AbstractEnvironment environment, Type.Existential upper,
-				Function<Type, Type> downwards, Function<Type, Type> upwards, Type.Existential lower) {
-			this.environment = environment;
-			this.upper = upper;
-			this.lower = lower;
-			this.upwards = upwards;
-			this.downwards = downwards;
-		}
-
-		@Override
-		public int maxVariable() {
-			return Math.max(upper.get(), lower.get());
-		}
-
-		@Override
-		public Solution apply(Solution solution) {
-			// Project upper and lower bounds
-			Type vUpper = downwards.apply(solution.ceil(upper.get()));
-			Type vLower = upwards.apply(solution.floor(lower.get()));
-			// Generate appropriate constraints for the projection
-			Subtyping.Constraints first = environment.isSubtype(upper, vLower);
-			Subtyping.Constraints second = environment.isSubtype(vUpper, lower);
-			// Sanity check solution
-			if (first == BOTTOM || second == BOTTOM) {
-				return environment.INVALID_SOLUTION;
-			} else {
-				// Apply all generated constraints
-				for (int i = 0; i != first.size(); ++i) {
-					solution = first.get(i).apply(solution);
-				}
-				for (int i = 0; i != second.size(); ++i) {
-					solution = second.get(i).apply(solution);
-				}
-				return solution;
-			}
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof ProjectionConstraint) {
-				ProjectionConstraint c = (ProjectionConstraint) o;
-				return upper.equals(c.upper) && lower.equals(c.lower) && upwards.equals(c.upwards)
-						&& downwards.equals(c.downwards);
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return upper.hashCode() ^ lower.hashCode();
-		}
-
-		@Override
-		public String toString() {
-			return upper + downwards.toString() + ":>" + upwards + lower;
-		}
-	}
-
-	public class UpwardsProjectionConstraint implements Subtyping.Constraint {
-		private final Subtyping.AbstractEnvironment environment;
-		private final Type upperBound;
-		private final Function<Solution,Type> projection;
-
-		public UpwardsProjectionConstraint(Subtyping.AbstractEnvironment environment,
-				Type lhs, Function<Solution, Type> projection) {
-			this.environment = environment;
-			this.projection = projection;
-			this.upperBound = lhs;
-		}
-
-		@Override
-		public int maxVariable() {
-			return Subtyping.maxVariable(upperBound);
-		}
-
-		@Override
-		public Solution apply(Solution solution) {
-			// Project upper and lower bounds
-			Type vLower = projection.apply(solution);
-			// Generate appropriate constraints for the projection
-			Subtyping.Constraints first = environment.isSubtype(upperBound,vLower);
-			//
-			if(first == BOTTOM) {
-				return environment.INVALID_SOLUTION;
-			} else {
-				// Apply all generated constraints
-				for(int i=0;i!=first.size();++i) {
-					solution = first.get(i).apply(solution);
-				}
-				return solution;
-			}
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof UpwardsProjectionConstraint) {
-				UpwardsProjectionConstraint c = (UpwardsProjectionConstraint) o;
-				return upperBound.equals(c.upperBound) && projection == c.projection;
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return upperBound.hashCode();
-		}
-
-		@Override
-		public String toString() {
-			return upperBound + ":>" + projection;
-		}
-	}
-
-
-	public class DownwardsProjectionConstraint implements Subtyping.Constraint {
-		private final Subtyping.AbstractEnvironment environment;
-		private final Function<Solution,Type> projection;
-		private final Type lowerBound;
-
-		public DownwardsProjectionConstraint(Subtyping.AbstractEnvironment environment,
-				Function<Solution, Type> projection, Type rhs) {
-			this.environment = environment;
-			this.projection = projection;
-			this.lowerBound = rhs;
-		}
-
-		@Override
-		public int maxVariable() {
-			return Subtyping.maxVariable(lowerBound);
-		}
-
-		@Override
-		public Solution apply(Solution solution) {
-			// Project upper and lower bounds
-			Type vUpper = projection.apply(solution);
-			// Generate appropriate constraints for the projection
-			Subtyping.Constraints first = environment.isSubtype(vUpper,lowerBound);
-			if(first == BOTTOM) {
-				return environment.INVALID_SOLUTION;
-			} else {
-				// Apply all generated constraints
-				for(int i=0;i!=first.size();++i) {
-					solution = first.get(i).apply(solution);
-				}
-				return solution;
-			}
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if(o instanceof DownwardsProjectionConstraint) {
-				DownwardsProjectionConstraint c = (DownwardsProjectionConstraint) o;
-				return lowerBound.equals(c.lowerBound) && projection == c.projection;
-			}
-			return false;
-		}
-
-		@Override
-		public int hashCode() {
-			return lowerBound.hashCode();
-		}
-
-		@Override
-		public String toString() {
-			return projection + ":>" + lowerBound;
-		}
-	}
 
 	/**
 	 * <p>
@@ -1080,6 +916,7 @@ public interface Subtyping {
 		 *
 		 */
 		protected Subtyping.Constraints isSubtype(Type t1, Type t2, BinaryRelation<Type> cache) {
+			final Subtyping.Constraints result;
 			// FIXME: only need to check for coinductive case when both types are recursive.
 			// If either is not recursive, then are guaranteed to eventually terminate.
 			if (cache != null && cache.get(t1, t2)) {
@@ -1103,47 +940,64 @@ public interface Subtyping {
 				case TYPE_int:
 					return TOP;
 				case TYPE_array:
-					return isSubtype((Type.Array) t1, (Type.Array) t2, cache);
+					result = isSubtype((Type.Array) t1, (Type.Array) t2, cache);
+					break;
 				case TYPE_tuple:
-					return isSubtype((Type.Tuple) t1, (Type.Tuple) t2, cache);
+					result = isSubtype((Type.Tuple) t1, (Type.Tuple) t2, cache);
+					break;
 				case TYPE_record:
-					return isSubtype((Type.Record) t1, (Type.Record) t2, cache);
+					result = isSubtype((Type.Record) t1, (Type.Record) t2, cache);
+					break;
 				case TYPE_nominal:
-					return isSubtype((Type.Nominal) t1, (Type.Nominal) t2, cache);
+					result = isSubtype((Type.Nominal) t1, (Type.Nominal) t2, cache);
+					break;
 				case TYPE_union:
-					return isSubtype(t1, (Type.Union) t2, cache);
+					result = isSubtype(t1, (Type.Union) t2, cache);
+					break;
 				case TYPE_staticreference:
 				case TYPE_reference:
-					return isSubtype((Type.Reference) t1, (Type.Reference) t2, cache);
+					result = isSubtype((Type.Reference) t1, (Type.Reference) t2, cache);
+					break;
 				case TYPE_method:
 				case TYPE_function:
 				case TYPE_property:
-					return isSubtype((Type.Callable) t1, (Type.Callable) t2, cache);
+					result = isSubtype((Type.Callable) t1, (Type.Callable) t2, cache);
+					break;
 				case TYPE_universal:
-					return isSubtype((Type.Universal) t1, (Type.Universal) t2, cache);
+					result = isSubtype((Type.Universal) t1, (Type.Universal) t2, cache);
+					break;
 				case TYPE_existential:
-					return isSubtype(t1, (Type.Existential) t2, cache);
+					result = isSubtype(t1, (Type.Existential) t2, cache);
+					break;
 				default:
 					throw new IllegalArgumentException("unexpected type encountered: " + t1);
 				}
 			} else if (t1_opcode == TYPE_any || t2_opcode == TYPE_void) {
-				return TOP;
+				result = TOP;
 			} else if (t1_opcode == TYPE_existential) {
-				return isSubtype((Type.Existential) t1, t2, cache);
+				result = isSubtype((Type.Existential) t1, t2, cache);
 			} else if (t2_opcode == TYPE_existential) {
-				return isSubtype(t1, (Type.Existential) t2, cache);
+				result = isSubtype(t1, (Type.Existential) t2, cache);
+			} else if (t2_opcode == TYPE_nominal && ((Type.Nominal) t2).isAlias()) {
+				// NOTE: this case is curious, but necessary. Explicit syntax for aliases would
+				// help here.
+				result = isSubtype(t1, (Type.Nominal) t2, cache);
 			} else if (t2_opcode == TYPE_union) {
-				return isSubtype(t1, (Type.Union) t2, cache);
+				result = isSubtype(t1, (Type.Union) t2, cache);
 			} else if (t1_opcode == TYPE_union) {
-				return isSubtype((Type.Union) t1, t2, cache);
-			} else if (t1_opcode == TYPE_nominal) {
-				return isSubtype((Type.Nominal) t1, (Type.Atom) t2, cache);
+				result = isSubtype((Type.Union) t1, t2, cache);
 			} else if (t2_opcode == TYPE_nominal) {
-				return isSubtype(t1, (Type.Nominal) t2, cache);
+				result = isSubtype(t1, (Type.Nominal) t2, cache);
+			} else if (t1_opcode == TYPE_nominal) {
+				result = isSubtype((Type.Nominal) t1, (Type.Atom) t2, cache);
 			} else {
 				// Nothing else works except void
-				return BOTTOM;
+				result = BOTTOM;
 			}
+			// Reset cache
+			cache.set(t1, t2, false);
+			//
+			return result;
 		}
 
 		protected Subtyping.Constraints isSubtype(Type.Array t1, Type.Array t2, BinaryRelation<Type> cache) {
@@ -1312,14 +1166,20 @@ public interface Subtyping {
 		}
 
 		protected Subtyping.Constraints isSubtype(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
+			Subtyping.Constraints winner = BOTTOM;
+			// Select the winning bound. In principle, we actually could do better here but
+			// this would mean allowing for disjunctions of constraints.
 			for (int i = 0; i != t1.size(); ++i) {
 				Subtyping.Constraints ith = isSubtype(t1.get(i), t2, cache);
 				// Check whether we found a match or not
-				if(ith != BOTTOM) {
-					return ith;
+				if(ith != BOTTOM && winner != BOTTOM) {
+					return BOTTOM;
+				} else if(ith != BOTTOM) {
+					winner = ith;
 				}
 			}
-			return BOTTOM;
+			//
+			return winner;
 		}
 
 		protected Subtyping.Constraints isSubtype(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
@@ -2087,8 +1947,8 @@ public interface Subtyping {
 			Decl.Type d1 = t1.getLink().getTarget();
 			Decl.Type d2 = t2.getLink().getTarget();
 			// Determine whether alias or not.
-			final boolean d1_alias = (d1.getInvariant().size() == 0);
-			final boolean d2_alias = (d2.getInvariant().size() == 0);
+			final boolean d1_alias = t1.isAlias();
+			final boolean d2_alias = t2.isAlias();
 			//
 			if (isSatisfiableSubtype(t2, t1)) {
 				return t1;
@@ -2139,7 +1999,7 @@ public interface Subtyping {
 			// REQUIRES: !(t2 instanceof Type.Nominal) && !(t2 instanceof Type.Union)
 			Decl.Type d1 = t1.getLink().getTarget();
 			// Determine whether alias or not.
-			final boolean alias = (d1.getInvariant().size() == 0);
+			final boolean alias = t1.isAlias();
 			//
 			if(isSatisfiableSubtype(t2, t1)) {
 				return t1;
@@ -2154,7 +2014,7 @@ public interface Subtyping {
 			// REQUIRES: !(t1 instanceof Type.Nominal) && !(t1 instanceof Type.Union)
 			Decl.Type d2 = t2.getLink().getTarget();
 			// Determine whether alias or not.
-			final boolean alias = (d2.getInvariant().size() == 0);
+			final boolean alias = t2.isAlias();
 			//
 			if (isSatisfiableSubtype(t1, t2)) {
 				return t2;
@@ -2393,10 +2253,10 @@ public interface Subtyping {
 			final boolean d1_alias = (d1.getInvariant().size() == 0);
 			final boolean d2_alias = (d2.getInvariant().size() == 0);
 			//
-			if (isSatisfiableSubtype(t2, t1)) {
-				return t2;
-			} else if (isSatisfiableSubtype(t1, t2)) {
+			if (isSatisfiableSubtype(t1, t2)) {
 				return t1;
+			} else if (isSatisfiableSubtype(t2, t1)) {
+				return t2;
 			} else if (d1_alias) {
 				return leastUpperBound(t1.getConcreteType(), t2);
 			} else if (d2_alias) {
@@ -2773,7 +2633,7 @@ public interface Subtyping {
 		 * @param opcode
 		 * @return
 		 */
-		private static int normalise(int opcode) {
+		public static int normalise(int opcode) {
 			switch (opcode) {
 			case TYPE_reference:
 			case TYPE_staticreference:

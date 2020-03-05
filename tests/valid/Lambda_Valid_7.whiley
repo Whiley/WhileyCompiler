@@ -4,12 +4,12 @@ function f(nat x) -> int
 requires x > 0:
     return x + 1
 
-type func_t is function(int)->int
+type func_t is function(nat)->int
 
 function g(int p) -> int
 requires p >= 0:
     func_t func = &(nat x -> f(x + 1))
-    return func(p)
+    return func((nat) p)
 
 public export method test() :
     int x = g(5)

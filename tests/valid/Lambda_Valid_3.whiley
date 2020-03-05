@@ -1,6 +1,6 @@
 public type t_Reader is method(int) -> byte[]
 public type InputStream is { t_Reader read }
-type BufferState is &{byte[] bytes, int pos}
+type BufferState is &{int pos, byte[] bytes}
 
 // Define the 8bit ASCII character
 public type char is (int x) where 0 <= x && x <= 255

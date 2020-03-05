@@ -7,4 +7,4 @@ function g(function(int)->int func) -> int:
     return func(1)
 
 public export method test() :
-    assume g((funii) &f) == 0
+    assume g(&f) == 0

@@ -9,4 +9,4 @@ function f(scf7tup x) -> int:
 public export method test() :
     {int f} x = {f: -1}
     x.f = x.f + 1
-    f(x)
+    f((scf7tup) x)

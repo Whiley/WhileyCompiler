@@ -13,13 +13,12 @@
 // limitations under the License.
 package wyc.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Template;
@@ -120,11 +119,16 @@ public class ErrorMessages {
 			if(context instanceof Tuple<?>) {
 				String r = "";
 				Tuple<?> t = (Tuple) context;
+				String[] items = new String[t.size()];
 				for(int i=0;i!=t.size();++i) {
+					items[i] = toString(t.get(i));
+				}
+				items = ArrayUtils.removeDuplicates(items);
+				for(int i=0;i!=items.length;++i) {
 					if(i != 0) {
 						r += " or ";
 					}
-					r = r + toString(t.get(i));
+					r = r + items[i];
 				}
 				return r;
 			} else {

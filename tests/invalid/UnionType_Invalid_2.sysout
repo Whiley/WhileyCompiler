@@ -1,3 +1,6 @@
-tests/invalid/UnionType_Invalid_2.whiley:12: expected int, found bool
+tests/invalid/UnionType_Invalid_2.whiley:10: expected int, found IntBool
+    f(x)
+      ^
+tests/invalid/UnionType_Invalid_2.whiley:12: expected int, found IntBool
     f(x)
       ^

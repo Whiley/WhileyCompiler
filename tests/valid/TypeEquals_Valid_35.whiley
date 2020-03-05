@@ -1,8 +1,5 @@
-
-
-type pos is int
-
-type neg is int
+type pos is int where true
+type neg is int where true
 
 type expr is pos | neg | int[]
 

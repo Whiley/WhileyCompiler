@@ -5,7 +5,7 @@ type nat is (int x) where nat(x)
 type pos is (int x) where pos(x)
 
 function f1(pos x) -> (nat y):
-    return x
+    return (nat) x
 
 function f2(nat x) -> (pos y):
-    return x
+    return (pos) x

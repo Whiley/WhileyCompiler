@@ -7,8 +7,8 @@ type nlt is nat | natlist
 
 function g(int y) -> nlt
 requires y >= 0:
-    return y
+    return (nat) y
 
 function f(int x) -> plt
 requires x >= 0:
-    return g(x)
+    return (plt) g(x)

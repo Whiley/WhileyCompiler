@@ -6,4 +6,3 @@ function init() -> (bool r):
 
 method test():
     int[] xs = init()
-    

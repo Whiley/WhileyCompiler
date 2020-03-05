@@ -8,4 +8,4 @@ type posLink is {posList next, nat data}
 type posList is int | posLink
 
 function f(LinkedList list) -> posList:
-    return list
+    return (posList) list

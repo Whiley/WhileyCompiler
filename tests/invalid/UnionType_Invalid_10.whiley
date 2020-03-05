@@ -4,7 +4,7 @@ type natlist is nat[]
 type nlt is nat | natlist
 
 function g(int y) -> nlt:
-    return y
+    return (nlt) y
 
 public export method test() :
     g(-1)

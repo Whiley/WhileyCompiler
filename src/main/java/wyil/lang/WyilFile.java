@@ -4831,12 +4831,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(EXPR_tupleinitialiser, type, operands);
 			}
 
-
-			@Override
-			public Type.Tuple getType() {
-				return (Type.Tuple) super.getType();
-			}
-
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new TupleInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
@@ -4988,6 +4982,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
+		public static final Array VoidArray = new Array(Void);
 		public static final Array IntArray = new Array(Int);
 		public static final Array AnyArray = new Array(Any);
 		public static final Null Null = new Null();
@@ -5641,6 +5636,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				this(new Value.Bool(isOpen), fields);
 			}
 
+			public Record(boolean isOpen, WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				this(new Value.Bool(isOpen), zip(fields,types));
+			}
+
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
 			}
@@ -5802,6 +5801,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "{" + r + "}";
 			}
 
+			private static WyilFile.Tuple<Type.Field> zip(WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				Type.Field[] fs = new Type.Field[fields.size()];
+				for(int i=0;i!=fs.length;++i) {
+					fs[i] = new Type.Field(fields.get(i),types.get(i));
+				}
+				return new WyilFile.Tuple<>(fs);
+			}
+
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_record") {
 				@SuppressWarnings("unchecked")
 				@Override
@@ -5896,12 +5903,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return types[0];
 				default:
 					// Sanity check
-					for(int i=0;i!=types.length;++i) {
-						if(types[i] instanceof Type.Void) {
-							return Type.Void;
-						}
-					}
-					//
 					return new Type.Tuple(types);
 				}
 			}
@@ -6092,6 +6093,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			}
 
+			public boolean isAlias() {
+				return getLink().getTarget().getInvariant().size() == 0;
+			}
+
 			@Override
 			public boolean isWriteable() {
 				return getConcreteType().isWriteable();
@@ -6206,6 +6211,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Union extends AbstractType implements Type {
+			public static Type create(WyilFile.Tuple<Type> types) {
+				return create(types.toArray(Type.class));
+			}
 			/**
 			 * Create a sequence of zero or more types.
 			 *

@@ -10,6 +10,6 @@ public export method test():
     IntBool x
     //
     x = 123
-    assume f(x) == 123
+    assume f((int) x) == 123
     x = false
-    assume f(x) == false
+    assume f((bool) x) == false
