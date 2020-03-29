@@ -125,6 +125,7 @@ public class TestUtils {
 		// Problems with strict subtyping
 		VALID_IGNORED.put("Contractive_Valid_2", "1003");
 		VALID_IGNORED.put("OpenRecord_Valid_9", "1003");
+		VALID_IGNORED.put("Template_Valid_59", "1003");
 		VALID_IGNORED.put("TypeEquals_Valid_28", "1003");
 		VALID_IGNORED.put("TypeEquals_Valid_35", "1003");
 		VALID_IGNORED.put("TypeEquals_Valid_46", "1003");

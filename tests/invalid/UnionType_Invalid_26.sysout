@@ -1,6 +1,3 @@
-tests/invalid/UnionType_Invalid_26.whiley:6: expected any[], found IntList
-    assume x[0] == 1
-           ^
-tests/invalid/UnionType_Invalid_26.whiley:10: expected any[], found IntList
+tests/invalid/UnionType_Invalid_26.whiley:10: expected any[], found int
     assume x[0] == 1
            ^

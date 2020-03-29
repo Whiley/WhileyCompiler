@@ -552,7 +552,7 @@ public class FlowTypeUtils {
 		public Typing(Subtyping.AbstractEnvironment subtyping) {
 			this.subtyping = subtyping;
 			this.frames = new ArrayList<>();
-			this.nVariables = 1;
+			this.nVariables = 0;
 			this.matrix = new Row[] { new Row(subtyping.TOP) };
 		}
 
@@ -592,7 +592,7 @@ public class FlowTypeUtils {
 		}
 
 		public int top() {
-			return nVariables-1;
+			return nVariables - 1;
 		}
 
 		public int[] top(int n) {
@@ -615,56 +615,6 @@ public class FlowTypeUtils {
 			return project(row -> row.addAll(n,projection));
 		}
 
-		public Typing pull(int lhs, Function<Row, Type> projection) {
-			return map(row -> {
-				Type upper = row.get(lhs);
-				Type lower = projection.apply(row);
-				//
-				if (upper instanceof Type.Void && lower instanceof Type.Void) {
-					// Target happy to accept void, and we have void.
-					return row;
-				} else if (upper instanceof Type.Void) {
-					// Indicates target happy to accept anything. Therefore, back propagate what we
-					// have.
-					return row.set(lhs, lower);
-				} else if (lower instanceof Type.Void) {
-					return null;
-				} else {
-					row = row.set(lhs, lower);
-					// Target requires something, source has something. Hence, check they are
-					// compatible.
-					Subtyping.Constraints constraints = subtyping.isSubtype(upper, lower);
-					// Done
-					return row.intersect(constraints);
-				}
-			});
-		}
-
-		public Typing pull(int lhs, int rhs, Function<Type, Type> projection) {
-			return map(row -> {
-				Type upper = row.get(lhs);
-				Type lower = projection.apply(row.get(rhs));
-				//
-				if (upper instanceof Type.Void && lower instanceof Type.Void) {
-					// Target happy to accept void, and we have void.
-					return row;
-				} else if (lower instanceof Type.Void || lower == null) {
-					return null;
-				} else if (upper instanceof Type.Void) {
-					// Indicates target happy to accept anything. Therefore, back propagate what we
-					// have.
-					return row.set(lhs, lower);
-				} else {
-					row = row.set(lhs, lower);
-					// Target requires something, source has something. Hence, check they are
-					// compatible.
-					Subtyping.Constraints constraints = subtyping.isSubtype(upper, lower);
-					// Done
-					return row.intersect(constraints);
-				}
-			});
-		}
-
 		public Typing project(Function<Row,Row[]> projection) {
 			ArrayList<Row> nRows = new ArrayList<>();
 			// Sanity check existing rows
@@ -673,7 +623,10 @@ public class FlowTypeUtils {
 				Row[] nith = projection.apply(ith);
 				//
 				for(int j=0;j!=nith.length;++j) {
-					nRows.add(nith[j]);
+					Row jth = nith[j];
+					if(jth != null) {
+						nRows.add(jth);
+					}
 				}
 			}
 			// Remove any invalid rows
@@ -682,6 +635,34 @@ public class FlowTypeUtils {
 			int nVariables = arr.length > 0 ? arr[0].size() : 0;
 			// Create new typing
 			return new Typing(subtyping, frames, nVariables, arr);
+		}
+
+		/**
+		 * Filter rows based on some particular predicate.
+		 *
+		 * @param fn
+		 * @return
+		 */
+		public Typing filter(Predicate<Row> fn) {
+			for (int i = 0; i != matrix.length; ++i) {
+				Row ith = matrix[i];
+				if (!fn.test(ith)) {
+					// Something is being filtered. This is the point of no return.
+					Row[] nRows = new Row[matrix.length];
+					System.arraycopy(matrix, 0, nRows, 0, i);
+					for (int j = i + 1; j < nRows.length; ++j) {
+						Row jth = matrix[j];
+						if (fn.test(jth)) {
+							nRows[j] = jth;
+						}
+					}
+					// Remove any invalid rows
+					nRows = ArrayUtils.removeAll(nRows, null);
+					// Create new typing
+					return new Typing(subtyping, frames, nVariables, nRows);
+				}
+			}
+			return this;
 		}
 
 		public Typing map(Function<Row,Row> fn) {
@@ -755,7 +736,8 @@ public class FlowTypeUtils {
 		 * @return
 		 */
 		public boolean finalise() {
-			boolean r = true;
+			// Finalising an empty typing should be considered a success.
+			boolean r = !isEmpty();
 			// Finally, run every registered finaliser.
 			for (Finaliser f : frames) {
 				r &= f.finalise(matrix);
@@ -854,17 +836,13 @@ public class FlowTypeUtils {
 			}
 
 			public Row add(Type type) {
-				Type[] nTypes = Arrays.copyOf(types, types.length + 1);
-				nTypes[types.length] = type;
-				return new Row(constraints, nTypes);
-			}
-
-			public Row addAll(int n, Type type) {
-				Type[] nTypes = Arrays.copyOf(types, types.length + n);
-				for(int i=0;i<n;++i) {
-					nTypes[i+types.length] = type;
+				if(type != null) {
+					Type[] nTypes = Arrays.copyOf(types, types.length + 1);
+					nTypes[types.length] = type;
+					return new Row(constraints, nTypes);
+				} else {
+					return null;
 				}
-				return new Row(constraints, nTypes);
 			}
 
 			public Row[] addAll(int n, BiFunction<Row, Integer, Type[]> fn) {
@@ -935,44 +913,6 @@ public class FlowTypeUtils {
 			}
 		}
 
-		private static List<Type.Tuple> filterApplicableTuples(int n, Type type) {
-			List<Type.Tuple> ts = type.filter(Type.Tuple.class);
-			for (int i = 0; i != ts.size(); ++i) {
-				Type.Tuple r = ts.get(0);
-				if (r.size() != n) {
-					ts.remove(i--);
-				}
-			}
-			return ts;
-		}
-
-		private static List<Type.Record> filterApplicableRecords(Tuple<Identifier> fields, Type type) {
-			List<Type.Record> ts = type.filter(Type.Record.class);
-			for(int i=0;i!=ts.size();++i) {
-				Type.Record r = ts.get(0);
-				if(!hasFields(r,fields)) {
-					ts.remove(i--);
-				}
-			}
-			return ts;
-		}
-
-		public static boolean hasFields(Type.Record rec, Tuple<Identifier> fields) {
-			Tuple<Type.Field> fs = rec.getFields();
-			if (!rec.isOpen() && fs.size() != fields.size()) {
-				return false;
-			} else if (rec.isOpen() && fs.size() > fields.size()) {
-				return false;
-			} else {
-				for (int i = 0; i != fields.size(); ++i) {
-					Identifier ith = fields.get(i);
-					if (rec.getField(ith) == null) {
-						return false;
-					}
-				}
-				return true;
-			}
-		}
 	}
 
 	private static Type[] substitute(Type[] types, Function<Object, SyntacticItem> binder) {
@@ -1049,77 +989,5 @@ public class FlowTypeUtils {
 			}
 			return "{" + r + "}:" + candidate.getType();
 		}
-	}
-
-	/**
-	 * <p>
-	 * Given a list of candidate bindings, determine the most precise match for the
-	 * supplied argument types. The winning candidate must be a subtype of all
-	 * candidates. For example, consider this:
-	 * </p>
-	 *
-	 * <pre>
-	 * function f(int|bool x) -> (int r):
-	 *    ...
-	 *
-	 * function f(int x) -> (int r):
-	 *    ...
-	 * </pre>
-	 *
-	 * <p>
-	 * Typing an invocation <code>f(1)</code> will generate two candidate bindings
-	 * (i.e. one for each declaration above). The candidate corresponding to
-	 * <code>function(int)->(int)</code> will be chosen over the other because its
-	 * signature is a subtype of the other.
-	 * </p>
-	 *
-	 * @param candidates
-	 * @param args
-	 * @return
-	 */
-	public static Binding selectCallableCandidate(List<Binding> candidates, Subtyping.Environment subtyping) {
-		Binding best = null;
-		Type.Callable bestType = null;
-		boolean bestValidWinner = false;
-		//
-		for (int i = 0; i != candidates.size(); ++i) {
-			Binding candidate = candidates.get(i);
-			Type.Callable candidateType = candidate.getConcreteType();
-			if (best == null) {
-				// No other candidates are applicable so far. Hence, this
-				// one is automatically promoted to the best seen so far.
-				best = candidate;
-				bestType = candidateType;
-				bestValidWinner = true;
-			} else {
-				boolean csubb = subtyping.isSatisfiableSubtype(bestType, candidateType);
-				boolean bsubc = subtyping.isSatisfiableSubtype(candidateType, bestType);
-				//
-				if (csubb && !bsubc) {
-					// This candidate is a subtype of the best seen so far. Hence, it is now the
-					// best seen so far.
-					best = candidate;
-					bestType = candidate.getConcreteType();
-					bestValidWinner = true;
-				} else if (bsubc && !csubb) {
-					// This best so far is a subtype of this candidate. Therefore, we can simply
-					// discard this candidate from consideration since it's definitely not the best.
-				} else if (!csubb && !bsubc) {
-					// This is the awkward case. Neither the best so far, nor the candidate, are
-					// subtypes of each other. In this case, we report an error. NOTE: must perform
-					// an explicit equality check above due to the present of type invariants.
-					// Specifically, without this check, the system will treat two declarations with
-					// identical raw types (though non-identical actual types) as the same.
-					return null;
-				} else {
-					// This is a tricky case. We have two types after instantiation which are
-					// considered identical under the raw subtype test. As such, they may not be
-					// actually identical (e.g. if one has a type invariant). Furthermore, we cannot
-					// stop at this stage as, in principle, we could still find an outright winner.
-					bestValidWinner = false;
-				}
-			}
-		}
-		return bestValidWinner ? best : null;
 	}
 }

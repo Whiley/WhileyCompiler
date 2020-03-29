@@ -5640,6 +5640,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				this(new Value.Bool(isOpen), zip(fields,types));
 			}
 
+			public Record(boolean isOpen, Identifier field, Type type) {
+				this(new Value.Bool(isOpen), new WyilFile.Tuple<Type.Field>(new Type.Field(field, type)));
+			}
+
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
 			}

@@ -20,6 +20,6 @@ public export method test():
     j = {val: false}
     k = {val: [1,2,3]}
     //
-    assume !(i is null) && i.val == 1
-    assume !(j is null) && j.val == false
-    assume !(k is null) && k.val == [1,2,3]
+    assume i.val == 1
+    assume j.val == false
+    assume k.val == [1,2,3]
