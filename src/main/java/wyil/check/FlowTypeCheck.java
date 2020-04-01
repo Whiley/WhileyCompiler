@@ -13,11 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import static wybs.util.AbstractCompilationUnit.ITEM_bool;
-import static wybs.util.AbstractCompilationUnit.ITEM_byte;
-import static wybs.util.AbstractCompilationUnit.ITEM_int;
-import static wybs.util.AbstractCompilationUnit.ITEM_null;
-import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
@@ -29,11 +24,11 @@ import java.util.function.Predicate;
 import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.*;
 import wybs.util.ResolveError;
-import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
+import static wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
@@ -107,23 +102,62 @@ import wyil.lang.WyilFile.Type;
  * <p>
  * The ability to omit template arguments also stems from the type inference
  * algorithm. This employs a constraint system over type variables to finding
- * suitable bindings for template parameters.  The following illustrates:
+ * suitable bindings for template parameters. The following illustrates:
  * </p>
+ * 
  * <pre>
  * type Box<T> is null | { T value }
  *
- * function get(Box<T> box, T dEfault) -> T:
+ * function empty<T>() -> Box<T>:
+ *  return null
+ *  
+ * function get<T>(Box<T> box, T dEfault) -> T:
  *    if box is null:
  *       return dEfault
  *    else:
  *       return box.value
+ * </pre>
+ * <p>
+ * Using the above definitions, the following type checks without requiring
+ * explicit type annotations:
+ * </p>
  * 
- * function toInt(Box<int> b) -> int:
- *    return get(b,0)
+ * <pre>
+ * Box<int> b = box(1)
+ * assert get(b,0) == 1
  * </pre>
  * 
+ * <p>
+ * In this case, the template parameter <code>T</code> is determine from the
+ * type of variable <code>b</code>. However, template parameters can also be
+ * bound from return values as well, which the following illustrates:
+ * </p>
+ * 
+ * <pre>
+ * Box<int> b = empty() assert get(b,0) == 1 </pre
+ * 
+ * <p>
+ * Here, the template parameter for <code>empty()</code> is determined from the
+ * return value.
+ * </p>
+ *
  * <h3>References</h3>
  * <ul>
+ * <li>
+ * <p>
+ * Sound and Complete Flow Typing with Unions, Intersections and Negations.
+ * David J. Pearce. In Proceedings of the Conference on Verification, Model
+ * Checking, and Abstract Interpretation (VMCAI), volume 7737 of Lecture Notes
+ * in Computer Science, pages 335--354, 2013. © Springer-Verlag
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * A Calculus for Constraint-Based Flow Typing. David J. Pearce. In Proceedings
+ * of the Workshop on Formal Techniques for Java-like Languages (FTFJP), Article
+ * 7, 2013.
+ * </p>
+ * </li>
  * <li>
  * <p>
  * David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
@@ -1311,7 +1345,41 @@ public class FlowTypeCheck implements Compiler.Check {
 	// Push Expressions (for Type Inference)
 	// =====================================================================================
 
-	public Typing pushExpression(int var, Expr expression, Typing typing, Environment environment) {
+	/**
+	 * <p>
+	 * Push a given type forwards through an expression. Pushing occurs when there
+	 * is a known target type which can be used as a basis for the push. For
+	 * example, consider this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * nat[]|null var = [1,false]
+	 * </pre>
+	 * 
+	 * <p>
+	 * This method is responsible for pushing the type <code>nat[]|null</code> into
+	 * the expression <code>[1,false]</code>. In turn, this will filter the type
+	 * down to <code>nat[]</code> and then push <code>nat</code> through each of the
+	 * initialiser expressions. Ultimately, this will lead to a type error as
+	 * <code>nat</code> cannot be pushed into <code>false</code>.
+	 * </p>
+	 * <p>
+	 * A type variable is used instead of an actual type because, unfortunately, we
+	 * must support multiple possible typings simultaneously. Thus, the type
+	 * variable refers to the set of types being simultaneously pushed through the
+	 * expression.
+	 * </p>
+	 * 
+	 * @param var         The type variable who's types are being pushed through the
+	 *                    expression
+	 * @param expression  The expression we are pushing through.
+	 * @param typing      The current typing matrix. This represents all current
+	 *                    typings under consideration.
+	 * @param environment The current typing environment applicable for the
+	 *                    expression given its context.
+	 * @return
+	 */
+	private Typing pushExpression(int var, Expr expression, Typing typing, Environment environment) {
 		meter.step("expression");
 		//
 		switch (expression.getOpcode()) {
@@ -1396,28 +1464,24 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public Typing pushExpression(Expr expression, Typing typing, Environment environment) {
+	private Typing  pushExpression(Expr expression, Typing typing, Environment environment) {
 		return pushExpression(typing.top(), expression, typing, environment);
 	}
 
-	public Typing pushExpressions(int[] children, Tuple<Expr> expressions, Typing typing, Environment environment) {
-		return pushExpressions(children, expressions, typing, environment);
-	}
-
-	public Typing pushExpressions(Tuple<Expr> expressions, Type type, Typing typing, Environment environment) {
+	private Typing  pushExpressions(Tuple<Expr> expressions, Type type, Typing typing, Environment environment) {
 		for (int i = 0; i != expressions.size(); ++i) {
 			typing = pushExpression(expressions.get(i), typing.push(type), environment);
 		}
 		return typing;
 	}
 
-	public Typing pushExpression(Expr expression, Function<Typing.Row, Type> fn, Typing typing,
+	private Typing  pushExpression(Expr expression, Function<Typing.Row, Type> fn, Typing typing,
 			Environment environment) {
 		typing = typing.map(row -> row.add(fn.apply(row)));
 		return pushExpression(expression, typing, environment);
 	}
 
-	public Typing pushExpressions(Tuple<Expr> expressions, BiFunction<Typing.Row, Integer, Type> fn, Typing typing,
+	private Typing  pushExpressions(Tuple<Expr> expressions, BiFunction<Typing.Row, Integer, Type> fn, Typing typing,
 			Environment environment) {
 		for (int i = 0; i != expressions.size(); ++i) {
 			final int _i = i;
@@ -1858,7 +1922,38 @@ public class FlowTypeCheck implements Compiler.Check {
 	// Pull Expressions (for Type Inference)
 	// =====================================================================================
 
-	public Typing pullExpression(Expr expression, boolean required, Typing typing, Environment environment) {
+	/**
+	 * <p>
+	 * Pull a type backwards out of an expression. Pull occurs when there is no
+	 * target type which could be used as a basis for pushing. For example, consider
+	 * this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * assert [1,2,3] == xs
+	 * </pre>
+	 * 
+	 * <p>
+	 * When typing the expression <code>[1,2,3]</code> there is no target type to
+	 * use. Therefore, we pull the "natural" type out of it (which would be
+	 * <code>int[]</code> in this case).
+	 * </p>
+	 * <p>
+	 * The type of the expression must be loaded onto the to of the typing returned.
+	 * This means we can easily determine the variable allocated for this expression
+	 * via Typing.top().
+	 * </p>
+	 * 
+	 * @param expression  The expression we are pulling from.
+	 * @param required    Flag to indicate whether or not a return value is
+	 *                    required.
+	 * @param typing      The current typing matrix. This represents all current
+	 *                    typings under consideration.
+	 * @param environment The current typing environment applicable for the
+	 *                    expression given its context.
+	 * @return
+	 */
+	private Typing  pullExpression(Expr expression, boolean required, Typing typing, Environment environment) {
 		meter.step("expression");
 		//
 		switch (expression.getOpcode()) {
@@ -2188,26 +2283,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		return typing.project(row -> fork(candidates, c -> row.add(c.getType())));
 	}
 
-	public List<Decl.Callable> filterLambdaCandidates(Expr.LambdaAccess expr) {
-		Decl.Link<Decl.Callable> link = expr.getLink();
-		Type types = expr.getParameterTypes();
-		// There is a problem here in that we cannot distinguish
-		// between the case where no parameters were supplied and when
-		// exactly zero arguments were supplied.
-		if (types.shape() > 0) {
-			return select(link.getCandidates(), d -> d.getType().getParameter().equals(types));
-		} else if (link.isResolved()) {
-			// Link already resolved (e.g. because was only one candidate).
-			return select(link.getCandidates(), d -> true);
-		} else if (link.isPartiallyResolved()) {
-			// Harder case. No signature given by user, so must fork constraints at this
-			// point for each sensible candidate.
-			return link.getCandidates();
-		} else {
-			return Collections.emptyList();
-		}
-	}
-
 	private Typing pullLambdaDeclaration(Decl.Lambda expr, Typing typing, Environment environment) {
 		// Extract parameters from declaration
 		Type params = Decl.Callable.project(expr.getParameters());
@@ -2317,6 +2392,33 @@ public class FlowTypeCheck implements Compiler.Check {
 	// ==========================================================================
 	// Helpers
 	// ==========================================================================
+
+	/**
+	 * Filter the set of candidates for a lambda access expression based on the
+	 * presence (or not) of type parameters.
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private static List<Decl.Callable> filterLambdaCandidates(Expr.LambdaAccess expr) {
+		Decl.Link<Decl.Callable> link = expr.getLink();
+		Type types = expr.getParameterTypes();
+		// There is a problem here in that we cannot distinguish
+		// between the case where no parameters were supplied and when
+		// exactly zero arguments were supplied.
+		if (types.shape() > 0) {
+			return select(link.getCandidates(), d -> d.getType().getParameter().equals(types));
+		} else if (link.isResolved()) {
+			// Link already resolved (e.g. because was only one candidate).
+			return link.getCandidates();
+		} else if (link.isPartiallyResolved()) {
+			// Harder case. No signature given by user, so must fork constraints at this
+			// point for each sensible candidate.
+			return link.getCandidates();
+		} else {
+			return Collections.emptyList();
+		}
+	}
 
 	private Tuple<Type> constructExpectedMethod(int var, Tuple<Expr> operands, Typing typing, Environment environment) {
 		// Determine natural type of arguments
@@ -3004,319 +3106,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	/**
-	 * Check whether two types are completely disjoint. For example,
-	 * <code>bool</code> and <code>int</code> are disjoint, whilst
-	 * <code>int|null</code> and <code>int</code> are not. This is used to determine
-	 * whether an equality comparison makes any possible sense. More specifically,
-	 * whether there is any interpretation under which these two types could be
-	 * equal or not.
-	 *
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static boolean disjoint(Type t1, Type t2, Set<Name> visited) {
-		int t1_opcode = Subtyping.AbstractEnvironment.normalise(t1.getOpcode());
-		int t2_opcode = Subtyping.AbstractEnvironment.normalise(t2.getOpcode());
-		//
-		if (t1_opcode == t2_opcode) {
-			switch (t1_opcode) {
-			case TYPE_any:
-			case TYPE_bool:
-			case TYPE_byte:
-			case TYPE_int:
-			case TYPE_null:
-			case TYPE_void:
-			case TYPE_existential:
-				return false;
-			case TYPE_universal: {
-				Type.Universal v1 = (Type.Universal) t1;
-				Type.Universal v2 = (Type.Universal) t2;
-				return !v1.getOperand().toString().equals(v2.getOperand().toString());
-			}
-			case TYPE_array: {
-				Type.Array a1 = (Type.Array) t1;
-				Type.Array a2 = (Type.Array) t2;
-				return disjoint(a1.getElement(), a2.getElement(), visited);
-			}
-			case TYPE_staticreference:
-			case TYPE_reference: {
-				Type.Reference a1 = (Type.Reference) t1;
-				Type.Reference a2 = (Type.Reference) t2;
-				// NOTE: could potentially do better here by examining lifetimes.
-				return disjoint(a1.getElement(), a2.getElement(), visited);
-			}
-			case TYPE_function:
-			case TYPE_method:
-			case TYPE_property: {
-				Type.Callable c1 = (Type.Callable) t1;
-				Type.Callable c2 = (Type.Callable) t2;
-				return disjoint(c1.getParameter(), c2.getParameter(), visited)
-						|| disjoint(c1.getReturn(), c2.getReturn(), visited);
-			}
-			case TYPE_nominal: {
-				Type.Nominal n1 = (Type.Nominal) t1;
-				Type.Nominal n2 = (Type.Nominal) t2;
-				Name n = n1.getLink().getName();
-				if (visited != null && visited.contains(n)) {
-					return false;
-				} else {
-					visited = (visited == null) ? new HashSet<>() : new HashSet<>(visited);
-					visited.add(n);
-					return disjoint(n1.getConcreteType(), n2.getConcreteType(), visited);
-				}
-			}
-			case TYPE_tuple: {
-				Type.Tuple u1 = (Type.Tuple) t1;
-				Type.Tuple u2 = (Type.Tuple) t2;
-				if (u1.size() != u2.size()) {
-					return true;
-				} else {
-					for (int i = 0; i != u1.size(); ++i) {
-						if (disjoint(u1.get(i), u2.get(i), visited)) {
-							return true;
-						}
-					}
-					return false;
-				}
-			}
-			case TYPE_union: {
-				Type.Union u1 = (Type.Union) t1;
-				Type.Union u2 = (Type.Union) t2;
-				for (int i = 0; i != u1.size(); ++i) {
-					for (int j = 0; j != u2.size(); ++j) {
-						if (!disjoint(u1.get(i), u2.get(i), visited)) {
-							return false;
-						}
-					}
-				}
-				return true;
-			}
-			case TYPE_record: {
-				Type.Record r1 = (Type.Record) t1;
-				Type.Record r2 = (Type.Record) t2;
-				Tuple<Type.Field> r1fs = r1.getFields();
-				Tuple<Type.Field> r2fs = r2.getFields();
-				//
-				if (r1fs.size() < r2fs.size() && !r1.isOpen()) {
-					return true;
-				} else if (r1fs.size() > r2fs.size() && !r2.isOpen()) {
-					return true;
-				}
-				for (int i = 0; i != r1fs.size(); ++i) {
-					Type.Field f1 = r1fs.get(i);
-					Type ft2 = r2.getField(f1.getName());
-					if (ft2 != null && disjoint(f1.getType(), ft2, visited)) {
-						return true;
-					}
-				}
-				return false;
-			}
-			}
-		} else if (t1 instanceof Type.Any || t2 instanceof Type.Any) {
-			return false;
-		} else if (t1 instanceof Type.Void || t2 instanceof Type.Void) {
-			// NOTE: should only be possible for empty arrays
-			return false;
-		} else if (t1 instanceof Type.Existential || t2 instanceof Type.Existential) {
-			return false;
-		} else if (t1 instanceof Type.Union) {
-			Type.Union u1 = (Type.Union) t1;
-			for (int i = 0; i != u1.size(); ++i) {
-				if (!disjoint(u1.get(i), t2, visited)) {
-					return false;
-				}
-			}
-			return true;
-		} else if (t2 instanceof Type.Union) {
-			Type.Union u2 = (Type.Union) t2;
-			for (int i = 0; i != u2.size(); ++i) {
-				if (!disjoint(t1, u2.get(i), visited)) {
-					return false;
-				}
-			}
-			return true;
-		} else if (t1 instanceof Type.Nominal) {
-			Type.Nominal n1 = (Type.Nominal) t1;
-			Name n = n1.getLink().getName();
-			if (visited != null && visited.contains(n)) {
-				return false;
-			} else {
-				visited = (visited == null) ? new HashSet<>() : new HashSet<>(visited);
-				visited.add(n);
-				return disjoint(n1.getConcreteType(), t2, visited);
-			}
-		} else if (t2 instanceof Type.Nominal) {
-			Type.Nominal n2 = (Type.Nominal) t2;
-			return disjoint(t1, n2.getConcreteType(), visited);
-		}
-
-		return true;
-	}
-
-	/**
-	 * A helper method which identifies the "natural" type of an expression.
-	 *
-	 * @param expression
-	 * @param environment
-	 * @return
-	 */
-	private Type getNaturalType(Expr expression, Environment environment) {
-		switch (expression.getOpcode()) {
-		case EXPR_constant:
-			return typeOf(((Expr.Constant) expression).getValue());
-		case EXPR_variablecopy:
-			return environment.getType(((Expr.VariableAccess) expression).getVariableDeclaration());
-		case EXPR_staticvariable: {
-			Decl.Link<Decl.StaticVariable> l = ((Expr.StaticVariableAccess) expression).getLink();
-			// Extract type if applicable
-			return l.isResolved() ? l.getTarget().getType() : null;
-		}
-		case EXPR_cast: {
-			Expr.Cast c = (Expr.Cast) expression;
-			return c.getType();
-		}
-		case EXPR_invoke: {
-			Expr.Invoke l = (Expr.Invoke) expression;
-			List<Decl.Callable> types = l.getLink().getCandidates();
-			Type[] ts = new Type[types.size()];
-			for (int i = 0; i != ts.length; ++i) {
-				ts[i] = types.get(i).getType().getReturn();
-			}
-			return Type.Union.create(ts);
-		}
-		case EXPR_indirectinvoke: {
-			Expr.IndirectInvoke r = (Expr.IndirectInvoke) expression;
-			Type.Callable src = getNaturalType(r.getSource(), environment).as(Type.Callable.class);
-			return (src == null) ? Type.Any : src.getReturn();
-		}
-		case EXPR_logicalnot:
-		case EXPR_logicalor:
-		case EXPR_logicaland:
-		case EXPR_logicaliff:
-		case EXPR_logicalimplication:
-		case EXPR_is:
-		case EXPR_logicaluniversal:
-		case EXPR_logicalexistential:
-		case EXPR_equal:
-		case EXPR_notequal:
-		case EXPR_integerlessthan:
-		case EXPR_integerlessequal:
-		case EXPR_integergreaterthan:
-		case EXPR_integergreaterequal:
-			return Type.Bool;
-		case EXPR_integernegation:
-		case EXPR_integeraddition:
-		case EXPR_integersubtraction:
-		case EXPR_integermultiplication:
-		case EXPR_integerdivision:
-		case EXPR_integerremainder:
-			return Type.Int;
-		case EXPR_bitwisenot:
-		case EXPR_bitwiseand:
-		case EXPR_bitwiseor:
-		case EXPR_bitwisexor:
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
-			return Type.Byte;
-		case EXPR_tupleinitialiser: {
-			Type[] types = getBackwardsTypes(((Expr.TupleInitialiser) expression).getOperands(), environment);
-			return Type.Tuple.create(types);
-		}
-		case EXPR_recordinitialiser: {
-			Expr.RecordInitialiser r = (Expr.RecordInitialiser) expression;
-			Tuple<Identifier> fields = r.getFields();
-			Type[] types = getBackwardsTypes(r.getOperands(), environment);
-			Type.Field[] fs = new Type.Field[types.length];
-			for (int i = 0; i != fields.size(); ++i) {
-				fs[i] = new Type.Field(fields.get(i), types[i]);
-			}
-			return new Type.Record(false, new Tuple<>(fs));
-		}
-		case EXPR_recordaccess:
-		case EXPR_recordborrow: {
-			Expr.RecordAccess r = (Expr.RecordAccess) expression;
-			Type.Record src = getNaturalType(r.getOperand(), environment).as(Type.Record.class);
-			if (src != null && src.getField(r.getField()) != null) {
-				return src.getField(r.getField());
-			} else {
-				return Type.Any;
-			}
-		}
-		case EXPR_arraylength:
-			return Type.Int;
-		case EXPR_arrayinitialiser: {
-			Expr.ArrayInitialiser r = (Expr.ArrayInitialiser) expression;
-			Type[] types = getBackwardsTypes(r.getOperands(), environment);
-			return new Type.Array(Type.Union.create(types));
-		}
-		case EXPR_arraygenerator: {
-			Expr.ArrayGenerator r = (Expr.ArrayGenerator) expression;
-			return new Type.Array(getNaturalType(r.getFirstOperand(), environment));
-		}
-		case EXPR_arrayaccess:
-		case EXPR_arrayborrow: {
-			Expr.ArrayAccess r = (Expr.ArrayAccess) expression;
-			Type.Array src = getNaturalType(r.getFirstOperand(), environment).as(Type.Array.class);
-			return (src == null) ? Type.Any : src.getElement();
-		}
-		case EXPR_arrayrange:
-			return Type.IntArray;
-		case EXPR_dereference: {
-			Expr.Dereference r = (Expr.Dereference) expression;
-			Type.Reference src = getNaturalType(r.getOperand(), environment).as(Type.Reference.class);
-			return (src == null) ? Type.Any : src.getElement();
-		}
-		case EXPR_fielddereference: {
-			Expr.FieldDereference r = (Expr.FieldDereference) expression;
-			Type.Reference src = getNaturalType(r.getOperand(), environment).as(Type.Reference.class);
-			if (src != null) {
-				Type.Record rec = src.getElement().as(Type.Record.class);
-				if (rec != null && rec.getField(r.getField()) != null) {
-					return rec.getField(r.getField());
-				}
-			}
-			return Type.Any;
-		}
-		case EXPR_staticnew: {
-			Expr.New r = (Expr.New) expression;
-			return new Type.Reference(getNaturalType(r.getOperand(), environment));
-		}
-		case EXPR_new: {
-			Expr.New r = (Expr.New) expression;
-			return new Type.Reference(getNaturalType(r.getOperand(), environment), r.getLifetime());
-		}
-		case EXPR_lambdaaccess: {
-			Expr.LambdaAccess l = (Expr.LambdaAccess) expression;
-			List<Decl.Callable> types = l.getLink().getCandidates();
-			Type[] ts = new Type[types.size()];
-			for (int i = 0; i != ts.length; ++i) {
-				ts[i] = types.get(i).getType();
-			}
-			return Type.Union.create(ts);
-		}
-		case DECL_lambda: {
-			Decl.Lambda l = (Decl.Lambda) expression;
-			Type ret = getNaturalType(l.getBody(), environment);
-			Tuple<Type> params = l.getParameters().map(v -> v.getType());
-			// Not much more we can do here
-			return new Type.Function(Type.Tuple.create(params), ret);
-		}
-		default:
-			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
-					expression);
-		}
-	}
-
-	private Type[] getBackwardsTypes(Tuple<Expr> expressions, Environment environment) {
-		Type[] types = new Type[expressions.size()];
-		for (int i = 0; i != types.length; ++i) {
-			types[i] = getNaturalType(expressions.get(i), environment);
-		}
-		return types;
-	}
-
-	/**
 	 * Project a given type as an array and extract its element type. Otherwise,
 	 * return null.
 	 *
@@ -3336,7 +3125,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param i
 	 * @return
 	 */
-	public Type getLambdaParameter(Type t, int i) {
+	private static Type getLambdaParameter(Type t, int i) {
 		Type.Callable ct = t.as(Type.Callable.class);
 		return (ct == null || ct.getParameter().shape() <= i) ? null : ct.getParameter().dimension(i);
 	}
@@ -3348,7 +3137,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param t
 	 * @return
 	 */
-	public Type getLambdaReturn(Type t) {
+	private static Type getLambdaReturn(Type t) {
 		Type.Callable ct = t.as(Type.Callable.class);
 		return (ct == null) ? null : ct.getReturn();
 	}
@@ -3429,7 +3218,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param var
 	 * @return
 	 */
-	public Predicate<Typing.Row[]> typeStandardExpression(Expr e, int var) {
+	private static Predicate<Typing.Row[]> typeStandardExpression(Expr e, int var) {
 		SyntacticHeap heap = e.getHeap();
 		return rows -> {
 			if (rows.length != 1 || var < 0) {
@@ -3443,7 +3232,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		};
 	}
 
-	public Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int sig) {
+	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int sig) {
 		Decl.Link<Decl.Callable> link = e.getLink();
 		return rows -> {
 			if (sig < 0) {
@@ -3460,7 +3249,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		};
 	}
 
-	public Predicate<Typing.Row[]> typeLambdaAccess(Expr.LambdaAccess e, int sig) {
+	private Predicate<Typing.Row[]> typeLambdaAccess(Expr.LambdaAccess e, int sig) {
 		Decl.Link<Decl.Callable> link = e.getLink();
 		return rows -> {
 			if (sig < 0) {
@@ -3475,31 +3264,6 @@ public class FlowTypeCheck implements Compiler.Check {
 			}
 			return false;
 		};
-	}
-
-	/**
-	 * Determine the underlying type of a given constant value. For example,
-	 * <code>1</code> has type <code>int</code>, etc.
-	 *
-	 * @param v The value to type
-	 * @return
-	 */
-	private Type typeOf(Value v) {
-		switch (v.getOpcode()) {
-		case ITEM_null:
-			return Type.Null;
-		case ITEM_bool:
-			return Type.Bool;
-		case ITEM_byte:
-			return Type.Byte;
-		case ITEM_int:
-			return Type.Int;
-		case ITEM_utf8:
-			return Type.IntArray;
-		// break;
-		default:
-			return internalFailure("unknown constant encountered: " + v, v);
-		}
 	}
 
 	/**
@@ -3520,135 +3284,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		// Remove any invalid environments which have arisen.
 		return ArrayUtils.removeAll(constraints, null);
-	}
-
-	/**
-	 * Get the underlying type for a given type. For example, consider the following
-	 * declarations:
-	 *
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * type rec_t is {nat f, int g}
-	 * </pre>
-	 *
-	 * Here, the underlying type of <code>nat</code> is <code>int</code>, whilst the
-	 * underlying type of <code>rec_t</code> is <code>{int f, int g}</code>.
-	 *
-	 * @param type
-	 * @param visited
-	 * @return
-	 */
-	public static Type getUnderlyingType(Type type, Set<Name> visited) {
-		switch (type.getOpcode()) {
-		case TYPE_null:
-		case TYPE_bool:
-		case TYPE_byte:
-		case TYPE_int:
-		case TYPE_void:
-		case TYPE_universal:
-		case TYPE_existential:
-			return type;
-		case TYPE_nominal: {
-			Type.Nominal t = (Type.Nominal) type;
-			Name n = t.getLink().getName();
-			if (visited != null && visited.contains(n)) {
-				return type;
-			} else {
-				visited = (visited == null) ? new HashSet<>() : new HashSet<>(visited);
-				visited.add(n);
-				return getUnderlyingType(t.getConcreteType(), visited);
-			}
-		}
-		case TYPE_array: {
-			Type.Array t = (Type.Array) type;
-			Type element = t.getElement();
-			Type nElement = getUnderlyingType(element, visited);
-			if (element == nElement) {
-				return type;
-			} else {
-				return new Type.Array(nElement);
-			}
-		}
-		case TYPE_staticreference:
-		case TYPE_reference: {
-			Type.Reference t = (Type.Reference) type;
-			Type element = t.getElement();
-			Type nElement = getUnderlyingType(element, visited);
-			if (element == nElement) {
-				return type;
-			} else {
-				return new Type.Reference(nElement);
-			}
-		}
-		case TYPE_record: {
-			Type.Record t = (Type.Record) type;
-			Tuple<Type.Field> fields = t.getFields();
-			Type.Field[] nFields = new Type.Field[fields.size()];
-			boolean changed = false;
-			for (int i = 0; i != nFields.length; ++i) {
-				Type.Field field = fields.get(i);
-				Type element = field.getType();
-				Type nElement = getUnderlyingType(element, visited);
-				if (element == nElement) {
-					nFields[i] = field;
-				} else {
-					nFields[i] = new Type.Field(field.getName(), nElement);
-					changed = true;
-				}
-			}
-			if (changed) {
-				return new Type.Record(t.isOpen(), new Tuple<>(nFields));
-			} else {
-				return type;
-			}
-		}
-		case TYPE_property:
-		case TYPE_function:
-		case TYPE_method: {
-			Type.Callable t = (Type.Callable) type;
-			Type tParam = t.getParameter();
-			Type tReturn = t.getReturn();
-			Type nParam = getUnderlyingType(tParam, visited);
-			Type nReturn = getUnderlyingType(tReturn, visited);
-			if (tParam == nParam && tReturn == nReturn) {
-				return type;
-			} else if (t instanceof Type.Property) {
-				return new Type.Property(nParam, nReturn);
-			} else if (t instanceof Type.Function) {
-				return new Type.Function(nParam, nReturn);
-			} else {
-				Type.Method m = (Type.Method) t;
-				return new Type.Method(nParam, nReturn, m.getCapturedLifetimes(), m.getLifetimeParameters());
-			}
-		}
-		case TYPE_tuple: {
-			Type.Tuple t = (Type.Tuple) type;
-			Type[] types = getUnderlyingTypes(t.getAll(), visited);
-			return Type.Tuple.create(types);
-		}
-		case TYPE_union: {
-			Type.Union t = (Type.Union) type;
-			Type[] types = getUnderlyingTypes(t.getAll(), visited);
-			return new Type.Union(types);
-		}
-		}
-		throw new IllegalArgumentException("invalid type (" + type + "," + type.getClass().getName() + ")");
-	}
-
-	public static Type[] getUnderlyingTypes(Type[] types, Set<Name> visited) {
-		Type[] uTypes = new Type[types.length];
-		for (int i = 0; i != types.length; ++i) {
-			uTypes[i] = getUnderlyingType(types[i], visited);
-		}
-		return uTypes;
-	}
-
-	public static <T> T[] map(T[] items, Function<T, T> fn) {
-		T[] nitems = Arrays.copyOf(items, items.length);
-		for (int i = 0; i != items.length; ++i) {
-			nitems[i] = fn.apply(items[i]);
-		}
-		return nitems;
 	}
 
 	public Type refine(Type declared, Type selector) {
@@ -3703,7 +3338,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * From a given record type, extract type for a given field.
 	 */
-	public Type extractFieldType(Type.Record type, Identifier field) {
+	private Type extractFieldType(Type.Record type, Identifier field) {
 		if (type == null) {
 			return null;
 		} else {
@@ -3726,7 +3361,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
+	private <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
 		if (type == null) {
 			// indicates failure upstream
 			return null;
@@ -3752,7 +3387,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param lhs
 	 * @param rhs
 	 */
-	public void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, Type rhs) {
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, Type rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3761,7 +3396,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, Typing before, Typing after, Type lhs, int rhs) {
+	private void checkForError(SyntacticItem element, Typing before, Typing after, Type lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3770,7 +3405,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, Typing before, Typing after, Tuple<Type> lhs, int rhs) {
+	private void checkForError(SyntacticItem element, Typing before, Typing after, Tuple<Type> lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3779,7 +3414,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, int code, Typing before, Typing after, int lhs, int rhs) {
+	private void checkForError(SyntacticItem element, int code, Typing before, Typing after, int lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3788,7 +3423,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, int code, Typing before, Typing after) {
+	private void checkForError(SyntacticItem element, int code, Typing before, Typing after) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3797,16 +3432,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int rhs) {
-		if (!before.isEmpty() && after.isEmpty()) {
-			// Concretise to avoid variables in error messages
-			before = before.concretise();
-			// No valid typings remain!
-			syntaxError(element, SUBTYPE_ERROR, before.types(lhs), before.types(rhs));
-		}
-	}
-
-	public void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int rhs,
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int rhs,
 			Function<Type, Type> projection) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
@@ -3816,23 +3442,13 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkForError(SyntacticItem element, Typing before, Typing after, int lhs,
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs,
 			Function<Type, Type> projection, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
 			// No valid typings remain!
 			syntaxError(element, SUBTYPE_ERROR, before.types(lhs).map(projection), before.types(rhs));
-		}
-	}
-
-	public void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int[] rhs,
-			Function<Tuple<Type>, Type> projection) {
-		if (!before.isEmpty() && after.isEmpty()) {
-			// Concretise to avoid variables in error messages
-			before = before.concretise();
-			// No valid typings remain!
-			syntaxError(element, SUBTYPE_ERROR, before.types(lhs), before.types(rhs).map(projection));
 		}
 	}
 
@@ -3846,7 +3462,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		ErrorMessages.syntaxError(e, code, context.toArray(new SyntacticItem[context.size()]));
 	}
 
-	private <T> T internalFailure(String msg, SyntacticItem e) {
+	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntacticException(msg, cu.getEntry(), e);
 	}
