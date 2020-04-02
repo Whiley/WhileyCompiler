@@ -1,4 +1,4 @@
 int x = 1
 
-method test():
+public export method test():
     assert x == 1

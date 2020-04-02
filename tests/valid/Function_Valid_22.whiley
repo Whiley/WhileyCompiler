@@ -7,7 +7,7 @@ function f({int x, int y} rec) -> int:
 function g({int x, int y} rec) -> int:
     return f(rec)
 
-method test():
+public export method test():
     {int x} r1 = {x:123}
     {int x, int y} r2 = {x:456, y:789}
     assume f(r1) == 123

@@ -20,7 +20,7 @@ ensures sum(xs,0,|xs|,r):
     //
     return x
 
-public method test():
+public export method test():
     //
     assert sum([]) == 0
     //

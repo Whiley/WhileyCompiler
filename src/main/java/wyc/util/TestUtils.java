@@ -49,8 +49,7 @@ import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.*;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -392,12 +391,23 @@ public class TestUtils {
 		try {
 			// Load the relevant WyIL module
 			stack.load(root.get(id, WyilFile.ContentType).read());
-			//
-			RValue returns = interpreter.execute(name, sig, stack);
-			// Print out any return values produced
-//			if (returns != null) {
-//				System.out.println(returns);
-//			}
+			// Sanity check modifiers on test method
+			Decl.Callable lambda = stack.getCallable(name, sig);
+			// Sanity check target has correct modifiers.
+			if (lambda.getModifiers().match(Modifier.Export.class) == null
+					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
+				Path.Entry<WhileyFile> srcfile = root.get(id, WhileyFile.ContentType);
+				new SyntacticException("test method must be exported and public", srcfile, lambda)
+						.outputSourceError(System.out, false);
+				throw new RuntimeException("test method must be exported and public");
+			} else {
+				//
+				RValue returns = interpreter.execute(name, sig, stack);
+				// Print out any return values produced
+				// if (returns != null) {
+				// System.out.println(returns);
+				// }
+			}
 		} catch (Interpreter.RuntimeError e) {
 			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
 			// FIXME: this is a hack based on current available API.

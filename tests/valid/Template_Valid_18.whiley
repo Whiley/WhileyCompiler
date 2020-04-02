@@ -15,7 +15,7 @@ ensures (x < y) ==> (r == t2):
     else:
         return t2
 
-method test():
+public export method test():
     &int p1 = new 8
     &int p2 = new 16
     //
