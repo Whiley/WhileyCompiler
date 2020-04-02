@@ -10,7 +10,7 @@ function g(neg x) -> bool:
 
 function f(expr e) :
     if e is pos:
-        g(e)
+        g((neg) e)
 
 public export method test() :
     f(-1)

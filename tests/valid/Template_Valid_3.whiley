@@ -10,5 +10,5 @@ public export method test():
     assert l2.next == null
     assert l2.data == 0
     assert l3.next == l2
-    assert l3.next.next == null
+    assert (l3.next is Link<int>) && l3.next.next == null
     assert l3.data == 1

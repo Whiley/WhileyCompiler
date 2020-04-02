@@ -8,7 +8,7 @@ function sum(nat[] ls) -> nat:
     while i < |ls| where i >= 0 && sum >= 0:
         sum = sum + ls[i]
         i = i + 1
-    return sum
+    return (nat) sum
 
 public export method test() :
     assume sum([]) == 0

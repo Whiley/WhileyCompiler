@@ -36,6 +36,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Equals;
 import static wyc.io.WhileyFileLexer.Token.Kind.EqualsEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Export;
 import static wyc.io.WhileyFileLexer.Token.Kind.Fail;
+import static wyc.io.WhileyFileLexer.Token.Kind.For;
 import static wyc.io.WhileyFileLexer.Token.Kind.Final;
 import static wyc.io.WhileyFileLexer.Token.Kind.Function;
 import static wyc.io.WhileyFileLexer.Token.Kind.GreaterEquals;
@@ -123,6 +124,7 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Template;
+import wyil.lang.WyilFile.Template.Variance;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -733,11 +735,11 @@ public class WhileyFileParser {
 			// lifetime variable
 			match(Ampersand);
 			Identifier name = parseIdentifier();
-			return annotateSourceLocation(new Template.Lifetime(name), start);
+			return annotateSourceLocation(new Template.Lifetime(name, Variance.INVARIANT), start);
 		} else {
 			// type variable
 			Identifier name = parseIdentifier();
-			return annotateSourceLocation(new Template.Type(name), start);
+			return annotateSourceLocation(new Template.Type(name, Template.Variance.UNKNOWN), start);
 		}
 	}
 
@@ -853,6 +855,8 @@ public class WhileyFileParser {
 			return parseDebugStatement(scope);
 		case Fail:
 			return parseFailStatement(scope);
+		case For:
+			return parseForStatement(scope);
 		case If:
 			return parseIfStatement(scope);
 		case Return:
@@ -909,16 +913,13 @@ public class WhileyFileParser {
 		// assignment   : Identifier | LeftBrace | Star
 		// variable decl: Identifier | LeftBrace | LeftCurly | Ampersand
 		// invoke       : Identifier | LeftBrace | Star
-		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
+		int r = isStatementInitialiser(scope);
+		if (r > 0) {
 			// Must be a statement initialiser as this is the only situation in which a type
 			// can be followed by an identifier.
-			index = start; // backtrack
-			//
-			return parseInitialiserStatement(scope);
+			return parseInitialiserStatement(scope, r > 1);
 		}
 		// Must be an assignment or invocation
-		index = start; // backtrack
-		//
 		Expr e = parseExpression(scope, false);
 		//
 		if (e instanceof Expr.Invoke || e instanceof Expr.IndirectInvoke) {
@@ -935,6 +936,31 @@ public class WhileyFileParser {
 		}
 	}
 
+	private int isStatementInitialiser(EnclosingScope scope) {
+		int result;
+		int start = index;
+		// First, try and match unit initialiser
+		if (tryAndMatch(false, Final) != null || (skipType(scope) && tryAndMatch(false, Identifier) != null)) {
+			// matched!
+			result = 1;
+		} else {
+			index = start; // backtrack
+			// Second, try and match multi-variable initialiser
+			if(tryAndMatch(false,LeftBrace) != null) {
+				result = isStatementInitialiser(scope);
+				index = start; // backtrack
+				if(result > 0) {
+					result = result + 1;
+				}
+			} else {
+				result = 0;
+			}
+		}
+		index = start; // backtrack
+		// Give up
+		return result;
+	}
+
 	/**
 	 * Parse a variable declaration statement which has the form:
 	 *
@@ -945,26 +971,35 @@ public class WhileyFileParser {
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
+	 * @param multi Indicates whether or not we have a multi-variable initialiser.
 	 *
 	 * @return
 	 */
-	private Stmt.Initialiser parseInitialiserStatement(EnclosingScope scope) {
+	private Stmt.Initialiser parseInitialiserStatement(EnclosingScope scope, boolean multi) {
 		int start = index;
 		ArrayList<Decl.Variable> variables = new ArrayList<>();
 		//
-		do {
+		if(multi) {
+			match(LeftBrace);
+			do {
+				Tuple<Modifier> modifiers = parseModifiers(Final);
+				Type type = parseType(scope);
+				Identifier name = parseIdentifier();
+				// Check that declared variables are not already defined.
+				scope.checkNameAvailable(name);
+				variables.add(new Decl.Variable(modifiers, name, type));
+			} while(tryAndMatch(true, Comma) != null);
+			match(RightBrace);
+		} else {
 			Tuple<Modifier> modifiers = parseModifiers(Final);
 			Type type = parseType(scope);
 			Identifier name = parseIdentifier();
-			// Ensure at least one variable is defined by this pattern.
-			// Check that declared variables are not already defined.
 			scope.checkNameAvailable(name);
 			variables.add(new Decl.Variable(modifiers, name, type));
-		} while(tryAndMatch(true, Comma) != null);
+		}
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
@@ -1247,6 +1282,28 @@ public class WhileyFileParser {
 		return annotateSourceLocation(new Stmt.Fail(),start,end-1);
 	}
 
+	private Stmt.For parseForStatement(EnclosingScope scope) {
+		int start = index;
+		match(For);
+		Identifier id = parseIdentifier();
+		scope.checkNameAvailable(id);
+		match(In);
+		Expr range = parseRangeExpression(scope, true);
+		// NOTE: unclear whether including final modifier here makes sense. However, it
+		// is necessary to prevent assignments to the index variable(s).
+		Decl.StaticVariable decl = new Decl.StaticVariable(new Tuple<>(new Modifier.Final()), id, new Type.Int(),
+				range);
+		// Must allocate declaration here so as to prevent it being copied.
+		decl = annotateSourceLocation(decl, start);
+		scope.declareVariable(decl);
+		// Parse the loop invariants
+		Tuple<Expr> invariants = parseInvariant(scope,Where);
+		match(Colon);
+		matchEndLine();
+		Stmt.Block block = parseBlock(scope, true);
+		return new Stmt.For(decl, invariants, new Tuple<>(), block);
+	}
+
 	/**
 	 * Parse a classical if-else statement, which is has the form:
 	 *
@@ -1280,7 +1337,6 @@ public class WhileyFileParser {
 		int end = index;
 		// First, parse the true branch, which is required
 		Stmt.Block tblk = parseBlock(scope, scope.isInLoop());
-
 		// Second, attempt to parse the false branch, which is optional.
 		Stmt.Block fblk = null;
 		if (tryAndMatchAtIndent(true, scope.getIndent(), Else) != null) {
@@ -2154,6 +2210,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseRangeExpression(EnclosingScope scope, boolean terminated) {
+		skipWhiteSpace();
 		int start = index;
 		Expr lhs = parseAdditiveExpression(scope, true);
 		match(DotDot);
@@ -2413,7 +2470,7 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
-			lhs = annotateSourceLocation(lhs, start);
+			lhs = annotateSourceLocation(lhs, start, start);
 			lhs = new Expr.IndirectInvoke(Type.Void, lhs, lifetimes, arguments);
 		}
 		return annotateSourceLocation(lhs,start);
@@ -3020,13 +3077,17 @@ public class WhileyFileParser {
 		if (lifetime != null) {
 			scope.mustBeLifetime(lifetime);
 			match(Colon);
-		} else {
-			// FIXME: this should really be null
-			lifetime = new Identifier("*");
 		}
 		match(New);
 		Expr e = parseExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.New(Type.Void, e, lifetime), start);
+		// Construct correct expression form
+		if(lifetime != null) {
+			e = new Expr.New(Type.Void, e, lifetime);
+		} else {
+			e = new Expr.New(Type.Void, e);
+		}
+		// Done
+		return annotateSourceLocation(e, start);
 	}
 
 	/**
@@ -3149,7 +3210,8 @@ public class WhileyFileParser {
 			}
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
-			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start);
+			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start,
+					start);
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
@@ -3751,7 +3813,11 @@ public class WhileyFileParser {
 			ArrayList<Type> types = new ArrayList<>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionType(scope));
+				Type type = parseIntersectionType(scope);
+				if(types.contains(type)) {
+					syntaxError(WyilFile.EMPTY_TYPE, type);
+				}
+				types.add(type);
 			} while (tryAndMatch(true, VerticalBar) != null);
 			//
 			Type[] bounds = types.toArray(new Type[types.size()]);
@@ -3877,20 +3943,16 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, Colon) != null && !isAtEOL()) {
 				// Now we know that there is an annotated lifetime
 				scope.mustBeLifetime(lifetimeIdentifier);
-				// Check whether this is an unknown reference or not
-				boolean unknown = tryAndMatch(true, QuestionMark) != null;
 				// Parse bound
 				Type element = parseArrayType(scope);
-				Type type = new Type.Reference(element, unknown, lifetimeIdentifier);
+				Type type = new Type.Reference(element, lifetimeIdentifier);
 				return annotateSourceLocation(type, start);
 			}
 		}
 		index = backtrack;
-		// Check whether this is an unknown reference or not
-		boolean unknown = tryAndMatch(true, QuestionMark) != null;
 		// Parse bound
 		Type element = parseArrayType(scope);
-		Type type = new Type.Reference(element, unknown);
+		Type type = new Type.Reference(element);
 		return annotateSourceLocation(type, start);
 	}
 
@@ -3984,7 +4046,7 @@ public class WhileyFileParser {
 		int start = index;
 		Name name = parseName(scope);
 		if (name.size() == 1 && scope.isTypeVariable(name.get(0))) {
-			return annotateSourceLocation(new Type.Variable(name.get(0)), start);
+			return annotateSourceLocation(new Type.Universal(name.get(0)), start);
 		} else {
 			Tuple<Type> types = parseTypeParameters(scope);
 			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name),types), start);

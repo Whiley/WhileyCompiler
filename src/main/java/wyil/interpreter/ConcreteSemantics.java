@@ -166,7 +166,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						return True;
 					}
 				}
-			} else if (type instanceof Type.Variable) {
+			} else if (type instanceof Type.Universal) {
 				// NOTE: for now, type variables cannot have bounds and cannot be used in
 				// runtime type tests. Therefore, we can always assume this is always true. The
 				// only situation this is use is for checking type invariants within the
@@ -967,15 +967,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
 				if(type instanceof Type.Callable) {
-					Type.Callable tc = (Type.Callable) type;
+					Type.Callable lhs = context.getType();
+					Type.Callable rhs = (Type.Callable) type;
 					// FIXME: this is really a hack, since we need to perform a full
 					// subtype test at this point. There remain some interesting
 					// questions as to what should and should not be support here.
-					if(tc.equals(context.getType())) {
-						return True;
-					} else {
-						return False;
-					}
+					return True;
 				} else {
 					return super.is(type, frame);
 				}

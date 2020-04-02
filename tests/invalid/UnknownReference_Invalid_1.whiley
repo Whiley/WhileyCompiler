@@ -1,6 +1,6 @@
 type Point is {int x, int y}
 
-method main(&?{int x, ...} q):
+method main(&{int x, ...} q):
     // Following not safe
     &Point p = q
 

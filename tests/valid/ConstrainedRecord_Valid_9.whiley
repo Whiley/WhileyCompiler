@@ -3,10 +3,10 @@
 type nat is (int x) where x >= 0
 
 type Matrix is ({
-    int height,
-    int width,
+    nat height,
+    nat width,
     int[][] data
-} m) where |m.data| == m.height && m.height >= 0 && m.width >= 0 &&
+} m) where |m.data| == m.height &&
         all { i in 0..|m.data| | |m.data[i]| == m.width }
 
 function Matrix(nat width, nat height, int[][] data) -> (Matrix result)

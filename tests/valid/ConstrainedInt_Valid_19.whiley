@@ -12,5 +12,5 @@ function f(a_nat x) -> b_nat:
 
 public export method test() :
     int x = 0
-    x = f(x)
+    x = f((a_nat) x)
     assume x == 1

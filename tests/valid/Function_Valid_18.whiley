@@ -5,9 +5,9 @@ ensures r == x || r == -x
 ensures r >= 0:
     //
     if x >= 0:
-        return x
+        return (nat) x
     else:
-        return -x
+        return (nat) -x
 
 function nop(nat item) -> (nat r)
 ensures item == r:

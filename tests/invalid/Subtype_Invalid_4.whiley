@@ -6,4 +6,4 @@ function f(scf4list x) -> int:
 
 public export method test() :
     int[] x = [0;0]
-    f(x)
+    f((scf4list) x)

@@ -24,7 +24,7 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
             j = j + 1        
         C[i] = row
         i = i + 1
-    return C
+    return (Matrix) C
 
 public export method test() :
     Matrix m1 = [[1, 2], [3, 4]]

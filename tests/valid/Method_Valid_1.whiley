@@ -1,6 +1,6 @@
-int BLANK = 0
-int CROSS = 1
-int CIRCLE = 2
+Piece BLANK = 0
+Piece CROSS = 1
+Piece CIRCLE = 2
 
 type Piece is (int x) where x == BLANK || x == CROSS || x == CIRCLE
 type Board is (Piece[] pieces) where |pieces| == 9

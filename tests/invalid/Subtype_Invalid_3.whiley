@@ -7,4 +7,4 @@ function f(scf3nat[] xs) -> int:
 public export method test() :
     int[] x = [1]
     x[0] = -1
-    f(x)
+    f((scf3nat[]) x)

@@ -3,4 +3,4 @@ function swap(int x, int y) -> (int a, int b):
     
 public export method test():
     //
-    int a, bool b = swap(1,2)
+    (int a, bool b) = swap(1,2)

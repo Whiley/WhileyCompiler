@@ -13,7 +13,8 @@ function extract(int[] ls) -> nat[]:
         if ls[i] >= 0:
             rs[i] = ls[i]
         i = i + 1
-    return rs
+    //
+    return (nat[]) rs
 
 public export method test() :
     int[] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])

@@ -13,47 +13,23 @@
 // limitations under the License.
 package wyil.check;
 
-import static wybs.util.AbstractCompilationUnit.ITEM_bool;
-import static wybs.util.AbstractCompilationUnit.ITEM_byte;
-import static wybs.util.AbstractCompilationUnit.ITEM_int;
-import static wybs.util.AbstractCompilationUnit.ITEM_null;
-import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
-import static wyil.lang.WyilFile.AMBIGUOUS_CALLABLE;
-import static wyil.lang.WyilFile.BRANCH_ALWAYS_TAKEN;
-import static wyil.lang.WyilFile.EMPTY_TYPE;
-import static wyil.lang.WyilFile.EXPECTED_ARRAY;
-import static wyil.lang.WyilFile.EXPECTED_LAMBDA;
-import static wyil.lang.WyilFile.EXPECTED_RECORD;
-import static wyil.lang.WyilFile.EXPECTED_REFERENCE;
-import static wyil.lang.WyilFile.INCOMPARABLE_OPERANDS;
-import static wyil.lang.WyilFile.INSUFFICIENT_ARGUMENTS;
-import static wyil.lang.WyilFile.INSUFFICIENT_RETURNS;
-import static wyil.lang.WyilFile.INVALID_FIELD;
-import static wyil.lang.WyilFile.MISSING_RETURN_STATEMENT;
-import static wyil.lang.WyilFile.SUBTYPE_ERROR;
-import static wyil.lang.WyilFile.TOO_MANY_RETURNS;
-import static wyil.lang.WyilFile.UNREACHABLE_CODE;
 import static wyil.lang.WyilFile.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Pair;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wybs.lang.*;
 import wybs.util.ResolveError;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
-import wyil.check.FlowTypeUtils.Environment;
-import wyil.check.FlowTypeUtils.PurityVisitor;
+import wyil.check.FlowTypeUtils.*;
+import static wyil.check.FlowTypeUtils.*;
+import wyil.util.*;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -61,10 +37,8 @@ import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
+import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
-import wyil.util.SubtypeOperator;
-import wyil.util.TypeSelector;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 
 /**
  * <p>
@@ -86,16 +60,16 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  * </pre>
  *
  * <p>
- * The flow typing algorithm distinguishes between the <i>declared type</i> of a
- * variable and its <i>known type</i>. That is, the known type at any given
- * point is permitted to be more precise than the declared type (but not vice
- * versa). For example:
+ * <b>Flow Typing.</b> The flow typing algorithm distinguishes between the
+ * <i>declared type</i> of a variable and its <i>known type</i>. That is, the
+ * known type at any given point is permitted to be more precise than the
+ * declared type (but not vice versa). For example:
  * </p>
  *
  * <pre>
  * function extract(int|null x) -> int:
  *    if x is int:
- *        return y
+ *        return x
  *    else:
  *        return 0
  * </pre>
@@ -105,9 +79,85 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  * <code>x</code> at the first return is <code>int</code>, which differs from
  * its declared type (i.e. <code>int|null</code>).
  * </p>
+ * <p>
+ * <b>Type Inference.</b> The algorithm performs <i>bidirectional</i> type
+ * inference when type checking expressions. This is useful for, amongst other
+ * things, helping with type polymorphism and constrained types. The following
+ * illustrates:
+ * </p>
+ * 
+ * <pre>
+ * type nat is (int x) where x >= 0
+ * 
+ * function one() -> nat:
+ * 	  return 1
+ * </pre>
+ * <p>
+ * The above function type checks without the need to cast <code>1</code> to
+ * type <code>nat</code> because of forward type inference. Specifically, the
+ * return type is propagated forwards and given to the constant value (of
+ * course, the safety of this needs to be determined either by evaluating the
+ * constraint with the given constant or using a theorem prover).
+ * </p>
+ * <p>
+ * The ability to omit template arguments also stems from the type inference
+ * algorithm. This employs a constraint system over type variables to finding
+ * suitable bindings for template parameters. The following illustrates:
+ * </p>
+ * 
+ * <pre>
+ * type Box<T> is null | { T value }
+ *
+ * function empty<T>() -> Box<T>:
+ *  return null
+ *  
+ * function get<T>(Box<T> box, T dEfault) -> T:
+ *    if box is null:
+ *       return dEfault
+ *    else:
+ *       return box.value
+ * </pre>
+ * <p>
+ * Using the above definitions, the following type checks without requiring
+ * explicit type annotations:
+ * </p>
+ * 
+ * <pre>
+ * Box<int> b = box(1)
+ * assert get(b,0) == 1
+ * </pre>
+ * 
+ * <p>
+ * In this case, the template parameter <code>T</code> is determine from the
+ * type of variable <code>b</code>. However, template parameters can also be
+ * bound from return values as well, which the following illustrates:
+ * </p>
+ * 
+ * <pre>
+ * Box<int> b = empty() assert get(b,0) == 1 </pre
+ * 
+ * <p>
+ * Here, the template parameter for <code>empty()</code> is determined from the
+ * return value.
+ * </p>
  *
  * <h3>References</h3>
  * <ul>
+ * <li>
+ * <p>
+ * Sound and Complete Flow Typing with Unions, Intersections and Negations.
+ * David J. Pearce. In Proceedings of the Conference on Verification, Model
+ * Checking, and Abstract Interpretation (VMCAI), volume 7737 of Lecture Notes
+ * in Computer Science, pages 335--354, 2013. © Springer-Verlag
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * A Calculus for Constraint-Based Flow Typing. David J. Pearce. In Proceedings
+ * of the Workshop on Formal Techniques for Java-like Languages (FTFJP), Article
+ * 7, 2013.
+ * </p>
+ * </li>
  * <li>
  * <p>
  * David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
@@ -121,14 +171,10 @@ import wyil.util.SubtypeOperator.LifetimeRelation;
  */
 public class FlowTypeCheck implements Compiler.Check {
 	private final Build.Meter meter;
-	//private final SubtypeOperator relaxedSubtypeOperator;
-	private final SubtypeOperator strictSubtypeOperator;
 	private boolean status = true;
 
 	public FlowTypeCheck(Build.Meter meter) {
 		this.meter = meter.fork(FlowTypeCheck.class.getSimpleName());
-		//this.relaxedSubtypeOperator = null;
-		this.strictSubtypeOperator = new SubtypeOperator.Relaxed();
 	}
 
 	// =========================================================================
@@ -150,17 +196,28 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	public void checkDeclaration(Decl decl) {
 		meter.step("declaration");
-		if (decl instanceof Decl.Unit) {
+		switch (decl.getOpcode()) {
+		case DECL_unit:
 			checkUnit((Decl.Unit) decl);
-		} else if (decl instanceof Decl.Import) {
-			// Can ignore
-		} else if (decl instanceof Decl.StaticVariable) {
+			break;
+		case DECL_importwith:
+		case DECL_importfrom:
+		case DECL_import:
+			// can ignore
+			break;
+		case DECL_staticvar:
 			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
-		} else if (decl instanceof Decl.Type) {
+			break;
+		case DECL_type:
+		case DECL_rectype:
 			checkTypeDeclaration((Decl.Type) decl);
-		} else if (decl instanceof Decl.FunctionOrMethod) {
+			break;
+		case DECL_function:
+		case DECL_method:
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
-		} else {
+			break;
+		default:
+		case DECL_property:
 			checkPropertyDeclaration((Decl.Property) decl);
 		}
 	}
@@ -175,14 +232,13 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * Resolve types for a given type declaration. If an invariant expression is
 	 * given, then we have to check and resolve types throughout the expression.
 	 *
-	 * @param td
-	 *            Type declaration to check.
+	 * @param decl Type declaration to check.
 	 * @throws IOException
 	 */
 	public void checkTypeDeclaration(Decl.Type decl) {
 		Environment environment = new Environment();
 		// Check type is contractive
-		checkContractive(decl);
+		checkContractive(decl, environment);
 		// Check the type invariant
 		checkConditions(decl.getInvariant(), true, environment);
 	}
@@ -190,42 +246,38 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * check and check types for a given constant declaration.
 	 *
-	 * @param cd
-	 *            Constant declaration to check.
+	 * @param decl Constant declaration to check.
 	 * @throws IOException
 	 */
 	public void checkStaticVariableDeclaration(Decl.StaticVariable decl) {
 		Environment environment = new Environment();
-		// Check type not void
-		Type type = checkExpression(decl.getInitialiser(), true, environment);
-		//
-		checkIsSubtype(decl.getType(), type, environment, decl.getInitialiser());
+		// Check initialiser matches declared type
+		checkExpression(decl.getInitialiser(), decl.getType(), true, environment);
 	}
 
 	/**
 	 * Type check a given function or method declaration.
 	 *
-	 * @param fd
-	 *            Function or method declaration to check.
+	 * @param decl Function or method declaration to check.
 	 * @throws IOException
 	 */
-	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod d) {
+	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod decl) {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Update environment so this within declared lifetimes
-		environment = FlowTypeUtils.declareThisWithin(d, environment);
+		environment = FlowTypeUtils.declareThisWithin(decl, environment);
 		// Check any preconditions (i.e. requires clauses) provided.
-		checkConditions(d.getRequires(), true, environment);
+		checkConditions(decl.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
-		checkConditions(d.getEnsures(), true, environment);
+		checkConditions(decl.getEnsures(), true, environment);
 		// FIXME: Add the "this" lifetime
-		if (d.getModifiers().match(Modifier.Native.class) == null) {
+		if (decl.getModifiers().match(Modifier.Native.class) == null) {
 			// Create scope representing this declaration
-			EnclosingScope scope = new FunctionOrMethodScope(d);
+			EnclosingScope scope = new FunctionOrMethodScope(decl);
 			// Check type information throughout all statements in body.
-			Environment last = checkBlock(d.getBody(), environment, scope);
+			Environment last = checkBlock(decl.getBody(), environment, scope);
 			// Check return value
-			checkReturnValue(d, last);
+			checkReturnValue(decl, last);
 		} else {
 			// NOTE: we obviously don't need to check the body of a native function or
 			// method. Attempting to do so causes problems because checkReturnValue will
@@ -266,11 +318,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * check type information in a flow-sensitive fashion through a block of
 	 * statements, whilst type checking each statement and expression.
 	 *
-	 * @param block
-	 *            Block of statements to flow sensitively type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param block       Block of statements to flow sensitively type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkBlock(Stmt.Block block, Environment environment, EnclosingScope scope) {
@@ -288,60 +338,70 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * information through them as well.
 	 *
 	 *
-	 * @param forest
-	 *            Block of statements to flow-sensitively type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to flow-sensitively type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
 		meter.step("statement");
 		try {
-			// FIXME: should be using a switch statement here!!
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
 				syntaxError(stmt, UNREACHABLE_CODE);
 				return environment;
-			} else if (stmt instanceof Stmt.Initialiser) {
-				return checkInitialiser((Stmt.Initialiser) stmt, environment);
-			} else if (stmt instanceof Stmt.Assign) {
-				return checkAssign((Stmt.Assign) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Return) {
-				return checkReturn((Stmt.Return) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.IfElse) {
-				return checkIfElse((Stmt.IfElse) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.NamedBlock) {
-				return checkNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.While) {
-				return checkWhile((Stmt.While) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Switch) {
-				return checkSwitch((Stmt.Switch) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.DoWhile) {
-				return checkDoWhile((Stmt.DoWhile) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Break) {
-				return checkBreak((Stmt.Break) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Continue) {
-				return checkContinue((Stmt.Continue) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Assert) {
+			}
+			switch (stmt.getOpcode()) {
+			case STMT_assert:
 				return checkAssert((Stmt.Assert) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Assume) {
+			case STMT_assign:
+				return checkAssign((Stmt.Assign) stmt, environment, scope);
+			case STMT_assume:
 				return checkAssume((Stmt.Assume) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Fail) {
-				return checkFail((Stmt.Fail) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Debug) {
+			case STMT_block:
+				return checkBlock((Stmt.Block) stmt, environment, scope);
+			case STMT_break:
+				return checkBreak((Stmt.Break) stmt, environment, scope);
+			case STMT_continue:
+				return checkContinue((Stmt.Continue) stmt, environment, scope);
+			case STMT_debug:
 				return checkDebug((Stmt.Debug) stmt, environment, scope);
-			} else if (stmt instanceof Stmt.Skip) {
+			case STMT_dowhile:
+				return checkDoWhile((Stmt.DoWhile) stmt, environment, scope);
+			case STMT_fail:
+				return checkFail((Stmt.Fail) stmt, environment, scope);
+			case STMT_for:
+				return checkFor((Stmt.For) stmt, environment, scope);
+			case STMT_if:
+			case STMT_ifelse:
+				return checkIfElse((Stmt.IfElse) stmt, environment, scope);
+			case STMT_initialiser:
+			case STMT_initialiservoid:
+				return checkInitialiser((Stmt.Initialiser) stmt, environment, scope);
+			case EXPR_invoke:
+				// NOTE: Void signal nothing is expected.
+				checkExpression((Expr.Invoke) stmt, null, false, environment);
+				return environment;
+			case EXPR_indirectinvoke:
+				// NOTE: Void signal nothing is expected.
+				checkExpression((Expr.IndirectInvoke) stmt, null, false, environment);
+				return environment;
+			case STMT_namedblock:
+				return checkNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
+			case STMT_return:
+			case STMT_returnvoid:
+				return checkReturn((Stmt.Return) stmt, environment, scope);
+			case STMT_skip:
 				return checkSkip((Stmt.Skip) stmt, environment, scope);
-			} else if (stmt instanceof Expr.Invoke) {
-				checkInvoke((Expr.Invoke) stmt, false, environment);
-				return environment;
-			} else if (stmt instanceof Expr.IndirectInvoke) {
-				checkIndirectInvoke((Expr.IndirectInvoke) stmt, false, environment);
-				return environment;
-			} else {
+			case STMT_switch:
+				return checkSwitch((Stmt.Switch) stmt, environment, scope);
+			case STMT_while:
+				return checkWhile((Stmt.While) stmt, environment, scope);
+			default:
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
+		} catch (SyntacticException e) {
+			throw e;
 		} catch (Throwable e) {
 			return internalFailure(e.getMessage(), stmt, e);
 		}
@@ -354,11 +414,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * is assert. For example, after <code>assert x is int</code> the environment
 	 * will regard <code>x</code> as having type <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope) {
@@ -372,11 +430,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * is assert. For example, after <code>assert x is int</code> the environment
 	 * will regard <code>x</code> as having type <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope) {
@@ -387,11 +443,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * Type check a fail statement. The environment after a fail statement is
 	 * "bottom" because that represents an unreachable program point.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
@@ -399,30 +453,48 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	/**
+	 * Type check a for each statement.
+	 *
+	 * @param stmt
+	 * @param environment
+	 * @param scope
+	 * @return
+	 */
+	private Environment checkFor(Stmt.For stmt, Environment environment, EnclosingScope scope) {
+		// Type loop invariant(s).
+		checkConditions(stmt.getInvariant(), true, environment);
+		// Type variable initialiser
+		checkExpression(stmt.getVariable().getInitialiser(), Type.IntArray, true, environment);
+		// Type loop body using true environment
+		checkBlock(stmt.getBody(), environment, scope);
+		// Determine and update modified variables
+		Tuple<Decl.Variable> modified = FlowTypeUtils.determineModifiedVariables(stmt.getBody());
+		stmt.setModified(stmt.getHeap().allocate(modified));
+		// Return environment unchanged
+		return environment;
+	}
+
+	/**
 	 * Type check a variable declaration statement. In particular, when an
 	 * initialiser is given we must check it is well-formed and that it is a subtype
 	 * of the declared type.
 	 *
-	 * @param decl
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param decl        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
-	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment) {
+	private Environment checkInitialiser(Stmt.Initialiser decl, Environment environment, EnclosingScope scope) {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
 			Type lhs = decl.getType();
-			Type rhs = checkExpression(decl.getInitialiser(), true, environment);
-			// Extract all types from the given declarations
-			checkIsSubtype(lhs, rhs, environment, decl.getInitialiser());
+			Type rhs = checkExpression(decl.getInitialiser(), lhs, true, environment);
 			// Apply type refinement (if applicable)
 			if (rhs != null) {
 				Tuple<Decl.Variable> vars = decl.getVariables();
-				for(int i=0;i!=lhs.shape();++i) {
+				for (int i = 0; i != Math.min(lhs.shape(), rhs.shape()); ++i) {
 					// Refine the declared type
-					Type refined = refine(lhs.dimension(i), rhs.dimension(i), environment);
+					Type refined = refine(lhs.dimension(i), rhs.dimension(i));
 					// Update the typing environment accordingly.
 					environment = environment.refineType(vars.get(i), refined);
 				}
@@ -435,11 +507,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check an assignment statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope)
@@ -451,27 +521,25 @@ public class FlowTypeCheck implements Compiler.Check {
 			types[i] = checkLVal(lvals.get(i), environment);
 		}
 		// NOTE: need to use min here for case where insufficient lvals or rvals given
-		for(int i=0;i!=Math.min(lvals.size(),rvals.size());++i) {
-			Type actual = checkExpression(rvals.get(i), true, environment);
-			// Check assigned type
-			checkIsSubtype(types[i], actual, environment, rvals.get(i));
+		for (int i = 0; i != Math.min(lvals.size(), rvals.size()); ++i) {
+			Type actual = checkExpression(rvals.get(i), types[i], true, environment);
 			// Apply type refinement (if applicable)
-			if(actual != null) {
+			if (actual != null) {
 				// ignore upstream errors
 				Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lvals.get(i), actual);
 				if (extraction != null) {
 					Decl.Variable decl = extraction.getFirst();
 					// Refine the declared type
-					Type type = refine(decl.getType(), extraction.getSecond(), environment);
+					Type type = refine(decl.getType(), extraction.getSecond());
 					// Update the typing environment accordingly.
 					environment = environment.refineType(extraction.getFirst(), type);
 				}
 			}
 		}
 		//
-		if(lvals.size() < rvals.size()) {
+		if (lvals.size() < rvals.size()) {
 			syntaxError(stmt, TOO_MANY_RETURNS);
-		} else if(lvals.size() > rvals.size()) {
+		} else if (lvals.size() > rvals.size()) {
 			syntaxError(stmt, INSUFFICIENT_RETURNS);
 		}
 		//
@@ -483,11 +551,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * environment to the block destination, to ensure that the actual types of all
 	 * variables at that point are precise.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkBreak(Stmt.Break stmt, Environment environment, EnclosingScope scope) {
@@ -500,11 +566,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * environment to the block destination, to ensure that the actual types of all
 	 * variables at that point are precise.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkContinue(Stmt.Continue stmt, Environment environment, EnclosingScope scope) {
@@ -516,33 +580,25 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * Type check an assume statement. This requires checking that the expression
 	 * being printed is well-formed and has string type.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
-		// FIXME: want to refine integer type here
-		Type std_ascii = new Type.Array(Type.Int);
-		Type type = checkExpression(stmt.getOperand(), true, environment);
-		checkIsSubtype(std_ascii, type, environment, stmt.getOperand());
+		checkExpression(stmt.getOperand(), Type.IntArray, true, environment);
 		return environment;
 	}
 
 	/**
 	 * Type check a do-while statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		// Type check loop body
@@ -590,15 +646,12 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * <code>x</code> at the end of each block is <code>int</code> and, hence, its
 	 * type after the if-statement is <code>int</code>.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
 		// Check condition and apply variable retypings.
@@ -621,17 +674,13 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * function or method's declared return type. The environment after a return
 	 * statement is "bottom" because that represents an unreachable program point.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
-	 * @param scope
-	 *            The stack of enclosing scopes
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
+	 * @param scope       The stack of enclosing scopes
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
@@ -641,15 +690,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
 		Type type = fm.getType().getReturn();
 		// Type check the operand for the return statement (if applicable)
-		if (stmt.hasReturn()) {
+		if (stmt.hasReturn() && type instanceof Type.Void) {
+			// This doesn't make sense!!
+			syntaxError(stmt.getReturn(), SUBTYPE_ERROR, Type.Void, getNaturalType(stmt.getReturn(), environment));
+		} else if (stmt.hasReturn()) {
 			// Type check the operands for the return statement (if any)
-			Type r = checkExpression(stmt.getReturn(), true, environment);
-			// Sanity check whether invoke actually returned something
-			if(r instanceof Type.Void) {
-				syntaxError(stmt.getReturn(),INSUFFICIENT_RETURNS);
-			}
-			// Sanity check return type matches
-			checkIsSubtype(type, r, environment, stmt.getReturn());
+			checkExpression(stmt.getReturn(), type, true, environment);
 		} else {
 			// Sanity check no return expected!
 			checkIsSubtype(Type.Void, type, environment, stmt);
@@ -664,11 +710,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * Type check a <code>skip</code> statement, which has no effect on the
 	 * environment.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkSkip(Stmt.Skip stmt, Environment environment, EnclosingScope scope) {
@@ -715,17 +759,15 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * three different environments. Finally, each of these is joined back together
 	 * to produce the environment going into the <code>return</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
 		// Type check the expression being switched upon
-		checkExpression(stmt.getCondition(), true, environment);
+		Type type = checkExpression(stmt.getCondition(), null, true, environment);
 		// The final environment determines what flow continues after the switch
 		// statement
 		Environment finalEnv = null;
@@ -736,7 +778,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (Stmt.Case c : stmt.getCases()) {
 			// Resolve the constants
 			for (Expr e : c.getConditions()) {
-				checkExpression(e, true, environment);
+				checkExpression(e, type, true, environment);
 			}
 			// Check case block
 			Environment localEnv = environment;
@@ -765,11 +807,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a <code>NamedBlock</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
 	 */
 	private Environment checkNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
@@ -785,15 +825,12 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * Type check a <code>whiley</code> statement.
 	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into this
-	 *            block
+	 * @param stmt        Statement to type check
+	 * @param environment Determines the type of all variables immediately going
+	 *                    into this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved within
-	 *             the enclosing project.
+	 * @throws ResolveError If a named type within this statement cannot be resolved
+	 *                      within the enclosing project.
 	 */
 	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		// Type loop invariant(s).
@@ -917,12 +954,10 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * this without actually rewriting the source code.
 	 * </p>
 	 *
-	 * @param condition
-	 *            The condition being type checked
-	 * @param sign
-	 *            The assumed outcome of the condition (either true or false).
-	 * @param environment
-	 *            The environment going into the condition
+	 * @param condition   The condition being type checked
+	 * @param sign        The assumed outcome of the condition (either true or
+	 *                    false).
+	 * @param environment The environment going into the condition
 	 * @return The (potentially updated) typing environment for this statement.
 	 */
 	public Environment checkCondition(Expr condition, boolean sign, Environment environment) {
@@ -943,8 +978,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_logicalexistential:
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
-			Type t = checkExpression(condition, true, environment);
-			checkIsSubtype(Type.Bool, t, environment, condition);
+			checkExpression(condition, Type.Bool, true, environment);
 			return environment;
 		}
 	}
@@ -990,7 +1024,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * Finally, the resulting environment is simply the union of the two
 	 * environments from each case.
 	 *
-	 * @param operands
+	 * @param expr
 	 * @param sign
 	 * @param environment
 	 *
@@ -1029,7 +1063,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * will be <code>{x-&gt;int}</code> and this is just threaded directly into the
 	 * next statement <code>x &gt; 0</code>
 	 *
-	 * @param operands
+	 * @param expr
 	 * @param sign
 	 * @param environment
 	 *
@@ -1081,25 +1115,19 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
 		Expr lhs = expr.getOperand();
-		Type lhsT = checkExpression(expr.getOperand(), true, environment);
+		Type lhsT = checkExpression(expr.getOperand(), null, true, environment);
 		Type rhsT = expr.getTestType();
 		// Sanity check operands for this type test
-		checkIsSubtype(lhsT,rhsT,environment,rhsT);
-		// FIXME: need better support for detecting branch always taken.
-//		// Sanity check for definite branch taken
-//		if(strictSubtypeOperator.isSubtype(rhsT,lhsT,environment))  {
-//			// DEFINITE FALSE CASE
-//			syntaxError(expr, BRANCH_ALWAYS_TAKEN);
-//		}
+		checkIsSubtype(lhsT, rhsT, environment, rhsT);
 		// Extract variable being tested
 		Pair<Decl.Variable, Type> extraction = FlowTypeUtils.extractTypeTest(lhs, expr.getTestType());
 		if (extraction != null) {
 			Decl.Variable var = extraction.getFirst();
 			Type refinementT = extraction.getSecond();
 			if (!sign) {
-				refinementT = strictSubtypeOperator.subtract(environment.getType(var), refinementT);
+				refinementT = environment.subtract(environment.getType(var), refinementT);
 				// Sanity check for definite branch taken
-				if(refinementT instanceof Type.Void)  {
+				if (refinementT instanceof Type.Void) {
 					// DEFINITE FALSE CASE
 					syntaxError(expr, BRANCH_ALWAYS_TAKEN);
 				}
@@ -1114,7 +1142,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Environment checkQuantifier(Expr.Quantifier stmt, boolean sign, Environment environment) {
 		// Check array initialisers
 		for (Decl.StaticVariable decl : stmt.getParameters()) {
-			checkExpression(decl.getInitialiser(), true, environment);
+			checkExpression(decl.getInitialiser(), Type.IntArray, true, environment);
 		}
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
@@ -1132,7 +1160,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * largest type which can be safely assigned to the lval. Observe that this type
 	 * is determined by the declared type of the variable being assigned.
 	 *
-	 * @param expression
+	 * @param lval
 	 * @param environment
 	 * @return
 	 * @throws ResolutionError
@@ -1197,20 +1225,19 @@ public class FlowTypeCheck implements Compiler.Check {
 	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
 		// NOTE: must check lval first, not expression (#950)
 		Type src = checkLVal((LVal) lval.getFirstOperand(), environment);
-		// Attempt to view src as a record
+		// Attempt to view src as array
 		Type.Array arrT = src.as(Type.Array.class);
 		// Check declared type
 		if (arrT == null) {
 			// Fall back on flow type
-			src = checkExpression(lval.getFirstOperand(), true, environment);
+			src = checkExpression(lval.getFirstOperand(), null, true, environment);
 			// Extract array or fail
 			arrT = extractType(Type.Array.class, src, EXPECTED_ARRAY, lval.getFirstOperand());
 		}
 		// Sanity check extraction
-		if(arrT != null) {
+		if (arrT != null) {
 			// Check for integer subscript
-			Type subscriptT = checkExpression(lval.getSecondOperand(), true, environment);
-			checkIsSubtype(Type.Int, subscriptT, environment, lval.getSecondOperand());
+			checkExpression(lval.getSecondOperand(), Type.Int, true, environment);
 			// Convert to concrete type
 			return arrT.getElement();
 		} else {
@@ -1227,7 +1254,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Check declared type
 		if (recT == null || recT.getField(lval.getField()) == null) {
 			// Fall back on flow type
-			src = checkExpression(lval.getOperand(), true, environment);
+			src = checkExpression(lval.getOperand(), null, true, environment);
 			// Extract record or fail
 			recT = extractType(Type.Record.class, src, EXPECTED_RECORD, lval.getOperand());
 		}
@@ -1236,17 +1263,20 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), true, environment);
+		Type src = checkExpression(lval.getOperand(), null, true, environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Sanity check writability of reference
-		checkIsWritable(refT, environment, lval.getOperand());
-		// Sanity check extraction
-		return refT == null ? null : refT.getElement();
+		if (refT != null) {
+			checkIsWritable(refT.getElement(), lval.getOperand());
+			return refT.getElement();
+		} else {
+			return null;
+		}
 	}
 
 	public Type checkFieldDereferenceLVal(Expr.FieldDereference lval, Environment environment) {
-		Type src = checkExpression(lval.getOperand(), true, environment);
+		Type src = checkExpression(lval.getOperand(), null, true, environment);
 		// Extract writeable reference type
 		Type.Reference refT = extractType(Type.Reference.class, src, EXPECTED_REFERENCE, lval.getOperand());
 		// Extact target type
@@ -1260,9 +1290,10 @@ public class FlowTypeCheck implements Compiler.Check {
 	public Type checkTupleInitialiserLVal(Expr.TupleInitialiser lval, Environment environment) {
 		Tuple<Expr> operands = lval.getOperands();
 		Type[] types = new Type[operands.size()];
-		for(int i=0;i!=types.length;++i) {
-			Type type = checkLVal((LVal) operands.get(i), environment);;
-			if(type == null) {
+		for (int i = 0; i != types.length; ++i) {
+			Type type = checkLVal((LVal) operands.get(i), environment);
+			;
+			if (type == null) {
 				return null;
 			}
 			types[i] = type;
@@ -1279,39 +1310,91 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *
 	 * @param expression  The expression to be checked.
 	 *
-	 * @param required    Indicates whether expression required to return result or
-	 *                    not
+	 * @param target      indicates the expected type from this expression (maybe
+	 *                    void).
 	 *
 	 * @param environment The environment in which this expression is to be typed
 	 * @return
 	 * @throws ResolutionError
 	 */
-	public Type checkExpression(Expr expression, boolean required, Environment environment) {
-		meter.step("expression");
-		Type type;
+	public Type checkExpression(Expr expression, Type target, boolean required, Environment environment) {
+		// Construct empty typing to start with
+		Typing typing = new Typing(environment);
+		//
+		if (target == null) {
+			typing = pullExpression(expression, required, typing, environment);
+		} else {
+			typing = pushExpression(expression, typing.push(target), environment);
+		}
+		// Concretise typing to eliminate type variables
+		typing = typing.concretise();
+		// Attempt to collapse typings
+		typing = typing.fold(Typing.Row.COMPARATOR(environment));
+		// Attempt to finalise typing
+		boolean ok = typing.finalise();
+		// Sanity check what is left
+		if (ok) {
+			return expression.getType();
+		} else {
+			status = false;
+			return null;
+		}
+	}
 
+	// =====================================================================================
+	// Push Expressions (for Type Inference)
+	// =====================================================================================
+
+	/**
+	 * <p>
+	 * Push a given type forwards through an expression. Pushing occurs when there
+	 * is a known target type which can be used as a basis for the push. For
+	 * example, consider this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * nat[]|null var = [1,false]
+	 * </pre>
+	 * 
+	 * <p>
+	 * This method is responsible for pushing the type <code>nat[]|null</code> into
+	 * the expression <code>[1,false]</code>. In turn, this will filter the type
+	 * down to <code>nat[]</code> and then push <code>nat</code> through each of the
+	 * initialiser expressions. Ultimately, this will lead to a type error as
+	 * <code>nat</code> cannot be pushed into <code>false</code>.
+	 * </p>
+	 * <p>
+	 * A type variable is used instead of an actual type because, unfortunately, we
+	 * must support multiple possible typings simultaneously. Thus, the type
+	 * variable refers to the set of types being simultaneously pushed through the
+	 * expression.
+	 * </p>
+	 * 
+	 * @param var         The type variable who's types are being pushed through the
+	 *                    expression
+	 * @param expression  The expression we are pushing through.
+	 * @param typing      The current typing matrix. This represents all current
+	 *                    typings under consideration.
+	 * @param environment The current typing environment applicable for the
+	 *                    expression given its context.
+	 * @return
+	 */
+	private Typing pushExpression(int var, Expr expression, Typing typing, Environment environment) {
+		meter.step("expression");
+		//
 		switch (expression.getOpcode()) {
 		case EXPR_constant:
-			type = checkConstant((Expr.Constant) expression, environment);
-			break;
+			return pushConstant(var, (Expr.Constant) expression, typing, environment);
 		case EXPR_variablecopy:
-			type = checkVariable((Expr.VariableAccess) expression, environment);
-			break;
+			return pushVariable(var, (Expr.VariableAccess) expression, typing, environment);
 		case EXPR_staticvariable:
-			type = checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
-			break;
+			return pushStaticVariable(var, (Expr.StaticVariableAccess) expression, typing, environment);
 		case EXPR_cast:
-			type = checkCast((Expr.Cast) expression, environment);
-			break;
+			return pushCast(var, (Expr.Cast) expression, typing, environment);
 		case EXPR_invoke:
-			Expr.Invoke e = (Expr.Invoke) expression;
-			// NOTE: following is needed because checkInvoke handles expression type via
-			// binding.
-			return checkInvoke(e, required, environment);
+			return pushInvoke(var, (Expr.Invoke) expression, typing, environment);
 		case EXPR_indirectinvoke:
-			type = checkIndirectInvoke((Expr.IndirectInvoke) expression, required, environment);
-			break;
-		// Conditions
+			return pushIndirectInvoke(var, (Expr.IndirectInvoke) expression, typing, environment);
 		case EXPR_logicalnot:
 		case EXPR_logicalor:
 		case EXPR_logicaland:
@@ -1320,109 +1403,220 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_is:
 		case EXPR_logicaluniversal:
 		case EXPR_logicalexistential:
-			checkCondition(expression, true, environment);
-			return Type.Bool;
-		// Comparators
+			return pushConditionExpression(var, expression, typing, environment);
 		case EXPR_equal:
 		case EXPR_notequal:
+			return pushEqualityOperator(var, (Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_integerlessthan:
 		case EXPR_integerlessequal:
 		case EXPR_integergreaterthan:
 		case EXPR_integergreaterequal:
-			return checkComparisonOperator((Expr.BinaryOperator) expression, environment);
-		// Arithmetic Operators
+			return pushIntegerComparator(var, (Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_integernegation:
-			type = checkIntegerOperator((Expr.UnaryOperator) expression, environment);
-			break;
+			return pushIntegerOperator(var, (Expr.UnaryOperator) expression, typing, environment);
 		case EXPR_integeraddition:
 		case EXPR_integersubtraction:
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
-			type = checkIntegerOperator((Expr.BinaryOperator) expression, environment);
-			break;
-		// Bitwise expressions
+			return pushIntegerOperator(var, (Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_bitwisenot:
-			type = checkBitwiseOperator((Expr.UnaryOperator) expression, environment);
-			break;
+			return pushBitwiseOperator(var, (Expr.UnaryOperator) expression, typing, environment);
 		case EXPR_bitwiseand:
 		case EXPR_bitwiseor:
 		case EXPR_bitwisexor:
-			type = checkBitwiseOperator((Expr.NaryOperator) expression, environment);
-			break;
+			return pushBitwiseOperator(var, (Expr.NaryOperator) expression, typing, environment);
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
-			type = checkBitwiseShift((Expr.BinaryOperator) expression, environment);
-			break;
-		// Tuple Expressions
+			return pushBitwiseShift(var, (Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_tupleinitialiser:
-			type = checkTupleInitialiser((Expr.TupleInitialiser) expression, environment);
-			break;
-		// Record Expressions
+			return pushTupleInitialiser(var, (Expr.TupleInitialiser) expression, typing, environment);
 		case EXPR_recordinitialiser:
-			type = checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
-			break;
+			return pushRecordInitialiser(var, (Expr.RecordInitialiser) expression, typing, environment);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
-			type = checkRecordAccess((Expr.RecordAccess) expression, environment);
-			break;
-		case EXPR_recordupdate:
-			type = checkRecordUpdate((Expr.RecordUpdate) expression, environment);
-			break;
-		// Array expressions
+			return pushRecordAccess(var, (Expr.RecordAccess) expression, typing, environment);
 		case EXPR_arraylength:
-			type = checkArrayLength((Expr.ArrayLength) expression, environment);
-			break;
+			return pushArrayLength(var, (Expr.ArrayLength) expression, typing, environment);
 		case EXPR_arrayinitialiser:
-			type = checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
-			break;
+			return pushArrayInitialiser(var, (Expr.ArrayInitialiser) expression, typing, environment);
 		case EXPR_arraygenerator:
-			type = checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
-			break;
+			return pushArrayGenerator(var, (Expr.ArrayGenerator) expression, typing, environment);
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow:
-			type = checkArrayAccess((Expr.ArrayAccess) expression, environment);
-			break;
+			return pushArrayAccess(var, (Expr.ArrayAccess) expression, typing, environment);
 		case EXPR_arrayrange:
-			type = checkArrayRange((Expr.ArrayRange) expression, environment);
-			break;
-		case EXPR_arrayupdate:
-			type = checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
-			break;
-		// Reference expressions
+			return pushArrayRange(var, (Expr.ArrayRange) expression, typing, environment);
 		case EXPR_dereference:
-			type = checkDereference((Expr.Dereference) expression, environment);
-			break;
+			return pushDereference(var, (Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
-			type = checkFieldDereference((Expr.FieldDereference) expression, environment);
-			break;
+			return pushFieldDereference(var, (Expr.FieldDereference) expression, typing, environment);
+		case EXPR_staticnew:
 		case EXPR_new:
-			type = checkNew((Expr.New) expression, environment);
-			break;
+			return pushNew(var, (Expr.New) expression, typing, environment);
 		case EXPR_lambdaaccess:
-			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
+			return pushLambdaAccess(var, (Expr.LambdaAccess) expression, typing, environment);
 		case DECL_lambda:
-			return checkLambdaDeclaration((Decl.Lambda) expression, environment);
+			return pushLambdaDeclaration(var, (Decl.Lambda) expression, typing, environment);
 		default:
 			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
 					expression);
 		}
-		// Sanity check sensible type generated from expression. Something non-sensical
-		// can be generated when there is a type error upsteam.
-		if (type != null) {
-			// Allocate and set type for expression
-			expression.setType(expression.getHeap().allocate(type));
-		}
-		// Done
-		return type;
 	}
 
-	public Tuple<Type>[] toTupleTypes(Type[] expected) {
-		Tuple<Type>[] tupleTypes = new Tuple[expected.length];
-		for (int i = 0; i != expected.length; ++i) {
-			tupleTypes[i] = new Tuple<>(expected[i]);
+	private Typing  pushExpression(Expr expression, Typing typing, Environment environment) {
+		return pushExpression(typing.top(), expression, typing, environment);
+	}
+
+	private Typing  pushExpressions(Tuple<Expr> expressions, Type type, Typing typing, Environment environment) {
+		for (int i = 0; i != expressions.size(); ++i) {
+			typing = pushExpression(expressions.get(i), typing.push(type), environment);
 		}
-		return tupleTypes;
+		return typing;
+	}
+
+	private Typing  pushExpression(Expr expression, Function<Typing.Row, Type> fn, Typing typing,
+			Environment environment) {
+		typing = typing.map(row -> row.add(fn.apply(row)));
+		return pushExpression(expression, typing, environment);
+	}
+
+	private Typing  pushExpressions(Tuple<Expr> expressions, BiFunction<Typing.Row, Integer, Type> fn, Typing typing,
+			Environment environment) {
+		for (int i = 0; i != expressions.size(); ++i) {
+			final int _i = i;
+			typing = typing.map(row -> row.add(fn.apply(row, _i)));
+			typing = pushExpression(typing.top(), expressions.get(i), typing, environment);
+		}
+		return typing;
+	}
+
+	private Typing pushArrayLength(int var, Expr.ArrayLength expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getOperand(), typing.push(Type.AnyArray), environment);
+		// Terminate flow
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Int, environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, Type.Int);
+		//
+		return nTyping;
+	}
+
+	private Typing pushArrayInitialiser(int var, Expr.ArrayInitialiser expr, Typing typing, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnArray(row, var, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		return pushExpressions(operands, (r, i) -> getArrayElement(r.get(var)), nTyping, environment);
+	}
+
+	private Typing pushArrayGenerator(int var, Expr.ArrayGenerator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnArray(row, var, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		nTyping = pushExpression(expr.getFirstOperand(), r -> getArrayElement(r.get(var)), nTyping, environment);
+		return pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+	}
+
+	private Typing pushArrayAccess(int var, Expr.ArrayAccess expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// <<< Propagate backwards from source
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int src = typing.top();
+		// Check source is array of appropriate type
+		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Array.class) != null));
+		Typing nnTyping = nTyping.map(row -> filterOnSubtype(row, var, getArrayElement(row.get(src)), environment));
+		// Report errors
+		checkForError(expr.getFirstOperand(), typing, nTyping, var, t -> new Type.Array(t), src);
+		checkForError(expr, nTyping, nnTyping, var, src, t -> getArrayElement(t));
+		// >>> Propagate forwards into index operand
+		return pushExpression(expr.getSecondOperand(), nnTyping.push(Type.Int), environment);
+	}
+
+	private Typing pushArrayRange(int var, Expr.ArrayRange expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
+		return pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+	}
+
+	private Typing pushBitwiseOperator(int var, Expr.UnaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getOperand(), typing.push(Type.Byte), environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Byte, environment));
+		// Report errors
+		checkForError(expr, typing, nTyping, var, Type.Byte);
+		//
+		return nTyping;
+	}
+
+	private Typing pushBitwiseOperator(int var, Expr.NaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpressions(expr.getOperands(), Type.Byte, typing, environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Byte, environment));
+		// Report errors
+		checkForError(expr, typing, nTyping, var, Type.Byte);
+		// >>> Propagate forwards into children
+		return nTyping;
+	}
+
+	private Typing pushBitwiseShift(int var, Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Byte), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Byte, environment));
+		// Report errors
+		checkForError(expr, typing, nTyping, var, Type.Byte);
+		//
+		return nTyping;
+	}
+
+	private Typing pushCast(int var, Expr.Cast expr, Typing typing, Environment environment) {
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnSubtype(row, var, expr.getType(), environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, expr.getType());
+		// <<< Propagate backwards from children
+		nTyping = pullExpression(expr.getOperand(), true, nTyping, environment);
+		int src = nTyping.top();
+		// Check cast makes sense
+		Typing nnTyping = nTyping.filter(r -> isSensibleCast(expr.getType(), r.get(src), environment));
+		// Report errors
+		checkForError(expr.getOperand(), nTyping, nnTyping, expr.getType(), src);
+		// Done
+		return nnTyping;
+	}
+
+	private Typing pushConditionExpression(int var, Expr expr, Typing typing, Environment environment) {
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Bool, environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, Type.Bool);
+		// Check condition
+		checkCondition(expr, true, environment);
+		// Done
+		return nTyping;
 	}
 
 	/**
@@ -1432,440 +1626,1674 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param expr
 	 * @return
 	 */
-	private Type checkConstant(Expr.Constant expr, Environment env) {
-		Value item = expr.getValue();
-		switch (item.getOpcode()) {
-		case ITEM_null:
-			return Type.Null;
-		case ITEM_bool:
-			return Type.Bool;
-		case ITEM_int:
-			return Type.Int;
-		case ITEM_byte:
-			return Type.Byte;
-		case ITEM_utf8:
-			// FIXME: this is not an optimal solution. The reason being that we
-			// have lost nominal information regarding whether it is an instance
-			// of std::ascii or std::utf8, for example.
-			return new Type.Array(Type.Int);
-		default:
-			return internalFailure("unknown constant encountered: " + expr, expr);
-		}
-	}
-
-	/**
-	 * Check the type of a given variable access. This is straightforward since the
-	 * determine is fully determined by the declared type for the variable in
-	 * question.
-	 *
-	 * @param expr
-	 * @return
-	 */
-	private Type checkVariable(Expr.VariableAccess expr, Environment environment) {
-		Decl.Variable var = expr.getVariableDeclaration();
-		return environment.getType(var);
-	}
-
-	private Type checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
+	private Typing pushConstant(int var, Expr.Constant expr, Typing typing, Environment environment) {
+		// Extract underling value type
+		final Type type = typeOf(expr.getValue());
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Filter target type
+		Typing nTyping;
 		//
-		Decl.Link<Decl.StaticVariable> l = expr.getLink();
-		if (l.isResolved()) {
-			return l.getTarget().getType();
+		if (type instanceof Type.Primitive) {
+			nTyping = typing.map(row -> filterOnPrimitive(row, var, (Type.Primitive) type, environment));
 		} else {
-			// Static variable access was not resolved during name resolution. Therefore,
-			// there's nothing we can at this stage.
-			return null;
+			nTyping = typing.map(row -> filterOnIntArray(row, var, environment));
 		}
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, type);
+		// Done
+		return nTyping;
 	}
 
-	private Type checkCast(Expr.Cast expr, Environment environment) {
-		Type rhsT = checkExpression(expr.getOperand(), true, environment);
-		checkIsSubtype(expr.getType(), rhsT, environment, expr);
-		return expr.getType();
-	}
-
-	private Type checkInvoke(Expr.Invoke expr, boolean required, Environment environment) {
-		boolean resolvable = true;
-		Tuple<Expr> arguments = expr.getOperands();
-		Type[] types = new Type[arguments.size()];
-		for (int i = 0; i != arguments.size(); ++i) {
-			Type t = checkExpression(arguments.get(i), true, environment);
-			resolvable &= (t != null);
-			types[i] = t;
-		}
+	private Typing pushDereference(int var, Expr.Dereference expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// <<< Propagate backwards from source operand
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Check source is reference of appropriate type
+		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Reference.class) != null));
+		Typing nnTyping = nTyping.map(row -> filterOnSubtype(row, var, getReferenceElement(row.get(src)), environment));
+		// Report errors
+		checkForError(expr.getOperand(), typing, nTyping, var, t -> new Type.Reference(t), src);
+		checkForError(expr, nTyping, nnTyping, var, src, t -> getReferenceElement(t));
 		//
+		return nTyping;
+	}
+
+	private Typing pushEqualityOperator(int var, Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Bool, environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, Type.Bool);
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int lhs = typing.top();
+		typing = pullExpression(expr.getSecondOperand(), true, typing, environment);
+		int rhs = typing.top();
+		// Check operand (in)compatibility
+		Typing typing_1 = typing.map(row -> disjoint(row.get(lhs), row.get(rhs), null) ? null : row);
+		// Report errors
+		checkForError(expr, INCOMPARABLE_OPERANDS, typing, typing_1, lhs, rhs);
+		// Done
+		return typing_1;
+	}
+
+	private Typing pushFieldDereference(int var, Expr.FieldDereference expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// <<< Propagate backwards from source operand
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Check source is reference of appropriate type
+		Typing nTyping = typing.filter(row -> isMatchingRecordReference(row.get(src), expr.getField()));
+		Typing nnTyping = nTyping
+				.map(row -> filterOnSubtype(row, var, getReferenceField(row.get(src), expr.getField()), environment));
+		// Report errors
+		checkForError(expr, typing, nTyping, var, t -> new Type.Reference(new Type.Record(true, expr.getField(), t)),
+				src);
+		checkForError(expr, nTyping, nnTyping, var, src, t -> getReferenceField(t, expr.getField()));
+		//
+		return nTyping;
+	}
+
+	private Typing pushIntegerComparator(int var, Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Bool, environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, Type.Bool);
+		//
+		return nTyping;
+	}
+
+	private Typing pushIntegerOperator(int var, Expr.UnaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getOperand(), typing.push(Type.Int), environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Int, environment));
+		// Sanity check typing
+		checkForError(expr, typing, nTyping, var, Type.Int);
+		//
+		return nTyping;
+	}
+
+	private Typing pushIntegerOperator(int var, Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Filter target type
+		Typing nTyping = typing.map(row -> filterOnPrimitive(row, var, Type.Int, environment));
+		// Sanity check whether valid typing still possible
+		checkForError(expr, typing, nTyping, var, Type.Int);
+		//
+		return nTyping;
+	}
+
+	private Typing pushIndirectInvoke(int var, Expr.IndirectInvoke expr, Typing typing, Environment environment) {
+		Tuple<Expr> operands = expr.getArguments();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// <<< Propagate backwards from source
+		typing = pullExpression(expr.getSource(), true, typing, environment);
+		int src = typing.top();
+		// Check source is suitable callable
+		Typing nTyping = typing.filter(row -> isMatchingLambda(row.get(src), operands.size()));
+		// Filter target type
+		Typing nnTyping = nTyping.map(row -> filterOnSubtype(row, var, getLambdaReturn(row.get(src)), environment));
+		// Report errors
+		checkForError(expr.getSource(), typing, nTyping, constructExpectedMethod(var, operands, typing, environment),
+				src);
+		checkForError(expr, nTyping, nnTyping, var, src, t -> getLambdaReturn(t));
+		// >>> Propagate forwards into children
+		return pushExpressions(operands, (row, i) -> getLambdaParameter(row.get(src), i), nnTyping, environment);
+	}
+
+	private Typing pushInvoke(int var, Expr.Invoke expr, Typing typing, Environment environment) {
+		// Extract link
 		Decl.Link<Decl.Callable> link = expr.getLink();
-		// Attempt to resolve this invocation (if we can).
-		if(link.isPartiallyResolved() && resolvable) {
-			// Apply type inference algorithm to resolve invocation
-			Type.Callable type = strictSubtypeOperator.bind(expr.getBinding(), Type.Tuple.create(types), environment);
-			// Sanity check we found something
-			if (type != null) {
-				// Finally, return the declared returns
-				Type ret = type.getReturn();
-				if(required && ret.shape() == 0) {
-					syntaxError(expr, INSUFFICIENT_RETURNS);
-					return null;
-				} else {
-					return ret;
-				}
-			}
-			// failed
+		// Save argument expressions for later
+		Tuple<Expr> arguments = expr.getOperands();
+		final int n = arguments.size();
+		// Select candidates with matching numbers of arguments
+		List<Decl.Callable> candidates = select(link.getCandidates(), c -> c.getParameters().size() == n);
+		// Check this invocation is resolvable
+		if (!link.isPartiallyResolved() || candidates.size() == 0) {
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			return typing.invalidate();
 		}
+		// Allocate space for the signature variables. This is used to identify each row
+		// in the typing matrix with one of candidates.
+		typing = typing.push(Type.Any).push(Type.Any);
+		int v_concrete = typing.top();
+		int v_signature = v_concrete - 1;
+		// Register a finaliser to resolve this invocation
+		typing.register(typeInvokeExpression(expr, v_signature));
+		// Fork typing into different cases for each overloaded candidate
+		typing = typing
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+		// <<< Filter return type
+		Typing nTyping = typing.map(row -> filterOnReturn(row, var, (Type.Callable) row.get(v_concrete), environment));
+		// Sanity check whether valid typing still possible
+		checkForError(expr, typing, nTyping, var, v_concrete, t -> getLambdaReturn(t));
+		// >>> Propagate forwards into children
+		return pushExpressions(arguments, (r, i) -> getLambdaParameter(r.get(v_concrete), i), nTyping, environment);
+	}
+
+	private Typing pushLambdaAccess(int var, Expr.LambdaAccess expr, Typing typing, Environment environment) {
+		Decl.Link<Decl.Callable> link = expr.getLink();
+		List<Decl.Callable> candidates = filterLambdaCandidates(expr);
+		// Sanity check for errors
+		if (candidates.size() == 0) {
+			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			return typing.invalidate();
+		}
+		// Allocate a finaliser for this expression
+		typing.register(typeLambdaAccess(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnLambda(row, var, environment));
+		// Filter target type
+		nTyping = nTyping.project(row -> fork(candidates, c -> filterOnSubtype(row, var, c.getType(), environment)));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// Done
+		return nTyping;
+	}
+
+	private Typing pushLambdaDeclaration(int var, Decl.Lambda expr, Typing typing, Environment environment) {
+		// Extract parameters from declaration
+		Type params = Decl.Callable.project(expr.getParameters());
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
+		// Type check the body of the lambda using the expected return types
+		Type returns = checkExpression(expr.getBody(), null, false, environment);
 		//
-		return null;
-	}
-
-	private Type checkIndirectInvoke(Expr.IndirectInvoke expr, boolean required, Environment environment) {
-		// Determine signature type from source
-		Type type = checkExpression(expr.getSource(), true, environment);
-		// Extract readable callable type
-		Type.Callable sig = extractType(Type.Callable.class, type, EXPECTED_LAMBDA, expr.getSource());
-		// Determine the argument types
-		if (sig == null) {
-			// Some kind of type error occurred upstream, therefore we're aborting.
-			return null;
+		if (returns == null) {
+			// Some kind of error has occurred upstream
+			return nTyping.invalidate();
 		} else {
-			Tuple<Expr> arguments = expr.getArguments();
-			Type parameters = sig.getParameter();
-			// Sanity check number of arguments provided
-			if (parameters.shape() != arguments.size()) {
-				syntaxError(expr, INSUFFICIENT_ARGUMENTS);
-			}
-			// Sanity check types of arguments provided
-			for (int i = 0; i != arguments.size(); ++i) {
-				// Determine argument type
-				Type arg = checkExpression(arguments.get(i), true, environment);
-				// Check argument is subtype of parameter
-				checkIsSubtype(parameters.dimension(i), arg, environment, arguments.get(i));
-			}
+			// Determine whether or not this is a pure or impure lambda.
+			Type.Callable type = constructLambdaType(expr, params, returns);
+			// Filter out problematic cases
+			Typing nnTyping = nTyping.map(row -> filterOnSubtype(row, var, type, environment));
+			// Report errors
+			checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+			checkForError(expr, nTyping, nnTyping, var, type);
 			//
-			Type ret = sig.getReturn();
-			//
-			if(ret != null) {
-				if(required && ret.shape() == 0) {
-					syntaxError(expr, INSUFFICIENT_RETURNS);
-				} else {
-					expr.setType(expr.getHeap().allocate(ret));
-					return ret;
-				}
-			}
-			// NOTE: must ignore returns if it contains null as this indicates some kind of
-			// upstream error.
-			return null;
+			return nnTyping;
 		}
 	}
 
-	private Type checkComparisonOperator(Expr.BinaryOperator expr, Environment environment) {
-		switch (expr.getOpcode()) {
-		case EXPR_equal:
-		case EXPR_notequal:
-			return checkEqualityOperator(expr, environment);
-		default:
-			return checkIntegerComparator(expr, environment);
-		}
+	private Typing pushNew(int var, Expr.New expr, Typing typing, Environment environment) {
+		final Identifier lifetime = (expr.hasLifetime()) ? expr.getLifetime() : null;
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnReference(row, var, lifetime, environment));
+		// Report errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		return pushExpression(expr.getOperand(), r -> getReferenceElement(r.get(var)), nTyping, environment);
 	}
 
-	private Type checkEqualityOperator(Expr.BinaryOperator expr, Environment environment) {
-		Type lhs = checkExpression(expr.getFirstOperand(), true, environment);
-		Type rhs = checkExpression(expr.getSecondOperand(), true, environment);
-		if (lhs != null && rhs != null) {
-			// Sanity check that the types of operands are actually comparable.
-			boolean left = strictSubtypeOperator.isSubtype(lhs, rhs, environment);
-			boolean right = strictSubtypeOperator.isSubtype(rhs, lhs, environment);
-			if (!left && !right) {
-				syntaxError(expr, INCOMPARABLE_OPERANDS, lhs, rhs);
-			}
-		}
-		return Type.Bool;
+	private Typing pushRecordAccess(int var, Expr.RecordAccess expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// <<< Propagate backwards from source
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Check source is array of appropriate type
+		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Record.class) != null));
+		Typing nnTyping = nTyping
+				.map(row -> filterOnSubtype(row, var, getRecordField(row.get(src), expr.getField()), environment));
+		// Report errors
+		checkForError(expr.getOperand(), typing, nTyping, var, t -> new Type.Record(true, expr.getField(), t), src);
+		checkForError(expr, nTyping, nnTyping, var, src, t -> getRecordField(t, expr.getField()));
+		// >>> Propagate forwards into index operand
+		return nnTyping;
 	}
 
-	private Type checkIntegerComparator(Expr.BinaryOperator expr, Environment environment) {
-		checkOperand(Type.Int, expr.getFirstOperand(), environment);
-		checkOperand(Type.Int, expr.getSecondOperand(), environment);
-		return Type.Bool;
-	}
-
-	private Type checkIntegerOperator(Expr.UnaryOperator expr, Environment environment) {
-		checkOperand(Type.Int, expr.getOperand(), environment);
-		return Type.Int;
-	}
-
-	/**
-	 * Check the type for a given arithmetic operator. Such an operator has the type
-	 * int, and all children should also produce values of type int.
-	 *
-	 * @param expr
-	 * @return
-	 */
-	private Type checkIntegerOperator(Expr.BinaryOperator expr, Environment environment) {
-		checkOperand(Type.Int, expr.getFirstOperand(), environment);
-		checkOperand(Type.Int, expr.getSecondOperand(), environment);
-		return Type.Int;
-	}
-
-	private Type checkBitwiseOperator(Expr.UnaryOperator expr, Environment environment) {
-		checkOperand(Type.Byte, expr.getOperand(), environment);
-		return Type.Byte;
-	}
-
-	private Type checkBitwiseOperator(Expr.NaryOperator expr, Environment environment) {
-		checkOperands(Type.Byte, expr.getOperands(), environment);
-		return Type.Byte;
-	}
-
-	private Type checkBitwiseShift(Expr.BinaryOperator expr, Environment environment) {
-		checkOperand(Type.Byte, expr.getFirstOperand(), environment);
-		checkOperand(Type.Int, expr.getSecondOperand(), environment);
-		return Type.Byte;
-	}
-
-	private Type checkTupleInitialiser(Expr.TupleInitialiser expr, Environment environment) {
-		Tuple<Expr> operands = expr.getOperands();
-		Type[] types = new Type[operands.size()];
-		for(int i=0;i!=types.length;++i) {
-			Type type = checkExpression(operands.get(i), true, environment);
-			if(type == null) {
-				return null;
-			}
-			types[i] = type;
-		}
-		return Type.Tuple.create(types);
-	}
-
-	private Type checkRecordAccess(Expr.RecordAccess expr, Environment environment) {
-		// Check expression against expected record types
-		Type src = checkExpression(expr.getOperand(), true, environment);
-		// Following may produce null if field not present
-		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getOperand());
-		// Return extracted field type
-		return extractFieldType(type, expr.getField());
-	}
-
-	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
-		// Check src and value expressions
-		Type src = checkExpression(expr.getFirstOperand(), true, environment);
-		Type val = checkExpression(expr.getSecondOperand(), true, environment);
-		// Extract readable record type
-		Type.Record type = extractType(Type.Record.class, src, EXPECTED_RECORD, expr.getFirstOperand());
-		// Extract corresponding field type
-		Type fieldType = extractFieldType(type, expr.getField());
-		// Matched the field type
-		checkIsSubtype(fieldType, val, environment, expr.getSecondOperand());
-		return src;
-	}
-
-	private Type checkRecordInitialiser(Expr.RecordInitialiser expr, Environment environment) {
+	private Typing pushRecordInitialiser(int var, Expr.RecordInitialiser expr, Typing typing, Environment environment) {
 		Tuple<Identifier> fields = expr.getFields();
 		Tuple<Expr> operands = expr.getOperands();
-		//
-		Type.Field[] decls = new Type.Field[operands.size()];
-		// Check field initialiser expressions one by one
-		for (int i = 0; i != operands.size(); ++i) {
-			Identifier field = fields.get(i);
-			Type fieldType = checkExpression(operands.get(i), true, environment);
-			if(fieldType == null) {
-				// Signals a type failure further upstream
-				return null;
-			}
-			decls[i] = new Type.Field(field, fieldType);
-		}
-		//
-		return new Type.Record(false, new Tuple<>(decls));
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming record types
+		Typing nTyping = typing.project(row -> forkOnRecord(row, var, fields, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		return pushExpressions(operands, (r, i) -> getRecordFieldWithDefault(r.get(var), fields.get(i), Type.Any),
+				nTyping, environment);
 	}
 
-	private Type checkArrayLength(Expr.ArrayLength expr, Environment environment) {
-		Type src = checkExpression(expr.getOperand(), true, environment);
-		// Check whether the source returns an array type or not.
-		extractType(Type.Array.class, src, EXPECTED_ARRAY, expr.getOperand());
-		//
-		return Type.Int;
-	}
-
-	private Type checkArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
-		// Check initialiser expressions
-		Tuple<Expr> operands = expr.getOperands();
-		Type[] ts = new Type[operands.size()];
-		for (int i = 0; i != ts.length; ++i) {
-			ts[i] = checkExpression(operands.get(i), true, environment);
-		}
-		if (ArrayUtils.firstIndexOf(ts, null) >= 0) {
-			// Upstream error
-			return null;
-		} else {
-			ts = ArrayUtils.removeDuplicates(ts);
-			Type element;
-			switch (ts.length) {
-			case 0:
-				element = Type.Void;
-				break;
-			case 1:
-				element = ts[0];
-				break;
-			default: {
-				element = new Type.Union(ts);
-			}
-			}
-			return new Type.Array(element);
-		}
-	}
-
-	private Type checkArrayGenerator(Expr.ArrayGenerator expr, Environment environment) {
-		Expr value = expr.getFirstOperand();
-		Expr length = expr.getSecondOperand();
-		// Check generation operands
-		Type valueT = checkExpression(value, true, environment);
-		checkOperand(Type.Int, length, environment);
-		//
-		if(valueT == null) {
-			// Upstream error
-			return null;
-		} else {
-			return new Type.Array(valueT);
-		}
-	}
-
-	private Type checkArrayAccess(Expr.ArrayAccess expr, Environment environment) {
-		Expr source = expr.getFirstOperand();
-		Expr subscript = expr.getSecondOperand();
-		//
-		Type sourceT = checkExpression(source, true, environment);
-		Type subscriptT = checkExpression(subscript, true, environment);
-		// Check whether source operand yielded an array type
-		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
-		// Check subscript has int type
-		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
-		// Return extracted array element type
-		return sourceArrayT == null ? null : sourceArrayT.getElement();
-	}
-
-	private Type checkArrayRange(Expr.ArrayRange expr, Environment environment) {
-		Type lhsT = checkExpression(expr.getFirstOperand(), true, environment);
-		Type rhsT = checkExpression(expr.getSecondOperand(), true, environment);
-		// Check integer types
-		checkIsSubtype(Type.Int, lhsT, environment, expr.getFirstOperand());
-		checkIsSubtype(Type.Int, rhsT, environment, expr.getSecondOperand());
-		//
-		return new Type.Array(Type.Int);
-	}
-
-	private Type checkArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
-		Expr source = expr.getFirstOperand();
-		Expr subscript = expr.getSecondOperand();
-		Expr value = expr.getThirdOperand();
-		// Check operand expressions
-		Type sourceT = checkExpression(source, true, environment);
-		Type subscriptT = checkExpression(subscript, true, environment);
-		Type valueT = checkExpression(value, true, environment);
-		// Extract the determined array type
-		Type.Array sourceArrayT = extractType(Type.Array.class, sourceT, EXPECTED_ARRAY, source);
-		// Extract the array element type
-		Type elementT = sourceArrayT.getElement();
-		// Check for integer subscript
-		checkIsSubtype(Type.Int, subscriptT, environment, subscript);
-		checkIsSubtype(elementT, valueT, environment, value);
-		return sourceArrayT;
-	}
-
-	private Type checkDereference(Expr.Dereference expr, Environment environment) {
-		Type operandT = checkExpression(expr.getOperand(), true, environment);
-		// Extract an appropriate reference type form the source.
-		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
-				expr.getOperand());
-		// Sanity check readability of reference
-		checkIsReadable(refT, environment,expr.getOperand());
+	private Typing pushStaticVariable(int var, Expr.StaticVariableAccess expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Extract variable link
+		Decl.Link<Decl.StaticVariable> l = expr.getLink();
+		// Extract type if applicable
+		Type type = l.isResolved() ? l.getTarget().getType() : null;
+		// Terminate this typing
+		Typing nTyping = typing.map(row -> filterOnSubtype(row, var, type, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, type);
 		// Done
-		return refT == null ? null : refT.getElement();
+		return nTyping;
 	}
 
-	private Type checkFieldDereference(Expr.FieldDereference expr, Environment environment) {
-		Type operandT = checkExpression(expr.getOperand(), true, environment);
-		// Extract an appropriate reference type form the source.
-		Type.Reference refT = extractType(Type.Reference.class, operandT, EXPECTED_REFERENCE,
-				expr.getOperand());
-		// Extract target type
-		Type target = refT == null ? null : refT.getElement();
-		// Following may produce null if field not present
-		Type.Record recT = extractType(Type.Record.class, target, EXPECTED_RECORD, expr.getOperand());
-		// Return extracted field type
-		return extractFieldType(recT, expr.getField());
+	private Typing pushTupleInitialiser(int var, Expr.TupleInitialiser expr, Typing typing, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		final int n = operands.size();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming record types
+		Typing nTyping = typing.project(row -> forkOnTuple(row, var, n, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		return pushExpressions(operands, (r, i) -> getTupleElement(r.get(var), i), nTyping, environment);
 	}
 
-	private Type checkNew(Expr.New expr, Environment environment) {
-		// Check expression type against expected element types
-		Type operandT = checkExpression(expr.getOperand(), true, environment);
+	private Typing pushVariable(int var, Expr.VariableAccess expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Extract variable's active type
+		Type type = environment.getType(expr.getVariableDeclaration());
+		// Terminate this typing
+		Typing nTyping = typing.map(row -> filterOnSubtype(row, var, type, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, type);
+		// Done
+		return nTyping;
+	}
+
+	// =====================================================================================
+	// Pull Expressions (for Type Inference)
+	// =====================================================================================
+
+	/**
+	 * <p>
+	 * Pull a type backwards out of an expression. Pull occurs when there is no
+	 * target type which could be used as a basis for pushing. For example, consider
+	 * this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * assert [1,2,3] == xs
+	 * </pre>
+	 * 
+	 * <p>
+	 * When typing the expression <code>[1,2,3]</code> there is no target type to
+	 * use. Therefore, we pull the "natural" type out of it (which would be
+	 * <code>int[]</code> in this case).
+	 * </p>
+	 * <p>
+	 * The type of the expression must be loaded onto the to of the typing returned.
+	 * This means we can easily determine the variable allocated for this expression
+	 * via Typing.top().
+	 * </p>
+	 * 
+	 * @param expression  The expression we are pulling from.
+	 * @param required    Flag to indicate whether or not a return value is
+	 *                    required.
+	 * @param typing      The current typing matrix. This represents all current
+	 *                    typings under consideration.
+	 * @param environment The current typing environment applicable for the
+	 *                    expression given its context.
+	 * @return
+	 */
+	private Typing  pullExpression(Expr expression, boolean required, Typing typing, Environment environment) {
+		meter.step("expression");
 		//
-		if(operandT == null) {
-			// upstream error
-			return null;
-		} else if (expr.hasLifetime()) {
-			return new Type.Reference(operandT, false, expr.getLifetime());
-		} else {
-			return new Type.Reference(operandT, false);
+		switch (expression.getOpcode()) {
+		case EXPR_constant:
+			return pullConstant((Expr.Constant) expression, typing, environment);
+		case EXPR_variablecopy:
+			return pullVariable((Expr.VariableAccess) expression, typing, environment);
+		case EXPR_staticvariable:
+			return pullStaticVariable((Expr.StaticVariableAccess) expression, typing, environment);
+		case EXPR_cast:
+			return pullCast((Expr.Cast) expression, typing, environment);
+		case EXPR_invoke:
+			return pullInvoke((Expr.Invoke) expression, required, typing, environment);
+		case EXPR_indirectinvoke:
+			return pullIndirectInvoke((Expr.IndirectInvoke) expression, required, typing, environment);
+		case EXPR_logicalnot:
+		case EXPR_logicalor:
+		case EXPR_logicaland:
+		case EXPR_logicaliff:
+		case EXPR_logicalimplication:
+		case EXPR_is:
+		case EXPR_logicaluniversal:
+		case EXPR_logicalexistential:
+			return pullConditionExpression(expression, typing, environment);
+		case EXPR_equal:
+		case EXPR_notequal:
+			return pullEqualityOperator((Expr.BinaryOperator) expression, typing, environment);
+		case EXPR_integerlessthan:
+		case EXPR_integerlessequal:
+		case EXPR_integergreaterthan:
+		case EXPR_integergreaterequal:
+			return pullIntegerComparator((Expr.BinaryOperator) expression, typing, environment);
+		case EXPR_integernegation:
+			return pullIntegerOperator((Expr.UnaryOperator) expression, typing, environment);
+		case EXPR_integeraddition:
+		case EXPR_integersubtraction:
+		case EXPR_integermultiplication:
+		case EXPR_integerdivision:
+		case EXPR_integerremainder:
+			return pullIntegerOperator((Expr.BinaryOperator) expression, typing, environment);
+		case EXPR_bitwisenot:
+			return pullBitwiseOperator((Expr.UnaryOperator) expression, typing, environment);
+		case EXPR_bitwiseand:
+		case EXPR_bitwiseor:
+		case EXPR_bitwisexor:
+			return pullBitwiseOperator((Expr.NaryOperator) expression, typing, environment);
+		case EXPR_bitwiseshl:
+		case EXPR_bitwiseshr:
+			return pullBitwiseShift((Expr.BinaryOperator) expression, typing, environment);
+		case EXPR_tupleinitialiser:
+			return pullTupleInitialiser((Expr.TupleInitialiser) expression, typing, environment);
+		case EXPR_recordinitialiser:
+			return pullRecordInitialiser((Expr.RecordInitialiser) expression, typing, environment);
+		case EXPR_recordaccess:
+		case EXPR_recordborrow:
+			return pullRecordAccess((Expr.RecordAccess) expression, typing, environment);
+		case EXPR_arraylength:
+			return pullArrayLength((Expr.ArrayLength) expression, typing, environment);
+		case EXPR_arrayinitialiser:
+			return pullArrayInitialiser((Expr.ArrayInitialiser) expression, typing, environment);
+		case EXPR_arraygenerator:
+			return pullArrayGenerator((Expr.ArrayGenerator) expression, typing, environment);
+		case EXPR_arrayaccess:
+		case EXPR_arrayborrow:
+			return pullArrayAccess((Expr.ArrayAccess) expression, typing, environment);
+		case EXPR_dereference:
+			return pullDereference((Expr.Dereference) expression, typing, environment);
+		case EXPR_fielddereference:
+			return pullFieldDereference((Expr.FieldDereference) expression, typing, environment);
+		case EXPR_staticnew:
+		case EXPR_new:
+			return pullNew((Expr.New) expression, typing, environment);
+		case EXPR_lambdaaccess:
+			return pullLambdaAccess((Expr.LambdaAccess) expression, typing, environment);
+		case DECL_lambda:
+			return pullLambdaDeclaration((Decl.Lambda) expression, typing, environment);
+		default:
+			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
+					expression);
 		}
 	}
 
-	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
+	private Typing pullArrayLength(Expr.ArrayLength expr, Typing typing, Environment environment) {
+		typing = pushExpression(expr.getOperand(), typing.push(Type.AnyArray), environment);
+		//
+		return typing.map(row -> row.add(Type.Int));
+	}
+
+	private Typing pullArrayInitialiser(Expr.ArrayInitialiser expr, Typing typing, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		// Identify allocated variable(s)
+		int[] children = new int[operands.size()];
+		// >>> Propagate forwards into children
+		for (int i = 0; i != children.length; ++i) {
+			typing = pullExpression(operands.get(i), true, typing, environment);
+			children[i] = typing.top();
+		}
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Propagate backwards from children
+		return typing.map(row -> row.add(new Type.Array(Type.Union.create(row.getAll(children)))));
+	}
+
+	private Typing pullArrayGenerator(Expr.ArrayGenerator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int element = typing.top();
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Propagate backwards from children
+		return typing.map(row -> row.add(new Type.Array(row.get(element))));
+	}
+
+	private Typing pullArrayAccess(Expr.ArrayAccess expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into source operand
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int src = typing.top();
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Propagate backwards from source operand
+		Typing nTyping = typing.map(row -> row.add(getArrayElement(row.get(src))));
+		// Sanity check typing
+		checkForError(expr.getFirstOperand(), typing, nTyping, Type.AnyArray, src);
+		//
+		return nTyping;
+	}
+
+	private Typing pullBitwiseOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getOperand(), typing.push(Type.Byte), environment);
+		// <<< Propagate backwards into parent
+		return typing.map(row -> row.add(Type.Byte));
+	}
+
+	private Typing pullBitwiseOperator(Expr.NaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpressions(expr.getOperands(), Type.Byte, typing, environment);
+		// <<< Propagate backwards into parent
+		return typing.map(row -> row.add(Type.Byte));
+	}
+
+	private Typing pullBitwiseShift(Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Byte), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// <<< Propagate backwards into parent
+		return typing.map(row -> row.add(Type.Byte));
+	}
+
+	private Typing pullCast(Expr.Cast expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Check cast makes sense
+		Typing nTyping = typing.filter(r -> isSensibleCast(expr.getType(), r.get(src), environment));
+		// Report errors
+		checkForError(expr.getOperand(), typing, nTyping, expr.getType(), src);
+		// <<< Propagate backwards into parent
+		return nTyping.map(row -> row.add(expr.getType()));
+	}
+
+	private Typing pullConditionExpression(Expr expr, Typing typing, Environment environment) {
+		// Check condition
+		checkCondition(expr, true, environment);
+		// <<< Back propagate boolean
+		return typing.map(row -> row.add(Type.Bool));
+	}
+
+	private Typing pullConstant(Expr.Constant expr, Typing typing, Environment environment) {
+		// Extract underling value type
+		final Type type = typeOf(expr.getValue());
+		// Assign type to expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Back propagate from type
+		return typing.map(row -> row.add(type));
+	}
+
+	private Typing pullDereference(Expr.Dereference expr, Typing typing, Environment environment) {
+		// >>> Propagate forward into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// >>> Propagate backwards from children
+		Typing nTyping = typing.map(row -> row.add(getReferenceElement(row.get(src))));
+		// Sanity check source was a reference
+		checkForError(expr.getOperand(), typing, nTyping, new Type.Reference(Type.Any), src);
+		// Allocate a finaliser for this expression
+		nTyping.register(typeStandardExpression(expr, nTyping.top()));
+		// Done
+		return nTyping;
+	}
+
+	private Typing pullEqualityOperator(Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int lhs = typing.top();
+		typing = pullExpression(expr.getSecondOperand(), true, typing, environment);
+		int rhs = typing.top();
+		// <<< Check operand (in)compatibility
+		Typing typing_1 = typing.map(row -> disjoint(row.get(lhs), row.get(rhs), null) ? null : row);
+		// Sanity check whether valid typing still possible
+		checkForError(expr, INCOMPARABLE_OPERANDS, typing, typing_1, lhs, rhs);
+		// <<< Propagate backwards from children
+		return typing_1.map(row -> row.add(Type.Bool));
+	}
+
+	private Typing pullFieldDereference(Expr.FieldDereference expr, Typing typing, Environment environment) {
+		// >>> Propagate forward into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, src + 1));
+		// >>> Propagate backwards from children
+		Typing nTyping = typing.map(row -> row.add(getReferenceField(row.get(src), expr.getField())));
+		// Sanity check typing
+		checkForError(expr.getOperand(), typing, nTyping,
+				new Type.Reference(new Type.Record(true, expr.getField(), Type.Any)), src);
+		// Done
+		return nTyping;
+	}
+
+	private Typing pullIntegerComparator(Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// <<< Propagate backwards to parent
+		return typing.map(row -> row.add(Type.Bool));
+	}
+
+	private Typing pullIntegerOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getOperand(), typing.push(Type.Int), environment);
+		// <<< Propagate backwards
+		return typing.map(row -> row.add(Type.Int));
+	}
+
+	private Typing pullIntegerOperator(Expr.BinaryOperator expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
+		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// <<< Propagate backwards
+		return typing.map(row -> row.add(Type.Int));
+	}
+
+	private Typing pullIndirectInvoke(Expr.IndirectInvoke expr, boolean required, Typing typing,
+			Environment environment) {
+		Tuple<Expr> operands = expr.getArguments();
+		// <<< Propagate backwards from source
+		typing = pullExpression(expr.getSource(), true, typing, environment);
+		int src = typing.top();
+		// Check source is suitable callable
+		Typing nTyping = typing.filter(row -> isMatchingLambda(row.get(src), operands.size()));
+		// Report errors
+		checkForError(expr, typing, nTyping, constructExpectedMethod(Type.Any, operands, typing, environment), src);
+		// >>> Propagate forwards into children
+		nTyping = pushExpressions(operands, (row, i) -> getLambdaParameter(row.get(src), i), nTyping, environment);
+		// Allocate a finaliser for this expression
+		nTyping.register(typeStandardExpression(expr, nTyping.top() + 1));
+		// <<< Propagate backwards
+		return nTyping.map(row -> row.add(getLambdaReturn(row.get(src))));
+	}
+
+	private Typing pullInvoke(Expr.Invoke expr, boolean required, Typing typing, Environment environment) {
+		// Extract link
 		Decl.Link<Decl.Callable> link = expr.getLink();
-		Type types = expr.getParameterTypes();
-		// FIXME: there is a problem here in that we cannot distinguish
-		// between the case where no parameters were supplied and when
-		// exactly zero arguments were supplied.
-		if (types.shape() > 0) {
-			// Now attempt to bind the given candidate declarations against the concrete
-			// argument types.
-			return strictSubtypeOperator.bind(expr.getBinding(), types, environment);
-		} else if (link.isResolved()) {
-			return link.getTarget().getType();
-		} else {
-			//
+		// Save argument expressions for later
+		Tuple<Expr> arguments = expr.getOperands();
+		final int n = arguments.size();
+		// Select candidates with matching numbers of arguments
+		List<Decl.Callable> candidates = select(link.getCandidates(), c -> c.getParameters().size() == n);
+		// Check this invocation is resolvable
+		if (!link.isPartiallyResolved() || candidates.size() == 0) {
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
-			return null;
+			return typing.invalidate();
 		}
+		// Allocate space for the signature variables. This is used to identify each row
+		// in the typing matrix with one of candidates.
+		typing = typing.push(Type.Any).push(Type.Any);
+		int v_concrete = typing.top();
+		int v_signature = v_concrete - 1;
+		// Register a finaliser to resolve this invocation
+		typing.register(typeInvokeExpression(expr, v_signature));
+		// Fork typing into different cases for each overloaded candidate
+		typing = typing
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+		// >>> Propagate forwards into children
+		typing = pushExpressions(arguments, (r, i) -> getLambdaParameter(r.get(v_concrete), i), typing, environment);
+		// Pull back return
+		return typing.map(row -> row.add(getLambdaReturn(row.get(v_concrete))));
 	}
 
-	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment environment) {
-		Type parameter = Decl.Callable.project(expr.getParameters());
+	private Typing.Row initialiseCallableFrame(Typing.Row row, Expr.Invoke expr, Decl.Callable candidate, int v_sig,
+			int v_concrete) {
+		Type.Callable signatureType = candidate.getType();
+		Tuple<Template.Variable> template = candidate.getTemplate();
+		Tuple<SyntacticItem> templateArguments = expr.getBinding().getArguments();
+		// Check whether need to infer template arguments
+		if (template.size() > 0 && templateArguments.size() == 0) {
+			// Template required, but no explicit arguments given. Therefore, we create
+			// fresh (existential) type for each position and subsitute them through.
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			row = p.first();
+			templateArguments = new Tuple<>(p.second());
+		}
+		// Construct the concrete type.
+		Type.Callable concreteType = WyilFile.substitute(signatureType, template, templateArguments);
+		// Configure first meta-variable to hold actual signature
+		row = row.set(v_sig, signatureType);
+		// Configure second meta-variable to hold concrete signature
+		row = row.set(v_concrete, concreteType);
+		//
+		return row;
+	}
+
+	private Typing pullLambdaAccess(Expr.LambdaAccess expr, Typing typing, Environment environment) {
+		Decl.Link<Decl.Callable> link = expr.getLink();
+		List<Decl.Callable> candidates = filterLambdaCandidates(expr);
+		// Sanity check for errors
+		if (candidates.size() == 0) {
+			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			return typing.invalidate();
+		}
+		// Allocate a finaliser for this expression
+		typing.register(typeLambdaAccess(expr, typing.top() + 1));
+		// Fork typing rows based on candidates
+		return typing.project(row -> fork(candidates, c -> row.add(c.getType())));
+	}
+
+	private Typing pullLambdaDeclaration(Decl.Lambda expr, Typing typing, Environment environment) {
+		// Extract parameters from declaration
+		Type params = Decl.Callable.project(expr.getParameters());
 		// Type check the body of the lambda using the expected return types
-		Type result = checkExpression(expr.getBody(), false, environment);
+		Type returns = checkExpression(expr.getBody(), null, false, environment);
 		// Determine whether or not this is a pure or impure lambda.
-		Type.Callable signature;
-		if(result == null) {
-			// An error occurred upstream
+		Type.Callable type = constructLambdaType(expr, params, returns);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// Allocate type variable(s) for this expression
+		return typing.map(row -> row.add(type));
+	}
+
+	public Type.Callable constructLambdaType(Decl.Lambda expr, Type params, Type returns) {
+		if (returns == null) {
+			// Error has occurred upstream, so simply propagate this down.
 			return null;
 		} else if (isPure(expr.getBody())) {
-			// This is a pure lambda, hence it has function type.
-			signature = new Type.Function(parameter, result);
+			return new Type.Function(params, returns);
 		} else {
-			// This is an impure lambda, hence it has method type.
-			signature = new Type.Method(parameter, result, expr.getCapturedLifetimes(),
-					expr.getLifetimes());
+			return new Type.Method(params, returns, expr.getCapturedLifetimes(), expr.getLifetimes());
 		}
-		// Update lambda declaration with inferred signature.
-		if(signature != null) {
-			// NOTE: must if has been upsteam error
-			expr.setType(expr.getHeap().allocate(signature));
+	}
+
+	private Typing pullNew(Expr.New expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		// <<< Propagate backwards
+		final int element = typing.top();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, element + 1));
+		//
+		if (expr.hasLifetime()) {
+			return typing.map(row -> row.add(new Type.Reference(row.get(element), expr.getLifetime())));
+		} else {
+			return typing.map(row -> row.add(new Type.Reference(row.get(element))));
 		}
+	}
+
+	private Typing pullRecordAccess(Expr.RecordAccess expr, Typing typing, Environment environment) {
+		// Recursively check source operand
+		typing = typing.push(Type.Any);
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		int src = typing.top();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, src + 1));
+		// <<< Propagate backwards from children
+		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Record.class) != null));
+		Typing nnTyping = nTyping.map(row -> row.add(getRecordField(row.get(src), expr.getField())));
+		// Report errors
+		checkForError(expr.getOperand(), EXPECTED_RECORD, typing, nTyping);
+		checkForError(expr.getField(), INVALID_FIELD, nTyping, nnTyping);
 		// Done
-		return signature;
+		return nnTyping;
+	}
+
+	private Typing pullRecordInitialiser(Expr.RecordInitialiser expr, Typing typing, Environment environment) {
+		Tuple<Identifier> fields = expr.getFields();
+		Tuple<Expr> operands = expr.getOperands();
+		// >>> Propagate forwards into children
+		int[] children = new int[operands.size()];
+		for (int i = 0; i != children.length; ++i) {
+			typing = pullExpression(operands.get(i), true, typing, environment);
+			children[i] = typing.top();
+		}
+		// Allocate finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Propagate backwards from children
+		return typing.map(row -> row.add(new Type.Record(false, fields, new Tuple<>(row.getAll(children)))));
+	}
+
+	private Typing pullStaticVariable(Expr.StaticVariableAccess expr, Typing typing, Environment environment) {
+		// Extract variable link
+		Decl.Link<Decl.StaticVariable> l = expr.getLink();
+		// Extract type if applicable
+		Type type = l.isResolved() ? l.getTarget().getType() : null;
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// Terminate this typing
+		return typing.map(row -> row.add(type));
+	}
+
+	private Typing pullTupleInitialiser(Expr.TupleInitialiser expr, Typing typing, Environment environment) {
+		Tuple<Expr> operands = expr.getOperands();
+		// >>> Propagate forwards into children
+		int[] children = new int[operands.size()];
+		for (int i = 0; i != children.length; ++i) {
+			typing = pullExpression(operands.get(i), true, typing, environment);
+			children[i] = typing.top();
+		}
+		// Allocate finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// <<< Propagate backwards from children
+		return typing.map(row -> row.add(Type.Tuple.create(row.getAll(children))));
+	}
+
+	private Typing pullVariable(Expr.VariableAccess expr, Typing typing, Environment environment) {
+		// Extract variable's active type
+		Type type = environment.getType(expr.getVariableDeclaration());
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
+		// Terminate this typing
+		return typing.map(row -> row.add(type));
 	}
 
 	// ==========================================================================
 	// Helpers
 	// ==========================================================================
 
-	public Type refine(Type declared, Type selector, LifetimeRelation lifetimes) {
+	/**
+	 * Filter the set of candidates for a lambda access expression based on the
+	 * presence (or not) of type parameters.
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private static List<Decl.Callable> filterLambdaCandidates(Expr.LambdaAccess expr) {
+		Decl.Link<Decl.Callable> link = expr.getLink();
+		Type types = expr.getParameterTypes();
+		// There is a problem here in that we cannot distinguish
+		// between the case where no parameters were supplied and when
+		// exactly zero arguments were supplied.
+		if (types.shape() > 0) {
+			return select(link.getCandidates(), d -> d.getType().getParameter().equals(types));
+		} else if (link.isResolved()) {
+			// Link already resolved (e.g. because was only one candidate).
+			return link.getCandidates();
+		} else if (link.isPartiallyResolved()) {
+			// Harder case. No signature given by user, so must fork constraints at this
+			// point for each sensible candidate.
+			return link.getCandidates();
+		} else {
+			return Collections.emptyList();
+		}
+	}
+
+	private Tuple<Type> constructExpectedMethod(int var, Tuple<Expr> operands, Typing typing, Environment environment) {
+		// Determine natural type of arguments
+		Tuple<Type> params = operands.map(e -> getNaturalType(e, environment));
+		// Construct expected parameter
+		Type param = Type.Tuple.create(params);
+		// Extract expected returns
+		Tuple<Type> returns = typing.types(var);
+		// Done
+		return returns.map(ret -> new Type.Method(param, ret, new Tuple<>(), new Tuple<>()));
+	}
+
+	private Type constructExpectedMethod(Type ret, Tuple<Expr> operands, Typing typing, Environment environment) {
+		// Determine natural type of arguments
+		Tuple<Type> params = operands.map(e -> getNaturalType(e, environment));
+		// Construct expected parameter
+		Type param = Type.Tuple.create(params);
+		// Done
+		return new Type.Method(param, ret, new Tuple<>(), new Tuple<>());
+	}
+
+	/**
+	 * Check all items contained in one tuple (left) are found in another tuple
+	 * (right). However, the right-hand side may contain additional items. Note also
+	 * the ordering of items does not matter.
+	 *
+	 * @param <T>
+	 * @param lhs The left-hand side which must be a subset of the right-hand side
+	 * @param rhs The right-hand side which must be a superset of the left-hand side
+	 * @return
+	 */
+	private static <T extends SyntacticItem> boolean isSubset(Tuple<T> lhs, Tuple<T> rhs) {
+		for (int i = 0; i != lhs.size(); ++i) {
+			final T ith = lhs.get(i);
+			boolean matched = false;
+			for (int j = 0; j != rhs.size(); ++j) {
+				final T jth = rhs.get(j);
+				if (ith.equals(jth)) {
+					matched = true;
+					break;
+				}
+			}
+			if (!matched) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static <T> List<T> select(List<T> items, Predicate<T> critereon) {
+		ArrayList<T> result = new ArrayList<>();
+		for (int i = 0; i != items.size(); ++i) {
+			T ith = items.get(i);
+			if (critereon.test(ith)) {
+				result.add(ith);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Determine whether a cast from one type to another is "sensible". That is,
+	 * could in principle be implemented.
+	 *
+	 * @param target    The type being cast to.
+	 * @param actual    The type being cast from.
+	 * @param subtyping
+	 * @return
+	 */
+	private static boolean isSensibleCast(Type target, Type actual, Subtyping.Environment subtyping) {
+		Type underlying = getUnderlyingType(actual, null);
+		// NOTE: this doesn't handle type variables properly.
+		Type glb = subtyping.greatestLowerBound(underlying, target);
+		//
+		return !(glb instanceof Type.Void);
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield an
+	 * array. For example, consider:
+	 *
+	 * <pre>
+	 * int[]|bool fb = [1,2,3]
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>int[]|bool</code> down to just
+	 * <code>int[]</code>. This can then be pushed into the initialiser expressions
+	 * where subtyping checking can be performed.
+	 * </p>
+	 *
+	 * <p>
+	 * A key challenge arises when the type variable is actually an existential. The
+	 * following illustrates an example:
+	 * </p>
+	 *
+	 * <pre>
+	 * function id<T>(T x) -> T:
+	 *    return x
+	 *
+	 * id([1,2])
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, we pull from <code>id([1,2])</code> since the return is
+	 * discarded. This results in pushing <code>?0</code> into <code>[1,2]</code>
+	 * which prevents filtering based on the underlying array type. To resolve this,
+	 * apply a subtyping constraint <code>?0 :> ?1[]</code> for a freshly
+	 * constructed variable <code>?1</code>.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnArray(Typing.Row row, int var, Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// NOTE: This case arises only because of open records (I believe). Really, we'd
+			// want to pull to get the most precise type. But, it's difficult because this
+			// is
+			// specific to individual rows.
+			return new Typing.Row[] { row.set(var, Type.AnyArray) };
+		} else if (type instanceof Type.Existential) {
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			Type.Existential element = p.second()[0];
+			Type.Array arr_t = new Type.Array(element);
+			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
+			return new Typing.Row[] { row.set(var, arr_t).intersect(constraints) };
+		} else {
+			return forkOnPredicate(row, var, t -> t.as(Type.Array.class) != null);
+		}
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield a
+	 * recording matching a given set of fields. For example, consider:
+	 *
+	 * <pre>
+	 * {int f}|{int g} r = {f:1}
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>{int f}|{int g}</code> down to just
+	 * <code>{int f}</code>. This can then be pushed into the initialiser
+	 * expressions where subtyping checking can be performed.
+	 * </p>
+	 *
+	 * <p>
+	 * A key challenge arises when the type variable is actually an existential. The
+	 * following illustrates an example:
+	 * </p>
+	 *
+	 * <pre>
+	 * function id<T>(T x) -> T:
+	 *    return x
+	 *
+	 * id({f:1})
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, we pull from <code>id({f:1})</code> since the return is
+	 * discarded. This results in pushing <code>?0</code> into <code>{f:1}</code>
+	 * which prevents filtering based on the underlying record type. To resolve
+	 * this, apply a subtyping constraint <code>?0 :> {?1 f}</code> for a freshly
+	 * constructed variable <code>?1</code>.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnRecord(Typing.Row row, int var, Tuple<Identifier> fields,
+			Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// NOTE: This case arises only because of open records (I believe). Really, we'd
+			// want to pull to get the most precise type. But, it's difficult because this
+			// is
+			// specific to individual rows.
+			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
+			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
+		} else if (type instanceof Type.Existential) {
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			Type.Existential element = p.second()[0];
+			Type.Array rec_t = new Type.Array(element);
+			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
+			return new Typing.Row[] { row.set(var, rec_t).intersect(constraints) };
+		} else {
+			return forkOnPredicate(row, var, t -> isMatchingRecord(t, fields));
+		}
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield a
+	 * reference. For example, consider:
+	 *
+	 * <pre>
+	 * &int|int r = new 1
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>&int|int</code> down to just <code>&int</code>.
+	 * This can then be pushed into the initialiser expressions where subtyping
+	 * checking can be performed.
+	 * </p>
+	 *
+	 * <p>
+	 * A key challenge arises when the type variable is actually an existential. The
+	 * following illustrates an example:
+	 * </p>
+	 *
+	 * <pre>
+	 * function id<T>(T x) -> T:
+	 *    return x
+	 *
+	 * id(new 1)
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, we pull from <code>id(new 1)</code> since the return is
+	 * discarded. This results in pushing <code>?0</code> into <code>new 1</code>
+	 * which prevents filtering based on the underlying reference type. To resolve
+	 * this, apply a subtyping constraint <code>?0 :> &?1</code> for a freshly
+	 * constructed variable <code>?1</code>.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnReference(Typing.Row row, int var, Identifier lifetime,
+			Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// NOTE: This case arises only because of open records (I believe). Really, we'd
+			// want to pull to get the most precise type. But, it's difficult because this
+			// is
+			// specific to individual rows.
+			Type.Reference t = (lifetime == null) ? new Type.Reference(Type.Any)
+					: new Type.Reference(Type.Any, lifetime);
+			return new Typing.Row[] { row.set(var, t) };
+		} else if (type instanceof Type.Existential) {
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			Type.Existential element = p.second()[0];
+			Type.Reference ref_t = (lifetime == null) ? new Type.Reference(element)
+					: new Type.Reference(element, lifetime);
+			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
+			return new Typing.Row[] { row.set(var, ref_t).intersect(constraints) };
+		} else {
+			return forkOnPredicate(row, var, t -> isMatchingReference(t, lifetime, subtyping));
+		}
+	}
+
+	/**
+	 * Check whether a given target reference is a match for a given reference
+	 * initialiser. Specifically, this comes down to check the respective lifetimes
+	 * are compatible.
+	 *
+	 * @param type
+	 * @param expr
+	 * @param subtyping
+	 * @return
+	 */
+	private static boolean isMatchingReference(Type type, Identifier lifetime, Subtyping.Environment subtyping) {
+		Type.Reference ref = type.as(Type.Reference.class);
+		if (ref == null) {
+			return false;
+		} else if (ref.hasLifetime() && lifetime != null) {
+			return subtyping.isWithin(ref.getLifetime().get(), lifetime.get());
+		} else if (ref.hasLifetime() || lifetime == null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield a
+	 * reference. For example, consider:
+	 *
+	 * <pre>
+	 * &int|int r = new 1
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>&int|int</code> down to just <code>&int</code>.
+	 * This can then be pushed into the initialiser expressions where subtyping
+	 * checking can be performed.
+	 * </p>
+	 *
+	 * <p>
+	 * A key challenge arises when the type variable is actually an existential. The
+	 * following illustrates an example:
+	 * </p>
+	 *
+	 * <pre>
+	 * function id<T>(T x) -> T:
+	 *    return x
+	 *
+	 * id(new 1)
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, we pull from <code>id(new 1)</code> since the return is
+	 * discarded. This results in pushing <code>?0</code> into <code>new 1</code>
+	 * which prevents filtering based on the underlying reference type. To resolve
+	 * this, apply a subtyping constraint <code>?0 :> &?1</code> for a freshly
+	 * constructed variable <code>?1</code>.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Existential) {
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			Type.Existential[] elements = p.second();
+			Type tup_t = Type.Tuple.create(elements);
+			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
+			return new Typing.Row[] { row.set(var, tup_t).intersect(constraints) };
+		} else {
+			return forkOnPredicate(row, var, t -> isMatchingTuple(row.get(var), n));
+		}
+	}
+
+	/**
+	 * Check the target type is a tuple with sufficiently many fields.
+	 *
+	 * @param type The type to be checked as a tuple
+	 * @param size The number of fields the tuple must have
+	 * @return
+	 */
+	private static boolean isMatchingTuple(Type type, int size) {
+		Type.Tuple tupe = type.as(Type.Tuple.class);
+		return (tupe != null) && (tupe.size() == size);
+	}
+
+	private static boolean isMatchingRecordReference(Type type, Identifier field) {
+		Type.Reference ref = type.as(Type.Reference.class);
+		if (ref == null) {
+			return false;
+		}
+		Type.Record rec = ref.getElement().as(Type.Record.class);
+		return (rec != null) && rec.getField(field) != null;
+	}
+
+	/**
+	 * Check the target type is a record with sufficiently matching fields. For
+	 * closed records, this is straightforward as we must have exactly the same
+	 * fields. For open records, we require only a subset of the required fields.
+	 *
+	 * @param type
+	 * @param fields
+	 * @return
+	 */
+	private static boolean isMatchingRecord(Type type, Tuple<Identifier> fields) {
+		// Check really have a record
+		Type.Record rec = type.as(Type.Record.class);
+		if (rec == null) {
+			return false;
+		}
+		// Extract field names from target record
+		Tuple<Identifier> rec_fields = rec.getFields().map(f -> f.getName());
+		// Check sufficiently matching fields.
+		return isSubset(rec_fields, fields) && (rec.isOpen() || rec_fields.size() == fields.size());
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield a lambda
+	 * with a suitable parameter type. For example, consider:
+	 *
+	 * <pre>
+	 * type fun_t is function(int)->(bool)
+	 *
+	 * fun_t|bool fb = &(int x -> (x==1))
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>fun_t|bool</code> down to just
+	 * <code>fun_t</code>. This can then be pushed into the lambda declaration where
+	 * subtyping checking can be performed.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnLambda(Typing.Row row, int var, Type parameter, Subtyping.Environment subtyping) {
+		// Fork out all lambdas
+		Typing.Row[] rows = forkOnLambda(row, var, subtyping);
+		// Filter lambdas based on parameter
+		for (int i = 0; i != rows.length; ++i) {
+			Typing.Row ith = rows[i];
+			if (ith != null) {
+				Type.Callable t = ith.get(var).as(Type.Callable.class);
+				rows[i] = ith.intersect(subtyping.isSubtype(parameter, t.getParameter()));
+			}
+		}
+		return rows;
+	}
+
+	/**
+	 * Fork a row based on a given type variable which is expected to yield a
+	 * lambda. For example, consider:
+	 *
+	 * <pre>
+	 * type fun_t is function(int)->(bool)
+	 *
+	 * fun_t|bool fb = &f
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, we need to filter <code>fun_t|bool</code> down to just
+	 * <code>fun_t</code>. This can then be pushed into the expression
+	 * <code>&f</code> where subtyping checking can be performed.
+	 * </p>
+	 *
+	 * <p>
+	 * A key challenge arises when the type variable is actually an existential. The
+	 * following illustrates an example:
+	 * </p>
+	 *
+	 * <pre>
+	 * function id<T>(T x) -> T:
+	 *    return x
+	 *
+	 * id(&f)
+	 * </pre>
+	 *
+	 * <p>
+	 * In this case, we pull from <code>id(&f)</code> since the return is discarded.
+	 * This results in pushing <code>?0</code> into <code>&f</code> which prevents
+	 * filtering based on the underlying lambda type. To resolve this, apply a
+	 * subtyping constraint <code>?0 :> function(?1)->(?2)</code> for freshly
+	 * constructed variables <code>?1</code> and <code>?2</code>.
+	 * </p>
+	 *
+	 * @param row
+	 * @param var
+	 * @param subtyping
+	 * @return
+	 */
+	private static Typing.Row[] forkOnLambda(Typing.Row row, int var, Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// NOTE: This case arises only because of open records (I believe). Really, we'd
+			// want to pull to get the most precise type. But, it's difficult because this
+			// is
+			// specific to individual rows.
+			Type.Callable t = new Type.Method(Type.Void, Type.Any, new Tuple<>(), new Tuple<>());
+			return new Typing.Row[] { row.set(var, t) };
+		} else if (type instanceof Type.Existential) {
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			Type.Existential param = p.second()[0];
+			Type.Existential ret = p.second()[1];
+			Type.Callable fun_t = new Type.Function(param, ret);
+			Subtyping.Constraints constraints = subtyping.isSubtype(type, fun_t);
+			return new Typing.Row[] { row.set(var, fun_t).intersect(constraints) };
+		} else {
+			return forkOnPredicate(row, var, t -> t.as(Type.Callable.class) != null);
+		}
+	}
+
+	private static boolean isMatchingLambda(Type type, int nParameters) {
+		Type.Callable ct = type.as(Type.Callable.class);
+		return ct != null && ct.getParameter().shape() == nParameters;
+	}
+
+	/**
+	 * Filter the type of a given variable based on a given predicate. For example,
+	 * consider:
+	 *
+	 * <pre>
+	 * int[]|bool xs = [1,2,3]
+	 * </pre>
+	 *
+	 * To process this, must filter <code>int[]|bool</code> to extract arrays. This,
+	 * in turn, allows one to push the element type into the initialiser
+	 * expressions.
+	 *
+	 * @param row
+	 * @param var
+	 * @param fn
+	 * @return
+	 */
+	private static Typing.Row[] forkOnPredicate(Typing.Row row, int var, Predicate<Type> fn) {
+		Type type = row.get(var);
+		List<Type> candidates = new ArrayList<>();
+		filterOnPredicate(type, fn, candidates);
+		//
+		Typing.Row[] rows = new Typing.Row[candidates.size()];
+		for (int i = 0; i != rows.length; ++i) {
+			rows[i] = row.set(var, candidates.get(i));
+		}
+		return rows;
+	}
+
+	/**
+	 * Filter an initial (over approximated) type based on a given primitive type.
+	 * For example:
+	 *
+	 * <pre>
+	 * nat|null x = 1
+	 * </pre>
+	 *
+	 * For expression <code>1</code>, the initial type would be
+	 * <code>nat|null</code> which we want to filter down to just <code>nat</code>
+	 * based on the expression's natural type <code>int</code>.
+	 *
+	 * @param row  The row in which this filtering is occurring.
+	 * @param var  The variables whose type is being filtered.
+	 * @param kind The underlying primitive kind used for filtering.
+	 * @return
+	 */
+	private static Typing.Row filterOnPrimitive(Typing.Row row, int var, Type.Primitive underlying,
+			Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// No forward type information available, hence use the natural type.
+			return row.set(var, underlying);
+		} else if (type instanceof Type.Existential) {
+			return row.intersect(subtyping.isSubtype(type, underlying));
+		} else {
+			List<Type> candidates = new ArrayList<>();
+			Class<? extends Type.Primitive> kind = underlying.getClass();
+			filterOnUnderlying(type, kind, candidates);
+			// Sanity check only one found, otherwise have ambiguity.
+			if (candidates.size() == 1) {
+				return row.set(var, candidates.get(0));
+			} else {
+				return null;
+			}
+		}
+	}
+
+	private static Typing.Row filterOnReturn(Typing.Row row, int var, Type.Callable signature,
+			Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		Type ret = signature.getReturn();
+		row = row.set(var, ret);
+		return (row == null) ? row : row.intersect(subtyping.isSubtype(type, ret));
+	}
+
+	/**
+	 * Filter an initial (over approximated) type based on a string. For example:
+	 *
+	 * <pre>
+	 * string|null x = "hello"
+	 * </pre>
+	 *
+	 * For expression <code>"hello"</code>, the initial type would be
+	 * <code>string|null</code> which we want to filter down to just
+	 * <code>string</code> based on the expression's natural type
+	 * <code>int[]</code>.
+	 *
+	 * @param row  The row in which this filtering is occurring.
+	 * @param var  The variables whose type is being filtered.
+	 * @param kind The underlying primitive kind used for filtering.
+	 * @return
+	 */
+	private static Typing.Row filterOnIntArray(Typing.Row row, int var, Subtyping.Environment subtyping) {
+		Type type = row.get(var);
+		if (type instanceof Type.Any) {
+			// No forward type information available, hence use the natural type.
+			return row.set(var, Type.IntArray);
+		} else {
+			List<Type> candidates = new ArrayList<>();
+			filterOnUnderlying(type, Type.Array.class, candidates);
+			// Filter out any non-integer arrays which were accidentally netted
+			candidates = select(candidates, t -> subtyping.isSatisfiableSubtype(Type.IntArray, t));
+			// Sanity check only one found, otherwise have ambiguity.
+			return (candidates.size() == 1) ? row.set(var, candidates.get(0)) : null;
+		}
+	}
+
+	/**
+	 * Extract atoms with matching underlying types. For example, consider the
+	 * following:
+	 *
+	 * <pre>
+	 * type string is (int[] xs) where ...
+	 * </pre>
+	 *
+	 * Then, extracting the underlying array type of <code>int|string|int[]</code>
+	 * should return <code>string</code> and <code>int[]</code>. Observe that we
+	 * want the most precise array type which includes all nominal information.
+	 *
+	 * @param candidate
+	 * @param underlying
+	 * @param candidates
+	 */
+	private static void filterOnUnderlying(Type candidate, Class<? extends Type> underlying, List<Type> candidates) {
+		//
+		Type atom = candidate.as(underlying);
+		//
+		if (atom != null) {
+			// Matched greatest atom
+			candidates.add(candidate);
+		} else if (candidate instanceof Type.Union) {
+			// NOTE: need to break type down in order to catch cases such as e.g. int :>
+			// pos|neg.
+			Type.Union t = (Type.Union) candidate;
+			for (int i = 0; i != t.size(); ++i) {
+				filterOnUnderlying(t.get(i), underlying, candidates);
+			}
+		} else if (candidate instanceof Type.Nominal) {
+			// This is broken really because we end up with a type for the expression
+			// which is not a subtype of its parent. The following illustrates:
+			//
+			// > type nint is null|int
+			// >
+			// > nint x = 1
+			//
+			// Here, we end up with 1 having type int.
+			Type.Nominal t = (Type.Nominal) candidate;
+			filterOnUnderlying(t.getConcreteType(), underlying, candidates);
+		}
+	}
+
+	/**
+	 * Extract (sub)types based on an underlying predicate. For example, consider
+	 * the type <code>int|{int f}|{int g}</code>. Using this method, we can extract
+	 * record types which have a field <code>f</code>.
+	 *
+	 * @param candidate
+	 * @param fn
+	 * @param candidates
+	 */
+	private static void filterOnPredicate(Type candidate, Predicate<Type> fn, List<Type> candidates) {
+		// FIXME: this method should be moved into wyil.lang.WyilFile.Type to replace
+		// the existing filter method.
+		if (fn.test(candidate)) {
+			// Matched greatest atom
+			candidates.add(candidate);
+		} else if (candidate instanceof Type.Union) {
+			// NOTE: need to break type down in order to catch cases such as e.g. int :>
+			// pos|neg.
+			Type.Union t = (Type.Union) candidate;
+			for (int i = 0; i != t.size(); ++i) {
+				filterOnPredicate(t.get(i), fn, candidates);
+			}
+		} else if (candidate instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) candidate;
+			filterOnPredicate(t.getConcreteType(), fn, candidates);
+		}
+	}
+
+	/**
+	 * Filter an initial (over approximated) type based on a given subtype. For
+	 * example:
+	 *
+	 * <pre>
+	 * nat x = 1
+	 * int|null y = x
+	 * </pre>
+	 *
+	 * For expression <code>x</code>, the initial type would be
+	 * <code>int|null</code> which we want to filter down to <code>int</code>.
+	 *
+	 * @param row  The row in which this filtering is occurring.
+	 * @param var  The variables whose type is being filtered.
+	 * @param kind The underlying primitive kind used for filtering.
+	 * @return
+	 */
+	private static Typing.Row filterOnSubtype(Typing.Row row, int var, Type subtype, Environment environment) {
+		Type supertype = row.get(var);
+		if (supertype instanceof Type.Any) {
+			return row.set(var, subtype);
+		} else {
+			// Apply the subtype tests which, if it fails, it will falsify this row.
+			Subtyping.Constraints constraints = environment.isSubtype(supertype, subtype);
+			// Set the type of this variable to the subtype (since this is fixed) and apply
+			// any constraints on the underlying type variables.
+			row = row.set(var, subtype);
+			return (row == null) ? row : row.intersect(constraints);
+		}
+	}
+
+	/**
+	 * Project a given type as an array and extract its element type. Otherwise,
+	 * return null.
+	 *
+	 * @param t
+	 * @return
+	 */
+	private Type getArrayElement(Type t) {
+		Type.Array at = t.as(Type.Array.class);
+		return (at == null) ? null : at.getElement();
+	}
+
+	/**
+	 * Project a given type as a lambda and extract its ith parameter type.
+	 * Otherwise, return null.
+	 *
+	 * @param t
+	 * @param i
+	 * @return
+	 */
+	private static Type getLambdaParameter(Type t, int i) {
+		Type.Callable ct = t.as(Type.Callable.class);
+		return (ct == null || ct.getParameter().shape() <= i) ? null : ct.getParameter().dimension(i);
+	}
+
+	/**
+	 * Project a given type as a lambda and extract its return type. Otherwise,
+	 * return null.
+	 *
+	 * @param t
+	 * @return
+	 */
+	private static Type getLambdaReturn(Type t) {
+		Type.Callable ct = t.as(Type.Callable.class);
+		return (ct == null) ? null : ct.getReturn();
+	}
+
+	/**
+	 * Project a given type as a reference to a record with a given field, and then
+	 * extract the type of that field. Otherwise, return null.
+	 *
+	 * @param t
+	 * @param field
+	 * @return
+	 */
+	private static Type getReferenceField(Type t, Identifier field) {
+		Type.Reference r = t.as(Type.Reference.class);
+		return (r == null) ? null : getRecordField(r.getElement(), field);
+	}
+
+	/**
+	 * Project a given type as a reference, and then extract the target type of that
+	 * reference. Otherwise, return null.
+	 *
+	 * @param t
+	 * @return
+	 */
+	private Type getReferenceElement(Type type) {
+		Type.Reference ref = type.as(Type.Reference.class);
+		return (ref == null) ? null : ref.getElement();
+	}
+
+	/**
+	 * Project a given type as a record with a given field, and then extract the
+	 * type of that field. Otherwise, return null.
+	 *
+	 * @param t
+	 * @param field
+	 * @return
+	 */
+	private static Type getRecordField(Type t, Identifier field) {
+		Type.Record r = t.as(Type.Record.class);
+		return (r == null) ? r : r.getField(field);
+	}
+
+	/**
+	 * Project a given type as a record with a given field, and then extract the
+	 * type of that field. If the original type is not a record, this is an error.
+	 * However, if the record does not contain a given field, then simply return a
+	 * default.
+	 *
+	 * @param t
+	 * @param field
+	 * @return
+	 */
+	private static Type getRecordFieldWithDefault(Type t, Identifier field, Type deFault) {
+		Type.Record r = t.as(Type.Record.class);
+		if (r == null) {
+			return null;
+		}
+		Type f = r.getField(field);
+		return (f == null) ? deFault : f;
+	}
+
+	/**
+	 * Project a given type as a tuple and extract the ith field of that tuple.
+	 *
+	 * @param t
+	 * @param field
+	 * @return
+	 */
+	private static Type getTupleElement(Type t, int ith) {
+		Type.Tuple r = t.as(Type.Tuple.class);
+		return (r == null) ? r : r.get(ith);
+	}
+
+	/**
+	 * Assign the type of a regular expression.
+	 *
+	 * @param e
+	 * @param var
+	 * @return
+	 */
+	private static Predicate<Typing.Row[]> typeStandardExpression(Expr e, int var) {
+		SyntacticHeap heap = e.getHeap();
+		return rows -> {
+			if (rows.length != 1 || var < 0) {
+				// invalid typing
+				return false;
+			} else {
+				Type type = rows[0].get(var);
+				e.setType(heap.allocate(type));
+				return true;
+			}
+		};
+	}
+
+	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int sig) {
+		Decl.Link<Decl.Callable> link = e.getLink();
+		return rows -> {
+			if (sig < 0) {
+				// invalid typing
+				return false;
+			} else if (rows.length == 1) {
+				Type.Callable signature = (Type.Callable) rows[0].get(sig);
+				link.resolve(link.lookup(signature));
+				return true;
+			} else if (rows.length > 1) {
+				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			}
+			return false;
+		};
+	}
+
+	private Predicate<Typing.Row[]> typeLambdaAccess(Expr.LambdaAccess e, int sig) {
+		Decl.Link<Decl.Callable> link = e.getLink();
+		return rows -> {
+			if (sig < 0) {
+				// invalid typing
+				return false;
+			} else if (rows.length == 1) {
+				Type.Callable signature = (Type.Callable) rows[0].get(sig);
+				link.resolve(link.lookup(signature));
+				return true;
+			} else if (rows.length > 1) {
+				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
+			}
+			return false;
+		};
+	}
+
+	/**
+	 * Apply a given forking function to produce an array of forked environments.
+	 *
+	 * @param candidates The list of candidates for which the environment is forked
+	 *                   where each candidate is forked into a new environment.
+	 * @param fn         The forking function which takes a given callable
+	 *                   declaration and produces a forked environment. This may
+	 *                   return <code>null</code> to indicate no valid environment
+	 *                   exists for the given declaration.
+	 * @return
+	 */
+	public Typing.Row[] fork(List<Decl.Callable> candidates, Function<Decl.Callable, Typing.Row> fn) {
+		Typing.Row[] constraints = new Typing.Row[candidates.size()];
+		for (int i = 0; i != candidates.size(); ++i) {
+			constraints[i] = fn.apply(candidates.get(i));
+		}
+		// Remove any invalid environments which have arisen.
+		return ArrayUtils.removeAll(constraints, null);
+	}
+
+	public Type refine(Type declared, Type selector) {
 		// FIXME: this method is a hack for now really, until such time as I resolve
 		// issues around subtyping and how to create proper type morphisms, etc.
-		Type.Selector s = TypeSelector.create(declared, selector, lifetimes);
-//		System.out.print("REFINING: " + declared + " is " + selector + " with " + s + " => ");
+		Type.Selector s = TypeSelector.create(declared, selector);
 		if (s == Type.Selector.BOTTOM) {
-//			System.out.println("FAILED");
 			// Something went wrong
 			return declared;
 		} else {
-//			System.out.println(s.apply(declared));
 			return s.apply(declared);
 		}
 	}
@@ -1885,80 +3313,32 @@ public class FlowTypeCheck implements Compiler.Check {
 		return visitor.pure;
 	}
 
-	private void checkOperand(Type type, Expr operand, Environment environment) {
-		checkIsSubtype(type, checkExpression(operand, true, environment), environment, operand);
-	}
-
-	private void checkOperands(Type type, Tuple<Expr> operands, Environment environment) {
-		for (int i = 0; i != operands.size(); ++i) {
-			Expr operand = operands.get(i);
-			checkOperand(type, operand, environment);
+	private void checkIsWritable(Type type, SyntacticItem element) {
+		if (type != null && !type.isWriteable()) {
+			syntaxError(element, DEREFERENCED_DYNAMICALLY_SIZED, element);
 		}
 	}
 
-	private void checkIsWritable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (rhs != null) {
-			Type.Reference lhs;
-			// Construct writeable variant
-			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
-			} else {
-				lhs = new Type.Reference(rhs.getElement(), false);
-			}
-			// Perform the subtype test
-			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-				// FIXME: better error message?
-				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
-			}
-		}
-	}
-
-	private void checkIsReadable(Type.Reference rhs, LifetimeRelation lifetimes, SyntacticItem element) {
-		if (rhs != null) {
-			Type.Reference lhs;
-			// Construct writeable variant
-			if (rhs.hasLifetime()) {
-				lhs = new Type.Reference(rhs.getElement(), false, rhs.getLifetime());
-			} else {
-				lhs = new Type.Reference(rhs.getElement(), false);
-			}
-			// Perform the subtype test
-			if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
-				// FIXME: better error message?
-				syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
-			}
-		}
-	}
-
-	private void checkIsSubtype(Type lhs, Type rhs, LifetimeRelation lifetimes, SyntacticItem element) {
+	private void checkIsSubtype(Type lhs, Type rhs, Subtyping.Environment subtyping, SyntacticItem element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
 			// type. At this point, we proceed assuming everything is hunky dory untill we
 			// can categorically find another problem.
-		} else if (!strictSubtypeOperator.isSubtype(lhs, rhs, lifetimes)) {
+		} else if (!subtyping.isSatisfiableSubtype(lhs, rhs)) {
 			syntaxError(element, SUBTYPE_ERROR, lhs, rhs);
 		}
 	}
 
-	private void checkContractive(Decl.Type d) {
-		if (!strictSubtypeOperator.isEmpty(d.getQualifiedName(), d.getType())) {
+	private void checkContractive(Decl.Type d, Subtyping.Environment subtyping) {
+		if (!subtyping.isEmpty(d.getQualifiedName(), d.getType())) {
 			syntaxError(d.getName(), EMPTY_TYPE);
 		}
-	}
-
-	private static <T extends SyntacticItem> boolean contains(Tuple<T> items, T item) {
-		for (int i = 0; i != items.size(); ++i) {
-			if (items.get(i) == item) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
 	 * From a given record type, extract type for a given field.
 	 */
-	public Type extractFieldType(Type.Record type, Identifier field) {
+	private Type extractFieldType(Type.Record type, Identifier field) {
 		if (type == null) {
 			return null;
 		} else {
@@ -1980,8 +3360,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param errcode
 	 * @return
 	 */
-	public <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
-		if(type == null) {
+	@SuppressWarnings("unchecked")
+	private <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
+		if (type == null) {
 			// indicates failure upstream
 			return null;
 		} else if (kind.isInstance(type)) {
@@ -1995,6 +3376,82 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
+	/**
+	 * Check whether an error has arisen between two typings. Specifically, if the
+	 * typing before is satisfiable but the typing after is not, then we have an
+	 * error.
+	 *
+	 * @param element
+	 * @param before
+	 * @param after
+	 * @param lhs
+	 * @param rhs
+	 */
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, Type rhs) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, SUBTYPE_ERROR, before.types(lhs), rhs);
+		}
+	}
+
+	private void checkForError(SyntacticItem element, Typing before, Typing after, Type lhs, int rhs) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, SUBTYPE_ERROR, lhs, before.types(rhs));
+		}
+	}
+
+	private void checkForError(SyntacticItem element, Typing before, Typing after, Tuple<Type> lhs, int rhs) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, SUBTYPE_ERROR, lhs, before.types(rhs));
+		}
+	}
+
+	private void checkForError(SyntacticItem element, int code, Typing before, Typing after, int lhs, int rhs) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, code, before.types(lhs), before.types(rhs));
+		}
+	}
+
+	private void checkForError(SyntacticItem element, int code, Typing before, Typing after) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, code);
+		}
+	}
+
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int rhs,
+			Function<Type, Type> projection) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, SUBTYPE_ERROR, before.types(lhs), before.types(rhs).map(projection));
+		}
+	}
+
+	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs,
+			Function<Type, Type> projection, int rhs) {
+		if (!before.isEmpty() && after.isEmpty()) {
+			// Concretise to avoid variables in error messages
+			before = before.concretise();
+			// No valid typings remain!
+			syntaxError(element, SUBTYPE_ERROR, before.types(lhs).map(projection), before.types(rhs));
+		}
+	}
+
 	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
@@ -2005,7 +3462,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		ErrorMessages.syntaxError(e, code, context.toArray(new SyntacticItem[context.size()]));
 	}
 
-	private <T> T internalFailure(String msg, SyntacticItem e) {
+	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntacticException(msg, cu.getEntry(), e);
 	}
@@ -2043,6 +3500,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		 *
 		 * @param kind
 		 */
+		@SuppressWarnings("unchecked")
 		public <T> T getEnclosingScope(Class<T> kind) {
 			if (kind.isInstance(this)) {
 				return (T) this;

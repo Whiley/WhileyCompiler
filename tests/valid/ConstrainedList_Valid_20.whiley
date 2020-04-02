@@ -12,7 +12,7 @@ ensures r >= 0:
         return ls[i]
 
 public export method test() :
-    int[] xs = [1, 3, 5, 7, 9, 11]
+    nat[] xs = [1, 3, 5, 7, 9, 11]
     assume get(xs, 0) == 1
     assume get(xs, 1) == 3
     assume get(xs, 2) == 5

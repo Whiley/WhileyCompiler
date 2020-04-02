@@ -7,16 +7,16 @@ requires |items| > 0:
 function abs(int[] items, nat index) -> nat[]
 requires (index <= |items|) && all { i in 0 .. index | items[i] >= 0 }:
     if index == |items|:
-        return items
+        return (nat[]) items
     else:
         items[index] = abs(items[index])
         return abs(items, index + 1)
 
 function abs(int x) -> nat:
     if x >= 0:
-        return x
+        return (nat) x
     else:
-        return -x
+        return (nat) -x
 
 public export method test() :
     int[] xs = [1, -3, -5, 7, -9, 11]

@@ -35,7 +35,7 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractVisitor {
-	private final Build.Meter meter;
+	protected final Build.Meter meter;
 
 	public AbstractVisitor(Build.Meter meter) {
 		this.meter = meter;
@@ -180,7 +180,6 @@ public abstract class AbstractVisitor {
 		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 			visitVariable((Decl.Variable) stmt);
 			break;
 		case STMT_assert:
@@ -209,6 +208,9 @@ public abstract class AbstractVisitor {
 			break;
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt);
+			break;
+		case STMT_for:
+			visitFor((Stmt.For) stmt);
 			break;
 		case STMT_if:
 		case STMT_ifelse:
@@ -291,6 +293,13 @@ public abstract class AbstractVisitor {
 	public void visitFail(Stmt.Fail stmt) {
 
 	}
+
+	public void visitFor(Stmt.For stmt) {
+		visitStaticVariable(stmt.getVariable());
+		visitExpressions(stmt.getInvariant());
+		visitStatement(stmt.getBody());
+	}
+
 
 	public void visitIfElse(Stmt.IfElse stmt) {
 		visitExpression(stmt.getCondition());
@@ -818,6 +827,9 @@ public abstract class AbstractVisitor {
 		case TYPE_byte:
 			visitTypeByte((Type.Byte) type);
 			break;
+		case TYPE_existential:
+			visitTypeExistential((Type.Existential) type);
+			break;
 		case TYPE_int:
 			visitTypeInt((Type.Int) type);
 			break;
@@ -851,8 +863,8 @@ public abstract class AbstractVisitor {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type);
 			break;
-		case TYPE_variable:
-			visitTypeVariable((Type.Variable) type);
+		case TYPE_universal:
+			visitTypeVariable((Type.Universal) type);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
@@ -890,6 +902,10 @@ public abstract class AbstractVisitor {
 	public void visitTypeFunction(Type.Function type) {
 		visitType(type.getParameter());
 		visitType(type.getReturn());
+	}
+
+	public void visitTypeExistential(Type.Existential type) {
+
 	}
 
 	public void visitTypeInt(Type.Int type) {
@@ -957,6 +973,6 @@ public abstract class AbstractVisitor {
 
 	}
 
-	public void visitTypeVariable(Type.Variable type) {
+	public void visitTypeVariable(Type.Universal type) {
 	}
 }

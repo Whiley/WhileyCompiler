@@ -1,9 +1,9 @@
-int PAWN = 0
-int KNIGHT = 1
-int BISHOP = 2
-int ROOK = 3
-int QUEEN = 4
-int KING = 5
+PieceKind PAWN = 0
+PieceKind KNIGHT = 1
+PieceKind BISHOP = 2
+PieceKind ROOK = 3
+PieceKind QUEEN = 4
+PieceKind KING = 5
 int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
 
 type PieceKind is (int x) where PAWN <= x && x <= KING

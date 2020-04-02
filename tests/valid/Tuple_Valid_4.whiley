@@ -2,7 +2,7 @@ public export method test():
     //
     int x = 1
     int y = 2
-    int a, int b = (y,x)
+    (int a, int b) = (y,x)
     //
     assert a == 2
     //

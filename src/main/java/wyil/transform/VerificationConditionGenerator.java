@@ -24,6 +24,7 @@ import java.util.Set;
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Declaration;
 import wyal.lang.WyalFile.Declaration.Named;
+import wyal.lang.WyalFile.Expr.VariableAccess;
 import wyal.lang.WyalFile.Expr;
 import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.Build;
@@ -433,6 +434,8 @@ public class VerificationConditionGenerator {
 					return translateDoWhile((WyilFile.Stmt.DoWhile) stmt, context);
 				case STMT_fail:
 					return translateFail((WyilFile.Stmt.Fail) stmt, context);
+				case STMT_for:
+					return translateFor((WyilFile.Stmt.For) stmt, context);
 				case STMT_if:
 				case STMT_ifelse:
 					return translateIf((WyilFile.Stmt.IfElse) stmt, context);
@@ -784,10 +787,11 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateDoWhile(WyilFile.Stmt.DoWhile stmt, Context context) {
+		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
 				.getParent().enclosingDeclaration;
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt.getInvariant(), declaration, context.wyalFile);
 		// Rule 1. Check loop invariant after first iteration
 		LoopScope firstScope = new LoopScope();
 		Context beforeFirstBodyContext = context.newLoopScope(firstScope);
@@ -797,14 +801,14 @@ public class VerificationConditionGenerator {
 		afterFirstBodyContext = joinDescendants(beforeFirstBodyContext, afterFirstBodyContext,
 				firstScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant may not be established by first iteration", stmt, afterFirstBodyContext);
+		checkLoopInvariant("loop invariant may not be established by first iteration", loopInvariant, afterFirstBodyContext);
 		// Rule 2. Check loop invariant preserved on subsequence iterations. On
 		// entry to the loop body we must havoc all modified variables. This is
 		// necessary as such variables should retain their values from before
 		// the loop.
 		LoopScope arbitraryScope = new LoopScope();
 		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getModified());
-		beforeArbitraryBodyContext = assumeLoopInvariant(stmt, beforeArbitraryBodyContext);
+		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeArbitraryBodyContext);
 		Expr trueCondition = p.first();
 		beforeArbitraryBodyContext = p.second().assume(trueCondition);
@@ -814,10 +818,10 @@ public class VerificationConditionGenerator {
 		afterArbitraryBodyContext = joinDescendants(beforeArbitraryBodyContext, afterArbitraryBodyContext,
 				arbitraryScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant may not be restored", stmt, afterArbitraryBodyContext);
+		checkLoopInvariant("loop invariant may not be restored", loopInvariant, afterArbitraryBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getModified());
-		exitContext = assumeLoopInvariant(stmt, exitContext);
+		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -874,6 +878,54 @@ public class VerificationConditionGenerator {
 		// Finally, we must join the two context's back together. This ensures
 		// that information from either side is properly preserved
 		return joinDescendants(context, new Context[] { trueContext, falseContext });
+	}
+
+	/**
+	 * Translate a While statement.
+	 *
+	 * @param stmt
+	 * @param context
+	 * @return
+	 */
+	private Context translateFor(WyilFile.Stmt.For stmt, Context context) {
+		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
+		WyilFile.Expr.ArrayRange range = (WyilFile.Expr.ArrayRange) stmt.getVariable().getInitialiser();
+		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
+				.getParent().enclosingDeclaration;
+		// Translate the loop invariant and generate appropriate macro
+		translateLoopInvariantMacros(stmt.getInvariant(), declaration, context.wyalFile);
+		// Rule 1. Check loop invariant on entry
+		Expr startExpr = translateExpression(range.getFirstOperand(), null, context.getEnvironment());
+		Expr v = new Expr.VariableAccess(context.read(stmt.getVariable()));
+		Expr e  = new Expr.Equal(startExpr,v);
+		checkLoopInvariant("loop invariant may not hold on entry", loopInvariant, context.assume(e));
+		// Rule 2. Check loop invariant preserved. On entry to the loop body we
+		// must havoc all modified variables. This is necessary as such
+		// variables should retain their values from before the loop.
+		LoopScope scope = new LoopScope();
+		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified());
+		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
+		// Translate initialiser
+		startExpr = translateExpression(range.getFirstOperand(), null, beforeBodyContext.getEnvironment());
+		Expr endExpr = translateExpression(range.getSecondOperand(), null, beforeBodyContext.getEnvironment());
+		v = new Expr.VariableAccess(beforeBodyContext.read(stmt.getVariable()));
+		e  = and(new Expr.LessThanOrEqual(startExpr,v), new Expr.LessThan(v,endExpr));
+		// done
+		beforeBodyContext = beforeBodyContext.assume(e);
+		// FIXME: do something with index variable
+		Context afterBodyContext = translateStatementBlock(stmt.getBody(), beforeBodyContext);
+		// Join continue contexts together since they must also preserve the
+		// loop invariant
+		afterBodyContext = joinDescendants(beforeBodyContext, afterBodyContext, scope.continueContexts);
+		checkLoopInvariant("loop invariant may not be restored", loopInvariant, afterBodyContext);
+		// Rule 3. Assume loop invariant holds.
+		Context exitContext = context.havoc(stmt.getModified());
+		endExpr = translateExpression(range.getSecondOperand(), null, exitContext.getEnvironment());
+		v = new Expr.VariableAccess(exitContext.read(stmt.getVariable()));
+		e  = new Expr.Equal(endExpr,v);
+		exitContext = assumeLoopInvariant(loopInvariant, exitContext.assume(e));
+		// Finally, need to join any break contexts
+		return joinDescendants(context, exitContext, scope.breakContexts);
 	}
 
 	/**
@@ -1117,18 +1169,19 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateWhile(WyilFile.Stmt.While stmt, Context context) {
+		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) context.getEnvironment()
 				.getParent().enclosingDeclaration;
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(stmt, declaration, context.wyalFile);
+		translateLoopInvariantMacros(stmt.getInvariant(), declaration, context.wyalFile);
 		// Rule 1. Check loop invariant on entry
-		checkLoopInvariant("loop invariant may not hold on entry", stmt, context);
+		checkLoopInvariant("loop invariant may not hold on entry", loopInvariant, context);
 		// Rule 2. Check loop invariant preserved. On entry to the loop body we
 		// must havoc all modified variables. This is necessary as such
 		// variables should retain their values from before the loop.
 		LoopScope scope = new LoopScope();
 		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getModified());
-		beforeBodyContext = assumeLoopInvariant(stmt, beforeBodyContext);
+		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getCondition(), null, beforeBodyContext);
 		Expr trueCondition = p.first();
 		beforeBodyContext = p.second().assume(trueCondition);
@@ -1136,10 +1189,10 @@ public class VerificationConditionGenerator {
 		// Join continue contexts together since they must also preserve the
 		// loop invariant
 		afterBodyContext = joinDescendants(beforeBodyContext, afterBodyContext, scope.continueContexts);
-		checkLoopInvariant("loop invariant may not be restored", stmt, afterBodyContext);
+		checkLoopInvariant("loop invariant may not be restored", loopInvariant, afterBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getModified());
-		exitContext = assumeLoopInvariant(stmt, exitContext);
+		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
 		Expr falseCondition = invertCondition(
 				translateExpression(stmt.getCondition(), null, exitContext.getEnvironment()), stmt.getCondition());
 		exitContext = exitContext.assume(falseCondition);
@@ -1158,20 +1211,17 @@ public class VerificationConditionGenerator {
 	 *            The clauses making up the loop invariant
 	 * @param wyalFile
 	 */
-	private void translateLoopInvariantMacros(Stmt.Loop stmt, WyilFile.Decl.FunctionOrMethod declaration,
+	private void translateLoopInvariantMacros(Tuple<WyilFile.Expr> invariant, WyilFile.Decl.FunctionOrMethod declaration,
 			WyalFile wyalFile) {
 		//
-		Identifier[] prefix = declaration.getQualifiedName().toName().getAll();
-		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
-		//
-		for (int i = 0; i != loopInvariant.size(); ++i) {
-			WyilFile.Expr clause = loopInvariant.get(i);
+		for (int i = 0; i != invariant.size(); ++i) {
+			WyilFile.Expr clause = invariant.get(i);
 			Name ident = convert(declaration.getQualifiedName(), "_loopinvariant_" + clause.getIndex(), declaration.getName());
 			// Construct fresh environment for this macro. This is necessary to
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(stmt, localEnvironment);
+			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(invariant, localEnvironment);
 			WyalFile.Stmt.Block e = translateAsBlock(clause, localEnvironment.clone());
 			Named.Macro macro = new Named.Macro(ident, vars, e);
 			wyalFile.allocate(macro);
@@ -1182,26 +1232,25 @@ public class VerificationConditionGenerator {
 	 * Emit verification condition(s) to ensure that the clauses of loop invariant
 	 * hold at a given point
 	 *
-	 * @param loopInvariant
+	 * @param invariant
 	 *            The clauses making up the loop invariant
 	 * @param context
 	 */
-	private void checkLoopInvariant(String msg, Stmt.Loop stmt, Context context) {
+	private void checkLoopInvariant(String msg, Tuple<WyilFile.Expr> invariant, Context context) {
 		//
-		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
 		// Construct argument to invocation
-		Tuple<WyilFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
+		Tuple<WyilFile.Decl.Variable> localVariables = determineUsedVariables(invariant);
 		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
 			WyilFile.Decl.Variable var = localVariables.get(i);
 			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
-		for (int i = 0; i != loopInvariant.size(); ++i) {
-			WyilFile.Expr clause = loopInvariant.get(i);
+		for (int i = 0; i != invariant.size(); ++i) {
+			WyilFile.Expr clause = invariant.get(i);
 			Name ident = convert(declaration.getQualifiedName(), "_loopinvariant_" + clause.getIndex(), declaration.getName());
 			Expr macroCall = new Expr.Invoke(null, ident, null, arguments);
 			context.emit(new VerificationCondition(msg, context.assumptions, macroCall,
@@ -1209,22 +1258,21 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private Context assumeLoopInvariant(Stmt.Loop stmt, Context context) {
+	private Context assumeLoopInvariant(Tuple<WyilFile.Expr> invariant, Context context) {
 		//
-		Tuple<WyilFile.Expr> loopInvariant = stmt.getInvariant();
 		LocalEnvironment environment = context.getEnvironment();
 		WyilFile.Decl.FunctionOrMethod declaration = (WyilFile.Decl.FunctionOrMethod) environment
 				.getParent().enclosingDeclaration;
 		// Construct argument to invocation
-		Tuple<WyilFile.Decl.Variable> localVariables = determineUsedVariables(stmt.getInvariant());
+		Tuple<WyilFile.Decl.Variable> localVariables = determineUsedVariables(invariant);
 		Expr[] arguments = new Expr[localVariables.size()];
 		for (int i = 0; i != arguments.length; ++i) {
 			WyilFile.Decl.Variable var = localVariables.get(i);
 			arguments[i] = new Expr.VariableAccess(environment.read(var));
 		}
 		//
-		for (int i = 0; i != loopInvariant.size(); ++i) {
-			WyilFile.Expr clause = loopInvariant.get(i);
+		for (int i = 0; i != invariant.size(); ++i) {
+			WyilFile.Expr clause = invariant.get(i);
 			Name ident = convert(declaration.getQualifiedName(), "_loopinvariant_" + clause.getIndex(), declaration.getName());
 			Expr macroCall = new Expr.Invoke(null, ident, null, arguments);
 			context = context.assume(macroCall);
@@ -1488,6 +1536,7 @@ public class VerificationConditionGenerator {
 			case EXPR_bitwisexor:
 			case EXPR_bitwisenot:
 			case EXPR_new:
+			case EXPR_staticnew:
 				result = translateAsUnknown(expr, environment);
 				break;
 			default:
@@ -2330,11 +2379,11 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Stmt.Loop loop,
+	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(Tuple<WyilFile.Expr> invariant,
 			LocalEnvironment environment) {
 		// Extract all used variables within the loop invariant. This is necessary to
 		// determine what parameters are required for the loop invariant macros.
-		Tuple<Decl.Variable> modified = determineUsedVariables(loop.getInvariant());
+		Tuple<Decl.Variable> modified = determineUsedVariables(invariant);
 		WyalFile.VariableDeclaration[] vars = new WyalFile.VariableDeclaration[modified.size()];
 		// second, set initial environment
 		for (int i = 0; i != modified.size(); ++i) {
@@ -2506,7 +2555,7 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			QualifiedName nid = nt.getLink().getTarget().getQualifiedName();
 			result = new WyalFile.Type.Nominal(convert(nid, type));
-		} else if (type instanceof Type.Variable) {
+		} else if (type instanceof Type.Universal) {
 			result = new WyalFile.Type.Any();
 		} else {
 			throw new SyntacticException("unknown type encountered (" + type.getClass().getName() + ")",
@@ -2575,7 +2624,7 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			// HACK
 			return true;
-		} else if (type instanceof Type.Variable) {
+		} else if (type instanceof Type.Universal) {
 			// FIXME: unsure what the right solution is here?
 			return true;
 		} else if (type instanceof Type.Tuple) {

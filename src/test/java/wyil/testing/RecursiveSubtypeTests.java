@@ -17,8 +17,9 @@ package wyil.testing;
 import org.junit.*;
 
 import wyc.util.TestUtils;
+import wyil.check.FlowTypeUtils;
 import wyil.lang.WyilFile.Type;
-import wyil.util.SubtypeOperator;
+import wyil.util.Subtyping;
 
 import static org.junit.Assert.*;
 import static wyil.lang.WyilFile.Type;
@@ -3749,16 +3750,16 @@ public class RecursiveSubtypeTests {
 	@Test @Ignore public void test_3721() { checkIsSubtype("null","null"); }
 
 	private void checkIsSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
+		Subtyping.Environment subtypeOperator = new FlowTypeUtils.Environment();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertTrue(subtypeOperator.isSubtype(ft,tt,null));
+		assertTrue(subtypeOperator.isSatisfiableSubtype(ft, tt));
 	}
 
 	private void checkNotSubtype(String from, String to) {
-		SubtypeOperator subtypeOperator = new SubtypeOperator.Strict();
+		Subtyping.Environment subtypeOperator = new FlowTypeUtils.Environment();
 		Type ft = TestUtils.fromString(from);
 		Type tt = TestUtils.fromString(to);
-		assertFalse(subtypeOperator.isSubtype(ft, tt, null));
+		assertFalse(subtypeOperator.isSatisfiableSubtype(ft, tt));
 	}
 }

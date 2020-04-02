@@ -8,7 +8,7 @@ function f(num x) -> int:
 
 function g(int x, int z) -> int
 requires (x == 1 || x == 2) && (z == 1 || z == 2 || z == 3 || z == x):
-    return f(z)
+    return f((num) z)
 
 public export method test() :
     assume g(1, 2) == 2

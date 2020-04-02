@@ -8,3 +8,4 @@ function overloaded(bool b) -> bool:
 
 public export method test():
     fun x = &overloaded
+    assume x(1) == 2

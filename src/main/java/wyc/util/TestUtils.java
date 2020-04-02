@@ -21,13 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
@@ -66,6 +60,82 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class TestUtils {
+	private final static boolean DEBUG = false;
+	//
+	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
+
+	static {
+		//  Normalisation for Method Subtyping
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
+		// Support Captured Lifetime Parameters
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
+		// Problem Type Checking Union Type
+		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
+		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
+		// Function Overloading for Nominal Types
+		VALID_IGNORED.put("Function_Valid_11", "#702");
+		VALID_IGNORED.put("Function_Valid_15", "#702");
+		// Semantics of Runtime Type Tests
+		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
+		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
+		// FlowTyping over Logical Conditions
+		VALID_IGNORED.put("Complex_Valid_3", "936");
+		VALID_IGNORED.put("RecursiveType_Valid_12", "936");
+		VALID_IGNORED.put("RecursiveType_Valid_30", "936");
+		// Subtype Operator for Casting
+		VALID_IGNORED.put("Coercion_Valid_9", "938");
+		VALID_IGNORED.put("RecordCoercion_Valid_1", "938");
+		// Separate out branch always taken 952
+		VALID_IGNORED.put("ListAccess_Valid_6", "952");
+		VALID_IGNORED.put("While_Valid_34", "952");
+		// Type Refinement via Assignment
+		VALID_IGNORED.put("Template_Valid_35", "977");
+		VALID_IGNORED.put("Template_Valid_36", "977");
+		VALID_IGNORED.put("Coercion_Valid_16", "977");
+		//
+		VALID_IGNORED.put("Reference_Valid_12", "986");
+		VALID_IGNORED.put("Reference_Valid_14", "986");
+		VALID_IGNORED.put("Reference_Valid_17", "986");
+		VALID_IGNORED.put("Reference_Valid_18", "986");
+		// Lifetime inference
+		VALID_IGNORED.put("Lifetime_Valid_3", "???");
+		VALID_IGNORED.put("Lifetime_Valid_4", "???");
+		VALID_IGNORED.put("Lifetime_Valid_5", "???");
+		VALID_IGNORED.put("Lifetime_Valid_6", "???");
+		VALID_IGNORED.put("Lifetime_Valid_7", "???");
+		VALID_IGNORED.put("Lifetime_Valid_8", "???");
+		VALID_IGNORED.put("Lifetime_Valid_9", "???");
+		VALID_IGNORED.put("Lifetime_Valid_10", "???");
+		VALID_IGNORED.put("Lifetime_Valid_11", "???");
+		VALID_IGNORED.put("Lifetime_Valid_12", "???");
+		VALID_IGNORED.put("Lifetime_Valid_13", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
+		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");
+		// Interpreter handling of tagged unions
+		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
+		// Binding Against Union Types
+		VALID_IGNORED.put("Template_Valid_19", "994");
+		// Flow typing and loop invariants
+		VALID_IGNORED.put("TypeEquals_Valid_3", "1000");
+		// Flow typing and selectors
+		VALID_IGNORED.put("RecordAssign_Valid_11", "1002");
+		// Problems with strict subtyping
+		VALID_IGNORED.put("Contractive_Valid_2", "1003");
+		VALID_IGNORED.put("OpenRecord_Valid_9", "1003");
+		VALID_IGNORED.put("Template_Valid_59", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_28", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_35", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_46", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_58", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_59", "1003");
+		VALID_IGNORED.put("UnionType_Valid_6", "1003");
+		// Limitations of Type Inference
+		VALID_IGNORED.put("Template_Valid_61", "1004");
+		VALID_IGNORED.put("Template_Valid_62", "1004");
+	}
 
 	/**
 	 * Default implementation of a content registry. This associates whiley and
@@ -129,8 +199,6 @@ public class TestUtils {
 	 */
 	public static Collection<Object[]> findTestNames(String srcDir) {
 		final String suffix = ".whiley";
-		String containsFilter = System.getProperty("test.name.contains");
-
 		ArrayList<Object[]> testcases = new ArrayList<>();
 		for (File f : new File(srcDir).listFiles()) {
 			// Check it's a file
@@ -144,10 +212,6 @@ public class TestUtils {
 			}
 			// Get rid of ".whiley" extension
 			String testName = name.substring(0, name.length() - suffix.length());
-			// If there's a filter, check the name matches
-			if (containsFilter != null && !testName.contains(containsFilter)) {
-				continue;
-			}
 			testcases.add(new Object[] { testName });
 		}
 		// Sort the result by filename
@@ -161,21 +225,6 @@ public class TestUtils {
 	}
 
 	/**
-	 * Identifies which whiley source files should be considered for compilation. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-	/**
-	 * Identifies which WyIL source files should be considered for verification. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-	/**
-	 * Identifies which WyAL source files should be considered for verification. By
-	 * default, all files reachable from srcdir are considered.
-	 */
-	private static Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
-	/**
 	 * A simple default registry which knows about whiley files and wyil files.
 	 */
 	private static final Content.Registry registry = new Registry();
@@ -183,7 +232,7 @@ public class TestUtils {
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.
 	 *
-	 * @param args --- list of tests to compile.
+	 * @param whileydir --- list of tests to compile.
 	 * @return
 	 * @throws IOException
 	 */
@@ -199,7 +248,7 @@ public class TestUtils {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
 			// Construct temporary build environment
-			Build.Environment environment = new Environment(root,false);
+			Build.Environment environment = new Environment(root,DEBUG);
 			// Construct build project within this environment
 			SequentialBuildProject project = new SequentialBuildProject(environment, root);
 			// Identify source files
@@ -234,7 +283,7 @@ public class TestUtils {
 			result = false;
 		}catch (Exception e) {
 			// Print out the syntax error
-			e.printStackTrace(psyserr);
+			printStackTrace(psyserr, e);
 			result = false;
 		}
 		//
@@ -247,11 +296,28 @@ public class TestUtils {
 	}
 
 	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
+		}
+	}
+
+	/**
 	 * Following method is something of a kludge as no easy way at the moment to
 	 * tell when a build has failed.
 	 *
 	 * @param item
-	 * @param items
 	 * @param visited
 	 * @return
 	 */
@@ -281,7 +347,7 @@ public class TestUtils {
 	 * root.
 	 *
 	 * @param root
-	 * @param args
+	 * @param arg
 	 * @return
 	 * @throws IOException
 	 */
@@ -307,7 +373,7 @@ public class TestUtils {
 	/**
 	 * Execute a given WyIL file using the default interpreter.
 	 *
-	 * @param wyilDir
+	 * @param wyildir
 	 *            The root directory to look for the WyIL file.
 	 * @param id
 	 *            The name of the WyIL file

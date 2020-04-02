@@ -74,7 +74,7 @@ public class AllInvalidTest {
 		IGNORED.put("While_Invalid_23", "??");
 		IGNORED.put("TupleAssign_Invalid_3", "??");
 		IGNORED.put("TypeEquals_Invalid_5", "??");
-		// #885 --- Contractive Types and isVoid()
+//		// #885 --- Contractive Types and isVoid()
 		IGNORED.put("Type_Invalid_5", "885");
 		IGNORED.put("Type_Invalid_8", "??");
 		IGNORED.put("Reference_Invalid_2", "unclassified");
@@ -82,18 +82,21 @@ public class AllInvalidTest {
 		IGNORED.put("Type_Invalid_15", "??");
 		IGNORED.put("While_Invalid_24", "??");
 		IGNORED.put("While_Invalid_25", "#956");
+		IGNORED.put("For_Invalid_9", "#982");
+		// Lifetime infernece
+		IGNORED.put("Lifetime_Invalid_5", "???");
+		IGNORED.put("Lifetime_Invalid_6", "???");
+		IGNORED.put("Lifetime_Invalid_7", "???");
+		IGNORED.put("Lifetime_Invalid_8", "???");
+		IGNORED.put("Lifetime_Invalid_9", "???");
+		IGNORED.put("Lifetime_Lambda_Invalid_1", "???");
+		IGNORED.put("Lifetime_Lambda_Invalid_2", "???");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
 		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
 	}
-
-	/**
-	 * The directory where compiler libraries are stored. This is necessary
-	 * since it will contain the Whiley Runtime.
-	 */
-	public final static String WYC_LIB_DIR = "../../lib/".replace('/', File.separatorChar);
 
 	// ======================================================================
 	// Test Harness

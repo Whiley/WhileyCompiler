@@ -6,4 +6,4 @@ function f(scf1nat x) -> int:
 
 public export method test() :
     int x = -1
-    f(x)
+    f((scf1nat) x)

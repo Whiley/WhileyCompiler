@@ -1,0 +1,15 @@
+type Handler is { function handler(int)->int }
+type nHandler is null | Handler
+
+function instanceof(nHandler attr) -> bool:
+    if attr is Handler:
+        return true
+    else:
+        return false
+
+function id(int x) -> (int y):
+    return x
+
+public export method test():
+    assume instanceof(null) == false
+    assume instanceof({handler: &id}) == true

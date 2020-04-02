@@ -14,7 +14,7 @@ ensures (a <= r) && (b <= r):
 function diff(int a, int b) -> (nat r)
 ensures (r == a - b) || (r == b - a)
 ensures ((a - b) <= r) && ((b - a) <= r):
-    int diff
+    nat diff
     //
     if a > b:
         diff = a - b

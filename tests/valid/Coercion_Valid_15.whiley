@@ -1,5 +1,5 @@
 type nat is (int x) where x >= 0
-type pos is (nat x) where x > 0
+type pos is (int x) where x > 0
 
 function f(pos x) -> (nat|pos r)
 ensures r == x:

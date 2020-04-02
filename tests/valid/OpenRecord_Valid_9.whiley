@@ -18,9 +18,9 @@ function sum(Point vp) -> int:
             return (vp.x + vp.y)
 
 public export method test() :
-    Point vp = {y: 2, x: 1}
+    Point vp = (Point2D) {y: 2, x: 1}
     assume sum(vp) == 3
-    vp = {z: 2, y: 2, x: 1}
+    vp = (Point3D) {z: 2, y: 2, x: 1}
     assume sum(vp) == 5
     vp = {y: 2, h: 2, x: 1}
     assume sum(vp) == 3

@@ -1,4 +1,3 @@
-tests/invalid/Template_Invalid_17.whiley:5: unable to resolve name (is ambiguous)
-	found function Template_Invalid_17::id(T)->(T)
+tests/invalid/Template_Invalid_17.whiley:5: expected int, found T
     return id<this>(x)
-           ^^
+           ^^^^^^^^^^^

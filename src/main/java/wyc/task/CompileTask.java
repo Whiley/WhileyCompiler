@@ -21,7 +21,7 @@ import java.util.concurrent.Callable;
 import java.util.function.Function;
 
 import wyal.lang.WyalFile;
-import wybs.lang.Build;
+import wybs.lang.*;
 import wybs.lang.Build.Meter;
 import wybs.util.AbstractBuildTask;
 import wybs.util.AbstractCompilationUnit.Name;
@@ -33,6 +33,7 @@ import wyfs.lang.Path;
 import wyil.check.*;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 
@@ -146,64 +147,84 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 * @return
 	 */
 	public boolean execute(Meter meter, WyilFile target, WhileyFile... sources) {
-		meter = meter.fork("WhileyCompiler");
-		// FIXME: this is something of a hack to handle the fact that this is not an
-		// incremental compiler! Basically, we always start from scratch no matter what.
-		WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
-		target.setRootItem(new WyilFile.Decl.Module(module.getName(), new Tuple<>(), new Tuple<>(), new Tuple<>()));
-		//
-		boolean r = true;
-		// Parse source files into target
-		Meter parserMeter = meter.fork(WhileyFileParser.class.getSimpleName());
-		for (int i = 0; i != sources.length; ++i) {
-			// NOTE: this is somehow where we work out the initial deltas for incremental
-			// compilation.
-			WhileyFile source = sources[i];
-			WhileyFileParser wyp = new WhileyFileParser(target, source);
-			//
-			r &= wyp.read(parserMeter);
-		}
-		parserMeter.done();
-		// Perform name resolution.
 		try {
-			r = r && new NameResolution(meter, project, target).apply();
-		} catch(IOException e) {
-			// FIXME: this is clearly broken.
-			throw new RuntimeException(e);
-		}
-		// ========================================================================
-		// Flow Type Checking
-		// ========================================================================
-		// Instantiate type checker
-		FlowTypeCheck checker = new FlowTypeCheck(meter);
-		r = r && checker.check(target);
-		// ========================================================================
-		// Compiler Checks
-		// ========================================================================
-		Compiler.Check[] stages = instantiateChecks(meter);
-		for (int i = 0; i != stages.length; ++i) {
-			r = r && stages[i].check(target);
-		}
-		if(r && verification) {
-			// NOTE: cannot generate verification conditions if WyilFile is in a bad state
-			// (e.g. has unresolved links).
-			WyalFile obligations = verifier.initialise(target);
-			r = verifier.check(obligations,counterexamples);
-		}
-		// Transforms
-		if (r) {
-			Compiler.Transform[] transforms = instantiateTransforms(meter);
-			// Only apply if previous stages have all passed.
-			for (int i = 0; i != transforms.length; ++i) {
-				transforms[i].apply(target);
+			meter = meter.fork("WhileyCompiler");
+			// FIXME: this is something of a hack to handle the fact that this is not an
+			// incremental compiler! Basically, we always start from scratch no matter what.
+			WyilFile.Decl.Module module = (WyilFile.Decl.Module) target.getRootItem();
+			target.setRootItem(new WyilFile.Decl.Module(module.getName(), new Tuple<>(), new Tuple<>(), new Tuple<>()));
+			//
+			boolean r = true;
+			// Parse source files into target
+			Meter parserMeter = meter.fork(WhileyFileParser.class.getSimpleName());
+			for (int i = 0; i != sources.length; ++i) {
+				// NOTE: this is somehow where we work out the initial deltas for incremental
+				// compilation.
+				WhileyFile source = sources[i];
+				WhileyFileParser wyp = new WhileyFileParser(target, source);
+				//
+				r &= wyp.read(parserMeter);
 			}
+			parserMeter.done();
+			// Perform name resolution.
+			try {
+				r = r && new NameResolution(meter, project, target).apply();
+			} catch(IOException e) {
+				// FIXME: this is clearly broken.
+				throw new RuntimeException(e);
+			}
+			// ========================================================================
+			// Recursive Type Check
+			// ========================================================================
+			new RecursiveTypeCheck(meter).check(target);
+			// ========================================================================
+			// Flow Type Checking
+			// ========================================================================
+			// Instantiate type checker
+			FlowTypeCheck checker = new FlowTypeCheck(meter);
+			r = r && checker.check(target);
+			// ========================================================================
+			// Compiler Checks
+			// ========================================================================
+			Compiler.Check[] stages = instantiateChecks(meter);
+			for (int i = 0; i != stages.length; ++i) {
+				r = r && stages[i].check(target);
+			}
+			if(r && verification) {
+				// NOTE: cannot generate verification conditions if WyilFile is in a bad state
+				// (e.g. has unresolved links).
+				WyalFile obligations = verifier.initialise(target);
+				r = verifier.check(obligations,counterexamples);
+			}
+			// Transforms
+			if (r) {
+				Compiler.Transform[] transforms = instantiateTransforms(meter);
+				// Only apply if previous stages have all passed.
+				for (int i = 0; i != transforms.length; ++i) {
+					transforms[i].apply(target);
+				}
+			}
+			// Collect garbage
+			//target.gc();
+			//
+			meter.done();
+			// Done
+			return r;
+		} catch (SyntacticException e) {
+			// FIXME: This conversion from WyilFile entry to WhileyFile entry seems like a
+			// hack. WOuld be nicer if there was a different way.
+			SyntacticItem item = e.getElement();
+			Decl.Unit unit = item.getAncestor(Decl.Unit.class);
+			for(int i=0;i!=sources.length;++i) {
+				WhileyFile wf = sources[i];
+				String n = new Name(wf.getEntry().id()).toString();
+				if(unit != null && n.endsWith(unit.getName().toString())) {
+					throw new SyntacticException(e.getMessage(),wf.getEntry(),item,e.getCause());
+				}
+			}
+			// Didn't find, default to fall back
+			throw e;
 		}
-		// Collect garbage
-		//target.gc();
-		//
-		meter.done();
-		// Done
-		return r;
 	}
 
 	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
@@ -212,8 +233,7 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 				new DefiniteUnassignmentCheck(m),
 				new FunctionalCheck(m),
 				new SignatureCheck(m),
-				new StaticVariableCheck(m),
-				new AmbiguousCoercionCheck(m)
+				new StaticVariableCheck(m)
 		};
 	}
 

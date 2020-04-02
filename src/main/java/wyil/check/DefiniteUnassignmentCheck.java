@@ -314,6 +314,13 @@ public class DefiniteUnassignmentCheck
 	}
 
 	@Override
+	public ControlFlow visitFor(Stmt.For stmt, MaybeAssignedSet environment) {
+		// Mark index variable as assigned
+		environment = environment.add(stmt.getVariable());
+		return visitBlock(stmt.getBody(), environment);
+	}
+
+	@Override
 	public ControlFlow visitIfElse(Stmt.IfElse stmt, MaybeAssignedSet environment) {
 		//
 		ControlFlow left = visitBlock(stmt.getTrueBranch(), environment);

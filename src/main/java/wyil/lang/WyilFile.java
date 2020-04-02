@@ -13,20 +13,6 @@
 // limitations under the License.
 package wyil.lang;
 
-import static wyil.lang.WyilFile.TYPE_array;
-import static wyil.lang.WyilFile.TYPE_bool;
-import static wyil.lang.WyilFile.TYPE_byte;
-import static wyil.lang.WyilFile.TYPE_function;
-import static wyil.lang.WyilFile.TYPE_int;
-import static wyil.lang.WyilFile.TYPE_method;
-import static wyil.lang.WyilFile.TYPE_nominal;
-import static wyil.lang.WyilFile.TYPE_null;
-import static wyil.lang.WyilFile.TYPE_property;
-import static wyil.lang.WyilFile.TYPE_record;
-import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
-import static wyil.lang.WyilFile.TYPE_void;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -45,11 +31,9 @@ import wybs.lang.Build;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntacticItem.Data;
-import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Descriptor;
 import wybs.util.*;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.SectionedSchema.Section;
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
@@ -58,11 +42,6 @@ import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
-import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.Type.Bool;
-import wyil.lang.WyilFile.Type.Byte;
-import wyil.lang.WyilFile.Type.Int;
-import wyil.lang.WyilFile.Type.Void;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -191,18 +170,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_unit = 18; // <TWO operands, ZERO>
 	public static final int DECL_import = 19; // <ONE operands, ZERO>
 	public static final int DECL_importfrom = 20; // <TWO operands, ZERO>
-	public static final int DECL_staticvar = 21; // <FOUR operands, ZERO>
-	public static final int DECL_type = 22; // <FIVE operands, ZERO>
-	public static final int DECL_rectype = 23; // <FIVE operands, ZERO>
-	public static final int DECL_function = 24; // <EIGHT operands, ZERO>
-	public static final int DECL_method = 25; // <EIGHT operands, ZERO>
-	public static final int DECL_property = 26; // <SIX operands, ZERO>
-	public static final int DECL_lambda = 27; // <NINE operands, ZERO>
-	public static final int DECL_variable = 28; // <THREE operands, ZERO>
-	public static final int DECL_variableinitialiser = 29; // <FOUR operands, ZERO>
+	public static final int DECL_importwith = 21; // <TWO operands, ZERO>
+	public static final int DECL_staticvar = 22; // <FOUR operands, ZERO>
+	public static final int DECL_type = 23; // <FIVE operands, ZERO>
+	public static final int DECL_rectype = 24; // <FIVE operands, ZERO>
+	public static final int DECL_function = 25; // <EIGHT operands, ZERO>
+	public static final int DECL_method = 26; // <EIGHT operands, ZERO>
+	public static final int DECL_property = 27; // <SIX operands, ZERO>
+	public static final int DECL_lambda = 28; // <NINE operands, ZERO>
+	public static final int DECL_variable = 29; // <THREE operands, ZERO>
 	public static final int DECL_link = 30; // <MANY operands, ZERO>
 	public static final int DECL_binding = 31; // <TWO operands, ZERO>
-	public static final int DECL_importwith = 32; // <TWO operands, ZERO>
 	public static final int MOD_native = 48; // <ZERO operands, ZERO>
 	public static final int MOD_export = 49; // <ZERO operands, ZERO>
 	public static final int MOD_final = 50; // <ZERO operands, ZERO>
@@ -215,6 +193,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int ATTR_counterexample = 69; // <ONE operands, ZERO>
 	public static final int TYPE_unknown = 80; // <ZERO operands, ZERO>
 	public static final int TYPE_void = 81; // <ZERO operands, ZERO>
+	public static final int TYPE_any = 82; // <ZERO operands, ZERO>
 	public static final int TYPE_null = 83; // <ZERO operands, ZERO>
 	public static final int TYPE_bool = 84; // <ZERO operands, ZERO>
 	public static final int TYPE_int = 85; // <ZERO operands, ZERO>
@@ -222,16 +201,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_reference = 87; // <THREE operands, ZERO>
 	public static final int TYPE_staticreference = 88; // <TWO operands, ZERO>
 	public static final int TYPE_array = 89; // <ONE operands, ZERO>
-	public static final int TYPE_record = 90; // <TWO operands, ZERO>
-	public static final int TYPE_field = 91; // <TWO operands, ZERO>
-	public static final int TYPE_function = 92; // <TWO operands, ZERO>
-	public static final int TYPE_method = 93; // <FOUR operands, ZERO>
-	public static final int TYPE_property = 94; // <TWO operands, ZERO>
+	public static final int TYPE_tuple = 90; // <MANY operands, ZERO>
+	public static final int TYPE_record = 91; // <TWO operands, ZERO>
+	public static final int TYPE_field = 92; // <TWO operands, ZERO>
+	public static final int TYPE_function = 93; // <TWO operands, ZERO>
+	public static final int TYPE_method = 94; // <FOUR operands, ZERO>
+	public static final int TYPE_property = 95; // <TWO operands, ZERO>
 	public static final int TYPE_union = 96; // <MANY operands, ZERO>
 	public static final int TYPE_byte = 97; // <ZERO operands, ZERO>
 	public static final int TYPE_recursive = 106; // <ONE operands, ZERO>
-	public static final int TYPE_variable = 107; // <ONE operands, ZERO>
-	public static final int TYPE_tuple = 108; // <MANY operands, ZERO>
+	public static final int TYPE_universal = 107; // <ONE operands, ZERO>
+	public static final int TYPE_existential = 108; // <ZERO operands, MANY>
 	public static final int STMT_block = 144; // <MANY operands, ZERO>
 	public static final int STMT_namedblock = 145; // <TWO operands, ZERO>
 	public static final int STMT_caseblock = 146; // <TWO operands, ZERO>
@@ -244,65 +224,65 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int STMT_continue = 153; // <ZERO operands, ZERO>
 	public static final int STMT_dowhile = 154; // <FOUR operands, ZERO>
 	public static final int STMT_fail = 155; // <ZERO operands, ZERO>
+	public static final int STMT_for = 156; // <THREE operands, ZERO>
 	public static final int STMT_if = 158; // <TWO operands, ZERO>
 	public static final int STMT_ifelse = 159; // <THREE operands, ZERO>
-	public static final int STMT_return = 160; // <ONE operands, ZERO>
-	public static final int STMT_switch = 161; // <TWO operands, ZERO>
-	public static final int STMT_while = 162; // <FOUR operands, ZERO>
+	public static final int STMT_initialiser = 160; // <TWO operands, ZERO>
+	public static final int STMT_initialiservoid = 161; // <ONE operands, ZERO>
+	public static final int STMT_return = 162; // <ONE operands, ZERO>
 	public static final int STMT_returnvoid = 163; // <ZERO operands, ZERO>
-	public static final int STMT_initialiser = 164; // <MANY operands, ZERO>
-	public static final int STMT_initialiservoid = 165; // <MANY operands, ZERO>
+	public static final int STMT_switch = 164; // <TWO operands, ZERO>
+	public static final int STMT_while = 165; // <FOUR operands, ZERO>
 	public static final int EXPR_variablecopy = 176; // <TWO operands, ZERO>
 	public static final int EXPR_variablemove = 177; // <TWO operands, ZERO>
 	public static final int EXPR_staticvariable = 179; // <TWO operands, ZERO>
 	public static final int EXPR_constant = 180; // <TWO operands, ZERO>
 	public static final int EXPR_cast = 181; // <TWO operands, ZERO>
-	public static final int EXPR_invoke = 183; // <TWO operands, ZERO>
-	public static final int EXPR_indirectinvoke = 184; // <FOUR operands, ZERO>
-	public static final int EXPR_logicalnot = 185; // <ONE operands, ZERO>
-	public static final int EXPR_logicaland = 186; // <ONE operands, ZERO>
-	public static final int EXPR_logicalor = 187; // <ONE operands, ZERO>
-	public static final int EXPR_logicalimplication = 188; // <TWO operands, ZERO>
-	public static final int EXPR_logicaliff = 189; // <TWO operands, ZERO>
-	public static final int EXPR_logicalexistential = 190; // <TWO operands, ZERO>
-	public static final int EXPR_logicaluniversal = 191; // <TWO operands, ZERO>
-	public static final int EXPR_equal = 192; // <TWO operands, ZERO>
-	public static final int EXPR_notequal = 193; // <TWO operands, ZERO>
-	public static final int EXPR_integerlessthan = 194; // <TWO operands, ZERO>
-	public static final int EXPR_integerlessequal = 195; // <TWO operands, ZERO>
-	public static final int EXPR_integergreaterthan = 196; // <TWO operands, ZERO>
-	public static final int EXPR_integergreaterequal = 197; // <TWO operands, ZERO>
-	public static final int EXPR_is = 198; // <TWO operands, ZERO>
-	public static final int EXPR_integernegation = 200; // <TWO operands, ZERO>
-	public static final int EXPR_integeraddition = 201; // <THREE operands, ZERO>
-	public static final int EXPR_integersubtraction = 202; // <THREE operands, ZERO>
-	public static final int EXPR_integermultiplication = 203; // <THREE operands, ZERO>
-	public static final int EXPR_integerdivision = 204; // <THREE operands, ZERO>
-	public static final int EXPR_integerremainder = 205; // <THREE operands, ZERO>
-	public static final int EXPR_bitwisenot = 208; // <TWO operands, ZERO>
-	public static final int EXPR_bitwiseand = 209; // <TWO operands, ZERO>
-	public static final int EXPR_bitwiseor = 210; // <TWO operands, ZERO>
-	public static final int EXPR_bitwisexor = 211; // <TWO operands, ZERO>
-	public static final int EXPR_bitwiseshl = 212; // <THREE operands, ZERO>
-	public static final int EXPR_bitwiseshr = 213; // <THREE operands, ZERO>
-	public static final int EXPR_dereference = 216; // <TWO operands, ZERO>
-	public static final int EXPR_new = 217; // <THREE operands, ZERO>
-	public static final int EXPR_staticnew = 218; // <TWO operands, ZERO>
-	public static final int EXPR_lambdaaccess = 219; // <TWO operands, ZERO>
-	public static final int EXPR_fielddereference = 220; // <THREE operands, ZERO>
-	public static final int EXPR_recordaccess = 224; // <THREE operands, ZERO>
-	public static final int EXPR_recordborrow = 225; // <THREE operands, ZERO>
-	public static final int EXPR_recordupdate = 226; // <FOUR operands, ZERO>
-	public static final int EXPR_recordinitialiser = 227; // <THREE operands, ZERO>
-	public static final int EXPR_arrayaccess = 232; // <THREE operands, ZERO>
-	public static final int EXPR_arrayborrow = 233; // <THREE operands, ZERO>
-	public static final int EXPR_arrayupdate = 234; // <FOUR operands, ZERO>
-	public static final int EXPR_arraylength = 235; // <TWO operands, ZERO>
-	public static final int EXPR_arraygenerator = 236; // <THREE operands, ZERO>
-	public static final int EXPR_arrayinitialiser = 237; // <TWO operands, ZERO>
-	public static final int EXPR_arrayrange = 238; // <THREE operands, ZERO>
-	public static final int EXPR_tupleinitialiser = 239; // <TWO operands, ZERO>
-
+	public static final int EXPR_invoke = 182; // <TWO operands, ZERO>
+	public static final int EXPR_indirectinvoke = 183; // <FOUR operands, ZERO>
+	public static final int EXPR_logicalnot = 184; // <ONE operands, ZERO>
+	public static final int EXPR_logicaland = 185; // <ONE operands, ZERO>
+	public static final int EXPR_logicalor = 186; // <ONE operands, ZERO>
+	public static final int EXPR_logicalimplication = 187; // <TWO operands, ZERO>
+	public static final int EXPR_logicaliff = 188; // <TWO operands, ZERO>
+	public static final int EXPR_logicalexistential = 189; // <TWO operands, ZERO>
+	public static final int EXPR_logicaluniversal = 190; // <TWO operands, ZERO>
+	public static final int EXPR_equal = 191; // <TWO operands, ZERO>
+	public static final int EXPR_notequal = 192; // <TWO operands, ZERO>
+	public static final int EXPR_integerlessthan = 193; // <TWO operands, ZERO>
+	public static final int EXPR_integerlessequal = 194; // <TWO operands, ZERO>
+	public static final int EXPR_integergreaterthan = 195; // <TWO operands, ZERO>
+	public static final int EXPR_integergreaterequal = 196; // <TWO operands, ZERO>
+	public static final int EXPR_is = 197; // <TWO operands, ZERO>
+	public static final int EXPR_integernegation = 199; // <TWO operands, ZERO>
+	public static final int EXPR_integeraddition = 200; // <THREE operands, ZERO>
+	public static final int EXPR_integersubtraction = 201; // <THREE operands, ZERO>
+	public static final int EXPR_integermultiplication = 202; // <THREE operands, ZERO>
+	public static final int EXPR_integerdivision = 203; // <THREE operands, ZERO>
+	public static final int EXPR_integerremainder = 204; // <THREE operands, ZERO>
+	public static final int EXPR_bitwisenot = 207; // <TWO operands, ZERO>
+	public static final int EXPR_bitwiseand = 208; // <TWO operands, ZERO>
+	public static final int EXPR_bitwiseor = 209; // <TWO operands, ZERO>
+	public static final int EXPR_bitwisexor = 210; // <TWO operands, ZERO>
+	public static final int EXPR_bitwiseshl = 211; // <THREE operands, ZERO>
+	public static final int EXPR_bitwiseshr = 212; // <THREE operands, ZERO>
+	public static final int EXPR_dereference = 215; // <TWO operands, ZERO>
+	public static final int EXPR_new = 216; // <THREE operands, ZERO>
+	public static final int EXPR_staticnew = 217; // <TWO operands, ZERO>
+	public static final int EXPR_lambdaaccess = 218; // <TWO operands, ZERO>
+	public static final int EXPR_fielddereference = 219; // <THREE operands, ZERO>
+	public static final int EXPR_recordaccess = 223; // <THREE operands, ZERO>
+	public static final int EXPR_recordborrow = 224; // <THREE operands, ZERO>
+	public static final int EXPR_recordupdate = 225; // <FOUR operands, ZERO>
+	public static final int EXPR_recordinitialiser = 226; // <THREE operands, ZERO>
+	public static final int EXPR_tupleinitialiser = 227; // <TWO operands, ZERO>
+	public static final int EXPR_arrayaccess = 231; // <THREE operands, ZERO>
+	public static final int EXPR_arrayborrow = 232; // <THREE operands, ZERO>
+	public static final int EXPR_arrayupdate = 233; // <FOUR operands, ZERO>
+	public static final int EXPR_arraylength = 234; // <TWO operands, ZERO>
+	public static final int EXPR_arraygenerator = 235; // <THREE operands, ZERO>
+	public static final int EXPR_arrayinitialiser = 236; // <TWO operands, ZERO>
+	public static final int EXPR_arrayrange = 237; // <THREE operands, ZERO>
 	/**
 	 * Cached copy of the current schema
 	 */
@@ -783,14 +763,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return new Import((Tuple<Identifier>) operands[0]);
 				}
 			};
+
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importfrom") {
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					Identifier name = (Identifier) operands[1];
-					return new Import((Tuple<Identifier>) operands[0], false, new Tuple<>(name));
-				}
-			};
-			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importfrom") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
@@ -1276,8 +1250,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(WyilFile.Type type) {
+				// FIXME: this is a hack which should be removed.
+				type = type.as(WyilFile.Type.Callable.class);
+				SyntacticHeap heap = getHeap();
+				//
 				if (type instanceof WyilFile.Type.Callable) {
-					operands[8] = type;
+					operands[8] = heap.allocate(type);
 				} else {
 					throw new IllegalArgumentException();
 				}
@@ -1431,20 +1409,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return getType().toString() + " " + getName();
 			}
 
-			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "DECL_variable") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "DECL_variable") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WyilFile.Type) operands[2]);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.FOUR, Data.ZERO, "DECL_variableinitialiser") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					throw new UnsupportedOperationException("GOT HERE");
 				}
 			};
 		}
@@ -1510,7 +1480,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 *
 		 * @param <T>
 		 */
-		public static class Link<T extends SyntacticItem> extends AbstractSyntacticItem {
+		public static class Link<T extends Decl.Named<?>> extends AbstractSyntacticItem {
 			public Link(Name name) {
 				super(DECL_link,name);
 			}
@@ -1546,6 +1516,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					candidates.add(candidate.get());
 				}
 				return candidates;
+			}
+
+			public T lookup(WyilFile.Type type) {
+				for (int i = 1; i != operands.length; ++i) {
+					Ref<T> candidate = (Ref<T>) operands[i];
+					Decl.Named<?> n = candidate.get();
+					if(n.getType().equals(type)) {
+						return (T) n;
+					}
+				}
+				throw new IllegalArgumentException("unable to find candidate declaration");
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1650,22 +1631,49 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Template
 	// ============================================================
 	public interface Template {
+		public enum Variance {
+			UNKNOWN, INVARIANT, COVARIANT, CONTRAVARIANT
+		}
 		public static abstract class Variable extends AbstractSyntacticItem {
-			public Variable(int opcode, Identifier name) {
-				super(opcode,name);
+			public Variable(int opcode, Identifier name, Variance variance) {
+				super(opcode, new byte[] { (byte) variance.ordinal() }, name);
 			}
+
 			public Identifier getName() {
 				return (Identifier) get(0);
 			}
+
+			public Variance getVariance() {
+				return getVariance(data[0]);
+			}
+
+			public void setVariance(Variance v) {
+				data[0] = (byte) v.ordinal();
+			}
+
+			protected static Variance getVariance(byte b) {
+				switch (b) {
+				case 0:
+					return Variance.UNKNOWN;
+				case 1:
+					return Variance.INVARIANT;
+				case 2:
+					return Variance.COVARIANT;
+				case 3:
+					return Variance.CONTRAVARIANT;
+				default:
+					throw new IllegalArgumentException("Invalid variance modifier");
+				}
+			}
 		}
 		public static class Type extends Variable {
-			public Type(Identifier name) {
-				super(TEMPLATE_type,name);
+			public Type(Identifier name, Variance variance) {
+				super(TEMPLATE_type, name, variance);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Type((Identifier) operands[0]);
+				return new Type((Identifier) operands[0], getVariance());
 			}
 
 			@Override
@@ -1677,19 +1685,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Template.Type((Identifier) operands[0]);
+					return new Template.Type((Identifier) operands[0], Variance.COVARIANT);
+				}
+			};
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.ONE, Data.ONE, "TEMPLATE_type") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Type((Identifier) operands[0], getVariance(data[0]));
 				}
 			};
 		}
 
 		public static class Lifetime extends Variable {
-			public Lifetime(Identifier name) {
-				super(TEMPLATE_lifetime,name);
+			public Lifetime(Identifier name, Variance variance) {
+				super(TEMPLATE_lifetime,name,variance);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Lifetime((Identifier) operands[0]);
+				return new Lifetime((Identifier) operands[0],getVariance());
 			}
 
 			@Override
@@ -1701,7 +1716,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Template.Lifetime((Identifier) operands[0]);
+					return new Template.Lifetime((Identifier) operands[0], Variance.INVARIANT);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.ONE, Data.ONE, "TEMPLATE_lifetime") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Template.Lifetime((Identifier) operands[0], getVariance(data[0]));
 				}
 			};
 		}
@@ -2174,6 +2197,61 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 		/**
 		 * <p>
+		 * Represents a for statement made up of variable initialisers and a block of statements
+		 * referred to as the <i>body</i>. The following illustrates:
+		 * </p>
+		 *
+		 * <pre>
+		 * function sum(int[] xs) -> int:
+		 *   int r = 0
+		 *   for i in 0..|xs|:
+		 *     r = r + xs[i]
+		 *   return r
+		 * </pre>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class For extends AbstractSyntacticItem implements Stmt {
+			public For(Decl.StaticVariable var, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block trueBranch) {
+				super(STMT_for, var, invariant, modified, trueBranch);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
+			}
+
+			public Decl.StaticVariable getVariable() {
+				return (Decl.StaticVariable) operands[0];
+			}
+
+			public Tuple<Expr> getInvariant() {
+				return (Tuple<Expr>) operands[1];
+			}
+
+			public Tuple<Decl.Variable> getModified() {
+				return (Tuple<Decl.Variable>)operands[2];
+			}
+
+			public void setModified(Tuple<Decl.Variable> modified) {
+				operands[2] = modified;
+			}
+
+			public Stmt.Block getBody() {
+				return (Stmt.Block) operands[3];
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "STMT_for") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
+				}
+			};
+		}
+
+		/**
+		 * <p>
 		 * Represents a classical if-else statement consisting of a <i>condition</i>, a
 		 * <i>true branch</i> and an optional <i>false branch</i>. The following
 		 * illustrates:
@@ -2350,17 +2428,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return new Return();
 				}
 			}
-
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "STMT_return") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					// NOTE: this is included only for backwards compatibility
-					return new Return(new Expr.TupleInitialiser(Type.Void, (Tuple<Expr>) operands[0]));
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1a = new Descriptor(Operands.ONE, Data.ZERO, "STMT_return") {
+			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.ONE, Data.ZERO, "STMT_return") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -2368,7 +2436,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			};
 
-			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_returnvoid") {
+			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_returnvoid") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -2786,7 +2854,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -2934,30 +3004,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					Tuple<Type> types = (Tuple<Type>) operands[0];
-					Type type = null;
-					if(types != null) {
-						switch(types.size()) {
-						case 0:
-							type = Type.Void;
-							break;
-						case 1:
-							type = types.get(0);
-							break;
-						default:
-							type = new Type.Tuple(types.toArray(Type.class));
-							break;
-						}
-					}
-					return new IndirectInvoke(type, (Expr) operands[1],
-							(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new IndirectInvoke((Type) operands[0], (Expr) operands[1],
 							(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
 				}
@@ -2990,7 +3036,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3170,7 +3218,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3216,7 +3266,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3261,7 +3313,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3312,7 +3366,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3362,7 +3418,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3406,7 +3464,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3456,7 +3516,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3507,7 +3569,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3558,7 +3622,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3609,7 +3675,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -3660,7 +3728,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4299,7 +4369,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				if(hasLifetime()) {
+					return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				} else {
+					return new New((Type) operands[0], (Expr) operands[1]);
+				}
 			}
 
 			@Override
@@ -4339,7 +4413,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(Type type) {
-				throw new UnsupportedOperationException();
+				if(!type.equals(Type.Bool)) {
+					throw new IllegalArgumentException();
+				}
 			}
 
 			@Override
@@ -4365,15 +4441,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_lambdaaccess") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					Type.Tuple types = new Type.Tuple(((Tuple<Type>) operands[1]).toArray(Type.class));
-					return new LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0], types);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_lambdaaccess") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -4764,12 +4831,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(EXPR_tupleinitialiser, type, operands);
 			}
 
-
-			@Override
-			public Type.Tuple getType() {
-				return (Type.Tuple) super.getType();
-			}
-
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new TupleInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
@@ -4780,6 +4841,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return (Tuple<Expr>) operands[1];
 			}
 
+			@Override
+			public String toString() {
+				String r = "";
+				//
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += ",";
+					}
+					r += get(i).toString();
+				}
+				//
+				return "(" + r + ")";
+			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_tupleinitialiser") {
 				@SuppressWarnings("unchecked")
@@ -4806,20 +4880,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// however, the parser constructs multiple initialisers during parsing (even
 				// when only one is present). This causes subsequent problems down the track.
 				super(EXPR_recordinitialiser, type, fields, operands);
-			}
-
-			@Override
-			public Type.Record getType() {
-				return (Type.Record) super.getType();
-			}
-
-			@Override
-			public void setType(Type type) {
-				if (type instanceof Type.Record) {
-					super.setType(type);
-				} else {
-					throw new IllegalArgumentException("invalid record initialiser type");
-				}
 			}
 
 			public Tuple<Identifier> getFields() {
@@ -4917,10 +4977,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 	public static interface Type extends SyntacticItem {
 
+		public static final Any Any = new Any();
 		public static final Void Void = new Void();
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
+		public static final Array VoidArray = new Array(Void);
+		public static final Array IntArray = new Array(Int);
+		public static final Array AnyArray = new Array(Any);
 		public static final Null Null = new Null();
 
 		/**
@@ -4939,12 +5003,28 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public Type dimension(int nth);
 
 		/**
+		 * Determine whether or not this type can be written. This is equivalent to
+		 * asking whether or not it has a known static size.
+		 *
+		 * @return
+		 */
+		public boolean isWriteable();
+
+		/**
+		 * Determine whether or not this type can be read. Types with an "unknown"
+		 * component cannot be read.
+		 *
+		 * @return
+		 */
+		public boolean isReadable();
+
+		/**
 		 * Substitute for lifetime or type parameters
 		 *
 		 * @param binding A function which returns
 		 * @return
 		 */
-		public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+		public Type substitute(java.util.function.Function<Object, SyntacticItem> binding);
 
 		/**
 		 * Expose the underlying type of this type. For example, consider this:
@@ -5022,6 +5102,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(opcode, operands);
 			}
 
+			AbstractType(int opcode, byte[] bytes) {
+				super(opcode, bytes);
+			}
+
 			@Override
 			public int shape() {
 				return 1;
@@ -5035,6 +5119,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					return this;
 				}
 			}
+
+			@Override
+			public boolean isWriteable() {
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return true;
+			}
+
 
 			@Override
 			public <T extends Type> T as(Class<T> kind) {
@@ -5072,7 +5167,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type getReturn();
 
 			@Override
-			public Type.Callable substitute(java.util.function.Function<Identifier, SyntacticItem> binding);
+			public Type.Callable substitute(java.util.function.Function<Object, SyntacticItem> binding);
 		}
 
 		/**
@@ -5091,7 +5186,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5129,6 +5224,58 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 
 		/**
+		 * An any type represents the type of all possible values. This type is not
+		 * currently permited in the syntax of Whiley, but is used internally within the
+		 * subtyping algorithm. <b>NOTE:</b> the any type is a supertype of everything;
+		 * that is, it is top in the type lattice.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Any extends AbstractType implements Primitive {
+			public Any() {
+				super(TYPE_any);
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				return this;
+			}
+
+			@Override
+			public Any clone(SyntacticItem[] operands) {
+				return new Any();
+			}
+
+			@Override
+			public int shape() {
+				return 1;
+			}
+
+			@Override
+			public Type dimension(int nth) {
+				return this;
+			}
+
+			@Override
+			public String toString() {
+				return "any";
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return "any";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_any") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Any();
+				}
+			};
+		}
+
+		/**
 		 * The null type is a special type which should be used to show the absence of
 		 * something. It is distinct from void, since variables can hold the special
 		 * <code>null</code> value (where as there is no special "void" value). With all
@@ -5147,7 +5294,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5186,7 +5333,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5229,7 +5376,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5270,7 +5417,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -5320,11 +5467,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Array substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
+			public Type.Array substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
 				if (before == after) {
 					return this;
+				} else if (after == null) {
+					return null;
 				} else {
 					return new Array(after);
 				}
@@ -5367,28 +5521,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Reference extends AbstractType implements Atom {
-			public Reference(Type element, boolean unknown) {
-				super(TYPE_staticreference, element, new Value.Bool(unknown));
+			public Reference(Type element) {
+				super(TYPE_staticreference, element);
 			}
 
-			public Reference(Type element, Value.Bool unknown) {
-				super(TYPE_staticreference, element, unknown);
-			}
-
-			public Reference(Type element, boolean unknown, Identifier lifetime) {
-				super(TYPE_reference, element, new Value.Bool(unknown), lifetime);
-			}
-
-			public Reference(Type element, Value.Bool unknown, Identifier lifetime) {
-				super(TYPE_reference, element, unknown, lifetime);
+			public Reference(Type element, Identifier lifetime) {
+				super(TYPE_reference, element, lifetime);
 			}
 
 			public boolean hasLifetime() {
 				return opcode == TYPE_reference;
-			}
-
-			public boolean isUnknown() {
-				return ((Value.Bool)get(1)).get();
 			}
 
 			public Type getElement() {
@@ -5396,20 +5538,24 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) get(2);
+				return (Identifier) get(1);
 			}
 
 			@Override
-			public Type.Reference substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Reference substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter && !hasLifetime()) {
-					return new Reference(elementAfter, isUnknown());
+					if(elementAfter == null) {
+						return null;
+					} else {
+						return new Reference(elementAfter);
+					}
 				} else if(hasLifetime()){
 					SyntacticItem lifetime = binding.apply(getLifetime());
 					if(lifetime != null) {
 						lifetime = (lifetime instanceof Identifier) ? lifetime : getLifetime();
-						return new Reference(elementAfter, isUnknown(), (Identifier) lifetime);
+						return new Reference(elementAfter, (Identifier) lifetime);
 					}
 				}
 				return this;
@@ -5417,20 +5563,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 2) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+				if (hasLifetime()) {
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
 				} else {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0]);
 				}
 			}
 
 			@Override
 			public String toString() {
-				String modifier = isUnknown() ? "?" : "";
 				if (hasLifetime()) {
-					return "&" + getLifetime() + ":" + modifier + braceAsNecessary(getElement());
+					return "&" + getLifetime() + ":" + braceAsNecessary(getElement());
 				} else {
-					return "&" + modifier + braceAsNecessary(getElement());
+					return "&" + braceAsNecessary(getElement());
 				}
 			}
 
@@ -5446,14 +5591,29 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "TYPE_reference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1], (Identifier) operands[2]);
+					return new Reference((Type) operands[0], (Identifier) operands[2]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_staticreference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Reference((Type) operands[0], (Value.Bool) operands[1]);
+					return new Reference((Type) operands[0]);
+				}
+			};
+
+
+			public static final Descriptor DESCRIPTOR_1a = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_reference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1b = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Reference((Type) operands[0]);
 				}
 			};
 		}
@@ -5476,8 +5636,48 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				this(new Value.Bool(isOpen), fields);
 			}
 
+			public Record(boolean isOpen, WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				this(new Value.Bool(isOpen), zip(fields,types));
+			}
+
+			public Record(boolean isOpen, Identifier field, Type type) {
+				this(new Value.Bool(isOpen), new WyilFile.Tuple<Type.Field>(new Type.Field(field, type)));
+			}
+
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
 				super(TYPE_record, isOpen, fields);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isWriteable()) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+
+			@Override
+			public boolean isReadable() {
+				if(isOpen()) {
+					return false;
+				} else {
+					WyilFile.Tuple<Field> fields = getFields();
+					for (int i = 0; i != fields.size(); ++i) {
+						Field vd = fields.get(i);
+						if(!vd.getType().isReadable()) {
+							return false;
+						}
+					}
+					return true;
+				}
 			}
 
 			public boolean isOpen() {
@@ -5503,11 +5703,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Record substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Record substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type.Field> before = getFields();
 				WyilFile.Tuple<Type.Field> after = substitute(before, binding);
 				if (before == after) {
 					return this;
+				} else if(after == null) {
+					return null;
 				} else {
 					return new Record(isOpen(), after);
 				}
@@ -5526,13 +5728,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 * @return
 			 */
 			private static WyilFile.Tuple<Type.Field> substitute(WyilFile.Tuple<Type.Field> fields,
-					java.util.function.Function<Identifier, SyntacticItem> binding) {
+					java.util.function.Function<Object, SyntacticItem> binding) {
 				//
 				for (int i = 0; i != fields.size(); ++i) {
 					Type.Field field = fields.get(i);
 					Type before = field.getType();
 					Type after = before.substitute(binding);
-					if (before != after) {
+					if(after == null) {
+						return null;
+					} else if (before != after) {
 						// Now committed to a change
 						Type.Field[] nFields = fields.toArray(Type.Field.class);
 						nFields[i] = new Field(field.getName(), after);
@@ -5540,7 +5744,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 							field = fields.get(j);
 							before = field.getType();
 							after = before.substitute(binding);
-							if (before != after) {
+							if(after == null) {
+								return null;
+							} else if (before != after) {
 								nFields[j] = new Field(field.getName(), after);
 							}
 						}
@@ -5597,6 +5803,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				//
 				return "{" + r + "}";
+			}
+
+			private static WyilFile.Tuple<Type.Field> zip(WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				Type.Field[] fs = new Type.Field[fields.size()];
+				for(int i=0;i!=fs.length;++i) {
+					fs[i] = new Type.Field(fields.get(i),types.get(i));
+				}
+				return new WyilFile.Tuple<>(fs);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_record") {
@@ -5692,6 +5906,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				case 1:
 					return types[0];
 				default:
+					// Sanity check
 					return new Type.Tuple(types);
 				}
 			}
@@ -5709,6 +5924,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				case 1:
 					return types.get(0);
 				default:
+					// Sanity check
+					for(int i=0;i!=types.size();++i) {
+						if(types.get(i) instanceof Type.Void) {
+							return Type.Void;
+						}
+					}
 					return new Type.Tuple(types.toArray(Type.class));
 				}
 			}
@@ -5738,6 +5959,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return get(nth);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
 
 			@Override
 			public Type get(int ith) {
@@ -5745,11 +5985,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Tuple substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
+			}
+
+			@Override
+			public Type.Tuple substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				for(int i=0;i!=size();++i) {
 					Type before = get(i);
 					Type after = before.substitute(binding);
-					if(before != after) {
+					if(after == null) {
+						return null;
+					} else if(before != after) {
 						// Committed to change
 						Type[] types = new Type[size()];
 						for(int j=0;j!=types.length;++j) {
@@ -5821,6 +6068,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			public Nominal(Decl.Link<Decl.Type> name, WyilFile.Tuple<Type> parameters) {
 				super(TYPE_nominal, name, parameters);
+				if(parameters != null) {
+					for(Type t : parameters) {
+						if(t == null) {
+							throw new IllegalArgumentException("invalid parameter types");
+						}
+					}
+				}
 			}
 
 			@Override
@@ -5841,6 +6095,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 					// affected by substitution.
 					return getLink().getTarget().getType().dimension(nth);
 				}
+			}
+
+			public boolean isAlias() {
+				return getLink().getTarget().getInvariant().size() == 0;
+			}
+
+			@Override
+			public boolean isWriteable() {
+				return getConcreteType().isWriteable();
+			}
+
+			@Override
+			public boolean isReadable() {
+				return getConcreteType().isReadable();
 			}
 
 			@Override
@@ -5886,10 +6154,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Nominal substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Nominal substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				WyilFile.Tuple<Type> o_parameters = getParameters();
 				WyilFile.Tuple<Type> n_parameters = WyilFile.substitute(o_parameters, binding);
-				if (o_parameters == n_parameters) {
+				if(n_parameters == null) {
+					return null;
+				} else if (o_parameters == n_parameters) {
 					return this;
 				} else {
 					return new Nominal(getLink(), n_parameters);
@@ -5945,9 +6215,71 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Union extends AbstractType implements Type {
+			public static Type create(WyilFile.Tuple<Type> types) {
+				return create(types.toArray(Type.class));
+			}
+			/**
+			 * Create a sequence of zero or more types.
+			 *
+			 * @param types
+			 * @return
+			 */
+			public static Type create(Type... _types) {
+				Type[] types = _types;
+				for (int i = 0; i != types.length; ++i) {
+					Type ith = types[i];
+					if (ith instanceof Type.Union) {
+						Type.Union u = (Type.Union) ith;
+						Type[] nTypes = new Type[types.length + u.size() - 1];
+						System.arraycopy(types, 0, nTypes, 0, i);
+						System.arraycopy(u.getAll(), 0, nTypes, i, u.size());
+						System.arraycopy(types, i + 1, nTypes, i + u.size(), (types.length - i - 1));
+						return create(nTypes);
+					} else if(ith instanceof Type.Void) {
+						if(types == _types) {
+							types = Arrays.copyOf(_types, _types.length);
+						}
+						types[i] = null;
+					}
+				}
+				//
+				types = ArrayUtils.removeAll(types, null);
+				types = ArrayUtils.removeDuplicates(types);
+				//
+				switch (types.length) {
+				case 0:
+					return Type.Void;
+				case 1:
+					return types[0];
+				default:
+					return new Type.Union(types);
+				}
+			}
+
 			public Union(Type... types) {
 				super(TYPE_union, types);
 			}
+
+			@Override
+			public boolean isWriteable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isWriteable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			@Override
+			public boolean isReadable() {
+				for(int i=0;i!=size();++i) {
+					if(!get(i).isReadable()) {
+						return false;
+					}
+				}
+				return true;
+			}
+
 
 			@Override
 			public Type get(int i) {
@@ -5960,13 +6292,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Union substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type[] before = getAll();
 				Type[] after = WyilFile.substitute(before, binding);
-				if (before == after) {
+				if(after == null) {
+					return null;
+				} else if (before == after) {
 					return this;
 				} else {
-					return new Union(after);
+					return create(after);
 				}
 			}
 
@@ -6047,12 +6381,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Function substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Function substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parameterBefore = getParameter();
 				Type parameterAfter = parameterBefore.substitute(binding);
 				Type returnBefore = getReturn();
 				Type returnAfter = returnBefore.substitute(binding);
-				if (parameterBefore == parameterAfter && returnBefore == returnAfter) {
+				if(parameterAfter == null || returnAfter == null) {
+					return null;
+				} else if (parameterBefore == parameterAfter && returnBefore == returnAfter) {
 					return this;
 				} else {
 					return new Function(parameterAfter, returnAfter);
@@ -6077,19 +6413,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_function") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					// Retained for backwards compatibility
-					WyilFile.Tuple<Type> params = (WyilFile.Tuple<Type>) operands[0];
-					Type.Tuple p = new Tuple(ArrayUtils.toArray(Type.class, params.getAll()));
-					WyilFile.Tuple<Type> returns = (WyilFile.Tuple<Type>) operands[1];
-					Type.Tuple r = new Tuple(ArrayUtils.toArray(Type.class, returns.getAll()));
-					return new Function(p, r);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_function") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -6138,7 +6461,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Method substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Method substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				// Sanity check the binding being used here. Specifically, any binding which is
 				// declared in this method cannot be subsitituted.
 				WyilFile.Tuple<Identifier> lifetimes = getLifetimeParameters();
@@ -6194,20 +6517,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					// Retained for backwards compatibility
-					WyilFile.Tuple<Type> params = (WyilFile.Tuple<Type>) operands[0];
-					Type.Tuple p = new Tuple(ArrayUtils.toArray(Type.class, params.getAll()));
-					WyilFile.Tuple<Type> returns = (WyilFile.Tuple<Type>) operands[1];
-					Type.Tuple r = new Tuple(ArrayUtils.toArray(Type.class, returns.getAll()));
-					return new Method(p, r, (WyilFile.Tuple<Identifier>) operands[2],
-							(WyilFile.Tuple<Identifier>) operands[3]);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.FOUR, Data.ZERO, "TYPE_method") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Method((Type) operands[0], (Type) operands[1], (WyilFile.Tuple<Identifier>) operands[2],
 							(WyilFile.Tuple<Identifier>) operands[3]);
 				}
@@ -6244,7 +6553,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Property substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Property substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				Type parametersBefore = getParameter();
 				Type parametersAfter = parametersBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6276,17 +6585,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					WyilFile.Tuple<Type> params = (WyilFile.Tuple<Type>) operands[0];
-					Type.Tuple p = new Tuple(ArrayUtils.toArray(Type.class, params.getAll()));
-					// Retained for backwards compatibility
-					return new Property(p);
-				}
-			};
-
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_property") {
-				@SuppressWarnings("unchecked")
-				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Property((Type.Tuple) operands[0], (Type.Tuple) operands[1]);
 				}
 			};
@@ -6309,7 +6607,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Type.Unknown substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type.Unknown substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				throw new UnsupportedOperationException();
 			}
 
@@ -6336,22 +6634,96 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			};
 		}
 
-		public static class Variable extends AbstractType implements Atom {
-			public Variable(Identifier name) {
-				super(TYPE_variable, name);
+		public static class Existential extends AbstractType implements Atom {
+			public Existential(int index) {
+				super(TYPE_existential, BigInteger.valueOf(index).toByteArray());
+				if(index < 0) {
+					throw new IllegalArgumentException("invalid existential type index");
+				}
+			}
+
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			public int get() {
+				return new BigInteger(data).intValue();
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Existential(new BigInteger(data).intValue());
+			}
+
+			@Override
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+				SyntacticItem i = binding.apply(get());
+				if(i instanceof Type) {
+					return (Type) i;
+				} else {
+					return this;
+				}
+			}
+
+			@Override
+			public String toCanonicalString() {
+				return toString();
+			}
+
+			@Override
+			public String toString() {
+				return "?" + Integer.toString(get());
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.MANY, "TYPE_existential") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Existential(new BigInteger(data).intValue());
+				}
+			};
+		}
+
+		public static class Universal extends AbstractType implements Atom {
+			public Universal(Identifier name) {
+				super(TYPE_universal, name);
+			}
+
+			@Override
+			public boolean isWriteable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public boolean isReadable() {
+				// It never makes sense to ask this question of a type variable, since we cannot
+				// possible known the answer.
+				throw new UnsupportedOperationException();
 			}
 
 			public Identifier getOperand() {
 				return (Identifier) get(0);
 			}
 
+
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Variable((Identifier) operands[0]);
+				return new Universal((Identifier) operands[0]);
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				SyntacticItem expanded = binding.apply(getOperand());
 				if (expanded instanceof Type) {
 					return (Type) expanded;
@@ -6370,10 +6742,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return getOperand().toString();
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_variable") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_universal") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Variable((Identifier) operands[0]);
+					return new Universal((Identifier) operands[0]);
 				}
 			};
 		}
@@ -6389,6 +6761,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(TYPE_recursive, reference);
 			}
 
+			@Override
+			public boolean isWriteable() {
+				return false;
+			}
+
+			@Override
+			public boolean isReadable() {
+				return false;
+			}
+
 			public Type getHead() {
 				Ref<Type> r = (Ref<Type>) get(0);
 				return r.get();
@@ -6399,7 +6781,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			@Override
-			public Recursive substitute(java.util.function.Function<Identifier, SyntacticItem> binding) {
+			public Recursive substitute(java.util.function.Function<Object, SyntacticItem> binding) {
 				return this;
 			}
 
@@ -6509,6 +6891,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 */
 			public String toString(Type type) {
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6576,6 +6959,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public Type apply(Type type) {
 				// FIXME: need to support infinite selectors
 				switch (type.getOpcode()) {
+				case TYPE_any:
 				case TYPE_void:
 				case TYPE_null:
 				case TYPE_bool:
@@ -6632,7 +7016,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	}
 
 	private static Tuple<Type> substitute(Tuple<Type> types,
-			java.util.function.Function<Identifier, SyntacticItem> binding) {
+			java.util.function.Function<Object, SyntacticItem> binding) {
 		for (int i = 0; i != types.size(); ++i) {
 			Type before = types.get(i);
 			Type after = before.substitute(binding);
@@ -6640,7 +7024,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// Committed to change
 				Type[] nTypes = new Type[types.size()];
 				for (int j = 0; j != nTypes.length; ++j) {
-					nTypes[i] = types.get(i).substitute(binding);
+					after = types.get(j).substitute(binding);
+					if(after == null) {
+						return null;
+					}
+					nTypes[j] = after;
 				}
 				return new Tuple<>(nTypes);
 			}
@@ -6649,12 +7037,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		return types;
 	}
 
-	private static Type[] substitute(Type[] types, java.util.function.Function<Identifier, SyntacticItem> binding) {
+	private static Type[] substitute(Type[] types, java.util.function.Function<Object, SyntacticItem> binding) {
 		Type[] nTypes = types;
 		for (int i = 0; i != nTypes.length; ++i) {
 			Type before = types[i];
 			Type after = before.substitute(binding);
-			if (before != after) {
+			if(after == null) {
+				return null;
+			} else if (before != after) {
 				if (nTypes == types) {
 					nTypes = Arrays.copyOf(types, types.length);
 				}
@@ -6677,7 +7067,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 */
 	public static Type.Callable substitute(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
 			Tuple<SyntacticItem> templateArguments) {
-		Function<Identifier,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
+		Function<Object,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
 		// Proceed with the potentially updated binding
 		Type parameters = fmp.getParameter().substitute(binding);
 		Type ret = fmp.getReturn().substitute(binding);
@@ -6704,10 +7094,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static String toString(Tuple<? extends SyntacticItem> items) {
 		String r = "";
 		for (int i = 0; i != items.size(); ++i) {
+			SyntacticItem ith = items.get(i);
 			if (i != 0) {
 				r += ",";
 			}
-			r += items.get(i).toString();
+			r += ith == null ? "?" : ith;
 		}
 		return r;
 	}
@@ -6890,11 +7281,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static <T extends SyntacticItem> java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static <T extends SyntacticItem> java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Tuple<T> arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -6911,11 +7303,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param arguments
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> bindingFunction(
+	public static java.util.function.Function<Object, SyntacticItem> bindingFunction(
 			Tuple<Template.Variable> variables, Type.Tuple arguments) {
 		//
-		return (Identifier var) -> {
-			for (int i = 0; i != variables.size(); ++i) {
+		return (Object var) -> {
+			int n = Math.min(variables.size(),arguments.size());
+			for (int i = 0; i != n; ++i) {
 				if (var.equals(variables.get(i).getName())) {
 					return arguments.get(i);
 				}
@@ -6933,9 +7326,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param variables
 	 * @return
 	 */
-	public static java.util.function.Function<Identifier, SyntacticItem> removeFromBinding(
-			java.util.function.Function<Identifier, SyntacticItem> binding, Tuple<Identifier> variables) {
-		return (Identifier var) -> {
+	public static java.util.function.Function<Object, SyntacticItem> removeFromBinding(
+			java.util.function.Function<Object, SyntacticItem> binding, Tuple<Identifier> variables) {
+		return (Object var) -> {
 			// Sanity check whether this is a variable which is being removed
 			for (int i = 0; i != variables.size(); ++i) {
 				if (var.equals(variables.get(i))) {
@@ -7121,6 +7514,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int METHODCALL_NOT_PERMITTED = 608;
 	public static final int REFERENCE_ACCESS_NOT_PERMITTED = 609;
 	public static final int INVALID_LVAL_EXPRESSION = 610;
+	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
+	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7233,60 +7628,25 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @return
 	 */
 	private static Schema createSchema() {
-		SectionedSchema v0_1 = createSchema_0_1();
-		// Updated on 30/10/2019
-		SectionedSchema v0_2 = createSchema_0_2(v0_1);
-		// Updated on 26/11/2019
-		SectionedSchema v0_3 = createSchema_0_3(v0_2);
+		SectionedSchema v1_1 = createSchema_1_1();
+		SectionedSchema v1_2 = createSchema_1_2(v1_1);
+		SectionedSchema v1_3 = createSchema_1_3(v1_2);
 		//
-//		for(int i=0;i<=255;++i) {
-//			Descriptor desc = v0_3.getDescriptor(i);
-//			if(desc != null) {
-//				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
-//			}
-//
-//		}
-//		System.out.println("VERSION: " + v0_3.getMajorVersion() + "." + v0_3.getMinorVersion());
+		return v1_3;
 		//
-		return v0_3;
 	}
 
-	/**
-	 * Schema changed as a result of #975 (Remove Multiple Expressions).
-	 *
-	 * @param v0_2
-	 * @return
-	 */
-	private static SectionedSchema createSchema_0_3(SectionedSchema v0_2) {
-		SectionedSchema.Builder builder = v0_2.extend();
-		//
-		builder.replace("STMT", "return", Stmt.Return.DESCRIPTOR_1a);
-		builder.add("STMT", "returnvoid", Stmt.Return.DESCRIPTOR_1b);
-		builder.add("STMT", "initialiser", Stmt.Initialiser.DESCRIPTOR_0a);
-		builder.add("STMT", "initialiservoid", Stmt.Initialiser.DESCRIPTOR_0b);
-		builder.replace("EXPR", "indirectinvoke", Expr.IndirectInvoke.DESCRIPTOR_1);
-		builder.replace("EXPR", "lambdaaccess", Expr.LambdaAccess.DESCRIPTOR_1);
-		builder.add("EXPR", "tupleinitialiser", Expr.TupleInitialiser.DESCRIPTOR_0);
-		builder.add("TYPE", "tuple", Type.Tuple.DESCRIPTOR_0);
-		builder.replace("TYPE", "function", Type.Function.DESCRIPTOR_1);
-		builder.replace("TYPE", "method", Type.Method.DESCRIPTOR_1);
-		builder.replace("TYPE", "property", Type.Property.DESCRIPTOR_1);
-		//
+	private static SectionedSchema createSchema_1_3(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("TEMPLATE", "type", Template.Type.DESCRIPTOR_1);
+		builder.replace("TEMPLATE", "lifetime", Template.Lifetime.DESCRIPTOR_1);
+		builder.add("TYPE", "existential", Type.Existential.DESCRIPTOR_0);
 		return builder.done();
 	}
-
-	/**
-	 * Schema changed as a result of #967 (Import With).
-	 *
-	 * @param v0_1
-	 * @return
-	 */
-	private static SectionedSchema createSchema_0_2(SectionedSchema v0_1) {
-		SectionedSchema.Builder builder = v0_1.extend();
-		//
-		builder.replace("DECL", "importfrom", Decl.Import.DESCRIPTOR_1b);
-		builder.add("DECL", "importwith", Decl.Import.DESCRIPTOR_0c);
-		//
+	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("TYPE", "reference", Type.Reference.DESCRIPTOR_1a);
+		builder.replace("TYPE", "staticreference", Type.Reference.DESCRIPTOR_1b);
 		return builder.done();
 	}
 
@@ -7296,8 +7656,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 *
 	 * @return
 	 */
-	private static SectionedSchema createSchema_0_1() {
-		SectionedSchema.Builder builder = SectionedSchema.ROOT.extend();
+	private static SectionedSchema createSchema_1_1() {
+		SectionedSchema ROOT = new SectionedSchema(null, 1, 0, new Section[0]);
+		SectionedSchema.Builder builder = ROOT.extend();
 		// Register the necessary sections
 		builder.register("ITEM", 16);
 		builder.register("DECL", 32);
@@ -7330,6 +7691,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("DECL", "unit", Decl.Unit.DESCRIPTOR_0);
 		builder.add("DECL", "import", Decl.Import.DESCRIPTOR_0a);
 		builder.add("DECL", "importfrom", Decl.Import.DESCRIPTOR_0b);
+		builder.add("DECL", "importwith", Decl.Import.DESCRIPTOR_0c);
 		builder.add("DECL", "staticvar", Decl.StaticVariable.DESCRIPTOR_0);
 		builder.add("DECL", "type", Decl.Type.DESCRIPTOR_0a);
 		builder.add("DECL", "rectype", Decl.Type.DESCRIPTOR_0b);
@@ -7337,8 +7699,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("DECL", "method", Decl.Method.DESCRIPTOR_0);
 		builder.add("DECL", "property", Decl.Property.DESCRIPTOR_0);
 		builder.add("DECL", "lambda", Decl.Lambda.DESCRIPTOR_0);
-		builder.add("DECL", "variable", Decl.Variable.DESCRIPTOR_0a);
-		builder.add("DECL", "variableinitialiser", Decl.Variable.DESCRIPTOR_0b);
+		builder.add("DECL", "variable", Decl.Variable.DESCRIPTOR_0);
 		builder.add("DECL", "link", Decl.Link.DESCRIPTOR_0);
 		builder.add("DECL", "binding", Decl.Binding.DESCRIPTOR_0);
 		// Modifiers
@@ -7361,7 +7722,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		// Types
 		builder.add("TYPE", "unknown", Type.Unknown.DESCRIPTOR_0);
 		builder.add("TYPE", "void", Type.Void.DESCRIPTOR_0);
-		builder.add("TYPE", "any", null);
+		builder.add("TYPE", "any", Type.Any.DESCRIPTOR_0);
 		builder.add("TYPE", "null", Type.Null.DESCRIPTOR_0);
 		builder.add("TYPE", "bool", Type.Bool.DESCRIPTOR_0);
 		builder.add("TYPE", "int", Type.Int.DESCRIPTOR_0);
@@ -7369,12 +7730,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("TYPE", "reference", Type.Reference.DESCRIPTOR_0a);
 		builder.add("TYPE", "staticreference", Type.Reference.DESCRIPTOR_0b);
 		builder.add("TYPE", "array", Type.Array.DESCRIPTOR_0);
+		builder.add("TYPE", "tuple", Type.Tuple.DESCRIPTOR_0);
 		builder.add("TYPE", "record", Type.Record.DESCRIPTOR_0);
 		builder.add("TYPE", "field", Type.Field.DESCRIPTOR_0);
 		builder.add("TYPE", "function", Type.Function.DESCRIPTOR_0);
 		builder.add("TYPE", "method", Type.Method.DESCRIPTOR_0);
 		builder.add("TYPE", "property", Type.Property.DESCRIPTOR_0);
-		builder.add("TYPE", null, null);
 		builder.add("TYPE", "union", Type.Union.DESCRIPTOR_0);
 		builder.add("TYPE", "byte", Type.Byte.DESCRIPTOR_0);
 		builder.add("TYPE", null, null);
@@ -7386,7 +7747,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", "recursive", Type.Recursive.DESCRIPTOR_0);
-		builder.add("TYPE", "variable", Type.Variable.DESCRIPTOR_0);
+		builder.add("TYPE", "universal", Type.Universal.DESCRIPTOR_0);
 		// Statements
 		builder.add("STMT", "block", Stmt.Block.DESCRIPTOR_0);
 		builder.add("STMT", "namedblock", Stmt.NamedBlock.DESCRIPTOR_0);
@@ -7400,11 +7761,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("STMT", "continue", Stmt.Continue.DESCRIPTOR_0);
 		builder.add("STMT", "dowhile", Stmt.DoWhile.DESCRIPTOR_0);
 		builder.add("STMT", "fail", Stmt.Fail.DESCRIPTOR_0);
-		builder.add("STMT", "for", null);
+		builder.add("STMT", "for", Stmt.For.DESCRIPTOR_0);
 		builder.add("STMT", "foreach", null);
 		builder.add("STMT", "if", Stmt.IfElse.DESCRIPTOR_0a);
 		builder.add("STMT", "ifelse", Stmt.IfElse.DESCRIPTOR_0b);
-		builder.add("STMT", "return", Stmt.Return.DESCRIPTOR_0);
+		builder.add("STMT", "initialiser", Stmt.Initialiser.DESCRIPTOR_0a);
+		builder.add("STMT", "initialiservoid", Stmt.Initialiser.DESCRIPTOR_0b);
+		builder.add("STMT", "return", Stmt.Return.DESCRIPTOR_0a);
+		builder.add("STMT", "returnvoid", Stmt.Return.DESCRIPTOR_0b);
 		builder.add("STMT", "switch", Stmt.Switch.DESCRIPTOR_0);
 		builder.add("STMT", "while", Stmt.While.DESCRIPTOR_0);
 		// General Expressions
@@ -7412,9 +7776,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "variablemove", Expr.VariableAccess.DESCRIPTOR_0b);
 		builder.add("EXPR", null, null);
 		builder.add("EXPR", "staticvariable", Expr.StaticVariableAccess.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "constant", Expr.Constant.DESCRIPTOR_0);
 		builder.add("EXPR", "cast", Expr.Cast.DESCRIPTOR_0);
-		builder.add("EXPR", null, null);
 		builder.add("EXPR", "invoke", Expr.Invoke.DESCRIPTOR_0);
 		builder.add("EXPR", "indirectinvoke", Expr.IndirectInvoke.DESCRIPTOR_0);
 		// Logical Expressions
@@ -7422,6 +7786,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "logicaland", Expr.LogicalAnd.DESCRIPTOR_0);
 		builder.add("EXPR", "logicalor", Expr.LogicalOr.DESCRIPTOR_0);
 		builder.add("EXPR", "logicalimplication", Expr.LogicalImplication.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "logicaliff", Expr.LogicalIff.DESCRIPTOR_0);
 		builder.add("EXPR", "logicalexistential", Expr.ExistentialQuantifier.DESCRIPTOR_0);
 		builder.add("EXPR", "logicaluniversal", Expr.UniversalQuantifier.DESCRIPTOR_0);
@@ -7430,6 +7795,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "notequal", Expr.NotEqual.DESCRIPTOR_0);
 		builder.add("EXPR", "integerlessthan", Expr.IntegerLessThan.DESCRIPTOR_0);
 		builder.add("EXPR", "integerlessequal", Expr.IntegerLessThanOrEqual.DESCRIPTOR_0);
+
 		builder.add("EXPR", "integergreaterthan", Expr.IntegerGreaterThan.DESCRIPTOR_0);
 		builder.add("EXPR", "integergreaterequal", Expr.IntegerGreaterThanOrEqual.DESCRIPTOR_0);
 		builder.add("EXPR", "is", Expr.Is.DESCRIPTOR_0);
@@ -7439,6 +7805,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "integeraddition", Expr.IntegerAddition.DESCRIPTOR_0);
 		builder.add("EXPR", "integersubtraction", Expr.IntegerSubtraction.DESCRIPTOR_0);
 		builder.add("EXPR", "integermultiplication", Expr.IntegerMultiplication.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "integerdivision", Expr.IntegerDivision.DESCRIPTOR_0);
 		builder.add("EXPR", "integerremainder", Expr.IntegerRemainder.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
@@ -7448,6 +7815,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "bitwiseand", Expr.BitwiseAnd.DESCRIPTOR_0);
 		builder.add("EXPR", "bitwiseor", Expr.BitwiseOr.DESCRIPTOR_0);
 		builder.add("EXPR", "bitwisexor", Expr.BitwiseXor.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "bitwiseshl", Expr.BitwiseShiftLeft.DESCRIPTOR_0);
 		builder.add("EXPR", "bitwiseshr", Expr.BitwiseShiftRight.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
@@ -7457,6 +7825,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "new", Expr.New.DESCRIPTOR_0a);
 		builder.add("EXPR", "staticnew", Expr.New.DESCRIPTOR_0b);
 		builder.add("EXPR", "lambdaaccess", Expr.LambdaAccess.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "fielddereference", Expr.FieldDereference.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
 		builder.add("EXPR", null, null);
@@ -7466,7 +7835,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "recordborrow", Expr.RecordAccess.DESCRIPTOR_0b);
 		builder.add("EXPR", "recordupdate", Expr.RecordUpdate.DESCRIPTOR_0);
 		builder.add("EXPR", "recordinitialiser", Expr.RecordInitialiser.DESCRIPTOR_0);
-		builder.add("EXPR", null, null);
+		// Tuple Expressions
+		builder.add("EXPR", "tupleinitialiser", Expr.TupleInitialiser.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
 		builder.add("EXPR", null, null);
 		builder.add("EXPR", null, null);
@@ -7475,20 +7845,24 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("EXPR", "arrayborrow", Expr.ArrayAccess.DESCRIPTOR_0b);
 		builder.add("EXPR", "arrayupdate", Expr.ArrayUpdate.DESCRIPTOR_0);
 		builder.add("EXPR", "arraylength", Expr.ArrayLength.DESCRIPTOR_0);
+		//
 		builder.add("EXPR", "arraygenerator", Expr.ArrayGenerator.DESCRIPTOR_0);
 		builder.add("EXPR", "arrayinitialiser", Expr.ArrayInitialiser.DESCRIPTOR_0);
 		builder.add("EXPR", "arrayrange", Expr.ArrayRange.DESCRIPTOR_0);
+		builder.add("EXPR", null, null);
 		// Done
 		SectionedSchema v0_1 = builder.done();
 		return v0_1;
 	}
 
 	public static void main(String[] args) {
-		Type r = new Type.Record(false, new Tuple<>(new Type.Field(new Identifier("f"), Type.Int),new Type.Field(new Identifier("g"), Type.Int),new Type.Field(new Identifier("h"), Type.Int)));
-		Type.Selector s = new Type.Selector(Type.Selector.BOTTOM, Type.Selector.BOTTOM, Type.Selector.TOP);
-		System.out.println("T: " + r);
-		System.out.println("S: " + s);
-		System.out.println("T o S: " + s.apply(r));
-		System.out.println("T o S: " + s.toString(r));
+		Schema current = createSchema();
+		for (int i = 0; i <= 255; ++i) {
+			Descriptor desc = current.getDescriptor(i);
+			if (desc != null) {
+				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
+			}
+		}
+		System.out.println("VERSION: " + current.getMajorVersion() + "." + current.getMinorVersion());
 	}
 }

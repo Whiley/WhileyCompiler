@@ -178,10 +178,6 @@ public abstract class AbstractConsumer<T> {
 		meter.step("statement");
 		//
 		switch (stmt.getOpcode()) {
-		case DECL_variable:
-		case DECL_variableinitialiser:
-			visitVariable((Decl.Variable) stmt, data);
-			break;
 		case STMT_assert:
 			visitAssert((Stmt.Assert) stmt, data);
 			break;
@@ -208,6 +204,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case STMT_fail:
 			visitFail((Stmt.Fail) stmt, data);
+			break;
+		case STMT_for:
+			visitFor((Stmt.For) stmt, data);
 			break;
 		case STMT_if:
 		case STMT_ifelse:
@@ -291,6 +290,12 @@ public abstract class AbstractConsumer<T> {
 
 	public void visitFail(Stmt.Fail stmt, T data) {
 
+	}
+
+	public void visitFor(Stmt.For stmt, T data) {
+		visitStaticVariable(stmt.getVariable(),data);
+		visitExpressions(stmt.getInvariant(),data);
+		visitStatement(stmt.getBody(),data);
 	}
 
 	public void visitIfElse(Stmt.IfElse stmt, T data) {
@@ -853,8 +858,8 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_void:
 			visitTypeVoid((Type.Void) type, data);
 			break;
-		case TYPE_variable:
-			visitTypeVariable((Type.Variable) type, data);
+		case TYPE_universal:
+			visitTypeVariable((Type.Universal) type, data);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
@@ -953,7 +958,7 @@ public abstract class AbstractConsumer<T> {
 
 	}
 
-	public void visitTypeVariable(Type.Variable type, T data) {
+	public void visitTypeVariable(Type.Universal type, T data) {
 
 	}
 

@@ -5,6 +5,7 @@ type wierd is (int[] xs) where some { i in 0..|xs| | xs[i] > 0 }
 function f(int[] xs) -> wierd
 requires |xs| > 0:
     xs[0] = 1
+    assert xs is wierd
     return xs
 
 public export method test() :

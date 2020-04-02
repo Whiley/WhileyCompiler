@@ -262,6 +262,8 @@ public class Interpreter {
 			return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
 		case STMT_fail:
 			return executeFail((Stmt.Fail) stmt, frame, scope);
+		case STMT_for:
+			return executeFor((Stmt.For) stmt, frame, scope);
 		case STMT_if:
 		case STMT_ifelse:
 			return executeIf((Stmt.IfElse) stmt, frame, scope);
@@ -285,7 +287,6 @@ public class Interpreter {
 			return executeSkip((Stmt.Skip) stmt, frame, scope);
 		case STMT_switch:
 			return executeSwitch((Stmt.Switch) stmt, frame, scope);
-		case DECL_variableinitialiser:
 		case DECL_variable:
 			return executeVariableDeclaration((Decl.Variable) stmt, frame);
 		}
@@ -524,6 +525,45 @@ public class Interpreter {
 	 */
 	private Status executeFail(Stmt.Fail stmt, CallStack frame, EnclosingScope scope) {
 		throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, stmt);
+	}
+
+	/**
+	 * Execute a for statement at a given point in the function or method body. This
+	 * will loop over the body zero or more times.
+	 *
+	 *
+	 * @param stmt  --- The for statement to execute
+	 * @param frame --- The current stack frame
+	 * @return
+	 */
+	private Status executeFor(Stmt.For stmt, CallStack frame, EnclosingScope scope) {
+		Decl.StaticVariable var = stmt.getVariable();
+		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
+		Status r = Status.NEXT;
+		// Evaluate index array
+		RValue[] indices = executeExpression(ARRAY_T, var.getInitialiser(), frame).getElements();
+		// Execute loop
+		for(int i=0;i!=indices.length;++i) {
+			// Assign index variable
+			frame.putLocal(var.getName(), indices[i]);
+			// Check loop invariants
+			checkInvariants(errcode, frame, stmt.getInvariant(), null);
+			// Keep executing the loop body until we exit it somehow.
+			r = executeBlock(stmt.getBody(), frame, scope);
+			if(r == Status.BREAK || r == Status.RETURN) {
+				break;
+			} else if(r == Status.CONTINUE) {
+				r = Status.NEXT;
+			}
+			errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
+		}
+		// If we get here, then we have exited the loop body without falling
+		// through to the next bytecode.
+		if (r == Status.BREAK) {
+			return Status.NEXT;
+		} else {
+			return r;
+		}
 	}
 
 	/**
@@ -859,6 +899,7 @@ public class Interpreter {
 		case EXPR_arrayrange:
 			val = executeArrayRange((Expr.ArrayRange) expr, frame);
 			break;
+		case EXPR_staticnew:
 		case EXPR_new:
 			val = executeNew((Expr.New) expr, frame);
 			break;

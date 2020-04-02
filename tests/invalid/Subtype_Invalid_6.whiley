@@ -9,4 +9,4 @@ function f(scf6tup x) -> int:
 public export method test() :
     {int f, int g} x = {f: 1, g: 2}
     x.f = 2
-    f(x)
+    f((scf6tup) x)

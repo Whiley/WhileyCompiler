@@ -1,3 +1,3 @@
-tests/invalid/For_Invalid_5.whiley:4: loop invariant may not be restored
-    for x in xs where |rs| <= 2:
-                      ^^^^^^^^^
+tests/invalid/For_Invalid_5.whiley:4: expected int, found bool
+    for i in 0..j:
+                ^

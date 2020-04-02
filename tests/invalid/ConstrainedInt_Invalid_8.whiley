@@ -6,4 +6,4 @@ ensures x <= 3:
     return 0
 
 function f() -> nat:
-    return h()
+    return (nat) h()

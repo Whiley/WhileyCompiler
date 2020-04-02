@@ -1,0 +1,124 @@
+property dup(int[] xs, int n)
+where some { i in n..|xs|, j in n..|xs| | i != j && xs[i] == xs[j] }
+
+// NOTE: this has not been proven yet and I'd assume there are some
+// problems still getting it to verify.  It does pass the test cases
+// though.                                                   --- djp
+
+function dup_lemma(int[] xs, int k, int n)
+// Index through xs
+requires k >= 0 && k <= |xs|
+// With n+1 or more elements, is always a duplicate
+requires n < |xs|
+// All elements between 0 and n (exclusive)
+requires all { i in 0..|xs| | xs[i] >= 0 && xs[i] < n }
+// Duplicate must exist!!
+ensures dup(xs,k):
+    //
+    if n == 1:
+        // base case
+        assert all { j in 0..|xs| | xs[j] == 0 }
+    else:
+        assert n > 1
+        // 
+        int i = k+1
+        while i < |xs|
+        where i > k
+        where all { j in (k+1)..i | xs[j] != xs[k] }:
+            if xs[i] == xs[k]:
+                // duplicate found
+                return
+            i = i + 1
+        // inductive step
+        dup_lemma(xs,k+1,n)        
+
+function find_dup(int[] xs) -> (int x, int y)
+// Duplicate must exist in input array
+requires dup(xs,0)
+// Must find a duplicate
+ensures x != y && xs[x] == xs[y]:
+    //
+    int i = 0
+    while i < |xs| where i >= 0 && dup(xs,i):
+        int j = (i+1)
+        while j < |xs| 
+        where j > i 
+        where all { k in (i+1)..j | xs[i] != xs[k] }:
+            if xs[i] == xs[j]:
+                return i,j
+            j = j + 1
+        i = i + 1
+    //
+    fail
+
+public export method test():
+    assert find_dup([0,0]) == (0,1)
+    assert find_dup([0,1,1]) == (1,2)
+    assert find_dup([1,4,3,4,0]) == (1,3)
+    // n == 1
+    dup_lemma([0,0],0,1)
+    dup_lemma([0,0,0],0,1)    
+    dup_lemma([0,0,0,0],0,1)
+    dup_lemma([0,0,0,0,0],0,1)    
+    // n == 2
+    dup_lemma([0,0,0],0,2)
+    dup_lemma([0,0,1],0,2)
+    dup_lemma([0,1,0],0,2)
+    dup_lemma([0,1,1],0,2)
+    dup_lemma([1,0,0],0,2)
+    dup_lemma([1,0,1],0,2)
+    dup_lemma([1,1,1],0,2)
+    // n == 3
+    dup_lemma([0,0,0,0],0,3)
+    dup_lemma([0,0,0,1],0,3)
+    dup_lemma([0,0,0,2],0,3)
+    dup_lemma([0,0,1,0],0,3)
+    dup_lemma([0,0,2,0],0,3)
+    dup_lemma([0,0,1,1],0,3)
+    dup_lemma([0,0,2,1],0,3)
+    dup_lemma([0,0,2,2],0,3)
+    dup_lemma([0,1,0,0],0,3)
+    dup_lemma([0,2,0,0],0,3)
+    dup_lemma([0,2,0,1],0,3)
+    dup_lemma([0,2,0,2],0,3)
+    dup_lemma([0,2,1,0],0,3)
+    dup_lemma([0,2,2,0],0,3)
+    dup_lemma([0,2,2,1],0,3)
+    dup_lemma([0,2,2,2],0,3)
+    dup_lemma([0,2,2,2],0,3)   
+    //
+    dup_lemma([1,0,0,0],0,3)
+    dup_lemma([1,0,0,1],0,3)
+    dup_lemma([1,0,0,2],0,3)
+    dup_lemma([1,0,1,0],0,3)
+    dup_lemma([1,0,2,0],0,3)
+    dup_lemma([1,0,1,1],0,3)
+    dup_lemma([1,0,2,1],0,3)
+    dup_lemma([1,0,2,2],0,3)
+    dup_lemma([1,1,0,0],0,3)
+    dup_lemma([1,2,0,0],0,3)
+    dup_lemma([1,2,0,1],0,3)
+    dup_lemma([1,2,0,2],0,3)
+    dup_lemma([1,2,1,0],0,3)
+    dup_lemma([1,2,2,0],0,3)
+    dup_lemma([1,2,2,1],0,3)
+    dup_lemma([1,2,2,2],0,3)
+    dup_lemma([1,2,2,2],0,3)
+    //
+    dup_lemma([2,0,0,0],0,3)
+    dup_lemma([2,0,0,1],0,3)
+    dup_lemma([2,0,0,2],0,3)
+    dup_lemma([2,0,1,0],0,3)
+    dup_lemma([2,0,2,0],0,3)
+    dup_lemma([2,0,1,1],0,3)
+    dup_lemma([2,0,2,1],0,3)
+    dup_lemma([2,0,2,2],0,3)
+    dup_lemma([2,1,0,0],0,3)
+    dup_lemma([2,2,0,0],0,3)
+    dup_lemma([2,2,0,1],0,3)
+    dup_lemma([2,2,0,2],0,3)
+    dup_lemma([2,2,1,0],0,3)
+    dup_lemma([2,2,2,0],0,3)
+    dup_lemma([2,2,2,1],0,3)
+    dup_lemma([2,2,2,2],0,3)
+    dup_lemma([2,2,2,2],0,3)

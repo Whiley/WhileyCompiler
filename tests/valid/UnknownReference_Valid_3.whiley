@@ -1,11 +1,11 @@
 type OpenPoint is {int x, int y, ...}
 
-method zeroOut((&?OpenPoint)[] points):
+method zeroOut((&OpenPoint)[] points):
     //
     int i =0
     //
     while i < |points| where i >= 0:
-        &?OpenPoint p = points[i]
+        &OpenPoint p = points[i]
         p->x = 0
         p->y = 0
         i = i + 1

@@ -181,7 +181,6 @@ public abstract class AbstractFunction<P,R> {
 		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
-		case DECL_variableinitialiser:
 			return visitVariable((Decl.Variable) stmt, data);
 		case STMT_assert:
 			return visitAssert((Stmt.Assert) stmt, data);
@@ -201,6 +200,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitDoWhile((Stmt.DoWhile) stmt, data);
 		case STMT_fail:
 			return visitFail((Stmt.Fail) stmt, data);
+		case STMT_for:
+			return visitFor((Stmt.For) stmt, data);
 		case STMT_if:
 		case STMT_ifelse:
 			return visitIfElse((Stmt.IfElse) stmt, data);
@@ -281,6 +282,14 @@ public abstract class AbstractFunction<P,R> {
 	public R visitFail(Stmt.Fail stmt, P data) {
 		return null;
 	}
+
+	public R visitFor(Stmt.For stmt, P data) {
+		visitStaticVariable(stmt.getVariable(),data);
+		visitExpressions(stmt.getInvariant(),data);
+		visitStatement(stmt.getBody(),data);
+		return null;
+	}
+
 
 	public R visitIfElse(Stmt.IfElse stmt, P data) {
 		visitExpression(stmt.getCondition(), data);
@@ -830,8 +839,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitTypeUnresolved((Type.Unknown) type, data);
 		case TYPE_void:
 			return visitTypeVoid((Type.Void) type, data);
-		case TYPE_variable:
-			return visitTypeVariable((Type.Variable) type, data);
+		case TYPE_universal:
+			return visitTypeVariable((Type.Universal) type, data);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -943,7 +952,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitTypeVariable(Type.Variable type, P data) {
+	public R visitTypeVariable(Type.Universal type, P data) {
 		return null;
 	}
 }

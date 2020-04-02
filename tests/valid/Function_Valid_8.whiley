@@ -13,6 +13,6 @@ function f(int[] x) -> int[]:
     return x
 
 public export method test() :
-    int[] ys = [1, 2, 3]
+    nat[] ys = [1, 2, 3]
     assume f(g(ys)) == [0, 2, 3]
 

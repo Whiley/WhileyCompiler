@@ -2,14 +2,14 @@ type i16 is (int x) where -32768 <= x && x <= 32767
 type string is int[]
 
 int T_VOID = 3
-int T_BOOLEAN = 4
-int T_CHAR = 5
-int T_FLOAT = 6
-int T_DOUBLE = 7
-int T_BYTE = 8
-int T_SHORT = 9
-int T_INT = 10
-int T_LONG = 11
+primitive_t T_BOOLEAN = 4
+primitive_t T_CHAR = 5
+primitive_t T_FLOAT = 6
+primitive_t T_DOUBLE = 7
+primitive_t T_BYTE = 8
+primitive_t T_SHORT = 9
+primitive_t T_INT = 10
+primitive_t T_LONG = 11
 
 type primitive_t is (int x) where T_BOOLEAN <= x && x <= T_LONG
 type array_t is {jvm_t element}

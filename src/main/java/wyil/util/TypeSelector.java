@@ -27,7 +27,7 @@ import static wyil.lang.WyilFile.TYPE_reference;
 import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_union;
 import static wyil.lang.WyilFile.TYPE_tuple;
-import static wyil.lang.WyilFile.TYPE_variable;
+import static wyil.lang.WyilFile.TYPE_universal;
 import static wyil.lang.WyilFile.TYPE_void;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -36,7 +36,6 @@ import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Selector;
-import wyil.util.SubtypeOperator.LifetimeRelation;
 import wyil.lang.WyilFile.Type;
 
 public abstract class TypeSelector {
@@ -50,11 +49,11 @@ public abstract class TypeSelector {
 	 * @param refinement
 	 * @return
 	 */
-	public static Type.Selector create(Type lhs, Type rhs, LifetimeRelation lifetimes) {
-		return create(lhs,rhs,lifetimes,null);
+	public static Type.Selector create(Type lhs, Type rhs) {
+		return create(lhs,rhs,null);
 	}
 
-	private static Type.Selector create(Type t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type t1, Type t2, BinaryRelation<Type> cache) {
 
 		if (cache != null && cache.get(t1, t2)) {
 			// FIXME: this is obviously wrong
@@ -78,43 +77,43 @@ public abstract class TypeSelector {
 			case TYPE_int:
 				return Type.Selector.TOP;
 			case TYPE_array:
-				return create((Type.Array) t1, (Type.Array) t2, lifetimes, cache);
+				return create((Type.Array) t1, (Type.Array) t2, cache);
 			case TYPE_tuple:
-				return create((Type.Tuple) t1, (Type.Tuple)t2, lifetimes, cache);
+				return create((Type.Tuple) t1, (Type.Tuple)t2, cache);
 			case TYPE_record:
-				return create((Type.Record) t1, (Type.Record)t2, lifetimes, cache);
+				return create((Type.Record) t1, (Type.Record)t2, cache);
 			case TYPE_nominal:
-				return create((Type.Nominal) t1, (Type.Nominal)t2, lifetimes, cache);
+				return create((Type.Nominal) t1, (Type.Nominal)t2, cache);
 			case TYPE_union:
-				return create((Type.Union) t1, t2, lifetimes, cache);
+				return create((Type.Union) t1, t2, cache);
 			case TYPE_staticreference:
 			case TYPE_reference:
-				return create((Type.Reference) t1, (Type.Reference) t2, lifetimes, cache);
+				return create((Type.Reference) t1, (Type.Reference) t2, cache);
 			case TYPE_method:
 			case TYPE_function:
 			case TYPE_property:
-				return create((Type.Callable) t1, (Type.Callable) t2, lifetimes, cache);
-			case TYPE_variable:
-				return create((Type.Variable) t1, (Type.Variable) t2, lifetimes, cache);
+				return create((Type.Callable) t1, (Type.Callable) t2, cache);
+			case TYPE_universal:
+				return create((Type.Universal) t1, (Type.Universal) t2, cache);
 			default:
 				throw new IllegalArgumentException("unexpected type encountered: " + t1);
 			}
 		} else if (t2_opcode == TYPE_nominal) {
-			return create(t1, (Type.Nominal) t2, lifetimes, cache);
+			return create(t1, (Type.Nominal) t2, cache);
 		} else if (t2_opcode == TYPE_union) {
-			return create(t1, t2, lifetimes, cache);
+			return create(t1, t2, cache);
 		} else if (t1_opcode == TYPE_union) {
-			return create((Type.Union) t1, t2, lifetimes, cache);
+			return create((Type.Union) t1, t2, cache);
 		} else if (t1_opcode == TYPE_nominal) {
-			return create((Type.Nominal) t1, (Type.Atom) t2, lifetimes, cache);
+			return create((Type.Nominal) t1, (Type.Atom) t2, cache);
 		} else {
 			// Nothing else works except void
 			return t2_opcode == TYPE_void ? Type.Selector.TOP : Type.Selector.BOTTOM;
 		}
 	}
 
-	private static Type.Selector create(Type.Array t1, Type.Array t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		Type.Selector element = create(t1.getElement(), t2.getElement(), lifetimes, cache);
+	private static Type.Selector create(Type.Array t1, Type.Array t2, BinaryRelation<Type> cache) {
+		Type.Selector element = create(t1.getElement(), t2.getElement(), cache);
 		if (element == Type.Selector.TOP || element == Type.Selector.BOTTOM) {
 			return element;
 		} else {
@@ -122,7 +121,7 @@ public abstract class TypeSelector {
 		}
 	}
 
-	private static Type.Selector create(Type.Tuple t1, Type.Tuple t2, LifetimeRelation lifetimes,
+	private static Type.Selector create(Type.Tuple t1, Type.Tuple t2,
 			BinaryRelation<Type> cache) {
 		// Sanity check number of fields are reasonable.
 		if (t1.size() != t2.size()) {
@@ -133,7 +132,7 @@ public abstract class TypeSelector {
 		for (int i = 0; i != t1.size(); ++i) {
 			Type f1 = t1.get(i);
 			Type f2 = t2.get(i);
-			Type.Selector s = create(f1, f2, lifetimes, cache);
+			Type.Selector s = create(f1, f2, cache);
 			if (s == Type.Selector.BOTTOM) {
 				return Type.Selector.BOTTOM;
 			} else {
@@ -147,7 +146,7 @@ public abstract class TypeSelector {
 		}
 	}
 
-	private static Type.Selector create(Type.Record t1, Type.Record t2, LifetimeRelation lifetimes,
+	private static Type.Selector create(Type.Record t1, Type.Record t2,
 			BinaryRelation<Type> cache) {
 		Tuple<Type.Field> t1_fields = t1.getFields();
 		Tuple<Type.Field> t2_fields = t2.getFields();
@@ -169,7 +168,7 @@ public abstract class TypeSelector {
 				// Fields have differing names
 				return Type.Selector.BOTTOM;
 			}
-			Type.Selector s = create(f1.getType(), f2.getType(), lifetimes, cache);
+			Type.Selector s = create(f1.getType(), f2.getType(), cache);
 			if (s == Type.Selector.BOTTOM) {
 				return Type.Selector.BOTTOM;
 			} else {
@@ -183,9 +182,9 @@ public abstract class TypeSelector {
 		}
 	}
 
-	private static Type.Selector create(Type.Reference t1, Type.Reference t2, LifetimeRelation lifetimes,
+	private static Type.Selector create(Type.Reference t1, Type.Reference t2,
 			BinaryRelation<Type> cache) {
-		Type.Selector element = create(t1.getElement(), t2.getElement(), lifetimes, cache);
+		Type.Selector element = create(t1.getElement(), t2.getElement(), cache);
 		if (element == Type.Selector.TOP) {
 			return element;
 		} else {
@@ -193,7 +192,7 @@ public abstract class TypeSelector {
 		}
 	}
 
-	private static Type.Selector create(Type.Callable t1, Type.Callable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Callable t1, Type.Callable t2, BinaryRelation<Type> cache) {
 		Type t1_params = t1.getParameter();
 		Type t2_params = t2.getParameter();
 		Type t1_return = t1.getReturn();
@@ -203,11 +202,11 @@ public abstract class TypeSelector {
 			return Type.Selector.BOTTOM;
 		}
 		// Check parameters
-		if(Type.Selector.TOP != create(t1_params,t2_params,lifetimes)) {
+		if(Type.Selector.TOP != create(t1_params,t2_params)) {
 			return Type.Selector.BOTTOM;
 		}
 		// Check return
-		if(Type.Selector.TOP != create(t1_return,t2_return,lifetimes)) {
+		if(Type.Selector.TOP != create(t1_return,t2_return)) {
 			return Type.Selector.BOTTOM;
 		}
 		// Check lifetimes
@@ -230,33 +229,33 @@ public abstract class TypeSelector {
 		return Type.Selector.TOP;
 	}
 
-	private static Type.Selector create(Type.Variable t1, Type.Variable t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Universal t1, Type.Universal t2, BinaryRelation<Type> cache) {
 		return t1.equals(t2) ? Type.Selector.TOP : Type.Selector.BOTTOM;
 	}
 
-	private static Type.Selector create(Type.Nominal t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Nominal t1, Type.Nominal t2, BinaryRelation<Type> cache) {
 		Decl.Link<Decl.Type> l1 = t1.getLink();
 		Decl.Link<Decl.Type> l2 = t2.getLink();
 		//
 		if(l1 == l2) {
 			return Type.Selector.TOP;
 		} else {
-			return create(t1.getConcreteType(),t2.getConcreteType(),lifetimes,cache);
+			return create(t1.getConcreteType(),t2.getConcreteType(),cache);
 		}
 	}
 
-	private static Type.Selector create(Type t1, Type.Nominal t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
-		return create(t1,t2.getConcreteType(),lifetimes,cache);
+	private static Type.Selector create(Type t1, Type.Nominal t2, BinaryRelation<Type> cache) {
+		return create(t1,t2.getConcreteType(),cache);
 	}
 
-	private static Type.Selector create(Type.Nominal t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Nominal t1, Type t2, BinaryRelation<Type> cache) {
 		// FIXME: need to handle type invariants?
-		return create(t1.getConcreteType(),t2,lifetimes,cache);
+		return create(t1.getConcreteType(),t2,cache);
 	}
 
-	private static Type.Selector create(Type.Atom t1, Type.Union t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Atom t1, Type.Union t2, BinaryRelation<Type> cache) {
 		for(int i=0;i!=t2.size();++i) {
-			Type.Selector s = create(t1,t2.get(i),lifetimes,cache);
+			Type.Selector s = create(t1,t2.get(i),cache);
 			if(s == Type.Selector.TOP) {
 				// Since this is an atom we know it cannot be further subdivided.
 				return Type.Selector.TOP;
@@ -265,10 +264,10 @@ public abstract class TypeSelector {
 		return Type.Selector.BOTTOM;
 	}
 
-	private static Type.Selector create(Type.Union t1, Type t2, LifetimeRelation lifetimes, BinaryRelation<Type> cache) {
+	private static Type.Selector create(Type.Union t1, Type t2, BinaryRelation<Type> cache) {
 		Type.Selector[] items = new Type.Selector[t1.size()];
 		for (int i = 0; i != items.length; ++i) {
-			items[i] = create(t1.get(i), t2, lifetimes, cache);
+			items[i] = create(t1.get(i), t2, cache);
 		}
 		if (isBottom(items)) {
 			return Type.Selector.BOTTOM;

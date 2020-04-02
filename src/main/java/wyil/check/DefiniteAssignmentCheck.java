@@ -250,6 +250,17 @@ public class DefiniteAssignmentCheck
 	}
 
 	@Override
+	public ControlFlow visitFor(Stmt.For stmt, DefinitelyAssignedSet environment) {
+		Decl.StaticVariable var = stmt.getVariable();
+		visitExpression(var.getInitialiser(), environment);
+		environment = environment.add(var);
+		visitExpressions(stmt.getInvariant(), environment);
+		visitBlock(stmt.getBody(), environment);
+		//
+		return new ControlFlow(environment,null);
+	}
+
+	@Override
 	public ControlFlow visitIfElse(Stmt.IfElse stmt, DefinitelyAssignedSet environment) {
 		visitExpression(stmt.getCondition(), environment);
 		//

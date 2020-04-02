@@ -1,6 +1,3 @@
-tests/invalid/Method_Invalid_9.whiley:12: expected type meth_t, found function(int)->(int)
-    meth_t x = &f
-               ^^
-tests/invalid/Method_Invalid_9.whiley:14: expected type fun_t, found method(int)->(int)
+tests/invalid/Method_Invalid_9.whiley:14: expected fun_t, found method(int)->(int)
     fun_t y = &m
               ^^

@@ -10,7 +10,7 @@ ensures (r > 0) && (r <= 256):
         return x
 
 function f(int x) -> i8[]:
-    return [g(x)]
+    return [(i8) g(x)]
 
 public export method test():
     assume f(256) == [256]

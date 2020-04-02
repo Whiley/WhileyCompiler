@@ -4,7 +4,7 @@ type pos is (int x) where x > 0
 
 function f(pos x, int y) -> nat
 requires y > 0:
-    int z
+    nat z
     if true:
         z = x / y
     else:
