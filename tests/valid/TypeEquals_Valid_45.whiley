@@ -7,7 +7,7 @@ type neg is (int n) where n < 0
 type intlist is pos | neg | int[]
 
 function f(intlist x) -> int:
-    if x is int:
+    if x is pos:
         return x
     return 1
 

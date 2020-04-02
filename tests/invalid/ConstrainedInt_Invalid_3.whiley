@@ -6,4 +6,4 @@ function f(odd x) -> int:
 
 public export method test():
     int y = 2
-    assume f(y) == 2
+    assume f((odd) y) == 2

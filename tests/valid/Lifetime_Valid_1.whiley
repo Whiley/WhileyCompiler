@@ -7,7 +7,7 @@ public export method test():
     &*:int ptr2 = new 2
     assume (*ptr2) == 2
 
-    &int ptr3 = *:new 3
+    &int ptr3 = new 3
     assume (*ptr3) == 3
 
     &this:int ptr4 = this:new 4
@@ -24,7 +24,7 @@ public export method test():
             &myblock:int ptr7 = myblock:new 7
             assume (*ptr7) == 7
 
-            &int ptr8 = *:new 8
+            &int ptr8 = new 8
             assume (*ptr8) == 8
 
             &this:int ptr9 = this:new 9
@@ -33,7 +33,7 @@ public export method test():
         &myblock:int ptr10 = myblock:new 10
         assume (*ptr10) == 10
 
-    &*:int ptr11 = *:new 11
+    &*:int ptr11 = new 11
     assume (*ptr11) == 11
 
     // name should be available again

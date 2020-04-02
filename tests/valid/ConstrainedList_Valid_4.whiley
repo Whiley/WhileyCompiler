@@ -5,7 +5,7 @@ ensures (r > 0) && (r < 125):
     return 1
 
 function f(int x) -> i8[]:
-    return [g(x)]
+    return [(i8) g(x)]
 
 public export method test() :
     int[] bytes = f(0)

@@ -12,7 +12,7 @@ requires |array| > 0:
     //
     return i
 
-function next(int[] arr) -> (int r)
+function next(int[] arr) -> (nat r)
 requires |arr| > 0
 ensures r >= 0 && r < |arr|:
     //

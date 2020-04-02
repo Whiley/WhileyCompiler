@@ -1250,8 +1250,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public void setType(WyilFile.Type type) {
+				// FIXME: this is a hack which should be removed.
+				type = type.as(WyilFile.Type.Callable.class);
+				SyntacticHeap heap = getHeap();
+				//
 				if (type instanceof WyilFile.Type.Callable) {
-					operands[8] = type;
+					operands[8] = heap.allocate(type);
 				} else {
 					throw new IllegalArgumentException();
 				}
@@ -1524,7 +1528,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 				throw new IllegalArgumentException("unable to find candidate declaration");
 			}
-			
+
 			@SuppressWarnings("unchecked")
 			public void resolve(T... items) {
 				SyntacticHeap heap = getHeap();
@@ -4365,7 +4369,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				if(hasLifetime()) {
+					return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
+				} else {
+					return new New((Type) operands[0], (Expr) operands[1]);
+				}
 			}
 
 			@Override
@@ -4823,12 +4831,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(EXPR_tupleinitialiser, type, operands);
 			}
 
-
-			@Override
-			public Type.Tuple getType() {
-				return (Type.Tuple) super.getType();
-			}
-
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new TupleInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
@@ -4878,20 +4880,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				// however, the parser constructs multiple initialisers during parsing (even
 				// when only one is present). This causes subsequent problems down the track.
 				super(EXPR_recordinitialiser, type, fields, operands);
-			}
-
-			@Override
-			public Type.Record getType() {
-				return (Type.Record) super.getType();
-			}
-
-			@Override
-			public void setType(Type type) {
-				if (type instanceof Type.Record) {
-					super.setType(type);
-				} else {
-					throw new IllegalArgumentException("invalid record initialiser type");
-				}
 			}
 
 			public Tuple<Identifier> getFields() {
@@ -4994,7 +4982,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static final Bool Bool = new Bool();
 		public static final Byte Byte = new Byte();
 		public static final Int Int = new Int();
+		public static final Array VoidArray = new Array(Void);
 		public static final Array IntArray = new Array(Int);
+		public static final Array AnyArray = new Array(Any);
 		public static final Null Null = new Null();
 
 		/**
@@ -5573,10 +5563,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public Type.Reference clone(SyntacticItem[] operands) {
-				if (operands.length == 1) {
-					return new Reference((Type) operands[0]);
-				} else {
+				if (hasLifetime()) {
 					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				} else {
+					return new Reference((Type) operands[0]);
 				}
 			}
 
@@ -5644,6 +5634,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Record extends AbstractType implements Atom {
 			public Record(boolean isOpen, WyilFile.Tuple<Type.Field> fields) {
 				this(new Value.Bool(isOpen), fields);
+			}
+
+			public Record(boolean isOpen, WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				this(new Value.Bool(isOpen), zip(fields,types));
+			}
+
+			public Record(boolean isOpen, Identifier field, Type type) {
+				this(new Value.Bool(isOpen), new WyilFile.Tuple<Type.Field>(new Type.Field(field, type)));
 			}
 
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
@@ -5807,6 +5805,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "{" + r + "}";
 			}
 
+			private static WyilFile.Tuple<Type.Field> zip(WyilFile.Tuple<Identifier> fields, WyilFile.Tuple<Type> types) {
+				Type.Field[] fs = new Type.Field[fields.size()];
+				for(int i=0;i!=fs.length;++i) {
+					fs[i] = new Type.Field(fields.get(i),types.get(i));
+				}
+				return new WyilFile.Tuple<>(fs);
+			}
+
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_record") {
 				@SuppressWarnings("unchecked")
 				@Override
@@ -5900,6 +5906,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				case 1:
 					return types[0];
 				default:
+					// Sanity check
 					return new Type.Tuple(types);
 				}
 			}
@@ -5917,6 +5924,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				case 1:
 					return types.get(0);
 				default:
+					// Sanity check
+					for(int i=0;i!=types.size();++i) {
+						if(types.get(i) instanceof Type.Void) {
+							return Type.Void;
+						}
+					}
 					return new Type.Tuple(types.toArray(Type.class));
 				}
 			}
@@ -6084,6 +6097,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				}
 			}
 
+			public boolean isAlias() {
+				return getLink().getTarget().getInvariant().size() == 0;
+			}
+
 			@Override
 			public boolean isWriteable() {
 				return getConcreteType().isWriteable();
@@ -6198,13 +6215,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @return
 		 */
 		public static class Union extends AbstractType implements Type {
+			public static Type create(WyilFile.Tuple<Type> types) {
+				return create(types.toArray(Type.class));
+			}
 			/**
 			 * Create a sequence of zero or more types.
 			 *
 			 * @param types
 			 * @return
 			 */
-			public static Type create(Type... types) {
+			public static Type create(Type... _types) {
+				Type[] types = _types;
 				for (int i = 0; i != types.length; ++i) {
 					Type ith = types[i];
 					if (ith instanceof Type.Union) {
@@ -6214,9 +6235,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 						System.arraycopy(u.getAll(), 0, nTypes, i, u.size());
 						System.arraycopy(types, i + 1, nTypes, i + u.size(), (types.length - i - 1));
 						return create(nTypes);
+					} else if(ith instanceof Type.Void) {
+						if(types == _types) {
+							types = Arrays.copyOf(_types, _types.length);
+						}
+						types[i] = null;
 					}
 				}
 				//
+				types = ArrayUtils.removeAll(types, null);
 				types = ArrayUtils.removeDuplicates(types);
 				//
 				switch (types.length) {
@@ -6607,9 +6634,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			};
 		}
 
-		public static class ExistentialVariable extends AbstractType implements Atom {
-			public ExistentialVariable(int index) {
+		public static class Existential extends AbstractType implements Atom {
+			public Existential(int index) {
 				super(TYPE_existential, BigInteger.valueOf(index).toByteArray());
+				if(index < 0) {
+					throw new IllegalArgumentException("invalid existential type index");
+				}
 			}
 
 			@Override
@@ -6632,7 +6662,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new ExistentialVariable(new BigInteger(data).intValue());
+				return new Existential(new BigInteger(data).intValue());
 			}
 
 			@Override
@@ -6658,13 +6688,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.MANY, "TYPE_existential") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new ExistentialVariable(new BigInteger(data).intValue());
+					return new Existential(new BigInteger(data).intValue());
 				}
 			};
 		}
 
-		public static class UniversalVariable extends AbstractType implements Atom {
-			public UniversalVariable(Identifier name) {
+		public static class Universal extends AbstractType implements Atom {
+			public Universal(Identifier name) {
 				super(TYPE_universal, name);
 			}
 
@@ -6689,7 +6719,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new UniversalVariable((Identifier) operands[0]);
+				return new Universal((Identifier) operands[0]);
 			}
 
 			@Override
@@ -6715,7 +6745,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_universal") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new UniversalVariable((Identifier) operands[0]);
+					return new Universal((Identifier) operands[0]);
 				}
 			};
 		}
@@ -7610,7 +7640,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		SectionedSchema.Builder builder = schema.extend();
 		builder.replace("TEMPLATE", "type", Template.Type.DESCRIPTOR_1);
 		builder.replace("TEMPLATE", "lifetime", Template.Lifetime.DESCRIPTOR_1);
-		builder.add("TYPE", "existential", Type.ExistentialVariable.DESCRIPTOR_0);
+		builder.add("TYPE", "existential", Type.Existential.DESCRIPTOR_0);
 		return builder.done();
 	}
 	private static SectionedSchema createSchema_1_2(SectionedSchema schema) {
@@ -7717,7 +7747,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", null, null);
 		builder.add("TYPE", "recursive", Type.Recursive.DESCRIPTOR_0);
-		builder.add("TYPE", "universal", Type.UniversalVariable.DESCRIPTOR_0);
+		builder.add("TYPE", "universal", Type.Universal.DESCRIPTOR_0);
 		// Statements
 		builder.add("STMT", "block", Stmt.Block.DESCRIPTOR_0);
 		builder.add("STMT", "namedblock", Stmt.NamedBlock.DESCRIPTOR_0);

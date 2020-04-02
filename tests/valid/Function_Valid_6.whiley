@@ -13,5 +13,5 @@ function f(fr5nat[] x) -> int[]:
     return x
 
 public export method test() :
-    int[] ys = [1, 2, 3]
+    fr5nat[] ys = [1, 2, 3]
     assume f(g(ys)) == [0, 2, 3]

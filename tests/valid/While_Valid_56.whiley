@@ -3,10 +3,10 @@ type nat is (int x) where x >= 0
 function loop(int[] array, int n) -> int
 requires |array| > 0:
     //
-    nat i = next(array)
+    nat i = (nat) next(array)
     //
     while n >= 0 where i < |array|:
-        i = next(array)
+        i = (nat) next(array)
         n = n - 1
     //
     return i

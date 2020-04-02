@@ -7,4 +7,4 @@ function f({scf5nat f} x) -> int:
 public export method test() :
     {int f} x = {f: 1}
     x.f = -1
-    f(x)
+    f(({scf5nat f}) x)

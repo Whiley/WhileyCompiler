@@ -18,7 +18,7 @@ ensures r ==> some { i in 0 .. |items| | items[i] == item }:
 
 function g(bignum[] zs, int z) -> int:
     if contains(zs,z) && contains([1,2,3,4],z):
-        return f(z)
+        return f((num) z)
     else:
         return -1
 

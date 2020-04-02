@@ -28,5 +28,5 @@ ensures r >= 0:
 
 // Print out hello world!
 public export method test():
-    C_string hw = (int[]) ['H','e','l','l','o','W','o','r','l','d',0]
+    C_string hw = ['H','e','l','l','o','W','o','r','l','d',0]
     assume strlen(hw) == 10

@@ -2470,7 +2470,7 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
-			lhs = annotateSourceLocation(lhs, start);
+			lhs = annotateSourceLocation(lhs, start, start);
 			lhs = new Expr.IndirectInvoke(Type.Void, lhs, lifetimes, arguments);
 		}
 		return annotateSourceLocation(lhs,start);
@@ -3077,13 +3077,17 @@ public class WhileyFileParser {
 		if (lifetime != null) {
 			scope.mustBeLifetime(lifetime);
 			match(Colon);
-		} else {
-			// FIXME: this should really be null
-			lifetime = new Identifier("*");
 		}
 		match(New);
 		Expr e = parseExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.New(Type.Void, e, lifetime), start);
+		// Construct correct expression form
+		if(lifetime != null) {
+			e = new Expr.New(Type.Void, e, lifetime);
+		} else {
+			e = new Expr.New(Type.Void, e);
+		}
+		// Done
+		return annotateSourceLocation(e, start);
 	}
 
 	/**
@@ -3189,7 +3193,6 @@ public class WhileyFileParser {
 	 */
 	private Expr parseInvokeExpression(EnclosingScope scope, int start, Identifier name, boolean terminated,
 			Tuple<? extends SyntacticItem> templateArguments) {
-		int nameEnd = start + name.get().length() - 1;
 		// First, parse the arguments to this invocation.
 		Tuple<Expr> args = parseInvocationArguments(scope);
 		// Second, determine what kind of invocation we have. If the name of the
@@ -3208,7 +3211,7 @@ public class WhileyFileParser {
 			Tuple<Identifier> lifetimes = (Tuple<Identifier>) templateArguments;
 			Decl.Variable decl = scope.getVariableDeclaration(name);
 			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start,
-					nameEnd);
+					start);
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
@@ -4043,7 +4046,7 @@ public class WhileyFileParser {
 		int start = index;
 		Name name = parseName(scope);
 		if (name.size() == 1 && scope.isTypeVariable(name.get(0))) {
-			return annotateSourceLocation(new Type.UniversalVariable(name.get(0)), start);
+			return annotateSourceLocation(new Type.Universal(name.get(0)), start);
 		} else {
 			Tuple<Type> types = parseTypeParameters(scope);
 			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name),types), start);

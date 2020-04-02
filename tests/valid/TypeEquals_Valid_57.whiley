@@ -5,7 +5,7 @@ function f(int|null x) -> nat:
     if x is null || x < 0:
         return 0
     else:
-        return x
+        return (nat) x
 
 public export method test():
     assume f(null) == 0

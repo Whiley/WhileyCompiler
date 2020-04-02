@@ -166,7 +166,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						return True;
 					}
 				}
-			} else if (type instanceof Type.UniversalVariable) {
+			} else if (type instanceof Type.Universal) {
 				// NOTE: for now, type variables cannot have bounds and cannot be used in
 				// runtime type tests. Therefore, we can always assume this is always true. The
 				// only situation this is use is for checking type invariants within the

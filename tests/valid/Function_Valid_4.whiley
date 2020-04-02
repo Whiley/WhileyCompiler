@@ -9,5 +9,5 @@ function f(fr4nat x) -> int:
     return x
 
 public export method test() :
-    int y = 1
+    fr4nat y = 1
     assume f(g(y)) == 2

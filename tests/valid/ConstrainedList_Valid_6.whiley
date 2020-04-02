@@ -1,13 +1,13 @@
 type nat is (int x) where x >= 0
 
-int ONE_CENT = 0
-int FIVE_CENTS = 1
-int TEN_CENTS = 2
-int TWENTY_CENTS = 3
-int FIFTY_CENTS = 4
-int ONE_DOLLAR = 5
-int FIVE_DOLLARS = 6
-int TEN_DOLLARS = 7
+nat ONE_CENT = 0
+nat FIVE_CENTS = 1
+nat TEN_CENTS = 2
+nat TWENTY_CENTS = 3
+nat FIFTY_CENTS = 4
+nat ONE_DOLLAR = 5
+nat FIVE_DOLLARS = 6
+nat TEN_DOLLARS = 7
 int[] Value = [1, 5, 10, 20, 50, 100, 500, 1_000]
 
 type Cash is (nat[] coins) where |coins| == |Value|

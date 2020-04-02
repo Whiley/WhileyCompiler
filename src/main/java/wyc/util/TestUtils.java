@@ -118,6 +118,20 @@ public class TestUtils {
 		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
 		// Binding Against Union Types
 		VALID_IGNORED.put("Template_Valid_19", "994");
+		// Flow typing and loop invariants
+		VALID_IGNORED.put("TypeEquals_Valid_3", "1000");
+		// Flow typing and selectors
+		VALID_IGNORED.put("RecordAssign_Valid_11", "1002");
+		// Problems with strict subtyping
+		VALID_IGNORED.put("Contractive_Valid_2", "1003");
+		VALID_IGNORED.put("OpenRecord_Valid_9", "1003");
+		VALID_IGNORED.put("Template_Valid_59", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_28", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_35", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_46", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_58", "1003");
+		VALID_IGNORED.put("TypeEquals_Valid_59", "1003");
+		VALID_IGNORED.put("UnionType_Valid_6", "1003");
 	}
 
 	/**

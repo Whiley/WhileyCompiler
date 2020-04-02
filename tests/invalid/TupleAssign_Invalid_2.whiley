@@ -9,4 +9,4 @@ function f(tac2tb y) -> tac2tb:
 public export method test() :
     tac2ta x = {f1: 1, f2: 3}
     x.f1 = 2
-    f(x)
+    f((tac2tb) x)

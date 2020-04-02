@@ -5,4 +5,4 @@ function f(c3num x) -> int:
     return y
 
 function g(int z) -> int:
-    return f(z)
+    return f((c3num) z)

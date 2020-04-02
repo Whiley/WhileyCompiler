@@ -5,7 +5,7 @@ function sum(nat[] items) -> nat:
     for i in 0..|items| where r >= 0:
         r = r + items[i]
     // Done
-    return r
+    return (nat) r
     
 public export method test():
     assume sum([1]) == 1

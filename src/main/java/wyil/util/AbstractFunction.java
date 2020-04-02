@@ -840,7 +840,7 @@ public abstract class AbstractFunction<P,R> {
 		case TYPE_void:
 			return visitTypeVoid((Type.Void) type, data);
 		case TYPE_universal:
-			return visitTypeVariable((Type.UniversalVariable) type, data);
+			return visitTypeVariable((Type.Universal) type, data);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
@@ -952,7 +952,7 @@ public abstract class AbstractFunction<P,R> {
 		return null;
 	}
 
-	public R visitTypeVariable(Type.UniversalVariable type, P data) {
+	public R visitTypeVariable(Type.Universal type, P data) {
 		return null;
 	}
 }

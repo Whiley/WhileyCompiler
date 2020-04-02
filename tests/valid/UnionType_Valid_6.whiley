@@ -1,5 +1,5 @@
-type ur4nat is int
-type tur4nat is int
+type ur4nat is int where true
+type tur4nat is int where true
 
 type wur4nat is ur4nat | tur4nat
 

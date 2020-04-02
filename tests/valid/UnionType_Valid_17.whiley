@@ -8,6 +8,6 @@ function g(int[] z) -> int[]:
 
 public export method test() :
     IntList x = 123
-    assume f(x) == 123
+    assume f((int) x) == 123
     x = [1, 2, 3]
-    assume g(x) == [1,2,3]
+    assume g((int[]) x) == [1,2,3]

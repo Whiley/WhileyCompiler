@@ -9,5 +9,5 @@ function f(UNIT x) -> int:
     return x.op
 
 public export method test() :
-    int bytes = f({op: NOP})
+    int bytes = f({op: (unitCode) NOP})
     assume bytes == NOP

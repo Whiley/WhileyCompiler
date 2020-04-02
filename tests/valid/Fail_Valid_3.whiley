@@ -2,7 +2,7 @@ type pos is (int x) where x > 0
 
 function f(pos|null x) -> null:
     //
-    if x is int && x >= 0:
+    if x is pos && x < 10:
         return null
     else if x is null:
         return x

@@ -1,6 +1,6 @@
-int BLANK = 0
-int CIRCLE = 1
-int CROSS = 2
+piece BLANK = 0
+piece CIRCLE = 1
+piece CROSS = 2
 
 type nat is (int x) where x >= 0
 
