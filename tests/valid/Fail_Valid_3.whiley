@@ -6,6 +6,8 @@ function f(pos|null x) -> null:
         return null
     else if x is null:
         return x
+    else if x >= 0:
+        return null
     else:
         fail
 
