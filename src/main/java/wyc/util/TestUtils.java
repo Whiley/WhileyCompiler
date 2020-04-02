@@ -132,6 +132,9 @@ public class TestUtils {
 		VALID_IGNORED.put("TypeEquals_Valid_58", "1003");
 		VALID_IGNORED.put("TypeEquals_Valid_59", "1003");
 		VALID_IGNORED.put("UnionType_Valid_6", "1003");
+		// Limitations of Type Inference
+		VALID_IGNORED.put("Template_Valid_61", "1004");
+		VALID_IGNORED.put("Template_Valid_62", "1004");
 	}
 
 	/**
