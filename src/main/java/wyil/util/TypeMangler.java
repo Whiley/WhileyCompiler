@@ -165,6 +165,9 @@ public interface TypeMangler {
 
 		private void writeTypeMangle(Type t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
 			switch (t.getOpcode()) {
+			case TYPE_void:
+				mangle.append("V");
+				break;
 			case TYPE_null:
 				mangle.append("N");
 				break;
