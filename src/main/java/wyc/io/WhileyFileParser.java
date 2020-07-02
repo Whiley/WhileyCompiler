@@ -1293,6 +1293,8 @@ public class WhileyFileParser {
 		// is necessary to prevent assignments to the index variable(s).
 		Decl.StaticVariable decl = new Decl.StaticVariable(new Tuple<>(new Modifier.Final()), id, new Type.Int(),
 				range);
+		// Clone scope for index variable
+		scope = scope.newEnclosingScope();
 		// Must allocate declaration here so as to prevent it being copied.
 		decl = annotateSourceLocation(decl, start);
 		scope.declareVariable(decl);
