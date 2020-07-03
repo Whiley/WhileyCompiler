@@ -163,15 +163,15 @@ public class WhileyFileParser {
 	public boolean read(Build.Meter meter) {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = parseModuleName(source.getEntry());
-		skipWhiteSpace();
+		Name name = new Name(new Identifier(source.getEntry().id().last()));
 		try {
+			name = parseModuleName(source.getEntry());
+			skipWhiteSpace();
 			while (index < tokens.size()) {
 				// Parse next logical declaration
 				declarations.add(parseDeclaration(meter));
 				skipWhiteSpace();
 			}
-
 		} catch (ParseError e) {
 			// Allocate an unknown declaration to represent this parse error.
 			Decl d = parent.allocate(new Decl.Unknown());
@@ -186,11 +186,11 @@ public class WhileyFileParser {
 		}
 		// Finally, construct the new file.
 		Tuple<Decl> decls = new Tuple<>(declarations);
-		Decl.Unit module = new Decl.Unit(name,decls);
+		Decl.Unit module = new Decl.Unit(name, decls);
 		//
 		Decl.Unit nunit = parent.allocate(module);
 		Decl.Unit ounit = parent.getModule().putUnit(nunit);
-		if(ounit != null) {
+		if (ounit != null) {
 			parent.replace(ounit, nunit);
 		}
 		return status;
@@ -202,7 +202,7 @@ public class WhileyFileParser {
 			// found a package keyword
 			components.add(parseIdentifier());
 
-			while (tryAndMatch(true, Dot) != null) {
+			while (tryAndMatch(true, ColonColon) != null) {
 				components.add(parseIdentifier());
 			}
 
