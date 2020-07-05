@@ -383,7 +383,6 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
 		case EXPR_fielddereference:
-		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -451,7 +450,6 @@ public abstract class AbstractFunction<P,R> {
 			return visitDereference((Expr.Dereference) expr, data);
 		case EXPR_fielddereference:
 			return visitFieldDereference((Expr.FieldDereference) expr, data);
-		case EXPR_staticnew:
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
 		case EXPR_recordaccess:

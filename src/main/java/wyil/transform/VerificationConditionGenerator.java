@@ -1536,7 +1536,6 @@ public class VerificationConditionGenerator {
 			case EXPR_bitwisexor:
 			case EXPR_bitwisenot:
 			case EXPR_new:
-			case EXPR_staticnew:
 				result = translateAsUnknown(expr, environment);
 				break;
 			default:
@@ -2531,7 +2530,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
 			WyalFile.Type elem = convert(lt.getElement(), context);
-			String lifetime = lt.hasLifetime() ? lt.getLifetime().get() : "*";
+			String lifetime = "*";
 			result = new WyalFile.Type.Reference(elem, new WyalFile.Identifier(lifetime));
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;

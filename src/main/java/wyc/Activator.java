@@ -113,7 +113,7 @@ public class Activator implements Module.Activator {
 		@Override
 		public void execute(Build.Project project, Path.ID id, String method, Value... args) throws IOException {
 			// Construct method's qualified name and signature
-			Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
+			Type.Method sig = new Type.Method(Type.Void, Type.Void);
 			QualifiedName name = new QualifiedName(new Name(id), new Identifier(method));
 			// Try to run the given function or method
 			Interpreter interpreter = new Interpreter(System.out);

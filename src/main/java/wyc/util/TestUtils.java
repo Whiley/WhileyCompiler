@@ -381,7 +381,7 @@ public class TestUtils {
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
 		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
-		Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
+		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);

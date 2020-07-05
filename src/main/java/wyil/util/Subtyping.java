@@ -248,10 +248,10 @@ public interface Subtyping {
 		 * @author David J. Pearce
 		 * @return
 		 */
-		public boolean isWithin(String inner, String outer);		
-		
+		public boolean isWithin(String inner, String outer);
+
 		/**
-		 * Declare a given lifetime 
+		 * Declare a given lifetime
 		 * @param inner
 		 * @param outers
 		 * @return
@@ -698,7 +698,7 @@ public interface Subtyping {
 	}
 
 
-	
+
 
 
 	// ===============================================================================
@@ -732,7 +732,6 @@ public interface Subtyping {
 			return ((Type.Existential)type).get();
 		case TYPE_array:
 			return maxVariable(((Type.Array)type).getElement());
-		case TYPE_staticreference:
 		case TYPE_reference:
 			return maxVariable(((Type.Reference)type).getElement());
 		case TYPE_function:
@@ -807,7 +806,6 @@ public interface Subtyping {
 			Type.Array t = (Type.Array) type;
 			return isConcrete(t.getElement());
 		}
-		case TYPE_staticreference:
 		case TYPE_reference: {
 			Type.Reference t = (Type.Reference) type;
 			return isConcrete(t.getElement());
@@ -862,7 +860,7 @@ public interface Subtyping {
 		}
 		return true;
 	}
-	
+
 	// ================================================================================
 	// Substitute
 	// ================================================================================
@@ -915,7 +913,6 @@ public interface Subtyping {
 				return new Type.Array(nElement);
 			}
 		}
-		case TYPE_staticreference:
 		case TYPE_reference: {
 			Type.Reference t = (Type.Reference) type;
 			Type element = t.getElement();
@@ -955,7 +952,7 @@ public interface Subtyping {
 				return new Type.Property(nParameters, nReturns);
 			} else {
 				Type.Method m = (Type.Method) type;
-				return new Type.Method(nParameters, nReturns, m.getCapturedLifetimes(), m.getLifetimeParameters());
+				return new Type.Method(nParameters, nReturns);
 			}
 		}
 		case TYPE_nominal: {

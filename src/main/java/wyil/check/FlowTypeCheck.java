@@ -85,10 +85,10 @@ import wyil.lang.WyilFile.Type;
  * things, helping with type polymorphism and constrained types. The following
  * illustrates:
  * </p>
- * 
+ *
  * <pre>
  * type nat is (int x) where x >= 0
- * 
+ *
  * function one() -> nat:
  * 	  return 1
  * </pre>
@@ -104,13 +104,13 @@ import wyil.lang.WyilFile.Type;
  * algorithm. This employs a constraint system over type variables to finding
  * suitable bindings for template parameters. The following illustrates:
  * </p>
- * 
+ *
  * <pre>
  * type Box<T> is null | { T value }
  *
  * function empty<T>() -> Box<T>:
  *  return null
- *  
+ *
  * function get<T>(Box<T> box, T dEfault) -> T:
  *    if box is null:
  *       return dEfault
@@ -121,21 +121,21 @@ import wyil.lang.WyilFile.Type;
  * Using the above definitions, the following type checks without requiring
  * explicit type annotations:
  * </p>
- * 
+ *
  * <pre>
  * Box<int> b = box(1)
  * assert get(b,0) == 1
  * </pre>
- * 
+ *
  * <p>
  * In this case, the template parameter <code>T</code> is determine from the
  * type of variable <code>b</code>. However, template parameters can also be
  * bound from return values as well, which the following illustrates:
  * </p>
- * 
+ *
  * <pre>
  * Box<int> b = empty() assert get(b,0) == 1 </pre
- * 
+ *
  * <p>
  * Here, the template parameter for <code>empty()</code> is determined from the
  * return value.
@@ -264,8 +264,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod decl) {
 		// Construct initial environment
 		Environment environment = new Environment();
-		// Update environment so this within declared lifetimes
-		environment = FlowTypeUtils.declareThisWithin(decl, environment);
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(decl.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
@@ -813,10 +811,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Environment checkNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
-		// Updated the environment with new within relations
-		LifetimeDeclaration enclosing = scope.getEnclosingScope(LifetimeDeclaration.class);
-		String[] lifetimes = enclosing.getDeclaredLifetimes();
-		environment = environment.declareWithin(stmt.getName().get(), lifetimes);
 		// Create an appropriate scope for this block
 		scope = new NamedBlockScope(scope, stmt);
 		return checkBlock(stmt.getBlock(), environment, scope);
@@ -1351,11 +1345,11 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * is a known target type which can be used as a basis for the push. For
 	 * example, consider this:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * nat[]|null var = [1,false]
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * This method is responsible for pushing the type <code>nat[]|null</code> into
 	 * the expression <code>[1,false]</code>. In turn, this will filter the type
@@ -1369,7 +1363,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * variable refers to the set of types being simultaneously pushed through the
 	 * expression.
 	 * </p>
-	 * 
+	 *
 	 * @param var         The type variable who's types are being pushed through the
 	 *                    expression
 	 * @param expression  The expression we are pushing through.
@@ -1451,7 +1445,6 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pushDereference(var, (Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
 			return pushFieldDereference(var, (Expr.FieldDereference) expression, typing, environment);
-		case EXPR_staticnew:
 		case EXPR_new:
 			return pushNew(var, (Expr.New) expression, typing, environment);
 		case EXPR_lambdaaccess:
@@ -1835,11 +1828,10 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Typing pushNew(int var, Expr.New expr, Typing typing, Environment environment) {
-		final Identifier lifetime = (expr.hasLifetime()) ? expr.getLifetime() : null;
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
 		// Split out incoming array types
-		Typing nTyping = typing.project(row -> forkOnReference(row, var, lifetime, environment));
+		Typing nTyping = typing.project(row -> forkOnReference(row, var, environment));
 		// Report errors
 		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
 		// >>> Propagate forwards into children
@@ -1928,11 +1920,11 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * target type which could be used as a basis for pushing. For example, consider
 	 * this:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * assert [1,2,3] == xs
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * When typing the expression <code>[1,2,3]</code> there is no target type to
 	 * use. Therefore, we pull the "natural" type out of it (which would be
@@ -1943,7 +1935,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * This means we can easily determine the variable allocated for this expression
 	 * via Typing.top().
 	 * </p>
-	 * 
+	 *
 	 * @param expression  The expression we are pulling from.
 	 * @param required    Flag to indicate whether or not a return value is
 	 *                    required.
@@ -2023,7 +2015,6 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pullDereference((Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
 			return pullFieldDereference((Expr.FieldDereference) expression, typing, environment);
-		case EXPR_staticnew:
 		case EXPR_new:
 			return pullNew((Expr.New) expression, typing, environment);
 		case EXPR_lambdaaccess:
@@ -2303,7 +2294,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		} else if (isPure(expr.getBody())) {
 			return new Type.Function(params, returns);
 		} else {
-			return new Type.Method(params, returns, expr.getCapturedLifetimes(), expr.getLifetimes());
+			return new Type.Method(params, returns);
 		}
 	}
 
@@ -2315,11 +2306,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, element + 1));
 		//
-		if (expr.hasLifetime()) {
-			return typing.map(row -> row.add(new Type.Reference(row.get(element), expr.getLifetime())));
-		} else {
-			return typing.map(row -> row.add(new Type.Reference(row.get(element))));
-		}
+		return typing.map(row -> row.add(new Type.Reference(row.get(element))));
 	}
 
 	private Typing pullRecordAccess(Expr.RecordAccess expr, Typing typing, Environment environment) {
@@ -2396,7 +2383,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	/**
 	 * Filter the set of candidates for a lambda access expression based on the
 	 * presence (or not) of type parameters.
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 */
@@ -2428,7 +2415,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Extract expected returns
 		Tuple<Type> returns = typing.types(var);
 		// Done
-		return returns.map(ret -> new Type.Method(param, ret, new Tuple<>(), new Tuple<>()));
+		return returns.map(ret -> new Type.Method(param, ret));
 	}
 
 	private Type constructExpectedMethod(Type ret, Tuple<Expr> operands, Typing typing, Environment environment) {
@@ -2437,7 +2424,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Construct expected parameter
 		Type param = Type.Tuple.create(params);
 		// Done
-		return new Type.Method(param, ret, new Tuple<>(), new Tuple<>());
+		return new Type.Method(param, ret);
 	}
 
 	/**
@@ -2653,26 +2640,23 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param subtyping
 	 * @return
 	 */
-	private static Typing.Row[] forkOnReference(Typing.Row row, int var, Identifier lifetime,
+	private static Typing.Row[] forkOnReference(Typing.Row row, int var,
 			Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Any) {
 			// NOTE: This case arises only because of open records (I believe). Really, we'd
 			// want to pull to get the most precise type. But, it's difficult because this
-			// is
-			// specific to individual rows.
-			Type.Reference t = (lifetime == null) ? new Type.Reference(Type.Any)
-					: new Type.Reference(Type.Any, lifetime);
+			// is specific to individual rows.
+			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
 			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
-			Type.Reference ref_t = (lifetime == null) ? new Type.Reference(element)
-					: new Type.Reference(element, lifetime);
+			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
 			return new Typing.Row[] { row.set(var, ref_t).intersect(constraints) };
 		} else {
-			return forkOnPredicate(row, var, t -> isMatchingReference(t, lifetime, subtyping));
+			return forkOnPredicate(row, var, t -> isMatchingReference(t, subtyping));
 		}
 	}
 
@@ -2686,17 +2670,9 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param subtyping
 	 * @return
 	 */
-	private static boolean isMatchingReference(Type type, Identifier lifetime, Subtyping.Environment subtyping) {
+	private static boolean isMatchingReference(Type type, Subtyping.Environment subtyping) {
 		Type.Reference ref = type.as(Type.Reference.class);
-		if (ref == null) {
-			return false;
-		} else if (ref.hasLifetime() && lifetime != null) {
-			return subtyping.isWithin(ref.getLifetime().get(), lifetime.get());
-		} else if (ref.hasLifetime() || lifetime == null) {
-			return true;
-		} else {
-			return false;
-		}
+		return ref != null;
 	}
 
 	/**
@@ -2876,7 +2852,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// want to pull to get the most precise type. But, it's difficult because this
 			// is
 			// specific to individual rows.
-			Type.Callable t = new Type.Method(Type.Void, Type.Any, new Tuple<>(), new Tuple<>());
+			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
 			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
@@ -3513,15 +3489,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private interface LifetimeDeclaration {
-		/**
-		 * Get the list of all lifetimes declared by this or an enclosing scope. That is
-		 * the complete set of lifetimes available at this point.
-		 *
-		 * @return
-		 */
-		public String[] getDeclaredLifetimes();
-	}
 
 	/**
 	 * Represents the enclosing scope for a function or method declaration.
@@ -3529,7 +3496,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope implements LifetimeDeclaration {
+	private static class FunctionOrMethodScope extends EnclosingScope {
 		private final Decl.FunctionOrMethod declaration;
 
 		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
@@ -3541,38 +3508,14 @@ public class FlowTypeCheck implements Compiler.Check {
 			return declaration;
 		}
 
-		@Override
-		public String[] getDeclaredLifetimes() {
-			if (declaration instanceof Decl.Method) {
-				Decl.Method meth = (Decl.Method) declaration;
-				Identifier[] lifetimes = meth.getLifetimes();
-				String[] arr = new String[lifetimes.length + 1];
-				for (int i = 0; i != lifetimes.length; ++i) {
-					arr[i] = lifetimes[i].get();
-				}
-				arr[arr.length - 1] = "this";
-				return arr;
-			} else {
-				return new String[] { "this" };
-			}
-		}
 	}
 
-	private static class NamedBlockScope extends EnclosingScope implements LifetimeDeclaration {
+	private static class NamedBlockScope extends EnclosingScope {
 		private final Stmt.NamedBlock stmt;
 
 		public NamedBlockScope(EnclosingScope parent, Stmt.NamedBlock stmt) {
 			super(parent);
 			this.stmt = stmt;
-		}
-
-		@Override
-		public String[] getDeclaredLifetimes() {
-			LifetimeDeclaration enclosing = parent.getEnclosingScope(LifetimeDeclaration.class);
-			String[] declared = enclosing.getDeclaredLifetimes();
-			declared = Arrays.copyOf(declared, declared.length + 1);
-			declared[declared.length - 1] = stmt.getName().get();
-			return declared;
 		}
 	}
 }

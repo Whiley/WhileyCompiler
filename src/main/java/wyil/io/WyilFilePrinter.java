@@ -731,7 +731,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_bitwiseshr:
 		case EXPR_is:
 		case EXPR_new:
-		case EXPR_staticnew:
 		case EXPR_dereference:
 			return true;
 		}
@@ -823,7 +822,6 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 		case EXPR_bitwiseshr:
 			return ">>";
 		case EXPR_new:
-		case EXPR_staticnew:
 			return "new";
 		default:
 			throw new IllegalArgumentException("unknown operator kind : " + k);

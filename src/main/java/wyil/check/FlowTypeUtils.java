@@ -57,23 +57,6 @@ import wyil.util.*;
  */
 public class FlowTypeUtils {
 
-	/**
-	 * Update the environment to reflect the fact that the special "this" lifetime
-	 * is contained within all declared lifetime parameters. Observe that this only
-	 * makes sense if the enclosing declaration is for a method.
-	 *
-	 * @param decl
-	 * @param environment
-	 * @return
-	 */
-	public static Environment declareThisWithin(Decl.FunctionOrMethod decl, Environment environment) {
-		if (decl instanceof Decl.Method) {
-			Decl.Method method = (Decl.Method) decl;
-			environment = environment.declareWithin("this", toStrings(method.getLifetimes()));
-		}
-		return environment;
-	}
-
 	public static Environment union(Environment... environments) {
 		Environment result = environments[0];
 		for (int i = 1; i != environments.length; ++i) {
@@ -445,13 +428,9 @@ public class FlowTypeUtils {
 			}
 			return Type.Any;
 		}
-		case EXPR_staticnew: {
-			Expr.New r = (Expr.New) expression;
-			return new Type.Reference(getNaturalType(r.getOperand(), environment));
-		}
 		case EXPR_new: {
 			Expr.New r = (Expr.New) expression;
-			return new Type.Reference(getNaturalType(r.getOperand(), environment), r.getLifetime());
+			return new Type.Reference(getNaturalType(r.getOperand(), environment));
 		}
 		case EXPR_lambdaaccess: {
 			Expr.LambdaAccess l = (Expr.LambdaAccess) expression;
@@ -508,7 +487,7 @@ public class FlowTypeUtils {
 			return internalFailure("unknown constant encountered: " + v, v);
 		}
 	}
-	
+
 	// ===============================================================================================================
 	// disjoint
 	// ===============================================================================================================
@@ -549,7 +528,6 @@ public class FlowTypeUtils {
 				Type.Array a2 = (Type.Array) t2;
 				return disjoint(a1.getElement(), a2.getElement(), visited);
 			}
-			case TYPE_staticreference:
 			case TYPE_reference: {
 				Type.Reference a1 = (Type.Reference) t1;
 				Type.Reference a2 = (Type.Reference) t2;
@@ -715,7 +693,6 @@ public class FlowTypeUtils {
 				return new Type.Array(nElement);
 			}
 		}
-		case TYPE_staticreference:
 		case TYPE_reference: {
 			Type.Reference t = (Type.Reference) type;
 			Type element = t.getElement();
@@ -763,8 +740,7 @@ public class FlowTypeUtils {
 			} else if (t instanceof Type.Function) {
 				return new Type.Function(nParam, nReturn);
 			} else {
-				Type.Method m = (Type.Method) t;
-				return new Type.Method(nParam, nReturn, m.getCapturedLifetimes(), m.getLifetimeParameters());
+				return new Type.Method(nParam, nReturn);
 			}
 		}
 		case TYPE_tuple: {
@@ -843,14 +819,14 @@ public class FlowTypeUtils {
 		public Set<Decl.Variable> getRefinedVariables() {
 			return refinements.keySet();
 		}
-		
+
 		@Override
 		public Environment declareWithin(String inner, String... outers) {
 			Environment nenv = new Environment(this.refinements, this.withins);
 			nenv.withins.put(inner, outers);
 			return nenv;
 		}
-		
+
 		@Override
 		public String toString() {
 			String r = "{";
@@ -1333,7 +1309,7 @@ public class FlowTypeUtils {
 			return "{" + r + "}:" + candidate.getType();
 		}
 	}
-	
+
 	private static String[] toStrings(Identifier...ids) {
 		String[] ss = new String[ids.length];
 		for(int i=0;i!=ids.length;++i) {

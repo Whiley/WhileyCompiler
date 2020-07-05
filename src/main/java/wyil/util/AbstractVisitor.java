@@ -391,7 +391,6 @@ public abstract class AbstractVisitor {
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
 		case EXPR_fielddereference:
-		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -472,7 +471,6 @@ public abstract class AbstractVisitor {
 		case EXPR_fielddereference:
 			visitFieldDereference((Expr.FieldDereference) expr);
 			break;
-		case EXPR_staticnew:
 		case EXPR_new:
 			visitNew((Expr.New) expr);
 			break;
@@ -842,7 +840,6 @@ public abstract class AbstractVisitor {
 		case TYPE_record:
 			visitTypeRecord((Type.Record) type);
 			break;
-		case TYPE_staticreference:
 		case TYPE_reference:
 			visitTypeReference((Type.Reference) type);
 			break;

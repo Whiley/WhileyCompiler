@@ -24,7 +24,6 @@ import static wyil.lang.WyilFile.TYPE_null;
 import static wyil.lang.WyilFile.TYPE_property;
 import static wyil.lang.WyilFile.TYPE_record;
 import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_union;
 import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_universal;
@@ -86,7 +85,6 @@ public abstract class TypeSelector {
 				return create((Type.Nominal) t1, (Type.Nominal)t2, cache);
 			case TYPE_union:
 				return create((Type.Union) t1, t2, cache);
-			case TYPE_staticreference:
 			case TYPE_reference:
 				return create((Type.Reference) t1, (Type.Reference) t2, cache);
 			case TYPE_method:
@@ -209,22 +207,6 @@ public abstract class TypeSelector {
 		if(Type.Selector.TOP != create(t1_return,t2_return)) {
 			return Type.Selector.BOTTOM;
 		}
-		// Check lifetimes
-		if(t1 instanceof Type.Method) {
-			Type.Method m1 = (Type.Method) t1;
-			Type.Method m2 = (Type.Method) t2;
-			Tuple<Identifier> m1_lifetimes = m1.getLifetimeParameters();
-			Tuple<Identifier> m2_lifetimes = m2.getLifetimeParameters();
-			Tuple<Identifier> m1_captured = m1.getCapturedLifetimes();
-			Tuple<Identifier> m2_captured = m2.getCapturedLifetimes();
-			// FIXME: it's not clear to me what we need to do here. I think one problem is
-			// that we must normalise lifetimes somehow.
-//			if (m1_lifetimes.size() > 0 || m2_lifetimes.size() > 0) {
-//				throw new RuntimeException("must implement this!");
-//			} else if (m1_captured.size() > 0 || m2_captured.size() > 0) {
-//				throw new RuntimeException("must implement this!");
-//			}
-		}
 		// Done
 		return Type.Selector.TOP;
 	}
@@ -305,9 +287,6 @@ public abstract class TypeSelector {
 	 */
 	protected static int normalise(int opcode) {
 		switch(opcode) {
-		case TYPE_reference:
-		case TYPE_staticreference:
-			return TYPE_reference;
 		case TYPE_method:
 		case TYPE_property:
 		case TYPE_function:
