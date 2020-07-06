@@ -177,7 +177,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int DECL_function = 25; // <EIGHT operands, ZERO>
 	public static final int DECL_method = 26; // <EIGHT operands, ZERO>
 	public static final int DECL_property = 27; // <SIX operands, ZERO>
-	public static final int DECL_lambda = 28; // <NINE operands, ZERO>
+	public static final int DECL_lambda = 28; // <SEVEN operands, ZERO>
 	public static final int DECL_variable = 29; // <THREE operands, ZERO>
 	public static final int DECL_link = 30; // <MANY operands, ZERO>
 	public static final int DECL_binding = 31; // <TWO operands, ZERO>
@@ -186,8 +186,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int MOD_final = 50; // <ZERO operands, ZERO>
 	public static final int MOD_private = 52; // <ZERO operands, ZERO>
 	public static final int MOD_public = 53; // <ZERO operands, ZERO>
-	public static final int TEMPLATE_type = 56; // <ONE operands, ZERO>
-//	public static final int TEMPLATE_lifetime = 57; // <ONE operands, ZERO>
+	public static final int TEMPLATE_type = 56; // <ONE operands, ONE>
 	public static final int ATTR_error = 65; // <MANY operands, TWO>
 	public static final int ATTR_stackframe = 68; // <TWO operands, ZERO>
 	public static final int ATTR_counterexample = 69; // <ONE operands, ZERO>
@@ -198,19 +197,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int TYPE_bool = 84; // <ZERO operands, ZERO>
 	public static final int TYPE_int = 85; // <ZERO operands, ZERO>
 	public static final int TYPE_nominal = 86; // <TWO operands, ZERO>
-	public static final int TYPE_reference = 87; // <THREE operands, ZERO>
-	public static final int TYPE_array = 89; // <ONE operands, ZERO>
-	public static final int TYPE_tuple = 90; // <MANY operands, ZERO>
-	public static final int TYPE_record = 91; // <TWO operands, ZERO>
-	public static final int TYPE_field = 92; // <TWO operands, ZERO>
-	public static final int TYPE_function = 93; // <TWO operands, ZERO>
-	public static final int TYPE_method = 94; // <FOUR operands, ZERO>
-	public static final int TYPE_property = 95; // <TWO operands, ZERO>
-	public static final int TYPE_union = 96; // <MANY operands, ZERO>
-	public static final int TYPE_byte = 97; // <ZERO operands, ZERO>
-	public static final int TYPE_recursive = 106; // <ONE operands, ZERO>
-	public static final int TYPE_universal = 107; // <ONE operands, ZERO>
-	public static final int TYPE_existential = 108; // <ZERO operands, MANY>
+	public static final int TYPE_reference = 87; // <ONE operands, ZERO>
+	public static final int TYPE_array = 88; // <ONE operands, ZERO>
+	public static final int TYPE_tuple = 89; // <MANY operands, ZERO>
+	public static final int TYPE_record = 90; // <TWO operands, ZERO>
+	public static final int TYPE_field = 91; // <TWO operands, ZERO>
+	public static final int TYPE_function = 92; // <TWO operands, ZERO>
+	public static final int TYPE_method = 93; // <TWO operands, ZERO>
+	public static final int TYPE_property = 94; // <TWO operands, ZERO>
+	public static final int TYPE_union = 95; // <MANY operands, ZERO>
+	public static final int TYPE_byte = 96; // <ZERO operands, ZERO>
+	public static final int TYPE_recursive = 105; // <ONE operands, ZERO>
+	public static final int TYPE_universal = 106; // <ONE operands, ZERO>
+	public static final int TYPE_existential = 107; // <ZERO operands, MANY>
 	public static final int STMT_block = 144; // <MANY operands, ZERO>
 	public static final int STMT_namedblock = 145; // <TWO operands, ZERO>
 	public static final int STMT_caseblock = 146; // <TWO operands, ZERO>
@@ -223,7 +222,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int STMT_continue = 153; // <ZERO operands, ZERO>
 	public static final int STMT_dowhile = 154; // <FOUR operands, ZERO>
 	public static final int STMT_fail = 155; // <ZERO operands, ZERO>
-	public static final int STMT_for = 156; // <THREE operands, ZERO>
+	public static final int STMT_for = 156; // <FOUR operands, ZERO>
 	public static final int STMT_if = 158; // <TWO operands, ZERO>
 	public static final int STMT_ifelse = 159; // <THREE operands, ZERO>
 	public static final int STMT_initialiser = 160; // <TWO operands, ZERO>
@@ -238,7 +237,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPR_constant = 180; // <TWO operands, ZERO>
 	public static final int EXPR_cast = 181; // <TWO operands, ZERO>
 	public static final int EXPR_invoke = 182; // <TWO operands, ZERO>
-	public static final int EXPR_indirectinvoke = 183; // <FOUR operands, ZERO>
+	public static final int EXPR_indirectinvoke = 183; // <THREE operands, ZERO>
 	public static final int EXPR_logicalnot = 184; // <ONE operands, ZERO>
 	public static final int EXPR_logicaland = 185; // <ONE operands, ZERO>
 	public static final int EXPR_logicalor = 186; // <ONE operands, ZERO>
@@ -266,22 +265,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public static final int EXPR_bitwiseshl = 211; // <THREE operands, ZERO>
 	public static final int EXPR_bitwiseshr = 212; // <THREE operands, ZERO>
 	public static final int EXPR_dereference = 215; // <TWO operands, ZERO>
-	public static final int EXPR_new = 216; // <THREE operands, ZERO>
-//	public static final int EXPR_staticnew = 217; // <TWO operands, ZERO>
-	public static final int EXPR_lambdaaccess = 218; // <TWO operands, ZERO>
-	public static final int EXPR_fielddereference = 219; // <THREE operands, ZERO>
-	public static final int EXPR_recordaccess = 223; // <THREE operands, ZERO>
-	public static final int EXPR_recordborrow = 224; // <THREE operands, ZERO>
-	public static final int EXPR_recordupdate = 225; // <FOUR operands, ZERO>
-	public static final int EXPR_recordinitialiser = 226; // <THREE operands, ZERO>
-	public static final int EXPR_tupleinitialiser = 227; // <TWO operands, ZERO>
-	public static final int EXPR_arrayaccess = 231; // <THREE operands, ZERO>
-	public static final int EXPR_arrayborrow = 232; // <THREE operands, ZERO>
-	public static final int EXPR_arrayupdate = 233; // <FOUR operands, ZERO>
-	public static final int EXPR_arraylength = 234; // <TWO operands, ZERO>
-	public static final int EXPR_arraygenerator = 235; // <THREE operands, ZERO>
-	public static final int EXPR_arrayinitialiser = 236; // <TWO operands, ZERO>
-	public static final int EXPR_arrayrange = 237; // <THREE operands, ZERO>
+	public static final int EXPR_new = 216; // <TWO operands, ZERO>
+	public static final int EXPR_lambdaaccess = 217; // <TWO operands, ZERO>
+	public static final int EXPR_fielddereference = 218; // <THREE operands, ZERO>
+	public static final int EXPR_recordaccess = 222; // <THREE operands, ZERO>
+	public static final int EXPR_recordborrow = 223; // <THREE operands, ZERO>
+	public static final int EXPR_recordupdate = 224; // <FOUR operands, ZERO>
+	public static final int EXPR_recordinitialiser = 225; // <THREE operands, ZERO>
+	public static final int EXPR_tupleinitialiser = 226; // <TWO operands, ZERO>
+	public static final int EXPR_arrayaccess = 230; // <THREE operands, ZERO>
+	public static final int EXPR_arrayborrow = 231; // <THREE operands, ZERO>
+	public static final int EXPR_arrayupdate = 232; // <FOUR operands, ZERO>
+	public static final int EXPR_arraylength = 233; // <TWO operands, ZERO>
+	public static final int EXPR_arraygenerator = 234; // <THREE operands, ZERO>
+	public static final int EXPR_arrayinitialiser = 235; // <TWO operands, ZERO>
+	public static final int EXPR_arrayrange = 236; // <THREE operands, ZERO>
 	/**
 	 * Cached copy of the current schema
 	 */
@@ -1224,7 +1222,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Expr) operands[7], (WyilFile.Type.Callable) operands[8]);
+						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5], (WyilFile.Type.Callable) operands[6]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SEVEN, Data.ZERO, "DECL_lambda") {
@@ -1233,8 +1231,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], (Expr) operands[7],
-							(WyilFile.Type.Callable) operands[8]);
+							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5],
+							(WyilFile.Type.Callable) operands[6]);
 				}
 			};
 		}
@@ -4278,7 +4276,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "new " + getOperand();
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_staticnew") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_new") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new New((Type) operands[0], (Expr) operands[1]);
@@ -5448,7 +5446,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				return "&" + canonicalBraceAsNecessary(getElement());
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_staticreference") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_reference") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Reference((Type) operands[0]);

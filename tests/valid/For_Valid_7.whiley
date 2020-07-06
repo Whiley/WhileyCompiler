@@ -6,14 +6,14 @@ public function filter(int[] items, pred_t fn) -> (int[] rs)
 ensures |rs| <= |items|:
     int n = 0
     // Determine how many
-    for i in 0..|items|:
+    for i in 0..|items| where n <= i:
         if fn(items[i]):
             n = n + 1
     // Allocate space
     int[] nitems = [0;n]
     int j = 0
     // Copy them over
-    for i in 0..|items|:
+    for i in 0..|items| where |nitems| <= |items|:
         int ith = items[i]
         if fn(ith):
             nitems[j] = ith

@@ -2,4 +2,4 @@ function id<T>(T x) -> (T y):
     return x
 
 function f(int x) -> (int y):
-    return id<this>(x)
+    return id<x>(x)

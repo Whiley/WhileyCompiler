@@ -64,12 +64,6 @@ public class TestUtils {
 	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
 
 	static {
-		//  Normalisation for Method Subtyping
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
-		// Support Captured Lifetime Parameters
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
 		// Problem Type Checking Union Type
 		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
 		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
@@ -98,21 +92,6 @@ public class TestUtils {
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
-		// Lifetime inference
-		VALID_IGNORED.put("Lifetime_Valid_3", "???");
-		VALID_IGNORED.put("Lifetime_Valid_4", "???");
-		VALID_IGNORED.put("Lifetime_Valid_5", "???");
-		VALID_IGNORED.put("Lifetime_Valid_6", "???");
-		VALID_IGNORED.put("Lifetime_Valid_7", "???");
-		VALID_IGNORED.put("Lifetime_Valid_8", "???");
-		VALID_IGNORED.put("Lifetime_Valid_9", "???");
-		VALID_IGNORED.put("Lifetime_Valid_10", "???");
-		VALID_IGNORED.put("Lifetime_Valid_11", "???");
-		VALID_IGNORED.put("Lifetime_Valid_12", "???");
-		VALID_IGNORED.put("Lifetime_Valid_13", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");
 		// Interpreter handling of tagged unions
 		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
 		// Binding Against Union Types

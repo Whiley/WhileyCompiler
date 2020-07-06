@@ -1,5 +1,0 @@
-tests/invalid/Lifetime_Invalid_6.whiley:12: unable to resolve name (is ambiguous)
-	found method Lifetime_Invalid_6::m(&a:int,&a:int)->(int)
-	found method Lifetime_Invalid_6::m(&a:int,&b:int)->(int)
-    m(this:new 1, this:new 2)
-    ^
