@@ -57,11 +57,6 @@ public class AllInvalidTest {
 	static {
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
-		// Normalisation for Method Subtyping
-		IGNORED.put("Lifetime_Lambda_Invalid_3", "#794");
-		// Support Captured Lifetime Parameters
-		IGNORED.put("Lifetime_Lambda_Invalid_5", "#795");
-		IGNORED.put("Lifetime_Lambda_Invalid_6", "#765");
 		// Access Static Variable from Type Invariant
 		IGNORED.put("Type_Invalid_11", "793");
 		// Problems with counterexample generation?
@@ -83,14 +78,6 @@ public class AllInvalidTest {
 		IGNORED.put("While_Invalid_24", "??");
 		IGNORED.put("While_Invalid_25", "#956");
 		IGNORED.put("For_Invalid_9", "#982");
-		// Lifetime infernece
-		IGNORED.put("Lifetime_Invalid_5", "???");
-		IGNORED.put("Lifetime_Invalid_6", "???");
-		IGNORED.put("Lifetime_Invalid_7", "???");
-		IGNORED.put("Lifetime_Invalid_8", "???");
-		IGNORED.put("Lifetime_Invalid_9", "???");
-		IGNORED.put("Lifetime_Lambda_Invalid_1", "???");
-		IGNORED.put("Lifetime_Lambda_Invalid_2", "???");
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================

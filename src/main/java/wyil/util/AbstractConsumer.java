@@ -388,7 +388,6 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_bitwisenot:
 		case EXPR_dereference:
 		case EXPR_fielddereference:
-		case EXPR_staticnew:
 		case EXPR_new:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -469,7 +468,6 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_fielddereference:
 			visitFieldDereference((Expr.FieldDereference) expr, data);
 			break;
-		case EXPR_staticnew:
 		case EXPR_new:
 			visitNew((Expr.New) expr, data);
 			break;
@@ -837,7 +835,6 @@ public abstract class AbstractConsumer<T> {
 		case TYPE_record:
 			visitTypeRecord((Type.Record) type, data);
 			break;
-		case TYPE_staticreference:
 		case TYPE_reference:
 			visitTypeReference((Type.Reference) type, data);
 			break;

@@ -142,15 +142,14 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 				Decl.Method method = (Decl.Method) decl;
 				Type ret = method.getType().getReturn();
 				Type parameter = method.getType().getParameter();
-				Tuple<Identifier> lifetimes = method.getType().getLifetimeParameters();
-				name += getMangle(parameter, lifetimes);
-				name += getMangle(ret, lifetimes);
+				name += getMangle(parameter);
+				name += getMangle(ret);
 			} else if(!exported && decl instanceof Decl.Callable) {
 				Decl.Callable callable = (Decl.Callable) decl;
 				Type ret = callable.getType().getReturn();
 				Type parameter = callable.getType().getParameter();
-				name += getMangle(parameter, new Tuple<>());
-				name += getMangle(ret, new Tuple<>());
+				name += getMangle(parameter);
+				name += getMangle(ret);
 			} else if(decl instanceof Decl.Type) {
 				name += "$type";
 			} else if(decl instanceof Decl.StaticVariable) {
@@ -160,11 +159,11 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 		}
 
 
-		private String getMangle(Type type, Tuple<Identifier> lifetimes) {
+		private String getMangle(Type type) {
 			if (type.shape() == 0) {
 				return "";
 			} else {
-				return "$" + mangler.getMangle(type, lifetimes);
+				return "$" + mangler.getMangle(type);
 			}
 		}
 	}

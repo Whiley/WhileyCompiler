@@ -1,2 +1,2 @@
-method equals<a>(&a:int x, &a:int y) -> bool:
-    return x == y
+method equals<a>(&a a) -> bool:
+    return a == a

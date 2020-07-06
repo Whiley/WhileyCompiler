@@ -123,7 +123,6 @@ public class RecursiveTypeCheck extends AbstractVisitor implements Compiler.Chec
 			Type.Array t = (Type.Array) type;
 			return infer(variable, t.getElement(), cache);
 		}
-		case TYPE_staticreference:
 		case TYPE_reference: {
 			Type.Reference t = (Type.Reference) type;
 			Template.Variance v = infer(variable, t.getElement(), cache);

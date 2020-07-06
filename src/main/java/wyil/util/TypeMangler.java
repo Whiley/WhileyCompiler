@@ -61,7 +61,7 @@ public interface TypeMangler {
 	 * @param types
 	 * @return
 	 */
-	public String getMangle(Tuple<Identifier> lifetimes, Type... types);
+	public String getMangle(Type... types);
 
 	/**
 	 * Construct the mangle for a given sequence of zero or more types.
@@ -69,7 +69,7 @@ public interface TypeMangler {
 	 * @param types
 	 * @return
 	 */
-	public String getMangle(Type type, Tuple<Identifier> lifetimes);
+	public String getMangle(Type type);
 
 	/**
 	 * Provides a default implementation of a type mangler. This uses a standard
@@ -146,24 +146,24 @@ public interface TypeMangler {
 	public class Default implements TypeMangler {
 
 		@Override
-		public String getMangle(Tuple<Identifier> lifetimes, Type... types) {
+		public String getMangle(Type... types) {
 			StringBuilder mangle = new StringBuilder();
 			for (int i = 0; i != types.length; ++i) {
-				writeTypeMangle(types[i], lifetimes, mangle);
+				writeTypeMangle(types[i], mangle);
 			}
 			return mangle.toString();
 		}
 
 		@Override
-		public String getMangle(Type types, Tuple<Identifier> lifetimes) {
+		public String getMangle(Type types) {
 			StringBuilder mangle = new StringBuilder();
 			for (int i = 0; i != types.shape(); ++i) {
-				writeTypeMangle(types.dimension(i), lifetimes, mangle);
+				writeTypeMangle(types.dimension(i), mangle);
 			}
 			return mangle.toString();
 		}
 
-		private void writeTypeMangle(Type t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangle(Type t, StringBuilder mangle) {
 			switch (t.getOpcode()) {
 			case TYPE_void:
 				mangle.append("V");
@@ -181,74 +181,64 @@ public interface TypeMangler {
 				mangle.append("I");
 				break;
 			case TYPE_array:
-				writeTypeMangleArray((Type.Array) t, lifetimes, mangle);
+				writeTypeMangleArray((Type.Array) t, mangle);
 				break;
-			case TYPE_staticreference:
 			case TYPE_reference:
-				writeTypeMangleReference((Type.Reference) t, lifetimes, mangle);
+				writeTypeMangleReference((Type.Reference) t, mangle);
 				break;
 			case TYPE_record:
-				writeTypeMangleRecord((Type.Record) t, lifetimes, mangle);
+				writeTypeMangleRecord((Type.Record) t, mangle);
 				break;
 			case TYPE_nominal:
-				writeTypeMangleNominal((Type.Nominal) t, lifetimes, mangle);
+				writeTypeMangleNominal((Type.Nominal) t, mangle);
 				break;
 			case TYPE_function:
-				writeTypeMangleFunctionOrMethod('f', (Type.Callable) t, lifetimes, mangle);
+				writeTypeMangleFunctionOrMethod('f', (Type.Callable) t, mangle);
 				break;
 			case TYPE_method:
-				writeTypeMangleFunctionOrMethod('m', (Type.Callable) t, lifetimes, mangle);
+				writeTypeMangleFunctionOrMethod('m', (Type.Callable) t, mangle);
 				break;
 			case TYPE_property:
-				writeTypeMangleFunctionOrMethod('p', (Type.Callable) t, lifetimes, mangle);
+				writeTypeMangleFunctionOrMethod('p', (Type.Callable) t, mangle);
 				break;
 			case TYPE_tuple:
-				writeTypeMangleTuple((Type.Tuple) t, lifetimes, mangle);
+				writeTypeMangleTuple((Type.Tuple) t, mangle);
 				break;
 			case TYPE_union:
-				writeTypeMangleUnion((Type.Union) t, lifetimes, mangle);
+				writeTypeMangleUnion((Type.Union) t, mangle);
 				break;
 			case TYPE_universal:
-				writeTypeMangleVariable((Type.Universal) t, lifetimes, mangle);
+				writeTypeMangleVariable((Type.Universal) t, mangle);
 				break;
 			default:
 				throw new IllegalArgumentException("unknown type encountered: " + t.getClass().getName());
 			}
 		}
 
-		private void writeTypeMangleArray(Type.Array t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleArray(Type.Array t, StringBuilder mangle) {
 			mangle.append('a');
-			writeTypeMangle(t.getElement(), lifetimes, mangle);
+			writeTypeMangle(t.getElement(), mangle);
 		}
 
-		private void writeTypeMangleReference(Type.Reference t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleReference(Type.Reference t, StringBuilder mangle) {
 			mangle.append('q');
-			if (t.hasLifetime()) {
-				String lifetime = t.getLifetime().get();
-				if (lifetime.equals("*")) {
-					mangle.append('_');
-				} else {
-					int index = find(t.getLifetime(), lifetimes);
-					mangle.append(index);
-				}
-			}
-			writeTypeMangle(t.getElement(), lifetimes, mangle);
+			writeTypeMangle(t.getElement(), mangle);
 		}
 
-		private void writeTypeMangleRecord(Type.Record rt, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleRecord(Type.Record rt, StringBuilder mangle) {
 			mangle.append('r');
 			Tuple<Type.Field> fields = rt.getFields();
 			mangle.append(fields.size());
 			for (int i = 0; i != fields.size(); ++i) {
 				Type.Field field = fields.get(i);
-				writeTypeMangle(field.getType(), lifetimes, mangle);
+				writeTypeMangle(field.getType(), mangle);
 				String fieldName = field.getName().get();
 				mangle.append(fieldName.length());
 				mangle.append(fieldName);
 			}
 		}
 
-		private void writeTypeMangleNominal(Type.Nominal t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleNominal(Type.Nominal t, StringBuilder mangle) {
 			// FIXME: need to deal with qualified names properly!
 			Name name = t.getLink().getName();
 			mangle.append('Q');
@@ -259,31 +249,29 @@ public interface TypeMangler {
 			}
 		}
 
-		private void writeTypeMangleFunctionOrMethod(char prefix, Type.Callable t, Tuple<Identifier> lifetimes,
-				StringBuilder mangle) {
+		private void writeTypeMangleFunctionOrMethod(char prefix, Type.Callable t, StringBuilder mangle) {
 			mangle.append(prefix);
-			writeTypeMangle(t.getParameter(), lifetimes, mangle);
-			writeTypeMangle(t.getReturn(), lifetimes, mangle);
+			writeTypeMangle(t.getParameter(), mangle);
+			writeTypeMangle(t.getReturn(), mangle);
 		}
 
-		private void writeTypeMangleUnion(Type.Union t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleUnion(Type.Union t, StringBuilder mangle) {
 			mangle.append('u');
 			mangle.append(t.size());
 			for (int i = 0; i != t.size(); ++i) {
-				writeTypeMangle(t.get(i), lifetimes, mangle);
+				writeTypeMangle(t.get(i), mangle);
 			}
 		}
 
-		private void writeTypeMangleTuple(Type.Tuple t, Tuple<Identifier> lifetimes,
-				StringBuilder mangle) {
+		private void writeTypeMangleTuple(Type.Tuple t, StringBuilder mangle) {
 			// Tuples are the only types which may start with a digit.
 			mangle.append(t.size());
 			for (int i = 0; i != t.size(); ++i) {
-				writeTypeMangle(t.get(i), lifetimes, mangle);
+				writeTypeMangle(t.get(i), mangle);
 			}
 		}
 
-		private void writeTypeMangleVariable(Type.Universal t, Tuple<Identifier> lifetimes, StringBuilder mangle) {
+		private void writeTypeMangleVariable(Type.Universal t, StringBuilder mangle) {
 			String name = t.getOperand().toString();
 			mangle.append("v" + name.length() + name);
 		}

@@ -26,7 +26,6 @@ import static wyil.lang.WyilFile.TYPE_null;
 import static wyil.lang.WyilFile.TYPE_property;
 import static wyil.lang.WyilFile.TYPE_record;
 import static wyil.lang.WyilFile.TYPE_reference;
-import static wyil.lang.WyilFile.TYPE_staticreference;
 import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_union;
 import static wyil.lang.WyilFile.TYPE_universal;
@@ -151,7 +150,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	 */
 	public final SubtypeConstraints BOTTOM = new SubtypeConstraints(0, (ConcreteSolution) null,
 			true, null, null);
-	
+
 	/**
 	 * A constant representing the set of empty constraint sets.
 	 */
@@ -171,7 +170,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	public IncrementalSubtypingEnvironment(Map<String, String[]> withins) {
 		this.withins = new HashMap<>(withins);
 	}
-	
+
 	@Override
 	public boolean isSatisfiableSubtype(Type t1, Type t2) {
 		Subtyping.Constraints constraints = isSubtype(t1, t2);
@@ -187,7 +186,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	public boolean isEmpty(QualifiedName nid, Type type) {
 		return isContractive(nid, type, null);
 	}
-	
+
 	// ===========================================================================
 	// Contractivity
 	// ===========================================================================
@@ -224,7 +223,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 		}
 		return r + "}";
 	}
-	
+
 	// ===========================================================================
 	// Contractivity
 	// ===========================================================================
@@ -250,7 +249,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 		case TYPE_function:
 		case TYPE_method:
 			return true;
-		case TYPE_staticreference:
 		case TYPE_reference: {
 			Type.Reference t = (Type.Reference) type;
 			return isContractive(name, t.getElement(), visited);
@@ -369,7 +367,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 			case TYPE_union:
 				result = isSubtype(t1, (Type.Union) t2, cache);
 				break;
-			case TYPE_staticreference:
 			case TYPE_reference:
 				result = isSubtype((Type.Reference) t1, (Type.Reference) t2, cache);
 				break;
@@ -471,20 +468,12 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	}
 
 	protected Subtyping.Constraints isSubtype(Type.Reference t1, Type.Reference t2, BinaryRelation<Type> cache) {
-		String l1 = extractLifetime(t1);
-		String l2 = extractLifetime(t2);
-		//
-		if (!isWithin(l1, l2)) {
-			// Definitely unsafe
-			return BOTTOM;
+		Subtyping.Constraints first = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
+		// Sanity check what's going on
+		if (first.isSatisfiable()) {
+			return first;
 		} else {
-			Subtyping.Constraints first = isWidthSubtype(t1.getElement(), t2.getElement(), cache);
-			// Sanity check what's going on
-			if (first.isSatisfiable()) {
-				return first;
-			} else {
-				return areEquivalent(t1.getElement(), t2.getElement(), cache);
-			}
+			return areEquivalent(t1.getElement(), t2.getElement(), cache);
 		}
 	}
 
@@ -533,23 +522,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 		Subtyping.Constraints c_params = isSubtype(t2_params, t1_params, cache);
 		// Check returns (co-variant)
 		Subtyping.Constraints c_returns = isSubtype(t1_return, t2_return, cache);
-		//
-		if (t1 instanceof Type.Method && t2 instanceof Type.Method) {
-			// Check lifetimes
-			Type.Method m1 = (Type.Method) t1;
-			Type.Method m2 = (Type.Method) t2;
-			Tuple<Identifier> m1_lifetimes = m1.getLifetimeParameters();
-			Tuple<Identifier> m2_lifetimes = m2.getLifetimeParameters();
-			Tuple<Identifier> m1_captured = m1.getCapturedLifetimes();
-			Tuple<Identifier> m2_captured = m2.getCapturedLifetimes();
-			// FIXME: it's not clear to me what we need to do here. I think one problem is
-			// that we must normalise lifetimes somehow.
-			if (m1_lifetimes.size() > 0 || m2_lifetimes.size() > 0) {
-				throw new RuntimeException("must implement this!");
-			} else if (m1_captured.size() > 0 || m2_captured.size() > 0) {
-				throw new RuntimeException("must implement this!");
-			}
-		}
 		// Done
 		return c_params.intersect(c_returns);
 	}
@@ -716,7 +688,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 		//
 		return left.intersect(right);
 	}
-	
+
 	private static boolean isCallableSubtype(int lhs, int rhs) {
 		switch(lhs) {
 		case TYPE_method:
@@ -1657,8 +1629,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 				Type.Method m1 = (Type.Method) t1;
 				Type.Method m2 = (Type.Method) t2;
 				// FIXME: this is broken
-				return new Type.Method(glb_param, glb_return, m1.getCapturedLifetimes(),
-						m1.getLifetimeParameters());
+				return new Type.Method(glb_param, glb_return);
 			}
 		}
 	}
@@ -1795,7 +1766,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 			case TYPE_int:
 				return Type.Void;
 			case TYPE_array:
-			case TYPE_staticreference:
 			case TYPE_reference:
 			case TYPE_method:
 			case TYPE_function:
@@ -1976,7 +1946,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 		}
 
 		@Override
-		public boolean isSatisfiable() {			
+		public boolean isSatisfiable() {
 			// NOTE: this is a very simple and largely broken formulation.
 			if (constraints == null) {
 				return false;
@@ -2002,6 +1972,7 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 			return nVariables - 1;
 		}
 
+		@Override
 		public SubtypeConstraints fresh(int n) {
 			return new SubtypeConstraints(nVariables + n, candidate, dirty, constraints, environment);
 		}
@@ -2236,7 +2207,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 				Type.Array c = (Type.Array) child;
 				return isAncestorOf(p.getElement(), c.getElement());
 			}
-			case TYPE_staticreference:
 			case TYPE_reference: {
 				Type.Reference p = (Type.Reference) parent;
 				Type.Reference c = (Type.Reference) child;
@@ -2329,20 +2299,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	}
 
 	/**
-	 * Extract the lifetime from a given reference type.
-	 *
-	 * @param ref
-	 * @return
-	 */
-	protected String extractLifetime(Type.Reference ref) {
-		if (ref.hasLifetime()) {
-			return ref.getLifetime().get();
-		} else {
-			return "*";
-		}
-	}
-
-	/**
 	 * Normalise opcode for sake of simplicity. This allows us to compare the types
 	 * of two operands more accurately using a switch.
 	 *
@@ -2351,9 +2307,6 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 	 */
 	public static int normalise(int opcode) {
 		switch (opcode) {
-		case TYPE_reference:
-		case TYPE_staticreference:
-			return TYPE_reference;
 		case TYPE_method:
 		case TYPE_property:
 		case TYPE_function:

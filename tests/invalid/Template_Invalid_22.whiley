@@ -1,2 +1,2 @@
-function f<T>(&T:int ptr, T value) -> (bool x):
+function f<T>(&T ptr, S value) -> (bool x):
     return false

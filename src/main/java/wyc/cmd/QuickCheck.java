@@ -703,7 +703,6 @@ public class QuickCheck implements Command {
 			case TYPE_universal:
 				result = constructGenerator((Type.Universal) type, context);
 				break;
-			case TYPE_staticreference:
 			case TYPE_reference:
 				result = constructGenerator((Type.Reference) type, context);
 				break;
@@ -1030,7 +1029,7 @@ public class QuickCheck implements Command {
 			Type.Method t = m.getType();
 			// FIXME: this needs to be improved!
 			kind = "method";
-			rest = m.getQualifiedName() + toMethodParametersString(t.getLifetimeParameters(),m.getTemplate()) + t.getParameter() + "->" + t.getReturn();
+			rest = m.getQualifiedName() + toMethodParametersString(m.getTemplate()) + t.getParameter() + "->" + t.getReturn();
 
 		} else if(d instanceof Decl.Type) {
 			kind = "type";
@@ -1053,15 +1052,11 @@ public class QuickCheck implements Command {
 		}
 	}
 
-	private static String toMethodParametersString(Tuple<? extends SyntacticItem> lifetimes, Tuple<? extends SyntacticItem> variables) {
-		if(lifetimes.size() == 0 && variables.size() == 0) {
+	private static String toMethodParametersString(Tuple<? extends SyntacticItem> variables) {
+		if(variables.size() == 0) {
 			return "";
-		} else if(lifetimes.size() > 0) {
-			return "<" + lifetimes.toBareString() + ">";
-		} else  if(variables.size() > 0) {
+		} else  {
 			return "<" + variables.toBareString() + ">";
-		} else {
-			return "<" + lifetimes.toBareString() + ", " + variables.toBareString() + ">";
 		}
 	}
 
