@@ -11,6 +11,6 @@ ensures r == 0:
 function f() -> (int r):
     return 0
 
-method test():
+public export method test():
     int x = f()
     assert fsum([x,x],2*x,[x,x]) == 0

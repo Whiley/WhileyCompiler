@@ -1,6 +1,0 @@
-tests/invalid/Lifetime_Invalid_7.whiley:16: unable to resolve name (is ambiguous)
-	found method Lifetime_Invalid_7::m(&*:int,&a:int,int|bool)->(&a:int)
-	found method Lifetime_Invalid_7::m(&a:bool,&a:int,bool)->(&a:int)
-	found method Lifetime_Invalid_7::m(&a:int|&b:bool,&a:int,bool)->(&b:int)
-    m(new 1, this:new 2, true)
-    ^

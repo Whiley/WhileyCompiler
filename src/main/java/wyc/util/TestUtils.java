@@ -49,8 +49,7 @@ import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.Type;
+import wyil.lang.WyilFile.*;
 
 /**
  * Miscellaneous utilities related to the test harness. These are located here
@@ -65,12 +64,6 @@ public class TestUtils {
 	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
 
 	static {
-		//  Normalisation for Method Subtyping
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_2", "#794");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_5", "#794");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_6", "#794");
-		// Support Captured Lifetime Parameters
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_7", "#795");
 		// Problem Type Checking Union Type
 		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
 		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
@@ -99,21 +92,6 @@ public class TestUtils {
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
-		// Lifetime inference
-		VALID_IGNORED.put("Lifetime_Valid_3", "???");
-		VALID_IGNORED.put("Lifetime_Valid_4", "???");
-		VALID_IGNORED.put("Lifetime_Valid_5", "???");
-		VALID_IGNORED.put("Lifetime_Valid_6", "???");
-		VALID_IGNORED.put("Lifetime_Valid_7", "???");
-		VALID_IGNORED.put("Lifetime_Valid_8", "???");
-		VALID_IGNORED.put("Lifetime_Valid_9", "???");
-		VALID_IGNORED.put("Lifetime_Valid_10", "???");
-		VALID_IGNORED.put("Lifetime_Valid_11", "???");
-		VALID_IGNORED.put("Lifetime_Valid_12", "???");
-		VALID_IGNORED.put("Lifetime_Valid_13", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_1", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_3", "???");
-		VALID_IGNORED.put("Lifetime_Lambda_Valid_4", "???");
 		// Interpreter handling of tagged unions
 		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
 		// Binding Against Union Types
@@ -382,7 +360,7 @@ public class TestUtils {
 	public static void execWyil(File wyildir, Path.ID id) throws IOException {
 		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
-		Type.Method sig = new Type.Method(Type.Void, Type.Void, new Tuple<>(), new Tuple<>());
+		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);
@@ -392,12 +370,23 @@ public class TestUtils {
 		try {
 			// Load the relevant WyIL module
 			stack.load(root.get(id, WyilFile.ContentType).read());
-			//
-			RValue returns = interpreter.execute(name, sig, stack);
-			// Print out any return values produced
-//			if (returns != null) {
-//				System.out.println(returns);
-//			}
+			// Sanity check modifiers on test method
+			Decl.Callable lambda = stack.getCallable(name, sig);
+			// Sanity check target has correct modifiers.
+			if (lambda.getModifiers().match(Modifier.Export.class) == null
+					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
+				Path.Entry<WhileyFile> srcfile = root.get(id, WhileyFile.ContentType);
+				new SyntacticException("test method must be exported and public", srcfile, lambda)
+						.outputSourceError(System.out, false);
+				throw new RuntimeException("test method must be exported and public");
+			} else {
+				//
+				RValue returns = interpreter.execute(name, sig, stack);
+				// Print out any return values produced
+				// if (returns != null) {
+				// System.out.println(returns);
+				// }
+			}
 		} catch (Interpreter.RuntimeError e) {
 			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
 			// FIXME: this is a hack based on current available API.

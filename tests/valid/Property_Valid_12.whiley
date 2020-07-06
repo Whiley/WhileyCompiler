@@ -9,7 +9,7 @@ property length(List l, int len)
 where (l is null) ==> (len == 0)
 where (l is Node) ==> length(l.next, len-1)
 
-public method test():
+public export method test():
     // List of length 1
     List l1 = {data: 0, next: null}
     // List of length 2

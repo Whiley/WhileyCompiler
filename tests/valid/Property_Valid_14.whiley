@@ -30,7 +30,7 @@ ensures length(l,r):
     //
     return x
 
-public method test():
+public export method test():
     // List of length 1
     List l1 = {data: 0, next: null}
     // List of length 2

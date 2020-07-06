@@ -6,7 +6,7 @@ type structB is { neg|bool r }
 function f(structA x) -> (structB y):
     return x
 
-method test():
+public export method test():
     structA x = { r: false }
     //
     assume f(x) == x

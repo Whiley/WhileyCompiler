@@ -9,7 +9,7 @@ property sum(List l, int s)
 where (l is null) ==> (s == 0)
 where (l is Node) ==> sum(l.next, s - l.data)
 
-public method test():
+public export method test():
     // List of length 1
     List l1 = {data: 0, next: null}
     // List of length 2

@@ -121,8 +121,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
 		// Issue 89 "Unknown Assertion Failure"
 		IGNORED.put("While_Valid_37", "WyTP#89");
-		// Issue 102 "Support Reference Lifetimes"
-		IGNORED.put("Lifetime_Valid_8", "WyTP#102");
 		// Issue 104 "Incompleteness in CoerciveSubtypeOperator"
 		IGNORED.put("RecursiveType_Valid_7", "WyTP#104");
 		IGNORED.put("While_Valid_15", "WyTP#104");
@@ -149,6 +147,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_24", "WyTP#133");
 		IGNORED.put("While_Valid_34", "#133");
 		IGNORED.put("While_Valid_35", "WyTP#133");
+		// Bug with For Loop Invariants
+		IGNORED.put("For_Valid_7", "#1016");
+		IGNORED.put("For_Valid_8", "#1016");
 		//
 		IGNORED.put("String_Valid_6", "??");
 		IGNORED.put("RecursiveType_Valid_12", "??");

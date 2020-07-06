@@ -7,7 +7,7 @@ property sum(int[] arr, int i, int s)
 where (i >= |arr|) ==> (s == 0)
 where (i >= 0 && i < |arr|) ==> sum(arr,i+1,s-arr[i])
 
-public method test():
+public export method test():
     //
     assert sum([],0,0)
     //

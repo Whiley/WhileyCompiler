@@ -1,0 +1,15 @@
+type string is int[]
+type handler is method()
+
+method bind(string p, method(string) handler) -> (method() r):
+    return &( -> handler(p))
+
+method consume(string s):
+    skip
+
+public export method test():
+    handler m = bind("empty",&(string s -> consume(s)))
+    // Execute the method
+    m()
+    // Done
+    assume 1 == 1
