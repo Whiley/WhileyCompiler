@@ -7,7 +7,7 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc</artifactId>
-  <version>0.7.0</version>
+  <version>0.7.1</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wycc</artifactId>
-      <version>0.7.16</version>
+      <version>0.7.18</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
@@ -63,7 +63,7 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>jmodelgen</artifactId>
-      <version>0.4.0</version>
+      <version>0.4.2</version>
     </dependency>
     <dependency>
       <groupId>ant</groupId>
