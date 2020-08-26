@@ -1845,7 +1845,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = pullExpression(expr.getOperand(), true, typing, environment);
 		int src = typing.top();
 		// Check source is array of appropriate type
-		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Record.class) != null));
+		//Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Record.class) != null));
+		Typing nTyping = typing.filter(row -> (getRecordField(row.get(src), expr.getField()) != null));
 		Typing nnTyping = nTyping
 				.map(row -> filterOnSubtype(row, var, getRecordField(row.get(src), expr.getField()), environment));
 		// Report errors
