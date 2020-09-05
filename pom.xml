@@ -1,13 +1,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+  </repositories>
+  
   <!-- ============================================== -->
   <!-- Configuration -->
   <!-- ============================================== -->
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc</artifactId>
-  <version>0.7.1</version>
+  <version>0.7.2</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -53,7 +60,7 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wycc</artifactId>
-      <version>0.7.18</version>
+      <version>0.7.19</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
