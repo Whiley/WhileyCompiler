@@ -5,8 +5,11 @@
 	   classpath="lib/maven-ant-tasks-2.1.3.jar"
 	   resource="org/apache/maven/artifact/ant/antlib.xml"/>  
   <!-- set pom file and dependencies -->
+  <artifact:remoteRepository id="remote.repository" url="https://repo1.maven.org/maven2" />  
   <artifact:pom id="mypom" file="pom.xml"/>
-  <artifact:dependencies pathId="MAVEN_DEPS" pomRefId="mypom" />  
+  <artifact:dependencies pathId="MAVEN_DEPS" pomRefId="mypom">
+    <remoteRepository refid="remote.repository" />
+  </artifact:dependencies>  
   <!-- set project layout -->
   <property name="SRC_DIR" location="src"/>
   <property name="JAVA_DIR" location="${SRC_DIR}/main/java"/>
