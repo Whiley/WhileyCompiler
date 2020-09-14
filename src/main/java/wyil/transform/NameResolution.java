@@ -33,6 +33,7 @@ import static wyil.lang.WyilFile.*;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -198,7 +199,10 @@ public class NameResolution {
 		 * The list of patches being constructed
 		 */
 		private ArrayList<Patch> patches = new ArrayList<>();
-
+		/**
+		 * Cache of previously resolved names.
+		 */
+		private HashMap<Name,QualifiedName> cache = new HashMap<>();
 		/**
 		 * Used to indicate when resolving something which is exposed (and, hence,
 		 * relevant members should themselves be exposed).
@@ -216,6 +220,8 @@ public class NameResolution {
 
 		@Override
 		public void visitUnit(Decl.Unit unit, List<Decl.Import> unused) {
+			// Reset cache as this is necessary when moving between compilation units!
+			cache.clear();
 			// Create an initially empty list of import statements.
 			super.visitUnit(unit, new ArrayList<>());
 		}
@@ -263,6 +269,10 @@ public class NameResolution {
 
 		@Override
 		public void visitImport(Decl.Import decl, List<Decl.Import> imports) {
+			// Reset cache as an import statement can have non-trivial effects. Ideally, it
+			// would be nice to incrementally update the cache.
+			cache.clear();
+			//
 			super.visitImport(decl, imports);
 			// Add this import statements to list of visible imports
 			imports.add(decl);
@@ -330,15 +340,29 @@ public class NameResolution {
 		 * @return
 		 */
 		private QualifiedName resolveAs(Decl.Link<?> link, List<Decl.Import> imports) {
+			QualifiedName r;
 			Name name = link.getName();
-			// Resolve unqualified name to qualified name
-			switch (name.size()) {
-			case 1:
-				return unqualifiedResolveAs(name.get(0), imports);
-			case 2:
-				return partialResolveAs(name.get(0), name.get(1), imports);
-			default:
-				return new QualifiedName(name.getPath(), name.getLast());
+			QualifiedName qualified = cache.get(name);
+			if(qualified != null) {
+				// Have previously resolved this particular name in this particular context.
+				return qualified;
+			} else {
+				// Resolve unqualified name to qualified name
+				switch (name.size()) {
+				case 1:
+					qualified = unqualifiedResolveAs(name.get(0), imports);
+					break;
+				case 2:
+					qualified = partialResolveAs(name.get(0), name.get(1), imports);
+					break;
+				default:
+					// NOTE: don't put these into cache as not necessary!
+					return new QualifiedName(name.getPath(), name.getLast());
+				}
+				// Cache resolution for performance
+				cache.put(name, qualified);
+				// Done
+				return qualified;
 			}
 		}
 
