@@ -182,6 +182,15 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	@Override
+	public void visitLambda(Decl.Lambda expr, Context context) {
+		if(expr.getType() instanceof Type.Method) {
+			super.visitLambda(expr, Context.IMPURE);
+		} else {
+			super.visitLambda(expr, Context.PURE);
+		}
+	}
+
+	@Override
 	public void visitNew(Expr.New expr, Context context) {
 		if (context != Context.IMPURE) {
 			syntaxError(expr, ALLOCATION_NOT_PERMITTED);
