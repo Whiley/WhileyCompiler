@@ -676,6 +676,9 @@ public class QuickCheck implements Command {
 		Domain.Big<RValue> result = cache.get(type);
 		if (result == null) {
 			switch (type.getOpcode()) {
+			case TYPE_void:
+				result = constructGenerator((Type.Void) type, context);
+				break;
 			case TYPE_null:
 				result = constructGenerator((Type.Null) type, context);
 				break;
@@ -722,6 +725,10 @@ public class QuickCheck implements Command {
 			cache.put(type,result);
 		}
 		return result;
+	}
+
+	private Domain.Small<RValue> constructGenerator(Type.Void type, ExtendedContext context) {
+		return Domains.EMPTY;
 	}
 
 	private Domain.Small<RValue> constructGenerator(Type.Null type, ExtendedContext context) {
