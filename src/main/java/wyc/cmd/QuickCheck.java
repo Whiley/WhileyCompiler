@@ -199,11 +199,6 @@ public class QuickCheck implements Command {
 	private final PrintStream syserr;
 
 	/**
-	 * The environment in which this command is executing
-	 */
-	private final Command.Environment environment;
-
-	/**
 	 * The interpreter instance used for executing code.
 	 */
 	private ExtendedInterpreter interpreter;
@@ -220,8 +215,7 @@ public class QuickCheck implements Command {
 	 */
 	private StructuredLogger<LogEntry> logger;
 
-	public QuickCheck(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
-		this.environment = environment;
+	public QuickCheck(Build.Environment environment, OutputStream sysout, OutputStream syserr) {
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
