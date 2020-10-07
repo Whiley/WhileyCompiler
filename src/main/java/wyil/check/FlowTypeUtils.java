@@ -37,7 +37,7 @@ import org.apache.tools.ant.types.Environment;
 
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.util.ArrayUtils;
+import wyfs.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -1134,14 +1134,14 @@ public class FlowTypeUtils {
 			 * @param n
 			 * @return
 			 */
-			public wycc.util.Pair<Row,Type.Existential[]> fresh(int n) {
+			public wyfs.util.Pair<Row,Type.Existential[]> fresh(int n) {
 				int m = constraints.maxVariable() + 1;
 				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != vars.length; ++i) {
 					vars[i] = new Type.Existential(m + i);
 				}
 				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
-				return new wycc.util.Pair<>(nrow,vars);
+				return new wyfs.util.Pair<>(nrow,vars);
 			}
 
 			public Row set(int index, Type type) {

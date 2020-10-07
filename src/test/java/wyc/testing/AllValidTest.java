@@ -29,7 +29,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.util.TestUtils;
-import wycc.util.Pair;
+import wyfs.util.Pair;
 import wyfs.util.Trie;
 
 /**

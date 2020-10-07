@@ -18,9 +18,9 @@ import java.io.IOException;
 import wybs.io.SyntacticHeapReader;
 import wybs.lang.*;
 import wybs.lang.SyntacticHeap.Schema;
-import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
+import wyfs.util.Pair;
 import wyil.lang.WyilFile;
 
 /**

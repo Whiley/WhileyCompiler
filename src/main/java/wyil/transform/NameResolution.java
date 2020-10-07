@@ -21,10 +21,9 @@ import wybs.util.AbstractCompilationUnit.Ref;
 import wybs.util.AbstractSyntacticHeap;
 
 import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-
+import wyfs.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 

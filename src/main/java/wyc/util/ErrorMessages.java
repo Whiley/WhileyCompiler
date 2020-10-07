@@ -18,7 +18,7 @@ import java.util.*;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wycc.util.ArrayUtils;
+import wyfs.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Template;

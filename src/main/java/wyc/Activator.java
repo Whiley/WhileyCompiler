@@ -16,7 +16,6 @@ package wyc;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wycc.lang.Module;
-import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -34,6 +33,7 @@ import java.util.List;
 
 import wybs.lang.Build;
 import wybs.util.AbstractBuildRule;
+import wybs.util.Logger;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
