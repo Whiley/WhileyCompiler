@@ -199,11 +199,6 @@ public class QuickCheck implements Command {
 	private final PrintStream syserr;
 
 	/**
-	 * The environment in which this command is executing
-	 */
-	private final Command.Environment environment;
-
-	/**
 	 * The interpreter instance used for executing code.
 	 */
 	private ExtendedInterpreter interpreter;
@@ -220,8 +215,7 @@ public class QuickCheck implements Command {
 	 */
 	private StructuredLogger<LogEntry> logger;
 
-	public QuickCheck(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
-		this.environment = environment;
+	public QuickCheck(Build.Environment environment, OutputStream sysout, OutputStream syserr) {
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
@@ -676,6 +670,9 @@ public class QuickCheck implements Command {
 		Domain.Big<RValue> result = cache.get(type);
 		if (result == null) {
 			switch (type.getOpcode()) {
+			case TYPE_void:
+				result = constructGenerator((Type.Void) type, context);
+				break;
 			case TYPE_null:
 				result = constructGenerator((Type.Null) type, context);
 				break;
@@ -722,6 +719,10 @@ public class QuickCheck implements Command {
 			cache.put(type,result);
 		}
 		return result;
+	}
+
+	private Domain.Small<RValue> constructGenerator(Type.Void type, ExtendedContext context) {
+		return Domains.EMPTY;
 	}
 
 	private Domain.Small<RValue> constructGenerator(Type.Null type, ExtendedContext context) {
