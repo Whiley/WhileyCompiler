@@ -13,12 +13,11 @@
 // limitations under the License.
 package wyc;
 
-import wycc.cfg.Configuration;
-import wycc.lang.Command;
-import wycc.lang.Module;
+import wycli.cfg.Configuration;
+import wycli.lang.Command;
+import wycli.lang.Module;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyfs.util.Trie;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
@@ -51,7 +50,7 @@ public class Activator implements Module.Activator {
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
-	public static Build.Platform WHILEY_PLATFORM = new Build.Platform() {
+	public static Command.Platform WHILEY_PLATFORM = new Command.Platform() {
 		//
 		@Override
 		public String getName() {
@@ -68,7 +67,7 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
-		public void initialise(Configuration configuration, Build.Project project) throws IOException {
+		public void initialise(Configuration configuration, Command.Project project) throws IOException {
 			Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			//
 			Trie source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
@@ -172,7 +171,7 @@ public class Activator implements Module.Activator {
 	@Override
 	public Module start(Module.Context context) {
 		// Register platform
-		context.register(Build.Platform.class, WHILEY_PLATFORM);
+		context.register(Command.Platform.class, WHILEY_PLATFORM);
 		// List of commands to register
 		context.register(Command.Descriptor.class, QuickCheck.DESCRIPTOR);
 		// List of content types
