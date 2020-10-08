@@ -29,11 +29,12 @@ import wybs.lang.*;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.Logger;
 import wyc.Activator;
 import wyc.util.ErrorMessages;
-import wycc.cfg.Configuration;
-import wycc.cfg.Configuration.Schema;
-import wycc.lang.Command;
+import wycli.cfg.Configuration;
+import wycli.cfg.Configuration.Schema;
+import wycli.lang.Command;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -181,7 +182,7 @@ public class QuickCheck implements Command {
 
 		@Override
 		public Command initialise(Command.Environment environment) {
-			return new QuickCheck(environment, System.out, System.err);
+			return new QuickCheck(environment.getLogger(), System.out, System.err);
 		}
 
 	};
@@ -215,7 +216,7 @@ public class QuickCheck implements Command {
 	 */
 	private StructuredLogger<LogEntry> logger;
 
-	public QuickCheck(Build.Environment environment, OutputStream sysout, OutputStream syserr) {
+	public QuickCheck(Logger logger, OutputStream sysout, OutputStream syserr) {
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 		this.cache = new HashMap<>();
@@ -224,12 +225,12 @@ public class QuickCheck implements Command {
 
 			@Override
 			public void logTimedMessage(LogEntry result, long time, long memory) {
-				environment.getLogger().logTimedMessage(result.toString(), time, memory);
+				logger.logTimedMessage(result.toString(), time, memory);
 			}
 
 			@Override
 			public void logTimedMessage(String msg, long time, long memory) {
-				environment.getLogger().logTimedMessage(msg, time, memory);
+				logger.logTimedMessage(msg, time, memory);
 			}
 
 		};
@@ -340,7 +341,7 @@ public class QuickCheck implements Command {
 	 */
 	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
 		// Extract all syntactic markers from entries in the build graph
-		List<SyntacticItem.Marker> items = wycc.commands.Build.extractSyntacticMarkers(target);
+		List<SyntacticItem.Marker> items = wycli.commands.Build.extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			SyntacticItem.Marker marker = items.get(i);
@@ -350,7 +351,7 @@ public class QuickCheck implements Command {
 			}
 			output.println();
 			// Log the error message
-			wycc.commands.Build.printSyntacticMarkers(output, sources, marker);
+			wycli.commands.Build.printSyntacticMarkers(output, sources, marker);
 			// FIXME: this whole thing is a complete hack
 			if(marker instanceof SyntaxError) {
 				SyntaxError err = (SyntaxError) marker;
