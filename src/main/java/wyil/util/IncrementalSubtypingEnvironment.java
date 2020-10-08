@@ -43,7 +43,7 @@ import java.util.function.Function;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wycc.util.ArrayUtils;
+import wyfs.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;

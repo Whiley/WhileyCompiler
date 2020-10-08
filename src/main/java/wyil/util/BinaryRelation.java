@@ -15,7 +15,7 @@ package wyil.util;
 
 import java.util.HashSet;
 
-import wycc.util.Pair;
+import wyfs.util.Pair;
 
 /**
  * Implements a binary relation between values of a given type.

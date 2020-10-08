@@ -24,11 +24,12 @@ import wyal.lang.WyalFile;
 import wybs.lang.*;
 import wybs.lang.Build.Meter;
 import wybs.util.AbstractBuildTask;
+import wybs.util.Logger;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wycc.util.Logger;
+import wycli.lang.Command;
 import wyfs.lang.Path;
 import wyil.check.*;
 import wyil.lang.Compiler;
@@ -100,16 +101,22 @@ public final class CompileTask extends AbstractBuildTask<WhileyFile, WyilFile> {
 	 */
 	private final Path.Root sourceRoot;
 
-	public CompileTask(Build.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
+	public CompileTask(Command.Project project, Path.Root sourceRoot, Path.Entry<WyilFile> target,
+			Collection<Path.Entry<WhileyFile>> sources) throws IOException {
+		this(project, project.getEnvironment().getLogger(), sourceRoot, target, sources);
+	}
+
+	public CompileTask(Build.Project project, Logger logger, Path.Root sourceRoot, Path.Entry<WyilFile> target,
 			Collection<Path.Entry<WhileyFile>> sources) throws IOException {
 		super(project, target, sources);
 		// FIXME: shouldn't need source root
 		this.sourceRoot = sourceRoot;
 		// Extract the logger for debug information
-		this.logger = project.getEnvironment().getLogger();
+		this.logger = logger;
 		//
 		this.verifier = new VerificationCheck(Build.NULL_METER,project,target);
 	}
+
 
 	public CompileTask setVerification(boolean flag) {
 		this.verification = flag;

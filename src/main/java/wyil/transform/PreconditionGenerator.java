@@ -8,7 +8,7 @@ import wyal.lang.WyalFile.Expr;
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.util.Pair;
+import wyfs.util.Pair;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;

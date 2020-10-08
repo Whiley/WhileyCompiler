@@ -33,19 +33,18 @@ import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.Logger;
 import wybs.util.SequentialBuildProject;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wycc.WyMain;
-import wycc.util.Logger;
-import wycc.util.Pair;
+import wycli.WyMain;
+import wycli.lang.Command;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Root;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.Trie;
+import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
@@ -226,9 +225,9 @@ public class TestUtils {
 			// Construct the project
 			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
 			// Construct temporary build environment
-			Build.Environment environment = new Environment(root,DEBUG);
+			//Command.Environment environment = new Environment(root,DEBUG);
 			// Construct build project within this environment
-			SequentialBuildProject project = new SequentialBuildProject(environment, root);
+			SequentialBuildProject project = new SequentialBuildProject(root);
 			// Identify source files
 			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
 			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
@@ -238,7 +237,8 @@ public class TestUtils {
 				@Override
 				public void apply(Collection<Build.Task> tasks) throws IOException {
 					// Construct a new build task
-					CompileTask task = new CompileTask(project, root, target, sources).setVerification(verify)
+					CompileTask task = new CompileTask(project, Logger.NULL, root, target, sources)
+							.setVerification(verify)
 							.setCounterExamples(counterexamples);
 					// Submit the task for execution
 					tasks.add(task);
@@ -247,14 +247,14 @@ public class TestUtils {
 			// FIXME: this is annoying!
 			project.refresh();
 			// Actually force the project to build!
-			result = project.build(ForkJoinPool.commonPool(), environment.getMeter()).get();
+			result = project.build(ForkJoinPool.commonPool(), Build.NULL_METER).get();
 			// Flush any created resources (e.g. wyil files)
 			root.flush();
 			root.refresh();
 			// Check whether any syntax error produced
 			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
 			// FIXME: this seems quite broken.
-			wycc.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
+			wycli.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
 			//e.outputSourceError(psyserr);
@@ -436,53 +436,6 @@ public class TestUtils {
 			return false;
 		}
 		return true;
-	}
-
-	static public class Environment implements Build.Environment {
-		private final Build.Meter meter;
-		private final Logger logger;
-		private final Path.Root root;
-
-		public Environment(Path.Root root, boolean verbose) {
-			this.root = root;
-			this.logger = verbose ? new Logger.Default(System.err) : Logger.NULL;
-			this.meter = new WyMain.Meter("TestUtils", logger, verbose ? Integer.MAX_VALUE : 0);
-		}
-
-		@Override
-		public Root getRoot() {
-			return root;
-		}
-
-		@Override
-		public List<Build.Project> getProjects() {
-			return Collections.EMPTY_LIST;
-		}
-
-		@Override
-		public Logger getLogger() {
-			return logger;
-		}
-
-		@Override
-		public ExecutorService getExecutor() {
-			return ForkJoinPool.commonPool();
-		}
-
-		@Override
-		public wyfs.lang.Content.Registry getContentRegistry() {
-			return registry;
-		}
-
-		@Override
-		public List<Build.Platform> getBuildPlatforms() {
-			return Collections.EMPTY_LIST;
-		}
-
-		@Override
-		public Meter getMeter() {
-			return meter;
-		}
 	}
 
 	/**

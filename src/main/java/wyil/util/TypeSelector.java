@@ -31,7 +31,7 @@ import static wyil.lang.WyilFile.TYPE_void;
 
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wycc.util.ArrayUtils;
+import wyfs.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Selector;
