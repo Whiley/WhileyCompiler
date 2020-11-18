@@ -1144,7 +1144,7 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	 * @author David J. Pearce
 	 *
 	 */
-	private abstract static class EnclosingScope {
+	public abstract static class EnclosingScope {
 		protected final EnclosingScope parent;
 
 		public EnclosingScope(EnclosingScope parent) {
