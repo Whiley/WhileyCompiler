@@ -296,7 +296,8 @@ public class IncrementalSubtypingEnvironment implements Subtyping.Environment {
 			} else {
 				// Lazily construct the visited set as, in the vast majority of cases, this is
 				// never required.
-				visited = new HashSet<>();
+				visited = (visited != null) ? visited : new HashSet<>();
+				// Add the name to prevent infinite loops
 				visited.add(nid);
 			}
 			return isContractive(name, decl.getType(), visited);
