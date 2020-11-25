@@ -209,7 +209,7 @@ public class QuickCheck implements Command {
 	 * requirements. Furthermore, it is necessary to ensure that aliasing bugs are
 	 * identified.
 	 */
-	private final HashMap<Type, Domain.Big<RValue>> cache;
+	private final HashMap<Name, Domain.Big<RValue>> cache;
 
 	/**
 	 * Provides the output chanel for information about the quick check process.
@@ -527,6 +527,8 @@ public class QuickCheck implements Command {
 		// iterate through all values in the generator to see whether any pass the
 		// invariant and, hence, are valid instances of this invariant.
 		Domain.Small<RValue> domain = generateValidInputs(t.getInvariant(), t.getVariableDeclaration(), generator, context, frame);
+		// Cache type
+		cache.put(t.getQualifiedName().toName(), domain);
  		//
 		time = System.currentTimeMillis() - time;
 		memory = memory - runtime.freeMemory();
@@ -668,58 +670,38 @@ public class QuickCheck implements Command {
 	 * @return
 	 */
 	private Domain.Big<RValue> constructGenerator(Type type, ExtendedContext context) {
-		Domain.Big<RValue> result = cache.get(type);
-		if (result == null) {
-			switch (type.getOpcode()) {
-			case TYPE_void:
-				result = constructGenerator((Type.Void) type, context);
-				break;
-			case TYPE_null:
-				result = constructGenerator((Type.Null) type, context);
-				break;
-			case TYPE_bool:
-				result = constructGenerator((Type.Bool) type, context);
-				break;
-			case TYPE_byte:
-				result = constructGenerator((Type.Byte) type, context);
-				break;
-			case TYPE_int:
-				result = constructGenerator((Type.Int) type, context);
-				break;
-			case TYPE_array:
-				result = constructGenerator((Type.Array) type, context);
-				break;
-			case TYPE_record:
-				result = constructGenerator((Type.Record) type, context);
-				break;
-			case TYPE_nominal:
-				result = constructGenerator((Type.Nominal) type, context);
-				break;
-			case TYPE_union:
-				result = constructGenerator((Type.Union) type, context);
-				break;
-			case TYPE_universal:
-				result = constructGenerator((Type.Universal) type, context);
-				break;
-			case TYPE_reference:
-				result = constructGenerator((Type.Reference) type, context);
-				break;
-			case TYPE_function:
-				result = constructGenerator((Type.Function) type, context);
-				break;
-			case TYPE_method:
-				result = constructGenerator((Type.Method) type, context);
-				break;
-			case TYPE_property:
-			default:
-				// NOTE: this should be dead code.
-				throw new RuntimeException("unknown type encountered (" + type + ")");
-			}
-			// Store the computed result in the cache. This is important to reduce memory
-			// footprints. In some cases, this reduction can be quite significant.
-			cache.put(type,result);
+		switch (type.getOpcode()) {
+		case TYPE_void:
+			return constructGenerator((Type.Void) type, context);
+		case TYPE_null:
+			return constructGenerator((Type.Null) type, context);
+		case TYPE_bool:
+			return constructGenerator((Type.Bool) type, context);
+		case TYPE_byte:
+			return constructGenerator((Type.Byte) type, context);
+		case TYPE_int:
+			return constructGenerator((Type.Int) type, context);
+		case TYPE_array:
+			return constructGenerator((Type.Array) type, context);
+		case TYPE_record:
+			return constructGenerator((Type.Record) type, context);
+		case TYPE_nominal:
+			return constructGenerator((Type.Nominal) type, context);
+		case TYPE_union:
+			return constructGenerator((Type.Union) type, context);
+		case TYPE_universal:
+			return constructGenerator((Type.Universal) type, context);
+		case TYPE_reference:
+			return constructGenerator((Type.Reference) type, context);
+		case TYPE_function:
+			return constructGenerator((Type.Function) type, context);
+		case TYPE_method:
+			return constructGenerator((Type.Method) type, context);
+		case TYPE_property:
+		default:
+			// NOTE: this should be dead code.
+			throw new RuntimeException("unknown type encountered (" + type + ")");
 		}
-		return result;
 	}
 
 	private Domain.Small<RValue> constructGenerator(Type.Void type, ExtendedContext context) {
@@ -786,8 +768,12 @@ public class QuickCheck implements Command {
 	private Domain.Big<RValue> constructGenerator(Type.Nominal type, ExtendedContext context) {
 		Decl.Type decl = type.getLink().getTarget();
 		int depth = context.depth(decl);
+		// Only cache nominal types.
+		Domain.Big<RValue> result = cache.get(type.getLink().getName());
 		//
-		if (depth == context.getRecursiveTypeDepth()) {
+		if(result != null) {
+			return result;
+		} else if (depth == context.getRecursiveTypeDepth()) {
 			// NOTE: we've reached the maximum depth to explore for recursive types.
 			// Therefore, we simply return the empty domain.
 			return Domains.EMPTY;
@@ -805,11 +791,11 @@ public class QuickCheck implements Command {
 			CallStack frame = context.getFrame().enter(decl);
 			// iterate through all values in the generator to see whether any pass the
 			// invariant and, hence, are valid instances of this invariant.
-			Domain.Big<RValue> domain = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
+			result = generateValidInputs(decl.getInvariant(), decl.getVariableDeclaration(), generator, context, frame);
 			//
 			context.leave(decl);
-			//
-			return domain;
+			// Done
+			return result;
 		}
 	}
 
