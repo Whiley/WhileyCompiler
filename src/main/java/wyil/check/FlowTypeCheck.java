@@ -2030,6 +2030,8 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Typing pullArrayLength(Expr.ArrayLength expr, Typing typing, Environment environment) {
 		typing = pushExpression(expr.getOperand(), typing.push(Type.AnyArray), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		//
 		return typing.map(row -> row.add(Type.Int));
 	}
@@ -2179,6 +2181,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullIntegerOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards
 		return typing.map(row -> row.add(Type.Int));
 	}
@@ -2187,6 +2191,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
 		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards
 		return typing.map(row -> row.add(Type.Int));
 	}
