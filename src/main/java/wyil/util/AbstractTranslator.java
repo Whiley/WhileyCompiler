@@ -183,9 +183,9 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		case STMT_initialiservoid:
 				return visitInitialiser((Stmt.Initialiser) stmt, environment);
 		case EXPR_invoke:
-			return visitInvoke((Expr.Invoke) stmt, environment);
+			return visitInvokeStmt((Expr.Invoke) stmt, environment);
 		case EXPR_indirectinvoke:
-			return visitIndirectInvoke((Expr.IndirectInvoke) stmt, environment);
+			return visitIndirectInvokeStmt((Expr.IndirectInvoke) stmt, environment);
 		case STMT_namedblock:
 			return visitNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
 		case STMT_return:
@@ -332,6 +332,17 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 			initialiser = visitExpression(stmt.getInitialiser(), environment);
 		}
 		return constructInitialiser(stmt, initialiser);
+	}
+
+	public S visitInvokeStmt(Expr.Invoke stmt, Environment environment) {
+		List<E> operands = visitHeterogenousExpressions(stmt.getOperands(), environment);
+		return constructInvokeStmt(stmt, operands);
+	}
+
+	public S visitIndirectInvokeStmt(Expr.IndirectInvoke stmt, Environment environment) {
+		E operand = visitExpression(stmt.getSource(), environment);
+		List<E> operands = visitHeterogenousExpressions(stmt.getArguments(), environment);
+		return constructIndirectInvokeStmt(stmt, operand, operands);
 	}
 
 	public S visitNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
@@ -953,6 +964,10 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	public abstract S constructIfElse(Stmt.IfElse stmt, E condition, S trueBranch, S falseBranch);
 
 	public abstract S constructInitialiser(Stmt.Initialiser stmt, E initialiser);
+
+	public abstract S constructInvokeStmt(Expr.Invoke expr, List<E> arguments);
+
+	public abstract S constructIndirectInvokeStmt(Expr.IndirectInvoke expr, E source, List<E> arguments);
 
 	public abstract S constructNamedBlock(Stmt.NamedBlock stmt, List<S> stmts);
 
