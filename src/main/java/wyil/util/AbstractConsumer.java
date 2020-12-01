@@ -814,6 +814,9 @@ public abstract class AbstractConsumer<T> {
 		meter.step("type");
 		//
 		switch (type.getOpcode()) {
+		case TYPE_any:
+			visitTypeAny((Type.Any) type, data);
+			break;
 		case TYPE_array:
 			visitTypeArray((Type.Array) type, data);
 			break;
@@ -877,6 +880,10 @@ public abstract class AbstractConsumer<T> {
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
+	}
+
+	public void visitTypeAny(Type.Any type, T data) {
+
 	}
 
 	public void visitTypeArray(Type.Array type, T data) {

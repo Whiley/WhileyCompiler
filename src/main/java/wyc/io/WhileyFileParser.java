@@ -2489,7 +2489,7 @@ public class WhileyFileParser {
 			// backtrack
 			index = mid;
 			// parse any optional template arguments
-			Tuple<? extends SyntacticItem> templateArguments = parseOptionalTemplateArguments(scope, terminated);
+			Tuple<Type> templateArguments = parseOptionalTemplateArguments(scope, terminated);
 			// Construct binding to be resolved
 			Decl.Binding<Type.Callable, Decl.Callable> binding = new Decl.Binding<>(link, templateArguments);
 			// Repeat this
@@ -2556,7 +2556,7 @@ public class WhileyFileParser {
 					// effort. We want to see whether it is a method invocation with
 					// lifetime arguments. But "Identifier < ..." can also be a
 					// boolean expression!
-					Tuple<? extends SyntacticItem> template = parseTemplateArguments(scope,terminated);
+					Tuple<Type> template = parseTemplateArguments(scope,terminated);
 					match(LeftBrace);
 					return parseInvokeExpression(scope, start, name, terminated, template);
 				} else {
@@ -2669,7 +2669,7 @@ public class WhileyFileParser {
 		return true;
 	}
 
-	public Tuple<? extends SyntacticItem> parseOptionalTemplateArguments(EnclosingScope scope, boolean terminated) {
+	public Tuple<Type> parseOptionalTemplateArguments(EnclosingScope scope, boolean terminated) {
 		skipWhiteSpace();
 		if(index < tokens.size() && tokens.get(index).kind == LeftAngle) {
 			return parseTemplateArguments(scope,terminated);
@@ -2678,10 +2678,10 @@ public class WhileyFileParser {
 		}
 	}
 
-	public Tuple<? extends SyntacticItem> parseTemplateArguments(EnclosingScope scope, boolean terminated) {
+	public Tuple<Type> parseTemplateArguments(EnclosingScope scope, boolean terminated) {
 		Token left = match(LeftAngle);
 		boolean firstTime = true;
-		ArrayList<SyntacticItem> template = new ArrayList<>();
+		ArrayList<Type> template = new ArrayList<>();
 		// Attempt to parse a template argument
 		while (eventuallyMatch(RightAngle) == null) {
 			if (!firstTime) {
@@ -3156,7 +3156,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseInvokeExpression(EnclosingScope scope, int start, Identifier name, boolean terminated,
-			Tuple<? extends SyntacticItem> templateArguments) {
+			Tuple<Type> templateArguments) {
 		// First, parse the arguments to this invocation.
 		Tuple<Expr> args = parseInvocationArguments(scope);
 		// Second, determine what kind of invocation we have. If the name of the

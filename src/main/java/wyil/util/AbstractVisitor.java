@@ -816,6 +816,9 @@ public abstract class AbstractVisitor {
 	public void visitType(Type type) {
 		meter.step("type");
 		switch (type.getOpcode()) {
+		case TYPE_any:
+			visitTypeAny((Type.Any) type);
+			break;
 		case TYPE_array:
 			visitTypeArray((Type.Array) type);
 			break;
@@ -882,6 +885,10 @@ public abstract class AbstractVisitor {
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
+	}
+
+	public void visitTypeAny(Type.Any type) {
+
 	}
 
 	public void visitTypeArray(Type.Array type) {

@@ -1765,14 +1765,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		// Allocate space for the signature variables. This is used to identify each row
 		// in the typing matrix with one of candidates.
-		typing = typing.push(Type.Any).push(Type.Any);
+		typing = typing.push(Type.Any).push(Type.Any).push(Type.Any);
 		int v_concrete = typing.top();
-		int v_signature = v_concrete - 1;
+		int v_template = v_concrete - 1;
+		int v_signature = v_concrete - 2;
 		// Register a finaliser to resolve this invocation
-		typing.register(typeInvokeExpression(expr, v_signature));
+		typing.register(typeInvokeExpression(expr, v_signature, v_template));
 		// Fork typing into different cases for each overloaded candidate
 		typing = typing
-				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete, v_template)));
 		// <<< Filter return type
 		Typing nTyping = typing.map(row -> filterOnReturn(row, var, (Type.Callable) row.get(v_concrete), environment));
 		// Sanity check whether valid typing still possible
@@ -2230,25 +2231,26 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		// Allocate space for the signature variables. This is used to identify each row
 		// in the typing matrix with one of candidates.
-		typing = typing.push(Type.Any).push(Type.Any);
+		typing = typing.push(Type.Any).push(Type.Any).push(Type.Any);
 		int v_concrete = typing.top();
-		int v_signature = v_concrete - 1;
+		int v_template = v_concrete - 1;
+		int v_signature = v_concrete - 2;
 		// Register a finaliser to resolve this invocation
-		typing.register(typeInvokeExpression(expr, v_signature));
+		typing.register(typeInvokeExpression(expr, v_signature, v_template));
 		// Fork typing into different cases for each overloaded candidate
 		typing = typing
-				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete, v_template)));
 		// >>> Propagate forwards into children
 		typing = pushExpressions(arguments, (r, i) -> getLambdaParameter(r.get(v_concrete), i), typing, environment);
 		// Pull back return
 		return typing.map(row -> row.add(getLambdaReturn(row.get(v_concrete))));
 	}
 
-	private Typing.Row initialiseCallableFrame(Typing.Row row, Expr.Invoke expr, Decl.Callable candidate, int v_sig,
-			int v_concrete) {
+	private Typing.Row initialiseCallableFrame(Typing.Row row, Expr.Invoke expr, Decl.Callable candidate, int v_signature,
+			int v_concrete, int v_template) {
 		Type.Callable signatureType = candidate.getType();
 		Tuple<Template.Variable> template = candidate.getTemplate();
-		Tuple<SyntacticItem> templateArguments = expr.getBinding().getArguments();
+		Tuple<Type> templateArguments = expr.getBinding().getArguments();
 		// Check whether need to infer template arguments
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
@@ -2258,11 +2260,17 @@ public class FlowTypeCheck implements Compiler.Check {
 			templateArguments = new Tuple<>(p.second());
 		}
 		// Construct the concrete type.
-		Type.Callable concreteType = WyilFile.substitute(signatureType, template, templateArguments);
+		Type.Callable concreteType = WyilFile.substituteTypeCallable(signatureType, template, templateArguments);
 		// Configure first meta-variable to hold actual signature
-		row = row.set(v_sig, signatureType);
+		row = row.set(v_signature, signatureType);
 		// Configure second meta-variable to hold concrete signature
 		row = row.set(v_concrete, concreteType);
+		// Configure third meta-variable to hold concrete template
+		if(templateArguments.size() > 0) {
+			// NOTE: cannot set the template type if there are no template arguments as this
+			// defaults to void which then renders the whole typing invalid!
+			row = row.set(v_template, Type.Tuple.create(templateArguments.toArray(Type.class)));
+		}
 		//
 		return row;
 	}
@@ -3215,15 +3223,32 @@ public class FlowTypeCheck implements Compiler.Check {
 		};
 	}
 
-	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int sig) {
+	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int signature, int template) {
 		Decl.Link<Decl.Callable> link = e.getLink();
+		Decl.Binding<Type.Callable, Decl.Callable> binding = e.getBinding();
 		return rows -> {
-			if (sig < 0) {
+			if (signature < 0) {
 				// invalid typing
 				return false;
 			} else if (rows.length == 1) {
-				Type.Callable signature = (Type.Callable) rows[0].get(sig);
-				link.resolve(link.lookup(signature));
+				Type.Callable sig = (Type.Callable) rows[0].get(signature);
+				Type tem = rows[0].get(template);
+				// Resolve link
+				link.resolve(link.lookup(sig));
+				Decl.Callable d = link.getTarget();
+				// Set binding arguments (if necessary)
+				if(d.getTemplate().size() > 0 && binding.getArguments().size() == 0) {
+					// Yes, is necessary as we have a declaration with template arguments but
+					// currently no specified arguments in the binding.
+					Type[] tems = new Type[tem.shape()];
+					// Unpack types from shape. This is ugly but is necessary as tuple types
+					// dissolve into the underlying type when there is a single component, etc.
+					for(int i=0;i!=tem.shape();++i) {
+						tems[i] = tem.dimension(i);
+					}
+					// Finally, update the binding arguments.
+					e.getBinding().setArguments(new Tuple<>(tems));
+				}
 				return true;
 			} else if (rows.length > 1) {
 				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());

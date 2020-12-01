@@ -1519,7 +1519,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		public static class Binding<S extends WyilFile.Type, T extends Decl.Named<S>> extends AbstractSyntacticItem {
 			private S concreteType;
 
-			public Binding(Link<T> link, Tuple<? extends SyntacticItem> arguments) {
+			public Binding(Link<T> link, Tuple<WyilFile.Type> arguments) {
 				super(DECL_binding, link, arguments);
 			}
 
@@ -1532,9 +1532,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if(concreteType == null) {
 					T decl = getLink().getTarget();
 					S type = decl.getType();
+					//
 					// Substitute type parameters
 					if(type instanceof WyilFile.Type.Callable) {
-						concreteType = (S) WyilFile.substitute((WyilFile.Type.Callable) type, decl.getTemplate(),
+						concreteType = (S) WyilFile.substituteTypeCallable((WyilFile.Type.Callable) type, decl.getTemplate(),
 								getArguments());
 					} else {
 						concreteType = (S) type.substitute(bindingFunction(decl.getTemplate(), getArguments()));
@@ -1552,18 +1553,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			 *
 			 * @return
 			 */
-			public Tuple<SyntacticItem> getArguments() {
-				return (Tuple<SyntacticItem>) get(1);
+			public Tuple<WyilFile.Type> getArguments() {
+				return (Tuple<WyilFile.Type>) get(1);
 			}
 
-			public void setArguments(Tuple<SyntacticItem> arguments) {
-				operands[1] = arguments;
+			public void setArguments(Tuple<WyilFile.Type> arguments) {
+				operands[1] = getHeap().allocate(arguments);
 				concreteType = null;
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Binding((Link) operands[0], (Tuple<SyntacticItem>) operands[1]);
+				return new Binding((Link) operands[0], (Tuple<Type>) operands[1]);
 			}
 
 			@Override
@@ -1577,7 +1578,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Binding((Decl.Link) operands[0], (Tuple<SyntacticItem>) operands[1]);
+					return new Binding((Decl.Link) operands[0], (Tuple<Type>) operands[1]);
 				}
 			};
 		}
@@ -5477,7 +5478,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 			}
 
 			public Record(boolean isOpen, Identifier field, Type type) {
-				this(new Value.Bool(isOpen), new WyilFile.Tuple<Type.Field>(new Type.Field(field, type)));
+				this(new Value.Bool(isOpen), new WyilFile.Tuple<>(new Type.Field(field, type)));
 			}
 
 			public Record(Value.Bool isOpen, WyilFile.Tuple<Type.Field> fields) {
@@ -6864,8 +6865,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	 * @param templateArguments
 	 * @return
 	 */
-	public static Type.Callable substitute(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
-			Tuple<SyntacticItem> templateArguments) {
+	public static Type.Callable substituteTypeCallable(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
+			Tuple<WyilFile.Type> templateArguments) {
 		Function<Object,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
 		// Proceed with the potentially updated binding
 		Type parameters = fmp.getParameter().substitute(binding);
