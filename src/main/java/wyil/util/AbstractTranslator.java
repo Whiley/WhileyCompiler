@@ -26,7 +26,6 @@ import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
-import wyil.util.Subtyping;
 
 import static wyil.lang.WyilFile.*;
 
@@ -44,7 +43,7 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public abstract class AbstractTranslator<D,S,E extends S> {
+public abstract class AbstractTranslator<D, S, E> {
 	protected final Build.Meter meter;
 	protected final Subtyping.Environment subtypeOperator;
 
@@ -87,21 +86,19 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		return constructImport(decl);
 	}
 
-	public E visitLambda(Decl.Lambda decl, Environment environment) {
+	public E visitLambda(Decl.Lambda decl) {
 		//
-		E body = visitExpression(decl.getBody(), environment);
+		E body = visitExpression(decl.getBody());
 		return constructLambda(decl,body);
 	}
 
 	public D visitStaticVariable(Decl.StaticVariable decl) {
-		Environment environment = new Environment();
-		E initialiser = visitExpression(decl.getInitialiser(), environment);
+		E initialiser = visitExpression(decl.getInitialiser());
 		return constructStaticVariable(decl,initialiser);
 	}
 
 	public D visitType(Decl.Type decl) {
-		Environment environment = new Environment();
-		List<E> invariant = visitHomogoneousExpressions(decl.getInvariant(), environment);
+		List<E> invariant = visitHomogoneousExpressions(decl.getInvariant());
 		return constructType(decl, invariant);
 	}
 
@@ -129,123 +126,119 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
-		Environment environment = new Environment();
-		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant(), environment);
+		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
 		return constructProperty(decl,clauses);
 	}
 
 	public D visitFunction(Decl.Function decl) {
-		Environment environment = new Environment();
-		List<E> precondition = visitHomogoneousExpressions(decl.getRequires(), environment);
-		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures(), environment);
-		S body = visitBlock(decl.getBody(), environment, new FunctionOrMethodScope(decl));
+		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
+		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
 		return constructFunction(decl,precondition,postcondition,body);
 	}
 
 	public D visitMethod(Decl.Method decl) {
 		// Construct environment relation
-		Environment environment = new Environment();
-		//
-		List<E> precondition = visitHomogoneousExpressions(decl.getRequires(), environment);
-		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures(), environment);
-		S body = visitBlock(decl.getBody(), environment, new FunctionOrMethodScope(decl));
+		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
+		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
 		return constructMethod(decl,precondition,postcondition,body);
 	}
 
-	public S visitStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
+	public S visitStatement(Stmt stmt, EnclosingScope scope) {
 		meter.step("statement");
 		//
 		switch (stmt.getOpcode()) {
 		case STMT_assert:
-			return visitAssert((Stmt.Assert) stmt, environment, scope);
+			return visitAssert((Stmt.Assert) stmt, scope);
 		case STMT_assign:
-			return visitAssign((Stmt.Assign) stmt, environment, scope);
+			return visitAssign((Stmt.Assign) stmt, scope);
 		case STMT_assume:
-			return visitAssume((Stmt.Assume) stmt, environment, scope);
+			return visitAssume((Stmt.Assume) stmt, scope);
 		case STMT_block:
-			return visitBlock((Stmt.Block) stmt, environment, scope);
+			return visitBlock((Stmt.Block) stmt, scope);
 		case STMT_break:
-			return visitBreak((Stmt.Break) stmt, environment, scope);
+			return visitBreak((Stmt.Break) stmt, scope);
 		case STMT_continue:
-			return visitContinue((Stmt.Continue) stmt, environment, scope);
+			return visitContinue((Stmt.Continue) stmt, scope);
 		case STMT_debug:
-			return visitDebug((Stmt.Debug) stmt, environment, scope);
+			return visitDebug((Stmt.Debug) stmt, scope);
 		case STMT_dowhile:
-			return visitDoWhile((Stmt.DoWhile) stmt, environment, scope);
+			return visitDoWhile((Stmt.DoWhile) stmt, scope);
 		case STMT_fail:
-			return visitFail((Stmt.Fail) stmt, environment, scope);
+			return visitFail((Stmt.Fail) stmt, scope);
 		case STMT_for:
-			return visitFor((Stmt.For) stmt, environment, scope);
+			return visitFor((Stmt.For) stmt, scope);
 		case STMT_if:
 		case STMT_ifelse:
-			return visitIfElse((Stmt.IfElse) stmt, environment, scope);
+			return visitIfElse((Stmt.IfElse) stmt, scope);
 		case STMT_initialiser:
 		case STMT_initialiservoid:
-				return visitInitialiser((Stmt.Initialiser) stmt, environment);
+				return visitInitialiser((Stmt.Initialiser) stmt);
 		case EXPR_invoke:
-			return visitInvokeStmt((Expr.Invoke) stmt, environment);
+			return visitInvokeStmt((Expr.Invoke) stmt);
 		case EXPR_indirectinvoke:
-			return visitIndirectInvokeStmt((Expr.IndirectInvoke) stmt, environment);
+			return visitIndirectInvokeStmt((Expr.IndirectInvoke) stmt);
 		case STMT_namedblock:
-			return visitNamedBlock((Stmt.NamedBlock) stmt, environment, scope);
+			return visitNamedBlock((Stmt.NamedBlock) stmt, scope);
 		case STMT_return:
 		case STMT_returnvoid:
-			return visitReturn((Stmt.Return) stmt, environment, scope);
+			return visitReturn((Stmt.Return) stmt, scope);
 		case STMT_skip:
-			return visitSkip((Stmt.Skip) stmt, environment, scope);
+			return visitSkip((Stmt.Skip) stmt, scope);
 		case STMT_switch:
-			return visitSwitch((Stmt.Switch) stmt, environment, scope);
+			return visitSwitch((Stmt.Switch) stmt, scope);
 		case STMT_while:
-			return visitWhile((Stmt.While) stmt, environment, scope);
+			return visitWhile((Stmt.While) stmt, scope);
 		default:
 			throw new IllegalArgumentException("unknown statement encountered (" + stmt.getClass().getName() + ")");
 		}
 	}
 
-	public S visitAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope) {
-		E operand = visitExpression(stmt.getCondition(), environment);
+	public S visitAssert(Stmt.Assert stmt, EnclosingScope scope) {
+		E operand = visitExpression(stmt.getCondition());
 		return constructAssert(stmt,operand);
 	}
 
-	public S visitAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope) {
+	public S visitAssign(Stmt.Assign stmt, EnclosingScope scope) {
 		Tuple<Type> targets = stmt.getLeftHandSide().map((LVal l) -> l.getType());
-		List<E> lvals = visitLVals(stmt.getLeftHandSide(), environment, scope);
-		List<E> rvals = visitExpressions(stmt.getRightHandSide(), environment);
+		List<E> lvals = visitLVals(stmt.getLeftHandSide(), scope);
+		List<E> rvals = visitExpressions(stmt.getRightHandSide());
 		return constructAssign(stmt,lvals,rvals);
 	}
 
-	public List<E> visitLVals(Tuple<LVal> lvals, Environment environment, EnclosingScope scope) {
+	public List<E> visitLVals(Tuple<LVal> lvals, EnclosingScope scope) {
 		ArrayList<E> ls = new ArrayList<>();
 		for (int i = 0; i != lvals.size(); ++i) {
 			LVal lval = lvals.get(i);
-			ls.add(visitLVal(lval, environment));
+			ls.add(visitLVal(lval));
 		}
 		return ls;
 	}
 
-	public E visitLVal(LVal lval, Environment environment) {
+	public E visitLVal(LVal lval) {
 		switch (lval.getOpcode()) {
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
-			E src = visitLVal((WyilFile.LVal) e.getFirstOperand(), environment);
-			E index = visitExpression(e.getSecondOperand(), environment);
+			E src = visitLVal((WyilFile.LVal) e.getFirstOperand());
+			E index = visitExpression(e.getSecondOperand());
 			return constructArrayAccessLVal(e,src,index);
 		}
 		case EXPR_dereference: {
 			Expr.Dereference e = (Expr.Dereference) lval;
-			E src = visitLVal((WyilFile.LVal) e.getOperand(), environment);
+			E src = visitLVal((WyilFile.LVal) e.getOperand());
 			return constructDereferenceLVal(e,src);
 		}
 		case EXPR_fielddereference: {
 			Expr.FieldDereference e = (Expr.FieldDereference) lval;
-			E src = visitLVal((WyilFile.LVal) e.getOperand(), environment);
+			E src = visitLVal((WyilFile.LVal) e.getOperand());
 			return constructFieldDereferenceLVal(e,src);
 		}
 		case EXPR_recordaccess:
 		case EXPR_recordborrow: {
 			Expr.RecordAccess e = (Expr.RecordAccess) lval;
-			E src = visitLVal((WyilFile.LVal) e.getOperand(), environment);
+			E src = visitLVal((WyilFile.LVal) e.getOperand());
 			return constructRecordAccessLVal(e,src);
 		}
 		case EXPR_tupleinitialiser: {
@@ -253,7 +246,7 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 			Tuple<Expr> operands = e.getOperands();
 			List<E> srcs = new ArrayList<>();
 			for (int i = 0; i != e.size(); ++i) {
-				srcs.add(visitLVal((WyilFile.LVal) operands.get(i), environment));
+				srcs.add(visitLVal((WyilFile.LVal) operands.get(i)));
 			}
 			return constructTupleInitialiserLVal(e, srcs);
 		}
@@ -267,15 +260,15 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		}
 	}
 
-	public S visitAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope) {
-		E operand = visitExpression(stmt.getCondition(), environment);
+	public S visitAssume(Stmt.Assume stmt, EnclosingScope scope) {
+		E operand = visitExpression(stmt.getCondition());
 		return constructAssume(stmt,operand);
 	}
 
-	public S visitBlock(Stmt.Block stmt, Environment environment, EnclosingScope scope) {
+	public S visitBlock(Stmt.Block stmt, EnclosingScope scope) {
 		ArrayList<S> stmts = new ArrayList<>();
 		for (int i = 0; i != stmt.size(); ++i) {
-			S s = visitStatement(stmt.get(i), environment, scope);
+			S s = visitStatement(stmt.get(i), scope);
 			if(s != null) {
 				stmts.add(s);
 			}
@@ -283,121 +276,121 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		return constructBlock(stmt, stmts);
 	}
 
-	public S visitBreak(Stmt.Break stmt, Environment environment, EnclosingScope scope) {
+	public S visitBreak(Stmt.Break stmt, EnclosingScope scope) {
 		return constructBreak(stmt);
 	}
 
-	public S visitContinue(Stmt.Continue stmt, Environment environment, EnclosingScope scope) {
+	public S visitContinue(Stmt.Continue stmt, EnclosingScope scope) {
 		return constructContinue(stmt);
 	}
 
-	public S visitDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
-		E operand = visitExpression(stmt.getOperand(), environment);
+	public S visitDebug(Stmt.Debug stmt, EnclosingScope scope) {
+		E operand = visitExpression(stmt.getOperand());
 		return constructDebug(stmt,operand);
 	}
 
-	public S visitDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
-		S body = visitStatement(stmt.getBody(), environment, scope);
-		E condition = visitExpression(stmt.getCondition(), environment);
-		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant(), environment);
+	public S visitDoWhile(Stmt.DoWhile stmt, EnclosingScope scope) {
+		S body = visitStatement(stmt.getBody(), scope);
+		E condition = visitExpression(stmt.getCondition());
+		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant());
 		return constructDoWhile(stmt, body, condition, invariant);
 	}
 
-	public S visitFail(Stmt.Fail stmt, Environment environment, EnclosingScope scope) {
+	public S visitFail(Stmt.Fail stmt, EnclosingScope scope) {
 		return constructFail(stmt);
 	}
 
-	public S visitFor(Stmt.For stmt, Environment environment, EnclosingScope scope) {
+	public S visitFor(Stmt.For stmt, EnclosingScope scope) {
 		Expr.ArrayRange range = (Expr.ArrayRange) stmt.getVariable().getInitialiser();
-		E start = visitExpression(range.getFirstOperand(),environment);
-		E end = visitExpression(range.getSecondOperand(),environment);
-		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant(), environment);
-		S body = visitStatement(stmt.getBody(), environment, scope);
+		E start = visitExpression(range.getFirstOperand());
+		E end = visitExpression(range.getSecondOperand());
+		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant());
+		S body = visitStatement(stmt.getBody(), scope);
 		return constructFor(stmt, new Pair<>(start, end), invariant, body);
 	}
 
-	public S visitIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
-		E condition = visitExpression(stmt.getCondition(), environment);
-		S trueBranch = visitStatement(stmt.getTrueBranch(), environment, scope);
+	public S visitIfElse(Stmt.IfElse stmt, EnclosingScope scope) {
+		E condition = visitExpression(stmt.getCondition());
+		S trueBranch = visitStatement(stmt.getTrueBranch(), scope);
 		S falseBranch = null;
 		if (stmt.hasFalseBranch()) {
-			falseBranch = visitStatement(stmt.getFalseBranch(), environment, scope);
+			falseBranch = visitStatement(stmt.getFalseBranch(), scope);
 		}
 		return constructIfElse(stmt, condition, trueBranch, falseBranch);
 	}
 
-	public S visitInitialiser(Stmt.Initialiser stmt, Environment environment) {
+	public S visitInitialiser(Stmt.Initialiser stmt) {
 		E initialiser = null;
 		if (stmt.hasInitialiser()) {
-			initialiser = visitExpression(stmt.getInitialiser(), environment);
+			initialiser = visitExpression(stmt.getInitialiser());
 		}
 		return constructInitialiser(stmt, initialiser);
 	}
 
-	public S visitInvokeStmt(Expr.Invoke stmt, Environment environment) {
-		List<E> operands = visitHeterogenousExpressions(stmt.getOperands(), environment);
+	public S visitInvokeStmt(Expr.Invoke stmt) {
+		List<E> operands = visitHeterogenousExpressions(stmt.getOperands());
 		return constructInvokeStmt(stmt, operands);
 	}
 
-	public S visitIndirectInvokeStmt(Expr.IndirectInvoke stmt, Environment environment) {
-		E operand = visitExpression(stmt.getSource(), environment);
-		List<E> operands = visitHeterogenousExpressions(stmt.getArguments(), environment);
+	public S visitIndirectInvokeStmt(Expr.IndirectInvoke stmt) {
+		E operand = visitExpression(stmt.getSource());
+		List<E> operands = visitHeterogenousExpressions(stmt.getArguments());
 		return constructIndirectInvokeStmt(stmt, operand, operands);
 	}
 
-	public S visitNamedBlock(Stmt.NamedBlock stmt, Environment environment, EnclosingScope scope) {
+	public S visitNamedBlock(Stmt.NamedBlock stmt, EnclosingScope scope) {
 		Stmt.Block blk = stmt.getBlock();
 		// Create an appropriate scope for this block
 		scope = new NamedBlockScope(scope, stmt);
 		//
 		ArrayList<S> stmts = new ArrayList<>();
 		for (int i = 0; i != blk.size(); ++i) {
-			stmts.add(visitStatement(blk.get(i), environment, scope));
+			stmts.add(visitStatement(blk.get(i), scope));
 		}
 		//
 		return constructNamedBlock(stmt,stmts);
 	}
 
-	public S visitReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope) {
+	public S visitReturn(Stmt.Return stmt, EnclosingScope scope) {
 		if (stmt.hasReturn()) {
-			E returns = visitExpression(stmt.getReturn(), environment);
+			E returns = visitExpression(stmt.getReturn());
 			return constructReturn(stmt, returns);
 		} else {
 			return constructReturn(stmt, null);
 		}
 	}
 
-	public S visitSkip(Stmt.Skip stmt, Environment environment, EnclosingScope scope) {
+	public S visitSkip(Stmt.Skip stmt, EnclosingScope scope) {
 		return constructSkip(stmt);
 	}
 
-	public S visitSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope) {
-		E condition = visitExpression(stmt.getCondition(), environment);
+	public S visitSwitch(Stmt.Switch stmt, EnclosingScope scope) {
+		E condition = visitExpression(stmt.getCondition());
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		ArrayList<Pair<List<E>,S>> cs = new ArrayList<>();
 		for (int i = 0; i != cases.size(); ++i) {
-			cs.add(visitCase(cases.get(i), environment, scope));
+			cs.add(visitCase(cases.get(i), scope));
 		}
 		return constructSwitch(stmt,condition,cs);
 	}
 
-	public Pair<List<E>,S> visitCase(Stmt.Case stmt, Environment environment, EnclosingScope scope) {
-		List<E> conditions = visitHomogoneousExpressions(stmt.getConditions(), environment);
-		S body = visitStatement(stmt.getBlock(), environment, scope);
+	public Pair<List<E>,S> visitCase(Stmt.Case stmt, EnclosingScope scope) {
+		List<E> conditions = visitHomogoneousExpressions(stmt.getConditions());
+		S body = visitStatement(stmt.getBlock(), scope);
 		return new Pair<>(conditions,body);
 	}
 
-	public S visitWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
-		E condition = visitExpression(stmt.getCondition(), environment);
-		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant(), environment);
-		S body = visitStatement(stmt.getBody(), environment, scope);
+	public S visitWhile(Stmt.While stmt, EnclosingScope scope) {
+		E condition = visitExpression(stmt.getCondition());
+		List<E> invariant = visitHomogoneousExpressions(stmt.getInvariant());
+		S body = visitStatement(stmt.getBody(), scope);
 		return constructWhile(stmt,condition,invariant,body);
 	}
 
-	public List<E> visitExpressions(Tuple<Expr> exprs, Environment environment) {
+	public List<E> visitExpressions(Tuple<Expr> exprs) {
 		ArrayList<E> returns = new ArrayList<>();
 		for (int i = 0; i != exprs.size(); ++i) {
-			returns.add(visitExpression(exprs.get(i), environment));
+			returns.add(visitExpression(exprs.get(i)));
 		}
 		return returns;
 	}
@@ -410,10 +403,10 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	 * @param environment
 	 * @return
 	 */
-	public List<E> visitHeterogenousExpressions(Tuple<Expr> exprs, Environment environment) {
+	public List<E> visitHeterogenousExpressions(Tuple<Expr> exprs) {
 		ArrayList<E> results = new ArrayList<>();
 		for (int i = 0; i != exprs.size(); ++i) {
-			results.add(visitExpression(exprs.get(i), environment));
+			results.add(visitExpression(exprs.get(i)));
 		}
 		return results;
 	}
@@ -426,10 +419,10 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	 * @param environment
 	 * @return
 	 */
-	public List<E> visitHomogoneousExpressions(Tuple<Expr> exprs, Environment environment) {
+	public List<E> visitHomogoneousExpressions(Tuple<Expr> exprs) {
 		ArrayList<E> results = new ArrayList<>();
 		for (int i = 0; i != exprs.size(); ++i) {
-			results.add(visitExpression(exprs.get(i), environment));
+			results.add(visitExpression(exprs.get(i)));
 		}
 		return results;
 	}
@@ -441,24 +434,24 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 	 * @param expr
 	 * @param target
 	 */
-	public E visitExpression(Expr expr, Environment environment) {
+	public E visitExpression(Expr expr) {
 		meter.step("expression");
 		//
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
-			return visitConstant((Expr.Constant) expr, environment);
+			return visitConstant((Expr.Constant) expr);
 		case EXPR_indirectinvoke:
-			return visitIndirectInvoke((Expr.IndirectInvoke) expr, environment);
+			return visitIndirectInvoke((Expr.IndirectInvoke) expr);
 		case EXPR_lambdaaccess:
-			return visitLambdaAccess((Expr.LambdaAccess) expr, environment);
+			return visitLambdaAccess((Expr.LambdaAccess) expr);
 		case DECL_lambda:
-			return visitLambda((Decl.Lambda) expr, environment);
+			return visitLambda((Decl.Lambda) expr);
 		case EXPR_staticvariable:
-			return visitStaticVariableAccess((Expr.StaticVariableAccess) expr, environment);
+			return visitStaticVariableAccess((Expr.StaticVariableAccess) expr);
 		case EXPR_variablecopy:
 		case EXPR_variablemove:
-			return visitVariableAccess((Expr.VariableAccess) expr, environment);
+			return visitVariableAccess((Expr.VariableAccess) expr);
 		// Unary Operators
 		case EXPR_cast:
 		case EXPR_integernegation:
@@ -473,7 +466,7 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
-			return visitUnaryOperator((Expr.UnaryOperator) expr, environment);
+			return visitUnaryOperator((Expr.UnaryOperator) expr);
 		// Binary Operators
 		case EXPR_logicalimplication:
 		case EXPR_logicaliff:
@@ -495,7 +488,7 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		case EXPR_arrayrange:
 		case EXPR_recordupdate:
 		case EXPR_arraygenerator:
-			return visitBinaryOperator((Expr.BinaryOperator) expr, environment);
+			return visitBinaryOperator((Expr.BinaryOperator) expr);
 		// Nary Operators
 		case EXPR_logicaland:
 		case EXPR_logicalor:
@@ -506,320 +499,320 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		case EXPR_arrayinitialiser:
 		case EXPR_recordinitialiser:
 		case EXPR_tupleinitialiser:
-			return visitNaryOperator((Expr.NaryOperator) expr, environment);
+			return visitNaryOperator((Expr.NaryOperator) expr);
 		// Ternary Operators
 		case EXPR_arrayupdate:
-			return visitTernaryOperator((Expr.TernaryOperator) expr, environment);
+			return visitTernaryOperator((Expr.TernaryOperator) expr);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
 	}
 
-	public E visitUnaryOperator(Expr.UnaryOperator expr, Environment environment) {
+	public E visitUnaryOperator(Expr.UnaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Unary Operators
 		case EXPR_cast:
-			return visitCast((Expr.Cast) expr, environment);
+			return visitCast((Expr.Cast) expr);
 		case EXPR_integernegation: {
-			return visitIntegerNegation((Expr.IntegerNegation) expr, environment);
+			return visitIntegerNegation((Expr.IntegerNegation) expr);
 		}
 		case EXPR_is:
-			return visitIs((Expr.Is) expr, environment);
+			return visitIs((Expr.Is) expr);
 		case EXPR_logicalnot:
-			return visitLogicalNot((Expr.LogicalNot) expr, environment);
+			return visitLogicalNot((Expr.LogicalNot) expr);
 		case EXPR_logicalexistential:
-			return visitExistentialQuantifier((Expr.ExistentialQuantifier) expr, environment);
+			return visitExistentialQuantifier((Expr.ExistentialQuantifier) expr);
 		case EXPR_logicaluniversal:
-			return visitUniversalQuantifier((Expr.UniversalQuantifier) expr, environment);
+			return visitUniversalQuantifier((Expr.UniversalQuantifier) expr);
 		case EXPR_bitwisenot:
-			return visitBitwiseComplement((Expr.BitwiseComplement) expr, environment);
+			return visitBitwiseComplement((Expr.BitwiseComplement) expr);
 		case EXPR_dereference:
-			return visitDereference((Expr.Dereference) expr, environment);
+			return visitDereference((Expr.Dereference) expr);
 		case EXPR_fielddereference:
-			return visitFieldDereference((Expr.FieldDereference) expr, environment);
+			return visitFieldDereference((Expr.FieldDereference) expr);
 		case EXPR_new: {
-			return visitNew((Expr.New) expr, environment);
+			return visitNew((Expr.New) expr);
 		}
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
-			return visitRecordAccess((Expr.RecordAccess) expr, environment);
+			return visitRecordAccess((Expr.RecordAccess) expr);
 		case EXPR_arraylength: {
-			return visitArrayLength((Expr.ArrayLength) expr, environment);
+			return visitArrayLength((Expr.ArrayLength) expr);
 		}
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
 	}
 
-	public E visitBinaryOperator(Expr.BinaryOperator expr, Environment environment) {
+	public E visitBinaryOperator(Expr.BinaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Binary Operators
 		case EXPR_equal:
-			return visitEqual((Expr.Equal) expr, environment);
+			return visitEqual((Expr.Equal) expr);
 		case EXPR_notequal:
-			return visitNotEqual((Expr.NotEqual) expr, environment);
+			return visitNotEqual((Expr.NotEqual) expr);
 		case EXPR_logicalimplication:
-			return visitLogicalImplication((Expr.LogicalImplication) expr, environment);
+			return visitLogicalImplication((Expr.LogicalImplication) expr);
 		case EXPR_logicaliff:
-			return visitLogicalIff((Expr.LogicalIff) expr, environment);
+			return visitLogicalIff((Expr.LogicalIff) expr);
 		case EXPR_integerlessthan:
-			return visitIntegerLessThan((Expr.IntegerLessThan) expr, environment);
+			return visitIntegerLessThan((Expr.IntegerLessThan) expr);
 		case EXPR_integerlessequal:
-			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, environment);
+			return visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr);
 		case EXPR_integergreaterthan:
-			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, environment);
+			return visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr);
 		case EXPR_integergreaterequal:
-			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, environment);
+			return visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr);
 		case EXPR_integeraddition: {
-			return visitIntegerAddition((Expr.IntegerAddition) expr, environment);
+			return visitIntegerAddition((Expr.IntegerAddition) expr);
 		}
 		case EXPR_integersubtraction: {
-			return visitIntegerSubtraction((Expr.IntegerSubtraction) expr, environment);
+			return visitIntegerSubtraction((Expr.IntegerSubtraction) expr);
 		}
 		case EXPR_integermultiplication: {
-			return visitIntegerMultiplication((Expr.IntegerMultiplication) expr, environment);
+			return visitIntegerMultiplication((Expr.IntegerMultiplication) expr);
 		}
 		case EXPR_integerdivision: {
-			return visitIntegerDivision((Expr.IntegerDivision) expr, environment);
+			return visitIntegerDivision((Expr.IntegerDivision) expr);
 		}
 		case EXPR_integerremainder: {
-			return visitIntegerRemainder((Expr.IntegerRemainder) expr, environment);
+			return visitIntegerRemainder((Expr.IntegerRemainder) expr);
 		}
 		case EXPR_bitwiseshl:
-			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, environment);
+			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr);
 		case EXPR_bitwiseshr:
-			return visitBitwiseShiftRight((Expr.BitwiseShiftRight) expr, environment);
+			return visitBitwiseShiftRight((Expr.BitwiseShiftRight) expr);
 		case EXPR_arraygenerator: {
-			return visitArrayGenerator((Expr.ArrayGenerator) expr, environment);
+			return visitArrayGenerator((Expr.ArrayGenerator) expr);
 		}
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow:
-			return visitArrayAccess((Expr.ArrayAccess) expr, environment);
+			return visitArrayAccess((Expr.ArrayAccess) expr);
 		case EXPR_arrayrange: {
-			return visitArrayRange((Expr.ArrayRange) expr, environment);
+			return visitArrayRange((Expr.ArrayRange) expr);
 		}
 		case EXPR_recordupdate:
-			return visitRecordUpdate((Expr.RecordUpdate) expr, environment);
+			return visitRecordUpdate((Expr.RecordUpdate) expr);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
 	}
 
-	public E visitTernaryOperator(Expr.TernaryOperator expr, Environment environment) {
+	public E visitTernaryOperator(Expr.TernaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Ternary Operators
 		case EXPR_arrayupdate:
-			return visitArrayUpdate((Expr.ArrayUpdate) expr, environment);
+			return visitArrayUpdate((Expr.ArrayUpdate) expr);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
 	}
 
-	public E visitNaryOperator(Expr.NaryOperator expr, Environment environment) {
+	public E visitNaryOperator(Expr.NaryOperator expr) {
 		switch (expr.getOpcode()) {
 		// Nary Operators
 		case EXPR_arrayinitialiser:
-			return visitArrayInitialiser((Expr.ArrayInitialiser) expr, environment);
+			return visitArrayInitialiser((Expr.ArrayInitialiser) expr);
 		case EXPR_bitwiseand:
-			return visitBitwiseAnd((Expr.BitwiseAnd) expr, environment);
+			return visitBitwiseAnd((Expr.BitwiseAnd) expr);
 		case EXPR_bitwiseor:
-			return visitBitwiseOr((Expr.BitwiseOr) expr, environment);
+			return visitBitwiseOr((Expr.BitwiseOr) expr);
 		case EXPR_bitwisexor:
-			return visitBitwiseXor((Expr.BitwiseXor) expr, environment);
+			return visitBitwiseXor((Expr.BitwiseXor) expr);
 		case EXPR_invoke:
-			return visitInvoke((Expr.Invoke) expr, environment);
+			return visitInvoke((Expr.Invoke) expr);
 		case EXPR_logicaland:
-			return visitLogicalAnd((Expr.LogicalAnd) expr, environment);
+			return visitLogicalAnd((Expr.LogicalAnd) expr);
 		case EXPR_logicalor:
-			return visitLogicalOr((Expr.LogicalOr) expr, environment);
+			return visitLogicalOr((Expr.LogicalOr) expr);
 		case EXPR_recordinitialiser:
-			return visitRecordInitialiser((Expr.RecordInitialiser) expr, environment);
+			return visitRecordInitialiser((Expr.RecordInitialiser) expr);
 		case EXPR_tupleinitialiser:
-			return visitTupleInitialiser((Expr.TupleInitialiser) expr, environment);
+			return visitTupleInitialiser((Expr.TupleInitialiser) expr);
 		default:
 			throw new IllegalArgumentException("unknown expression encountered (" + expr.getClass().getName() + ")");
 		}
 	}
 
-	public E visitArrayAccess(Expr.ArrayAccess expr, Environment environment) {
-		E source = visitExpression(expr.getFirstOperand(), environment);
-		E index = visitExpression(expr.getSecondOperand(), environment);
+	public E visitArrayAccess(Expr.ArrayAccess expr) {
+		E source = visitExpression(expr.getFirstOperand());
+		E index = visitExpression(expr.getSecondOperand());
 		return constructArrayAccess(expr,source,index);
 	}
 
-	public E visitArrayLength(Expr.ArrayLength expr,  Environment environment) {
-		E source = visitExpression(expr.getOperand(), environment);
+	public E visitArrayLength(Expr.ArrayLength expr) {
+		E source = visitExpression(expr.getOperand());
 		return constructArrayLength(expr,source);
 	}
 
-	public E visitArrayGenerator(Expr.ArrayGenerator expr,Environment environment) {
-		E value = visitExpression(expr.getFirstOperand(), environment);
-		E length = visitExpression(expr.getSecondOperand(), environment);
+	public E visitArrayGenerator(Expr.ArrayGenerator expr) {
+		E value = visitExpression(expr.getFirstOperand());
+		E length = visitExpression(expr.getSecondOperand());
 		return constructArrayGenerator(expr,value,length);
 	}
 
-	public E visitArrayInitialiser(Expr.ArrayInitialiser expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitArrayInitialiser(Expr.ArrayInitialiser expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructArrayInitialiser(expr,operands);
 	}
 
-	public E visitArrayRange(Expr.ArrayRange expr, Environment environment) {
+	public E visitArrayRange(Expr.ArrayRange expr) {
 		throw new UnsupportedOperationException();
 	}
 
-	public E visitArrayUpdate(Expr.ArrayUpdate expr, Environment environment) {
+	public E visitArrayUpdate(Expr.ArrayUpdate expr) {
 		throw new UnsupportedOperationException();
 	}
 
-	public E visitBitwiseComplement(Expr.BitwiseComplement expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitBitwiseComplement(Expr.BitwiseComplement expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructBitwiseComplement(expr,operand);
 	}
 
-	public E visitBitwiseAnd(Expr.BitwiseAnd expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitBitwiseAnd(Expr.BitwiseAnd expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructBitwiseAnd(expr,operands);
 	}
 
-	public E visitBitwiseOr(Expr.BitwiseOr expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitBitwiseOr(Expr.BitwiseOr expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructBitwiseOr(expr,operands);
 	}
 
-	public E visitBitwiseXor(Expr.BitwiseXor expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitBitwiseXor(Expr.BitwiseXor expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructBitwiseXor(expr,operands);
 	}
 
-	public E visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitBitwiseShiftLeft(Expr.BitwiseShiftLeft expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructBitwiseShiftLeft(expr,lhs,rhs);
 	}
 
-	public E visitBitwiseShiftRight(Expr.BitwiseShiftRight expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitBitwiseShiftRight(Expr.BitwiseShiftRight expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructBitwiseShiftRight(expr,lhs,rhs);
 	}
 
-	public E visitCast(Expr.Cast expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitCast(Expr.Cast expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructCast(expr,operand);
 	}
 
-	public E visitConstant(Expr.Constant expr, Environment environment) {
+	public E visitConstant(Expr.Constant expr) {
 		return constructConstant(expr);
 	}
 
-	public E visitDereference(Expr.Dereference expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitDereference(Expr.Dereference expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructDereference(expr,operand);
 	}
 
-	public E visitFieldDereference(Expr.FieldDereference expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitFieldDereference(Expr.FieldDereference expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructFieldDereference(expr,operand);
 	}
 
-	public E visitEqual(Expr.Equal expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitEqual(Expr.Equal expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructEqual(expr,lhs,rhs);
 	}
 
-	public E visitIntegerLessThan(Expr.IntegerLessThan expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerLessThan(Expr.IntegerLessThan expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerLessThan(expr,lhs,rhs);
 	}
 
-	public E visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerLessThanOrEqual(expr,lhs,rhs);
 	}
 
-	public E visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerGreaterThan(Expr.IntegerGreaterThan expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerGreaterThan(expr,lhs,rhs);
 	}
 
-	public E visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerGreaterThanOrEqual(expr,lhs,rhs);
 	}
 
-	public E visitIntegerNegation(Expr.IntegerNegation expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitIntegerNegation(Expr.IntegerNegation expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructIntegerNegation(expr,operand);
 	}
 
-	public E visitIntegerAddition(Expr.IntegerAddition expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerAddition(Expr.IntegerAddition expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerAddition(expr,lhs,rhs);
 	}
 
-	public E visitIntegerSubtraction(Expr.IntegerSubtraction expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerSubtraction(Expr.IntegerSubtraction expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerSubtraction(expr,lhs,rhs);
 	}
 
-	public E visitIntegerMultiplication(Expr.IntegerMultiplication expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerMultiplication(Expr.IntegerMultiplication expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerMultiplication(expr,lhs,rhs);
 	}
 
-	public E visitIntegerDivision(Expr.IntegerDivision expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerDivision(Expr.IntegerDivision expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerDivision(expr,lhs,rhs);
 	}
 
-	public E visitIntegerRemainder(Expr.IntegerRemainder expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitIntegerRemainder(Expr.IntegerRemainder expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerRemainder(expr,lhs,rhs);
 	}
 
-	public E visitIs(Expr.Is expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitIs(Expr.Is expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructIs(expr,operand);
 	}
 
-	public E visitLogicalAnd(Expr.LogicalAnd expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitLogicalAnd(Expr.LogicalAnd expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructLogicalAnd(expr,operands);
 	}
 
-	public E visitLogicalImplication(Expr.LogicalImplication expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitLogicalImplication(Expr.LogicalImplication expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructLogicalImplication(expr,lhs,rhs);
 	}
 
-	public E visitLogicalIff(Expr.LogicalIff expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitLogicalIff(Expr.LogicalIff expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructLogicalIff(expr,lhs,rhs);
 	}
 
-	public E visitLogicalNot(Expr.LogicalNot expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitLogicalNot(Expr.LogicalNot expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructLogicalNot(expr,operand);
 	}
 
-	public E visitLogicalOr(Expr.LogicalOr expr, Environment environment) {
-		List<E> operands = visitHomogoneousExpressions(expr.getOperands(), environment);
+	public E visitLogicalOr(Expr.LogicalOr expr) {
+		List<E> operands = visitHomogoneousExpressions(expr.getOperands());
 		return constructLogicalOr(expr,operands);
 	}
 
-	public E visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Environment environment) {
+	public E visitExistentialQuantifier(Expr.ExistentialQuantifier expr) {
 		Tuple<Decl.StaticVariable> parameters = expr.getParameters();
 		ArrayList<Pair<E,E>> ranges = new ArrayList<>();
 		for (int i = 0; i != parameters.size(); ++i) {
@@ -827,15 +820,15 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 			// NOTE: Currently ranges can only appear in quantifiers. Eventually, this will
 			// be deprecated.
 			Expr.ArrayRange range = (Expr.ArrayRange) parameter.getInitialiser();
-			E start = visitExpression(range.getFirstOperand(), environment);
-			E end = visitExpression(range.getSecondOperand(), environment);
+			E start = visitExpression(range.getFirstOperand());
+			E end = visitExpression(range.getSecondOperand());
 			ranges.add(new Pair<>(start,end));
 		}
-		E body = visitExpression(expr.getOperand(), environment);
+		E body = visitExpression(expr.getOperand());
 		return constructExistentialQuantifier(expr,ranges,body);
 	}
 
-	public E visitUniversalQuantifier(Expr.UniversalQuantifier expr, Environment environment) {
+	public E visitUniversalQuantifier(Expr.UniversalQuantifier expr) {
 		Tuple<Decl.StaticVariable> parameters = expr.getParameters();
 		ArrayList<Pair<E,E>> ranges = new ArrayList<>();
 		for (int i = 0; i != parameters.size(); ++i) {
@@ -843,79 +836,79 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 			// NOTE: Currently ranges can only appear in quantifiers. Eventually, this will
 			// be deprecated.
 			Expr.ArrayRange range = (Expr.ArrayRange) parameter.getInitialiser();
-			E start = visitExpression(range.getFirstOperand(), environment);
-			E end = visitExpression(range.getSecondOperand(), environment);
+			E start = visitExpression(range.getFirstOperand());
+			E end = visitExpression(range.getSecondOperand());
 			ranges.add(new Pair<>(start,end));
 		}
-		E body = visitExpression(expr.getOperand(), environment);
+		E body = visitExpression(expr.getOperand());
 		return constructUniversalQuantifier(expr,ranges,body);
 	}
 
-	public E visitInvoke(Expr.Invoke expr, Environment environment) {
-		List<E> operands = visitHeterogenousExpressions(expr.getOperands(), environment);
+	public E visitInvoke(Expr.Invoke expr) {
+		List<E> operands = visitHeterogenousExpressions(expr.getOperands());
 		return constructInvoke(expr, operands);
 	}
 
-	public E visitIndirectInvoke(Expr.IndirectInvoke expr, Environment environment) {
-		E operand = visitExpression(expr.getSource(), environment);
-		List<E> operands = visitHeterogenousExpressions(expr.getArguments(), environment);
+	public E visitIndirectInvoke(Expr.IndirectInvoke expr) {
+		E operand = visitExpression(expr.getSource());
+		List<E> operands = visitHeterogenousExpressions(expr.getArguments());
 		return constructIndirectInvoke(expr, operand, operands);
 	}
 
-	public E visitLambdaAccess(Expr.LambdaAccess expr, Environment environment) {
+	public E visitLambdaAccess(Expr.LambdaAccess expr) {
 		return constructLambdaAccess(expr);
 	}
 
-	public E visitNew(Expr.New expr, Environment environment) {
-		E operand = visitExpression(expr.getOperand(), environment);
+	public E visitNew(Expr.New expr) {
+		E operand = visitExpression(expr.getOperand());
 		return constructNew(expr,operand);
 	}
 
-	public E visitNotEqual(Expr.NotEqual expr, Environment environment) {
-		E lhs = visitExpression(expr.getFirstOperand(), environment);
-		E rhs = visitExpression(expr.getSecondOperand(), environment);
+	public E visitNotEqual(Expr.NotEqual expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
 		return constructNotEqual(expr,lhs,rhs);
 	}
 
-	public E visitRecordAccess(Expr.RecordAccess expr, Environment environment) {
-		E src = visitExpression(expr.getOperand(), environment);
+	public E visitRecordAccess(Expr.RecordAccess expr) {
+		E src = visitExpression(expr.getOperand());
 		return constructRecordAccess(expr, src);
 	}
 
-	public E visitRecordInitialiser(Expr.RecordInitialiser expr, Environment environment) {
+	public E visitRecordInitialiser(Expr.RecordInitialiser expr) {
 		Tuple<Identifier> fields = expr.getFields();
 		Tuple<Expr> operands = expr.getOperands();
 		List<E> args = new ArrayList<>();
 		for (int i = 0; i != fields.size(); ++i) {
 			Expr operand = operands.get(i);
-			args.add(visitExpression(operand, environment));
+			args.add(visitExpression(operand));
 		}
 		return constructRecordInitialiser(expr,args);
 	}
 
-	public E visitRecordUpdate(Expr.RecordUpdate expr, Environment environment) {
-		E src = visitExpression(expr.getFirstOperand(), environment);
-		E val = visitExpression(expr.getSecondOperand(), environment);
+	public E visitRecordUpdate(Expr.RecordUpdate expr) {
+		E src = visitExpression(expr.getFirstOperand());
+		E val = visitExpression(expr.getSecondOperand());
 		// TODO: implement me!
 		// return constructRecordUpdate(expr,src,val);
 		throw new UnsupportedOperationException();
 	}
 
-	public E visitTupleInitialiser(Expr.TupleInitialiser expr, Environment environment) {
+	public E visitTupleInitialiser(Expr.TupleInitialiser expr) {
 		Tuple<Expr> operands = expr.getOperands();
 		List<E> args = new ArrayList<>();
 		for (int i = 0; i != operands.size(); ++i) {
 			Expr operand = operands.get(i);
-			args.add(visitExpression(operand, environment));
+			args.add(visitExpression(operand));
 		}
 		return constructTupleInitialiser(expr,args);
 	}
 
-	public E visitStaticVariableAccess(Expr.StaticVariableAccess expr, Environment environment) {
+	public E visitStaticVariableAccess(Expr.StaticVariableAccess expr) {
 		return constructStaticVariableAccess(expr);
 	}
 
-	public E visitVariableAccess(Expr.VariableAccess expr, Environment environment) {
+	public E visitVariableAccess(Expr.VariableAccess expr) {
 		return constructVariableAccess(expr);
 	}
 
@@ -935,7 +928,7 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 
 	public abstract D constructMethod(Decl.Method d, List<E> precondition, List<E> postcondition, S body);
 
-	public abstract E constructLambda(Decl.Lambda decl, S body);
+	public abstract E constructLambda(Decl.Lambda decl, E body);
 
 	// ====================================================================================
 	// Statement Constructors
@@ -1130,19 +1123,6 @@ public abstract class AbstractTranslator<D,S,E extends S> {
 		} else {
 			return false;
 		}
-	}
-
-	private static final Type.Array TYPE_ARRAY_INT = new Type.Array(Type.Int);
-
-	/**
-	 * Provides a very simple environment for tracking the current declared lifetime
-	 * relationships.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Environment {
-
 	}
 
 	// ==========================================================================
