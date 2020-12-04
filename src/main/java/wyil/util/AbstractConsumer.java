@@ -239,7 +239,7 @@ public abstract class AbstractConsumer<T> {
 			visitWhile((Stmt.While) stmt, data);
 			break;
 		default:
-			throw new IllegalArgumentException("unknown statement encountered (" + stmt.getClass().getName() + ")");
+			visitExpression((Expr) stmt, data);
 		}
 	}
 

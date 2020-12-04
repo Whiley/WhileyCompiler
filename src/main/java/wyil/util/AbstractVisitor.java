@@ -243,7 +243,7 @@ public abstract class AbstractVisitor {
 			visitWhile((Stmt.While) stmt);
 			break;
 		default:
-			throw new IllegalArgumentException("unknown statement encountered (" + stmt.getClass().getName() + ")");
+			visitExpression((Expr) stmt);
 		}
 	}
 

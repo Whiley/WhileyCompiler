@@ -224,7 +224,7 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_while:
 			return visitWhile((Stmt.While) stmt, data);
 		default:
-			throw new IllegalArgumentException("unknown statement encountered (" + stmt.getClass().getName() + ")");
+			return visitExpression((Expr) stmt, data);
 		}
 	}
 
