@@ -15,13 +15,118 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyil.lang.WyilFile.Type.*;
+import wyil.lang.WyilFile.Type.Byte;
+import wyil.lang.WyilFile.Type.Void;
 
 public class WyilUtils {
+
+	/**
+	 * Determine whether a given type is <i>pure</i> or not. That is, whether or not
+	 * it contains a reference type. For example, <code>int</code> and
+	 * <code>{int f}</code> are pure, whilst <code>&int</code> and
+	 * <code>{&int f}</code> are not.
+	 *
+	 * @param type
+	 * @return
+	 */
+	public static boolean isPure(Type type) {
+		return new AbstractTypeReduction<Boolean>() {
+
+			@Override
+			public Boolean constructTypeArray(Array type, Boolean child) {
+				return child;
+			}
+
+			@Override
+			public Boolean constructTypeBool(Bool type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeByte(Byte type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeInt(Int type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeFunction(Function type, Boolean param, Boolean ret) {
+				return param && ret;
+			}
+
+			@Override
+			public Boolean constructTypeMethod(Method type, Boolean param, Boolean ret) {
+				return param && ret;
+			}
+
+			@Override
+			public Boolean constructTypeNominal(Nominal type, Boolean child) {
+				return (child == null) ? true : child;
+			}
+
+			@Override
+			public Boolean constructTypeNull(Null type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeProperty(Property type, Boolean param, Boolean ret) {
+				return param && ret;
+			}
+
+			@Override
+			public Boolean constructTypeRecord(Record type, List<Boolean> children) {
+				return AND(children);
+			}
+
+			@Override
+			public Boolean constructTypeReference(Reference type, Boolean child) {
+				return false;
+			}
+
+			@Override
+			public Boolean constructTypeTuple(wyil.lang.WyilFile.Type.Tuple type, List<Boolean> children) {
+				return AND(children);
+			}
+
+			@Override
+			public Boolean constructTypeUnion(Union type, List<Boolean> children) {
+				return AND(children);
+			}
+
+			@Override
+			public Boolean constructTypeUnresolved(Unknown type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeVoid(Void type) {
+				return true;
+			}
+
+			@Override
+			public Boolean constructTypeVariable(Universal type) {
+				return true;
+			}
+
+			private boolean AND(List<Boolean> items) {
+				boolean r = true;
+				for(int i=0;i!=items.size();++i) {
+					r &= items.get(i);
+				}
+				return r;
+			}
+
+		}.apply(type);
+	}
 
 	/**
 	 * Check whether a given assignment is "simple" or not. That is, assigns only a
