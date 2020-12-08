@@ -2081,6 +2081,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullBitwiseOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getOperand(), typing.push(Type.Byte), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
@@ -2088,6 +2090,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullBitwiseOperator(Expr.NaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpressions(expr.getOperands(), Type.Byte, typing, environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
@@ -2096,6 +2100,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Byte), environment);
 		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
