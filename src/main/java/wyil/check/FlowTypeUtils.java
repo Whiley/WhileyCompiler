@@ -1252,64 +1252,6 @@ public class FlowTypeUtils {
 	// Binding
 	// ===============================================================================================================
 
-	/**
-	 * Represents a candidate binding between a lambda type and declaration. For
-	 * example, consider this:
-	 *
-	 * <pre>
-	 * function id<T>(T x) -> (T x):
-	 *    return 1
-	 * </pre>
-	 *
-	 * Typing an invocation <code>id(1)</code> which will generate at least one
-	 * binding. The <i>candidate</i> type will be
-	 * <code>function(T)->(T)<code>, whilst the concrete type is <code>function(int)->(int)</code>.
-	 * This binding additionally clarifies how the concrete type is derived from the
-	 * candidate type using a mapping from template variables to types (e.g. in this
-	 * case <code>{T=>int}</code>).
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Binding {
-		private final Tuple<SyntacticItem> arguments;
-		private final Decl.Callable candidate;
-		private final Type.Callable concreteType;
-
-		public Binding(Decl.Callable candidate, Tuple<SyntacticItem> arguments, Type.Callable concreteType) {
-			this.candidate = candidate;
-			this.arguments = arguments;
-			this.concreteType = concreteType;
-		}
-
-		public Decl.Callable getCandidateDeclaration() {
-			return candidate;
-		}
-
-		public Type.Callable getConcreteType() {
-			return concreteType;
-		}
-
-		public Tuple<SyntacticItem> getArguments() {
-			return arguments;
-		}
-
-		@Override
-		public String toString() {
-			Tuple<Template.Variable> variables = candidate.getTemplate();
-			String r = "";
-			for (int i = 0; i != variables.size(); ++i) {
-				if (i != 0) {
-					r = r + ",";
-				}
-				r += variables.get(i);
-				r += "=";
-				r += arguments.get(i);
-			}
-			return "{" + r + "}:" + candidate.getType();
-		}
-	}
-
 	private static String[] toStrings(Identifier...ids) {
 		String[] ss = new String[ids.length];
 		for(int i=0;i!=ids.length;++i) {

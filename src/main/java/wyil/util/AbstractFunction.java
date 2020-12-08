@@ -224,7 +224,7 @@ public abstract class AbstractFunction<P,R> {
 		case STMT_while:
 			return visitWhile((Stmt.While) stmt, data);
 		default:
-			throw new IllegalArgumentException("unknown statement encountered (" + stmt.getClass().getName() + ")");
+			return visitExpression((Expr) stmt, data);
 		}
 	}
 
@@ -809,6 +809,8 @@ public abstract class AbstractFunction<P,R> {
 	public R visitType(Type type, P data) {
 		meter.step("type");
 		switch (type.getOpcode()) {
+		case TYPE_any:
+			return visitTypeAny((Type.Any) type, data);
 		case TYPE_array:
 			return visitTypeArray((Type.Array) type, data);
 		case TYPE_bool:
@@ -855,6 +857,10 @@ public abstract class AbstractFunction<P,R> {
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
+	}
+
+	public R visitTypeAny(Type.Any type, P data) {
+		return null;
 	}
 
 	public R visitTypeArray(Type.Array type, P data) {

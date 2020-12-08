@@ -1,5 +1,6 @@
 function select<S,T>(bool f, S s, T t) -> (S|T r)
-ensures (r == s) || (r == t):
+ensures f ==> (r == s)
+ensures !f ==> (r == t):
     if f:
         return s
     else:

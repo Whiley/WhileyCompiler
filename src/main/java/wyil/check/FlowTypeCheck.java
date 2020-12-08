@@ -1765,16 +1765,18 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		// Allocate space for the signature variables. This is used to identify each row
 		// in the typing matrix with one of candidates.
-		typing = typing.push(Type.Any).push(Type.Any);
+		typing = typing.push(Type.Any).push(Type.Any).push(Type.Any);
 		int v_concrete = typing.top();
-		int v_signature = v_concrete - 1;
+		int v_template = v_concrete - 1;
+		int v_signature = v_concrete - 2;
 		// Register a finaliser to resolve this invocation
-		typing.register(typeInvokeExpression(expr, v_signature));
+		typing.register(typeInvokeExpression(expr, v_signature, v_template));
 		// Fork typing into different cases for each overloaded candidate
 		typing = typing
-				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete, v_template)));
 		// <<< Filter return type
-		Typing nTyping = typing.map(row -> filterOnReturn(row, var, (Type.Callable) row.get(v_concrete), environment));
+		Typing nTyping = typing.map(
+				row -> filterOnSubtype(row, var, row.get(v_concrete).as(Type.Callable.class).getReturn(), environment));
 		// Sanity check whether valid typing still possible
 		checkForError(expr, typing, nTyping, var, v_concrete, t -> getLambdaReturn(t));
 		// >>> Propagate forwards into children
@@ -1789,12 +1791,17 @@ public class FlowTypeCheck implements Compiler.Check {
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
 			return typing.invalidate();
 		}
+		// Allocate variable for concrete signature
+		typing = typing.push(Type.Any);
+		int sig = typing.top();
 		// Allocate a finaliser for this expression
-		typing.register(typeLambdaAccess(expr, var));
+		typing.register(typeLambdaAccess(expr, sig));
 		// Split out incoming array types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, environment));
-		// Filter target type
-		nTyping = nTyping.project(row -> fork(candidates, c -> filterOnSubtype(row, var, c.getType(), environment)));
+		// Fork candidates
+		nTyping = nTyping.project(row -> fork(candidates, c -> row.set(sig, c.getType())));
+		// Filter on signature type
+		nTyping = nTyping.map(row -> filterOnSubtype(row, var, row.get(sig), environment));
 		// Sanity check for errors
 		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
 		// Done
@@ -1806,7 +1813,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type params = Decl.Callable.project(expr.getParameters());
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
-		// Split out incoming array types
+		// Split out incoming lambda types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
 		// Type check the body of the lambda using the expected return types
 		Type returns = checkExpression(expr.getBody(), null, false, environment);
@@ -2030,6 +2037,8 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private Typing pullArrayLength(Expr.ArrayLength expr, Typing typing, Environment environment) {
 		typing = pushExpression(expr.getOperand(), typing.push(Type.AnyArray), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		//
 		return typing.map(row -> row.add(Type.Int));
 	}
@@ -2078,6 +2087,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullBitwiseOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getOperand(), typing.push(Type.Byte), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
@@ -2085,6 +2096,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullBitwiseOperator(Expr.NaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpressions(expr.getOperands(), Type.Byte, typing, environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
@@ -2093,6 +2106,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Byte), environment);
 		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards into parent
 		return typing.map(row -> row.add(Type.Byte));
 	}
@@ -2179,6 +2194,8 @@ public class FlowTypeCheck implements Compiler.Check {
 	private Typing pullIntegerOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards
 		return typing.map(row -> row.add(Type.Int));
 	}
@@ -2187,6 +2204,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
 		typing = pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards
 		return typing.map(row -> row.add(Type.Int));
 	}
@@ -2224,25 +2243,26 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 		// Allocate space for the signature variables. This is used to identify each row
 		// in the typing matrix with one of candidates.
-		typing = typing.push(Type.Any).push(Type.Any);
+		typing = typing.push(Type.Any).push(Type.Any).push(Type.Any);
 		int v_concrete = typing.top();
-		int v_signature = v_concrete - 1;
+		int v_template = v_concrete - 1;
+		int v_signature = v_concrete - 2;
 		// Register a finaliser to resolve this invocation
-		typing.register(typeInvokeExpression(expr, v_signature));
+		typing.register(typeInvokeExpression(expr, v_signature, v_template));
 		// Fork typing into different cases for each overloaded candidate
 		typing = typing
-				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete)));
+				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete, v_template)));
 		// >>> Propagate forwards into children
 		typing = pushExpressions(arguments, (r, i) -> getLambdaParameter(r.get(v_concrete), i), typing, environment);
 		// Pull back return
 		return typing.map(row -> row.add(getLambdaReturn(row.get(v_concrete))));
 	}
 
-	private Typing.Row initialiseCallableFrame(Typing.Row row, Expr.Invoke expr, Decl.Callable candidate, int v_sig,
-			int v_concrete) {
+	private Typing.Row initialiseCallableFrame(Typing.Row row, Expr.Invoke expr, Decl.Callable candidate, int v_signature,
+			int v_concrete, int v_template) {
 		Type.Callable signatureType = candidate.getType();
 		Tuple<Template.Variable> template = candidate.getTemplate();
-		Tuple<SyntacticItem> templateArguments = expr.getBinding().getArguments();
+		Tuple<Type> templateArguments = expr.getBinding().getArguments();
 		// Check whether need to infer template arguments
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
@@ -2252,11 +2272,17 @@ public class FlowTypeCheck implements Compiler.Check {
 			templateArguments = new Tuple<>(p.second());
 		}
 		// Construct the concrete type.
-		Type.Callable concreteType = WyilFile.substitute(signatureType, template, templateArguments);
+		Type.Callable concreteType = WyilFile.substituteTypeCallable(signatureType, template, templateArguments);
 		// Configure first meta-variable to hold actual signature
-		row = row.set(v_sig, signatureType);
+		row = row.set(v_signature, signatureType);
 		// Configure second meta-variable to hold concrete signature
 		row = row.set(v_concrete, concreteType);
+		// Configure third meta-variable to hold concrete template
+		if(templateArguments.size() > 0) {
+			// NOTE: cannot set the template type if there are no template arguments as this
+			// defaults to void which then renders the whole typing invalid!
+			row = row.set(v_template, Type.Tuple.create(templateArguments.toArray(Type.class)));
+		}
 		//
 		return row;
 	}
@@ -2939,14 +2965,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private static Typing.Row filterOnReturn(Typing.Row row, int var, Type.Callable signature,
-			Subtyping.Environment subtyping) {
-		Type type = row.get(var);
-		Type ret = signature.getReturn();
-		row = row.set(var, ret);
-		return (row == null) ? row : row.intersect(subtyping.isSubtype(type, ret));
-	}
-
 	/**
 	 * Filter an initial (over approximated) type based on a string. For example:
 	 *
@@ -3072,12 +3090,16 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type supertype = row.get(var);
 		if (supertype instanceof Type.Any) {
 			return row.set(var, subtype);
+		} else if(subtype instanceof Type.Void) {
+			// NOTE: This is an edge case when we try to use the return value from a
+			// function which returns void. In such case, we want to kill the typing row
+			// dead.
+			return row.set(var, subtype);
 		} else {
 			// Apply the subtype tests which, if it fails, it will falsify this row.
 			Subtyping.Constraints constraints = environment.isSubtype(supertype, subtype);
 			// Set the type of this variable to the subtype (since this is fixed) and apply
 			// any constraints on the underlying type variables.
-			row = row.set(var, subtype);
 			return (row == null) ? row : row.intersect(constraints);
 		}
 	}
@@ -3209,15 +3231,32 @@ public class FlowTypeCheck implements Compiler.Check {
 		};
 	}
 
-	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int sig) {
+	private Predicate<Typing.Row[]> typeInvokeExpression(Expr.Invoke e, int signature, int template) {
 		Decl.Link<Decl.Callable> link = e.getLink();
+		Decl.Binding<Type.Callable, Decl.Callable> binding = e.getBinding();
 		return rows -> {
-			if (sig < 0) {
+			if (signature < 0) {
 				// invalid typing
 				return false;
 			} else if (rows.length == 1) {
-				Type.Callable signature = (Type.Callable) rows[0].get(sig);
-				link.resolve(link.lookup(signature));
+				Type.Callable sig = (Type.Callable) rows[0].get(signature);
+				Type tem = rows[0].get(template);
+				// Resolve link
+				link.resolve(link.lookup(sig));
+				Decl.Callable d = link.getTarget();
+				// Set binding arguments (if necessary)
+				if(d.getTemplate().size() > 0 && binding.getArguments().size() == 0) {
+					// Yes, is necessary as we have a declaration with template arguments but
+					// currently no specified arguments in the binding.
+					Type[] tems = new Type[tem.shape()];
+					// Unpack types from shape. This is ugly but is necessary as tuple types
+					// dissolve into the underlying type when there is a single component, etc.
+					for(int i=0;i!=tem.shape();++i) {
+						tems[i] = tem.dimension(i);
+					}
+					// Finally, update the binding arguments.
+					e.getBinding().setArguments(new Tuple<>(tems));
+				}
 				return true;
 			} else if (rows.length > 1) {
 				syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
@@ -3233,7 +3272,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				// invalid typing
 				return false;
 			} else if (rows.length == 1) {
-				Type.Callable signature = (Type.Callable) rows[0].get(sig);
+				Type.Callable signature = rows[0].get(sig).as(Type.Callable.class);
 				link.resolve(link.lookup(signature));
 				return true;
 			} else if (rows.length > 1) {

@@ -167,6 +167,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("UnionType_Valid_17", "??");
 		IGNORED.put("UnionType_Valid_27", "??");
 		IGNORED.put("ConstrainedReference_Valid_1", "??");
+		IGNORED.put("Reference_Valid_22", "??");
 		//
 		IGNORED.put("Property_Valid_10", "??");
 		IGNORED.put("Property_Valid_11", "??");
@@ -215,6 +216,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Byte_Valid_7", "??");
 		IGNORED.put("Function_Valid_26", "??");
 		IGNORED.put("Reference_Valid_21", "??");
+		IGNORED.put("RecursiveType_Valid_31", "??");
 		IGNORED.put("While_Valid_71", "??");
 	}
 
