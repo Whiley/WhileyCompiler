@@ -3270,7 +3270,7 @@ public class FlowTypeCheck implements Compiler.Check {
 				// invalid typing
 				return false;
 			} else if (rows.length == 1) {
-				Type.Callable signature = (Type.Callable) rows[0].get(sig);
+				Type.Callable signature = rows[0].get(sig).as(Type.Callable.class);
 				link.resolve(link.lookup(signature));
 				return true;
 			} else if (rows.length > 1) {
