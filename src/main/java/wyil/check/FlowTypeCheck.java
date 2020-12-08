@@ -1775,7 +1775,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing = typing
 				.project(row -> fork(candidates, c -> initialiseCallableFrame(row, expr, c, v_signature, v_concrete, v_template)));
 		// <<< Filter return type
-		Typing nTyping = typing.map(row -> filterOnReturn(row, var, (Type.Callable) row.get(v_concrete), environment));
+		Typing nTyping = typing.map(
+				row -> filterOnSubtype(row, var, row.get(v_concrete).as(Type.Callable.class).getReturn(), environment));
 		// Sanity check whether valid typing still possible
 		checkForError(expr, typing, nTyping, var, v_concrete, t -> getLambdaReturn(t));
 		// >>> Propagate forwards into children
@@ -1790,12 +1791,17 @@ public class FlowTypeCheck implements Compiler.Check {
 			syntaxError(link.getName(), AMBIGUOUS_CALLABLE, link.getCandidates());
 			return typing.invalidate();
 		}
+		// Allocate variable for concrete signature
+		typing = typing.push(Type.Any);
+		int sig = typing.top();
 		// Allocate a finaliser for this expression
-		typing.register(typeLambdaAccess(expr, var));
+		typing.register(typeLambdaAccess(expr, sig));
 		// Split out incoming array types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, environment));
-		// Filter target type
-		nTyping = nTyping.project(row -> fork(candidates, c -> filterOnSubtype(row, var, c.getType(), environment)));
+		// Fork candidates
+		nTyping = nTyping.project(row -> fork(candidates, c -> row.set(sig, c.getType())));
+		// Filter on signature type
+		nTyping = nTyping.map(row -> filterOnSubtype(row, var, row.get(sig), environment));
 		// Sanity check for errors
 		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
 		// Done
@@ -1807,7 +1813,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type params = Decl.Callable.project(expr.getParameters());
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
-		// Split out incoming array types
+		// Split out incoming lambda types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
 		// Type check the body of the lambda using the expected return types
 		Type returns = checkExpression(expr.getBody(), null, false, environment);
@@ -2959,14 +2965,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private static Typing.Row filterOnReturn(Typing.Row row, int var, Type.Callable signature,
-			Subtyping.Environment subtyping) {
-		Type type = row.get(var);
-		Type ret = signature.getReturn();
-		row = row.set(var, ret);
-		return (row == null) ? row : row.intersect(subtyping.isSubtype(type, ret));
-	}
-
 	/**
 	 * Filter an initial (over approximated) type based on a string. For example:
 	 *
@@ -3092,12 +3090,16 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type supertype = row.get(var);
 		if (supertype instanceof Type.Any) {
 			return row.set(var, subtype);
+		} else if(subtype instanceof Type.Void) {
+			// NOTE: This is an edge case when we try to use the return value from a
+			// function which returns void. In such case, we want to kill the typing row
+			// dead.
+			return row.set(var, subtype);
 		} else {
 			// Apply the subtype tests which, if it fails, it will falsify this row.
 			Subtyping.Constraints constraints = environment.isSubtype(supertype, subtype);
 			// Set the type of this variable to the subtype (since this is fixed) and apply
 			// any constraints on the underlying type variables.
-			row = row.set(var, subtype);
 			return (row == null) ? row : row.intersect(constraints);
 		}
 	}

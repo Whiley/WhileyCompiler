@@ -5,6 +5,8 @@ type LinkedList is Leaf | Link
 function dist(Link list) -> Leaf:
     LinkedList iter = list
     int distance = 0
+    // Following shouldn't be necessary!
+    assert iter is Link
     do:
         iter = iter.next
         distance = distance + 1
