@@ -23,8 +23,10 @@ import java.util.function.Predicate;
 
 import wyal.util.NameResolver.ResolutionError;
 import wybs.lang.*;
-import wybs.util.ResolveError;
+import wybs.util.AbstractCompilationUnit;
+import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.ResolveError;
 import wyc.util.ErrorMessages;
 import wyfs.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
