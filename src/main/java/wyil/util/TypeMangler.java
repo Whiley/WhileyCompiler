@@ -165,6 +165,9 @@ public interface TypeMangler {
 
 		private void writeTypeMangle(Type t, StringBuilder mangle) {
 			switch (t.getOpcode()) {
+			case TYPE_any:
+				mangle.append("A");
+				break;
 			case TYPE_void:
 				mangle.append("V");
 				break;
