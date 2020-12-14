@@ -1033,7 +1033,6 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				System.out.println("COMPARING: " + this + " : " + o + " == " + ((o instanceof RValue.Reference) && (referent == ((RValue.Reference) o).referent)));
 				return (o instanceof RValue.Reference) && (referent == ((RValue.Reference) o).referent);
 			}
 
@@ -1071,13 +1070,55 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			public String toString() {
-				return value.toString();
+				return toString(value);
 			}
 
 			@Override
 			public Value toValue() {
 				// FIXME: need to implement this
 				return new Value.Null();
+			}
+
+			/**
+			 * This method exists because we currently have a problem related to the storage of heap cells as Values in
+			 * the WyIL binary file.  Since the format of that file is likely to change in the near future, I'm going to
+			 * defer this.  See #1045.
+			 *
+			 * @param rval
+			 * @return
+			 */
+			private static String toString(RValue rval) {
+				if (rval instanceof RValue.Bool || rval instanceof RValue.Byte || rval instanceof RValue.Int || rval instanceof RValue.Null) {
+					return rval.toString();
+				} else if(rval instanceof RValue.Array){
+					RValue.Array arr = (RValue.Array) rval;
+					RValue[] elements = arr.elements;
+					String r = "[";
+					for(int i=0;i!=elements.length;++i) {
+						if(i != 0) {
+							r += ",";
+						}
+						r += toString(elements[i]);
+					}
+					return r + "]";
+				} else if(rval instanceof RValue.Record){
+					RValue.Record rec = (RValue.Record) rval;
+					RValue.Field[] elements = rec.fields;
+					String r = "{";
+					for(int i=0;i!=elements.length;++i) {
+						if(i != 0) {
+							r += ",";
+						}
+						r += elements[i].name + ": ";
+						r += toString(elements[i].value);
+					}
+					return r + "}";
+				} else if(rval instanceof RValue.Reference) {
+					RValue.Reference ref = (RValue.Reference) rval;
+					return "&" + System.identityHashCode(ref.referent);
+				} else {
+					return "...";
+				}
 			}
 		}
 	}
