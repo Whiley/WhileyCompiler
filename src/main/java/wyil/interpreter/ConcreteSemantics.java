@@ -214,7 +214,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 */
 		@Override
 		public Bool equal(AbstractSemantics.RValue rhs) {
-			return this.equals(rhs) ? True : False;
+			return  this.equals(rhs) ? True : False;
 		}
 
 		/**
@@ -1033,6 +1033,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
+				System.out.println("COMPARING: " + this + " : " + o + " == " + ((o instanceof RValue.Reference) && (referent == ((RValue.Reference) o).referent)));
 				return (o instanceof RValue.Reference) && (referent == ((RValue.Reference) o).referent);
 			}
 
@@ -1043,13 +1044,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public String toString() {
-				return "&" + System.identityHashCode(referent);
+				return "&" + System.identityHashCode(referent) + "(" + referent.toString() + ")";
 			}
 
 			@Override
 			public Value toValue() {
-				// FIXME: need to implement this
-				return new Value.Null();
+				return new Value.UTF8(toString());
 			}
 		}
 
@@ -1068,6 +1068,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			@Override
 			public void write(AbstractSemantics.RValue value) {
 				this.value = (RValue) value;
+			}
+
+			public String toString() {
+				return value.toString();
 			}
 
 			@Override
