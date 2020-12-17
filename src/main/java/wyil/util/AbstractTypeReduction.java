@@ -92,11 +92,11 @@ public abstract class AbstractTypeReduction<R> implements Function<Type,R> {
 	private R visitTypeCallable(Type.Callable type) {
 		switch (type.getOpcode()) {
 		case TYPE_function:
-			visitTypeFunction((Type.Function) type);
+			return visitTypeFunction((Type.Function) type);
 		case TYPE_method:
-			visitTypeMethod((Type.Method) type);
+			return visitTypeMethod((Type.Method) type);
 		case TYPE_property:
-			visitTypeProperty((Type.Property) type);
+			return visitTypeProperty((Type.Property) type);
 		default:
 			throw new IllegalArgumentException("unknown type encountered (" + type.getClass().getName() + ")");
 		}
