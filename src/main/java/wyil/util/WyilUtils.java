@@ -83,7 +83,7 @@ public class WyilUtils {
 			}
 
 			@Override
-			public Boolean constructTypeRecord(Record type, List<Boolean> children) {
+			public Boolean constructTypeRecord(Type.Record type, List<Boolean> children) {
 				return AND(children);
 			}
 
