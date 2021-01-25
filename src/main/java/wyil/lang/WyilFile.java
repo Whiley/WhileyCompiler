@@ -43,6 +43,7 @@ import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.util.AbstractConsumer;
+import wyil.util.WyilUtils;
 
 /**
  * <p>
@@ -1211,7 +1212,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				SyntacticHeap heap = getHeap();
 				//
 				if (type instanceof WyilFile.Type.Callable) {
+					// Set the type
 					operands[6] = heap.allocate(type);
+					// Configure the required template
+					Tuple<Template.Variable> template = WyilUtils.extractTemplate(type, Build.NULL_METER);
+					// Set it!
+					operands[2] = heap.allocate(template);
 				} else {
 					throw new IllegalArgumentException();
 				}

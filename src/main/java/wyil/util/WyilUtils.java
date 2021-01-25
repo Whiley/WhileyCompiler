@@ -349,4 +349,34 @@ public class WyilUtils {
 		visitor.visitExpression(e);
 	}
 
+	/**
+	 * Determine all (universal) type variables used within a given type.  For example, in the type <code>{ int msg, T data}</code>
+	 * we have variable <code>T</code>.  This method is used in situations where we need to handle free variables (e.g.
+	 * by adding template arguments).
+	 *
+	 * @param t
+	 * @return
+	 */
+	public static Tuple<Template.Variable> extractTemplate(Type type, Build.Meter meter) {
+		HashSet<Template.Variable> holes = new HashSet<>();
+		// Traverse the type looking for universals
+		new AbstractVisitor(meter) {
+			@Override
+			public void visitTypeVariable(Type.Universal t) {
+				// FIXME: unsure what the appropriate variance would be.
+				holes.add(new Template.Type(t.getOperand(), Template.Variance.INVARIANT));
+			}
+		}.visitType(type);
+		// Extract and sort holes
+		ArrayList<Template.Variable> nholes = new ArrayList<>(holes);
+		Collections.sort(nholes, new Comparator<Template.Variable>() {
+			@Override
+			public int compare(Template.Variable t1, Template.Variable t2) {
+				return t1.getName().compareTo(t2.getName());
+			}
+		});
+		// Done
+		return new Tuple<>(nholes);
+	}
+
 }
