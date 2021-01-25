@@ -1214,10 +1214,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				if (type instanceof WyilFile.Type.Callable) {
 					// Set the type
 					operands[6] = heap.allocate(type);
-					// Configure the required template
-					Tuple<Template.Variable> template = WyilUtils.extractTemplate(type, Build.NULL_METER);
-					// Set it!
-					operands[2] = heap.allocate(template);
 				} else {
 					throw new IllegalArgumentException();
 				}
