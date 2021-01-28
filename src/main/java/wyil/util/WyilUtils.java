@@ -279,13 +279,13 @@ public class WyilUtils {
 	}
 
 	/**
-	 * Extract all used variables from a given expression. This is tricky as we must
+	 * Extract all used variables from a given statement. This is tricky as we must
 	 * account properly for captured variables, etc.
 	 *
 	 * @param e
 	 * @param uses
 	 */
-	private static void extractUsedVariables(Expr e, Set<Decl.Variable> uses, Build.Meter meter) {
+	private static void extractUsedVariables(Stmt e, Set<Decl.Variable> uses, Build.Meter meter) {
 		// Construct appropriate visitor
 		AbstractVisitor visitor = new AbstractVisitor(meter) {
 			@Override
@@ -346,7 +346,20 @@ public class WyilUtils {
 			}
 		};
 		//
-		visitor.visitExpression(e);
+		visitor.visitStatement(e);
+	}
+
+	/**
+	 * Determine the set of variables used within a given statement, whilst properly accounting for variable capture, etc.
+	 *
+	 * @param stmt
+	 * @param meter
+	 * @return
+	 */
+	public static Set<Decl.Variable> determineUsedVariables(Stmt stmt, Build.Meter meter) {
+		HashSet<Decl.Variable> used = new HashSet<>();
+		extractUsedVariables(stmt, used, meter);
+		return used;
 	}
 
 	/**
@@ -378,5 +391,4 @@ public class WyilUtils {
 		// Done
 		return new Tuple<>(nholes);
 	}
-
 }
