@@ -150,9 +150,20 @@ public class FlowTypeUtils {
 	}
 
 	public static void determineModifiedVariables(Stmt.Block block, Set<Decl.Variable> modified) {
+		ArrayList<Decl.Variable> locals = new ArrayList<>();
+		//
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			switch (stmt.getOpcode()) {
+			case STMT_initialiser:
+			case STMT_initialiservoid: {
+				Stmt.Initialiser s = (Stmt.Initialiser) stmt;
+				Tuple<Decl.Variable> variables = s.getVariables();
+				for(int j=0;j!=variables.size();++j) {
+					locals.add(variables.get(j));
+				}
+				break;
+			}
 			case STMT_assign: {
 				Stmt.Assign s = (Stmt.Assign) stmt;
 				for (LVal lval : s.getLeftHandSide()) {
@@ -179,6 +190,12 @@ public class FlowTypeUtils {
 				}
 				break;
 			}
+			case STMT_for: {
+				Stmt.For s = (Stmt.For) stmt;
+				locals.add(s.getVariable());
+				determineModifiedVariables(s.getBody(), modified);
+				break;
+			}
 			case STMT_namedblock: {
 				Stmt.NamedBlock s = (Stmt.NamedBlock) stmt;
 				determineModifiedVariables(s.getBlock(), modified);
@@ -198,6 +215,8 @@ public class FlowTypeUtils {
 			}
 			}
 		}
+		// Remove any locally declared variables
+		modified.removeAll(locals);
 	}
 
 	/**
