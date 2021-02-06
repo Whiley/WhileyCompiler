@@ -37,6 +37,8 @@ import wybs.util.SectionedSchema.Section;
 import wyc.util.ErrorMessages;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Type;
+import wyfs.lang.Path.ID;
 import wyfs.util.ArrayUtils;
 import wyfs.util.Trie;
 import wyil.io.WyilFilePrinter;
@@ -86,7 +88,7 @@ import wyil.util.WyilUtils;
  * @author David J. Pearce
  *
  */
-public class WyilFile extends AbstractCompilationUnit<WyilFile> {
+public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Entry {
 
 	// =========================================================================
 	// Binary Content Type
@@ -146,6 +148,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		@Override
 		public String getSuffix() {
 			return "wyil";
+		}
+
+		@Override
+		public WyilFile read(wyfs.lang.Path.ID id, InputStream input) throws IOException {
+			return new WyilFileReader(input).read(id);
 		}
 	};
 
@@ -299,6 +306,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	// Constructors
 	// =========================================================================
 
+	private final Path.ID ID;
 	private final int majorVersion;
 	private final int minorVersion;
 
@@ -307,8 +315,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		Schema schema = WyilFile.getSchema();
 		this.majorVersion = schema.getMajorVersion();
 		this.minorVersion = schema.getMinorVersion();
+		this.ID = (entry != null) ? entry.id() : null;
 	}
 
+	public WyilFile(Path.ID id) {
+		super(null);
+		this.ID = id;
+		Schema schema = WyilFile.getSchema();
+		this.majorVersion = schema.getMajorVersion();
+		this.minorVersion = schema.getMinorVersion();
+	}
+	
 	/**
 	 * Copy constructor which creates an identical WyilFile.
 	 *
@@ -338,6 +355,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
+		this.ID = (entry != null) ? entry.id() : null;
 	}
 
 	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items, int major, int minor) {
@@ -351,12 +369,41 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
+		this.ID = (entry != null) ? entry.id() : null;
 	}
 
+	public WyilFile(Path.ID ID, int root, SyntacticItem[] items, int major, int minor) {
+		super(null);
+		this.majorVersion = major;
+		this.minorVersion = minor;
+		// Allocate every item into this heap
+		for (int i = 0; i != items.length; ++i) {
+			syntacticItems.add(items[i]);
+			items[i].allocate(this, i);
+		}
+		// Set the distinguished root item
+		setRootItem(getSyntacticItem(root));
+		this.ID = ID;
+	}
+	
 	// =========================================================================
 	// Accessors
 	// =========================================================================
 
+	@Override
+	public ID getID() {
+		return ID;
+	}
+
+	@Override
+	public Content.Type<?> getContentType() {
+		return ContentType;
+	}
+	
+	public boolean isValid() {
+		return findAll(SyntacticItem.Marker.class).size() == 0;
+	}
+	
 	public int getMajorVersion() {
 		return majorVersion;
 	}

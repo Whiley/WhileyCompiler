@@ -22,28 +22,24 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
-import wybs.lang.Build.Meter;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wybs.util.FileRepository;
 import wybs.util.Logger;
 import wybs.util.SequentialBuildProject;
-import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wycli.WyMain;
-import wycli.lang.Command;
+import wyc.task.NewCompileTask;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Root;
 import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
@@ -128,12 +124,10 @@ public class TestUtils {
 		@Override
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
-
-			if (suffix.equals("whiley")) {
-				e.associate(WhileyFile.ContentType, null);
-			} else if (suffix.equals("wyil")) {
-				e.associate(WyilFile.ContentType, null);
-			}
+			Content.Type<?> type = contentType(suffix);
+			if(type != null) {
+				e.associate(type, null);
+			}			
 		}
 
 		@Override
@@ -143,7 +137,14 @@ public class TestUtils {
 
 		@Override
 		public wyfs.lang.Content.Type<?> contentType(String suffix) {
-			// TODO Auto-generated method stub
+			switch(suffix) {
+			case "whiley":
+				return WhileyFile.ContentType;
+			case "wyil":
+				return WyilFile.ContentType;
+			case "wyal":
+				return WyalFile.ContentType;
+			}
 			return null;
 		}
 	}
@@ -155,9 +156,9 @@ public class TestUtils {
 	 * @return
 	 */
 	public static Type fromString(String from) {
-		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
 		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
-		WhileyFileParser parser = new WhileyFileParser(wf, new WhileyFile(tokens));
+		WhileyFile sf = new WhileyFile(null,from.getBytes());
+		WhileyFileParser parser = new WhileyFileParser(wf, sf);
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
 		return parser.parseType(scope);
 	}
@@ -190,14 +191,14 @@ public class TestUtils {
 			}
 			// Get rid of ".whiley" extension
 			String testName = name.substring(0, name.length() - suffix.length());
-			testcases.add(new Object[] { testName });
+			testcases.add(new Object[]{testName});
 		}
 		// Sort the result by filename
 		Collections.sort(testcases, new Comparator<Object[]>() {
-				@Override
-				public int compare(Object[] o1, Object[] o2) {
-					return ((String) o1[0]).compareTo((String) o2[0]);
-				}
+			@Override
+			public int compare(Object[] o1, Object[] o2) {
+				return ((String) o1[0]).compareTo((String) o2[0]);
+			}
 		});
 		return testcases;
 	}
@@ -274,6 +275,49 @@ public class TestUtils {
 		return new Pair<>(result, output);
 	}
 
+	public static Pair<Boolean, String> compile2(File whileydir, boolean verify, boolean counterexamples, String arg)
+			throws IOException {
+		String filename = arg + ".whiley";
+		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
+		PrintStream psyserr = new PrintStream(syserr);
+		// Determine the ID of the test being compiler
+		Path.ID id = Trie.fromString(arg);
+		//
+		boolean result = true;
+		//
+		try {
+			// Construct the build repository
+			FileRepository db = new FileRepository(registry, whileydir, f -> {
+				return f.getName().equals(filename);
+			});
+			// Apply Whiley Compile Task
+			db.apply(new NewCompileTask<>(id, Collections.EMPTY_LIST));
+			// Extract files
+			WhileyFile source = db.get().get(WhileyFile.ContentType, id);
+			WyilFile target = db.get().get(WyilFile.ContentType, id);
+			// Check whether result valid (or not)
+			result = target.isValid();
+			// Writeback any results
+			db.flush();
+			// Print out syntactic markers
+			wycli.commands.Build.printSyntacticMarkers(psyserr, target, source);
+		} catch (SyntacticException e) {
+			// Print out the syntax error
+			//e.outputSourceError(psyserr);
+			result = false;
+		}catch (Exception e) {
+			// Print out the syntax error
+			printStackTrace(psyserr, e);
+			result = false;
+		}
+		//
+		psyserr.flush();
+		// Convert bytes produced into resulting string.
+		byte[] errBytes = syserr.toByteArray();
+		String output = new String(errBytes);
+		return new Pair<>(result, output);
+	}
+	
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
 	 * in that it always prints all of the trace.

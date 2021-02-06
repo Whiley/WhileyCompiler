@@ -163,9 +163,9 @@ public class WhileyFileParser {
 	public boolean read(Build.Meter meter) {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = new Name(new Identifier(source.getEntry().id().last()));
+		Name name = new Name(new Identifier(source.getID().last()));
 		try {
-			name = parseModuleName(source.getEntry());
+			name = parseModuleName(source.getID());
 			skipWhiteSpace();
 			while (index < tokens.size()) {
 				// Parse next logical declaration
@@ -196,7 +196,7 @@ public class WhileyFileParser {
 		return status;
 	}
 
-	private Name parseModuleName(Path.Entry<WhileyFile> entry) {
+	private Name parseModuleName(Path.ID id) {
 		ArrayList<Identifier> components = new ArrayList<>();
 		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword
@@ -210,7 +210,7 @@ public class WhileyFileParser {
 		}
 		Identifier[] bits = components.toArray(new Identifier[components.size() + 1]);
 		// FIXME: this is so completely broken
-		bits[bits.length - 1] = new Identifier(entry.id().last());
+		bits[bits.length - 1] = new Identifier(id.last());
 		return new Name(bits);
 	}
 
