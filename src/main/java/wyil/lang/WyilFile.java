@@ -43,6 +43,7 @@ import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.util.AbstractConsumer;
+import wyil.util.WyilUtils;
 
 /**
  * <p>
@@ -1211,6 +1212,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				SyntacticHeap heap = getHeap();
 				//
 				if (type instanceof WyilFile.Type.Callable) {
+					// Set the type
 					operands[6] = heap.allocate(type);
 				} else {
 					throw new IllegalArgumentException();
@@ -1661,7 +1663,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 	public interface Stmt extends SyntacticItem {
 
 		public interface Loop extends Stmt {
-			Expr getCondition();
+			//Expr getCondition();
 
 			Tuple<Expr> getInvariant();
 
@@ -2046,7 +2048,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(STMT_dowhile, condition, invariant, modified, body);
 			}
 
-			@Override
 			public Expr getCondition() {
 				return (Expr) super.get(0);
 			}
@@ -2128,7 +2129,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class For extends AbstractSyntacticItem implements Stmt {
+		public static class For extends AbstractSyntacticItem implements Loop {
 			public For(Decl.StaticVariable var, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block trueBranch) {
 				super(STMT_for, var, invariant, modified, trueBranch);
 			}
@@ -2475,7 +2476,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> {
 				super(STMT_while, condition, invariant, modified, body);
 			}
 
-			@Override
 			public Expr getCondition() {
 				return (Expr) super.get(0);
 			}

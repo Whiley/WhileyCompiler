@@ -1,6 +1,7 @@
 type Box<T> is { T contents }
 
-function empty_boxes<T>(T t) -> (T xs, Box<T>[] ys):
+function empty_boxes<T>(T t) -> (T xs, Box<T>[] ys)
+ensures |ys| == 0:
     return t,[]
 
 public export method test():

@@ -1868,15 +1868,16 @@ public class WhileyFileParser {
 		int start = index;
 		Expr lhs = parseAndOrExpression(scope, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalImplication, LogicalIff);
+		//System.out.println("PARSED: " + lhs + " : " + lookahead);
 		if (lookahead != null) {
 			switch (lookahead.kind) {
 			case LogicalImplication: {
-				Expr rhs = parseExpression(scope, terminated);
+				Expr rhs = parseAndOrExpression(scope, terminated);
 				lhs = new Expr.LogicalImplication(lhs, rhs);
 				break;
 			}
 			case LogicalIff: {
-				Expr rhs = parseExpression(scope, terminated);
+				Expr rhs = parseAndOrExpression(scope, terminated);
 				lhs = new Expr.LogicalIff(lhs, rhs);
 				break;
 			}
@@ -1921,12 +1922,12 @@ public class WhileyFileParser {
 		if (lookahead != null) {
 			switch (lookahead.kind) {
 			case LogicalAnd: {
-				Expr rhs = parseExpression(scope, terminated);
+				Expr rhs = parseAndOrExpression(scope, terminated);
 				lhs = annotateSourceLocation(new Expr.LogicalAnd(new Tuple<>(lhs, rhs)),start);
 				break;
 			}
 			case LogicalOr: {
-				Expr rhs = parseExpression(scope, terminated);
+				Expr rhs = parseAndOrExpression(scope, terminated);
 				lhs = annotateSourceLocation(new Expr.LogicalOr(new Tuple<>(lhs, rhs)), start);
 				break;
 			}
@@ -1963,7 +1964,7 @@ public class WhileyFileParser {
 		Expr lhs = parseBitwiseXorExpression(scope, terminated);
 
 		if (tryAndMatch(terminated, VerticalBar) != null) {
-			Expr rhs = parseExpression(scope, terminated);
+			Expr rhs = parseBitwiseOrExpression(scope, terminated);
 			return annotateSourceLocation(new Expr.BitwiseOr(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 
@@ -1996,7 +1997,7 @@ public class WhileyFileParser {
 		Expr lhs = parseBitwiseAndExpression(scope, terminated);
 
 		if (tryAndMatch(terminated, Caret) != null) {
-			Expr rhs = parseExpression(scope, terminated);
+			Expr rhs = parseBitwiseXorExpression(scope, terminated);
 			return annotateSourceLocation(new Expr.BitwiseXor(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 
@@ -2029,7 +2030,7 @@ public class WhileyFileParser {
 		Expr lhs = parseConditionExpression(scope, terminated);
 
 		if (tryAndMatch(terminated, Ampersand) != null) {
-			Expr rhs = parseExpression(scope, terminated);
+			Expr rhs = parseBitwiseAndExpression(scope, terminated);
 			return annotateSourceLocation(new Expr.BitwiseAnd(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 

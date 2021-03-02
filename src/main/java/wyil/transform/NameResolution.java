@@ -285,7 +285,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(isVisible,name, expr));
+				patches.add(new Patch(isVisible, name, null, expr));
 			}
 		}
 
@@ -297,7 +297,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(isVisible,name, expr));
+				patches.add(new Patch(isVisible, name, null, expr));
 			}
 		}
 
@@ -309,7 +309,7 @@ public class NameResolution {
 			// Sanity check result
 			if(name != null) {
 				// Create patch
-				patches.add(new Patch(isVisible,name, expr));
+				patches.add(new Patch(isVisible, name, null, expr));
 			}
 		}
 
@@ -321,7 +321,7 @@ public class NameResolution {
 			// Sanity check result
 			if (name != null) {
 				// Create patch
-				patches.add(new Patch(isVisible, name, type));
+				patches.add(new Patch(isVisible, name, null, type));
 			}
 		}
 
@@ -448,14 +448,16 @@ public class NameResolution {
 	public class Patch {
 		public final boolean isPublic;
 		public final QualifiedName name;
+		public final Type type;
 		private final SyntacticItem target;
 
-		public Patch(boolean isPublic, QualifiedName name, SyntacticItem target) {
+		public Patch(boolean isPublic, QualifiedName name, Type type, SyntacticItem target) {
 			if(name == null || target == null) {
 				throw new IllegalArgumentException("name cannot be null");
 			}
 			this.isPublic = isPublic;
 			this.name = name;
+			this.type = type;
 			this.target = target;
 		}
 
@@ -512,9 +514,18 @@ public class NameResolution {
 			}
 			case EXPR_invoke: {
 				Expr.Invoke e = (Expr.Invoke) target;
-				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
-				if(resolved != null) {
-					e.getLink().resolve(resolved);
+				Decl.Link<Decl.Callable> link = e.getLink();
+				if(type != null) {
+					// do nothing?
+					Decl.Callable resolved = select(name, type, Decl.Callable.class);
+					if (resolved != null) {
+						e.getLink().resolve(resolved);
+					}
+				} else {
+					Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
+					if (resolved != null) {
+						e.getLink().resolve(resolved);
+					}
 				}
 				break;
 			}
@@ -565,6 +576,31 @@ public class NameResolution {
 				Decl.Named d = declarations.get(i);
 				//
 				if (kind.isInstance(d)) {
+					// Found direct instance
+					return (T) d;
+				}
+			}
+			syntaxError(id, RESOLUTION_ERROR);
+			return null;
+		}
+
+		/**
+		 * Resolve a name which is fully qualified (e.g.
+		 * <code>std::array::equals</code>) and includes a distinguishing type signature.
+		 *
+		 * @param name
+		 *            Fully qualified name
+		 * @param kind
+		 *            Declaration kind we are resolving.
+		 * @return
+		 */
+		private <T extends Decl> T select(QualifiedName name, Type type, Class<T> kind) {
+			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
+			Identifier id = name.getName();
+			for (int i = 0; i != declarations.size(); ++i) {
+				Decl.Named d = declarations.get(i);
+				//
+				if (kind.isInstance(d) && d.getType().equals(type)) {
 					// Found direct instance
 					return (T) d;
 				}
@@ -700,7 +736,7 @@ public class NameResolution {
 				Decl.Link<? extends Decl.Named> link = linkable.getLink();
 				item = super.allocate(item);
 				// Register patch
-				patches.add(new Patch(false, link.getTarget().getQualifiedName(), item));
+				patches.add(new Patch(false, link.getTarget().getQualifiedName(), link.getTarget().getType(), item));
 				// Done
 				return item;
 			}
@@ -728,16 +764,22 @@ public class NameResolution {
 			if (item != null) {
 				// item is already allocated as a stub, therefore must return that.
 				return item;
-			} else if (fm instanceof Decl.Function) {
+			}
+			Tuple<Template.Variable> template = (Tuple<Template.Variable>) super.allocate(fm.getTemplate());
+			Tuple<Decl.Variable> params = (Tuple<Decl.Variable>) super.allocate(fm.getParameters());
+			Tuple<Decl.Variable> returns = (Tuple<Decl.Variable>) super.allocate(fm.getReturns());
+			Tuple<Expr> requires = (Tuple<Expr>) super.allocate(fm.getRequires());
+			Tuple<Expr> ensures = (Tuple<Expr>) super.allocate(fm.getEnsures());
+			if (fm instanceof Decl.Function) {
 				// Create function stub
 				Decl.Function f = (Decl.Function) fm;
-				item = new Decl.Function(f.getModifiers(), f.getName(), f.getTemplate(), f.getParameters(), f.getReturns(),
-						f.getRequires(), f.getEnsures(), new Stmt.Block());
+				item = new Decl.Function(f.getModifiers(), f.getName(), template, params, returns,
+						requires, ensures, new Stmt.Block());
 			} else {
 				// Create method stub
 				Decl.Method m = (Decl.Method) fm;
-				item = new Decl.Method(m.getModifiers(), m.getName(), m.getTemplate(), m.getParameters(),
-						m.getReturns(), m.getRequires(), m.getEnsures(), new Stmt.Block());
+				item = new Decl.Method(m.getModifiers(), m.getName(), template, params,
+						returns, requires, ensures, new Stmt.Block());
 			}
 			// Allocate new item using underlying allocator. This will recursively allocate
 			// child nodes.

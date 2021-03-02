@@ -83,7 +83,7 @@ public class WyilUtils {
 			}
 
 			@Override
-			public Boolean constructTypeRecord(Record type, List<Boolean> children) {
+			public Boolean constructTypeRecord(Type.Record type, List<Boolean> children) {
 				return AND(children);
 			}
 
@@ -279,13 +279,13 @@ public class WyilUtils {
 	}
 
 	/**
-	 * Extract all used variables from a given expression. This is tricky as we must
+	 * Extract all used variables from a given statement. This is tricky as we must
 	 * account properly for captured variables, etc.
 	 *
 	 * @param e
 	 * @param uses
 	 */
-	private static void extractUsedVariables(Expr e, Set<Decl.Variable> uses, Build.Meter meter) {
+	private static void extractUsedVariables(Stmt e, Set<Decl.Variable> uses, Build.Meter meter) {
 		// Construct appropriate visitor
 		AbstractVisitor visitor = new AbstractVisitor(meter) {
 			@Override
@@ -346,7 +346,49 @@ public class WyilUtils {
 			}
 		};
 		//
-		visitor.visitExpression(e);
+		visitor.visitStatement(e);
 	}
 
+	/**
+	 * Determine the set of variables used within a given statement, whilst properly accounting for variable capture, etc.
+	 *
+	 * @param stmt
+	 * @param meter
+	 * @return
+	 */
+	public static Set<Decl.Variable> determineUsedVariables(Stmt stmt, Build.Meter meter) {
+		HashSet<Decl.Variable> used = new HashSet<>();
+		extractUsedVariables(stmt, used, meter);
+		return used;
+	}
+
+	/**
+	 * Determine all (universal) type variables used within a given type.  For example, in the type <code>{ int msg, T data}</code>
+	 * we have variable <code>T</code>.  This method is used in situations where we need to handle free variables (e.g.
+	 * by adding template arguments).
+	 *
+	 * @param t
+	 * @return
+	 */
+	public static Tuple<Template.Variable> extractTemplate(Type type, Build.Meter meter) {
+		HashSet<Template.Variable> holes = new HashSet<>();
+		// Traverse the type looking for universals
+		new AbstractVisitor(meter) {
+			@Override
+			public void visitTypeVariable(Type.Universal t) {
+				// FIXME: unsure what the appropriate variance would be.
+				holes.add(new Template.Type(t.getOperand(), Template.Variance.INVARIANT));
+			}
+		}.visitType(type);
+		// Extract and sort holes
+		ArrayList<Template.Variable> nholes = new ArrayList<>(holes);
+		Collections.sort(nholes, new Comparator<Template.Variable>() {
+			@Override
+			public int compare(Template.Variable t1, Template.Variable t2) {
+				return t1.getName().compareTo(t2.getName());
+			}
+		});
+		// Done
+		return new Tuple<>(nholes);
+	}
 }

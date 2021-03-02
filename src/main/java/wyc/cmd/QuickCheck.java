@@ -29,6 +29,7 @@ import wybs.lang.*;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.Logger;
 import wyc.Activator;
 import wyc.util.ErrorMessages;

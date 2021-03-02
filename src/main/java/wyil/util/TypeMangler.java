@@ -165,6 +165,9 @@ public interface TypeMangler {
 
 		private void writeTypeMangle(Type t, StringBuilder mangle) {
 			switch (t.getOpcode()) {
+			case TYPE_any:
+				mangle.append("A");
+				break;
 			case TYPE_void:
 				mangle.append("V");
 				break;
@@ -239,13 +242,20 @@ public interface TypeMangler {
 		}
 
 		private void writeTypeMangleNominal(Type.Nominal t, StringBuilder mangle) {
-			// FIXME: need to deal with qualified names properly!
 			Name name = t.getLink().getName();
+			Tuple<Type> params = t.getParameters();
+			//
 			mangle.append('Q');
 			for (int i = 0; i != name.size(); ++i) {
 				String component = name.get(i).get();
 				mangle.append(component.length());
 				mangle.append(component);
+			}
+			if(params.size() > 0) {
+				mangle.append('t');
+				for (int i = 0; i < params.size(); ++i) {
+					writeTypeMangle(params.get(i),mangle);
+				}
 			}
 		}
 
@@ -265,9 +275,14 @@ public interface TypeMangler {
 
 		private void writeTypeMangleTuple(Type.Tuple t, StringBuilder mangle) {
 			// Tuples are the only types which may start with a digit.
-			mangle.append(t.size());
-			for (int i = 0; i != t.size(); ++i) {
-				writeTypeMangle(t.get(i), mangle);
+			if(t.size() == 0) {
+				// Type equivalent to void
+				mangle.append("V");
+			} else {
+				mangle.append(t.size());
+				for (int i = 0; i != t.size(); ++i) {
+					writeTypeMangle(t.get(i), mangle);
+				}
 			}
 		}
 

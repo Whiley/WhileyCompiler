@@ -130,8 +130,6 @@ public class TestUtils {
 				e.associate(WhileyFile.ContentType, null);
 			} else if (suffix.equals("wyil")) {
 				e.associate(WyilFile.ContentType, null);
-			} else if (suffix.equals("wyal")) {
-				e.associate(WyalFile.ContentType, null);
 			}
 		}
 
