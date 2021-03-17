@@ -123,6 +123,8 @@ public class AllInvalidTest {
 //						fw.close();
 //					} catch(Exception e) {}
 
+		// Translate any Windows file separators to Unix.
+		output = output.replaceAll("\\\\","/");
 		// Third, compare the output!
 		if(!TestUtils.compare(output,sampleOutputFile)) {
 			fail("Output does not match reference");
