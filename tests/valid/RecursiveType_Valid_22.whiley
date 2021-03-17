@@ -5,8 +5,9 @@ type SortedList is null | SortedListNode
 type SortedListNode is ({SortedList next, int data} _this)
 where (_this.next is null) || (_this.data < _this.next.data)
 
-function SortedList(int head, SortedList tail) -> SortedList
-requires (tail is null) || (head < tail.data):
+function SortedList(int head, SortedList tail) -> (SortedList r)
+requires (tail is null) || (head < tail.data)
+ensures !(r is null) && (r.data == head) && (r.next == tail):
     return {next: tail, data: head}
 
 function contains(int item, SortedList list) -> bool:

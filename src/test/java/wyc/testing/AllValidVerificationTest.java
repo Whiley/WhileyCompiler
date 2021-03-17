@@ -176,6 +176,10 @@ public class AllValidVerificationTest {
 		IGNORED.put("Property_Valid_15", "??");
 		IGNORED.put("Property_Valid_16", "??");
 		IGNORED.put("Property_Valid_17", "??");
+		IGNORED.put("Property_Valid_18", "TIMEOUT");
+		IGNORED.put("Property_Valid_20", "TIMEOUT");
+		IGNORED.put("Property_Valid_21", "TIMEOUT");
+		IGNORED.put("Property_Valid_22", "TIMEOUT");
 		// Issue 903.  Verification of templates
 		IGNORED.put("Template_Valid_11", "??");
 		IGNORED.put("Template_Valid_12", "??");
@@ -207,8 +211,13 @@ public class AllValidVerificationTest {
 		IGNORED.put("Template_Valid_53", "??");
 		IGNORED.put("Template_Valid_54", "??");
 		IGNORED.put("Template_Valid_60", "??");
+		IGNORED.put("Template_Valid_63", "??");
 		IGNORED.put("Tuple_Valid_6", "???");
 		//
+		IGNORED.put("Array_Valid_11", "??");
+		IGNORED.put("Infeasible_Function_2", "??");
+		IGNORED.put("Infeasible_Function_3", "??");
+		IGNORED.put("Infeasible_Function_4", "??");
 		IGNORED.put("Tuple_Valid_1", "??");
 		IGNORED.put("Tuple_Valid_2", "??");
 		IGNORED.put("Tuple_Valid_4", "??");
@@ -216,7 +225,12 @@ public class AllValidVerificationTest {
 		IGNORED.put("Byte_Valid_7", "??");
 		IGNORED.put("Function_Valid_26", "??");
 		IGNORED.put("Reference_Valid_21", "??");
+		IGNORED.put("Reference_Valid_23", "???");
+		IGNORED.put("Reference_Valid_25", "???");
+		IGNORED.put("Reference_Valid_26", "???");
+		IGNORED.put("Reference_Valid_29", "???");
 		IGNORED.put("RecursiveType_Valid_31", "??");
+		IGNORED.put("While_Valid_67", "??");
 		IGNORED.put("While_Valid_71", "??");
 	}
 

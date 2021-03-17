@@ -4,7 +4,7 @@ public function first_index_of<T>(T[] items, T item, int start) -> (int|null ind
 // Starting point cannot be negative
 requires start >= 0
 // If null returned, no element in items matches item
-ensures index is null ==> all { i in start .. |items| | items[i] != item }:
+ensures index is null ==> all { i in 0 .. |items| | items[i] != item }:
     //
     int i = start
     //

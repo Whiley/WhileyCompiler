@@ -1,12 +1,16 @@
 type Box<T> is null | { T value }
 
-function empty<T>() -> Box<T>:
+function empty<T>() -> (Box<T> r)
+ensures r is null:
     return null
 
-function box<T>(T value) -> Box<T>:
+function box<T>(T value) -> (Box<T> r)
+ensures !(r is null) && r.value == value:
     return { value: value }
 
-function get<T>(Box<T> box, T dEfault) -> T:
+function get<T>(Box<T> box, T dEfault) -> (T r)
+ensures (box is null) ==> (r == dEfault)
+ensures !(box is null) ==> (r == box.value):
    if box is null:
       return dEfault
    else:

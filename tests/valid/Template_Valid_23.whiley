@@ -8,10 +8,10 @@ function g<T>(T[] arr, T def) -> T[]:
 
 public export method test():
     //
-    assert f([1,2,3]) == []
-    assert f([true,false]) == []
+    assume f([1,2,3]) == []
+    assume f([true,false]) == []
     //
-    assert g([],0) == []
-    assert g([1,2,3],0) == [0,0,0]
-    assert g([true,false],false) == [false,false]
+    assume g([],0) == []
+    assume g([1,2,3],0) == [0,0,0]
+    assume g([true,false],false) == [false,false]
     

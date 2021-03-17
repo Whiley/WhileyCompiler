@@ -5,11 +5,30 @@ where some { i in n..|xs|, j in n..|xs| | i != j && xs[i] == xs[j] }
 // problems still getting it to verify.  It does pass the test cases
 // though.                                                   --- djp
 
+/**
+ * An array of n+1 elements containing unsigned integers less than n
+ * must contain a duplicate.  This is the so-called "pigeon hole"
+ * principle: https://en.wikipedia.org/wiki/Pigeonhole_principle"
+ */
+function dup_lemma(int[] xs, int n)
+// With n+1 or more elements, is always a duplicate
+requires 0 < n && n < |xs|
+// All elements between 0 and n (exclusive)
+requires all { i in 0..|xs| | xs[i] >= 0 && xs[i] < n }
+// Duplicate must exist!!
+ensures dup(xs,0):
+    //
+    dup_lemma(xs,0,n)
+
+/**
+ * Support lemma for the main lemma which focuses on a slice of the
+ * array starting from a given position k.
+ */
 function dup_lemma(int[] xs, int k, int n)
 // Index through xs
-requires k >= 0 && k <= |xs|
+requires 0 <= k && k <= |xs|
 // With n+1 or more elements, is always a duplicate
-requires n < |xs|
+requires k < n && n < |xs|
 // All elements between 0 and n (exclusive)
 requires all { i in 0..|xs| | xs[i] >= 0 && xs[i] < n }
 // Duplicate must exist!!
@@ -32,6 +51,10 @@ ensures dup(xs,k):
         // inductive step
         dup_lemma(xs,k+1,n)        
 
+/**
+ * A simple iterative method for finding duplicates in an array known
+ * to contain at least one duplicate.
+ */
 function find_dup(int[] xs) -> (int x, int y)
 // Duplicate must exist in input array
 requires dup(xs,0)
@@ -56,69 +79,69 @@ public export method test():
     assert find_dup([0,1,1]) == (1,2)
     assert find_dup([1,4,3,4,0]) == (1,3)
     // n == 1
-    dup_lemma([0,0],0,1)
-    dup_lemma([0,0,0],0,1)    
-    dup_lemma([0,0,0,0],0,1)
-    dup_lemma([0,0,0,0,0],0,1)    
+    dup_lemma([0,0],1)
+    dup_lemma([0,0,0],1)    
+    dup_lemma([0,0,0,0],1)
+    dup_lemma([0,0,0,0,0],1)    
     // n == 2
-    dup_lemma([0,0,0],0,2)
-    dup_lemma([0,0,1],0,2)
-    dup_lemma([0,1,0],0,2)
-    dup_lemma([0,1,1],0,2)
-    dup_lemma([1,0,0],0,2)
-    dup_lemma([1,0,1],0,2)
-    dup_lemma([1,1,1],0,2)
+    dup_lemma([0,0,0],2)
+    dup_lemma([0,0,1],2)
+    dup_lemma([0,1,0],2)
+    dup_lemma([0,1,1],2)
+    dup_lemma([1,0,0],2)
+    dup_lemma([1,0,1],2)
+    dup_lemma([1,1,1],2)
     // n == 3
-    dup_lemma([0,0,0,0],0,3)
-    dup_lemma([0,0,0,1],0,3)
-    dup_lemma([0,0,0,2],0,3)
-    dup_lemma([0,0,1,0],0,3)
-    dup_lemma([0,0,2,0],0,3)
-    dup_lemma([0,0,1,1],0,3)
-    dup_lemma([0,0,2,1],0,3)
-    dup_lemma([0,0,2,2],0,3)
-    dup_lemma([0,1,0,0],0,3)
-    dup_lemma([0,2,0,0],0,3)
-    dup_lemma([0,2,0,1],0,3)
-    dup_lemma([0,2,0,2],0,3)
-    dup_lemma([0,2,1,0],0,3)
-    dup_lemma([0,2,2,0],0,3)
-    dup_lemma([0,2,2,1],0,3)
-    dup_lemma([0,2,2,2],0,3)
-    dup_lemma([0,2,2,2],0,3)   
+    dup_lemma([0,0,0,0],3)
+    dup_lemma([0,0,0,1],3)
+    dup_lemma([0,0,0,2],3)
+    dup_lemma([0,0,1,0],3)
+    dup_lemma([0,0,2,0],3)
+    dup_lemma([0,0,1,1],3)
+    dup_lemma([0,0,2,1],3)
+    dup_lemma([0,0,2,2],3)
+    dup_lemma([0,1,0,0],3)
+    dup_lemma([0,2,0,0],3)
+    dup_lemma([0,2,0,1],3)
+    dup_lemma([0,2,0,2],3)
+    dup_lemma([0,2,1,0],3)
+    dup_lemma([0,2,2,0],3)
+    dup_lemma([0,2,2,1],3)
+    dup_lemma([0,2,2,2],3)
+    dup_lemma([0,2,2,2],3)   
     //
-    dup_lemma([1,0,0,0],0,3)
-    dup_lemma([1,0,0,1],0,3)
-    dup_lemma([1,0,0,2],0,3)
-    dup_lemma([1,0,1,0],0,3)
-    dup_lemma([1,0,2,0],0,3)
-    dup_lemma([1,0,1,1],0,3)
-    dup_lemma([1,0,2,1],0,3)
-    dup_lemma([1,0,2,2],0,3)
-    dup_lemma([1,1,0,0],0,3)
-    dup_lemma([1,2,0,0],0,3)
-    dup_lemma([1,2,0,1],0,3)
-    dup_lemma([1,2,0,2],0,3)
-    dup_lemma([1,2,1,0],0,3)
-    dup_lemma([1,2,2,0],0,3)
-    dup_lemma([1,2,2,1],0,3)
-    dup_lemma([1,2,2,2],0,3)
-    dup_lemma([1,2,2,2],0,3)
+    dup_lemma([1,0,0,0],3)
+    dup_lemma([1,0,0,1],3)
+    dup_lemma([1,0,0,2],3)
+    dup_lemma([1,0,1,0],3)
+    dup_lemma([1,0,2,0],3)
+    dup_lemma([1,0,1,1],3)
+    dup_lemma([1,0,2,1],3)
+    dup_lemma([1,0,2,2],3)
+    dup_lemma([1,1,0,0],3)
+    dup_lemma([1,2,0,0],3)
+    dup_lemma([1,2,0,1],3)
+    dup_lemma([1,2,0,2],3)
+    dup_lemma([1,2,1,0],3)
+    dup_lemma([1,2,2,0],3)
+    dup_lemma([1,2,2,1],3)
+    dup_lemma([1,2,2,2],3)
+    dup_lemma([1,2,2,2],3)
     //
-    dup_lemma([2,0,0,0],0,3)
-    dup_lemma([2,0,0,1],0,3)
-    dup_lemma([2,0,0,2],0,3)
-    dup_lemma([2,0,1,0],0,3)
-    dup_lemma([2,0,2,0],0,3)
-    dup_lemma([2,0,1,1],0,3)
-    dup_lemma([2,0,2,1],0,3)
-    dup_lemma([2,0,2,2],0,3)
-    dup_lemma([2,1,0,0],0,3)
-    dup_lemma([2,2,0,0],0,3)
-    dup_lemma([2,2,0,1],0,3)
-    dup_lemma([2,2,0,2],0,3)
-    dup_lemma([2,2,1,0],0,3)
-    dup_lemma([2,2,2,0],0,3)
-    dup_lemma([2,2,2,1],0,3)
-    dup_lemma([2,2,2,2],0,3)
-    dup_lemma([2,2,2,2],0,3)
+    dup_lemma([2,0,0,0],3)
+    dup_lemma([2,0,0,1],3)
+    dup_lemma([2,0,0,2],3)
+    dup_lemma([2,0,1,0],3)
+    dup_lemma([2,0,2,0],3)
+    dup_lemma([2,0,1,1],3)
+    dup_lemma([2,0,2,1],3)
+    dup_lemma([2,0,2,2],3)
+    dup_lemma([2,1,0,0],3)
+    dup_lemma([2,2,0,0],3)
+    dup_lemma([2,2,0,1],3)
+    dup_lemma([2,2,0,2],3)
+    dup_lemma([2,2,1,0],3)
+    dup_lemma([2,2,2,0],3)
+    dup_lemma([2,2,2,1],3)
+    dup_lemma([2,2,2,2],3)
+    dup_lemma([2,2,2,2],3)

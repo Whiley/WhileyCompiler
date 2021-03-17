@@ -14,7 +14,7 @@ ensures sum(xs,0,|xs|,r):
     int i = 0
     int x = 0
     //
-    while i < |xs| where sum(xs,0,i,x):
+    while i < |xs| where i >= 0 && i <= |xs| && sum(xs,0,i,x):
         x = x + xs[i]
         i = i + 1
     //

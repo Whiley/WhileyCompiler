@@ -1,3 +1,4 @@
+type u8 is (int x) where 0 <= x && x <= 255
 type i16 is (int x) where -32768 <= x && x <= 32767
 type string is int[]
 
@@ -18,27 +19,27 @@ type class_t is {string[] classes, string pkg}
 type ref_t is array_t | class_t
 type fun_t is {jvm_t ret, jvm_t[] params}
 type jvm_t is primitive_t | ref_t
-type Unit is {int op, int offset}
-type Branch is {int op, i16 off, int offset}
-type VarIndex is {int index, int op, int offset}
-type MethodIndex is {int op, string name, class_t owner, int offset, fun_t type}
-type FieldIndex is {int op, string name, class_t owner, int offset, jvm_t type}
-type ConstIndex is {int index, int op, int offset}
+type Unit is {u8 op, int offset}
+type Branch is {u8 op, i16 off, int offset}
+type VarIndex is {int index, u8 op, int offset}
+type MethodIndex is {u8 op, string name, class_t owner, int offset, fun_t type}
+type FieldIndex is {u8 op, string name, class_t owner, int offset, jvm_t type}
+type ConstIndex is {int index, u8 op, int offset}
 type Bytecode is Unit | VarIndex | Branch | MethodIndex | FieldIndex | ConstIndex
 
-function Unit(int offset, int op) -> Unit:
+function Unit(int offset, u8 op) -> Unit:
     return {op: op, offset: offset}
 
-function VarIndex(int offset, int op, int index) -> VarIndex:
+function VarIndex(int offset, u8 op, int index) -> VarIndex:
     return {index: index, op: op, offset: offset}
 
-function MethodIndex(int offset, int op, class_t owner, string name, fun_t type) -> MethodIndex:
+function MethodIndex(int offset, u8 op, class_t owner, string name, fun_t type) -> MethodIndex:
     return {op: op, name: name, owner: owner, offset: offset, type: type}
 
-function FieldIndex(int offset, int op, class_t owner, string name, jvm_t type) -> FieldIndex:
+function FieldIndex(int offset, u8 op, class_t owner, string name, jvm_t type) -> FieldIndex:
     return {op: op, name: name, owner: owner, offset: offset, type: type}
 
-function ConstIndex(int offset, int op, int index) -> ConstIndex:
+function ConstIndex(int offset, u8 op, int index) -> ConstIndex:
     return {index: index, op: op, offset: offset}
 
 function code2toString(Bytecode b) -> string:

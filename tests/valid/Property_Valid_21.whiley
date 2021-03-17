@@ -1,0 +1,51 @@
+// This benchmark was created specifically to test recursive
+// properties.
+type Node is {int data, List next}
+type List is null|Node
+
+// A given (sub)list is "reachable" from its enclosing list
+property reachable(List head, List child)
+// Either we met the child, or need to keep searching
+where (head == child) || (head is Node && reachable(head.next,child))
+
+// Lemma is needed to go "against" the direction of unrolling.  This
+// may seem kind of strange.
+function lemma(List head, List child)
+// If head ~~> child
+requires reachable(head,child)
+// Then, head ~~> child.next
+ensures (child is null) || reachable(head,child.next):
+    //
+    if head != child:
+        assert head is Node
+        lemma(head.next,child)
+
+// Determine length of a list
+function len(List l) -> (int r):
+    //
+    int x = 0
+    List ol = l // ghost
+    // iterate until 
+    while l is Node
+    where l is null || reachable(ol,l):
+        lemma(ol,l)
+        l = l.next
+        x = x + 1
+    //
+    return x
+
+public export method test():
+    // List of length 1
+    List l1 = {data: 0, next: null}
+    // List of length 2
+    List l2 = {data: 0, next: l1}
+    // List of length 3
+    List l3 = {data: 0, next: l2}
+    //
+    assume len(null) == 0
+    //
+    assume len(l1) == 1
+    //
+    assume len(l2) == 2
+    //
+    assume len(l3) == 3

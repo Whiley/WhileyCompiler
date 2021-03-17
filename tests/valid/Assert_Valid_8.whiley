@@ -1,0 +1,13 @@
+function f(int[] xs) -> (int r)
+requires xs[0] == 0:
+    //
+    for n in 0..10 where xs[0] == 0:
+        assert |xs| > 0
+        xs[0] = 0
+    //
+    return 10
+        
+
+public export method test():
+    int[] xs = [0,0,0]
+    assume f(xs) == 10 

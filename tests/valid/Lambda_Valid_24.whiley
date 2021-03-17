@@ -1,0 +1,18 @@
+type State is { int status }
+type handler is method(State)|method(int)
+
+type DomObject is &{
+  method addEventListener(int[], handler),
+  ...
+}
+
+method empty():
+    skip
+
+method register(DomObject obj):
+    // Register identity
+    obj->addEventListener("click",&(State s -> empty()))
+
+public export method test() :
+    DomObject obj = new { addEventListener: &(int[] k, handler h -> empty() ) }
+    register(obj)

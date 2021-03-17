@@ -9,12 +9,15 @@ ensures all { k in 0..len | items[matches[k]] == item }:
     nat n = 0
     //
     while i < |items|     
-    where n <= i && |ms| == |items|
+    where n <= i && i <= |items| && |ms| == |items|
     where all { j in 0..n | items[ms[j]] == item }:
         if items[i] == item:
             ms[n] = i
             n = n + 1
         i = i + 1
+    //
+    assert i == |ms|
+    assert n <= |ms|        
     //
     return n,ms
 

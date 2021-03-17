@@ -5,7 +5,8 @@ type T_Record<T> is {T f}
 
 type S_Record<S> is {S f}
 
-function f<T>({T f} rec) -> T:
+function f<T>({T f} rec) -> (T r)
+ensures r == rec.f:
     //
     return rec.f
 

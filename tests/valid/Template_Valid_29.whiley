@@ -1,20 +1,33 @@
 // test case from std::collection
+public type uint is (int i) where i >= 0
+
+property equals<T>(T[] lhs, T[] rhs, int n)
+where all { k in 0..n | lhs[k] == rhs[k] }
 
 public type Vector<T> is {
     T[] items,
-    int length
+    uint length
 } where length <= |items|
 
-function add<T>(Vector<T> vec, T item) -> Vector<T>:
+function add<T>(Vector<T> vec, T item) -> (Vector<T> nvec)
+// Length increases by exactly one
+ensures nvec.length == (vec.length+1)
+// All existing items unchanged
+ensures equals(vec.items,nvec.items,vec.length)
+// Item was added
+ensures nvec.items[vec.length] == item:
     //
     if vec.length == |vec.items|:
         // vec is full so must resize
-        int nlen = (vec.length*2)+1
+        uint nlen = (vec.length*2)+1
         // double size of internal array
         T[] nitems = [item; nlen]
-        int i = 0
+        uint i = 0
         // copy items
-        while i < vec.length:
+        while i < vec.length && nlen > |vec.items|
+        where |nitems| == nlen
+        where equals(vec.items,nitems,i)
+        where nitems[vec.length] == item:
            nitems[i] = vec.items[i]
            i = i + 1
         //
@@ -31,13 +44,11 @@ public export method test():
     Vector<int> vi_1 = { items: [1,2,3], length: 2 }    
     Vector<int> vi_2 = add(vi_1,0)
     Vector<int> vi_3 = add(vi_2,4)    
-    assert vi_1 == { items: [1,2,3], length: 2 } 
-    assert vi_2 == { items: [1,2,0], length: 3 } 
-    assert vi_3 == { items: [1,2,0,4,4,4,4], length: 4 } 
+    assert vi_2.length == 3 && equals(vi_2.items,[1,2,0],3)
+    assert vi_3.length == 4 && equals(vi_3.items,[1,2,0,4],4)
     // booleans second
     Vector<bool> vb_1 = { items: [true,false,true,false], length: 3 }
     Vector<bool> vb_2 = add(vb_1,true)
     Vector<bool> vb_3 = add(vb_2,false)
-    assert vb_1 == { items: [true,false,true,false], length: 3 } 
-    assert vb_2 == { items: [true,false,true,true], length: 4 }
-    assert vb_3 == { items: [true,false,true,true,false,false,false,false,false], length: 5 }
+    assert vb_2.length == 4 && equals(vb_2.items, [true,false,true,true], 4)
+    assert vb_3.length == 5 && equals(vb_3.items, [true,false,true,true,false], 5)

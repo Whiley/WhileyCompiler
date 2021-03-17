@@ -1,5 +1,7 @@
+type uint is (int x) where x >= 0
+
 type InputStream is {
-    method read(int) -> byte[],
+    method read(uint) -> byte[],
     method eof() -> bool
 }
 
@@ -28,8 +30,8 @@ function toByte(char v) -> byte:
 // Convert an ASCII string into a list of bytes
 function toBytes(string s) -> byte[]:
     byte[] r = [0b0; |s|]
-    int i = 0
-    while i < |s| where i >= 0:
+    uint i = 0
+    while i < |s| where |r| == |s|:
         r[i] = toByte(s[i])
         i = i + 1
     return r
@@ -42,11 +44,12 @@ function min(int a, int b) -> int:
         return b
 
 // Read specified number of bytes from buffer
-method read(BufferState state, int amount) -> byte[]:
+method read(BufferState state, uint amount) -> byte[]:
     byte[] r = [0b0; amount]
-    int i = 0
+    uint i = 0
     //
-    while i < amount && state->pos < |state->bytes|:
+    while i < amount && state->pos < |state->bytes|
+    where |r| == amount:
         r[i] = state->bytes[state->pos]
         state->pos = state->pos + 1
         i = i + 1
@@ -61,7 +64,7 @@ method eof(BufferState state) -> bool:
 method BufferInputStream(byte[] buffer) -> InputStream:
     BufferState _this = new {bytes: buffer, pos: 0}
     return {
-        read: &(int x -> read(_this, x)),
+        read: &(uint x -> read(_this, x)),
         eof: &( -> eof(_this))
     }
 

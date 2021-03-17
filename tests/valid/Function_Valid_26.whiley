@@ -1,13 +1,17 @@
-function id(int x) -> int:
+function id(int x) -> (int r)
+ensures x == r:
     return x
 
-function id(bool x) -> bool:
+function id(bool x) -> (bool r)
+ensures x == r:
     return x
 
-function id(int[] x) -> int[]:
+function id(int[] x) -> (int[] r)
+ensures x == r:
     return x
 
-function id(bool[] x) -> bool[]:
+function id(bool[] x) -> (bool[] r)
+ensures x == r:
     return x
 
 public export method test():

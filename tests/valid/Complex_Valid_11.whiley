@@ -99,10 +99,10 @@ requires from < 6 && to < 6:
 function shuffle(Deck deck, Random rand, nat count) -> Deck:
     //
     nat i = 0
-    nat from
-    nat to
     //
     while i < count:
+       nat from
+       nat to  
        (from,rand) = next(rand)
        (to,rand) = next(rand)
        deck = swap(deck,from,to)

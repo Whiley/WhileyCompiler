@@ -12,7 +12,7 @@ requires all { k in 0 .. |board| | |board[k]| == 3 }:
         while j < 3 
             where j >= 0
             where |board| == |nboard|
-            where |board[i]| == |nboard[i]|:
+            where all { k in 0..3 | |board[k]| == |nboard[k]| }:
             int c = countLiving(board, i, j)
             if board[i][j]:
                 switch c:
@@ -23,7 +23,9 @@ requires all { k in 0 .. |board| | |board[k]| == 3 }:
         i = i + 1
     return nboard
 
-function countLiving(Board board, int row, int col) -> int:
+function countLiving(Board board, int row, int col) -> int
+requires |board| == 3
+requires all { k in 0 .. |board| | |board[k]| == 3 }:
     int count = isAlive(board, row - 1, col - 1)
     count = count + isAlive(board, row - 1, col)
     count = count + isAlive(board, row - 1, col + 1)
@@ -34,7 +36,9 @@ function countLiving(Board board, int row, int col) -> int:
     count = count + isAlive(board, row + 1, col + 1)
     return count
 
-function isAlive(Board board, int row, int col) -> int:
+function isAlive(Board board, int row, int col) -> int
+requires |board| == 3
+requires all { k in 0 .. |board| | |board[k]| == 3 }:
     int nrows = |board|
     if (row < 0) || (row >= nrows):
         return 0

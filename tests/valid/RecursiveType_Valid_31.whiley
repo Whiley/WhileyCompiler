@@ -1,11 +1,17 @@
-type Box is { Type elem }
-type Borrow is { int n }
-type Undefined is { Type base }
+type Node is { int data, List next }
+type List is null | Node
 
-type Type is Box | Borrow | Undefined
+function cons(int item, List list) -> (List r)
+ensures r is Node && r.next == list && r.data == item:
+    return { data: item, next: list }
 
 public export method test():
-    Type leaf = {n:0}
-    Type box = { elem:leaf }
-    Type undef = { base:leaf }
-    assert box.elem == undef.base
+    List l = null
+    //
+    l = cons(1,l)
+    assert l is Node && l.data == 1
+    assert l is Node && l.next is null    
+    //
+    l = cons(2,l)
+    assert l is Node && l.data == 2
+    assert l is Node && l.next is Node && l.next.next is null

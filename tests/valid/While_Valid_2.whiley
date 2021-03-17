@@ -1,4 +1,6 @@
-
+property sorted(int[] items, int n)
+//where all { i in 0 .. n-1 | items[i] < items[i+1] }
+where all { i in 0..|items|, j in 0..|items| | (i < j) ==> (items[i] < items[j]) }
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or
@@ -6,7 +8,7 @@
 // for the verifier!!
 function binarySearch(int[] items, int item) -> (bool result)
 // The input list must be in sorted order
-requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
+requires sorted(items,|items|)
 // If return true, then matching item must exist in items
 ensures result ==> some { i in 0..|items| | items[i] == item }
 // If return false, then no matching item exists in items
@@ -17,8 +19,10 @@ ensures !result ==> all { i in 0..|items| | items[i] != item }:
 
     while lo < hi
         where 0 <= lo && hi <= |items| && lo <= hi
-        where all { i in 0 .. lo | items[i] != item }
-        where all { i in hi .. |items| | items[i] != item }:
+        // everything before lo is below item
+        where all { i in 0 .. lo | items[i] < item }
+        // everything after hi is above item
+        where all { i in hi .. |items| | items[i] > item }:
         //
         // Note, the following is safe in Whiley because we have
         // unbounded integers.  If that wasn't the case, then this could
@@ -35,17 +39,3 @@ ensures !result ==> all { i in 0..|items| | items[i] != item }:
             return true
     //
     return false
-
-public export method test():
-    int[] list = [3,5,6,9]
-    assume binarySearch(list,0) == false
-    assume binarySearch(list,1) == false
-    assume binarySearch(list,2) == false
-    assume binarySearch(list,3) == true
-    assume binarySearch(list,4) == false
-    assume binarySearch(list,5) == true
-    assume binarySearch(list,6) == true
-    assume binarySearch(list,7) == false
-    assume binarySearch(list,8) == false
-    assume binarySearch(list,9) == true
-    assume binarySearch(list,10) == false
