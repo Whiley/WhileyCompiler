@@ -1,5 +1,6 @@
 function f(int[] xs) -> (int r)
-ensures r == 0:
+requires |xs| > 0
+ensures r >= 0 && r < |xs|:
     //
     return 0
 
@@ -8,4 +9,7 @@ public export method test():
     int[] xs = [0]
     xs[f([0])] = 1
     assert xs == [1]
+    int[] ys = [1,2]
+    ys[f(ys)] = 3
+    assert (ys[0] == 3) || (ys[1] == 3)
 

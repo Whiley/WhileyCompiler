@@ -1,6 +1,5 @@
-type uint is (int x) where x >= 0
-
-public type t_Reader is method(int) -> byte[]
+public type uint is (int x) where x >= 0
+public type t_Reader is method(uint) -> byte[]
 public type InputStream is { t_Reader read }
 type BufferState is &{uint pos, byte[] bytes}
 
@@ -59,7 +58,7 @@ requires amount >= 0:
 // Construct buffer from list of bytes
 public method BufferInputStream(byte[] buffer) -> InputStream:
     BufferState _this = new {bytes: buffer, pos: 0}
-    return {read: &(int x -> read(_this, x))}
+    return {read: &(uint x -> read(_this, x))}
 
 public export method test() :
     InputStream bis = BufferInputStream(toBytes("hello"))

@@ -5,7 +5,7 @@ type InputStream is {
     method eof() -> bool
 }
 
-type BufferState is &{byte[] bytes, int pos}
+type BufferState is &{byte[] bytes, uint pos}
 
 // Define the 8bit ASCII character
 type char is (int x) where 0 <= x && x <= 255
