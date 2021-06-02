@@ -73,11 +73,6 @@
       <version>[0.7.0,0.8.0)</version>
     </dependency>
     <dependency>
-      <groupId>org.whiley</groupId>
-      <artifactId>jmodelgen</artifactId>
-      <version>[0.4.0,0.5.0)</version>
-    </dependency>
-    <dependency>
       <groupId>ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.7.0</version>

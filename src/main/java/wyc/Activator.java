@@ -32,11 +32,9 @@ import java.util.List;
 
 import wybs.lang.Build;
 import wybs.util.AbstractBuildRule;
-import wybs.util.Logger;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyc.cmd.QuickCheck;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 
@@ -172,8 +170,6 @@ public class Activator implements Module.Activator {
 	public Module start(Module.Context context) {
 		// Register platform
 		context.register(Command.Platform.class, WHILEY_PLATFORM);
-		// List of commands to register
-		context.register(Command.Descriptor.class, QuickCheck.DESCRIPTOR);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
 		context.register(Content.Type.class, WyilFile.ContentType);
