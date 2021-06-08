@@ -222,8 +222,12 @@ public class AllValidVerificationTest {
 		IGNORED.put("Tuple_Valid_2", "??");
 		IGNORED.put("Tuple_Valid_4", "??");
 		IGNORED.put("Lambda_Valid_17", "??");
+		IGNORED.put("Lambda_Valid_26", "??");
+		IGNORED.put("Method_Valid_4", "??");
 		IGNORED.put("Byte_Valid_7", "??");
 		IGNORED.put("Function_Valid_26", "??");
+		IGNORED.put("Function_Valid_30", "??");
+		IGNORED.put("Function_Valid_32", "??");
 		IGNORED.put("Reference_Valid_21", "??");
 		IGNORED.put("Reference_Valid_23", "???");
 		IGNORED.put("Reference_Valid_25", "???");
