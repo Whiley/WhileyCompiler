@@ -157,48 +157,23 @@ public class WhileyFileLexer {
 	 * @return
 	 */
 	public Token scanCharacterLiteral() {
-		boolean failed = false;
-		int start = pos;
-		pos++;
-		char c = input.charAt(pos++);
-		if (c == '\\') {
-			// escape code
-			switch (input.charAt(pos++)) {
-			case 'b':
-				c = '\b';
-				break;
-			case 't':
-				c = '\t';
-				break;
-			case 'n':
-				c = '\n';
-				break;
-			case 'f':
-				c = '\f';
-				break;
-			case 'r':
-				c = '\r';
-				break;
-			case '"':
-				c = '\"';
-				break;
-			case '\'':
-				c = '\'';
-				break;
-			case '\\':
-				c = '\\';
-				break;
-			default:
-				failed=true;
-			}
+		int start = pos++;
+		// Check for escape character
+		if (pos < input.length() && input.charAt(pos) == '\\') {
+			pos = pos + 1;
 		}
-		if (input.charAt(pos) != '\'') {
-			return new Token(Token.Kind.Unknown, "" + c, pos);
-		}
+		// Parse character
 		pos = pos + 1;
-		if(failed) {
-			return new Token(Token.Kind.Unknown, input.substring(start, pos), start);
+		// Check for trailing quote
+		if (pos >= input.length()) {
+			// Missing
+			return new Token(Token.Kind.Unknown, input.substring(start), input.length());
+		} else if (input.charAt(pos) != '\'') {
+			// Missing
+			return new Token(Token.Kind.Unknown, input.substring(start, pos), pos);
 		} else {
+			// Present
+			pos = pos + 1;
 			return new Token(Token.Kind.CharLiteral, input.substring(start, pos),
 					start);
 		}
