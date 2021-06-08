@@ -156,6 +156,13 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	@Override
+	public void visitFor(Stmt.For stmt, Context context) {
+		visitExpression(stmt.getVariable().getInitialiser(), context);
+		visitStatement(stmt.getBody(), context);
+		visitExpressions(stmt.getInvariant(), toFunctional(context));
+	}
+
+	@Override
 	public void visitWhile(Stmt.While stmt, Context context) {
 		visitStatement(stmt.getBody(), context);
 		visitExpression(stmt.getCondition(), context);
