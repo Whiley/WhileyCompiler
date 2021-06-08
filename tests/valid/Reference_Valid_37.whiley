@@ -3,7 +3,7 @@ type Ref<T> is &T
 method next(Ref<int>[] rs):
     skip
 
-method main():
+public export method test():
     Ref<int>[] ps = [new 0, new 1]
     &int q = new 2
     assert *q == 2

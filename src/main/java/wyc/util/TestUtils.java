@@ -66,9 +66,6 @@ public class TestUtils {
 		// Problem Type Checking Union Type
 		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
 		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
-		// Function Overloading for Nominal Types
-		VALID_IGNORED.put("Function_Valid_11", "#702");
-		VALID_IGNORED.put("Function_Valid_15", "#702");
 		// Semantics of Runtime Type Tests
 		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
 		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
@@ -80,8 +77,8 @@ public class TestUtils {
 		VALID_IGNORED.put("Coercion_Valid_9", "938");
 		VALID_IGNORED.put("RecordCoercion_Valid_1", "938");
 		// Separate out branch always taken 952
-		VALID_IGNORED.put("ListAccess_Valid_6", "952");
-		VALID_IGNORED.put("While_Valid_34", "952");
+		VALID_IGNORED.put("ListAccess_Valid_6", "955");
+		VALID_IGNORED.put("While_Valid_34", "955");
 		// Type Refinement via Assignment
 		VALID_IGNORED.put("Template_Valid_35", "977");
 		VALID_IGNORED.put("Template_Valid_36", "977");
@@ -112,6 +109,12 @@ public class TestUtils {
 		// Limitations of Type Inference
 		VALID_IGNORED.put("Template_Valid_61", "1004");
 		VALID_IGNORED.put("Template_Valid_62", "1004");
+		// Interpreter Infinite Loop.
+		VALID_IGNORED.put("Infeasible_Function_2", "???");
+		VALID_IGNORED.put("Infeasible_Function_3", "???");
+		VALID_IGNORED.put("Infeasible_Function_4", "???");
+		// Type Invariant Failure (QuickCheck#10)
+		VALID_IGNORED.put("RecordAssign_Valid_17", "???");
 	}
 
 	/**

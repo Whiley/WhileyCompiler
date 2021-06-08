@@ -1,4 +1,4 @@
-public export method main():
+public export method test():
     &int q = new 1
     &int p = new 2
     //

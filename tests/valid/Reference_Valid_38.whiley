@@ -4,7 +4,7 @@ type List is null | Node
 method next(Node r):
     skip
 
-method main():
+public export method test():
     List p = new Node{next: null, data: 0}
     List q =  new Node{next: p, data: 1}
     Node r =  new {next: null, data: 2}

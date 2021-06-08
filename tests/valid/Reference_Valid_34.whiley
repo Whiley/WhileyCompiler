@@ -9,7 +9,7 @@ method visit(List s):
     next(s)
     next(s)
 
-public export method main():
+public export method test():
     List l1 = new Node{ next: null, data: 0}
     List l2 = new Node{ next: null, data: 1}
     //

@@ -16,4 +16,4 @@ ensures index < 52:
     if r.index == |r.sequence|:
         r.index = 0
     //
-    return result, r
+    return (nat) result, r
