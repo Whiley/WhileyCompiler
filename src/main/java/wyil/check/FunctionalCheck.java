@@ -189,6 +189,22 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	@Override
+	public void visitExistentialQuantifier(Expr.ExistentialQuantifier expr, Context context) {
+		for(Decl.StaticVariable v : expr.getParameters()) {
+			visitExpression(v.getInitialiser(), context);
+		}
+		visitExpression(expr.getOperand(), context);
+	}
+
+	@Override
+	public void visitUniversalQuantifier(Expr.UniversalQuantifier expr, Context context) {
+		for(Decl.StaticVariable v : expr.getParameters()) {
+			visitExpression(v.getInitialiser(), context);
+		}
+		visitExpression(expr.getOperand(), context);
+	}
+
+	@Override
 	public void visitLambda(Decl.Lambda expr, Context context) {
 		if(expr.getType() instanceof Type.Method) {
 			super.visitLambda(expr, Context.IMPURE);
