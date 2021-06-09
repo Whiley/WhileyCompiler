@@ -82,18 +82,22 @@ public class NameResolution {
 
 	private final SymbolTable symbolTable;
 
-	private final Build.Project project;
+	private final List<Build.Package> packages;
 
 	private boolean status = true;
 
 	public NameResolution(Build.Meter meter, Build.Project project, WyilFile target) throws IOException {
+		this(meter, project.getPackages(), target);
+	}
+
+	public NameResolution(Build.Meter meter, List<Build.Package> packages, WyilFile target) throws IOException {
 		this.meter = meter.fork(NameResolution.class.getSimpleName());
-		this.project = project;
+		this.packages = packages;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
 		this.resolver = new Resolver(meter);
 	}
-
+	
 	/**
 	 * Apply this name resolver to a given WyilFile.
 	 *
@@ -131,10 +135,9 @@ public class NameResolution {
 	 */
 	private List<WyilFile> getExternals() throws IOException {
 		ArrayList<WyilFile> externals = new ArrayList<>();
-		List<Build.Package> pkgs = project.getPackages();
 		// Consider each package in turn and identify all contained WyilFiles
-		for (int i = 0; i != pkgs.size(); ++i) {
-			Build.Package p = pkgs.get(i);
+		for (int i = 0; i != packages.size(); ++i) {
+			Build.Package p = packages.get(i);
 			// FIXME: This is kind broken me thinks. Potentially, we should be able to
 			// figure out what modules are supplied via the configuration.
 			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));

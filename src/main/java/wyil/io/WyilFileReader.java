@@ -14,6 +14,7 @@
 package wyil.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import wybs.io.SyntacticHeapReader;
 import wybs.lang.*;
@@ -40,11 +41,20 @@ public final class WyilFileReader extends SyntacticHeapReader {
 		super(entry.inputStream());
 		this.entry = entry;
 	}
-
+	
+	public WyilFileReader(InputStream input) throws IOException {
+		super(input);
+	}
+	
 	@Override
 	public WyilFile read() throws IOException {
 		Pair<Integer,SyntacticItem[]> p = readItems();
 		return new WyilFile(entry,p.first(),p.second(), majorVersion, minorVersion);
+	}
+	
+	public WyilFile read(Path.ID ID) throws IOException {
+		Pair<Integer,SyntacticItem[]> p = readItems();
+		return new WyilFile(ID,p.first(),p.second(), majorVersion, minorVersion);
 	}
 
 	@Override
