@@ -29,6 +29,7 @@ import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import wybs.lang.Build;
@@ -77,7 +78,10 @@ public class Activator implements Module.Activator {
 			// Determine whether to try and find counterexamples or not
 			boolean counterexamples = configuration.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
 			// Construct build task
-			return new CompileTask(target, packages);
+
+			// FIXME: this is clearly broken!
+
+			return new CompileTask(target, Collections.EMPTY_LIST);
 		}
 	};
 

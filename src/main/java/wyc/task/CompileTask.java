@@ -12,6 +12,7 @@ import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyfs.lang.Path;
+import wyfs.util.Pair;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
 import wyil.check.FlowTypeCheck;
@@ -25,7 +26,7 @@ import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 
 
-public class CompileTask<S extends Build.State<S>> implements Function<S, S> {
+public class CompileTask<S extends Build.State<S>> implements Build.Task<S> {
 	private final Build.Meter meter = Build.NULL_METER;
 	private final List<Build.Package> packages;
 	/**
@@ -37,18 +38,20 @@ public class CompileTask<S extends Build.State<S>> implements Function<S, S> {
 		this.target = target;
 		this.packages = new ArrayList<>(packages);
 	}
-	
+
 	@Override
-	public S apply(S t) {
+	public Pair<S, Boolean> apply(S t) {
 		// Identify all Whiley source files
 		List<WhileyFile> sources = t.selectAll(WhileyFile.ContentType);
 		// Compile them into a single binary target
-		WyilFile target = compile(sources);
+		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target back
-		return t.put(target);		
+		t = t.put(r.first());
+		// Done
+		return new Pair<>(t, r.second());
 	}
 	
-	private WyilFile compile(List<WhileyFile> sources) {
+	private Pair<WyilFile,Boolean> compile(List<WhileyFile> sources) {
 		WyilFile target = new WyilFile(this.target);
 		// Construct root entry
 		target.setRootItem(new WyilFile.Decl.Module(new Name(this.target), new Tuple<>(), new Tuple<>(), new Tuple<>()));
@@ -108,7 +111,7 @@ public class CompileTask<S extends Build.State<S>> implements Function<S, S> {
 		//
 		// FIXME: how to handle errors?
 		//
-		return target;
+		return new Pair<>(target, r);
 	}
 	
 
