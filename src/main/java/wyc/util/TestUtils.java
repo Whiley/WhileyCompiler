@@ -217,66 +217,6 @@ public class TestUtils {
 	 */
 	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String arg)
 			throws IOException {
-		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
-		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
-		PrintStream psyserr = new PrintStream(syserr);
-		//
-		boolean result = true;
-		//
-		try {
-			// Construct the project
-			DirectoryRoot root = new DirectoryRoot(whileydir, registry);
-			// Construct temporary build environment
-			//Command.Environment environment = new Environment(root,DEBUG);
-			// Construct build project within this environment
-			SequentialBuildProject project = new SequentialBuildProject(root);
-			// Identify source files
-			Pair<Path.Entry<WhileyFile>,Path.Entry<WyilFile>> p = findSourceFiles(root,arg);
-			List<Path.Entry<WhileyFile>> sources = Arrays.asList(p.first());
-			Path.Entry<WyilFile> target = p.second();
-			// Add build rule
-			project.add(new Build.Rule() {
-				@Override
-				public void apply(Collection<Build.Task> tasks) throws IOException {
-					// Construct a new build task
-					CompileTask task = new CompileTask(project, Logger.NULL, root, target, sources)
-							.setVerification(verify)
-							.setCounterExamples(counterexamples);
-					// Submit the task for execution
-					tasks.add(task);
-				}
-			});
-			// FIXME: this is annoying!
-			project.refresh();
-			// Actually force the project to build!
-			result = project.build(ForkJoinPool.commonPool(), Build.NULL_METER).get();
-			// Flush any created resources (e.g. wyil files)
-			root.flush();
-			root.refresh();
-			// Check whether any syntax error produced
-			//result = !findSyntaxErrors(target.read().getRootItem(), new BitSet());
-			// FIXME: this seems quite broken.
-			wycli.commands.Build.printSyntacticMarkers(psyserr, (List) sources, (Path.Entry) target);
-		} catch (SyntacticException e) {
-			// Print out the syntax error
-			//e.outputSourceError(psyserr);
-			result = false;
-		}catch (Exception e) {
-			// Print out the syntax error
-			printStackTrace(psyserr, e);
-			result = false;
-		}
-		//
-		psyserr.flush();
-		// Convert bytes produced into resulting string.
-		byte[] errBytes = syserr.toByteArray();
-		byte[] outBytes = sysout.toByteArray();
-		String output = new String(errBytes) + new String(outBytes);
-		return new Pair<>(result, output);
-	}
-
-	public static Pair<Boolean, String> compile2(File whileydir, boolean verify, boolean counterexamples, String arg)
-			throws IOException {
 		String filename = arg + ".whiley";
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
