@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
-import java.util.concurrent.ForkJoinPool;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
@@ -32,12 +31,9 @@ import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Name;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.FileRepository;
-import wybs.util.Logger;
-import wybs.util.SequentialBuildProject;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyc.task.NewCompileTask;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.*;
@@ -231,7 +227,7 @@ public class TestUtils {
 				return f.getName().equals(filename);
 			});
 			// Apply Whiley Compile Task
-			db.apply(new NewCompileTask<>(id, Collections.EMPTY_LIST));
+			db.apply(new CompileTask<>(id, Collections.EMPTY_LIST));
 			// Extract files
 			WhileyFile source = db.get().get(WhileyFile.ContentType, id);
 			WyilFile target = db.get().get(WyilFile.ContentType, id);
