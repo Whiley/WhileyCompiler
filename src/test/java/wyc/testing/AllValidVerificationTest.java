@@ -233,6 +233,14 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_25", "???");
 		IGNORED.put("Reference_Valid_26", "???");
 		IGNORED.put("Reference_Valid_29", "???");
+		IGNORED.put("Reference_Valid_30", "???");
+		IGNORED.put("Reference_Valid_31", "???");
+		IGNORED.put("Reference_Valid_32", "???");
+		IGNORED.put("Reference_Valid_34", "???");
+		IGNORED.put("Reference_Valid_35", "???");
+		IGNORED.put("Reference_Valid_36", "???");
+		IGNORED.put("Reference_Valid_37", "???");
+		IGNORED.put("Reference_Valid_38", "???");
 		IGNORED.put("RecursiveType_Valid_31", "??");
 		IGNORED.put("While_Valid_67", "??");
 		IGNORED.put("While_Valid_71", "??");
