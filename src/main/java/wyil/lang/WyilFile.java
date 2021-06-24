@@ -27,20 +27,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticHeap;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntacticItem.Descriptor;
-import wybs.util.*;
-import wybs.util.SectionedSchema.Section;
+import wycc.lang.Build;
+import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticHeap;
+import wycc.lang.SyntacticItem;
+import wycc.lang.SyntacticItem.Descriptor;
+import wycc.util.*;
+import wycc.util.SectionedSchema.Section;
 import wyc.util.ErrorMessages;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.lang.Content.Type;
-import wyfs.lang.Path.ID;
-import wyfs.util.ArrayUtils;
-import wyfs.util.Trie;
+import wycc.lang.Path;
+import wycc.util.ArrayUtils;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
@@ -88,7 +84,7 @@ import wyil.util.WyilUtils;
  * @author David J. Pearce
  *
  */
-public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Entry {
+public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Artifact {
 
 	// =========================================================================
 	// Binary Content Type
@@ -306,20 +302,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Constructors
 	// =========================================================================
 
-	private final Path.ID ID;
+	private final Path ID;
 	private final int majorVersion;
 	private final int minorVersion;
 
-	public WyilFile(Path.Entry<WyilFile> entry) {
-		super(entry);
-		Schema schema = WyilFile.getSchema();
-		this.majorVersion = schema.getMajorVersion();
-		this.minorVersion = schema.getMinorVersion();
-		this.ID = (entry != null) ? entry.id() : null;
-	}
-
-	public WyilFile(Path.ID id) {
-		super(null);
+	public WyilFile(Path id) {
+		super();
 		this.ID = id;
 		Schema schema = WyilFile.getSchema();
 		this.majorVersion = schema.getMajorVersion();
@@ -331,8 +319,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 *
 	 * @param wf
 	 */
-	public WyilFile(Path.Entry<WyilFile> entry, WyilFile wf) {
-		super(entry);
+	public WyilFile(WyilFile wf) {
 		this.majorVersion = wf.majorVersion;
 		this.minorVersion = wf.minorVersion;
 		// Create initial copies
@@ -355,24 +342,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
-		this.ID = (entry != null) ? entry.id() : null;
+		this.ID = wf.getID();
 	}
 
-	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items, int major, int minor) {
-		super(entry);
-		this.majorVersion = major;
-		this.minorVersion = minor;
-		// Allocate every item into this heap
-		for (int i = 0; i != items.length; ++i) {
-			syntacticItems.add(items[i]);
-			items[i].allocate(this, i);
-		}
-		// Set the distinguished root item
-		setRootItem(getSyntacticItem(root));
-		this.ID = (entry != null) ? entry.id() : null;
-	}
-
-	public WyilFile(Path.ID ID, int root, SyntacticItem[] items, int major, int minor) {
+	public WyilFile(Path ID, int root, SyntacticItem[] items, int major, int minor) {
 		super(null);
 		this.majorVersion = major;
 		this.minorVersion = minor;
@@ -391,15 +364,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// =========================================================================
 
 	@Override
-	public ID getID() {
+	public Path getID() {
 		return ID;
 	}
 
-	@Override
-	public Content.Type<?> getContentType() {
-		return ContentType;
-	}
-	
 	public boolean isValid() {
 		return findAll(SyntacticItem.Marker.class).size() == 0;
 	}
@@ -7229,11 +7197,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Path.ID getSource() {
+			public Path getSource() {
 				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
 				// FIXME: this is realy a temporary hack
 				String nameStr = unit.getName().toString().replace("::", "/");
-				return Trie.fromString(nameStr);
+				return Path.fromString(nameStr);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.TWO, "ATTR_error") {

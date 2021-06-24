@@ -15,8 +15,8 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
+import wycc.lang.SyntacticItem;
+import wycc.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;

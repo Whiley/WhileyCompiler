@@ -18,10 +18,10 @@ import static wyil.lang.WyilFile.*;
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.Build;
+import wycc.lang.SyntacticItem;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;

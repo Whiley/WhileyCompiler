@@ -22,13 +22,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.*;
-import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.ResolveError;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
-import wyfs.util.ArrayUtils;
+import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
 import static wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
@@ -597,8 +596,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		// Type check loop body
@@ -650,8 +647,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
 		// Check condition and apply variable retypings.
@@ -679,8 +674,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *                    into this block
 	 * @param scope       The stack of enclosing scopes
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
@@ -825,8 +818,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		// Type loop invariant(s).
@@ -2269,7 +2260,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
 			// fresh (existential) type for each position and subsitute them through.
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
 			row = p.first();
 			templateArguments = new Tuple<>(p.second());
 		}

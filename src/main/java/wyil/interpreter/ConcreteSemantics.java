@@ -18,10 +18,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wycc.lang.SyntacticItem;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;

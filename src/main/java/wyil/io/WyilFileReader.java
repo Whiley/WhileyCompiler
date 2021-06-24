@@ -16,12 +16,12 @@ package wyil.io;
 import java.io.IOException;
 import java.io.InputStream;
 
-import wybs.io.SyntacticHeapReader;
-import wybs.lang.*;
-import wybs.lang.SyntacticHeap.Schema;
-import wyfs.io.BinaryInputStream;
-import wyfs.lang.Path;
-import wyfs.util.Pair;
+import wycc.io.SyntacticHeapReader;
+import wycc.lang.*;
+import wycc.lang.SyntacticHeap.Schema;
+import wycc.io.BinaryInputStream;
+import wycc.lang.Path;
+import wycc.util.Pair;
 import wyil.lang.WyilFile;
 
 /**
@@ -33,11 +33,11 @@ import wyil.lang.WyilFile;
  */
 public final class WyilFileReader extends SyntacticHeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
-	private Path.Entry<WyilFile> entry;
+	private WyilFile entry;
 	private int minorVersion;
 	private int majorVersion;
 
-	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
+	public WyilFileReader(WyilFile entry) throws IOException {
 		super(entry.inputStream());
 		this.entry = entry;
 	}
@@ -52,7 +52,7 @@ public final class WyilFileReader extends SyntacticHeapReader {
 		return new WyilFile(entry,p.first(),p.second(), majorVersion, minorVersion);
 	}
 	
-	public WyilFile read(Path.ID ID) throws IOException {
+	public WyilFile read(Path ID) throws IOException {
 		Pair<Integer,SyntacticItem[]> p = readItems();
 		return new WyilFile(ID,p.first(),p.second(), majorVersion, minorVersion);
 	}

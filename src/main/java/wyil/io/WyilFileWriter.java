@@ -15,7 +15,7 @@ package wyil.io;
 
 import java.io.*;
 
-import wybs.io.SyntacticHeapWriter;
+import wycc.io.SyntacticHeapWriter;
 import wyil.lang.WyilFile;
 
 
