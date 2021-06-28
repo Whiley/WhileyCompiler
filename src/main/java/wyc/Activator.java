@@ -16,35 +16,27 @@ package wyc;
 import wyc.task.CompileTask;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
-import wycli.lang.Module;
+import wycli.lang.Plugin;
 import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.Trie;
-import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.QualifiedName;
-import wyil.lang.WyilFile.Type;
-import static wyil.lang.WyilFile.Name;
-import wyil.interpreter.Interpreter;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-import wybs.lang.Build;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wycc.lang.Build;
+import wycc.lang.Path;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
 
-public class Activator implements Module.Activator {
+public class Activator implements Plugin.Activator {
 
-	public static Trie PKGNAME_CONFIG_OPTION = Trie.fromString("package/name");
-	public static Trie SOURCE_CONFIG_OPTION = Trie.fromString("build/whiley/source");
-	public static Trie TARGET_CONFIG_OPTION = Trie.fromString("build/whiley/target");
-	public static Trie VERIFY_CONFIG_OPTION = Trie.fromString("build/whiley/verify");
-	public static Trie COUNTEREXAMPLE_CONFIG_OPTION = Trie.fromString("build/whiley/counterexamples");
+	public static Path PKGNAME_CONFIG_OPTION = Path.fromString("package/name");
+	public static Path SOURCE_CONFIG_OPTION = Path.fromString("build/whiley/source");
+	public static Path TARGET_CONFIG_OPTION = Path.fromString("build/whiley/target");
+	public static Path VERIFY_CONFIG_OPTION = Path.fromString("build/whiley/verify");
+	public static Path COUNTEREXAMPLE_CONFIG_OPTION = Path.fromString("build/whiley/counterexamples");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -65,12 +57,12 @@ public class Activator implements Module.Activator {
 		}
 
 		@Override
-		public Build.Task initialise(Configuration configuration, Command.Environment environment) throws IOException {
-			Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
+		public Build.Task initialise(Command.Environment environment) throws IOException {
+			Path pkg = Path.fromString(environment.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			//
-			Trie source = Trie.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
+			Path source = Path.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			// Specify directory where generated WyIL files are dumped.
-			Trie target = Trie.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			Path target = Path.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 			// Specify set of files included
 			Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
 			// Determine whether verification enabled or not
@@ -90,14 +82,14 @@ public class Activator implements Module.Activator {
 	// =======================================================================
 
 	@Override
-	public Module start(Module.Context context) {
+	public Plugin start(Plugin.Context context) {
 		// Register platform
 		context.register(Command.Platform.class, WHILEY_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
 		context.register(Content.Type.class, WyilFile.ContentType);
 		// Done
-		return new Module() {
+		return new Plugin() {
 			// what goes here?
 		};
 	}
@@ -107,7 +99,7 @@ public class Activator implements Module.Activator {
 	// =======================================================================
 
 	@Override
-	public void stop(Module module, Module.Context context) {
+	public void stop(Plugin module, Plugin.Context context) {
 		// could do more here?
 	}
 }

@@ -21,7 +21,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import wyal.util.NameResolver.ResolutionError;
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Identifier;
@@ -2551,7 +2550,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// specific to individual rows.
 			return new Typing.Row[] { row.set(var, Type.AnyArray) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array arr_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
@@ -2611,7 +2610,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
 			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array rec_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
@@ -2670,7 +2669,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
@@ -2737,7 +2736,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
 			Type.Existential[] elements = p.second();
 			Type tup_t = Type.Tuple.create(elements);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
@@ -2875,7 +2874,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
 			Type.Existential param = p.second()[0];
 			Type.Existential ret = p.second()[1];
 			Type.Callable fun_t = new Type.Function(param, ret);
@@ -3473,12 +3472,12 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu, e);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e, Throwable ex) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu.getEntry(), e, ex);
+		throw new SyntacticException(msg, cu, e, ex);
 	}
 
 	// ==========================================================================

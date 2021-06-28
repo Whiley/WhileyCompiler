@@ -19,11 +19,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wyil.check.FlowTypeUtils.Environment;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.Type.Array;
-import wyil.util.Subtyping.Constraints.Solution;
 
 public interface Subtyping {
 

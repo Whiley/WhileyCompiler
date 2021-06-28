@@ -17,8 +17,8 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
-import wybs.lang.Build;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.Build;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type.*;
 import wyil.lang.WyilFile.Type.Byte;
 import wyil.lang.WyilFile.Type.Void;

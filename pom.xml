@@ -68,11 +68,6 @@
       <version>[0.8.3,0.9.0)</version>
     </dependency>
     <dependency>
-      <groupId>org.whiley</groupId>
-      <artifactId>wytp</artifactId>
-      <version>[0.7.0,0.8.0)</version>
-    </dependency>
-    <dependency>
       <groupId>ant</groupId>
       <artifactId>ant</artifactId>
       <version>1.7.0</version>

@@ -41,16 +41,13 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wyfs.util.ArrayUtils;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.Template.Variable;
-import wyil.lang.WyilFile.Type.Field;
 import wyil.util.Subtyping.Constraints;
 import wyil.util.Subtyping.LowerBoundConstraint;
 import wyil.util.Subtyping.UpperBoundConstraint;

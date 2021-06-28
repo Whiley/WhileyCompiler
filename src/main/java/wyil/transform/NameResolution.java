@@ -13,17 +13,16 @@
 // limitations under the License.
 package wyil.transform;
 
-import wybs.lang.*;
-import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.util.AbstractSyntacticHeap;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Ref;
+import wycc.util.AbstractSyntacticHeap;
 
 import wyc.util.ErrorMessages;
 import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.ArrayUtils;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -34,7 +33,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import wyil.util.AbstractConsumer;
 
@@ -97,7 +95,7 @@ public class NameResolution {
 		this.symbolTable = new SymbolTable(target,getExternals());
 		this.resolver = new Resolver(meter);
 	}
-	
+
 	/**
 	 * Apply this name resolver to a given WyilFile.
 	 *

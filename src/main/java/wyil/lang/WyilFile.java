@@ -37,11 +37,12 @@ import wycc.util.SectionedSchema.Section;
 import wyc.util.ErrorMessages;
 import wycc.lang.Path;
 import wycc.util.ArrayUtils;
+import wyfs.lang.Content;
+import wyfs.lang.FileSystem;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.util.AbstractConsumer;
-import wyil.util.WyilUtils;
 
 /**
  * <p>
@@ -90,7 +91,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Binary Content Type
 	// =========================================================================
 
-	public static final Content.Type<WyilFile> ContentType = new Content.Printable<WyilFile>() {
+	public static final Content.Type<WyilFile> ContentType = new Content.Printable<>() {
 
 		/**
 		 * This method simply parses a whiley file into an abstract syntax tree. It
@@ -103,10 +104,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @throws IOException
 		 */
 		@Override
-		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
-			WyilFile wf = new WyilFileReader(e).read();
-			// new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
-			return wf;
+		public WyilFile read(Path id, InputStream in) throws IOException {
+			return new WyilFileReader(in).read(id);
 		}
 
 		@Override
@@ -144,11 +143,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		@Override
 		public String getSuffix() {
 			return "wyil";
-		}
-
-		@Override
-		public WyilFile read(wyfs.lang.Path.ID id, InputStream input) throws IOException {
-			return new WyilFileReader(input).read(id);
 		}
 	};
 
@@ -313,7 +307,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		this.majorVersion = schema.getMajorVersion();
 		this.minorVersion = schema.getMinorVersion();
 	}
-	
+
 	/**
 	 * Copy constructor which creates an identical WyilFile.
 	 *
@@ -358,7 +352,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		setRootItem(getSyntacticItem(root));
 		this.ID = ID;
 	}
-	
+
 	// =========================================================================
 	// Accessors
 	// =========================================================================
@@ -371,7 +365,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public boolean isValid() {
 		return findAll(SyntacticItem.Marker.class).size() == 0;
 	}
-	
+
 	public int getMajorVersion() {
 		return majorVersion;
 	}
@@ -2158,10 +2152,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				return (Decl.StaticVariable) operands[0];
 			}
 
+			@Override
 			public Tuple<Expr> getInvariant() {
 				return (Tuple<Expr>) operands[1];
 			}
 
+			@Override
 			public Tuple<Decl.Variable> getModified() {
 				return (Tuple<Decl.Variable>)operands[2];
 			}
@@ -2170,6 +2166,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				operands[2] = modified;
 			}
 
+			@Override
 			public Stmt.Block getBody() {
 				return (Stmt.Block) operands[3];
 			}

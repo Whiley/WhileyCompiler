@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
-import wybs.lang.Build;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.Build;
+import wycc.lang.Build.SnapShot;
+import wycc.lang.Path;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wyfs.lang.Path;
-import wyfs.util.Pair;
+import wycc.util.Pair;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
 import wyil.check.FlowTypeCheck;
@@ -26,23 +26,23 @@ import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 
 
-public class CompileTask<S extends Build.State<S>> implements Build.Task<S> {
+public class CompileTask implements Build.Task {
 	private final Build.Meter meter = Build.NULL_METER;
 	private final List<Build.Package> packages;
 	/**
 	 * Identifier for target of this build task.
 	 */
-	private final Path.ID target;
-	
-	public CompileTask(Path.ID target, Collection<Build.Package> packages) {
+	private final Path target;
+
+	public CompileTask(Path target, Collection<Build.Package> packages) {
 		this.target = target;
 		this.packages = new ArrayList<>(packages);
 	}
 
 	@Override
-	public Pair<S, Boolean> apply(S t) {
+	public Pair<SnapShot, Boolean> apply(SnapShot t) {
 		// Identify all Whiley source files
-		List<WhileyFile> sources = t.selectAll(WhileyFile.ContentType);
+		List<WhileyFile> sources = t.selectAll(WhileyFile.class);
 		// Compile them into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target back
@@ -50,7 +50,7 @@ public class CompileTask<S extends Build.State<S>> implements Build.Task<S> {
 		// Done
 		return new Pair<>(t, r.second());
 	}
-	
+
 	private Pair<WyilFile,Boolean> compile(List<WhileyFile> sources) {
 		WyilFile target = new WyilFile(this.target);
 		// Construct root entry
@@ -113,7 +113,7 @@ public class CompileTask<S extends Build.State<S>> implements Build.Task<S> {
 		//
 		return new Pair<>(target, r);
 	}
-	
+
 
 	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
 		return new Compiler.Check[] {

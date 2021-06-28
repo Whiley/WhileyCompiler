@@ -29,12 +29,8 @@ import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_universal;
 import static wyil.lang.WyilFile.TYPE_void;
 
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wyfs.util.ArrayUtils;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Type;
-import wyil.lang.WyilFile.Type.Selector;
 import wyil.lang.WyilFile.Type;
 
 public abstract class TypeSelector {

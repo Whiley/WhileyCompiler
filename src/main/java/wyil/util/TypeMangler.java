@@ -15,9 +15,9 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.lang.CompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.lang.CompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
 
 /**

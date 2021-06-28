@@ -23,19 +23,18 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
 
-import wyal.lang.WyalFile;
-import wybs.lang.Build;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.FileRepository;
+import wycc.lang.Build;
+import wycc.lang.Path;
+import wycc.lang.SyntacticException;
+import wycc.lang.SyntacticItem;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.Pair;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyfs.lang.Content;
-import wyfs.lang.Path;
 import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
@@ -117,14 +116,6 @@ public class TestUtils {
 	 *
 	 */
 	public static class Registry implements Content.Registry {
-		@Override
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-			Content.Type<?> type = contentType(suffix);
-			if(type != null) {
-				e.associate(type, null);
-			}			
-		}
 
 		@Override
 		public String suffix(Content.Type<?> t) {
@@ -138,8 +129,6 @@ public class TestUtils {
 				return WhileyFile.ContentType;
 			case "wyil":
 				return WyilFile.ContentType;
-			case "wyal":
-				return WyalFile.ContentType;
 			}
 			return null;
 		}
@@ -152,8 +141,9 @@ public class TestUtils {
 	 * @return
 	 */
 	public static Type fromString(String from) {
-		WyilFile wf = new WyilFile((Path.Entry<WyilFile>)null);
-		WhileyFile sf = new WhileyFile(null,from.getBytes());
+		Path id = Path.fromString("main");
+		WyilFile wf = new WyilFile(id);
+		WhileyFile sf = new WhileyFile(id,from.getBytes());
 		WhileyFileParser parser = new WhileyFileParser(wf, sf);
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
 		return parser.parseType(scope);
@@ -217,7 +207,7 @@ public class TestUtils {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
 		// Determine the ID of the test being compiler
-		Path.ID id = Trie.fromString(arg);
+		Path id = Path.fromString(arg);
 		//
 		boolean result = true;
 		//
@@ -227,10 +217,10 @@ public class TestUtils {
 				return f.getName().equals(filename);
 			});
 			// Apply Whiley Compile Task
-			db.apply(new CompileTask<>(id, Collections.EMPTY_LIST));
+			db.apply(new CompileTask(id, Collections.EMPTY_LIST));
 			// Extract files
-			WhileyFile source = db.get().get(WhileyFile.ContentType, id);
-			WyilFile target = db.get().get(WyilFile.ContentType, id);
+			WhileyFile source = db.get().get(id, WhileyFile.class);
+			WyilFile target = db.get().get(id, WyilFile.class);
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Writeback any results
@@ -253,7 +243,7 @@ public class TestUtils {
 		String output = new String(errBytes);
 		return new Pair<>(result, output);
 	}
-	
+
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
 	 * in that it always prints all of the trace.
@@ -312,7 +302,7 @@ public class TestUtils {
 	 */
 	public static Pair<Path.Entry<WhileyFile>, Path.Entry<WyilFile>> findSourceFiles(Path.Root root, String arg)
 			throws IOException {
-		Path.ID id = Trie.fromString(arg);
+		Path id = Path.fromString(arg);
 		Path.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
 		if (source == null) {
 			throw new IllegalArgumentException("file not found: " + arg);
@@ -338,7 +328,7 @@ public class TestUtils {
 	 *            The name of the WyIL file
 	 * @throws IOException
 	 */
-	public static void execWyil(File wyildir, Path.ID id) throws IOException {
+	public static void execWyil(File wyildir, Path id) throws IOException {
 		Path.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
