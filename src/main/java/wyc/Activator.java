@@ -57,18 +57,21 @@ public class Activator implements Plugin.Activator {
 		}
 
 		@Override
-		public Build.Task initialise(Command.Environment environment) throws IOException {
-			Path pkg = Path.fromString(environment.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
+		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
+			// Determine local configuration
+			Configuration config = environment.get(path);
 			//
-			Path source = Path.fromString(configuration.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
+			Path pkg = Path.fromString(config.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
+			//
+			Path source = Path.fromString(config.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			// Specify directory where generated WyIL files are dumped.
-			Path target = Path.fromString(configuration.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			Path target = Path.fromString(config.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
 			// Specify set of files included
 			Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
 			// Determine whether verification enabled or not
-			boolean verification = configuration.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
+			boolean verification = config.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
 			// Determine whether to try and find counterexamples or not
-			boolean counterexamples = configuration.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
+			boolean counterexamples = config.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
 			// Construct build task
 
 			// FIXME: this is clearly broken!

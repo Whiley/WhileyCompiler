@@ -35,6 +35,7 @@ import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyfs.lang.Content;
+import wyfs.lang.FileSystem;
 import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
@@ -217,7 +218,7 @@ public class TestUtils {
 				return f.getName().equals(filename);
 			});
 			// Apply Whiley Compile Task
-			db.apply(new CompileTask(id, Collections.EMPTY_LIST));
+			db.apply(s -> new CompileTask(id, Collections.EMPTY_LIST).apply(s).first());
 			// Extract files
 			WhileyFile source = db.get().get(id, WhileyFile.class);
 			WyilFile target = db.get().get(id, WyilFile.class);
@@ -300,18 +301,18 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Path.Entry<WhileyFile>, Path.Entry<WyilFile>> findSourceFiles(Path.Root root, String arg)
+	public static Pair<FileSystem.Entry<WhileyFile>, FileSystem.Entry<WyilFile>> findSourceFiles(FileSystem.Root root, String arg)
 			throws IOException {
 		Path id = Path.fromString(arg);
-		Path.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
+		FileSystem.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
 		if (source == null) {
 			throw new IllegalArgumentException("file not found: " + arg);
 		}
 		// Construct target
-		Path.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
+		FileSystem.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
 		// Doesn't exist, so create with default value
 		target = root.create(id, WyilFile.ContentType);
-		WyilFile wf = new WyilFile(target);
+		WyilFile wf = new WyilFile(id);
 		target.write(wf);
 		// Create initially empty WyIL module.
 		wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
@@ -329,7 +330,7 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Path id) throws IOException {
-		Path.Root root = new DirectoryRoot(wyildir, registry);
+		FileSystem.Root root = new DirectoryRoot(wyildir, registry);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
@@ -346,8 +347,8 @@ public class TestUtils {
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
-				Path.Entry<WhileyFile> srcfile = root.get(id, WhileyFile.ContentType);
-				new SyntacticException("test method must be exported and public", srcfile, lambda)
+				FileSystem.Entry<WhileyFile> srcfile = root.get(id, WhileyFile.ContentType);
+				new SyntacticException("test method must be exported and public", srcfile.read(), lambda)
 						.outputSourceError(System.out, false);
 				throw new RuntimeException("test method must be exported and public");
 			} else {
@@ -359,9 +360,9 @@ public class TestUtils {
 				// }
 			}
 		} catch (Interpreter.RuntimeError e) {
-			Path.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
+			FileSystem.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
 			// FIXME: this is a hack based on current available API.
-			new SyntacticException(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
+			new SyntacticException(e.getMessage(), srcfile.read(), e.getElement()).outputSourceError(System.out, false);
 			throw e;
 		}
 	}

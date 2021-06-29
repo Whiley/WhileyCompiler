@@ -25,7 +25,6 @@ import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 
-
 public class CompileTask implements Build.Task {
 	private final Build.Meter meter = Build.NULL_METER;
 	private final List<Build.Package> packages;
@@ -51,10 +50,11 @@ public class CompileTask implements Build.Task {
 		return new Pair<>(t, r.second());
 	}
 
-	private Pair<WyilFile,Boolean> compile(List<WhileyFile> sources) {
+	private Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
 		WyilFile target = new WyilFile(this.target);
 		// Construct root entry
-		target.setRootItem(new WyilFile.Decl.Module(new Name(this.target), new Tuple<>(), new Tuple<>(), new Tuple<>()));
+		target.setRootItem(
+				new WyilFile.Decl.Module(new Name(this.target), new Tuple<>(), new Tuple<>(), new Tuple<>()));
 		// Identify success or failure
 		boolean r = true;
 		// Parse all source files
@@ -69,7 +69,7 @@ public class CompileTask implements Build.Task {
 		// Perform name resolution.
 		try {
 			r = r && new NameResolution(meter, packages, target).apply();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
 		}
@@ -105,7 +105,7 @@ public class CompileTask implements Build.Task {
 			}
 		}
 		// Collect garbage
-		//target.gc();
+		// target.gc();
 		//
 		meter.done();
 		//
@@ -114,20 +114,13 @@ public class CompileTask implements Build.Task {
 		return new Pair<>(target, r);
 	}
 
-
 	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
-		return new Compiler.Check[] {
-				new DefiniteAssignmentCheck(m),
-				new DefiniteUnassignmentCheck(m),
-				new FunctionalCheck(m),
-				new SignatureCheck(m),
-				new StaticVariableCheck(m)
-		};
+		return new Compiler.Check[] { new DefiniteAssignmentCheck(m), new DefiniteUnassignmentCheck(m),
+				new FunctionalCheck(m), new SignatureCheck(m), new StaticVariableCheck(m) };
 	}
 
 	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
-		return new Compiler.Transform[] {
-				new MoveAnalysis(meter),
+		return new Compiler.Transform[] { new MoveAnalysis(meter),
 //				new RecursiveTypeAnalysis(meter)
 		};
 	}

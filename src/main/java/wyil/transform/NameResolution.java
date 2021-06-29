@@ -84,10 +84,6 @@ public class NameResolution {
 
 	private boolean status = true;
 
-	public NameResolution(Build.Meter meter, Build.Project project, WyilFile target) throws IOException {
-		this(meter, project.getPackages(), target);
-	}
-
 	public NameResolution(Build.Meter meter, List<Build.Package> packages, WyilFile target) throws IOException {
 		this.meter = meter.fork(NameResolution.class.getSimpleName());
 		this.packages = packages;
@@ -138,9 +134,9 @@ public class NameResolution {
 			Build.Package p = packages.get(i);
 			// FIXME: This is kind broken me thinks. Potentially, we should be able to
 			// figure out what modules are supplied via the configuration.
-			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+			List<WyilFile> entries = p.match(WyilFile.class, Filter.fromString("**/*"));
 			for (int j = 0; j != entries.size(); ++j) {
-				externals.add(entries.get(j).read());
+				externals.add(entries.get(j));
 			}
 		}
 		return externals;
