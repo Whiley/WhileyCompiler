@@ -74,6 +74,8 @@ public class Activator implements Plugin.Activator {
 			boolean counterexamples = config.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
 			// Construct build task
 
+			System.out.println("INITIALISING WYC TASK");
+
 			// FIXME: this is clearly broken!
 
 			return new CompileTask(target, Collections.EMPTY_LIST);
