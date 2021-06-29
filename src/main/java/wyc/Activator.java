@@ -78,7 +78,7 @@ public class Activator implements Plugin.Activator {
 
 			// FIXME: this is clearly broken!
 
-			return new CompileTask(target, Collections.EMPTY_LIST);
+			return new CompileTask(target.append(pkg), Collections.EMPTY_LIST);
 		}
 	};
 
