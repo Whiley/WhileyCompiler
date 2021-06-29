@@ -26,14 +26,10 @@ import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
-import java.sql.Types;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import org.apache.tools.ant.types.Environment;
 
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
@@ -43,7 +39,6 @@ import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
-import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.util.*;
 
