@@ -38,7 +38,6 @@ import wyc.util.ErrorMessages;
 import wycc.lang.Path;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
-import wyfs.lang.FileSystem;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
@@ -91,7 +90,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Binary Content Type
 	// =========================================================================
 
-	public static final Content.Type<WyilFile> ContentType = new Content.Printable<>() {
+	public static final Content.Type<WyilFile> ContentType = new Content.Type<>() {
 
 		/**
 		 * This method simply parses a whiley file into an abstract syntax tree. It
@@ -130,10 +129,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 //			WyilFileWriter.printMetrics(WyilFile.SCHEMA);
 		}
 
-		@Override
-		public void print(PrintStream output, WyilFile content) throws IOException {
-			new WyilFilePrinter(output).apply(content);
-		}
+//		public void print(PrintStream output, WyilFile content) throws IOException {
+//			new WyilFilePrinter(output).apply(content);
+//		}
 
 		@Override
 		public String toString() {

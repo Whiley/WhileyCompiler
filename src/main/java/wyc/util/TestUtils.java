@@ -35,7 +35,6 @@ import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyfs.lang.Content;
-import wyfs.lang.FileSystem;
 import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
@@ -211,31 +210,39 @@ public class TestUtils {
 		Path id = Path.fromString(arg);
 		//
 		boolean result = true;
+		// Construct the directory root
+		DirectoryRoot root = new DirectoryRoot(registry, whileydir, f -> {
+			return f.getName().equals(filename);
+		});
 		//
 		try {
-			// Construct the build repository
-			FileRepository db = new FileRepository(registry, whileydir, f -> {
-				return f.getName().equals(filename);
-			});
-			// Apply Whiley Compile Task
-			db.apply(s -> new CompileTask(id, Collections.EMPTY_LIST).apply(s).first());
-			// Extract files
-			WhileyFile source = db.get().get(id, WhileyFile.class);
-			WyilFile target = db.get().get(id, WyilFile.class);
+			// Construct build repository
+			Build.Repository repository = null;
+			// Extract source file
+			WhileyFile source = root.get(WhileyFile.class, id);
+			// Write source file into repository
+			repository.apply(s -> s.put(source));
+			// Apply Whiley Compiler to repository
+			repository.apply(s -> new CompileTask(id, Collections.EMPTY_LIST).apply(s).first());
+			// Read out binary file and flush to directory
+			WyilFile target = repository.get().get(id, WyilFile.class);
+			//
+			root.put(id, target);
 			// Check whether result valid (or not)
 			result = target.isValid();
-			// Writeback any results
-			db.flush();
 			// Print out syntactic markers
 			wycli.commands.Build.printSyntacticMarkers(psyserr, target, source);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
 			//e.outputSourceError(psyserr);
 			result = false;
-		}catch (Exception e) {
+		} catch (Exception e) {
 			// Print out the syntax error
 			printStackTrace(psyserr, e);
 			result = false;
+		} finally {
+			// Writeback any results
+			root.flush();
 		}
 		//
 		psyserr.flush();
@@ -293,34 +300,6 @@ public class TestUtils {
 	}
 
 	/**
-	 * For each test, identify the corresponding Whiley file entry in the source
-	 * root.
-	 *
-	 * @param root
-	 * @param arg
-	 * @return
-	 * @throws IOException
-	 */
-	public static Pair<FileSystem.Entry<WhileyFile>, FileSystem.Entry<WyilFile>> findSourceFiles(FileSystem.Root root, String arg)
-			throws IOException {
-		Path id = Path.fromString(arg);
-		FileSystem.Entry<WhileyFile> source = root.get(id, WhileyFile.ContentType);
-		if (source == null) {
-			throw new IllegalArgumentException("file not found: " + arg);
-		}
-		// Construct target
-		FileSystem.Entry<WyilFile> target = root.get(id, WyilFile.ContentType);
-		// Doesn't exist, so create with default value
-		target = root.create(id, WyilFile.ContentType);
-		WyilFile wf = new WyilFile(id);
-		target.write(wf);
-		// Create initially empty WyIL module.
-		wf.setRootItem(new WyilFile.Decl.Module(new Name(id), new Tuple<>(), new Tuple<>(), new Tuple<>()));
-		// Done
-		return new Pair<>(source, target);
-	}
-
-	/**
 	 * Execute a given WyIL file using the default interpreter.
 	 *
 	 * @param wyildir
@@ -330,7 +309,7 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Path id) throws IOException {
-		FileSystem.Root root = new DirectoryRoot(wyildir, registry);
+		Content.Source<Build.Artifact> root = new DirectoryRoot(registry, wyildir);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
@@ -341,14 +320,14 @@ public class TestUtils {
 		//
 		try {
 			// Load the relevant WyIL module
-			stack.load(root.get(id, WyilFile.ContentType).read());
+			stack.load(root.get(WyilFile.class, id));
 			// Sanity check modifiers on test method
 			Decl.Callable lambda = stack.getCallable(name, sig);
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
-				FileSystem.Entry<WhileyFile> srcfile = root.get(id, WhileyFile.ContentType);
-				new SyntacticException("test method must be exported and public", srcfile.read(), lambda)
+				WhileyFile srcfile = root.get(WhileyFile.class, id);
+				new SyntacticException("test method must be exported and public", srcfile, lambda)
 						.outputSourceError(System.out, false);
 				throw new RuntimeException("test method must be exported and public");
 			} else {
@@ -360,9 +339,9 @@ public class TestUtils {
 				// }
 			}
 		} catch (Interpreter.RuntimeError e) {
-			FileSystem.Entry<WhileyFile> srcfile = root.get(id,WhileyFile.ContentType);
+			WhileyFile srcfile = root.get(WhileyFile.class, id);
 			// FIXME: this is a hack based on current available API.
-			new SyntacticException(e.getMessage(), srcfile.read(), e.getElement()).outputSourceError(System.out, false);
+			new SyntacticException(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
 			throw e;
 		}
 	}
@@ -382,32 +361,36 @@ public class TestUtils {
 	public static boolean compare(String output, String referenceFile) throws IOException {
 		BufferedReader outReader = new BufferedReader(new StringReader(output));
 		BufferedReader refReader = new BufferedReader(new FileReader(new File(referenceFile)));
-
-		boolean match = true;
-		while (true) {
-			String l1 = refReader.readLine();
-			String l2 = outReader.readLine();
-			if (l1 != null && l2 != null) {
-				if (!l1.equals(l2)) {
+		try {
+			boolean match = true;
+			while (true) {
+				String l1 = refReader.readLine();
+				String l2 = outReader.readLine();
+				if (l1 != null && l2 != null) {
+					if (!l1.equals(l2)) {
+						System.err.println(" < " + l1);
+						System.err.println(" > " + l2);
+						match = false;
+					}
+				} else if (l1 != null) {
 					System.err.println(" < " + l1);
+					match = false;
+				} else if (l2 != null) {
 					System.err.println(" > " + l2);
 					match = false;
+				} else {
+					break;
 				}
-			} else if (l1 != null) {
-				System.err.println(" < " + l1);
-				match = false;
-			} else if (l2 != null) {
-				System.err.println(" > " + l2);
-				match = false;
-			} else {
-				break;
 			}
+			if (!match) {
+				System.err.println();
+				return false;
+			}
+			return true;
+		} finally {
+			outReader.close();
+			refReader.close();
 		}
-		if (!match) {
-			System.err.println();
-			return false;
-		}
-		return true;
 	}
 
 	/**

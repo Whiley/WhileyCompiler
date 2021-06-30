@@ -66,8 +66,6 @@ public class Activator implements Plugin.Activator {
 			Path source = Path.fromString(config.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			// Specify directory where generated WyIL files are dumped.
 			Path target = Path.fromString(config.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
-			// Specify set of files included
-			Content.Filter<WhileyFile> includes = Content.filter("**", WhileyFile.ContentType);
 			// Determine whether verification enabled or not
 			boolean verification = config.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
 			// Determine whether to try and find counterexamples or not
