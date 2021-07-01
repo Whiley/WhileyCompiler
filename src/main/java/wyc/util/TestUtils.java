@@ -24,18 +24,19 @@ import java.io.StringReader;
 import java.util.*;
 
 import wycc.lang.Build;
+import wycc.lang.Content;
 import wycc.lang.Path;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ByteRepository;
+import wycc.util.DirectoryRoot;
 import wycc.util.Pair;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyfs.lang.Content;
-import wyfs.util.*;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
@@ -123,7 +124,7 @@ public class TestUtils {
 		}
 
 		@Override
-		public wyfs.lang.Content.Type<?> contentType(String suffix) {
+		public wycc.lang.Content.Type<?> contentType(String suffix) {
 			switch(suffix) {
 			case "whiley":
 				return WhileyFile.ContentType;
@@ -207,7 +208,7 @@ public class TestUtils {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
 		// Determine the ID of the test being compiler
-		Path id = Path.fromString(arg);
+		Path path = Path.fromString(arg);
 		//
 		boolean result = true;
 		// Construct the directory root
@@ -216,18 +217,16 @@ public class TestUtils {
 		});
 		//
 		try {
-			// Construct build repository
-			Build.Repository repository = null;
 			// Extract source file
-			WhileyFile source = root.get(WhileyFile.class, id);
-			// Write source file into repository
-			repository.apply(s -> s.put(source));
+			WhileyFile source = root.get(WhileyFile.class, path);
+			// Construct build repository
+			Build.Repository repository = new ByteRepository(source);
 			// Apply Whiley Compiler to repository
-			repository.apply(s -> new CompileTask(id, Collections.EMPTY_LIST).apply(s).first());
-			// Read out binary file and flush to directory
-			WyilFile target = repository.get().get(id, WyilFile.class);
-			//
-			root.put(id, target);
+			repository.apply(s -> new CompileTask(path, Collections.EMPTY_LIST).apply(s).first());
+			// Read out binary file from build repository
+			WyilFile target = repository.get(WyilFile.class, path);
+			// Write binary file to directory
+			root.put(path, target);
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers

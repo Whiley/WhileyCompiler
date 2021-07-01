@@ -29,6 +29,7 @@ import java.util.function.Function;
 
 import wycc.lang.Build;
 import wycc.lang.CompilationUnit;
+import wycc.lang.Content;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 import wycc.lang.SyntacticItem.Descriptor;
@@ -37,7 +38,6 @@ import wycc.util.SectionedSchema.Section;
 import wyc.util.ErrorMessages;
 import wycc.lang.Path;
 import wycc.util.ArrayUtils;
-import wyfs.lang.Content;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
@@ -334,7 +334,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
-		this.ID = wf.getID();
+		this.ID = wf.getPath();
 	}
 
 	public WyilFile(Path ID, int root, SyntacticItem[] items, int major, int minor) {
@@ -356,8 +356,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// =========================================================================
 
 	@Override
-	public Path getID() {
+	public Path getPath() {
 		return ID;
+	}
+
+	@Override
+	public Content.Type<WyilFile> getContentType() {
+		return WyilFile.ContentType;
 	}
 
 	public boolean isValid() {

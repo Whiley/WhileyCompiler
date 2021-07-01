@@ -7,6 +7,7 @@ import java.util.List;
 
 import wycc.lang.Build;
 import wycc.lang.Build.SnapShot;
+import wycc.lang.Filter;
 import wycc.lang.Path;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Tuple;
@@ -29,6 +30,10 @@ public class CompileTask implements Build.Task {
 	private final Build.Meter meter = Build.NULL_METER;
 	private final List<Build.Package> packages;
 	/**
+	 * Determine the set of files which will be compiled by this task.
+	 */
+	private final Filter includes = Filter.fromString("**/*");
+	/**
 	 * Identifier for target of this build task.
 	 */
 	private final Path target;
@@ -41,7 +46,7 @@ public class CompileTask implements Build.Task {
 	@Override
 	public Pair<SnapShot, Boolean> apply(SnapShot t) {
 		// Identify all Whiley source files
-		List<WhileyFile> sources = t.selectAll(WhileyFile.class);
+		List<WhileyFile> sources = t.match(WhileyFile.class, includes);
 		//
 		System.out.println("EXECUTING WYC TASK: " + sources);
 		// Compile them into a single binary target

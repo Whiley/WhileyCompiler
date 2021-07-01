@@ -17,13 +17,13 @@ import wyc.task.CompileTask;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Plugin;
-import wyfs.lang.Content;
 import wyil.lang.WyilFile;
 
 import java.io.IOException;
 import java.util.Collections;
 
 import wycc.lang.Build;
+import wycc.lang.Content;
 import wycc.lang.Path;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;

@@ -162,9 +162,9 @@ public class WhileyFileParser {
 	public boolean read(Build.Meter meter) {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = new Name(new Identifier(source.getID().last()));
+		Name name = new Name(new Identifier(source.getPath().last()));
 		try {
-			name = parseModuleName(source.getID());
+			name = parseModuleName(source.getPath());
 			skipWhiteSpace();
 			while (index < tokens.size()) {
 				// Parse next logical declaration

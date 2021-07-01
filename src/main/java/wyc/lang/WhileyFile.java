@@ -20,10 +20,10 @@ import java.util.Collections;
 import java.util.List;
 
 import wyc.io.WhileyFileLexer;
+import wycc.lang.Content;
 import wycc.lang.Path;
 import wycc.lang.SourceFile;
-import wyfs.lang.Content;
-import wyfs.lang.Content.Type;
+import wycc.lang.Content.Type;
 
 public class WhileyFile extends SourceFile {
 	// =========================================================================
@@ -79,8 +79,13 @@ public class WhileyFile extends SourceFile {
 	}
 
 	@Override
-	public Path getID() {
+	public Path getPath() {
 		return ID;
+	}
+
+	@Override
+	public Content.Type<WhileyFile> getContentType() {
+		return WhileyFile.ContentType;
 	}
 
 	public List<WhileyFileLexer.Token> getTokens() {
