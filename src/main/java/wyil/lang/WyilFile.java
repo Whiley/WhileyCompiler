@@ -338,7 +338,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	}
 
 	public WyilFile(Path ID, int root, SyntacticItem[] items, int major, int minor) {
-		super(null);
 		this.majorVersion = major;
 		this.minorVersion = minor;
 		// Allocate every item into this heap

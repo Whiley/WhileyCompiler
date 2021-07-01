@@ -47,16 +47,10 @@ public class CompileTask implements Build.Task {
 	public Pair<SnapShot, Boolean> apply(SnapShot t) {
 		// Identify all Whiley source files
 		List<WhileyFile> sources = t.match(WhileyFile.class, includes);
-		//
-		System.out.println("EXECUTING WYC TASK: " + sources);
-		// Compile them into a single binary target
+		// Compile into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
-		// Write target back
+		// Write target into snapshot
 		t = t.put(r.first());
-		//
-		System.out.println("TARGET: " + target);
-		System.out.println("STATE: " + t);
-		System.out.println("STATUS: " + r.second());
 		// Done
 		return new Pair<>(t, r.second());
 	}
