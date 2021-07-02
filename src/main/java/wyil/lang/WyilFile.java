@@ -142,6 +142,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		public String getSuffix() {
 			return "wyil";
 		}
+
+		@Override
+		public boolean includes(Class<?> kind) {
+			return kind == WyilFile.class;
+		}
 	};
 
 	// =========================================================================

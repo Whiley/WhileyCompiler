@@ -62,6 +62,11 @@ public class WhileyFile extends SourceFile {
 		public String getSuffix() {
 			return "whiley";
 		}
+
+		@Override
+		public boolean includes(Class<?> kind) {
+			return kind == WhileyFile.class;
+		}
 	};
 
 	private final Path ID;

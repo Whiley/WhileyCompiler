@@ -308,7 +308,10 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Path id) throws IOException {
-		Content.Source<Build.Artifact> root = new DirectoryRoot(registry, wyildir);
+		String filename = id.toString() + ".wyil";
+		Content.Source<Build.Artifact> root = new DirectoryRoot(registry, wyildir, f -> {
+			return f.getName().equals(filename);
+		});
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
