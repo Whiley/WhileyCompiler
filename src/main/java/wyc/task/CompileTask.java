@@ -47,6 +47,12 @@ public class CompileTask implements Build.Task {
 	public Pair<SnapShot, Boolean> apply(SnapShot t) {
 		// Identify all Whiley source files
 		List<WhileyFile> sources = t.match(WhileyFile.class, includes);
+		//
+		//
+		System.out.println("FILES: " + t);
+		System.out.println("INCLUDES: " + includes);
+		//
+		System.out.println("MATCHED SOURCES: " + sources);
 		// Compile into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target into snapshot

@@ -69,7 +69,7 @@ public class WhileyFile extends SourceFile {
 		}
 	};
 
-	private final Path ID;
+	private final Path path;
 
 	private final List<WhileyFileLexer.Token> tokens;
 
@@ -80,12 +80,12 @@ public class WhileyFile extends SourceFile {
 	public WhileyFile(Path ID, String content) {
 		super(ID, content);
 		this.tokens = new WhileyFileLexer(content).scan();
-		this.ID = ID;
+		this.path = ID;
 	}
 
 	@Override
 	public Path getPath() {
-		return ID;
+		return path;
 	}
 
 	@Override
@@ -95,5 +95,10 @@ public class WhileyFile extends SourceFile {
 
 	public List<WhileyFileLexer.Token> getTokens() {
 		return Collections.unmodifiableList(tokens);
+	}
+
+	@Override
+	public String toString() {
+		return path + ":whiley";
 	}
 }
