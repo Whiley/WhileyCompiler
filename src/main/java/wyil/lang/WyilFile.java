@@ -35,6 +35,7 @@ import wycc.lang.SyntacticItem;
 import wycc.lang.SyntacticItem.Descriptor;
 import wycc.util.*;
 import wycc.util.SectionedSchema.Section;
+import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
 import wycc.lang.Path;
 import wycc.util.ArrayUtils;
@@ -300,13 +301,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// =========================================================================
 
 	private final Path ID;
+	private final List<WhileyFile> sourceFiles;
 	private final int majorVersion;
 	private final int minorVersion;
 
-	public WyilFile(Path id) {
+	public WyilFile(Path id, List<WhileyFile> sourceFiles) {
 		super();
 		this.ID = id;
 		Schema schema = WyilFile.getSchema();
+		this.sourceFiles = new ArrayList<>(sourceFiles);
 		this.majorVersion = schema.getMajorVersion();
 		this.minorVersion = schema.getMinorVersion();
 	}
@@ -339,6 +342,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
+		//
+		this.sourceFiles = new ArrayList<>(wf.sourceFiles);
 		this.ID = wf.getPath();
 	}
 
@@ -352,6 +357,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
+		this.sourceFiles = new ArrayList<>();
 		this.ID = ID;
 	}
 
@@ -367,6 +373,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	@Override
 	public Content.Type<WyilFile> getContentType() {
 		return WyilFile.ContentType;
+	}
+	
+	@Override
+	public List<WhileyFile> getSourceArtifacts() {
+		return sourceFiles;
 	}
 
 	public boolean isValid() {
@@ -7202,10 +7213,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@Override
 			public Path getSource() {
+				// **************************************
+				// FIXME: this is really a temporary hack
+				// **************************************
+				WyilFile bin = (WyilFile) getTarget().getHeap();
 				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
-				// FIXME: this is realy a temporary hack
 				String nameStr = unit.getName().toString().replace("::", "/");
-				return Path.fromString(nameStr);
+				//
+				for(Build.Artifact s : bin.getSourceArtifacts()) {
+					String n = s.getPath().toString();
+					if(n.endsWith(nameStr)) {
+						return s.getPath();
+					}
+				}
+				return null;
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.TWO, "ATTR_error") {

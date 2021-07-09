@@ -143,8 +143,8 @@ public class TestUtils {
 	 */
 	public static Type fromString(String from) {
 		Path id = Path.fromString("main");
-		WyilFile wf = new WyilFile(id);
 		WhileyFile sf = new WhileyFile(id,from.getBytes());
+		WyilFile wf = new WyilFile(id, Arrays.asList(sf));
 		WhileyFileParser parser = new WhileyFileParser(wf, sf);
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
 		return parser.parseType(scope);

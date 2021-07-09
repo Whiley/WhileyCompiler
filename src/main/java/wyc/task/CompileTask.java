@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import wycc.lang.Build;
+import wycc.lang.Content;
 import wycc.lang.Build.SnapShot;
 import wycc.lang.Filter;
 import wycc.lang.Path;
@@ -44,15 +45,19 @@ public class CompileTask implements Build.Task {
 	}
 
 	@Override
+	public Path getTarget() {
+		return target;
+	}
+
+	@Override
+	public Content.Type<WyilFile> getContentType() {
+		return WyilFile.ContentType;
+	}
+	
+	@Override
 	public Pair<SnapShot, Boolean> apply(SnapShot t) {
 		// Identify all Whiley source files
 		List<WhileyFile> sources = t.match(WhileyFile.class, includes);
-		//
-		//
-		System.out.println("FILES: " + t);
-		System.out.println("INCLUDES: " + includes);
-		//
-		System.out.println("MATCHED SOURCES: " + sources);
 		// Compile into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target into snapshot
@@ -62,7 +67,7 @@ public class CompileTask implements Build.Task {
 	}
 
 	private Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
-		WyilFile target = new WyilFile(this.target);
+		WyilFile target = new WyilFile(this.target, sources);
 		// Construct root entry
 		target.setRootItem(
 				new WyilFile.Decl.Module(new Name(this.target), new Tuple<>(), new Tuple<>(), new Tuple<>()));
