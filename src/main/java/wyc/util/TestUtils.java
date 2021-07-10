@@ -230,7 +230,7 @@ public class TestUtils {
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
-			wycli.commands.Build.printSyntacticMarkers(psyserr, target, source);
+			wycli.commands.BuildSystem.printSyntacticMarkers(psyserr, target, source);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
 			//e.outputSourceError(psyserr);
