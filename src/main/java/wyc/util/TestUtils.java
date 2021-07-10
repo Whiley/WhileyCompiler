@@ -212,7 +212,7 @@ public class TestUtils {
 		//
 		boolean result = true;
 		// Construct the directory root
-		DirectoryRoot<Build.Artifact> root = new DirectoryRoot<>(registry, whileydir, f -> {
+		DirectoryRoot root = new DirectoryRoot(registry, whileydir, f -> {
 			return f.getName().equals(filename);
 		});
 		//
@@ -309,7 +309,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Path id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		Content.Source<Build.Artifact> root = new DirectoryRoot<Build.Artifact>(registry, wyildir, f -> {
+		Content.Source root = new DirectoryRoot(registry, wyildir, f -> {
 			return f.getName().equals(filename);
 		});
 		// Empty signature

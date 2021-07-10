@@ -6,7 +6,6 @@ import java.util.*;
 import wycc.lang.Build;
 import wycc.lang.Content;
 import wycc.lang.Build.SnapShot;
-import wycc.lang.Filter;
 import wycc.lang.Path;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Tuple;
@@ -74,7 +73,7 @@ public class CompileTask implements Build.Task {
 	/**
 	 * The set of build packages that this task relies on.
 	 */
-	private final List<Build.Package> packages;
+	private final List<Content.Source> packages;
 
 	/**
 	 * The set of source files that this task will compiler from.
@@ -91,7 +90,7 @@ public class CompileTask implements Build.Task {
 		this.packages = Collections.emptyList();
 	}
 
-	public CompileTask(Path target, List<WhileyFile> sources, Collection<Build.Package> packages) {
+	public CompileTask(Path target, List<WhileyFile> sources, Collection<Content.Source> packages) {
 		this.target = target;
 		this.sources = new ArrayList<>(sources);
 		this.packages = new ArrayList<>(packages);
