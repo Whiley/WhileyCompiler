@@ -21,22 +21,16 @@ import wyil.lang.WyilFile;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
-import wycc.lang.Path;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {
-
 	public static Path PKGNAME_CONFIG_OPTION = Path.fromString("package/name");
 	public static Path SOURCE_CONFIG_OPTION = Path.fromString("build/whiley/source");
 	public static Path TARGET_CONFIG_OPTION = Path.fromString("build/whiley/target");
-	public static Path VERIFY_CONFIG_OPTION = Path.fromString("build/whiley/verify");
-	public static Path COUNTEREXAMPLE_CONFIG_OPTION = Path.fromString("build/whiley/counterexamples");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -51,30 +45,26 @@ public class Activator implements Plugin.Activator {
 		public Configuration.Schema getConfigurationSchema() {
 			return Configuration.fromArray(
 					Configuration.UNBOUND_STRING(SOURCE_CONFIG_OPTION, "Specify location for whiley source files", SOURCE_DEFAULT),
-					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT),
-					Configuration.UNBOUND_BOOLEAN(VERIFY_CONFIG_OPTION, "Enable verification of whiley files", new Value.Bool(false)),
-					Configuration.UNBOUND_BOOLEAN(COUNTEREXAMPLE_CONFIG_OPTION, "Enable counterexample generation during verification", new Value.Bool(false)));
+					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT));
 		}
 
 		@Override
 		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
 			// Determine local configuration
 			Configuration config = environment.get(path);
+			Build.SnapShot snapshot = environment.getRepository().last();
 			//
 			Path pkg = Path.fromString(config.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			//
-			Path source = Path.fromString(config.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
+			Filter source = Filter.fromString(config.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
 			// Specify directory where generated WyIL files are dumped.
 			Path target = Path.fromString(config.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
-			// Determine whether verification enabled or not
-			boolean verification = config.get(Value.Bool.class, VERIFY_CONFIG_OPTION).unwrap();
-			// Determine whether to try and find counterexamples or not
-			boolean counterexamples = config.get(Value.Bool.class, COUNTEREXAMPLE_CONFIG_OPTION).unwrap();
 			// Construct build task
-
-			// FIXME: this is clearly broken!
-
-			return new CompileTask(target.append(pkg), Collections.EMPTY_LIST);
+			Filter includes = source.append(Filter.EVERYTHING);
+			// Identify all Whiley source files
+			List<WhileyFile> sources = snapshot.match(WhileyFile.class, includes);
+			// Done
+			return new CompileTask(target.append(pkg), sources, Collections.emptyList());
 		}
 	};
 

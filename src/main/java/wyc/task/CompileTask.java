@@ -1,9 +1,7 @@
 package wyc.task;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import wycc.lang.Build;
 import wycc.lang.Content;
@@ -27,25 +25,80 @@ import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
 import wyil.transform.NameResolution;
 
+/**
+ * Responsible for managing the process of turning source files into binary code
+ * for execution. Each source file is passed through a pipeline of stages that
+ * modify it in a variet y of ways. The main stages are:
+ * <ol>
+ * <li>
+ * <p>
+ * <b>Lexing and Parsing</b>, where the source file is converted into an
+ * Abstract Syntax Tree (AST) representation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Name Resolution</b>, where the fully qualified names of all external
+ * symbols are determined.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Type Propagation</b>, where the types of all expressions are determined by
+ * propagation from e.g. declared parameter types.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>WYIL Generation</b>, where the the AST is converted into the Whiley
+ * Intermediate Language (WYIL). A number of passes are then made over this
+ * before it is ready for code generation.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * <b>Code Generation</b>. Here, the executable code is finally generated. This
+ * could be Java bytecode, or something else (e.g. JavaScript).
+ * </p>
+ * </li>
+ * </ol>
+ * Every stage of the compiler can be configured by setting various options.
+ * Stages can also be bypassed (typically for testing) and new ones can be
+ * added.
+ *
+ * @author David J. Pearce
+ *
+ */
 public class CompileTask implements Build.Task {
 	private final Build.Meter meter = Build.NULL_METER;
-	private final List<Build.Package> packages;
 	/**
-	 * Determine the set of files which will be compiled by this task.
+	 * The set of build packages that this task relies on.
 	 */
-	private final Filter includes = Filter.fromString("**/*");
+	private final List<Build.Package> packages;
+
+	/**
+	 * The set of source files that this task will compiler from.
+	 */
+	private final List<WhileyFile> sources;
 	/**
 	 * Identifier for target of this build task.
 	 */
 	private final Path target;
 
-	public CompileTask(Path target, Collection<Build.Package> packages) {
+	public CompileTask(Path target, WhileyFile... sources) {
 		this.target = target;
+		this.sources = Arrays.asList(sources);
+		this.packages = Collections.emptyList();
+	}
+
+	public CompileTask(Path target, List<WhileyFile> sources, Collection<Build.Package> packages) {
+		this.target = target;
+		this.sources = new ArrayList<>(sources);
 		this.packages = new ArrayList<>(packages);
 	}
 
 	@Override
-	public Path getTarget() {
+	public Path getPath() {
 		return target;
 	}
 
@@ -53,11 +106,14 @@ public class CompileTask implements Build.Task {
 	public Content.Type<WyilFile> getContentType() {
 		return WyilFile.ContentType;
 	}
-	
+
+	@Override
+	public List<WhileyFile> getSourceArtifacts() {
+		return sources;
+	}
+
 	@Override
 	public Pair<SnapShot, Boolean> apply(SnapShot t) {
-		// Identify all Whiley source files
-		List<WhileyFile> sources = t.match(WhileyFile.class, includes);
 		// Compile into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target into snapshot
