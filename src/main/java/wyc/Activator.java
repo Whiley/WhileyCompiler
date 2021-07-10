@@ -62,7 +62,7 @@ public class Activator implements Plugin.Activator {
 			// Construct build task
 			Filter includes = source.append(Filter.EVERYTHING);
 			// Identify all Whiley source files
-			List<WhileyFile> sources = snapshot.match(WhileyFile.class, includes);
+			List<WhileyFile> sources = snapshot.getAll(WhileyFile.ContentType, includes);
 			// Done
 			return new CompileTask(target.append(pkg), sources, Collections.emptyList());
 		}

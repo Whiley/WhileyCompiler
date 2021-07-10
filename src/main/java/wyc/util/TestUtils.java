@@ -212,19 +212,19 @@ public class TestUtils {
 		//
 		boolean result = true;
 		// Construct the directory root
-		DirectoryRoot root = new DirectoryRoot(registry, whileydir, f -> {
+		DirectoryRoot<Build.Artifact> root = new DirectoryRoot<>(registry, whileydir, f -> {
 			return f.getName().equals(filename);
 		});
 		//
 		try {
 			// Extract source file
-			WhileyFile source = root.get(WhileyFile.class, path);
+			WhileyFile source = root.get(WhileyFile.ContentType, path);
 			// Construct build repository
 			Build.Repository repository = new ByteRepository(source);
 			// Apply Whiley Compiler to repository
 			repository.apply(s -> new CompileTask(path, source).apply(s).first());
 			// Read out binary file from build repository
-			WyilFile target = repository.get(WyilFile.class, path);
+			WyilFile target = repository.get(WyilFile.ContentType, path);
 			// Write binary file to directory
 			root.put(path, target);
 			// Check whether result valid (or not)
@@ -309,7 +309,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Path id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		Content.Source<Build.Artifact> root = new DirectoryRoot(registry, wyildir, f -> {
+		Content.Source<Build.Artifact> root = new DirectoryRoot<Build.Artifact>(registry, wyildir, f -> {
 			return f.getName().equals(filename);
 		});
 		// Empty signature
@@ -322,13 +322,13 @@ public class TestUtils {
 		//
 		try {
 			// Load the relevant WyIL module
-			stack.load(root.get(WyilFile.class, id));
+			stack.load(root.get(WyilFile.ContentType, id));
 			// Sanity check modifiers on test method
 			Decl.Callable lambda = stack.getCallable(name, sig);
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
-				WhileyFile srcfile = root.get(WhileyFile.class, id);
+				WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
 				new SyntacticException("test method must be exported and public", srcfile, lambda)
 						.outputSourceError(System.out, false);
 				throw new RuntimeException("test method must be exported and public");
@@ -341,7 +341,7 @@ public class TestUtils {
 				// }
 			}
 		} catch (Interpreter.RuntimeError e) {
-			WhileyFile srcfile = root.get(WhileyFile.class, id);
+			WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
 			// FIXME: this is a hack based on current available API.
 			new SyntacticException(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
 			throw e;
