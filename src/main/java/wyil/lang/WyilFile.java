@@ -104,7 +104,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @throws IOException
 		 */
 		@Override
-		public WyilFile read(Path id, InputStream in) throws IOException {
+		public WyilFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
 			return new WyilFileReader(in).read(id);
 		}
 
@@ -374,7 +374,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public Content.Type<WyilFile> getContentType() {
 		return WyilFile.ContentType;
 	}
-	
+
 	@Override
 	public List<WhileyFile> getSourceArtifacts() {
 		return sourceFiles;

@@ -43,7 +43,7 @@ public class WhileyFile extends SourceFile {
 		 * @throws IOException
 		 */
 		@Override
-		public WhileyFile read(Path id, InputStream in) throws IOException {
+		public WhileyFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
 			return new WhileyFile(id,in.readAllBytes());
 		}
 

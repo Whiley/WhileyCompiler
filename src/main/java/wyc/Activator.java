@@ -17,6 +17,7 @@ import wyc.task.CompileTask;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Plugin;
+import wycli.lang.Package;
 import wyil.lang.WyilFile;
 
 import java.io.IOException;
@@ -53,6 +54,7 @@ public class Activator implements Plugin.Activator {
 			// Determine local configuration
 			Configuration config = environment.get(path);
 			Build.SnapShot snapshot = environment.getRepository().last();
+			Package.Resolver resolver = environment.getPackageResolver();
 			//
 			Path pkg = Path.fromString(config.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
 			//
@@ -63,8 +65,10 @@ public class Activator implements Plugin.Activator {
 			Filter includes = source.append(Filter.EVERYTHING);
 			// Identify all Whiley source files
 			List<WhileyFile> sources = snapshot.getAll(WhileyFile.ContentType, includes);
+			// Resolve all packages declared in configuration
+			List<Content.Source> pkgs = resolver.resolve(config);
 			// Done
-			return new CompileTask(target.append(pkg), sources, Collections.emptyList());
+			return new CompileTask(target.append(pkg), sources, pkgs);
 		}
 	};
 
