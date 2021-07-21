@@ -220,7 +220,7 @@ public class TestUtils {
 			// Extract source file
 			WhileyFile source = root.get(WhileyFile.ContentType, path);
 			// Construct build repository
-			Build.Repository repository = new ByteRepository(source);
+			Build.Repository repository = new ByteRepository(registry, source);
 			// Apply Whiley Compiler to repository
 			repository.apply(s -> new CompileTask(path, source).apply(s).first());
 			// Read out binary file from build repository
