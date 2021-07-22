@@ -1,15 +1,15 @@
-tests/invalid/Coercion_Invalid_10.whiley:7: expected intr[], found int[]
+Coercion_Invalid_10.whiley:7: expected intr[], found int[]
     if e is int[]:
            ^^^^^^
-tests/invalid/Coercion_Invalid_10.whiley:7: expected intr[], found int[]
+Coercion_Invalid_10.whiley:7: expected intr[], found int[]
     if e is int[]:
            ^^^^^^
-tests/invalid/Coercion_Invalid_10.whiley:13: expected intr, found int
+Coercion_Invalid_10.whiley:13: expected intr, found int
     assume f([1, 2, 3, 4, 5, 6, 7]) == [1, 2, 3, 4, 5, 6, 7]
               ^
-tests/invalid/Coercion_Invalid_10.whiley:15: expected intr, found int
+Coercion_Invalid_10.whiley:15: expected intr, found int
     assume f([1, 2, true]) == [1,2,3]
               ^
-tests/invalid/Coercion_Invalid_10.whiley:16: expected intr, found int
+Coercion_Invalid_10.whiley:16: expected intr, found int
     assume f([false, 2, true]) == [1,2,3]
                      ^

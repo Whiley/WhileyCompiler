@@ -1,3 +1,3 @@
-tests/invalid/ConstrainedInt_Invalid_12.whiley:8: type invariant may not be satisfied {x=0}
+ConstrainedInt_Invalid_12.whiley:8: type invariant may not be satisfied {x=0}
     f((irf2nat) x)
                 ^

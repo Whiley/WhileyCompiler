@@ -1,12 +1,12 @@
-tests/invalid/MultiAssign_Invalid_1.whiley:8: unable to resolve name
+MultiAssign_Invalid_1.whiley:8: unable to resolve name
     if x > y:
        ^
-tests/invalid/MultiAssign_Invalid_1.whiley:8: unable to resolve name
+MultiAssign_Invalid_1.whiley:8: unable to resolve name
     if x > y:
            ^
-tests/invalid/MultiAssign_Invalid_1.whiley:9: unable to resolve name
+MultiAssign_Invalid_1.whiley:9: unable to resolve name
         return y
                ^
-tests/invalid/MultiAssign_Invalid_1.whiley:11: unable to resolve name
+MultiAssign_Invalid_1.whiley:11: unable to resolve name
         return x
                ^

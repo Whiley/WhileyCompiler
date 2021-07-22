@@ -1,3 +1,3 @@
-tests/invalid/Quantifiers_Invalid_8.whiley:8: precondition may not be satisfied {ls=[-1]}
+Quantifiers_Invalid_8.whiley:8: precondition may not be satisfied {ls=[-1]}
     f(ls)
     ^^^^^

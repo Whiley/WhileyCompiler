@@ -1,3 +1,3 @@
-tests/invalid/Infeasible_Function_6.whiley:3: postcondition may not be satisfied {x=0}
+Infeasible_Function_6.whiley:3: postcondition may not be satisfied {x=0}
     return x
     ^^^^^^^^

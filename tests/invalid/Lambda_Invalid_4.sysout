@@ -1,3 +1,3 @@
-tests/invalid/Lambda_Invalid_4.whiley:12: expected Transformer<State>, found method(State)->(State)
+Lambda_Invalid_4.whiley:12: expected Transformer<State>, found method(State)->(State)
     return [f<State>(&(State st -> push(st)))]
                      ^^^^^^^^^^^^^^^^^^^^^^^

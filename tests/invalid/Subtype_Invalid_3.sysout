@@ -1,3 +1,3 @@
-tests/invalid/Subtype_Invalid_3.whiley:10: type invariant may not be satisfied {x=[1], x$1=[-1]}
+Subtype_Invalid_3.whiley:10: type invariant may not be satisfied {x=[1], x$1=[-1]}
     f((scf3nat[]) x)
                   ^

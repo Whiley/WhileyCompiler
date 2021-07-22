@@ -1,6 +1,6 @@
-tests/invalid/RecursiveType_Invalid_11.whiley:1: empty type encountered
+RecursiveType_Invalid_11.whiley:1: empty type encountered
 type T is {T t}
      ^
-tests/invalid/RecursiveType_Invalid_11.whiley:4: expected int, found int|T
+RecursiveType_Invalid_11.whiley:4: expected int, found int|T
     return x
            ^

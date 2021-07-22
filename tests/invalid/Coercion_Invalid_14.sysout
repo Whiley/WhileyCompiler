@@ -1,18 +1,18 @@
-tests/invalid/Coercion_Invalid_14.whiley:7: expected Point, found {int x}
+Coercion_Invalid_14.whiley:7: expected Point, found {int x}
     assert ((Point) {x:1}) == {x:1,y:1}
                     ^^^^^
-tests/invalid/Coercion_Invalid_14.whiley:8: expected int, found {int x}
+Coercion_Invalid_14.whiley:8: expected int, found {int x}
     assert ((int) {x:1}) == 2
                   ^^^^^
-tests/invalid/Coercion_Invalid_14.whiley:9: expected int[], found {int x}
+Coercion_Invalid_14.whiley:9: expected int[], found {int x}
     assert ((int[]) {x:1}) == 2
                     ^^^^^
-tests/invalid/Coercion_Invalid_14.whiley:10: expected Point, found int[]
+Coercion_Invalid_14.whiley:10: expected Point, found int[]
     assert ((Point) [1]) == {x:1,y:1}
                     ^^^
-tests/invalid/Coercion_Invalid_14.whiley:11: expected int, found &int
+Coercion_Invalid_14.whiley:11: expected int, found &int
     assert ((int) new 1) == 2
                   ^^^^^
-tests/invalid/Coercion_Invalid_14.whiley:12: expected int[], found Point[]
+Coercion_Invalid_14.whiley:12: expected int[], found Point[]
     assert ((int[]) [p]) == 2   
                     ^^^

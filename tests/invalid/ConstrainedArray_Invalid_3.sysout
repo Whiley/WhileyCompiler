@@ -1,3 +1,3 @@
-tests/invalid/ConstrainedArray_Invalid_3.whiley:5: type invariant may not be satisfied {}
+ConstrainedArray_Invalid_3.whiley:5: type invariant may not be satisfied {}
     return [-1]
            ^^^^

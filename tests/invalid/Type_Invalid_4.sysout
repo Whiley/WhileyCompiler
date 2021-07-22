@@ -1,6 +1,6 @@
-tests/invalid/Type_Invalid_4.whiley:1: empty type encountered
+Type_Invalid_4.whiley:1: empty type encountered
 type Point is {
      ^^^^^
-tests/invalid/Type_Invalid_4.whiley:6: expected Point, found null
+Type_Invalid_4.whiley:6: expected Point, found null
     return null
            ^^^^

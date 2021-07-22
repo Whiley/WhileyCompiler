@@ -1,3 +1,3 @@
-tests/invalid/While_Invalid_2.whiley:5: unable to resolve name
+While_Invalid_2.whiley:5: unable to resolve name
     while i < |args| where j > 0:
                            ^

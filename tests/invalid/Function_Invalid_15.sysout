@@ -1,3 +1,3 @@
-tests/invalid/Function_Invalid_15.whiley:1: unknown type encountered
+Function_Invalid_15.whiley:1: unknown type encountered
 type fn_t is function()->()
                           ^

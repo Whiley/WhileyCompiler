@@ -1,6 +1,6 @@
-tests/invalid/Record_Invalid_3.whiley:5: variable may be uninitialised
+Record_Invalid_3.whiley:5: variable may be uninitialised
     r.tag = tag
     ^
-tests/invalid/Record_Invalid_3.whiley:6: variable may be uninitialised
+Record_Invalid_3.whiley:6: variable may be uninitialised
     return r
            ^

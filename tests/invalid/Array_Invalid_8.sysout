@@ -1,3 +1,3 @@
-tests/invalid/Array_Invalid_8.whiley:10: possible index out of bounds (negative) 
+Array_Invalid_8.whiley:10: possible index out of bounds (negative) 
     xs[xs[f([0])]] = 1
        ^^^^^^^^^^

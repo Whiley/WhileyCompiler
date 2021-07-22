@@ -1,6 +1,6 @@
-tests/invalid/StaticVar_Invalid_6.whiley:1: cyclic static initialiser
+StaticVar_Invalid_6.whiley:1: cyclic static initialiser
 int x = y + 1
         ^^^^^
-tests/invalid/StaticVar_Invalid_6.whiley:2: cyclic static initialiser
+StaticVar_Invalid_6.whiley:2: cyclic static initialiser
 int y = x
         ^

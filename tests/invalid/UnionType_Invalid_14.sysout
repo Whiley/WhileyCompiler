@@ -1,6 +1,6 @@
-tests/invalid/UnionType_Invalid_14.whiley:4: expected record
+UnionType_Invalid_14.whiley:4: expected record
     r.y = 1
     ^
-tests/invalid/UnionType_Invalid_14.whiley:5: expected {int x, ...}, found rec_t
+UnionType_Invalid_14.whiley:5: expected {int x, ...}, found rec_t
     return r.x
            ^

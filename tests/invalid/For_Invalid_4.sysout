@@ -1,9 +1,9 @@
-tests/invalid/For_Invalid_4.whiley:4: variable may be uninitialised
+For_Invalid_4.whiley:4: variable may be uninitialised
     for i in 0..5 where r >= 0:
                         ^
-tests/invalid/For_Invalid_4.whiley:5: variable may be uninitialised
+For_Invalid_4.whiley:5: variable may be uninitialised
         r = r + i
             ^
-tests/invalid/For_Invalid_4.whiley:7: variable may be uninitialised
+For_Invalid_4.whiley:7: variable may be uninitialised
     assume r == (0+1+2+3+4)
            ^

@@ -1,3 +1,3 @@
-tests/invalid/ConstrainedInt_Invalid_8.whiley:9: type invariant may not be satisfied {}
+ConstrainedInt_Invalid_8.whiley:9: type invariant may not be satisfied {}
     return (nat) h()
                  ^^^

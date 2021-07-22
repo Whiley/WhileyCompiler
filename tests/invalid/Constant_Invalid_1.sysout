@@ -1,6 +1,6 @@
-tests/invalid/Constant_Invalid_1.whiley:1: cyclic static initialiser
+Constant_Invalid_1.whiley:1: cyclic static initialiser
 int X = 1 + Y
         ^^^^^
-tests/invalid/Constant_Invalid_1.whiley:2: cyclic static initialiser
+Constant_Invalid_1.whiley:2: cyclic static initialiser
 int Y = 1 + X
         ^^^^^

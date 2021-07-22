@@ -1,6 +1,6 @@
-tests/invalid/UnionType_Invalid_11.whiley:3: expected int, found bool
+UnionType_Invalid_11.whiley:3: expected int, found bool
     x.f = false
           ^^^^^
-tests/invalid/UnionType_Invalid_11.whiley:5: expected record
+UnionType_Invalid_11.whiley:5: expected record
     y.f = false
     ^

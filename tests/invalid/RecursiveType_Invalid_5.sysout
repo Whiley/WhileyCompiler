@@ -1,6 +1,6 @@
-tests/invalid/RecursiveType_Invalid_5.whiley:5: unable to resolve name
+RecursiveType_Invalid_5.whiley:5: unable to resolve name
 type Var is {string id}
              ^^^^^^
-tests/invalid/RecursiveType_Invalid_5.whiley:7: unable to resolve name
+RecursiveType_Invalid_5.whiley:7: unable to resolve name
 type SyntaxError is {string err}
                      ^^^^^^

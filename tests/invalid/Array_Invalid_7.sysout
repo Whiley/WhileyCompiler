@@ -1,6 +1,6 @@
-tests/invalid/Array_Invalid_7.whiley:3: variable may be uninitialised
+Array_Invalid_7.whiley:3: variable may be uninitialised
     r[0] = tag
     ^
-tests/invalid/Array_Invalid_7.whiley:4: variable may be uninitialised
+Array_Invalid_7.whiley:4: variable may be uninitialised
     return r
            ^

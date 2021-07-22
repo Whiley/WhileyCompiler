@@ -1,3 +1,3 @@
-tests/invalid/Fail_Invalid_1.whiley:11: possible panic {x=0}
+Fail_Invalid_1.whiley:11: possible panic {x=0}
         fail
         ^^^^

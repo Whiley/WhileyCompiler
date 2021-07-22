@@ -1,3 +1,3 @@
-tests/invalid/ArrayLength_Invalid_1.whiley:8: assertion may not hold 
+ArrayLength_Invalid_1.whiley:8: assertion may not hold 
     assert |arr| == 4
            ^^^^^^^^^^

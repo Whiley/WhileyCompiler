@@ -1,3 +1,3 @@
-tests/invalid/Infeasible_Constant_1.whiley:3: type invariant may not be satisfied {}
+Infeasible_Constant_1.whiley:3: type invariant may not be satisfied {}
 nat x = -1
         ^^

@@ -1,3 +1,3 @@
-tests/invalid/Template_Invalid_21.whiley:4: method invocation not permitted
+Template_Invalid_21.whiley:4: method invocation not permitted
 property g(int x) where f(x)
                         ^^^^

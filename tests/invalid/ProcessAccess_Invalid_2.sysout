@@ -1,3 +1,3 @@
-tests/invalid/ProcessAccess_Invalid_2.whiley:6: expected state, found {int z,int x}
+ProcessAccess_Invalid_2.whiley:6: expected state, found {int z,int x}
     _this = new {z: 4, x: 3}
                 ^^^^^^^^^^^^

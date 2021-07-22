@@ -1,3 +1,3 @@
-tests/invalid/ArrayAccess_Invalid_3.whiley:11: expected {int data,int mode}[], found tup[]
+ArrayAccess_Invalid_3.whiley:11: expected {int data,int mode}[], found tup[]
     return f(tups)
              ^^^^

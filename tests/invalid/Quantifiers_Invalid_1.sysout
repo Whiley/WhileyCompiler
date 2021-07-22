@@ -1,3 +1,3 @@
-tests/invalid/Quantifiers_Invalid_1.whiley:7: precondition may not be satisfied {}
+Quantifiers_Invalid_1.whiley:7: precondition may not be satisfied {}
     f([1, 2, 3])
     ^^^^^^^^^^^^

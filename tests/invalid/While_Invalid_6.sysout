@@ -1,9 +1,9 @@
-tests/invalid/While_Invalid_6.whiley:3: expected int, found int[]
+While_Invalid_6.whiley:3: expected int, found int[]
     int r = [1]
             ^^^
-tests/invalid/While_Invalid_6.whiley:5: expected any[], found int
+While_Invalid_6.whiley:5: expected any[], found int
     while i < |ls| where |r| < 2:
                           ^
-tests/invalid/While_Invalid_6.whiley:6: expected int, found int[]
+While_Invalid_6.whiley:6: expected int, found int[]
         r = [0;0]
             ^^^^^

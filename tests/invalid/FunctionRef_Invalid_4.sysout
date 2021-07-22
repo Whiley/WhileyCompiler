@@ -1,3 +1,3 @@
-tests/invalid/FunctionRef_Invalid_4.whiley:14: expected method(int)->(int), found null|func_t
+FunctionRef_Invalid_4.whiley:14: expected method(int)->(int), found null|func_t
     return y(123)
            ^
