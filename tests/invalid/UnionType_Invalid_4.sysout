@@ -1,9 +1,9 @@
-tests/invalid/UnionType_Invalid_4.whiley:8: expected array
+UnionType_Invalid_4.whiley:8: expected array
     x[0] = false
     ^
-tests/invalid/UnionType_Invalid_4.whiley:10: expected int, found bool
+UnionType_Invalid_4.whiley:10: expected int, found bool
     y[0] = false
            ^^^^^
-tests/invalid/UnionType_Invalid_4.whiley:11: expected int[], found IntBoolList
+UnionType_Invalid_4.whiley:11: expected int[], found IntBoolList
     return f(x)
              ^

@@ -1,4 +1,4 @@
-tests/invalid/Template_Invalid_10.whiley:5: unable to resolve name (is ambiguous)
+Template_Invalid_10.whiley:5: unable to resolve name (is ambiguous)
 	found function Template_Invalid_10::f(T)->(T)
     int x = f(1,1)
             ^

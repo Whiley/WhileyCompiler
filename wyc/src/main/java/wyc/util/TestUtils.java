@@ -221,8 +221,10 @@ public class TestUtils {
 			WhileyFile source = root.get(WhileyFile.ContentType, path);
 			// Construct build repository
 			Build.Repository repository = new ByteRepository(registry, source);
+			// Construct compile task
+			CompileTask task = new CompileTask(path, source);
 			// Apply Whiley Compiler to repository
-			repository.apply(s -> new CompileTask(path, source).apply(s).first());
+			repository.apply(s -> task.apply(s).first());
 			// Read out binary file from build repository
 			WyilFile target = repository.get(WyilFile.ContentType, path);
 			// Write binary file to directory

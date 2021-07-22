@@ -1,6 +1,6 @@
-tests/invalid/OpenRecord_Invalid_2.whiley:7: expected {int x, ...}, found {int z,int y}
+OpenRecord_Invalid_2.whiley:7: expected {int x, ...}, found {int z,int y}
         if r is {int z, int y}:
                 ^^^^^^^^^^^^^^
-tests/invalid/OpenRecord_Invalid_2.whiley:7: expected {int x, ...}, found {int z,int y}
+OpenRecord_Invalid_2.whiley:7: expected {int x, ...}, found {int z,int y}
         if r is {int z, int y}:
                 ^^^^^^^^^^^^^^

@@ -1,6 +1,6 @@
-tests/invalid/Coercion_Invalid_7.whiley:16: expected expr, found int
+Coercion_Invalid_7.whiley:16: expected expr, found int
     f(-1)
       ^^
-tests/invalid/Coercion_Invalid_7.whiley:17: expected expr, found int
+Coercion_Invalid_7.whiley:17: expected expr, found int
     f(1)
       ^

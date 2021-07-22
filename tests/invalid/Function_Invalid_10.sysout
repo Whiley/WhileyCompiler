@@ -1,4 +1,4 @@
-tests/invalid/Function_Invalid_10.whiley:13: unable to resolve name (is ambiguous)
+Function_Invalid_10.whiley:13: unable to resolve name (is ambiguous)
 	found function Function_Invalid_10::f(anat)->(int)
 	found function Function_Invalid_10::f(bnat)->(int)
     f(1)

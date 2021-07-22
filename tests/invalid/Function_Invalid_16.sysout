@@ -1,6 +1,6 @@
-tests/invalid/Function_Invalid_16.whiley:4: expected int, found void
+Function_Invalid_16.whiley:4: expected int, found void
     return f(&h)
            ^^^^^
-tests/invalid/Function_Invalid_16.whiley:7: expected void, found int
+Function_Invalid_16.whiley:7: expected void, found int
     return fn()
            ^^^^

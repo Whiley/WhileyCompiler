@@ -1,3 +1,3 @@
-tests/invalid/UnionType_Invalid_6.whiley:10: expected {int op}, found {int[] op}
+UnionType_Invalid_6.whiley:10: expected {int op}, found {int[] op}
     f(x)
       ^

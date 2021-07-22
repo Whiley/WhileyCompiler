@@ -1,12 +1,12 @@
-tests/invalid/TypeEquals_Invalid_2.whiley:2: branch always taken
+TypeEquals_Invalid_2.whiley:2: branch always taken
     if e is bool:
        ^^^^^^^^^
-tests/invalid/TypeEquals_Invalid_2.whiley:5: expected void, found int
+TypeEquals_Invalid_2.whiley:5: expected void, found int
         if e is int:
                 ^^^
-tests/invalid/TypeEquals_Invalid_2.whiley:5: expected void, found int
+TypeEquals_Invalid_2.whiley:5: expected void, found int
         if e is int:
                 ^^^
-tests/invalid/TypeEquals_Invalid_2.whiley:5: branch always taken
+TypeEquals_Invalid_2.whiley:5: branch always taken
         if e is int:
            ^^^^^^^^

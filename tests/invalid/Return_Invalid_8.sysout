@@ -1,3 +1,3 @@
-tests/invalid/Return_Invalid_8.whiley:2: expected int, found bool
+Return_Invalid_8.whiley:2: expected int, found bool
     return x && !y
            ^^^^^^^

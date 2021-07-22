@@ -1,3 +1,3 @@
-tests/invalid/RecursiveType_Invalid_8.whiley:18: type invariant may not be satisfied {e1={op=3, left=1, right=2}}
+RecursiveType_Invalid_8.whiley:18: type invariant may not be satisfied {e1={op=3, left=1, right=2}}
     return (expr) f((asexpr) e1)
                              ^^

@@ -1,3 +1,3 @@
-tests/invalid/Lambda_Invalid_6.whiley:17: expected fun_t<int|bool>, found function(int)->(int)
+Lambda_Invalid_6.whiley:17: expected fun_t<int|bool>, found function(int)->(int)
     assume map(items,&inc) == [2,3,4]
                      ^^^^

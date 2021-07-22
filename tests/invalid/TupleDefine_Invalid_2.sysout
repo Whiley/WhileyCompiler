@@ -1,3 +1,3 @@
-tests/invalid/TupleDefine_Invalid_2.whiley:7: type invariant may not be satisfied {}
+TupleDefine_Invalid_2.whiley:7: type invariant may not be satisfied {}
     point p = {y: 1, x: -1}
               ^^^^^^^^^^^^^

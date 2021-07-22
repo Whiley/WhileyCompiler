@@ -1,3 +1,3 @@
-tests/invalid/UnknownReference_Invalid_5.whiley:4: cannot dereference dynamically sized type
+UnknownReference_Invalid_5.whiley:4: cannot dereference dynamically sized type
     *p = [4,5,6]
      ^

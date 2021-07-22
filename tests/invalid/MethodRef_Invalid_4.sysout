@@ -1,3 +1,3 @@
-tests/invalid/MethodRef_Invalid_4.whiley:8: expected Transformer, found method(int)->(int)
+MethodRef_Invalid_4.whiley:8: expected Transformer, found method(int)->(int)
     return &(int x -> g(x))
            ^^^^^^^^^^^^^^^^

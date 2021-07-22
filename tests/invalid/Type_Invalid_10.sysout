@@ -1,6 +1,6 @@
-tests/invalid/Type_Invalid_10.whiley:1: empty type encountered
+Type_Invalid_10.whiley:1: empty type encountered
 type Other is Contractive
      ^^^^^
-tests/invalid/Type_Invalid_10.whiley:2: empty type encountered
+Type_Invalid_10.whiley:2: empty type encountered
 type Contractive is Other[]
      ^^^^^^^^^^^

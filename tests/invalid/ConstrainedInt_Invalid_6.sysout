@@ -1,3 +1,3 @@
-tests/invalid/ConstrainedInt_Invalid_6.whiley:8: type invariant may not be satisfied {z=0}
+ConstrainedInt_Invalid_6.whiley:8: type invariant may not be satisfied {z=0}
     return f((c3num) z)
                      ^

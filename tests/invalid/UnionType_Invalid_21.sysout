@@ -1,3 +1,3 @@
-tests/invalid/UnionType_Invalid_21.whiley:4: expected {LinkedList next, ...}, found LinkedList
+UnionType_Invalid_21.whiley:4: expected {LinkedList next, ...}, found LinkedList
     return list.next
            ^^^^

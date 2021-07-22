@@ -1,3 +1,3 @@
-tests/invalid/While_Invalid_8.whiley:5: loop invariant may not hold on entry {i=0, ls=[], r=[]}
+While_Invalid_8.whiley:5: loop invariant may not hold on entry {i=0, ls=[], r=[]}
     while i < |ls| where |r| > 0:
                          ^^^^^^^

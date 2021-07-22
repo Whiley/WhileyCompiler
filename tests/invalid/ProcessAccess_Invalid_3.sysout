@@ -1,6 +1,6 @@
-tests/invalid/ProcessAccess_Invalid_3.whiley:4: expected record
+ProcessAccess_Invalid_3.whiley:4: expected record
     p.data = _this.data
     ^
-tests/invalid/ProcessAccess_Invalid_3.whiley:4: expected record
+ProcessAccess_Invalid_3.whiley:4: expected record
     p.data = _this.data
              ^^^^^

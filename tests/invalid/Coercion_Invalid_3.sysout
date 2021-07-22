@@ -1,3 +1,3 @@
-tests/invalid/Coercion_Invalid_3.whiley:6: expected {pos f}|{neg f}, found {nat f}
+Coercion_Invalid_3.whiley:6: expected {pos f}|{neg f}, found {nat f}
     return r
            ^

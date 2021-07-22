@@ -1,8 +1,8 @@
-tests/invalid/Template_Invalid_27.whiley:11: unable to resolve name (is ambiguous)
+Template_Invalid_27.whiley:11: unable to resolve name (is ambiguous)
 	found method Template_Invalid_27::consume(S)
     consume(&fun)
     ^^^^^^^
-tests/invalid/Template_Invalid_27.whiley:11: unable to resolve name (is ambiguous)
+Template_Invalid_27.whiley:11: unable to resolve name (is ambiguous)
 	found function Template_Invalid_27::fun(S,T)->(T)
 	found function Template_Invalid_27::fun(T)->(T)
     consume(&fun)

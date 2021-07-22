@@ -1,9 +1,9 @@
-tests/invalid/ConstrainedInt_Invalid_11.whiley:11: unable to resolve name (is ambiguous)
+ConstrainedInt_Invalid_11.whiley:11: unable to resolve name (is ambiguous)
 	found function ConstrainedInt_Invalid_11::f(nat)
 	found function ConstrainedInt_Invalid_11::f(pos)
     f(-1)
     ^
-tests/invalid/ConstrainedInt_Invalid_11.whiley:12: unable to resolve name (is ambiguous)
+ConstrainedInt_Invalid_11.whiley:12: unable to resolve name (is ambiguous)
 	found function ConstrainedInt_Invalid_11::f(nat)
 	found function ConstrainedInt_Invalid_11::f(pos)
     f(1)

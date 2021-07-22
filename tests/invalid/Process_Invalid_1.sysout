@@ -1,15 +1,15 @@
-tests/invalid/Process_Invalid_1.whiley:5: expected record
+Process_Invalid_1.whiley:5: expected record
     _this.data = d
     ^^^^^
-tests/invalid/Process_Invalid_1.whiley:8: expected {int data, ...}, found MyProc1
+Process_Invalid_1.whiley:8: expected {int data, ...}, found MyProc1
     return _this.data
            ^^^^^
-tests/invalid/Process_Invalid_1.whiley:14: expected MyProc2, found MyProc1
+Process_Invalid_1.whiley:14: expected MyProc2, found MyProc1
     MyProc2 p = create(1)
                 ^^^^^^^^^
-tests/invalid/Process_Invalid_1.whiley:15: expected record
+Process_Invalid_1.whiley:15: expected record
     p.set(false)
     ^
-tests/invalid/Process_Invalid_1.whiley:16: expected MyProc1, found MyProc2
+Process_Invalid_1.whiley:16: expected MyProc1, found MyProc2
     return get(p)
                ^

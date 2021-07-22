@@ -1,6 +1,6 @@
-tests/invalid/UnionType_Invalid_12.whiley:3: expected int, found bool
+UnionType_Invalid_12.whiley:3: expected int, found bool
     *x = false
          ^^^^^
-tests/invalid/UnionType_Invalid_12.whiley:5: expected reference
+UnionType_Invalid_12.whiley:5: expected reference
     *y = false
      ^

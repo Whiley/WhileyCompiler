@@ -1,6 +1,6 @@
-tests/invalid/Template_Invalid_31.whiley:4: expected fun_t<int|bool>, found fun_t<int>
+Template_Invalid_31.whiley:4: expected fun_t<int|bool>, found fun_t<int>
     return fn
            ^^
-tests/invalid/Template_Invalid_31.whiley:7: expected function(int|bool)->(int), found fun_t<int>
+Template_Invalid_31.whiley:7: expected function(int|bool)->(int), found fun_t<int>
     return fn
            ^^

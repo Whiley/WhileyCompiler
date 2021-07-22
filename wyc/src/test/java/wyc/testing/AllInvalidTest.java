@@ -47,7 +47,7 @@ public class AllInvalidTest {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "tests/invalid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "../tests/invalid".replace('/', File.separatorChar);
 
 	/**
 	 * Ignored tests and a reason why we ignore them.
@@ -84,11 +84,135 @@ public class AllInvalidTest {
 		IGNORED.put("Subtype_Invalid_11", "??");
 		IGNORED.put("Subtype_Invalid_12", "??");
 		IGNORED.put("Subtype_Invalid_13", "??");
-		// ===============================================================
-		// Whiley Theorem Prover faults
-		// ===============================================================
 		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
+		// Ignored because removed theorem prover
+		IGNORED.put("ArrayAccess_Invalid_2", "???");
+		IGNORED.put("ArrayAccess_Invalid_4", "???");
+		IGNORED.put("ArrayAccess_Invalid_5", "???");
+		IGNORED.put("ArrayAssign_Invalid_2", "???");
+		IGNORED.put("ArrayAssign_Invalid_3", "???");
+		IGNORED.put("ArrayEmpty_Invalid_2", "???");
+		IGNORED.put("ArrayEquals_Invalid_1", "???");
+		IGNORED.put("ArrayGenerator_Invalid_1", "???");
+		IGNORED.put("ArrayGenerator_Invalid_2", "???");
+		IGNORED.put("ArrayLength_Invalid_1", "???");
+		IGNORED.put("ArrayLength_Invalid_2", "???");
+		IGNORED.put("ArrayLength_Invalid_3", "???");
+		IGNORED.put("ArrayUpdate_Invalid_1", "???");
+		IGNORED.put("Array_Invalid_10", "???");
+		IGNORED.put("Array_Invalid_11", "???");
+		IGNORED.put("Array_Invalid_12", "???");
+		IGNORED.put("Array_Invalid_13", "???");
+		IGNORED.put("Array_Invalid_14", "???");
+		IGNORED.put("Array_Invalid_15", "???");
+		IGNORED.put("Array_Invalid_16", "???");
+		IGNORED.put("Array_Invalid_17", "???");
+		IGNORED.put("Array_Invalid_18", "???");
+		IGNORED.put("Array_Invalid_19", "???");
+		IGNORED.put("Array_Invalid_20", "???");
+		IGNORED.put("Array_Invalid_21", "???");
+		IGNORED.put("Array_Invalid_22", "???");
+		IGNORED.put("Array_Invalid_23", "???");
+		IGNORED.put("Array_Invalid_24", "???");
+		IGNORED.put("Array_Invalid_8", "???");
+		IGNORED.put("Array_Invalid_9", "???");
+		IGNORED.put("Assert_Invalid_3", "???");
+		IGNORED.put("Byte_Invalid_2", "???");
+		IGNORED.put("ConstrainedArray_Invalid_1", "???");
+		IGNORED.put("ConstrainedArray_Invalid_2", "???");
+		IGNORED.put("ConstrainedArray_Invalid_3", "???");
+		IGNORED.put("ConstrainedInt_Invalid_1", "???");
+		IGNORED.put("ConstrainedInt_Invalid_12", "???");
+		IGNORED.put("ConstrainedInt_Invalid_2", "???");
+		IGNORED.put("ConstrainedInt_Invalid_3", "???");
+		IGNORED.put("ConstrainedInt_Invalid_4", "???");
+		IGNORED.put("ConstrainedInt_Invalid_5", "???");
+		IGNORED.put("ConstrainedInt_Invalid_6", "???");
+		IGNORED.put("ConstrainedInt_Invalid_7", "???");
+		IGNORED.put("ConstrainedInt_Invalid_8", "???");
+		IGNORED.put("ConstrainedInt_Invalid_9", "???");
+		IGNORED.put("ConstrainedRecord_Invalid_1", "???");
+		IGNORED.put("DoWhile_Invalid_1", "???");
+		IGNORED.put("DoWhile_Invalid_2", "???");
+		IGNORED.put("DoWhile_Invalid_3", "???");
+		IGNORED.put("DoWhile_Invalid_4", "???");
+		IGNORED.put("DoWhile_Invalid_7", "???");
+		IGNORED.put("EndOfFile_Invalid_1", "???");
+		IGNORED.put("Ensures_Invalid_1", "???");
+		IGNORED.put("Ensures_Invalid_3", "???");
+		IGNORED.put("Ensures_Invalid_4", "???");
+		IGNORED.put("Fail_Invalid_1", "???");
+		IGNORED.put("Fail_Invalid_3", "???");
+		IGNORED.put("For_Invalid_7", "???");
+		IGNORED.put("For_Invalid_8", "???");
+		IGNORED.put("If_Invalid_5", "???");
+		IGNORED.put("Infeasible_Constant_1", "???");
+		IGNORED.put("Infeasible_Function_1", "???");
+		IGNORED.put("Infeasible_Function_5", "???");
+		IGNORED.put("Infeasible_Function_6", "???");
+		IGNORED.put("IntDiv_Invalid_1", "???");
+		IGNORED.put("Lambda_Invalid_3", "???");
+		IGNORED.put("Parsing_Invalid_32", "???");
+		IGNORED.put("Property_Invalid_2", "???");
+		IGNORED.put("Property_Invalid_3", "???");
+		IGNORED.put("Property_Invalid_4", "???");
+		IGNORED.put("Property_Invalid_8", "???");
+		IGNORED.put("Quantifiers_Invalid_1", "???");
+		IGNORED.put("Quantifiers_Invalid_2", "???");
+		IGNORED.put("Quantifiers_Invalid_3", "???");
+		IGNORED.put("Quantifiers_Invalid_4", "???");
+		IGNORED.put("Quantifiers_Invalid_5", "???");
+		IGNORED.put("Quantifiers_Invalid_6", "???");
+		IGNORED.put("Quantifiers_Invalid_7", "???");
+		IGNORED.put("Quantifiers_Invalid_8", "???");
+		IGNORED.put("RecursiveType_Invalid_1", "???");
+		IGNORED.put("RecursiveType_Invalid_10", "???");
+		IGNORED.put("RecursiveType_Invalid_4", "???");
+		IGNORED.put("RecursiveType_Invalid_7", "???");
+		IGNORED.put("RecursiveType_Invalid_8", "???");
+		IGNORED.put("Reference_Invalid_6", "???");
+		IGNORED.put("Remainder_Invalid_1", "???");
+		IGNORED.put("Requires_Invalid_1", "???");
+		IGNORED.put("StaticVar_Invalid_5", "???");
+		IGNORED.put("Subtype_Invalid_1", "???");
+		IGNORED.put("Subtype_Invalid_10", "???");
+		IGNORED.put("Subtype_Invalid_2", "???");
+		IGNORED.put("Subtype_Invalid_3", "???");
+		IGNORED.put("Subtype_Invalid_4", "???");
+		IGNORED.put("Subtype_Invalid_5", "???");
+		IGNORED.put("Subtype_Invalid_6", "???");
+		IGNORED.put("Subtype_Invalid_7", "???");
+		IGNORED.put("Subtype_Invalid_8", "???");
+		IGNORED.put("Subtype_Invalid_9", "???");
+		IGNORED.put("Template_Invalid_18", "???");
+		IGNORED.put("TupleAssign_Invalid_1", "???");
+		IGNORED.put("TupleAssign_Invalid_2", "???");
+		IGNORED.put("TupleDefine_Invalid_2", "???");
+		IGNORED.put("Tuple_Invalid_3", "???");
+		IGNORED.put("Tuple_Invalid_4", "???");
+		IGNORED.put("Tuple_Invalid_5", "???");
+		IGNORED.put("Tuple_Invalid_8", "???");
+		IGNORED.put("TypeEquals_Invalid_12", "???");
+		IGNORED.put("TypeEquals_Invalid_6", "???");
+		IGNORED.put("UnionType_Invalid_10", "???");
+		IGNORED.put("UnionType_Invalid_7", "???");
+		IGNORED.put("UnionType_Invalid_8", "???");
+		IGNORED.put("UnionType_Invalid_9", "???");
+		IGNORED.put("VarDecl_Invalid_2", "???");
+		IGNORED.put("VarDecl_Invalid_4", "???");
+		IGNORED.put("While_Invalid_10", "???");
+		IGNORED.put("While_Invalid_11", "???");
+		IGNORED.put("While_Invalid_12", "???");
+		IGNORED.put("While_Invalid_13", "???");
+		IGNORED.put("While_Invalid_15", "???");
+		IGNORED.put("While_Invalid_17", "???");
+		IGNORED.put("While_Invalid_19", "???");
+		IGNORED.put("While_Invalid_5", "???");
+		IGNORED.put("While_Invalid_7", "???");
+		IGNORED.put("While_Invalid_8", "???");
+		IGNORED.put("While_Invalid_9", "???");
+
 	}
 
 	// ======================================================================

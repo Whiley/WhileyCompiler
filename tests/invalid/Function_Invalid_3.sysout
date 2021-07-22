@@ -1,4 +1,4 @@
-tests/invalid/Function_Invalid_3.whiley:5: unable to resolve name (is ambiguous)
+Function_Invalid_3.whiley:5: unable to resolve name (is ambiguous)
 	found method Function_Invalid_3::f(int,int)->(int)
     return f(1)
            ^

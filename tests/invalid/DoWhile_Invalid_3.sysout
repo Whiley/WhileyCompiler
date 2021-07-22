@@ -1,3 +1,3 @@
-tests/invalid/DoWhile_Invalid_3.whiley:12: loop invariant may not be established by first iteration {i=0, i$1=0, i$2=1, i$3=1, n=0}
+DoWhile_Invalid_3.whiley:12: loop invariant may not be established by first iteration {i=0, i$1=0, i$2=1, i$3=1, n=0}
     while i < n where i >= 0 && i <= n
                       ^^^^^^^^^^^^^^^^

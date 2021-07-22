@@ -1,3 +1,3 @@
-tests/invalid/While_Invalid_15.whiley:7: loop invariant may not be restored {i=0, i$1=3, i$2=5, i$3=0, i$4=5, n=4}
+While_Invalid_15.whiley:7: loop invariant may not be restored {i=0, i$1=3, i$2=5, i$3=0, i$4=5, n=4}
     while i < n where i >= 0 && i <= n:
                       ^^^^^^^^^^^^^^^^

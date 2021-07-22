@@ -1,6 +1,6 @@
-tests/invalid/Lambda_Invalid_8.whiley:7: expected function(int|bool)->(int), found function(int)->(int)
+Lambda_Invalid_8.whiley:7: expected function(int|bool)->(int), found function(int)->(int)
     function(int|bool)->(int) fn1 = &id
                                     ^^^
-tests/invalid/Lambda_Invalid_8.whiley:9: expected fun_t<int|bool>, found fun_t<int>
+Lambda_Invalid_8.whiley:9: expected fun_t<int|bool>, found fun_t<int>
     fun_t<int|bool> fn3 = fn2
                           ^^^

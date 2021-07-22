@@ -1,9 +1,9 @@
-tests/invalid/Parsing_Invalid_31.whiley:5: expected int, found void
+Parsing_Invalid_31.whiley:5: expected int, found void
     int a1 = m()
              ^^^
-tests/invalid/Parsing_Invalid_31.whiley:6: expected int, found void
+Parsing_Invalid_31.whiley:6: expected int, found void
     int a2 = m()+1
              ^^^
-tests/invalid/Parsing_Invalid_31.whiley:7: expected int, found void
+Parsing_Invalid_31.whiley:7: expected int, found void
     int[] a3 = [m()]
                 ^^^

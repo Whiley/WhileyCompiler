@@ -1,3 +1,3 @@
-tests/invalid/Template_Invalid_2.whiley:1: expecting "Identifier" here
+Template_Invalid_2.whiley:1: expecting "Identifier" here
 type nat<int> is (int x) where x >= 0
          ^^^

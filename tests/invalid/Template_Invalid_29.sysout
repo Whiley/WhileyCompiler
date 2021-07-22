@@ -1,3 +1,3 @@
-tests/invalid/Template_Invalid_29.whiley:8: expected (Option<int>,Option<bool>), found (Option<any>,Option<any>)
+Template_Invalid_29.whiley:8: expected (Option<int>,Option<bool>), found (Option<any>,Option<any>)
     (Option<int> i, Option<bool> j) = empty()
                                       ^^^^^^^

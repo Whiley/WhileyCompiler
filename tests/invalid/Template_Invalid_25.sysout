@@ -1,6 +1,6 @@
-tests/invalid/Template_Invalid_25.whiley:1: insufficient template parameters
+Template_Invalid_25.whiley:1: insufficient template parameters
 type LinkedList<T> is null | { LinkedList next, T data }
                                ^^^^^^^^^^
-tests/invalid/Template_Invalid_25.whiley:2: too many template parameters
+Template_Invalid_25.whiley:2: too many template parameters
 type BinaryTree<T> is null | { BinaryTree<T> left, BinaryTree<T,T> right, T data }
                                                    ^^^^^^^^^^

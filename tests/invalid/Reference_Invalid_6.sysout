@@ -1,3 +1,3 @@
-tests/invalid/Reference_Invalid_6.whiley:10: assertion may not hold 
+Reference_Invalid_6.whiley:10: assertion may not hold 
         assert head != tail
                ^^^^^^^^^^^^

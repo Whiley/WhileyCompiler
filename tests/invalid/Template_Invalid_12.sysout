@@ -1,6 +1,6 @@
-tests/invalid/Template_Invalid_12.whiley:2: expected int, found T
+Template_Invalid_12.whiley:2: expected int, found T
     return x
            ^
-tests/invalid/Template_Invalid_12.whiley:5: expected bool, found int
+Template_Invalid_12.whiley:5: expected bool, found int
     bool x = f(1)
              ^^^^

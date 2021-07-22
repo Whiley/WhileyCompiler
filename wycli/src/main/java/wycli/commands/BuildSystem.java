@@ -216,7 +216,7 @@ public class BuildSystem implements Command {
 	public static void printSyntacticMarkers(PrintStream output, SyntacticItem.Marker marker, SourceFile... sources) {
 		// Identify enclosing source file
 		SourceFile source = getSourceEntry(marker.getSource(), sources);
-		String filename = source.getPath().toString();
+		String filename = source.getPath().toString() + "." + source.getContentType().getSuffix();
 		//
 		Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
 		// Read the enclosing line so we can print it
