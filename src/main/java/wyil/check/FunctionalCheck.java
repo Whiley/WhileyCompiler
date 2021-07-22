@@ -13,9 +13,8 @@
 // limitations under the License.
 package wyil.check;
 
-import wybs.lang.Build;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.Build;
+import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;

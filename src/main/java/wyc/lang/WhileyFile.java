@@ -20,18 +20,17 @@ import java.util.Collections;
 import java.util.List;
 
 import wyc.io.WhileyFileLexer;
-import wybs.lang.SourceFile;
-import wyfs.lang.Content;
-import wyfs.lang.Content.Type;
-import wyfs.lang.Path;
-import wyfs.lang.Path.ID;
+import wycc.lang.Content;
+import wycc.lang.Path;
+import wycc.lang.SourceFile;
+import wycc.lang.Content.Type;
 
 public class WhileyFile extends SourceFile {
 	// =========================================================================
 	// Source Content Type
 	// =========================================================================
 
-	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
+	public static final Content.Type<WhileyFile> ContentType = new Content.Type<>() {
 
 		/**
 		 * This method simply parses a whiley file into an abstract syntax tree. It
@@ -44,12 +43,13 @@ public class WhileyFile extends SourceFile {
 		 * @throws IOException
 		 */
 		@Override
-		public WhileyFile read(Path.Entry<WhileyFile> e, InputStream inputstream) throws IOException {
-			return new WhileyFile(e);
+		public WhileyFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
+			return new WhileyFile(id,in.readAllBytes());
 		}
 
 		@Override
 		public void write(OutputStream output, WhileyFile value) throws IOException {
+
 			output.write(value.getBytes());
 		}
 
@@ -64,49 +64,41 @@ public class WhileyFile extends SourceFile {
 		}
 
 		@Override
-		public WhileyFile read(ID id, InputStream input) throws IOException {
-			return new WhileyFile(id, input.readAllBytes());
+		public boolean includes(Class<?> kind) {
+			return kind == WhileyFile.class;
 		}
 	};
 
-	private final Path.Entry<WhileyFile> entry;
-	private final Path.ID ID;
+	private final Path path;
 
 	private final List<WhileyFileLexer.Token> tokens;
 
-	public WhileyFile(Path.Entry<WhileyFile> entry) throws IOException {
-		super(entry.id(), null);
-		this.entry = entry;
-		this.tokens = new WhileyFileLexer(entry).scan();
-		this.ID = entry.id();
-	}
-
-	public WhileyFile(Path.ID ID, byte[] bytes) {
+	public WhileyFile(Path ID, byte[] bytes) {
 		this(ID,new String(bytes));
 	}
 
-	public WhileyFile(Path.ID ID, String content) {
+	public WhileyFile(Path ID, String content) {
 		super(ID, content);
-		this.entry = null;
 		this.tokens = new WhileyFileLexer(content).scan();
-		this.ID = ID;
+		this.path = ID;
 	}
 
 	@Override
-	public ID getID() {
-		return ID;
+	public Path getPath() {
+		return path;
 	}
 
 	@Override
-	public Type<?> getContentType() {
-		return ContentType;
-	}
-	
-	public Path.Entry<WhileyFile> getEntry() {
-		return entry;
+	public Content.Type<WhileyFile> getContentType() {
+		return WhileyFile.ContentType;
 	}
 
 	public List<WhileyFileLexer.Token> getTokens() {
 		return Collections.unmodifiableList(tokens);
+	}
+
+	@Override
+	public String toString() {
+		return path + ":whiley";
 	}
 }

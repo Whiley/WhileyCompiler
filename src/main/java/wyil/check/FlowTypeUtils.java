@@ -13,37 +13,32 @@
 // limitations under the License.
 package wyil.check;
 
-import wybs.lang.*;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Pair;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Pair;
 
-import static wybs.util.AbstractCompilationUnit.ITEM_bool;
-import static wybs.util.AbstractCompilationUnit.ITEM_byte;
-import static wybs.util.AbstractCompilationUnit.ITEM_int;
-import static wybs.util.AbstractCompilationUnit.ITEM_null;
-import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
+import static wycc.util.AbstractCompilationUnit.ITEM_bool;
+import static wycc.util.AbstractCompilationUnit.ITEM_byte;
+import static wycc.util.AbstractCompilationUnit.ITEM_int;
+import static wycc.util.AbstractCompilationUnit.ITEM_null;
+import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
-import java.sql.Types;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import org.apache.tools.ant.types.Environment;
-
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
-import wyfs.util.ArrayUtils;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Stmt;
-import wyil.lang.WyilFile.Template;
 import wyil.lang.WyilFile.Type;
 import wyil.util.*;
 
@@ -1153,14 +1148,14 @@ public class FlowTypeUtils {
 			 * @param n
 			 * @return
 			 */
-			public wyfs.util.Pair<Row,Type.Existential[]> fresh(int n) {
+			public wycc.util.Pair<Row,Type.Existential[]> fresh(int n) {
 				int m = constraints.maxVariable() + 1;
 				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != vars.length; ++i) {
 					vars[i] = new Type.Existential(m + i);
 				}
 				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
-				return new wyfs.util.Pair<>(nrow,vars);
+				return new wycc.util.Pair<>(nrow,vars);
 			}
 
 			public Row set(int index, Type type) {
@@ -1281,6 +1276,6 @@ public class FlowTypeUtils {
 
 	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu, e);
 	}
 }

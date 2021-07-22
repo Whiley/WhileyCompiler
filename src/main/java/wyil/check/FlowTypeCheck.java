@@ -21,14 +21,12 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.*;
-import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.ResolveError;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
-import wyfs.util.ArrayUtils;
+import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
 import static wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
@@ -597,8 +595,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		// Type check loop body
@@ -650,8 +646,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
 		// Check condition and apply variable retypings.
@@ -679,8 +673,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *                    into this block
 	 * @param scope       The stack of enclosing scopes
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
@@ -825,8 +817,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param environment Determines the type of all variables immediately going
 	 *                    into this block
 	 * @return
-	 * @throws ResolveError If a named type within this statement cannot be resolved
-	 *                      within the enclosing project.
 	 */
 	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		// Type loop invariant(s).
@@ -2269,7 +2259,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
 			// fresh (existential) type for each position and subsitute them through.
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
 			row = p.first();
 			templateArguments = new Tuple<>(p.second());
 		}
@@ -2560,7 +2550,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// specific to individual rows.
 			return new Typing.Row[] { row.set(var, Type.AnyArray) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array arr_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
@@ -2620,7 +2610,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
 			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array rec_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
@@ -2679,7 +2669,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
@@ -2746,7 +2736,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
 			Type.Existential[] elements = p.second();
 			Type tup_t = Type.Tuple.create(elements);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
@@ -2884,7 +2874,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wyfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
 			Type.Existential param = p.second()[0];
 			Type.Existential ret = p.second()[1];
 			Type.Callable fun_t = new Type.Function(param, ret);
@@ -3482,12 +3472,12 @@ public class FlowTypeCheck implements Compiler.Check {
 
 	private static <T> T internalFailure(String msg, SyntacticItem e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu.getEntry(), e);
+		throw new SyntacticException(msg, cu, e);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e, Throwable ex) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu.getEntry(), e, ex);
+		throw new SyntacticException(msg, cu, e, ex);
 	}
 
 	// ==========================================================================

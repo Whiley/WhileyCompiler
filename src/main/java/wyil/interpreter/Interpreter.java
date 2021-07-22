@@ -13,11 +13,11 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import static wybs.util.AbstractCompilationUnit.ITEM_bool;
-import static wybs.util.AbstractCompilationUnit.ITEM_byte;
-import static wybs.util.AbstractCompilationUnit.ITEM_int;
-import static wybs.util.AbstractCompilationUnit.ITEM_null;
-import static wybs.util.AbstractCompilationUnit.ITEM_utf8;
+import static wycc.util.AbstractCompilationUnit.ITEM_bool;
+import static wycc.util.AbstractCompilationUnit.ITEM_byte;
+import static wycc.util.AbstractCompilationUnit.ITEM_int;
+import static wycc.util.AbstractCompilationUnit.ITEM_null;
+import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
@@ -26,16 +26,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import wyal.util.NameResolver.ResolutionError;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticHeap;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
-import wyfs.lang.Path;
-import wyfs.util.ArrayUtils;
+import wycc.util.ArrayUtils;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -1581,11 +1577,11 @@ public class Interpreter {
 			return frame;
 		}
 
-		private static Path.Entry<?> extractEntry(SyntacticItem item) {
+		private static Build.Artifact extractEntry(SyntacticItem item) {
 			// FIXME: this feels like a hack
 			SyntacticHeap h = item.getHeap();
 			if (h instanceof WyilFile) {
-				return ((WyilFile) h).getEntry();
+				return ((WyilFile) h);
 			} else {
 				return null;
 			}

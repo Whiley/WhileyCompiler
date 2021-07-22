@@ -27,25 +27,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import wybs.lang.Build;
-import wybs.lang.CompilationUnit;
-import wybs.lang.SyntacticHeap;
-import wybs.lang.SyntacticItem;
-import wybs.lang.SyntacticItem.Descriptor;
-import wybs.util.*;
-import wybs.util.SectionedSchema.Section;
+import wycc.lang.Build;
+import wycc.lang.CompilationUnit;
+import wycc.lang.Content;
+import wycc.lang.SyntacticHeap;
+import wycc.lang.SyntacticItem;
+import wycc.lang.SyntacticItem.Descriptor;
+import wycc.util.*;
+import wycc.util.SectionedSchema.Section;
+import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.lang.Content.Type;
-import wyfs.lang.Path.ID;
-import wyfs.util.ArrayUtils;
-import wyfs.util.Trie;
+import wycc.lang.Path;
+import wycc.util.ArrayUtils;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.util.AbstractConsumer;
-import wyil.util.WyilUtils;
 
 /**
  * <p>
@@ -88,13 +85,13 @@ import wyil.util.WyilUtils;
  * @author David J. Pearce
  *
  */
-public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Entry {
+public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Artifact {
 
 	// =========================================================================
 	// Binary Content Type
 	// =========================================================================
 
-	public static final Content.Type<WyilFile> ContentType = new Content.Printable<WyilFile>() {
+	public static final Content.Type<WyilFile> ContentType = new Content.Type<>() {
 
 		/**
 		 * This method simply parses a whiley file into an abstract syntax tree. It
@@ -107,10 +104,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @throws IOException
 		 */
 		@Override
-		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
-			WyilFile wf = new WyilFileReader(e).read();
-			// new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
-			return wf;
+		public WyilFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
+			return new WyilFileReader(in).read(id);
 		}
 
 		@Override
@@ -135,10 +130,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 //			WyilFileWriter.printMetrics(WyilFile.SCHEMA);
 		}
 
-		@Override
-		public void print(PrintStream output, WyilFile content) throws IOException {
-			new WyilFilePrinter(output).apply(content);
-		}
+//		public void print(PrintStream output, WyilFile content) throws IOException {
+//			new WyilFilePrinter(output).apply(content);
+//		}
 
 		@Override
 		public String toString() {
@@ -151,8 +145,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 
 		@Override
-		public WyilFile read(wyfs.lang.Path.ID id, InputStream input) throws IOException {
-			return new WyilFileReader(input).read(id);
+		public boolean includes(Class<?> kind) {
+			return kind == WyilFile.class;
 		}
 	};
 
@@ -306,33 +300,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Constructors
 	// =========================================================================
 
-	private final Path.ID ID;
+	private final Path ID;
+	private final List<WhileyFile> sourceFiles;
 	private final int majorVersion;
 	private final int minorVersion;
 
-	public WyilFile(Path.Entry<WyilFile> entry) {
-		super(entry);
-		Schema schema = WyilFile.getSchema();
-		this.majorVersion = schema.getMajorVersion();
-		this.minorVersion = schema.getMinorVersion();
-		this.ID = (entry != null) ? entry.id() : null;
-	}
-
-	public WyilFile(Path.ID id) {
-		super(null);
+	public WyilFile(Path id, List<WhileyFile> sourceFiles) {
+		super();
 		this.ID = id;
 		Schema schema = WyilFile.getSchema();
+		this.sourceFiles = new ArrayList<>(sourceFiles);
 		this.majorVersion = schema.getMajorVersion();
 		this.minorVersion = schema.getMinorVersion();
 	}
-	
+
 	/**
 	 * Copy constructor which creates an identical WyilFile.
 	 *
 	 * @param wf
 	 */
-	public WyilFile(Path.Entry<WyilFile> entry, WyilFile wf) {
-		super(entry);
+	public WyilFile(WyilFile wf) {
 		this.majorVersion = wf.majorVersion;
 		this.minorVersion = wf.minorVersion;
 		// Create initial copies
@@ -355,11 +342,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
-		this.ID = (entry != null) ? entry.id() : null;
+		//
+		this.sourceFiles = new ArrayList<>(wf.sourceFiles);
+		this.ID = wf.getPath();
 	}
 
-	public WyilFile(Path.Entry<WyilFile> entry, int root, SyntacticItem[] items, int major, int minor) {
-		super(entry);
+	public WyilFile(Path ID, int root, SyntacticItem[] items, int major, int minor) {
 		this.majorVersion = major;
 		this.minorVersion = minor;
 		// Allocate every item into this heap
@@ -369,41 +357,33 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
-		this.ID = (entry != null) ? entry.id() : null;
-	}
-
-	public WyilFile(Path.ID ID, int root, SyntacticItem[] items, int major, int minor) {
-		super(null);
-		this.majorVersion = major;
-		this.minorVersion = minor;
-		// Allocate every item into this heap
-		for (int i = 0; i != items.length; ++i) {
-			syntacticItems.add(items[i]);
-			items[i].allocate(this, i);
-		}
-		// Set the distinguished root item
-		setRootItem(getSyntacticItem(root));
+		this.sourceFiles = new ArrayList<>();
 		this.ID = ID;
 	}
-	
+
 	// =========================================================================
 	// Accessors
 	// =========================================================================
 
 	@Override
-	public ID getID() {
+	public Path getPath() {
 		return ID;
 	}
 
 	@Override
-	public Content.Type<?> getContentType() {
-		return ContentType;
+	public Content.Type<WyilFile> getContentType() {
+		return WyilFile.ContentType;
 	}
-	
+
+	@Override
+	public List<WhileyFile> getSourceArtifacts() {
+		return sourceFiles;
+	}
+
 	public boolean isValid() {
 		return findAll(SyntacticItem.Marker.class).size() == 0;
 	}
-	
+
 	public int getMajorVersion() {
 		return majorVersion;
 	}
@@ -2190,10 +2170,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				return (Decl.StaticVariable) operands[0];
 			}
 
+			@Override
 			public Tuple<Expr> getInvariant() {
 				return (Tuple<Expr>) operands[1];
 			}
 
+			@Override
 			public Tuple<Decl.Variable> getModified() {
 				return (Tuple<Decl.Variable>)operands[2];
 			}
@@ -2202,6 +2184,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				operands[2] = modified;
 			}
 
+			@Override
 			public Stmt.Block getBody() {
 				return (Stmt.Block) operands[3];
 			}
@@ -7229,11 +7212,21 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Path.ID getSource() {
+			public Path getSource() {
+				// **************************************
+				// FIXME: this is really a temporary hack
+				// **************************************
+				WyilFile bin = (WyilFile) getTarget().getHeap();
 				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
-				// FIXME: this is realy a temporary hack
 				String nameStr = unit.getName().toString().replace("::", "/");
-				return Trie.fromString(nameStr);
+				//
+				for(Build.Artifact s : bin.getSourceArtifacts()) {
+					String n = s.getPath().toString();
+					if(n.endsWith(nameStr)) {
+						return s.getPath();
+					}
+				}
+				return null;
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.TWO, "ATTR_error") {

@@ -34,9 +34,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import wybs.lang.Build;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
+import wycc.lang.Build;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.Named;

@@ -29,8 +29,9 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.util.TestUtils;
-import wyfs.util.Pair;
-import wyfs.util.Trie;
+import wycc.lang.Path;
+import wycc.util.Pair;
+import wycc.util.Trie;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -89,7 +90,7 @@ public class AllValidTest {
 			fail("Test failed to compile!");
 		}
 		// Execute the compile WyIL file
-		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+		TestUtils.execWyil(whileySrcDir, Path.fromString(testName));
 	}
 
 	// ======================================================================

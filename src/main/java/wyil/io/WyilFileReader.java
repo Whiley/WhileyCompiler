@@ -16,12 +16,12 @@ package wyil.io;
 import java.io.IOException;
 import java.io.InputStream;
 
-import wybs.io.SyntacticHeapReader;
-import wybs.lang.*;
-import wybs.lang.SyntacticHeap.Schema;
-import wyfs.io.BinaryInputStream;
-import wyfs.lang.Path;
-import wyfs.util.Pair;
+import wycc.io.SyntacticHeapReader;
+import wycc.lang.*;
+import wycc.lang.SyntacticHeap.Schema;
+import wycc.io.BinaryInputStream;
+import wycc.lang.Path;
+import wycc.util.Pair;
 import wyil.lang.WyilFile;
 
 /**
@@ -33,28 +33,23 @@ import wyil.lang.WyilFile;
  */
 public final class WyilFileReader extends SyntacticHeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
-	private Path.Entry<WyilFile> entry;
 	private int minorVersion;
 	private int majorVersion;
 
-	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
-		super(entry.inputStream());
-		this.entry = entry;
-	}
-	
 	public WyilFileReader(InputStream input) throws IOException {
 		super(input);
 	}
-	
+
 	@Override
 	public WyilFile read() throws IOException {
-		Pair<Integer,SyntacticItem[]> p = readItems();
-		return new WyilFile(entry,p.first(),p.second(), majorVersion, minorVersion);
+//		Pair<Integer,SyntacticItem[]> p = readItems();
+//		return new WyilFile(p.first(), p.second(), majorVersion, minorVersion);
+		throw new IllegalArgumentException("deadcode reached");
 	}
-	
-	public WyilFile read(Path.ID ID) throws IOException {
-		Pair<Integer,SyntacticItem[]> p = readItems();
-		return new WyilFile(ID,p.first(),p.second(), majorVersion, minorVersion);
+
+	public WyilFile read(Path ID) throws IOException {
+		Pair<Integer, SyntacticItem[]> p = readItems();
+		return new WyilFile(ID, p.first(), p.second(), majorVersion, minorVersion);
 	}
 
 	@Override
@@ -74,9 +69,9 @@ public final class WyilFileReader extends SyntacticHeapReader {
 		//
 		if (majorVersion > schema.getMajorVersion()
 				|| (majorVersion == schema.getMajorVersion() && minorVersion > schema.getMinorVersion())) {
-			String msg = "WyilFile compiled with newer version of WyC [" + entry.id() + ", " + majorVersion + "." + minorVersion
+			String msg = "WyilFile compiled with newer version of WyC [" + majorVersion + "." + minorVersion
 					+ " > " + schema.getMajorVersion() + "." + schema.getMinorVersion() + "]";
-			throw new SyntacticException(msg, entry, null);
+			throw new SyntacticException(msg, null, null);
 		} else {
 			schema = selectSchema(majorVersion,minorVersion,schema);
 		}

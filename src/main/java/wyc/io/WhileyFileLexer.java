@@ -15,6 +15,7 @@ package wyc.io;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import wyc.lang.WhileyFile;
-import wyfs.lang.Path;
+import wycc.lang.Path;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -32,13 +33,11 @@ import wyfs.lang.Path;
  *
  */
 public class WhileyFileLexer {
-	private final Path.Entry<WhileyFile> entry;
 	private StringBuilder input;
 	private int pos;
 
-	public WhileyFileLexer(Path.Entry<WhileyFile> entry) throws IOException {
-		this.entry = entry;
-		Reader reader = new InputStreamReader(entry.inputStream());
+	public WhileyFileLexer(InputStream input) throws IOException {
+		Reader reader = new InputStreamReader(input);
 		BufferedReader in = new BufferedReader(reader);
 		try {
 			StringBuilder text = new StringBuilder();
@@ -47,14 +46,13 @@ public class WhileyFileLexer {
 			while ((len = in.read(buf)) != -1) {
 				text.append(buf, 0, len);
 			}
-			input = text;
+			this.input = text;
 		} finally {
 			in.close();
 		}
 	}
 
 	public WhileyFileLexer(String input) {
-		this.entry = null;
 		this.input = new StringBuilder(input);
 	}
 

@@ -104,19 +104,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wybs.lang.Build;
-import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
-import wybs.util.AbstractCompilationUnit.Attribute;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Pair;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
+import wycc.lang.Build;
+import wycc.lang.Path;
+import wycc.lang.SyntacticException;
+import wycc.lang.SyntacticItem;
+import wycc.util.AbstractCompilationUnit.Attribute;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Pair;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wyfs.lang.Path;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -124,7 +124,6 @@ import wyil.lang.WyilFile.LVal;
 import wyil.lang.WyilFile.Modifier;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Template;
-import wyil.lang.WyilFile.Template.Variance;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -137,18 +136,18 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class WhileyFileParser {
-	private final WyilFile parent;
+	private final WyilFile target;
 	private final WhileyFile source;
 	private ArrayList<Token> tokens;
 	private int index;
 
 	public WhileyFileParser(WyilFile target, WhileyFile source) {
-		if(target == null) {
+		if (target == null) {
 			throw new IllegalArgumentException("target cannot be null");
-		} else if(source == null) {
+		} else if (source == null) {
 			throw new IllegalArgumentException("source cannot be null");
 		}
-		this.parent = target;
+		this.target = target;
 		this.source = source;
 		this.tokens = new ArrayList<>(source.getTokens());
 	}
@@ -163,9 +162,9 @@ public class WhileyFileParser {
 	public boolean read(Build.Meter meter) {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
-		Name name = new Name(new Identifier(source.getID().last()));
+		Name name = new Name(new Identifier(source.getPath().last()));
 		try {
-			name = parseModuleName(source.getID());
+			name = parseModuleName(source.getPath());
 			skipWhiteSpace();
 			while (index < tokens.size()) {
 				// Parse next logical declaration
@@ -174,13 +173,13 @@ public class WhileyFileParser {
 			}
 		} catch (ParseError e) {
 			// Allocate an unknown declaration to represent this parse error.
-			Decl d = parent.allocate(new Decl.Unknown());
+			Decl d = target.allocate(new Decl.Unknown());
 			// Add to declarations for enclosing unit
 			declarations.add(d);
 			// Give the unknown declaration a span corresponding to exact point of error.
-			parent.allocate(new Attribute.Span(d,e.getStart(),e.getEnd()));
+			target.allocate(new Attribute.Span(d, e.getStart(), e.getEnd()));
 			// Generate a syntax error which identifies the parse error
-			ErrorMessages.syntaxError(d, e.getErrorCode(),e.context);
+			ErrorMessages.syntaxError(d, e.getErrorCode(), e.context);
 			// Signal that we have failed
 			status = false;
 		}
@@ -188,15 +187,15 @@ public class WhileyFileParser {
 		Tuple<Decl> decls = new Tuple<>(declarations);
 		Decl.Unit module = new Decl.Unit(name, decls);
 		//
-		Decl.Unit nunit = parent.allocate(module);
-		Decl.Unit ounit = parent.getModule().putUnit(nunit);
+		Decl.Unit nunit = target.allocate(module);
+		Decl.Unit ounit = target.getModule().putUnit(nunit);
 		if (ounit != null) {
-			parent.replace(ounit, nunit);
+			target.replace(ounit, nunit);
 		}
 		return status;
 	}
 
-	private Name parseModuleName(Path.ID id) {
+	private Name parseModuleName(Path id) {
 		ArrayList<Identifier> components = new ArrayList<>();
 		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword
@@ -232,16 +231,16 @@ public class WhileyFileParser {
 		//
 		Token lookahead = tokens.get(index);
 		if (lookahead.text.equals("type")) {
-			return parseTypeDeclaration(meter,modifiers);
+			return parseTypeDeclaration(meter, modifiers);
 		} else if (lookahead.kind == Function) {
-			return parseFunctionOrMethodDeclaration(meter,modifiers, true);
+			return parseFunctionOrMethodDeclaration(meter, modifiers, true);
 		} else if (lookahead.kind == Method) {
-			return parseFunctionOrMethodDeclaration(meter,modifiers, false);
+			return parseFunctionOrMethodDeclaration(meter, modifiers, false);
 		} else if (lookahead.kind == Property) {
-			return parsePropertyDeclaration(meter,modifiers);
+			return parsePropertyDeclaration(meter, modifiers);
 		} else {
 			// Fall back
-			return parseStaticVariableDeclaration(meter,modifiers);
+			return parseStaticVariableDeclaration(meter, modifiers);
 		}
 	}
 
@@ -259,11 +258,11 @@ public class WhileyFileParser {
 		Tuple<Identifier> names = parseOptionalFroms(scope);
 		Tuple<Identifier> filterPath = parseFilterPath(scope);
 		Decl.Import imprt;
-		if(names != null) {
+		if (names != null) {
 			imprt = new Decl.Import(filterPath, false, names);
 		} else {
 			names = parseOptionalWiths(scope);
-			if(names != null) {
+			if (names != null) {
 				imprt = new Decl.Import(filterPath, true, names);
 			} else {
 				imprt = new Decl.Import(filterPath);
@@ -284,7 +283,7 @@ public class WhileyFileParser {
 		Token lookahead = tryAndMatch(true, Identifier);
 		if (lookahead != null) {
 			// Optional from identifier was given
-			if(lookahead.text.equals("with")) {
+			if (lookahead.text.equals("with")) {
 				// Backtrack
 				index = start;
 				return null;
@@ -352,21 +351,21 @@ public class WhileyFileParser {
 			}
 			switch (lookahead.kind) {
 			case Public:
-				mods.add(annotateSourceLocation(new Modifier.Public(),index-1));
+				mods.add(annotateSourceLocation(new Modifier.Public(), index - 1));
 				visible = true;
 				break;
 			case Private:
-				mods.add(annotateSourceLocation(new Modifier.Private(),index-1));
+				mods.add(annotateSourceLocation(new Modifier.Private(), index - 1));
 				visible = true;
 				break;
 			case Native:
-				mods.add(annotateSourceLocation(new Modifier.Native(),index-1));
+				mods.add(annotateSourceLocation(new Modifier.Native(), index - 1));
 				break;
 			case Export:
-				mods.add(annotateSourceLocation(new Modifier.Export(),index-1));
+				mods.add(annotateSourceLocation(new Modifier.Export(), index - 1));
 				break;
 			case Final:
-				mods.add(annotateSourceLocation(new Modifier.Final(),index-1));
+				mods.add(annotateSourceLocation(new Modifier.Final(), index - 1));
 				break;
 			}
 		}
@@ -374,8 +373,8 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which
-	 * have the form:
+	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which have
+	 * the form:
 	 *
 	 * <pre>
 	 * FunctionDeclaration ::= "function" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
@@ -386,29 +385,26 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 * Here, the first type pattern (i.e. before "->") is referred to as the
-	 * "parameter", whilst the second is referred to as the "return". There are
-	 * two kinds of option clause:
+	 * "parameter", whilst the second is referred to as the "return". There are two
+	 * kinds of option clause:
 	 *
 	 * <ul>
 	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
 	 * values of the parameters on entry to the function or method, and is often
-	 * referred to as the "precondition". This expression may refer to any
-	 * variables declared within the parameter type pattern. Multiple clauses
-	 * may be given, and these are taken together as a conjunction. Furthermore,
-	 * the convention is to specify the requires clause(s) before any ensure(s)
-	 * clauses.</li>
+	 * referred to as the "precondition". This expression may refer to any variables
+	 * declared within the parameter type pattern. Multiple clauses may be given,
+	 * and these are taken together as a conjunction. Furthermore, the convention is
+	 * to specify the requires clause(s) before any ensure(s) clauses.</li>
 	 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
-	 * values of the the function or method's return value, and is often
-	 * referred to as the "postcondition". This expression may refer to any
-	 * variables declared within either the parameter or return type pattern.
-	 * Multiple clauses may be given, and these are taken together as a
-	 * conjunction. Furthermore, the convention is to specify the requires
-	 * clause(s) after the others.</li>
+	 * values of the the function or method's return value, and is often referred to
+	 * as the "postcondition". This expression may refer to any variables declared
+	 * within either the parameter or return type pattern. Multiple clauses may be
+	 * given, and these are taken together as a conjunction. Furthermore, the
+	 * convention is to specify the requires clause(s) after the others.</li>
 	 * </ul>
 	 *
 	 * <p>
-	 * The following function declaration provides a small example to
-	 * illustrate:
+	 * The following function declaration provides a small example to illustrate:
 	 * </p>
 	 *
 	 * <pre>
@@ -421,9 +417,9 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 * <p>
-	 * Here, we see the specification for the well-known <code>max()</code>
-	 * function which returns the largest of its parameters. This does not throw
-	 * any exceptions, and does not enforce any preconditions on its parameters.
+	 * Here, we see the specification for the well-known <code>max()</code> function
+	 * which returns the largest of its parameters. This does not throw any
+	 * exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
 	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Build.Meter meter, Tuple<Modifier> modifiers,
@@ -441,7 +437,7 @@ public class WhileyFileParser {
 		// Parse template parameters
 		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
 		// Parse function or method parameters
-		Tuple<Decl.Variable> parameters = parseParameters(scope,RightBrace);
+		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
 		// Parse (optional) return type
 		Tuple<Decl.Variable> returns;
 		//
@@ -456,12 +452,12 @@ public class WhileyFileParser {
 			returns = new Tuple<>();
 		}
 		// Parse optional requires/ensures clauses
-		Tuple<Expr> requires = parseInvariant(scope,Requires);
-		Tuple<Expr> ensures = parseInvariant(scope,Ensures);
+		Tuple<Expr> requires = parseInvariant(scope, Requires);
+		Tuple<Expr> ensures = parseInvariant(scope, Ensures);
 		// Parse function or method body (if not native)
 		Stmt.Block body;
 		int end;
-		if(modifiers.match(Modifier.Native.class) == null) {
+		if (modifiers.match(Modifier.Native.class) == null) {
 			// Not native function or method
 			match(Colon);
 			end = index;
@@ -476,12 +472,11 @@ public class WhileyFileParser {
 		//
 		WyilFile.Decl.FunctionOrMethod declaration;
 		if (isFunction) {
-			declaration = new Decl.Function(modifiers, name, template, parameters, returns, requires, ensures,
-					body);
+			declaration = new Decl.Function(modifiers, name, template, parameters, returns, requires, ensures, body);
 		} else {
 			declaration = new Decl.Method(modifiers, name, template, parameters, returns, requires, ensures, body);
 		}
-		return annotateSourceLocation(declaration,start,end-1);
+		return annotateSourceLocation(declaration, start, end - 1);
 	}
 
 	/**
@@ -499,8 +494,8 @@ public class WhileyFileParser {
 		match(Property);
 		Identifier name = parseIdentifier();
 		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
-		Tuple<Decl.Variable> parameters = parseParameters(scope,RightBrace);
-		Tuple<Expr> invariant = parseInvariant(scope,Where);
+		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
+		Tuple<Expr> invariant = parseInvariant(scope, Where);
 		//
 		int end = index;
 		matchEndLine();
@@ -540,7 +535,7 @@ public class WhileyFileParser {
 	public Tuple<Decl.Variable> parseOptionalParameters(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if (next < tokens.size() && tokens.get(next).kind == LeftBrace) {
-			return parseParameters(scope,RightBrace);
+			return parseParameters(scope, RightBrace);
 		} else {
 			return new Tuple<>(parseOptionalParameter(scope));
 		}
@@ -579,25 +574,23 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 * Here, the type pattern specifies a type which may additionally be adorned
-	 * with variable names. The "where" clause is optional and is often referred
-	 * to as the type's "constraint". Variables defined within the type pattern
-	 * may be used within this constraint expressions. A simple example to
-	 * illustrate is:
+	 * with variable names. The "where" clause is optional and is often referred to
+	 * as the type's "constraint". Variables defined within the type pattern may be
+	 * used within this constraint expressions. A simple example to illustrate is:
 	 *
 	 * <pre>
 	 * type nat is (int x) where x >= 0
 	 * </pre>
 	 *
-	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
-	 * which represents the set of natural numbers (i.e the non-negative
-	 * integers). Type declarations may also have modifiers, such as
-	 * <code>public</code> and <code>private</code>.
+	 * Here, we are defining a <i>constrained type</i> called <code>nat</code> which
+	 * represents the set of natural numbers (i.e the non-negative integers). Type
+	 * declarations may also have modifiers, such as <code>public</code> and
+	 * <code>private</code>.
 	 *
 	 * @see wyil.lang.WyilFile.Type
 	 *
-	 * @param modifiers
-	 *            --- The list of modifiers for this declaration (which were
-	 *            already parsed before this method was called).
+	 * @param modifiers --- The list of modifiers for this declaration (which were
+	 *                  already parsed before this method was called).
 	 */
 	public Decl.Type parseTypeDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
 		int start = index;
@@ -619,18 +612,18 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * In the special case of a record type declaration, those fields contained
-	 * in the record are registered as "field aliases". This means they can be
-	 * referred to directly from the type invariant, rather than requiring an
-	 * additional variable be declared. For example, the following is permitted:
+	 * In the special case of a record type declaration, those fields contained in
+	 * the record are registered as "field aliases". This means they can be referred
+	 * to directly from the type invariant, rather than requiring an additional
+	 * variable be declared. For example, the following is permitted:
 	 *
 	 * <pre>
 	 * type Point is {int x, int y} where x >= 0 && y >= 0
 	 * </pre>
 	 *
-	 * Here, <code>x</code> and <code>y</code> are "field aliases" within the
-	 * scope of the type invariant. In essence, what happens is that the above
-	 * is silently transformed into the following:
+	 * Here, <code>x</code> and <code>y</code> are "field aliases" within the scope
+	 * of the type invariant. In essence, what happens is that the above is silently
+	 * transformed into the following:
 	 *
 	 * <pre>
 	 * type Point is ({int x, int y} $) where $.x >= 0 && $.y >= 0
@@ -668,15 +661,14 @@ public class WhileyFileParser {
 	 * constant PI is 3.141592654
 	 * </pre>
 	 *
-	 * Here, we are defining a constant called <code>PI</code> which represents
-	 * the decimal value "3.141592654". Constant declarations may also have
-	 * modifiers, such as <code>public</code> and <code>private</code>.
+	 * Here, we are defining a constant called <code>PI</code> which represents the
+	 * decimal value "3.141592654". Constant declarations may also have modifiers,
+	 * such as <code>public</code> and <code>private</code>.
 	 *
 	 * @see wyc.lang.WhielyFile.StaticVariable
 	 *
-	 * @param modifiers
-	 *            --- The list of modifiers for this declaration (which were
-	 *            already parsed before this method was called).
+	 * @param modifiers --- The list of modifiers for this declaration (which were
+	 *                  already parsed before this method was called).
 	 */
 	private Decl.StaticVariable parseStaticVariableDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
 		//
@@ -712,7 +704,7 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			Template.Variable var = parseTemplateVariable();
-			if(vars.contains(var)) {
+			if (vars.contains(var)) {
 				syntaxError(WyilFile.DUPLICATE_TEMPLATE_VARIABLE, var);
 			} else {
 				vars.add(var);
@@ -735,21 +727,18 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a block of zero or more statements which share the same indentation
-	 * level. Their indentation level must be strictly greater than that of
-	 * their parent, otherwise the end of block is signaled. The <i>indentation
-	 * level</i> for the block is set by the first statement encountered
-	 * (assuming their is one). An error occurs if a subsequent statement is
-	 * reached with an indentation level <i>greater</i> than the block's
-	 * indentation level.
+	 * level. Their indentation level must be strictly greater than that of their
+	 * parent, otherwise the end of block is signaled. The <i>indentation level</i>
+	 * for the block is set by the first statement encountered (assuming their is
+	 * one). An error occurs if a subsequent statement is reached with an
+	 * indentation level <i>greater</i> than the block's indentation level.
 	 *
-	 * @param parentIndent
-	 *            The indentation level of the parent, for which all statements
-	 *            in this block must have a greater indent. May not be
-	 *            <code>null</code>.
-	 * @param isLoop
-	 *            Indicates whether or not this block represents the body of a
-	 *            loop. This is important in order to setup the scope for this
-	 *            block appropriately.
+	 * @param parentIndent The indentation level of the parent, for which all
+	 *                     statements in this block must have a greater indent. May
+	 *                     not be <code>null</code>.
+	 * @param isLoop       Indicates whether or not this block represents the body
+	 *                     of a loop. This is important in order to setup the scope
+	 *                     for this block appropriately.
 	 * @return
 	 */
 	private Stmt.Block parseBlock(EnclosingScope scope, boolean isLoop) {
@@ -810,16 +799,15 @@ public class WhileyFileParser {
 	/**
 	 * Parse a given statement. There are essentially two forms of statement:
 	 * <code>simple</code> and <code>compound</code>. Simple statements (e.g.
-	 * assignment, <code>debug</code>, etc) are terminated by a
-	 * <code>NewLine</code> token, although they may span multiple lines if an
-	 * expression does. Compound statements (e.g. <code>if</code>,
-	 * <code>while</code>, etc) themselves contain blocks of statements and are
-	 * not (generally) terminated by a <code>NewLine</code>.
+	 * assignment, <code>debug</code>, etc) are terminated by a <code>NewLine</code>
+	 * token, although they may span multiple lines if an expression does. Compound
+	 * statements (e.g. <code>if</code>, <code>while</code>, etc) themselves contain
+	 * blocks of statements and are not (generally) terminated by a
+	 * <code>NewLine</code>.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Stmt parseStatement(EnclosingScope scope) {
@@ -875,13 +863,12 @@ public class WhileyFileParser {
 
 	/**
 	 * A headless statement is one which has no identifying keyword. The set of
-	 * headless statements include assignments, invocations, variable
-	 * declarations and named blocks.
+	 * headless statements include assignments, invocations, variable declarations
+	 * and named blocks.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Stmt parseHeadlessStatement(EnclosingScope scope) {
@@ -893,16 +880,16 @@ public class WhileyFileParser {
 				int end = index;
 				matchEndLine();
 				scope = scope.newEnclosingScope();
-				//scope.declareLifetime(blockName);
+				// scope.declareLifetime(blockName);
 				Stmt.Block body = parseBlock(scope, false);
 				return annotateSourceLocation(new Stmt.NamedBlock(blockName, body), start);
 			} else {
 				index = start; // backtrack
 			}
 		}
-		// assignment   : Identifier | LeftBrace | Star
+		// assignment : Identifier | LeftBrace | Star
 		// variable decl: Identifier | LeftBrace | LeftCurly | Ampersand
-		// invoke       : Identifier | LeftBrace | Star
+		// invoke : Identifier | LeftBrace | Star
 		int r = isStatementInitialiser(scope);
 		if (r > 0) {
 			// Must be a statement initialiser as this is the only situation in which a type
@@ -936,10 +923,10 @@ public class WhileyFileParser {
 		} else {
 			index = start; // backtrack
 			// Second, try and match multi-variable initialiser
-			if(tryAndMatch(false,LeftBrace) != null) {
+			if (tryAndMatch(false, LeftBrace) != null) {
 				result = isStatementInitialiser(scope);
 				index = start; // backtrack
-				if(result > 0) {
+				if (result > 0) {
 					result = result + 1;
 				}
 			} else {
@@ -972,7 +959,7 @@ public class WhileyFileParser {
 		int start = index;
 		ArrayList<Decl.Variable> variables = new ArrayList<>();
 		//
-		if(multi) {
+		if (multi) {
 			match(LeftBrace);
 			do {
 				Tuple<Modifier> modifiers = parseModifiers(Final);
@@ -981,7 +968,7 @@ public class WhileyFileParser {
 				// Check that declared variables are not already defined.
 				scope.checkNameAvailable(name);
 				variables.add(new Decl.Variable(modifiers, name, type));
-			} while(tryAndMatch(true, Comma) != null);
+			} while (tryAndMatch(true, Comma) != null);
 			match(RightBrace);
 		} else {
 			Tuple<Modifier> modifiers = parseModifiers(Final);
@@ -996,7 +983,7 @@ public class WhileyFileParser {
 		Stmt.Initialiser stmt;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
 			initialiser = parseExpression(scope, false);
-			stmt = new Stmt.Initialiser(new Tuple<>(variables),initialiser);
+			stmt = new Stmt.Initialiser(new Tuple<>(variables), initialiser);
 		} else {
 			stmt = new Stmt.Initialiser(new Tuple<>(variables));
 		}
@@ -1008,7 +995,7 @@ public class WhileyFileParser {
 		// Finally, register all new variables in the enclosing scope. This
 		// should be done after parsing the initialiser expression to prevent it
 		// from referring to this variable.
-		for(Decl.Variable decl : stmt.getVariables()) {
+		for (Decl.Variable decl : stmt.getVariables()) {
 			scope.declareVariable(decl);
 		}
 		return stmt;
@@ -1021,14 +1008,13 @@ public class WhileyFileParser {
 	 * ReturnStmt ::= "return" [Expr] NewLine
 	 * </pre>
 	 *
-	 * The optional expression is referred to as the <i>return value</i>. Note
-	 * that, the returned expression (if there is one) must begin on the same
-	 * line as the return statement itself.
+	 * The optional expression is referred to as the <i>return value</i>. Note that,
+	 * the returned expression (if there is one) must begin on the same line as the
+	 * return statement itself.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Return
 	 * @return
@@ -1047,7 +1033,7 @@ public class WhileyFileParser {
 		Stmt.Return stmt;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
 			Tuple<Expr> returns = parseExpressions(scope, false);
-			switch(returns.size()) {
+			switch (returns.size()) {
 			case 0:
 				stmt = new Stmt.Return();
 				break;
@@ -1065,7 +1051,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(stmt, start, end-1);
+		return annotateSourceLocation(stmt, start, end - 1);
 	}
 
 	/**
@@ -1075,10 +1061,9 @@ public class WhileyFileParser {
 	 * AssertStmt ::= "assert" Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Assert
 	 * @return
@@ -1104,10 +1089,9 @@ public class WhileyFileParser {
 	 * AssumeStmt ::= "assume" Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Assume
 	 * @return
@@ -1133,10 +1117,9 @@ public class WhileyFileParser {
 	 * BreakStmt ::= "break"
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Break
 	 * @return
@@ -1152,7 +1135,7 @@ public class WhileyFileParser {
 			syntaxError(WyilFile.BREAK_OUTSIDE_SWITCH_OR_LOOP, t);
 		}
 		// Done.
-		return annotateSourceLocation(new Stmt.Break(),start,end-1);
+		return annotateSourceLocation(new Stmt.Break(), start, end - 1);
 	}
 
 	/**
@@ -1162,10 +1145,9 @@ public class WhileyFileParser {
 	 * ContinueStmt ::= "continue"
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Continue
 	 * @return
@@ -1181,7 +1163,7 @@ public class WhileyFileParser {
 			syntaxError(WyilFile.CONTINUE_OUTSIDE_LOOP, t);
 		}
 		// Done.
-		return annotateSourceLocation(new Stmt.Continue(),start,end-1);
+		return annotateSourceLocation(new Stmt.Continue(), start, end - 1);
 	}
 
 	/**
@@ -1191,10 +1173,9 @@ public class WhileyFileParser {
 	 * DebugStmt ::= "debug" Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
@@ -1210,7 +1191,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Debug(e), start, end-1);
+		return annotateSourceLocation(new Stmt.Debug(e), start, end - 1);
 	}
 
 	/**
@@ -1222,10 +1203,9 @@ public class WhileyFileParser {
 	 *
 	 * @see wyc.lang.Stmt.DoWhile
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
@@ -1242,9 +1222,9 @@ public class WhileyFileParser {
 		match(While);
 		Expr condition = parseLogicalExpression(scope, false);
 		// Parse the loop invariants
-		Tuple<Expr> invariant = parseInvariant(scope,Where);
+		Tuple<Expr> invariant = parseInvariant(scope, Where);
 		matchEndLine();
-		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, new Tuple<>(), blk), start, end-1);
+		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, new Tuple<>(), blk), start, end - 1);
 	}
 
 	/**
@@ -1254,10 +1234,9 @@ public class WhileyFileParser {
 	 * FailStmt ::= "fail"
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Fail
 	 * @return
@@ -1269,7 +1248,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Fail(),start,end-1);
+		return annotateSourceLocation(new Stmt.Fail(), start, end - 1);
 	}
 
 	private Stmt.For parseForStatement(EnclosingScope scope) {
@@ -1289,7 +1268,7 @@ public class WhileyFileParser {
 		decl = annotateSourceLocation(decl, start);
 		scope.declareVariable(decl);
 		// Parse the loop invariants
-		Tuple<Expr> invariants = parseInvariant(scope,Where);
+		Tuple<Expr> invariants = parseInvariant(scope, Where);
 		match(Colon);
 		matchEndLine();
 		Stmt.Block block = parseBlock(scope, true);
@@ -1303,16 +1282,15 @@ public class WhileyFileParser {
 	 * "if" Expr ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
 	 *
-	 * The first expression is referred to as the <i>condition</i>, while the
-	 * first block is referred to as the <i>true branch</i>. The optional second
-	 * block is referred to as the <i>false branch</i>.
+	 * The first expression is referred to as the <i>condition</i>, while the first
+	 * block is referred to as the <i>true branch</i>. The optional second block is
+	 * referred to as the <i>false branch</i>.
 	 *
 	 * @see wyc.lang.Stmt.IfElse
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Stmt.IfElse parseIfStatement(EnclosingScope scope) {
@@ -1344,13 +1322,13 @@ public class WhileyFileParser {
 			}
 		}
 		Stmt.IfElse stmt;
-		if(fblk == null) {
+		if (fblk == null) {
 			stmt = new Stmt.IfElse(c, tblk);
 		} else {
 			stmt = new Stmt.IfElse(c, tblk, fblk);
 		}
 		// Done!
-		return annotateSourceLocation(stmt, start, end-1);
+		return annotateSourceLocation(stmt, start, end - 1);
 	}
 
 	/**
@@ -1362,10 +1340,9 @@ public class WhileyFileParser {
 	 *
 	 * @see wyc.lang.Stmt.While
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
@@ -1376,12 +1353,12 @@ public class WhileyFileParser {
 		// NOTE: expression terminated by ':'
 		Expr condition = parseLogicalExpression(scope, true);
 		// Parse the loop invariants
-		Tuple<Expr> invariants = parseInvariant(scope,Where);
+		Tuple<Expr> invariants = parseInvariant(scope, Where);
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		Stmt.Block blk = parseBlock(scope, true);
-		return annotateSourceLocation(new Stmt.While(condition, invariants, new Tuple<>(), blk), start, end-1);
+		return annotateSourceLocation(new Stmt.While(condition, invariants, new Tuple<>(), blk), start, end - 1);
 	}
 
 	/**
@@ -1391,10 +1368,9 @@ public class WhileyFileParser {
 	 * SkipStmt ::= "skip"
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Skip
 	 * @return
@@ -1406,7 +1382,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Done.
-		return annotateSourceLocation(new Stmt.Skip(),start,end-1);
+		return annotateSourceLocation(new Stmt.Skip(), start, end - 1);
 	}
 
 	/**
@@ -1420,10 +1396,9 @@ public class WhileyFileParser {
 	 *
 	 * @see wyc.lang.Stmt.Switch
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
@@ -1439,22 +1414,20 @@ public class WhileyFileParser {
 		// Match case block
 		Tuple<Stmt.Case> cases = parseCaseBlock(scope);
 		// Done
-		return annotateSourceLocation(new Stmt.Switch(condition, cases), start,end-1);
+		return annotateSourceLocation(new Stmt.Switch(condition, cases), start, end - 1);
 	}
 
 	/**
 	 * Parse a block of zero or more case statements which share the same
-	 * indentation level. Their indentation level must be strictly greater than
-	 * that of their parent, otherwise the end of block is signalled. The
-	 * <i>indentation level</i> for the block is set by the first statement
-	 * encountered (assuming their is one). An error occurs if a subsequent
-	 * statement is reached with an indentation level <i>greater</i> than the
-	 * block's indentation level.
+	 * indentation level. Their indentation level must be strictly greater than that
+	 * of their parent, otherwise the end of block is signalled. The <i>indentation
+	 * level</i> for the block is set by the first statement encountered (assuming
+	 * their is one). An error occurs if a subsequent statement is reached with an
+	 * indentation level <i>greater</i> than the block's indentation level.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Tuple<Stmt.Case> parseCaseBlock(EnclosingScope scope) {
@@ -1502,14 +1475,14 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Check whether we have a duplicate default statement, or a case which
-	 * occurs after a default statement (and, hence, is unreachable).
+	 * Check whether we have a duplicate default statement, or a case which occurs
+	 * after a default statement (and, hence, is unreachable).
 	 *
 	 * @param cases
 	 */
 	private void checkForDuplicateDefault(List<Stmt.Case> cases) {
 		boolean hasDefault = false;
-		for(int i=0;i!=cases.size();++i) {
+		for (int i = 0; i != cases.size(); ++i) {
 			Stmt.Case c = cases.get(i);
 			if (c.getConditions().size() > 0 && hasDefault) {
 				syntaxError(WyilFile.UNREACHABLE_CODE, c);
@@ -1526,17 +1499,17 @@ public class WhileyFileParser {
 	 * relatively simplistic and does not perform any complex simplifications.
 	 * Therefore, some duplicates are missed because they require simplification.
 	 * For example, the condition <code>1+1</code> and <code>2</code> are not
-	 * considered duplicates here.  See #648 for more.
+	 * considered duplicates here. See #648 for more.
 	 */
 	private void checkForDuplicateConditions(List<Stmt.Case> cases) {
 		HashSet<Expr> seen = new HashSet<>();
-		for(int i=0;i!=cases.size();++i) {
+		for (int i = 0; i != cases.size(); ++i) {
 			Stmt.Case c = cases.get(i);
 			Tuple<Expr> conditions = c.getConditions();
 			// Check whether any of these conditions already seen.
-			for(int j=0;j!=conditions.size();++j) {
+			for (int j = 0; j != conditions.size(); ++j) {
 				Expr condition = conditions.get(j);
-				if(seen.contains(condition)) {
+				if (seen.contains(condition)) {
 					syntaxError(WyilFile.DUPLICATE_CASE_LABEL, condition);
 				} else {
 					seen.add(condition);
@@ -1544,6 +1517,7 @@ public class WhileyFileParser {
 			}
 		}
 	}
+
 	/**
 	 * Parse a case Statement, which has the form:
 	 *
@@ -1551,10 +1525,9 @@ public class WhileyFileParser {
 	 * CaseStmt ::= "case" NonTupleExpr (',' NonTupleExpression)* ':' NewLine Block
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Stmt.Case parseCaseStatement(EnclosingScope scope) {
@@ -1575,7 +1548,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Stmt.Block stmts = parseBlock(scope, scope.isInLoop());
-		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start,end-1);
+		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start, end - 1);
 	}
 
 	/**
@@ -1597,16 +1570,15 @@ public class WhileyFileParser {
 	 * x[i].f = y  // compound assignment
 	 * </pre>
 	 *
-	 * The last assignment here illustrates that the left-hand side of an
-	 * assignment can be arbitrarily complex, involving nested assignments into
-	 * arrays and records.
+	 * The last assignment here illustrates that the left-hand side of an assignment
+	 * can be arbitrarily complex, involving nested assignments into arrays and
+	 * records.
 	 *
 	 * @see wyc.lang.Stmt.Assign
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @return
 	 */
@@ -1617,7 +1589,7 @@ public class WhileyFileParser {
 		Tuple<Expr> rvals = parseExpressions(scope, false);
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Stmt.Assign(lvals, rvals), start,end-1);
+		return annotateSourceLocation(new Stmt.Assign(lvals, rvals), start, end - 1);
 	}
 
 	/**
@@ -1629,10 +1601,9 @@ public class WhileyFileParser {
 	 * LVal ::= LValTerm (',' LValTerm)* ')'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @return
 	 */
@@ -1666,10 +1637,9 @@ public class WhileyFileParser {
 	 *           | AccessLVal '[' Expr ']' // index assigmment
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @return
 	 */
@@ -1697,7 +1667,7 @@ public class WhileyFileParser {
 				break;
 			}
 			}
-			lhs = annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs, start);
 		}
 
 		return lhs;
@@ -1711,10 +1681,9 @@ public class WhileyFileParser {
 	 *           | '(' LVal ')'            // Bracketed assignment
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @return
 	 */
@@ -1727,7 +1696,7 @@ public class WhileyFileParser {
 		case Identifier:
 			Identifier name = parseIdentifier();
 			LVal var;
-			if(scope.isVariable(name)) {
+			if (scope.isVariable(name)) {
 				var = new Expr.VariableAccess(Type.Void, scope.getVariableDeclaration(name));
 			} else {
 				var = new Expr.StaticVariableAccess(Type.Void, new Decl.Link<>(new Name(name)));
@@ -1741,7 +1710,7 @@ public class WhileyFileParser {
 				match(Comma);
 				lvals.add(parseLVal(start, scope));
 			}
-			if(lvals.size() > 1) {
+			if (lvals.size() > 1) {
 				return annotateSourceLocation(new Expr.TupleInitialiser(Type.Void, new Tuple<>(lvals)), start);
 			} else {
 				return annotateSourceLocation((LVal) lvals.get(0), start);
@@ -1759,24 +1728,23 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a "multi-expression"; that is, a sequence of one or more
-	 * expressions separated by comma's
+	 * Parse a "multi-expression"; that is, a sequence of one or more expressions
+	 * separated by comma's
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 * @return
 	 */
 	public Tuple<Expr> parseExpressions(EnclosingScope scope, boolean terminated) {
@@ -1804,33 +1772,32 @@ public class WhileyFileParser {
 	 *
 	 * <p>
 	 * A unit expression is essentially any expression, except that it is not
-	 * allowed to be a tuple expression. More specifically, it cannot be
-	 * followed by ',' (e.g. because the enclosing context uses ',').
+	 * allowed to be a tuple expression. More specifically, it cannot be followed by
+	 * ',' (e.g. because the enclosing context uses ',').
 	 * </p>
 	 *
 	 * <p>
 	 * As an example consider a record expression, such as
 	 * <code>{x: e1, y: e2}</code>. Here, the sub-expression "e1" must be a
-	 * non-tuple expression since it is followed by ',' to signal the start of
-	 * the next field "y". Of course, e1 can be a tuple expression if we use
-	 * brackets as these help disambiguate the context.
+	 * non-tuple expression since it is followed by ',' to signal the start of the
+	 * next field "y". Of course, e1 can be a tuple expression if we use brackets as
+	 * these help disambiguate the context.
 	 * </p>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 * @return
 	 */
 	private Expr parseExpression(EnclosingScope scope, boolean terminated) {
@@ -1845,21 +1812,20 @@ public class WhileyFileParser {
 	 * Expr ::= AndOrExpr [ "==>" UnitExpr]
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -1868,7 +1834,7 @@ public class WhileyFileParser {
 		int start = index;
 		Expr lhs = parseAndOrExpression(scope, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalImplication, LogicalIff);
-		//System.out.println("PARSED: " + lhs + " : " + lookahead);
+		// System.out.println("PARSED: " + lhs + " : " + lookahead);
 		if (lookahead != null) {
 			switch (lookahead.kind) {
 			case LogicalImplication: {
@@ -1884,7 +1850,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			lhs = annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs, start);
 		}
 		return lhs;
 	}
@@ -1896,21 +1862,20 @@ public class WhileyFileParser {
 	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -1923,7 +1888,7 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case LogicalAnd: {
 				Expr rhs = parseAndOrExpression(scope, terminated);
-				lhs = annotateSourceLocation(new Expr.LogicalAnd(new Tuple<>(lhs, rhs)),start);
+				lhs = annotateSourceLocation(new Expr.LogicalAnd(new Tuple<>(lhs, rhs)), start);
 				break;
 			}
 			case LogicalOr: {
@@ -1941,21 +1906,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse an bitwise "inclusive or" expression
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -1974,21 +1938,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse an bitwise "exclusive or" expression
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2007,21 +1970,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse an bitwise "and" expression
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2040,21 +2002,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse a condition expression.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2100,7 +2061,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			lhs = annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs, start);
 		}
 
 		return lhs;
@@ -2117,21 +2078,20 @@ public class WhileyFileParser {
 	 *               '}'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 * @return
 	 */
 	private Expr parseQuantifierExpression(Token lookahead, EnclosingScope scope, boolean terminated) {
@@ -2184,21 +2144,20 @@ public class WhileyFileParser {
 	 * RangeExpr ::= Expr ".." Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2219,21 +2178,20 @@ public class WhileyFileParser {
 	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2261,21 +2219,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse an additive expression.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2304,21 +2261,20 @@ public class WhileyFileParser {
 	/**
 	 * Parse a multiplicative expression.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2369,31 +2325,29 @@ public class WhileyFileParser {
 	 *
 	 * <p>
 	 * This parser attempts to construct the most accurate AST possible and this
-	 * requires disambiguating otherwise identical forms. For example, an
-	 * expression of the form "aaa.bbb.ccc" can correspond to either a field
-	 * access, or a constant expression (e.g. with a package/module specifier).
-	 * Likewise, an expression of the form "aaa.bbb.ccc()" can correspond to an
-	 * indirect function/method call, or a direct function/method call with a
-	 * package/module specifier. To disambiguate these forms, the parser relies
-	 * on the fact any sequence of field-accesses must begin with a local
-	 * variable.
+	 * requires disambiguating otherwise identical forms. For example, an expression
+	 * of the form "aaa.bbb.ccc" can correspond to either a field access, or a
+	 * constant expression (e.g. with a package/module specifier). Likewise, an
+	 * expression of the form "aaa.bbb.ccc()" can correspond to an indirect
+	 * function/method call, or a direct function/method call with a package/module
+	 * specifier. To disambiguate these forms, the parser relies on the fact any
+	 * sequence of field-accesses must begin with a local variable.
 	 * </p>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2441,7 +2395,7 @@ public class WhileyFileParser {
 				break;
 			}
 			// Attached source information
-			lhs = annotateSourceLocation(lhs,start);
+			lhs = annotateSourceLocation(lhs, start);
 		}
 
 		return lhs;
@@ -2462,19 +2416,17 @@ public class WhileyFileParser {
 			lhs = annotateSourceLocation(lhs, start, start);
 			lhs = new Expr.IndirectInvoke(Type.Void, lhs, arguments);
 		}
-		return annotateSourceLocation(lhs,start);
+		return annotateSourceLocation(lhs, start);
 	}
 
 	/**
 	 * Attempt to parse a possible module identifier. This will reflect a true
-	 * module identifier only if the root variable is not in the given
-	 * environment.
+	 * module identifier only if the root variable is not in the given environment.
 	 *
 	 * @param src
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 * @return
 	 */
 	private Expr parseQualifiedAccess(EnclosingScope scope, boolean terminated) {
@@ -2508,21 +2460,20 @@ public class WhileyFileParser {
 
 	/**
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2551,13 +2502,13 @@ public class WhileyFileParser {
 				int tStart = index;
 				// NOTE: need to check right brance after right angle to avoid strange
 				// expressions (e.g. [ x < T,S > 1 ])
-				if(skipTemplate(scope) && lookaheadSequence(terminated, LeftBrace)) {
+				if (skipTemplate(scope) && lookaheadSequence(terminated, LeftBrace)) {
 					index = tStart;
 					// This one is a little tricky, as we need some lookahead
 					// effort. We want to see whether it is a method invocation with
 					// lifetime arguments. But "Identifier < ..." can also be a
 					// boolean expression!
-					Tuple<Type> template = parseTemplateArguments(scope,terminated);
+					Tuple<Type> template = parseTemplateArguments(scope, terminated);
 					match(LeftBrace);
 					return parseInvokeExpression(scope, start, name, terminated, template);
 				} else {
@@ -2578,7 +2529,7 @@ public class WhileyFileParser {
 				// Signals a field alias
 				Decl.Variable var = scope.getVariableDeclaration(new Identifier("$"));
 				Expr access = new Expr.RecordAccess(Type.Void, new Expr.VariableAccess(Type.Void, var), name);
-				return annotateSourceLocation(access,start);
+				return annotateSourceLocation(access, start);
 			} else {
 				// Otherwise, this must be a static access of some kind.
 				// Observe that, at this point, we cannot determine whether or
@@ -2655,8 +2606,8 @@ public class WhileyFileParser {
 		} else {
 			boolean firstTime = true;
 			while (tryAndMatch(false, RightAngle) == null) {
-				if (!firstTime && tryAndMatch(false,Comma) == null) {
-					// Failed to match a comma.  Something is wrong
+				if (!firstTime && tryAndMatch(false, Comma) == null) {
+					// Failed to match a comma. Something is wrong
 					index = start;
 					return false;
 				} else if (!skipLifetimeIdentifier(scope) && !skipType(scope)) {
@@ -2672,8 +2623,8 @@ public class WhileyFileParser {
 
 	public Tuple<Type> parseOptionalTemplateArguments(EnclosingScope scope, boolean terminated) {
 		skipWhiteSpace();
-		if(index < tokens.size() && tokens.get(index).kind == LeftAngle) {
-			return parseTemplateArguments(scope,terminated);
+		if (index < tokens.size() && tokens.get(index).kind == LeftAngle) {
+			return parseTemplateArguments(scope, terminated);
 		} else {
 			return new Tuple<>();
 		}
@@ -2706,23 +2657,22 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 * <p>
-	 * The challenge here is to disambiguate the two forms (which is similar to
-	 * the problem of disambiguating a variable declaration from e.g. an
-	 * assignment). Getting this right is actually quite tricky, and we need to
-	 * consider what permissible things can follow a cast and/or a bracketed
-	 * expression. To simplify things, we only consider up to the end of the
-	 * current line in determining whether this is a cast or not. That means
-	 * that the expression following a cast *must* reside on the same line as
-	 * the cast.
+	 * The challenge here is to disambiguate the two forms (which is similar to the
+	 * problem of disambiguating a variable declaration from e.g. an assignment).
+	 * Getting this right is actually quite tricky, and we need to consider what
+	 * permissible things can follow a cast and/or a bracketed expression. To
+	 * simplify things, we only consider up to the end of the current line in
+	 * determining whether this is a cast or not. That means that the expression
+	 * following a cast *must* reside on the same line as the cast.
 	 * </p>
 	 *
 	 * <p>
-	 * A cast can be followed by the start of any valid expression. This
-	 * includes: identifiers (e.g. "(T) x"), braces of various kinds (e.g. "(T)
-	 * [1,2]" or "(T) (1,2)"), unary operators (e.g. "(T) !x", "(T) |xs|", etc).
-	 * A bracketed expression, on the other hand, can be followed by a binary
-	 * operator (e.g. "(e) + 1"), a left- or right-brace (e.g. "(1 + (x+1))" or
-	 * "(*f)(1)") or a newline.
+	 * A cast can be followed by the start of any valid expression. This includes:
+	 * identifiers (e.g. "(T) x"), braces of various kinds (e.g. "(T) [1,2]" or "(T)
+	 * (1,2)"), unary operators (e.g. "(T) !x", "(T) |xs|", etc). A bracketed
+	 * expression, on the other hand, can be followed by a binary operator (e.g.
+	 * "(e) + 1"), a left- or right-brace (e.g. "(1 + (x+1))" or "(*f)(1)") or a
+	 * newline.
 	 * </p>
 	 * <p>
 	 * Most of these are easy to disambiguate by the following rules:
@@ -2730,8 +2680,8 @@ public class WhileyFileParser {
 	 * <ul>
 	 * <li>If what follows is a binary operator (e.g. +, -, etc) then this is an
 	 * bracketed expression, not a cast.</li>
-	 * <li>If what follows is a right-brace then this is a bracketed expression,
-	 * not a cast.</li>
+	 * <li>If what follows is a right-brace then this is a bracketed expression, not
+	 * a cast.</li>
 	 * <li>Otherwise, this is a cast.</li>
 	 * </ul>
 	 * <p>
@@ -2744,25 +2694,24 @@ public class WhileyFileParser {
 	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
 	 * </pre>
 	 *
-	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can
-	 * be certain we have a type, then a general expression may follow;
-	 * otherwise, only a restricted expression may follow.
+	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can be
+	 * certain we have a type, then a general expression may follow; otherwise, only
+	 * a restricted expression may follow.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2792,12 +2741,12 @@ public class WhileyFileParser {
 		match(LeftBrace);
 		ArrayList<Expr> es = new ArrayList<>();
 		es.add(parseExpression(scope, true));
-		while(tryAndMatch(true,RightBrace) == null) {
+		while (tryAndMatch(true, RightBrace) == null) {
 			match(Comma);
 			es.add(parseExpression(scope, true));
 		}
 		// What have we got?
-		if(es.size() == 1) {
+		if (es.size() == 1) {
 			// Assume bracketed
 			return es.get(0);
 		} else {
@@ -2822,21 +2771,20 @@ public class WhileyFileParser {
 	 *             | '[' Expr ';' Expr ']'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2869,21 +2817,20 @@ public class WhileyFileParser {
 	 * ArrayInitialiserExpr ::= '[' [ Expr (',' Expr)+ ] ']'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2916,21 +2863,20 @@ public class WhileyFileParser {
 	 * ArrayGeneratorExpr ::= '[' Expr ';' Expr ']'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -2954,25 +2900,23 @@ public class WhileyFileParser {
 	 * During parsing, we additionally check that each identifier is unique;
 	 * otherwise, an error is reported.
 	 *
-	 * @param name
-	 *            An optional name component for the record initialiser. If
-	 *            null, then this is an anonymous record initialiser. Otherwise,
-	 *            it is a named record initialiser.
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param name       An optional name component for the record initialiser. If
+	 *                   null, then this is an anonymous record initialiser.
+	 *                   Otherwise, it is a named record initialiser.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3027,21 +2971,20 @@ public class WhileyFileParser {
 	 *                 |  Lifetime ":" "new" Identifier Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3063,21 +3006,20 @@ public class WhileyFileParser {
 	 *                 |  '|' Expr '|'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3103,21 +3045,20 @@ public class WhileyFileParser {
 	 *                 |  '-' Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3138,21 +3079,20 @@ public class WhileyFileParser {
 	 * Observe that this when this function is called, we're assuming that the
 	 * identifier and opening brace has already been matched.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3164,10 +3104,10 @@ public class WhileyFileParser {
 		// method is a local variable, then it must be an indirect invocation on
 		// this variable.
 		if (scope.isVariable(name) && templateArguments.size() == 0) {
-			// Indirect invocation on local variable. In this case, template arguments not permitted
+			// Indirect invocation on local variable. In this case, template arguments not
+			// permitted
 			Decl.Variable decl = scope.getVariableDeclaration(name);
-			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start,
-					start);
+			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Void, decl), start, start);
 			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Void, var, args), start);
 		} else {
 			// unqualified direct invocation
@@ -3178,31 +3118,29 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a sequence of arguments separated by commas that ends in a
-	 * right-brace:
+	 * Parse a sequence of arguments separated by commas that ends in a right-brace:
 	 *
 	 * <pre>
 	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
 	 * </pre>
 	 *
-	 * Note, when this function is called we're assuming the left brace was
-	 * already parsed.
+	 * Note, when this function is called we're assuming the left brace was already
+	 * parsed.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3236,21 +3174,20 @@ public class WhileyFileParser {
 	 *       | '!' Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3272,10 +3209,9 @@ public class WhileyFileParser {
 	 *                 | '*' Expr
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
+	 * @param scope The enclosing scope for this statement, which determines the set
+	 *              of visible (i.e. declared) variables and also the current
+	 *              indentation level.
 	 *
 	 * @return
 	 */
@@ -3300,21 +3236,20 @@ public class WhileyFileParser {
 	 * Disambiguating these two forms is relatively straightforward, and we just
 	 * look to see what follows the '&'.
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3340,21 +3275,20 @@ public class WhileyFileParser {
 	 *                   '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3366,7 +3300,7 @@ public class WhileyFileParser {
 		// But it keeps all unavailable names, i.e. unaccessible lifetimes
 		// from the outer scope cannot be redeclared.
 		scope = scope.newEnclosingScope();
-		Tuple<Decl.Variable> parameters = parseParameters(scope,MinusGreater);
+		Tuple<Decl.Variable> parameters = parseParameters(scope, MinusGreater);
 		// NOTE: expression guanrateed to be terminated by ')'
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
@@ -3382,21 +3316,20 @@ public class WhileyFileParser {
 	 *                 | '&' Identifier [ '(' Type (',' Type)* ')']
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3437,21 +3370,20 @@ public class WhileyFileParser {
 	 *                 | '~' Expr// bitwise complement
 	 * </pre>
 	 *
-	 * @param scope
-	 *            The enclosing scope for this statement, which determines the
-	 *            set of visible (i.e. declared) variables and also the current
-	 *            indentation level.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
 	 *
 	 * @return
 	 */
@@ -3464,10 +3396,9 @@ public class WhileyFileParser {
 
 	/**
 	 * Attempt to parse something which maybe a type, or an expression. The
-	 * semantics of this function dictate that it returns an instanceof
-	 * Type *only* if what it finds *cannot* be parsed as an
-	 * expression, but can be parsed as a type. Otherwise, the state is left
-	 * unchanged.
+	 * semantics of this function dictate that it returns an instanceof Type *only*
+	 * if what it finds *cannot* be parsed as an expression, but can be parsed as a
+	 * type. Otherwise, the state is left unchanged.
 	 *
 	 * @return An instance of Type or null.
 	 */
@@ -3487,23 +3418,22 @@ public class WhileyFileParser {
 
 	/**
 	 * <p>
-	 * Determine whether or not the given type can be parsed as an expression.
-	 * In many cases, a type can (e.g. <code>{x}</code> is both a valid type and
+	 * Determine whether or not the given type can be parsed as an expression. In
+	 * many cases, a type can (e.g. <code>{x}</code> is both a valid type and
 	 * expression). However, some types are not also expressions (e.g.
 	 * <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
 	 *
 	 * <p>
-	 * This function *must* return false if what the given type could not be
-	 * parsed as an expression. However, if what it can be parsed as an
-	 * expression, then this function must return false (even if we will
-	 * eventually treat this as a type). This function is called from either the
-	 * beginning of a statement (i.e. to disambiguate variable declarations), or
-	 * after matching a left brace (i.e. to disambiguate casts).
+	 * This function *must* return false if what the given type could not be parsed
+	 * as an expression. However, if what it can be parsed as an expression, then
+	 * this function must return false (even if we will eventually treat this as a
+	 * type). This function is called from either the beginning of a statement (i.e.
+	 * to disambiguate variable declarations), or after matching a left brace (i.e.
+	 * to disambiguate casts).
 	 * </p>
 	 *
-	 * @param index
-	 *            Position in the token stream to begin looking from.
+	 * @param index Position in the token stream to begin looking from.
 	 * @return
 	 */
 	private boolean mustParseAsType(Type type) {
@@ -3528,13 +3458,13 @@ public class WhileyFileParser {
 		} else if (type instanceof Type.Union) {
 			Type.Union tt = (Type.Union) type;
 			boolean result = false;
-			for(int i=0;i!=tt.size();++i) {
+			for (int i = 0; i != tt.size(); ++i) {
 				result |= mustParseAsType(tt.get(i));
 			}
 			return result;
 		} else {
 			// Error!
-			throw new SyntacticException("unknown syntactic type encountered", parent.getEntry(), type);
+			throw new SyntacticException("unknown syntactic type encountered", target, type);
 		}
 	}
 
@@ -3552,8 +3482,8 @@ public class WhileyFileParser {
 
 	public boolean skipTypeArray(EnclosingScope scope) {
 		if (skipTypeTerm(scope)) {
-			while(tryAndMatch(false,LeftSquare) != null) {
-				if(tryAndMatch(false,RightSquare) == null) {
+			while (tryAndMatch(false, LeftSquare) != null) {
+				if (tryAndMatch(false, RightSquare) == null) {
 					return false;
 				}
 			}
@@ -3606,8 +3536,8 @@ public class WhileyFileParser {
 
 	public boolean skipOptionalLifetimeIdentifier(EnclosingScope scope) {
 		int start = index;
-		if(tryAndMatch(false,Identifier,Star,This) != null) {
-			if(tryAndMatch(false,Colon) != null) {
+		if (tryAndMatch(false, Identifier, Star, This) != null) {
+			if (tryAndMatch(false, Colon) != null) {
 				return true;
 			}
 		}
@@ -3617,7 +3547,7 @@ public class WhileyFileParser {
 
 	public boolean skipLifetimeIdentifier(EnclosingScope scope) {
 		int start = index;
-		if(tryAndMatch(false,Identifier,Star,This) != null) {
+		if (tryAndMatch(false, Identifier, Star, This) != null) {
 			return true;
 		}
 		index = start;
@@ -3629,8 +3559,8 @@ public class WhileyFileParser {
 		Token token = match(Identifier);
 		Identifier id = new Identifier(token.text);
 		// Pass all path components
-		while(tryAndMatch(false, ColonColon) != null) {
-			if(tryAndMatch(false, Identifier) == null) {
+		while (tryAndMatch(false, ColonColon) != null) {
+			if (tryAndMatch(false, Identifier) == null) {
 				// Something when properly wrong.
 				return false;
 			} else {
@@ -3638,22 +3568,22 @@ public class WhileyFileParser {
 			}
 		}
 		// Attempt to parse type parameters (if present)
-		if(tryAndMatch(false, LeftAngle) != null) {
+		if (tryAndMatch(false, LeftAngle) != null) {
 			boolean firstTime = true;
-			while(tryAndMatch(false, RightAngle) == null) {
-				if(!firstTime && tryAndMatch(false,Comma) == null) {
+			while (tryAndMatch(false, RightAngle) == null) {
+				if (!firstTime && tryAndMatch(false, Comma) == null) {
 					// something went wrong
 					return false;
-				} else if(!skipType(scope)) {
+				} else if (!skipType(scope)) {
 					// something went wrong
 					return false;
 				}
-				firstTime=false;
+				firstTime = false;
 			}
 		}
 		// If encountered a path (e.g. std::math) then we definitely have a type.
 		// Otherwise, is a type only if not already a local variable.
-		if(definite || !scope.isVariable(id)) {
+		if (definite || !scope.isVariable(id)) {
 			return true;
 		} else {
 			return false;
@@ -3709,20 +3639,21 @@ public class WhileyFileParser {
 	}
 
 	public boolean skipParameterTypes(EnclosingScope scope) {
-		if(tryAndMatch(false,LeftBrace) != null) {
+		if (tryAndMatch(false, LeftBrace) != null) {
 			boolean firstTime = true;
-			while(eventuallyMatch(RightBrace) == null) {
+			while (eventuallyMatch(RightBrace) == null) {
 				if (!firstTime && tryAndMatch(false, Comma) == null) {
 					return false;
-				} else if(!skipType(scope)) {
+				} else if (!skipType(scope)) {
 					return false;
 				}
-				firstTime=false;
+				firstTime = false;
 			}
 			return true;
 		}
 		return false;
 	}
+
 	/**
 	 * Parse a top-level type, which is of the form:
 	 *
@@ -3757,7 +3688,7 @@ public class WhileyFileParser {
 			types.add(t);
 			do {
 				Type type = parseIntersectionType(scope);
-				if(types.contains(type)) {
+				if (types.contains(type)) {
 					syntaxError(WyilFile.EMPTY_TYPE, type);
 				}
 				types.add(type);
@@ -3816,7 +3747,7 @@ public class WhileyFileParser {
 		Type element = parseBaseType(scope);
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
-			element = annotateSourceLocation(new Type.Array(element),start);
+			element = annotateSourceLocation(new Type.Array(element), start);
 		}
 
 		return element;
@@ -3858,7 +3789,7 @@ public class WhileyFileParser {
 			return null;
 		}
 		match(token.kind);
-		return annotateSourceLocation(t,start);
+		return annotateSourceLocation(t, start);
 	}
 
 	/**
@@ -3917,11 +3848,11 @@ public class WhileyFileParser {
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
 	 *
-	 * Disambiguating these three forms is relatively straightforward as all
-	 * three must be terminated by a right curly brace. Therefore, after parsing
-	 * the first Type, we simply check what follows. One complication is the
-	 * potential for "mixed types" where the field name and type and intertwined
-	 * (e.g. function read()->[byte]).
+	 * Disambiguating these three forms is relatively straightforward as all three
+	 * must be terminated by a right curly brace. Therefore, after parsing the first
+	 * Type, we simply check what follows. One complication is the potential for
+	 * "mixed types" where the field name and type and intertwined (e.g. function
+	 * read()->[byte]).
 	 *
 	 * @return
 	 */
@@ -3974,7 +3905,7 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Type.Universal(name.get(0)), start);
 		} else {
 			Tuple<Type> types = parseTypeParameters(scope);
-			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name),types), start);
+			return annotateSourceLocation(new Type.Nominal(new Decl.Link(name), types), start);
 		}
 	}
 
@@ -4001,10 +3932,10 @@ public class WhileyFileParser {
 	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type
 	 * </pre>
 	 *
-	 * At the moment, it is required that parameters for a function or method
-	 * type are enclosed in braces. In principle, we would like to relax this.
-	 * However, this is difficult to make work because there is not way to
-	 * invoke a function or method without using braces.
+	 * At the moment, it is required that parameters for a function or method type
+	 * are enclosed in braces. In principle, we would like to relax this. However,
+	 * this is difficult to make work because there is not way to invoke a function
+	 * or method without using braces.
 	 *
 	 * @return
 	 */
@@ -4037,7 +3968,7 @@ public class WhileyFileParser {
 		} else {
 			type = new Type.Method(paramTypes, returnType);
 		}
-		return annotateSourceLocation(type,start);
+		return annotateSourceLocation(type, start);
 	}
 
 	/**
@@ -4095,7 +4026,7 @@ public class WhileyFileParser {
 				} else {
 					type = new Type.Method(paramTypes, returnType);
 				}
-				return new Pair<>(annotateSourceLocation(type,start), id);
+				return new Pair<>(annotateSourceLocation(type, start), id);
 			} else {
 				// In this case, we failed to match a mixed type. Therefore, we
 				// backtrack and parse as two separate items (i.e. type
@@ -4115,14 +4046,13 @@ public class WhileyFileParser {
 		match(LeftBrace);
 		ArrayList<Type> paramTypes = new ArrayList<>();
 		while (eventuallyMatch(RightBrace) == null) {
-			if(!paramTypes.isEmpty()) {
+			if (!paramTypes.isEmpty()) {
 				match(Comma);
 			}
 			paramTypes.add(parseType(scope));
 		}
 		return Type.Tuple.create(paramTypes);
 	}
-
 
 	public Type parseOptionalParameterTypes(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
@@ -4141,7 +4071,7 @@ public class WhileyFileParser {
 			components.add(parseIdentifier());
 		}
 		Name nid = new Name(components.toArray(new Identifier[components.size()]));
-		return annotateSourceLocation(nid,start);
+		return annotateSourceLocation(nid, start);
 	}
 
 	private Identifier parseOptionalIdentifier(EnclosingScope scope) {
@@ -4149,7 +4079,7 @@ public class WhileyFileParser {
 		Token token = tryAndMatch(false, Identifier);
 		if (token != null) {
 			Identifier id = new Identifier(token.text);
-			return annotateSourceLocation(id,start);
+			return annotateSourceLocation(id, start);
 		} else {
 			return null;
 		}
@@ -4177,8 +4107,8 @@ public class WhileyFileParser {
 
 	/**
 	 * Match a given token kind, whilst moving passed any whitespace encountered
-	 * inbetween. In the case that meet the end of the stream, or we don't match
-	 * the expected token, then an error is thrown.
+	 * inbetween. In the case that meet the end of the stream, or we don't match the
+	 * expected token, then an error is thrown.
 	 *
 	 * @param kind
 	 * @return
@@ -4217,10 +4147,10 @@ public class WhileyFileParser {
 
 	/**
 	 * Attempt to match a given kind of token with the view that it must
-	 * *eventually* be matched. This differs from <code>tryAndMatch()</code>
-	 * because it calls <code>checkNotEof()</code>. Thus, it is guaranteed to
-	 * skip any whitespace encountered in between. This is safe because we know
-	 * there is a terminating token still to come.
+	 * *eventually* be matched. This differs from <code>tryAndMatch()</code> because
+	 * it calls <code>checkNotEof()</code>. Thus, it is guaranteed to skip any
+	 * whitespace encountered in between. This is safe because we know there is a
+	 * terminating token still to come.
 	 *
 	 * @param kind
 	 * @return
@@ -4237,21 +4167,19 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Attempt to match a given token(s) at a given level of indent, whilst
-	 * ignoring any whitespace in between. Note that, in the case it fails to
-	 * match, then the index will be unchanged. This latter point is important,
-	 * otherwise we could accidentally gobble up some important indentation. If
-	 * more than one kind is provided then this will try to match any of them.
+	 * Attempt to match a given token(s) at a given level of indent, whilst ignoring
+	 * any whitespace in between. Note that, in the case it fails to match, then the
+	 * index will be unchanged. This latter point is important, otherwise we could
+	 * accidentally gobble up some important indentation. If more than one kind is
+	 * provided then this will try to match any of them.
 	 *
-	 * @param terminated
-	 *            Indicates whether or not this function should be concerned
-	 *            with new lines. The terminated flag indicates whether or not
-	 *            the current construct being parsed is known to be terminated.
-	 *            If so, then we don't need to worry about newlines and can
-	 *            greedily consume them (i.e. since we'll eventually run into
-	 *            the terminating symbol).
-	 * @param indent
-	 *            The indentation level to try and match the tokens at.
+	 * @param terminated Indicates whether or not this function should be concerned
+	 *                   with new lines. The terminated flag indicates whether or
+	 *                   not the current construct being parsed is known to be
+	 *                   terminated. If so, then we don't need to worry about
+	 *                   newlines and can greedily consume them (i.e. since we'll
+	 *                   eventually run into the terminating symbol).
+	 * @param indent     The indentation level to try and match the tokens at.
 	 * @param kinds
 	 *
 	 * @return
@@ -4271,19 +4199,18 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Attempt to match a given token(s), whilst ignoring any whitespace in
-	 * between. Note that, in the case it fails to match, then the index will be
-	 * unchanged. This latter point is important, otherwise we could
-	 * accidentally gobble up some important indentation. If more than one kind
-	 * is provided then this will try to match any of them.
+	 * Attempt to match a given token(s), whilst ignoring any whitespace in between.
+	 * Note that, in the case it fails to match, then the index will be unchanged.
+	 * This latter point is important, otherwise we could accidentally gobble up
+	 * some important indentation. If more than one kind is provided then this will
+	 * try to match any of them.
 	 *
-	 * @param terminated
-	 *            Indicates whether or not this function should be concerned
-	 *            with new lines. The terminated flag indicates whether or not
-	 *            the current construct being parsed is known to be terminated.
-	 *            If so, then we don't need to worry about newlines and can
-	 *            greedily consume them (i.e. since we'll eventually run into
-	 *            the terminating symbol).
+	 * @param terminated Indicates whether or not this function should be concerned
+	 *                   with new lines. The terminated flag indicates whether or
+	 *                   not the current construct being parsed is known to be
+	 *                   terminated. If so, then we don't need to worry about
+	 *                   newlines and can greedily consume them (i.e. since we'll
+	 *                   eventually run into the terminating symbol).
 	 * @param kinds
 	 *
 	 * @return
@@ -4308,16 +4235,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Attempt to match a given sequence of tokens in the given order, whilst
-	 * ignoring any whitespace in between. Note that, in any case, the index
-	 * will be unchanged!
+	 * ignoring any whitespace in between. Note that, in any case, the index will be
+	 * unchanged!
 	 *
-	 * @param terminated
-	 *            Indicates whether or not this function should be concerned
-	 *            with new lines. The terminated flag indicates whether or not
-	 *            the current construct being parsed is known to be terminated.
-	 *            If so, then we don't need to worry about newlines and can
-	 *            greedily consume them (i.e. since we'll eventually run into
-	 *            the terminating symbol).
+	 * @param terminated Indicates whether or not this function should be concerned
+	 *                   with new lines. The terminated flag indicates whether or
+	 *                   not the current construct being parsed is known to be
+	 *                   terminated. If so, then we don't need to worry about
+	 *                   newlines and can greedily consume them (i.e. since we'll
+	 *                   eventually run into the terminating symbol).
 	 * @param kinds
 	 *
 	 * @return whether the sequence matches
@@ -4334,8 +4260,8 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Check whether the current index is, after skipping all line spaces, at
-	 * the end of a line. This method does not change the state!
+	 * Check whether the current index is, after skipping all line spaces, at the
+	 * end of a line. This method does not change the state!
 	 *
 	 * @return whether index is at end of line
 	 */
@@ -4347,8 +4273,8 @@ public class WhileyFileParser {
 	/**
 	 * Attempt to match a given token on the *same* line, whilst ignoring any
 	 * whitespace in between. Note that, in the case it fails to match, then the
-	 * index will be unchanged. This latter point is important, otherwise we
-	 * could accidentally gobble up some important indentation.
+	 * index will be unchanged. This latter point is important, otherwise we could
+	 * accidentally gobble up some important indentation.
 	 *
 	 * @param kind
 	 * @return
@@ -4366,8 +4292,8 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Match a the end of a line. This is required to signal, for example, the
-	 * end of the current statement.
+	 * Match a the end of a line. This is required to signal, for example, the end
+	 * of the current statement.
 	 */
 	private void matchEndLine() {
 		// First, parse all whitespace characters except for new lines
@@ -4386,8 +4312,8 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Check that the End-Of-File has not been reached. This method should be
-	 * called from contexts where we are expecting something to follow.
+	 * Check that the End-Of-File has not been reached. This method should be called
+	 * from contexts where we are expecting something to follow.
 	 */
 	private void checkNotEof() {
 		skipWhiteSpace();
@@ -4415,9 +4341,9 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Skip over any whitespace characters that are permitted on a given line
-	 * (i.e. all except newlines), starting from a given index and returning the
-	 * first index passed any whitespace encountered.
+	 * Skip over any whitespace characters that are permitted on a given line (i.e.
+	 * all except newlines), starting from a given index and returning the first
+	 * index passed any whitespace encountered.
 	 */
 	private int skipLineSpace(int index) {
 		while (index < tokens.size() && isLineSpace(tokens.get(index))) {
@@ -4427,8 +4353,8 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Skip over any empty lines. That is lines which contain only whitespace
-	 * and comments.
+	 * Skip over any empty lines. That is lines which contain only whitespace and
+	 * comments.
 	 */
 	private void skipEmptyLines() {
 		int tmp = index;
@@ -4520,8 +4446,8 @@ public class WhileyFileParser {
 	protected byte[] parseUnicodeString(Token token) {
 		String v = token.text;
 		/*
-		 * Parsing a string requires several steps to be taken. First, we need
-		 * to strip quotes from the ends of the string.
+		 * Parsing a string requires several steps to be taken. First, we need to strip
+		 * quotes from the ends of the string.
 		 */
 		v = v.substring(1, v.length() - 1);
 
@@ -4589,8 +4515,7 @@ public class WhileyFileParser {
 	/**
 	 * Parse a token representing an integer literal, such as "112", "1_024", etc.
 	 *
-	 * @param input
-	 *            The token representing the integer value.
+	 * @param input The token representing the integer value.
 	 * @return
 	 */
 	private BigInteger parseIntegerLiteral(Token input) {
@@ -4601,8 +4526,7 @@ public class WhileyFileParser {
 	 * Parse a token representing a binary literal, such as "0b0110", "0b1111_0101",
 	 * etc.
 	 *
-	 * @param input
-	 *            The token representing the byte value.
+	 * @param input The token representing the byte value.
 	 * @return
 	 */
 	private byte parseBinaryLiteral(Token input) {
@@ -4616,7 +4540,9 @@ public class WhileyFileParser {
 		for (int i = 2; i != text.length(); ++i) {
 			char c = text.charAt(i);
 			// Skip underscore
-			if(c == '_') { continue; }
+			if (c == '_') {
+				continue;
+			}
 			val = val << 1;
 			if (c == '1') {
 				val = val | 1;
@@ -4632,8 +4558,7 @@ public class WhileyFileParser {
 	/**
 	 * Parse a token representing a hex literal, such as "0x
 	 *
-	 * @param input
-	 *            The token representing the byte value.
+	 * @param input The token representing the byte value.
 	 * @return
 	 */
 	private BigInteger parseHexLiteral(Token input) {
@@ -4641,13 +4566,13 @@ public class WhileyFileParser {
 		// Start past 0x
 		for (int i = 2; i != text.length(); ++i) {
 			char c = text.charAt(i);
-			if(c != '_' && !isHexDigit(c)) {
+			if (c != '_' && !isHexDigit(c)) {
 				syntaxError(WyilFile.INVALID_HEX_LITERAL, input);
 			}
 		}
 		// Remove "0x" and "_"
 		text = input.text.substring(2).replace("_", "");
-		return new BigInteger(text,16);
+		return new BigInteger(text, 16);
 	}
 
 	private boolean isHexDigit(char c) {
@@ -4685,17 +4610,17 @@ public class WhileyFileParser {
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start, int end) {
 		// Allocate item to enclosing WhileyFile. This is necessary so that the
 		// annotations can then be correctly allocated as well.
-		item = parent.allocate(item);
+		item = target.allocate(item);
 		// Determine the first and last token representing this span.
 		Token first = tokens.get(start);
 		Token last = tokens.get(end);
-		parent.allocate(new Attribute.Span(item,first.start,last.end()));
+		target.allocate(new Attribute.Span(item, first.start, last.end()));
 		return item;
 	}
 
 	/**
-	 * Represents a given amount of indentation. Specifically, a count of tabs
-	 * and spaces. Observe that the order in which tabs / spaces occurred is not
+	 * Represents a given amount of indentation. Specifically, a count of tabs and
+	 * spaces. Observe that the order in which tabs / spaces occurred is not
 	 * retained.
 	 *
 	 * @author David J. Pearce
@@ -4728,12 +4653,11 @@ public class WhileyFileParser {
 		}
 
 		/**
-		 * Test whether this indentation is considered "less than or equivalent"
-		 * to another indentation. For example, an indentation of 2 spaces is
-		 * considered less than an indentation of 3 spaces, etc.
+		 * Test whether this indentation is considered "less than or equivalent" to
+		 * another indentation. For example, an indentation of 2 spaces is considered
+		 * less than an indentation of 3 spaces, etc.
 		 *
-		 * @param other
-		 *            The indent to compare against.
+		 * @param other The indent to compare against.
 		 * @return
 		 */
 		public boolean lessThanEq(Indent other) {
@@ -4742,12 +4666,10 @@ public class WhileyFileParser {
 
 		/**
 		 * Test whether this indentation is considered "equivalent" to another
-		 * indentation. For example, an indentation of 3 spaces followed by 1
-		 * tab is considered equivalent to an indentation of 1 tab followed by 3
-		 * spaces, etc.
+		 * indentation. For example, an indentation of 3 spaces followed by 1 tab is
+		 * considered equivalent to an indentation of 1 tab followed by 3 spaces, etc.
 		 *
-		 * @param other
-		 *            The indent to compare against.
+		 * @param other The indent to compare against.
 		 * @return
 		 */
 		public boolean equivalent(Indent other) {
@@ -4763,8 +4685,8 @@ public class WhileyFileParser {
 	private static final Indent ROOT_INDENT = new Indent("", 0);
 
 	/**
-	 * The enclosing scope provides contextual information about the enclosing
-	 * scope for the given statement or expression being parsed.
+	 * The enclosing scope provides contextual information about the enclosing scope
+	 * for the given statement or expression being parsed.
 	 *
 	 * @author David J. Pearce
 	 *
@@ -4781,12 +4703,11 @@ public class WhileyFileParser {
 		/**
 		 * The set of declared variables in the enclosing scope.
 		 */
-		private final HashMap<Identifier,Decl.Variable> environment;
+		private final HashMap<Identifier, Decl.Variable> environment;
 		/**
-		 * The set of field aliases in the enclosing scope. A field alias occurs
-		 * for a record declaration where, for convenience, we allow the type
-		 * invariant to refer directly to the field, rather than through a
-		 * declared variable.
+		 * The set of field aliases in the enclosing scope. A field alias occurs for a
+		 * record declaration where, for convenience, we allow the type invariant to
+		 * refer directly to the field, rather than through a declared variable.
 		 */
 		private final HashSet<Identifier> fieldAliases;
 
@@ -4796,9 +4717,9 @@ public class WhileyFileParser {
 		private final HashSet<Identifier> typeVariables;
 
 		/**
-		 * A simple flag that tells us whether or not we are currently within a
-		 * loop. This is necessary to stop break or continue statements which
-		 * are written outside of a loop.
+		 * A simple flag that tells us whether or not we are currently within a loop.
+		 * This is necessary to stop break or continue statements which are written
+		 * outside of a loop.
 		 */
 		private final boolean inLoop;
 
@@ -4812,8 +4733,7 @@ public class WhileyFileParser {
 		}
 
 		private EnclosingScope(Build.Meter meter, Indent indent, Map<Identifier, Decl.Variable> variables,
-				Set<Identifier> fieldAliases, Set<Identifier> typeVariables,
-				boolean inLoop) {
+				Set<Identifier> fieldAliases, Set<Identifier> typeVariables, boolean inLoop) {
 			this.meter = meter;
 			this.indent = indent;
 			this.environment = new HashMap<>(variables);
@@ -4831,8 +4751,7 @@ public class WhileyFileParser {
 		}
 
 		/**
-		 * Check whether a given name corresponds to a declared variable in this
-		 * scope.
+		 * Check whether a given name corresponds to a declared variable in this scope.
 		 *
 		 * @param name
 		 * @return
@@ -4842,10 +4761,10 @@ public class WhileyFileParser {
 		}
 
 		/**
-		 * Check whether a given name corresponds to a "field alias" in this
-		 * scope. A field alias occurs for a record declaration where, for
-		 * convenience, we allow the type invariant to refer directly to the
-		 * field, rather than through a declared variable.
+		 * Check whether a given name corresponds to a "field alias" in this scope. A
+		 * field alias occurs for a record declaration where, for convenience, we allow
+		 * the type invariant to refer directly to the field, rather than through a
+		 * declared variable.
 		 */
 		public boolean isFieldAlias(Identifier name) {
 			return fieldAliases.contains(name);
@@ -4864,10 +4783,8 @@ public class WhileyFileParser {
 		/**
 		 * Check whether a given name is available, i.e. can be declared.
 		 *
-		 * @param id
-		 *            identifier that holds the name to check
-		 * @throws SyntacticException
-		 *             if the name is unavailable (already declared)
+		 * @param id identifier that holds the name to check
+		 * @throws SyntacticException if the name is unavailable (already declared)
 		 */
 		public void checkNameAvailable(Identifier id) {
 			if (!isAvailableName(id)) {
@@ -4893,10 +4810,8 @@ public class WhileyFileParser {
 		/**
 		 * Declare a new variable in this scope.
 		 *
-		 * @param id
-		 *            identifier that holds the name to declare
-		 * @throws SyntacticException
-		 *             if the name is already declared
+		 * @param id identifier that holds the name to declare
+		 * @throws SyntacticException if the name is already declared
 		 */
 		public void declareVariable(Decl.Variable decl) {
 			Identifier id = decl.getName();
@@ -4910,8 +4825,7 @@ public class WhileyFileParser {
 		/**
 		 * Declare a new field alias in this scope.
 		 *
-		 * @param alias
-		 *            The field alias to declare
+		 * @param alias The field alias to declare
 		 */
 		public void declareFieldAlias(Identifier alias) {
 			fieldAliases.add(alias);
@@ -4919,11 +4833,12 @@ public class WhileyFileParser {
 
 		/**
 		 * Declare a new type variables
+		 *
 		 * @param name
 		 */
 		public void declareTemplateVariable(Template.Variable var) {
 			Identifier name = var.getName();
-			if(!isAvailableName(name)) {
+			if (!isAvailableName(name)) {
 				// name is not available!
 				syntaxError(WyilFile.DUPLICATE_DECLARATION, name);
 			} else {
@@ -4932,45 +4847,42 @@ public class WhileyFileParser {
 		}
 
 		/**
-		 * Create a new enclosing scope in which variables can be declared which
-		 * are remain invisible to this enclosing scope. All variables declared
-		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * Create a new enclosing scope in which variables can be declared which are
+		 * remain invisible to this enclosing scope. All variables declared in this
+		 * enclosing scope remain declared in the new enclosing scope.
 		 *
-		 * @param indent
-		 *            the indent level for the new scope
+		 * @param indent the indent level for the new scope
 		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope() {
-			return new EnclosingScope(meter,indent, environment, fieldAliases, typeVariables, inLoop);
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
 		}
 
 		/**
-		 * Create a new enclosing scope in which variables can be declared which
-		 * are remain invisible to this enclosing scope. All variables declared
-		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * Create a new enclosing scope in which variables can be declared which are
+		 * remain invisible to this enclosing scope. All variables declared in this
+		 * enclosing scope remain declared in the new enclosing scope.
 		 *
-		 * @param indent
-		 *            the indent level for the new scope
+		 * @param indent the indent level for the new scope
 		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent) {
-			return new EnclosingScope(meter,indent, environment, fieldAliases, typeVariables, inLoop);
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
 		}
 
 		/**
-		 * Create a new enclosing scope in which variables can be declared which
-		 * are remain invisible to this enclosing scope. All variables declared
-		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * Create a new enclosing scope in which variables can be declared which are
+		 * remain invisible to this enclosing scope. All variables declared in this
+		 * enclosing scope remain declared in the new enclosing scope.
 		 *
-		 * @param indent
-		 *            the indent level for the new scope
+		 * @param indent the indent level for the new scope
 		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
-			return new EnclosingScope(meter,indent, environment, fieldAliases, typeVariables, inLoop);
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
 		}
 
 		private boolean isAvailableName(Identifier name) {

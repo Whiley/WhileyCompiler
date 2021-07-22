@@ -29,7 +29,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.util.TestUtils;
-import wyfs.util.Pair;
+import wycc.util.Pair;
 
 /**
  * Run through all invalid test cases with verification enabled. Since every

@@ -11,6 +11,7 @@
 *.o
 *.jar
 *.smt2
+*.iml
 /report/
 /build/
 /dist/

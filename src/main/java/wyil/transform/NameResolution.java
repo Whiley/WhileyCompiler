@@ -13,17 +13,15 @@
 // limitations under the License.
 package wyil.transform;
 
-import wybs.lang.*;
-import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Ref;
-import wybs.util.AbstractSyntacticHeap;
+import wycc.lang.*;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Ref;
+import wycc.util.AbstractSyntacticHeap;
 
 import wyc.util.ErrorMessages;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.ArrayUtils;
+import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -34,7 +32,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import wyil.util.AbstractConsumer;
 
@@ -82,22 +79,18 @@ public class NameResolution {
 
 	private final SymbolTable symbolTable;
 
-	private final List<Build.Package> packages;
+	private final List<Content.Source> packages;
 
 	private boolean status = true;
 
-	public NameResolution(Build.Meter meter, Build.Project project, WyilFile target) throws IOException {
-		this(meter, project.getPackages(), target);
-	}
-
-	public NameResolution(Build.Meter meter, List<Build.Package> packages, WyilFile target) throws IOException {
+	public NameResolution(Build.Meter meter, List<Content.Source> packages, WyilFile target) throws IOException {
 		this.meter = meter.fork(NameResolution.class.getSimpleName());
 		this.packages = packages;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
 		this.resolver = new Resolver(meter);
 	}
-	
+
 	/**
 	 * Apply this name resolver to a given WyilFile.
 	 *
@@ -137,12 +130,12 @@ public class NameResolution {
 		ArrayList<WyilFile> externals = new ArrayList<>();
 		// Consider each package in turn and identify all contained WyilFiles
 		for (int i = 0; i != packages.size(); ++i) {
-			Build.Package p = packages.get(i);
+			Content.Source p = packages.get(i);
 			// FIXME: This is kind broken me thinks. Potentially, we should be able to
 			// figure out what modules are supplied via the configuration.
-			List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
+			List<WyilFile> entries = p.getAll(WyilFile.ContentType, Filter.EVERYTHING);
 			for (int j = 0; j != entries.size(); ++j) {
-				externals.add(entries.get(j).read());
+				externals.add(entries.get(j));
 			}
 		}
 		return externals;

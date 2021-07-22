@@ -16,10 +16,10 @@ package wyil.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import wybs.lang.Build;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wyfs.util.Pair;
+import wycc.lang.Build;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
