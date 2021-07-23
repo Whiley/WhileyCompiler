@@ -6,14 +6,14 @@
   <!-- ============================================== -->
 
   <groupId>org.whiley</groupId>
-  <artifactId>wycc</artifactId>
+  <artifactId>wyqc</artifactId>
   <packaging>jar</packaging>
 
   <licenses>
     <license>
       <name>Apache License, Version 2.0</name>
       <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
+      <distribution>repo</distribution>      
     </license>
   </licenses>
   
@@ -22,20 +22,20 @@
     <artifactId>wyc-all</artifactId>
     <version>0.9.2</version>
   </parent>
-
+  
   <!-- ============================================== -->
   <!-- Description -->
   <!-- ============================================== -->
 
-  <name>Whiley Compiler Collection</name>
+  <name>Whiley Quick Check</name>
   <description>
-    A compiler framework for managing the Whiley Compiler and related tooling.
+    An Automated Testing Tool for Whiley.
   </description>
 
   <url>http://whiley.org/</url>
 
   <scm>
-    <url>https://github.com/Whiley/WhileyCompilerCollection</url>
+    <url>https://github.com/Whiley/WhileyQuickCheck</url>
   </scm>
 
   <developers>
@@ -46,6 +46,29 @@
       <url>http://www.ecs.vuw.ac.nz/~djp</url>
     </developer>
   </developers>
+
+  <!-- ============================================== -->
+  <!-- Dependencies -->
+  <!-- ============================================== -->
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>wyc</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.whiley</groupId>
+      <artifactId>jmodelgen</artifactId>
+      <version>[0.4.0,0.5.0)</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
 </project>
 

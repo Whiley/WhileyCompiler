@@ -9,16 +9,16 @@
   <!-- Configuration -->
   <!-- ============================================== -->
 
-
   <groupId>org.whiley</groupId>
   <artifactId>wyc-all</artifactId>
-  <version>0.9.0</version>
+  <version>0.9.2</version>
   <packaging>pom</packaging>
   
   <modules>
     <module>wycc</module>
     <module>wycli</module>      
     <module>wyc</module>
+    <module>wyqc</module>
   </modules>
   
   <licenses>
@@ -56,7 +56,16 @@
       <url>http://www.ecs.vuw.ac.nz/~djp</url>
     </developer>
   </developers>
-  
+
+   <dependencies>
+     <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <!-- ============================================== -->
   <!-- Deployment -->
   <!-- ============================================== -->
