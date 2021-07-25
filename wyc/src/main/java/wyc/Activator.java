@@ -29,9 +29,9 @@ import wycc.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {
-	public static Path PKGNAME_CONFIG_OPTION = Path.fromString("package/name");
-	public static Path SOURCE_CONFIG_OPTION = Path.fromString("build/whiley/source");
-	public static Path TARGET_CONFIG_OPTION = Path.fromString("build/whiley/target");
+	public static Path PACKAGE_NAME = Path.fromString("package/name");
+	public static Path BUILD_WHILEY_SOURCE = Path.fromString("build/whiley/source");
+	public static Path BUILD_WHILEY_TARGET = Path.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -45,8 +45,8 @@ public class Activator implements Plugin.Activator {
 		@Override
 		public Configuration.Schema getConfigurationSchema() {
 			return Configuration.fromArray(
-					Configuration.UNBOUND_STRING(SOURCE_CONFIG_OPTION, "Specify location for whiley source files", SOURCE_DEFAULT),
-					Configuration.UNBOUND_STRING(TARGET_CONFIG_OPTION, "Specify location for generated wyil files", TARGET_DEFAULT));
+					Configuration.UNBOUND_STRING(BUILD_WHILEY_SOURCE, "Specify location for whiley source files", SOURCE_DEFAULT),
+					Configuration.UNBOUND_STRING(BUILD_WHILEY_TARGET, "Specify location for generated wyil files", TARGET_DEFAULT));
 		}
 
 		@Override
@@ -56,11 +56,11 @@ public class Activator implements Plugin.Activator {
 			Build.SnapShot snapshot = environment.getRepository().last();
 			Package.Resolver resolver = environment.getPackageResolver();
 			//
-			Path pkg = Path.fromString(config.get(Value.UTF8.class, PKGNAME_CONFIG_OPTION).unwrap());
+			Path pkg = Path.fromString(config.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
 			//
-			Filter source = Filter.fromString(config.get(Value.UTF8.class, SOURCE_CONFIG_OPTION).unwrap());
+			Filter source = Filter.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_SOURCE).unwrap());
 			// Specify directory where generated WyIL files are dumped.
-			Path target = Path.fromString(config.get(Value.UTF8.class, TARGET_CONFIG_OPTION).unwrap());
+			Path target = Path.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
 			// Construct build task
 			Filter includes = source.append(Filter.EVERYTHING);
 			// Identify all Whiley source files

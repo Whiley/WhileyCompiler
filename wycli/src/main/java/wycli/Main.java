@@ -119,24 +119,18 @@ public class Main implements Command.Environment {
 
 	@Override
 	public Configuration get(Path path) {
-		try {
-			ArrayList<Configuration> files = new ArrayList<>();
-			// Pull out all configuration files upto the root
-			while (path != null) {
-				ConfigFile cf = repository.get(ConfigFile.ContentType, path.append("wy"));
-				if (cf != null) {
-					Configuration c = cf.toConfiguration(localSchema, false);
-					files.add(c);
-				}
-				path = path.parent();
+		ArrayList<Configuration> files = new ArrayList<>();
+		// Pull out all configuration files upto the root
+		while (path != null) {
+			ConfigFile cf = repository.get(ConfigFile.ContentType, path.append("wy"));
+			if (cf != null) {
+				Configuration c = cf.toConfiguration(localSchema, false);
+				files.add(c);
 			}
-			// Construct the combinator
-			return new ConfigurationCombinator(files.toArray(new Configuration[files.size()]));
-		} catch(IOException e) {
-			// FIXME: this is a hack for now. A better solution is to read all configuration
-			// files into memory at the beginning.
-			throw new RuntimeException(e);
+			path = path.parent();
 		}
+		// Construct the combinator
+		return new ConfigurationCombinator(files.toArray(new Configuration[files.size()]));
 	}
 
 	@Override

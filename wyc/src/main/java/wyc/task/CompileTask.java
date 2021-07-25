@@ -74,7 +74,6 @@ public class CompileTask implements Build.Task {
 	 * The set of build packages that this task relies on.
 	 */
 	private final List<Content.Source> packages;
-
 	/**
 	 * The set of source files that this task will compiler from.
 	 */

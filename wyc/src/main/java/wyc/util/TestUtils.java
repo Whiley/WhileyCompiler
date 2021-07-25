@@ -30,7 +30,6 @@ import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ByteRepository;
 import wycc.util.DirectoryRoot;
 import wycc.util.Pair;
@@ -260,7 +259,7 @@ public class TestUtils {
 	 * @param out
 	 * @param err
 	 */
-	private static void printStackTrace(PrintStream out, Throwable err) {
+	public static void printStackTrace(PrintStream out, Throwable err) {
 		out.println(err.getClass().getName() + ": " + err.getMessage());
 		for (StackTraceElement ste : err.getStackTrace()) {
 			out.println("\tat " + ste.toString());

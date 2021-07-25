@@ -274,7 +274,7 @@ public class QuickCheck implements Command {
 		double samplingRate = configuration.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
 		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
-		Path pkg = Path.fromString(configuration.get(Value.UTF8.class, Activator.PKGNAME_CONFIG_OPTION).unwrap());
+		Path pkg = Path.fromString(configuration.get(Value.UTF8.class, Activator.PACKAGE_NAME).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
 		//
@@ -300,7 +300,7 @@ public class QuickCheck implements Command {
 			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
-		Path target = Path.fromString(configuration.get(Value.UTF8.class, Activator.TARGET_CONFIG_OPTION).unwrap());
+		Path target = Path.fromString(configuration.get(Value.UTF8.class, Activator.BUILD_WHILEY_TARGET).unwrap());
 		//
 		WyilFile binary = repository.get(WyilFile.ContentType,pkg);
 		if (binary != null) {
