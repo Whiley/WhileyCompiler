@@ -27,7 +27,6 @@ import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
 import wycc.lang.*;
 import wycc.lang.Build.Repository;
-import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
 import wycc.util.AbstractCompilationUnit.Name;
@@ -38,16 +37,14 @@ import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.commands.BuildSystem;
 import wycli.lang.Command;
-import wyil.interpreter.ConcreteSemantics.RValue;
+import static wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Decl.FunctionOrMethod;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Attr.StackFrame;
-import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
@@ -302,7 +299,8 @@ public class QuickCheck implements Command {
 		// Specify directory where generated WyIL files are dumped.
 		Path target = Path.fromString(configuration.get(Value.UTF8.class, Activator.BUILD_WHILEY_TARGET).unwrap());
 		//
-		WyilFile binary = repository.get(WyilFile.ContentType,pkg);
+		WyilFile binary = repository.get(WyilFile.ContentType,target.append(pkg));
+
 		if (binary != null) {
 			// Construct initial context
 			Context context = DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
@@ -341,7 +339,6 @@ public class QuickCheck implements Command {
 	 * printing of stack frames. However, this is really a temporary solution which
 	 * should be replaced in the future with something more generic.
 	 *
-	 * @param executor
 	 * @throws IOException
 	 */
 //	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {

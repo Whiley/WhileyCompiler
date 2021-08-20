@@ -33,6 +33,7 @@ import wycc.lang.Build.SnapShot;
 import wycc.lang.Build;
 import wycc.lang.Build.Artifact;
 import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Value;
 import wycc.util.AbstractCompilationUnit.Attribute.Span;
 import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
@@ -45,6 +46,7 @@ import wycc.util.Pair;
  *
  */
 public class BuildSystem implements Command {
+	public static Path BUILD_PLATFORMS = Path.fromString("build/platforms");
 	/**
 	 * The descriptor for this command.
 	 */
@@ -128,11 +130,22 @@ public class BuildSystem implements Command {
 
 	@Override
 	public boolean execute(Path path, Template template) throws Exception {
+		// Extract configuration for this path
+		Configuration config = environment.get(path);
 		Repository repository = environment.getRepository();
 		List<Build.Task> tasks = new ArrayList<>();
+		// Determine active platforms
+		Value.Array platforms = config.get(Value.Array.class, BUILD_PLATFORMS);
 		// Construct tasks
 		for(Command.Platform p : environment.getCommandPlatforms()) {
-			tasks.add(p.initialise(path, environment));
+			// TODO: this is not pretty.
+			for (int i = 0; i != platforms.size(); ++i) {
+				Value.UTF8 ith = (Value.UTF8) platforms.get(i);
+				if(ith.toString().equals(p.getName())) {
+					// Yes, this platform is active
+					tasks.add(p.initialise(path, environment));
+				}
+			}
 		}
 		// Construct pipeline
 		Pipeline pipeline = new Pipeline(tasks);

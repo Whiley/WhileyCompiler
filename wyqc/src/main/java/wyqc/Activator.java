@@ -19,32 +19,32 @@ import wycli.lang.Plugin;
 import wycc.lang.Content;
 import wycc.lang.Path;
 import wyil.lang.WyilFile;
+import wyqc.cmd.QuickCheck;
 
 import java.io.IOException;
 
 import wycc.lang.Build;
-import wycc.util.AbstractCompilationUnit.Value;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {
 
-	public static Command.Platform CHECK_PLATFORM = new Command.Platform() {
-		//
-		@Override
-		public String getName() {
-			return "check";
-		}
-
-		@Override
-		public Configuration.Schema getConfigurationSchema() {
-			return Configuration.EMPTY_SCHEMA;
-		}
-
-		@Override
-		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
-			throw new IllegalArgumentException();
-		}
-	};
+//	public static Command.Platform CHECK_PLATFORM = new Command.Platform() {
+//		//
+//		@Override
+//		public String getName() {
+//			return "check";
+//		}
+//
+//		@Override
+//		public Configuration.Schema getConfigurationSchema() {
+//			return Configuration.EMPTY_SCHEMA;
+//		}
+//
+//		@Override
+//		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
+//			throw new IllegalArgumentException();
+//		}
+//	};
 
 	// =======================================================================
 	// Start
@@ -52,9 +52,10 @@ public class Activator implements Plugin.Activator {
 
 	@Override
 	public Plugin start(Plugin.Context context) {
-		System.out.println("WYQC ACTIVATED");
+		// Register check command
+		context.register(Command.Descriptor.class, QuickCheck.DESCRIPTOR);
 		// Register platform
-		context.register(Command.Platform.class, CHECK_PLATFORM);
+//		context.register(Command.Platform.class, CHECK_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
 		context.register(Content.Type.class, WyilFile.ContentType);

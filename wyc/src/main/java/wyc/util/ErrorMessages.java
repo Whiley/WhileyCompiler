@@ -442,6 +442,9 @@ public class ErrorMessages {
 	 * @param context
 	 */
 	public static void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+		if(e == null) {
+			throw new IllegalArgumentException("Syntactic item cannot be null");
+		}
 		WyilFile wf = (WyilFile) e.getHeap();
 		// Allocate syntax error in the heap));
 		SyntacticItem.Marker m = wf.allocate(new WyilFile.Attr.SyntaxError(code, e, new Tuple<>(context)));

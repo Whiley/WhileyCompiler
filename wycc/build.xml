@@ -1,0 +1,115 @@
+<project name="wyqc" default="build" xmlns:artifact="urn:maven-ant">
+
+  <!-- ================================================================== -->
+  <!-- Configuration -->
+  <!-- ================================================================== -->
+  <import file="../config.xml"/>
+
+  <!-- ================================================================== -->
+  <!-- Setup -->
+  <!-- ================================================================== -->
+
+  <target name="setup">
+    <mkdir dir="${JAR_DIR}"/>
+    <mkdir dir="${CLASS_DIR}"/>
+    <mkdir dir="${DOC_DIR}"/>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Compile -->
+  <!-- ================================================================== -->
+
+  <target name="compile" depends="setup">
+    <javac includeantruntime="false"
+	   target="${JAVA_VERSION}"
+	   srcdir="${JAVA_DIR}"
+	   destdir="${CLASS_DIR}">
+      <classpath>
+	<path refid="MAVEN_DEPS"/>
+    </classpath>
+    </javac>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Compile Tests -->
+  <!-- ================================================================== -->
+
+  <target name="compile-tests" depends="compile">
+    <javac includeantruntime="false"
+	   target="${JAVA_VERSION}"
+	   srcdir="${TEST_DIR}"
+	   destdir="${CLASS_DIR}">
+      <classpath>
+	<path refid="MAVEN_DEPS"/>
+    </classpath>
+    </javac>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Test -->
+  <!-- ================================================================== -->
+
+  <target name="test" depends="compile-tests">
+    <junit printsummary="yes"
+	   fork="yes"
+	   haltonfailure="yes">
+      <formatter type="plain" usefile="false"/>
+      <batchtest>
+        <fileset dir="${TEST_DIR}" includes="**/*Test.java"/>
+      </batchtest>
+      <classpath>
+	<pathelement path="${CLASS_DIR}"/>
+	<path refid="MAVEN_DEPS"/>
+      </classpath>
+    </junit>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Build -->
+  <!-- ================================================================== -->
+
+  <target name="build" depends="compile">
+    <jar destfile="${CLASS_JAR}">
+      <fileset dir="${CLASS_DIR}" includes="**/*.class"/>
+    </jar>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Dist -->
+  <!-- ================================================================== -->
+
+  <target name="dist" depends="build">
+    <!-- build sources jar -->
+    <jar destfile="${JAVA_JAR}">
+      <fileset dir="${JAVA_DIR}" includes="**/*.java"/>
+    </jar>
+    <!-- build javadoc jar -->
+    <javadoc sourcepath="${JAVA_DIR}" destdir="${DOC_DIR}">
+      <classpath refid="MAVEN_DEPS"/>      
+      <arg value="-Xdoclint:none"/>
+    </javadoc>
+    <jar jarfile="${DOC_JAR}">
+      <fileset dir="${DOC_DIR}" />
+    </jar>    
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Deploy Plugin -->
+  <!-- ================================================================== -->
+
+  <target name="plugin" depends="build">
+    <copy file="${CLASS_JAR}" todir="${WHILEYHOME}/lib"/>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Clean -->
+  <!-- ================================================================== -->
+
+  <target name="clean">
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset dir="${BIN_DIR}"/>
+      <fileset dir="." includes="**/*.wyil,**/*.class"/>
+    </delete>
+  </target>
+
+</project>
