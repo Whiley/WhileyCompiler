@@ -19,7 +19,7 @@ import wycli.lang.Plugin;
 import wycc.lang.Content;
 import wycc.lang.Path;
 import wyil.lang.WyilFile;
-import wyqc.cmd.QuickCheck;
+import wyqc.cmd.Check;
 
 import java.io.IOException;
 
@@ -53,7 +53,7 @@ public class Activator implements Plugin.Activator {
 	@Override
 	public Plugin start(Plugin.Context context) {
 		// Register check command
-		context.register(Command.Descriptor.class, QuickCheck.DESCRIPTOR);
+		context.register(Command.Descriptor.class, Check.DESCRIPTOR);
 		// Register platform
 //		context.register(Command.Platform.class, CHECK_PLATFORM);
 		// List of content types
