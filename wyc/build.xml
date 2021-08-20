@@ -3,7 +3,7 @@
   <!-- ================================================================== -->
   <!-- Configuration -->
   <!-- ================================================================== -->
-  <import file="config.xml"/>
+  <import file="../config.xml"/>
 
   <!-- ================================================================== -->
   <!-- Setup -->
@@ -91,59 +91,6 @@
     <jar jarfile="${DOC_JAR}">
       <fileset dir="${DOC_DIR}" />
     </jar>    
-  </target>
-
-  <!-- ================================================================== -->
-  <!-- DEPLOY SNAPSHOT -->
-  <!-- ================================================================== -->
-
-  <target name="deploy-snapshot" depends="dist">
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-deploy-plugin:2.6:deploy-file" />
-      <arg value="-Durl=${SNAPSHOT_URL}" />
-      <arg value="-DrepositoryId=${SERVER_ID}" />
-      <arg value="-DpomFile=pom.xml" />
-      <arg value="-Dfile=${CLASS_JAR}" />
-    </artifact:mvn>
-  </target>
-
-  <!-- ================================================================== -->
-  <!-- DEPLOY -->
-  <!-- ================================================================== -->
-  
-  <target name="deploy" depends="dist">
-    <!-- sign and deploy the main artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-      <arg value="-Durl=${STAGING_URL}" />
-      <arg value="-DrepositoryId=${SERVER_ID}" />
-      <arg value="-DpomFile=pom.xml" />
-      <arg value="-Dfile=${CLASS_JAR}" />
-      <arg value="-Pgpg"/>
-      <arg value="-e"/>
-    </artifact:mvn>
-
-    <!-- sign and deploy the sources artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-      <arg value="-Durl=${STAGING_URL}" />
-      <arg value="-DrepositoryId=${SERVER_ID}" />
-      <arg value="-DpomFile=pom.xml" />
-      <arg value="-Dfile=${CLASS_JAR}" />
-      <arg value="-Dclassifier=sources" />
-      <arg value="-Pgpg" />
-    </artifact:mvn>
-
-    <!-- sign and deploy the javadoc artifact -->
-    <artifact:mvn>
-      <arg value="org.apache.maven.plugins:maven-gpg-plugin:1.3:sign-and-deploy-file" />
-      <arg value="-Durl=${STAGING_URL}" />
-      <arg value="-DrepositoryId=${SERVER_ID}" />
-      <arg value="-DpomFile=pom.xml" />
-      <arg value="-Dfile=${CLASS_JAR}" />
-      <arg value="-Dclassifier=javadoc" />
-      <arg value="-Pgpg" />
-    </artifact:mvn>
   </target>
 
   <!-- ================================================================== -->

@@ -52,6 +52,7 @@ public class Activator implements Plugin.Activator {
 
 	@Override
 	public Plugin start(Plugin.Context context) {
+		System.out.println("WYQC ACTIVATED");
 		// Register platform
 		context.register(Command.Platform.class, CHECK_PLATFORM);
 		// List of content types
