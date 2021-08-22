@@ -18,33 +18,100 @@ import wycli.lang.Command;
 import wycli.lang.Plugin;
 import wycc.lang.Content;
 import wycc.lang.Path;
+import wycc.lang.Build.Artifact;
+import wycc.lang.Build.Repository;
+import wycc.lang.Build.SnapShot;
+import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import wyqc.cmd.Check;
+import wyqc.lang.QuickCheck;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import wycc.lang.Build;
+import static wyqc.cmd.Check.*;
+import static wyc.Activator.*;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {
 
-//	public static Command.Platform CHECK_PLATFORM = new Command.Platform() {
-//		//
-//		@Override
-//		public String getName() {
-//			return "check";
-//		}
-//
-//		@Override
-//		public Configuration.Schema getConfigurationSchema() {
-//			return Configuration.EMPTY_SCHEMA;
-//		}
-//
-//		@Override
-//		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
-//			throw new IllegalArgumentException();
-//		}
-//	};
+	public static Command.Platform CHECK_PLATFORM = new Command.Platform() {
+		//
+		@Override
+		public String getName() {
+			return "check";
+		}
+
+		@Override
+		public Configuration.Schema getConfigurationSchema() {
+			return Configuration.EMPTY_SCHEMA;
+		}
+
+		@Override
+		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
+			Configuration configuration = environment.get(path);
+			// Extract configuration options
+			int minInteger = configuration.get(Value.Int.class,MIN_CONFIG_OPTION).unwrap().intValue();
+			int maxInteger = configuration.get(Value.Int.class,MAX_CONFIG_OPTION).unwrap().intValue();
+			int maxArrayLength = configuration.get(Value.Int.class,LENGTH_CONFIG_OPTION).unwrap().intValue();
+			int maxTypeDepth = configuration.get(Value.Int.class,DEPTH_CONFIG_OPTION).unwrap().intValue();
+			int maxAliasingWidth = configuration.get(Value.Int.class,WIDTH_CONFIG_OPTION).unwrap().intValue();
+			int maxRotationWidth = configuration.get(Value.Int.class,ROTATION_CONFIG_OPTION).unwrap().intValue();
+			int limit = configuration.get(Value.Int.class,LIMIT_CONFIG_OPTION).unwrap().intValue();
+			double samplingRate = configuration.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
+			long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
+			String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
+			// Construct initial context
+			QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT.setIntegerRange(minInteger, maxInteger).setArrayLength(maxArrayLength)
+					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
+					.setIgnores(ignores).setSamplingRate(samplingRate).setSampleMin(limit)
+					.setTimeout(timeout);
+			Path pkg = Path.fromString(configuration.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
+			// Specify directory where generated WyIL files are dumped.
+			Path bindir = Path.fromString(configuration.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
+			final Path target = bindir.append(pkg);
+			//
+			return new Build.Task() {
+
+				@Override
+				public Path getPath() {
+					return target;
+				}
+
+				@Override
+				public Type<? extends Artifact> getContentType() {
+					return WyilFile.ContentType;
+				}
+
+				@Override
+				public List<? extends Artifact> getSourceArtifacts() {
+					return Arrays.asList();
+				}
+
+				@Override
+				public Pair<SnapShot, Boolean> apply(SnapShot snapshot) {
+					//
+					try {
+						WyilFile binary = snapshot.get(WyilFile.ContentType,target);
+						boolean OK = new QuickCheck(environment.getLogger()).check(environment, binary, context,
+								Collections.EMPTY_LIST);
+						// FIXME: something is not right here because QuickCheck updates the WyilFile
+						// with error messages.
+						return new Pair<>(snapshot, OK);
+					} catch(IOException e) {
+						// Why is this necessary? There should be no I/O in this method. That's the
+						// whole point!
+						throw new RuntimeException(e);
+					}
+				}
+
+			};
+		}
+	};
 
 	// =======================================================================
 	// Start
@@ -53,9 +120,9 @@ public class Activator implements Plugin.Activator {
 	@Override
 	public Plugin start(Plugin.Context context) {
 		// Register check command
-		context.register(Command.Descriptor.class, Check.DESCRIPTOR);
+		//context.register(Command.Descriptor.class, Check.DESCRIPTOR);
 		// Register platform
-//		context.register(Command.Platform.class, CHECK_PLATFORM);
+		context.register(Command.Platform.class, CHECK_PLATFORM);
 		// List of content types
 		context.register(Content.Type.class, WhileyFile.ContentType);
 		context.register(Content.Type.class, WyilFile.ContentType);
