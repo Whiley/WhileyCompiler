@@ -25,6 +25,7 @@ import java.util.Set;
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractSyntacticItem;
+import wycc.util.Trie;
 
 public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements Build.Artifact {
 	// =========================================================================
@@ -33,7 +34,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 
 	public static final Content.Type<ConfigFile> ContentType = new Content.Type<ConfigFile>() {
 		@Override
-		public ConfigFile read(Path id, InputStream input, Content.Registry registry) throws IOException {
+		public ConfigFile read(Trie id, InputStream input, Content.Registry registry) throws IOException {
 			ConfigFileLexer lexer = new ConfigFileLexer(input);
 			ConfigFileParser parser = new ConfigFileParser(id, lexer.scan());
 			return parser.read();
@@ -54,11 +55,6 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		public String getSuffix() {
 			return "toml";
 		}
-
-		@Override
-		public boolean includes(Class<?> kind) {
-			return kind == ConfigFile.class;
-		}
 	};
 
 	// =========================================================================
@@ -72,18 +68,18 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 	// =========================================================================
 	// Constructors
 	// =========================================================================
-	private final Path path;
+	private final Trie path;
 	/**
 	 * The list of declarations which make up this configuration.
 	 */
 	private Tuple<Declaration> declarations;
 
-	public ConfigFile(Path path) {
+	public ConfigFile(Trie path) {
 		this.declarations = new Tuple<>();
 		this.path = path;
 	}
 
-	public ConfigFile(Path path, Tuple<Declaration> declarations) {
+	public ConfigFile(Trie path, Tuple<Declaration> declarations) {
 		this.declarations = declarations;
 		//
 		allocate(declarations);
@@ -91,7 +87,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 	}
 
 	@Override
-	public Path getPath() {
+	public Trie getPath() {
 		return path;
 	}
 
@@ -188,7 +184,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		}
 	}
 
-	private KeyValuePair getKeyValuePair(Path key, Tuple<? extends Declaration> decls) {
+	private KeyValuePair getKeyValuePair(Trie key, Tuple<? extends Declaration> decls) {
 		String table = key.parent().toString();
 		//
 		for(int i=0;i!=decls.size();++i) {
@@ -208,7 +204,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		return null;
 	}
 
-	private void insert(Path key, Object value, Tuple<Declaration> decls) {
+	private void insert(Trie key, Object value, Tuple<Declaration> decls) {
 		throw new UnsupportedOperationException();
 		// FIXME: needs to be updated
 //		for(int i=0;i!=decls.size();++i) {
@@ -256,7 +252,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		}
 
 		@Override
-		public boolean hasKey(Path key) {
+		public boolean hasKey(Trie key) {
 			// Find the key-value pair
 			KeyValuePair kvp = getKeyValuePair(key, declarations);
 			// If didn't find a value, still might have default
@@ -271,7 +267,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		}
 
 		@Override
-		public <T> T get(Class<T> kind, Path key) {
+		public <T> T get(Class<T> kind, Trie key) {
 			// Get the descriptor for this key
 			Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
 			// Find the key-value pair
@@ -299,7 +295,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		}
 
 		@Override
-		public <T> void write(Path key, T value) {
+		public <T> void write(Trie key, T value) {
 			// Get the descriptor for this key
 			Configuration.KeyValueDescriptor descriptor = schema.getDescriptor(key);
 			// Sanity check the expected kind
@@ -316,25 +312,25 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 		}
 
 		@Override
-		public List<Path> matchAll(Filter filter) {
-			ArrayList<Path> matches = new ArrayList<>();
-			match(Path.ROOT,filter,declarations,matches);
+		public List<Trie> matchAll(Trie filter) {
+			ArrayList<Trie> matches = new ArrayList<>();
+			match(Trie.ROOT,filter,declarations,matches);
 			return matches;
 		}
 
 		@Override
 		public String toString() {
-			List<Path> keys = matchAll(Filter.fromString("**/*"));
+			List<Trie> keys = matchAll(Trie.fromString("**/*"));
 			String r = "{";
 			for(int i=0;i!=keys.size();++i) {
-				Path ith = keys.get(i);
+				Trie ith = keys.get(i);
 				r = (i == 0) ? r : r + ",";
 				r += ith + "=" + get(ith);
 			}
 			return r + "}";
 		}
 
-		private Object get(Path key) {
+		private Object get(Trie key) {
 			// Get the descriptor for this key
 			Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
 			// Find the key-value pair
@@ -349,20 +345,20 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 			}
 		}
 
-		private void match(Path id, Filter filter, Tuple<? extends Declaration> declarations, ArrayList<Path> matches) {
+		private void match(Trie id, Trie filter, Tuple<? extends Declaration> declarations, ArrayList<Trie> matches) {
 			for (int i = 0; i != declarations.size(); ++i) {
 				Declaration decl = declarations.get(i);
 				if (decl instanceof Table) {
 					Table table = (Table) decl;
 					// FIXME: could be more efficient!
-					Path tid = id;
+					Trie tid = id;
 					for (Identifier c : table.getName()) {
 						tid = tid.append(c.toString());
 					}
 					match(tid, filter, table.getContents(), matches);
 				} else if (decl instanceof KeyValuePair) {
 					KeyValuePair kvp = (KeyValuePair) decl;
-					Path match = id.append(kvp.getKey().toString());
+					Trie match = id.append(kvp.getKey().toString());
 					if (filter.matches(match)) {
 						matches.add(match);
 					}
@@ -374,20 +370,20 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 			List<KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
 			// Matched holds all concrete key-value pairs which are matched. This allows us
 			// to identify any which were not matched and, hence, are invalid
-			Set<Path> matched = new HashSet<>();
+			Set<Trie> matched = new HashSet<>();
 			// Validate all descriptors against given values.
 			for (int i = 0; i != descriptors.size(); ++i) {
 				KeyValueDescriptor descriptor = descriptors.get(i);
 				// Sanity check the expected kind
 				Class<?> kind = descriptor.getType();
 				// Identify all matching keys
-				List<Path> results = matchAll(descriptor.getFilter());
+				List<Trie> results = matchAll(descriptor.getFilter());
 				// Sanity check whether required
 				if(results.size() == 0 && descriptor.isRequired()) {
 					throw new SyntacticException("missing key value: " + descriptor.getFilter(), ConfigFile.this, null);
 				}
 				// Check all matching keys
-				for (Path id : results) {
+				for (Trie id : results) {
 					// Find corresponding key value pair.
 					KeyValuePair kvp = getKeyValuePair(id, declarations);
 					// NOTE: kvp != null
@@ -405,9 +401,9 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements B
 			}
 			if(strict) {
 				// Check whether any unmatched key-valid pairs exist or not
-				List<Path> all = matchAll(Filter.fromString("**/*"));
+				List<Trie> all = matchAll(Trie.fromString("**/*"));
 				for(int i=0;i!=all.size();++i) {
-					Path id = all.get(i);
+					Trie id = all.get(i);
 					if(!matched.contains(id)) {
 						// Found unmatched attribute
 						KeyValuePair kvp = getKeyValuePair(id, declarations);

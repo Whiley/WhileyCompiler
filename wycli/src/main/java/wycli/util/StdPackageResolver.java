@@ -22,7 +22,6 @@ import java.util.Set;
 import wycc.lang.Build;
 import wycc.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.lang.Content;
-import wycc.lang.Filter;
 import wycli.Schemas;
 import wycli.cfg.ConfigFile;
 import wycli.cfg.Configuration;
@@ -31,8 +30,8 @@ import wycli.lang.Package;
 import wycli.lang.Semantic.Version;
 import wycli.lang.Package.Repository;
 import wycli.lang.Semantic;
-import wycc.lang.Path;
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wycc.util.ZipFile;
 
 /**
@@ -82,7 +81,7 @@ public class StdPackageResolver implements Package.Resolver {
 			ZipFile pkg = repository.get(name, version);
 			if (pkg != null) {
 				// Read package configuration file.
-				ConfigFile cfile = pkg.get(ConfigFile.ContentType, Path.fromString("wy"));
+				ConfigFile cfile = pkg.get(ConfigFile.ContentType, Trie.fromString("wy"));
 				if (cfile == null) {
 					// Something is wrong
 					environment.getLogger()
@@ -135,11 +134,11 @@ public class StdPackageResolver implements Package.Resolver {
 
 	private List<Pair<String, String>> extractDependencies(Configuration cf) {
 		//
-		List<Path> deps = cf.matchAll(Filter.fromString("dependencies/**"));
+		List<Trie> deps = cf.matchAll(Trie.fromString("dependencies/**"));
 		// Determine dependency roots
 		List<Pair<String, String>> pairs = new ArrayList<>();
 		for (int i = 0; i != deps.size(); ++i) {
-			Path dep = deps.get(i);
+			Trie dep = deps.get(i);
 			// Get dependency name
 			String name = dep.get(1);
 			// Get version string

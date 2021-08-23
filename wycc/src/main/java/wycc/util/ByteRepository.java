@@ -9,9 +9,6 @@ import java.util.function.Predicate;
 import wycc.lang.Build;
 import wycc.lang.Content;
 import wycc.lang.Content.Registry;
-import wycc.lang.Content.Type;
-import wycc.lang.Filter;
-import wycc.lang.Path;
 
 public class ByteRepository implements Build.Repository {
 	private final Content.Registry registry;
@@ -23,7 +20,7 @@ public class ByteRepository implements Build.Repository {
 
 	public ByteRepository(Content.Registry registry, Iterator<Build.Artifact> entries) {
 		this.registry = registry;
-		this.states = new ArrayList();
+		this.states = new ArrayList<>();
 		states.add(new SnapShot(entries));
 	}
 
@@ -49,22 +46,22 @@ public class ByteRepository implements Build.Repository {
 	}
 
 	@Override
-	public <T extends Content> T get(Content.Type<T> kind, Path path) {
+	public <T extends Content> T get(Content.Type<T> kind, Trie path) {
 		return last().get(kind, path);
 	}
 
 	@Override
-	public <T extends Content> List<T> getAll(Content.Type<T> kind, Filter filter) {
-		return last().getAll(kind, filter);
+	public <T extends Content> List<T> getAll(Content.Filter<T> filter) {
+		return last().getAll(filter);
 	}
 
 	@Override
-	public List<Path> match(Content.Type<? extends Content> ct, Filter filter) {
-		return last().match(ct, filter);
+	public List<Trie> match(Content.Filter<? extends Content> filter) {
+		return last().match(filter);
 	}
 
 	@Override
-	public <S extends Content> List<Path> match(Content.Type<S> kind, Predicate<S> p) {
+	public <S extends Content> List<Trie> match(Content.Filter<S> kind, Predicate<S> p) {
 		return last().match(kind,p);
 	}
 
@@ -111,11 +108,12 @@ public class ByteRepository implements Build.Repository {
 			return ByteRepository.this.registry;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends Content> List<Path> match(Content.Type<T> kind, Predicate<T> query) {
-			ArrayList<Path> es = new ArrayList<>();
+		public <T extends Content> List<Trie> match(Content.Filter<T> cf, Predicate<T> query) {
+			ArrayList<Trie> es = new ArrayList<>();
 			for (Build.Artifact e : items) {
-				if (e.getContentType() == kind && query.test((T) e)) {
+				if (cf.includes(e.getContentType(), e.getPath()) && query.test((T) e)) {
 					es.add(e.getPath());
 				}
 			}
@@ -123,31 +121,33 @@ public class ByteRepository implements Build.Repository {
 		}
 
 		@Override
-		public List<Path> match(Content.Type<? extends Content> ct, Filter filter) {
-			ArrayList<Path> es = new ArrayList<>();
+		public List<Trie> match(Content.Filter<? extends Content> filter) {
+			ArrayList<Trie> es = new ArrayList<>();
 			for (Build.Artifact e : items) {
-				if (e.getContentType() == ct && filter.matches(e.getPath())) {
+				if (filter.includes(e.getContentType(),e.getPath())) {
 					es.add(e.getPath());
 				}
 			}
 			return es;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends Content> T get(Content.Type<T> kind, Path path) {
+		public <T extends Content> T get(Content.Type<T> ct, Trie path) {
 			for (Build.Artifact e : items) {
-				if (e.getContentType() == kind && e.getPath().equals(path)) {
+				if (e.getContentType() == ct && e.getPath().equals(path)) {
 					return (T) e;
 				}
 			}
 			return null;
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
-		public <T extends Content> List<T> getAll(Content.Type<T> ct, Filter filter) {
+		public <T extends Content> List<T> getAll(Content.Filter<T> filter) {
 			ArrayList<T> es = new ArrayList<>();
 			for (Build.Artifact e : items) {
-				if (e.getContentType() == ct && filter.matches(e.getPath())) {
+				if (filter.includes(e.getContentType(),e.getPath())) {
 					es.add((T) e);
 				}
 			}

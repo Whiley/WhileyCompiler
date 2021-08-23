@@ -25,7 +25,6 @@ import java.util.*;
 
 import wycc.lang.Build;
 import wycc.lang.Content;
-import wycc.lang.Path;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
@@ -33,6 +32,7 @@ import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.ByteRepository;
 import wycc.util.DirectoryRoot;
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -141,7 +141,7 @@ public class TestUtils {
 	 * @return
 	 */
 	public static Type fromString(String from) {
-		Path id = Path.fromString("main");
+		Trie id = Trie.fromString("main");
 		WhileyFile sf = new WhileyFile(id,from.getBytes());
 		WyilFile wf = new WyilFile(id, Arrays.asList(sf));
 		WhileyFileParser parser = new WhileyFileParser(wf, sf);
@@ -207,7 +207,7 @@ public class TestUtils {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
 		// Determine the ID of the test being compiler
-		Path path = Path.fromString(arg);
+		Trie path = Trie.fromString(arg);
 		//
 		boolean result = true;
 		// Construct the directory root
@@ -231,7 +231,7 @@ public class TestUtils {
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
-			wycli.commands.BuildSystem.printSyntacticMarkers(psyserr, target, source);
+			wycli.commands.BuildCmd.printSyntacticMarkers(psyserr, target, source);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
 			//e.outputSourceError(psyserr);
@@ -308,7 +308,7 @@ public class TestUtils {
 	 *            The name of the WyIL file
 	 * @throws IOException
 	 */
-	public static void execWyil(File wyildir, Path id) throws IOException {
+	public static void execWyil(File wyildir, Trie id) throws IOException {
 		String filename = id.toString() + ".wyil";
 		Content.Source root = new DirectoryRoot(registry, wyildir, f -> {
 			return f.getName().equals(filename);

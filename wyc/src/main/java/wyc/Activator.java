@@ -21,17 +21,17 @@ import wycli.lang.Package;
 import wyil.lang.WyilFile;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.Trie;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {
-	public static Path PACKAGE_NAME = Path.fromString("package/name");
-	public static Path BUILD_WHILEY_SOURCE = Path.fromString("build/whiley/source");
-	public static Path BUILD_WHILEY_TARGET = Path.fromString("build/whiley/target");
+	public static Trie PACKAGE_NAME = Trie.fromString("package/name");
+	public static Trie BUILD_WHILEY_SOURCE = Trie.fromString("build/whiley/source");
+	public static Trie BUILD_WHILEY_TARGET = Trie.fromString("build/whiley/target");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
 
@@ -50,21 +50,21 @@ public class Activator implements Plugin.Activator {
 		}
 
 		@Override
-		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
+		public Build.Task initialise(Trie path, Command.Environment environment) throws IOException {
 			// Determine local configuration
 			Configuration config = environment.get(path);
 			Build.SnapShot snapshot = environment.getRepository().last();
 			Package.Resolver resolver = environment.getPackageResolver();
 			//
-			Path pkg = Path.fromString(config.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
+			Trie pkg = Trie.fromString(config.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
 			//
-			Filter source = Filter.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_SOURCE).unwrap());
+			Trie source = Trie.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_SOURCE).unwrap());
 			// Specify directory where generated WyIL files are dumped.
-			Path target = Path.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
-			// Construct build task
-			Filter includes = source.append(Filter.EVERYTHING);
+			Trie target = Trie.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
+			// Construct includes filter
+			Content.Filter<WhileyFile> includes = Content.Filter(WhileyFile.ContentType,source.append(Trie.EVERYTHING));
 			// Identify all Whiley source files
-			List<WhileyFile> sources = snapshot.getAll(WhileyFile.ContentType, includes);
+			List<WhileyFile> sources = snapshot.getAll(includes);
 			// Resolve all packages declared in configuration
 			List<Content.Source> pkgs = resolver.resolve(config);
 			// Done

@@ -15,6 +15,8 @@ package wycc.lang;
 
 import java.util.List;
 
+import wycc.util.Trie;
+
 public interface SyntacticItem extends Comparable<SyntacticItem> {
 
 	/**
@@ -161,11 +163,11 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 		public SyntacticItem getTarget();
 
 		/**
-		 * Get the Path.ID of the enclosing source file.
+		 * Get concrete path of enclosing source file.
 		 *
 		 * @return
 		 */
-		public Path getSource();
+		public Trie getSource();
 	}
 
 	// ============================================================

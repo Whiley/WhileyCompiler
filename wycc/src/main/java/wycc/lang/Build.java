@@ -13,11 +13,11 @@
 // limitations under the License.
 package wycc.lang;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
 import wycc.util.Pair;
+import wycc.util.Trie;
 
 public interface Build {
 
@@ -56,10 +56,10 @@ public interface Build {
 		public SnapShot last();
 
 		@Override
-		public <T extends Content> T get(Content.Type<T> kind, Path p);
+		public <T extends Content> T get(Content.Type<T> kind, Trie p);
 
 		@Override
-		public <T extends Content> List<T> getAll(Content.Type<T> kind, Filter f);
+		public <T extends Content> List<T> getAll(Content.Filter<T> filter);
 	}
 
 	/**
@@ -69,10 +69,10 @@ public interface Build {
 	 */
 	public interface SnapShot extends Content.Source, Iterable<Build.Artifact> {
 		@Override
-		public <T extends Content> T get(Content.Type<T> kind, Path p);
+		public <T extends Content> T get(Content.Type<T> kind, Trie p);
 
 		@Override
-		public <T extends Content> List<T> getAll(Content.Type<T> kind, Filter f);
+		public <T extends Content> List<T> getAll(Content.Filter<T> filter);
 
 		/**
 		 * Write a specific artifact to this snapshot, thereby producing a new snapshot.
@@ -94,7 +94,7 @@ public interface Build {
 		 *
 		 * @return
 		 */
-        public Path getPath();
+        public Trie getPath();
 
         /**
 		 * Get the content type of this artifact.

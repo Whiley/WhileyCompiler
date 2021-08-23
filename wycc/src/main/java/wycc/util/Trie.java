@@ -40,6 +40,10 @@ import java.util.Iterator;
  */
 public final class Trie implements Iterable<String>, Comparable<Trie> {
 
+	// =========================================================
+	// Private Constants
+	// =========================================================
+
 	private static final Trie[] ONE_CHILD = new Trie[1];
 
 	// =========================================================
@@ -47,6 +51,12 @@ public final class Trie implements Iterable<String>, Comparable<Trie> {
 	// =========================================================
 
 	public static final Trie ROOT = new Trie(null,"");
+	public static final Trie STAR = fromString("*");
+	public static final Trie STARSTAR = fromString("**");
+	/**
+	 * A default filter which recursively matches everything
+	 */
+	public static final Trie EVERYTHING = Trie.fromString("**/*");
 
 	// =========================================================
 	// Private State
@@ -232,6 +242,14 @@ public final class Trie implements Iterable<String>, Comparable<Trie> {
 	 */
 	public static Trie fromString(String str) {
 		String[] components = str.split("/");
+		Trie r = ROOT;
+		for(int i=0;i!=components.length;++i) {
+			r = r.append(components[i]);
+		}
+		return r;
+	}
+
+	public static Trie fromStrings(String... components) {
 		Trie r = ROOT;
 		for(int i=0;i!=components.length;++i) {
 			r = r.append(components[i]);

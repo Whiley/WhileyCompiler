@@ -6,12 +6,12 @@ import java.util.*;
 import wycc.lang.Build;
 import wycc.lang.Content;
 import wycc.lang.Build.SnapShot;
-import wycc.lang.Path;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wyil.check.DefiniteAssignmentCheck;
 import wyil.check.DefiniteUnassignmentCheck;
 import wyil.check.FlowTypeCheck;
@@ -81,22 +81,22 @@ public class CompileTask implements Build.Task {
 	/**
 	 * Identifier for target of this build task.
 	 */
-	private final Path target;
+	private final Trie target;
 
-	public CompileTask(Path target, WhileyFile... sources) {
+	public CompileTask(Trie target, WhileyFile... sources) {
 		this.target = target;
 		this.sources = Arrays.asList(sources);
 		this.packages = Collections.emptyList();
 	}
 
-	public CompileTask(Path target, List<WhileyFile> sources, Collection<Content.Source> packages) {
+	public CompileTask(Trie target, List<WhileyFile> sources, Collection<Content.Source> packages) {
 		this.target = target;
 		this.sources = new ArrayList<>(sources);
 		this.packages = new ArrayList<>(packages);
 	}
 
 	@Override
-	public Path getPath() {
+	public Trie getPath() {
 		return target;
 	}
 

@@ -13,10 +13,9 @@
 // limitations under the License.
 package wycli;
 
-import wycc.lang.Filter;
 import wycc.util.AbstractCompilationUnit;
+import wycc.util.Trie;
 import wycli.cfg.Configuration;
-import wycc.lang.Path;
 
 import java.util.regex.Pattern;
 
@@ -29,20 +28,20 @@ public class Schemas {
      * Schema for system configuration (i.e. which applies to all users).
      */
     public static Configuration.Schema SYSTEM_CONFIG_SCHEMA = Configuration.fromArray(
-            Configuration.UNBOUND_STRING(Filter.fromString("plugins/*"), "list of globally installed plugins", true));
+            Configuration.UNBOUND_STRING(Trie.fromString("plugins/*"), "list of globally installed plugins", true));
 
     /**
      * Schema for global configuration (i.e. which applies to all projects for a given user).
      */
     public static Configuration.Schema GLOBAL_CONFIG_SCHEMA = Configuration.fromArray(
-            Configuration.UNBOUND_STRING(Path.fromString("user/name"), "username", false),
-            Configuration.UNBOUND_STRING(Path.fromString("user/email"), "email", false));
+            Configuration.UNBOUND_STRING(Trie.fromString("user/name"), "username", false),
+            Configuration.UNBOUND_STRING(Trie.fromString("user/email"), "email", false));
 
     /**
      * Schema for local configuration (i.e. which applies to a given workspace).
      */
     public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
-            Configuration.UNBOUND_STRING_ARRAY(Path.fromString("workspace/projects"), "list of projects", false));
+            Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("workspace/projects"), "list of projects", false));
 
 
     /**
@@ -63,19 +62,19 @@ public class Schemas {
      */
     public static Configuration.Schema PACKAGE = Configuration.fromArray(
             // Required items
-            Configuration.UNBOUND_STRING(Path.fromString("package/name"), "Name of this package", new AbstractCompilationUnit.Value.UTF8("main")),
-            Configuration.UNBOUND_STRING_ARRAY(Path.fromString("package/authors"), "Author(s) of this package", false),
-            Configuration.UNBOUND_STRING(Path.fromString("package/version"), "Semantic version of this package", false),
+            Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package", new AbstractCompilationUnit.Value.UTF8("main")),
+            Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("package/authors"), "Author(s) of this package", false),
+            Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", false),
             // Build items
-            Configuration.UNBOUND_STRING_ARRAY(Path.fromString("build/platforms"),
+            Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/platforms"),
                     "Target platforms for this package (default just \"whiley\")",
                     new AbstractCompilationUnit.Value.Array(new AbstractCompilationUnit.Value.UTF8("whiley"))),
-            Configuration.UNBOUND_STRING_ARRAY(Path.fromString("build/includes"), "Files to include in package",
+            Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/includes"), "Files to include in package",
                     DEFAULT_BUILD_INCLUDES),
-            Configuration.UNBOUND_STRING(Path.fromString("build/main"), "Identify main method", false),
+            Configuration.UNBOUND_STRING(Trie.fromString("build/main"), "Identify main method", false),
             // Optional items
-            Configuration.REGEX_STRING(Filter.fromString("dependencies/*"), "Packages this package depends on", false,
-                    Pattern.compile("\\d+.\\d+.\\d+"))
+			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on", false,
+					Pattern.compile("\\d+.\\d+.\\d+"))
     );
 
 }

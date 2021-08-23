@@ -13,11 +13,10 @@
 // limitations under the License.
 package wycli.cfg;
 
-import wycc.lang.Filter;
-import wycc.lang.Path;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import wycc.util.Trie;
 
 /**
  * Combines one or more configurations into a single configuration. The
@@ -42,7 +41,7 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
-	public boolean hasKey(Path key) {
+	public boolean hasKey(Trie key) {
 		for(int i=0;i!=configurations.length;++i) {
 			if(configurations[i].hasKey(key)) {
 				return true;
@@ -52,8 +51,8 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
-	public List<Path> matchAll(Filter filter) {
-		ArrayList<Path> results = new ArrayList<>();
+	public List<Trie> matchAll(Trie filter) {
+		ArrayList<Trie> results = new ArrayList<>();
 		for(int i=0;i!=configurations.length;++i) {
 			results.addAll(configurations[i].matchAll(filter));
 		}
@@ -61,7 +60,7 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
-	public <T> T get(Class<T> kind, Path key) {
+	public <T> T get(Class<T> kind, Trie key) {
 		for (int i = 0; i != configurations.length; ++i) {
 			Configuration config = configurations[i];
 			if (config.getConfigurationSchema().isKey(key)) {
@@ -72,7 +71,7 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
-	public <T> void write(Path key, T value) {
+	public <T> void write(Trie key, T value) {
 		for (int i = 0; i != configurations.length; ++i) {
 			Configuration config = configurations[i];
 			if (config.getConfigurationSchema().isKey(key)) {

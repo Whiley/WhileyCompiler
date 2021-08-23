@@ -21,9 +21,8 @@ import java.util.List;
 
 import wyc.io.WhileyFileLexer;
 import wycc.lang.Content;
-import wycc.lang.Path;
 import wycc.lang.SourceFile;
-import wycc.lang.Content.Type;
+import wycc.util.Trie;
 
 public class WhileyFile extends SourceFile {
 	// =========================================================================
@@ -43,7 +42,7 @@ public class WhileyFile extends SourceFile {
 		 * @throws IOException
 		 */
 		@Override
-		public WhileyFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
+		public WhileyFile read(Trie id, InputStream in, Content.Registry registry) throws IOException {
 			return new WhileyFile(id,in.readAllBytes());
 		}
 
@@ -62,29 +61,24 @@ public class WhileyFile extends SourceFile {
 		public String getSuffix() {
 			return "whiley";
 		}
-
-		@Override
-		public boolean includes(Class<?> kind) {
-			return kind == WhileyFile.class;
-		}
 	};
 
-	private final Path path;
+	private final Trie path;
 
 	private final List<WhileyFileLexer.Token> tokens;
 
-	public WhileyFile(Path ID, byte[] bytes) {
+	public WhileyFile(Trie ID, byte[] bytes) {
 		this(ID,new String(bytes));
 	}
 
-	public WhileyFile(Path ID, String content) {
+	public WhileyFile(Trie ID, String content) {
 		super(ID, content);
 		this.tokens = new WhileyFileLexer(content).scan();
 		this.path = ID;
 	}
 
 	@Override
-	public Path getPath() {
+	public Trie getPath() {
 		return path;
 	}
 

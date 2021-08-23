@@ -1,11 +1,12 @@
 package wycli.commands;
 
-import wycc.lang.Path;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 
 import java.util.Arrays;
 import java.util.List;
+
+import wycc.util.Trie;
 
 /**
  * The "root" command of the command tree.  This is the starting point for all command execution, and is really just a
@@ -79,7 +80,7 @@ public class Root implements Command {
     }
 
     @Override
-    public boolean execute(Path path, Command.Template template) throws Exception {
+    public boolean execute(Trie path, Command.Template template) throws Exception {
         boolean verbose = template.getOptions().get("verbose", Boolean.class);
         //
         if (template.getChild() != null) {
@@ -93,7 +94,7 @@ public class Root implements Command {
             return command.execute(path,template);
         } else {
             // Initialise command
-            Command cmd = HelpSystem.DESCRIPTOR.initialise(environment);
+            Command cmd = HelpCmd.DESCRIPTOR.initialise(environment);
             // Execute command
             return cmd.execute(path, template);
         }

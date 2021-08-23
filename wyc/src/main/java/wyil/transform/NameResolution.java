@@ -22,6 +22,7 @@ import wycc.util.AbstractSyntacticHeap;
 
 import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
+import wycc.util.Trie;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -70,6 +71,7 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class NameResolution {
+	private static final Content.Filter<WyilFile> ALL_WYILFILES = Content.Filter(WyilFile.ContentType, Trie.EVERYTHING);
 	private final Build.Meter meter;
 	private final WyilFile target;
 	/**
@@ -133,7 +135,7 @@ public class NameResolution {
 			Content.Source p = packages.get(i);
 			// FIXME: This is kind broken me thinks. Potentially, we should be able to
 			// figure out what modules are supplied via the configuration.
-			List<WyilFile> entries = p.getAll(WyilFile.ContentType, Filter.EVERYTHING);
+			List<WyilFile> entries = p.getAll(ALL_WYILFILES);
 			for (int j = 0; j != entries.size(); ++j) {
 				externals.add(entries.get(j));
 			}

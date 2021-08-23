@@ -9,8 +9,6 @@ import java.util.function.Predicate;
 import wycc.lang.Content;
 import wycc.lang.Content.Root;
 import wycc.lang.Content.Type;
-import wycc.lang.Filter;
-import wycc.lang.Path;
 
 /**
  * Provides an implementation of <code>Content.Source</code>
@@ -52,7 +50,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends Content> S get(Content.Type<S> kind, Path p) {
+	public <S extends Content> S get(Content.Type<S> kind, Trie p) {
 		for (int i = 0; i != items.size(); ++i) {
 			Entry<?> ith = items.get(i);
 			Content.Type<?> ct = ith.getContentType();
@@ -63,12 +61,13 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends Content> List<S> getAll(Content.Type<S> ct, Filter f) {
+	public <S extends Content> List<S> getAll(Content.Filter<S> filter) {
 		ArrayList<S> rs = new ArrayList<>();
 		for (int i = 0; i != items.size(); ++i) {
 			Entry<?> ith = items.get(i);
-			if (f.matches(ith.getPath()) && ith.getContentType() == ct) {
+			if (filter.includes(ith.getContentType(), ith.getPath())) {
 				rs.add((S) ith.get());
 			}
 		}
@@ -76,11 +75,11 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	}
 
 	@Override
-	public List<Path> match(Content.Type<?> ct, Filter f) {
-		ArrayList<Path> rs = new ArrayList<>();
+	public List<Trie> match(Content.Filter<?> filter) {
+		ArrayList<Trie> rs = new ArrayList<>();
 		for (int i = 0; i != items.size(); ++i) {
 			Entry<?> ith = items.get(i);
-			if (f.matches(ith.getPath()) && ith.getContentType() == ct) {
+			if (filter.includes(ith.getContentType(), ith.getPath())) {
 				rs.add(ith.getPath());
 			}
 		}
@@ -89,12 +88,12 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <S extends Content> List<Path> match(Content.Type<S> kind, Predicate<S> f) {
-		ArrayList<Path> rs = new ArrayList<>();
+	public <S extends Content> List<Trie> match(Content.Filter<S> filter, Predicate<S> f) {
+		ArrayList<Trie> rs = new ArrayList<>();
 		for (int i = 0; i != items.size(); ++i) {
 			Entry<?> ith = items.get(i);
 			Content.Type<?> ct = ith.getContentType();
-			if (ct == kind) {
+			if (filter.includes(ct, ith.getPath())) {
 				S item = (S) ith.get();
 				if (f.test(item)) {
 					rs.add(ith.getPath());
@@ -105,7 +104,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	}
 
 	@Override
-	public Content.Root subroot(Path path) {
+	public Content.Root subroot(Trie path) {
 		return new SubRoot(path);
 	}
 
@@ -134,7 +133,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public void put(Path p, Content value) {
+	public void put(Trie p, Content value) {
 		// NOTE: yes, there is unsafe stuff going on here because we cannot easily type
 		// this in Java.
 		Content.Type ct = (Content.Type) value.getContentType();
@@ -210,7 +209,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 			File ith = files.get(i);
 			String filename = root.relativize(ith.toPath()).toString().replace(File.separatorChar, '/');
 			// Decode filename into path and content type.
-			Pair<Path,Content.Type<?>> p = decodeFilename(filename, registry);
+			Pair<Trie,Content.Type<?>> p = decodeFilename(filename, registry);
 			if(p != null) {
 				// Decoding was successfull!
 				Content.Type ct = (Content.Type) p.second();
@@ -237,7 +236,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		/**
 		 * The repository path to which this entry corresponds.
 		 */
-		private final Path path;
+		private final Trie path;
 		/**
 		 * The content type of this entry
 		 */
@@ -252,13 +251,13 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		 */
 		private S value;
 
-		public Entry(Path path, Content.Type<S> contentType) {
+		public Entry(Trie path, Content.Type<S> contentType) {
 			this.path = path;
 			this.contentType = contentType;
 			this.dirty = false;
 		}
 
-		public Path getPath() {
+		public Trie getPath() {
 			return path;
 		}
 
@@ -321,9 +320,9 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	 *
 	 */
 	private class SubRoot implements Content.Root {
-		private final Path path;
+		private final Trie path;
 
-		SubRoot(Path path) {
+		SubRoot(Trie path) {
 			this.path = path;
 		}
 
@@ -333,32 +332,44 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		}
 
 		@Override
-		public <T extends Content> T get(Type<T> ct, Path p) throws IOException {
+		public <T extends Content> T get(Type<T> ct, Trie p) throws IOException {
 			return DirectoryRoot.this.get(ct, path.append(p));
 		}
 
 		@Override
-		public <T extends Content> List<T> getAll(Content.Type<T> ct, Filter f) throws IOException {
-			return DirectoryRoot.this.getAll(ct, path.append(f));
+		public <T extends Content> List<T> getAll(Content.Filter<T> filter) throws IOException {
+			Content.Filter<T> f = new Content.Filter<>() {
+				@Override
+				public boolean includes(Type<?> ct, Trie p) {
+					return filter.includes(ct, path.append(p));
+				}
+			};
+			return DirectoryRoot.this.getAll(f);
 		}
 
 		@Override
-		public List<Path> match(Content.Type<?> ct, Filter f) {
-			return DirectoryRoot.this.match(ct, path.append(f));
+		public List<Trie> match(Content.Filter<?> filter) {
+			Content.Filter<?> f = new Content.Filter<>() {
+				@Override
+				public boolean includes(Type<?> ct, Trie p) {
+					return filter.includes(ct, path.append(p));
+				}
+			};
+			return DirectoryRoot.this.match(f);
 		}
 
 		@Override
-		public <T extends Content> List<Path> match(Content.Type<T> ct, Predicate<T> p) {
+		public <T extends Content> List<Trie> match(Content.Filter<T> cf, Predicate<T> p) {
 			throw new UnsupportedOperationException("implement me");
 		}
 
 		@Override
-		public void put(Path p, Content value) {
+		public void put(Trie p, Content value) {
 			DirectoryRoot.this.put(path.append(p), value);
 		}
 
 		@Override
-		public Root subroot(Path p) {
+		public Root subroot(Trie p) {
 			return DirectoryRoot.this.subroot(path.append(p));
 		}
 
@@ -383,7 +394,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	 *                 <code>Content.Type</code>s.
 	 * @return
 	 */
-	private static Pair<Path, Content.Type<?>> decodeFilename(String filename, Content.Registry registry) {
+	private static Pair<Trie, Content.Type<?>> decodeFilename(String filename, Content.Registry registry) {
 		// Determine file suffix
 		String suffix = "";
 		int pos = filename.lastIndexOf('.');
@@ -392,16 +403,14 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		}
 		// Extract the path string
 		String pathStr = filename.substring(0, filename.length() - (suffix.length() + 1));
-		if (Path.isPathString(pathStr)) {
-			// Convert into path (if applicable)
-			Path path = Path.fromString(pathStr);
-			// Extract appropriate content type (if applicable)
-			Content.Type<?> type = registry.contentType(suffix);
-			// Read entry (if applicable)
-			if (type != null) {
-				// Done
-				return new Pair<>(path, type);
-			}
+		// Convert into path (if applicable)
+		Trie path = Trie.fromString(pathStr);
+		// Extract appropriate content type (if applicable)
+		Content.Type<?> type = registry.contentType(suffix);
+		// Read entry (if applicable)
+		if (type != null) {
+			// Done
+			return new Pair<>(path, type);
 		}
 		return null;
 	}

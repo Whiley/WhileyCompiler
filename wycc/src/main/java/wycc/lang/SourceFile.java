@@ -16,25 +16,27 @@ package wycc.lang;
 import java.util.Collections;
 import java.util.List;
 
+import wycc.util.Trie;
+
 public abstract class SourceFile implements Build.Artifact {
-    private final Path id;
+    private final Trie id;
     private final String content;
 
-    public SourceFile(Path id, String content) {
+    public SourceFile(Trie id, String content) {
         this.id = id;
         this.content = content;
     }
 
     @Override
-    public Path getPath() {
+    public Trie getPath() {
         return id;
     }
-    
+
 	@Override
 	public List<? extends Build.Artifact> getSourceArtifacts() {
 		return Collections.emptyList();
 	}
-	
+
     public byte[] getBytes() {
         return content.getBytes();
     }

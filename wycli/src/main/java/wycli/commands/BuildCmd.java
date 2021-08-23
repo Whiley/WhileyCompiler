@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
-import wycc.lang.Path;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 import wycc.lang.SourceFile;
@@ -39,14 +38,15 @@ import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.lang.Command;
 import wycc.util.Pair;
+import wycc.util.Trie;
 
 /**
  *
  * @author David J. Pearce
  *
  */
-public class BuildSystem implements Command {
-	public static Path BUILD_PLATFORMS = Path.fromString("build/platforms");
+public class BuildCmd implements Command {
+	public static Trie BUILD_PLATFORMS = Trie.fromString("build/platforms");
 	/**
 	 * The descriptor for this command.
 	 */
@@ -79,7 +79,7 @@ public class BuildSystem implements Command {
 
 		@Override
 		public Command initialise(Command.Environment environment) {
-			return new BuildSystem(environment, System.out, System.err);
+			return new BuildCmd(environment, System.out, System.err);
 		}
 
 	};
@@ -108,7 +108,7 @@ public class BuildSystem implements Command {
 	 */
 	private final Command.Environment environment;
 
-	public BuildSystem(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
+	public BuildCmd(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
 		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
@@ -129,7 +129,7 @@ public class BuildSystem implements Command {
 	}
 
 	@Override
-	public boolean execute(Path path, Template template) throws Exception {
+	public boolean execute(Trie path, Template template) throws Exception {
 		// Extract configuration for this path
 		Configuration config = environment.get(path);
 		Repository repository = environment.getRepository();
@@ -155,7 +155,7 @@ public class BuildSystem implements Command {
 		// At this point we need to figure out what the generated files are, and from
 		// them determine the sources which generated them.
 		for (Build.Task task : tasks) {
-			Path target = task.getPath();
+			Trie target = task.getPath();
 			Build.Artifact binary = repository.get(task.getContentType(), target);
 			printSyntacticMarkers(syserr, binary);
 		}
@@ -295,7 +295,7 @@ public class BuildSystem implements Command {
 		return annotated;
 	}
 
-	private static SourceFile getSourceEntry(Path id, SourceFile... sources) {
+	private static SourceFile getSourceEntry(Trie id, SourceFile... sources) {
 		//
 		for (SourceFile s : sources) {
 			if (id.equals(s.getPath())) {
@@ -305,7 +305,7 @@ public class BuildSystem implements Command {
 		return null;
 	}
 
-	private static SourceFile getSourceEntry(Path id, List<? extends Build.Artifact> sources) {
+	private static SourceFile getSourceEntry(Trie id, List<? extends Build.Artifact> sources) {
 		//
 		for (Build.Artifact s : sources) {
 			if (id.equals(s.getPath())) {

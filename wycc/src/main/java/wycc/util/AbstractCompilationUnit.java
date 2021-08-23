@@ -25,7 +25,6 @@ import java.util.function.Function;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
-import wycc.lang.Path;
 
 public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
@@ -341,7 +340,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			super(ITEM_name, components);
 		}
 
-		public Name(Path path) {
+		public Name(Trie path) {
 			super(ITEM_name, path2ids(path));
 		}
 
@@ -381,7 +380,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			return r;
 		}
 
-		private static Identifier[] path2ids(Path id) {
+		private static Identifier[] path2ids(Trie id) {
 			Identifier[] ids = new Identifier[id.size()];
 			for(int i=0;i!=id.size();++i) {
 				ids[i] = new Identifier(id.get(i));
