@@ -21,8 +21,8 @@ import wycc.lang.Build;
 import wycc.lang.Content;
 import wycc.lang.Build.Repository;
 import wycc.lang.Build.Meter;
-import wycc.lang.Path;
 import wycc.util.Logger;
+import wycc.util.Trie;
 import wycli.cfg.Configuration;
 
 /**
@@ -57,7 +57,7 @@ public interface Command {
 	 * any calls are made to <code>finalise()</code>. Observer, however, that this
 	 * command may be executed multiple times.
 	 */
-	public boolean execute(Path path, Template template) throws Exception;
+	public boolean execute(Trie path, Template template) throws Exception;
 
 	/**
 	 * Defines an environment in which commands can be executed.
@@ -85,21 +85,29 @@ public interface Command {
 		 *
 		 * @return
 		 */
-		public Content.Registry getContentRegistry();
+		Content.Registry getContentRegistry();
 
 		/**
 		 * Get the set of build platforms which are active in this environment.
 		 *
 		 * @return
 		 */
-		public List<Platform> getCommandPlatforms();
+		List<Platform> getCommandPlatforms();
 
 		/**
 		 * Get the build repository associated with this environment.
 		 *
 		 * @return
 		 */
-		public Repository getRepository();
+		Repository getRepository();
+
+		/**
+		 * Get the root of the work space. That is, where user files are found and where
+		 * built artifacts are projected.
+		 *
+		 * @return
+		 */
+		Content.Root getWorkspaceRoot();
 
 		/**
 		 * Get the configuration associated with a given build path.  The key is that the configuration at a given path
@@ -109,19 +117,19 @@ public interface Command {
 		 * @param path
 		 * @return
 		 */
-		public Configuration get(Path path);
+		Configuration get(Trie path);
 
 		/**
 		 * Get the top-level meter for this environment.
 		 *
 		 * @return
 		 */
-		public Meter getMeter();
+		Meter getMeter();
 
 		/**
 		 * Get the default logger used in this environment.
 		 */
-		public Logger getLogger();
+		Logger getLogger();
 	}
 
 	/**
@@ -155,7 +163,7 @@ public interface Command {
 		 *            Enclosing project for this build task
 		 * @return
 		 */
-		public Build.Task initialise(Path path, Environment environment) throws IOException;
+		public Build.Task initialise(Trie path, Environment environment) throws IOException;
 	}
 
 	/**

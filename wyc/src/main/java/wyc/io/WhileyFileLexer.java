@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wyc.lang.WhileyFile;
-import wycc.lang.Path;
-
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
  * the parser in order to generate an Abstract Syntax Tree (AST).
@@ -97,7 +94,6 @@ public class WhileyFileLexer {
 	 * @return
 	 */
 	public Token scanNumericLiteral() {
-		int start = pos;
 		int next = pos + 1;
 		// Decide whether it's an integer, binary or hexadecimal literal
 		if (next < input.length() && input.charAt(pos) == '0' && input.charAt(next) == 'x') {
@@ -522,6 +518,11 @@ public class WhileyFileLexer {
 	 * A map from identifier strings to the corresponding token kind.
 	 */
 	public static final HashMap<String, Token.Kind> keywords = new HashMap<String, Token.Kind>() {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1L;
+
 		{
 			// types
 			//put("void", Token.Kind.Void);

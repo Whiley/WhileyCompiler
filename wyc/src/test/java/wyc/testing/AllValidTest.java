@@ -29,7 +29,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.util.TestUtils;
-import wycc.lang.Path;
 import wycc.util.Pair;
 import wycc.util.Trie;
 
@@ -90,7 +89,7 @@ public class AllValidTest {
 			fail("Test failed to compile!");
 		}
 		// Execute the compile WyIL file
-		TestUtils.execWyil(whileySrcDir, Path.fromString(testName));
+		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
 	}
 
 	// ======================================================================

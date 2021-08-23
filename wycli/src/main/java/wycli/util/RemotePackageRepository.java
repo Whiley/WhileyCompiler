@@ -22,15 +22,15 @@ import wycli.lang.Command;
 import wycli.lang.Package;
 import wycli.lang.Semantic;
 import wycc.lang.Content;
-import wycc.lang.Path;
+import wycc.util.Trie;
 import wycc.util.ZipFile;
 
 public class RemotePackageRepository extends LocalPackageRepository {
 
-	public static final Path REPOSITORY_URL = Path.fromString("repository/url");
-	public static final Path REPOSITORY_ROUTE = Path.fromString("repository/route");
-	public static final Path REPOSITORY_COOKIE = Path.fromString("repository/cookie");
-	public static final Path REPOSITORY_PROXY = Path.fromString("repository/proxy");
+	public static final Trie REPOSITORY_URL = Trie.fromString("repository/url");
+	public static final Trie REPOSITORY_ROUTE = Trie.fromString("repository/route");
+	public static final Trie REPOSITORY_COOKIE = Trie.fromString("repository/cookie");
+	public static final Trie REPOSITORY_PROXY = Trie.fromString("repository/proxy");
 
 	/**
 	 * Schema for global configuration (i.e. which applies to all projects for a given user).

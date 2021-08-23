@@ -105,7 +105,6 @@ import java.util.Map;
 import java.util.Set;
 
 import wycc.lang.Build;
-import wycc.lang.Path;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Attribute;
@@ -114,6 +113,7 @@ import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Pair;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.Trie;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
@@ -195,7 +195,7 @@ public class WhileyFileParser {
 		return status;
 	}
 
-	private Name parseModuleName(Path id) {
+	private Name parseModuleName(Trie id) {
 		ArrayList<Identifier> components = new ArrayList<>();
 		if (tryAndMatch(true, Package) != null) {
 			// found a package keyword

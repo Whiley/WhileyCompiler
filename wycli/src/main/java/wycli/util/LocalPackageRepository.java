@@ -23,8 +23,7 @@ import wycli.lang.Command;
 import wycli.lang.Package;
 import wycli.lang.Semantic;
 import wycc.lang.Content;
-import wycc.lang.Filter;
-import wycc.lang.Path;
+import wycc.util.Trie;
 import wycc.util.ZipFile;
 
 /**
@@ -33,8 +32,8 @@ import wycc.util.ZipFile;
  *
  */
 public class LocalPackageRepository implements Package.Repository {
-	public static final Path REPOSITORY_DIR = Path.fromStrings("repository", "dir");
-
+	public static final Trie REPOSITORY_DIR = Trie.fromStrings("repository", "dir");
+	private static final Content.Filter<ZipFile> ALL_ZIPS = Content.Filter(ZipFile.ContentType, Trie.EVERYTHING);
 	/**
 	 * Schema for global configuration (i.e. which applies to all projects for a given user).
 	 */
@@ -64,10 +63,10 @@ public class LocalPackageRepository implements Package.Repository {
 
 	@Override
 	public Set<Semantic.Version> list(String pkg) throws IOException {
-		List<Path> matches = root.match(ZipFile.ContentType, Filter.EVERYTHING);
+		List<Trie> matches = root.match(ALL_ZIPS);
 		HashSet<Semantic.Version> versions = new HashSet<>();
 		String prefix = pkg + "-v";
-		for(Path m : matches) {
+		for(Trie m : matches) {
 			// FIXME: need for m.last() seems like bug
 			String str = m.last().toString();
 			if(str.startsWith(prefix)) {
@@ -80,7 +79,7 @@ public class LocalPackageRepository implements Package.Repository {
 
 	@Override
 	public ZipFile get(String pkg, Semantic.Version version) throws IOException {
-		Path id = Path.fromString(pkg + "-v" + version);
+		Trie id = Trie.fromString(pkg + "-v" + version);
 		ZipFile zf = root.get(ZipFile.ContentType, id);
 		// Attempt to resolve it.
 		if (zf == null) {
@@ -95,7 +94,7 @@ public class LocalPackageRepository implements Package.Repository {
 	@Override
 	public void put(ZipFile pkg, String name, Semantic.Version version) throws IOException {
 		// Determine fully qualified package name
-		Path qpn = Path.fromString(name + "-v" + version);
+		Trie qpn = Trie.fromString(name + "-v" + version);
 		// Dig out the file!
 		root.put(qpn, pkg);
 		//

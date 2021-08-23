@@ -19,8 +19,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.lang.Path;
 import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.Trie;
 import wycli.cfg.ConfigFile.*;
 import wycli.cfg.ConfigFileLexer.Token;
 import wycc.lang.SyntacticItem;
@@ -39,7 +39,7 @@ public class ConfigFileParser {
 	private final ArrayList<Token> tokens;
 	private int index;
 
-	public ConfigFileParser(Path id, List<Token> tokens) {
+	public ConfigFileParser(Trie id, List<Token> tokens) {
 		this.tokens = new ArrayList<>(tokens);
 		this.file = new ConfigFile(id);
 	}

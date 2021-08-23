@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import wycc.util.Trie;
+
 
 /**
  * Provides various interfaces for mapping the structured content held in memory
@@ -31,13 +33,29 @@ import java.util.function.Predicate;
  *
  */
 public interface Content {
-
 	/**
 	 * Get the content type associated with this piece of content.
 	 *
 	 * @return
 	 */
 	public Type<?> getContentType();
+
+	/**
+	 * Provides a means for selecting one or more content types from a repository or
+	 * root.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Filter<T extends Content> {
+		/**
+		 * Check whether this filter includes a given content type
+		 *
+		 * @param ct Content Type to check for inclusion.
+		 * @return
+		 */
+		public boolean includes(Content.Type<?> ct, Trie p);
+	}
 
 	/**
 	 * Provides an abstract mechanism for reading and writing file in
@@ -57,14 +75,6 @@ public interface Content {
 		public String getSuffix();
 
 		/**
-		 * Check whether this content type includes instances of the given kind.
-		 *
-		 * @param kind
-		 * @return
-		 */
-		public boolean includes(Class<?> kind);
-
-		/**
 		 * Physically read the raw bytes from a given input stream and convert into the
 		 * format described by this content type.
 		 *
@@ -75,7 +85,7 @@ public interface Content {
 		 *                 given type.
 		 * @return
 		 */
-		public T read(Path id, InputStream input, Content.Registry registry) throws IOException;
+		public T read(Trie id, InputStream input, Content.Registry registry) throws IOException;
 
 		/**
 		 * Convert an object in the format described by this content type into
@@ -104,7 +114,7 @@ public interface Content {
 		 * @param p
 		 * @return
 		 */
-		public <T extends Content> T get(Content.Type<T> kind, Path p) throws IOException;
+		public <T extends Content> T get(Content.Type<T> kind, Trie p) throws IOException;
 
 		/**
 		 * Get a given piece of content from this source.
@@ -114,7 +124,7 @@ public interface Content {
 		 * @param p
 		 * @return
 		 */
-		public <T extends Content> List<T> getAll(Content.Type<T> kind, Filter f) throws IOException;
+		public <T extends Content> List<T> getAll(Content.Filter<T> filter) throws IOException;
 
 		/**
 		 * Find all content matching a given filter.
@@ -124,7 +134,7 @@ public interface Content {
 		 * @param f
 		 * @return
 		 */
-		public List<Path> match(Content.Type<? extends Content> ct, Filter f);
+		public List<Trie> match(Content.Filter<? extends Content> filter);
 
 		/**
 		 * Find all content matching a given predicate.
@@ -134,7 +144,7 @@ public interface Content {
 		 * @param p
 		 * @return
 		 */
-		public <T extends Content> List<Path> match(Content.Type<T> ct, Predicate<T> p);
+		public <T extends Content> List<Trie> match(Content.Filter<T> ct, Predicate<T> p);
 
 		/**
 		 * Get the content regsitry associated with this source.
@@ -183,7 +193,7 @@ public interface Content {
 		 * @param p
 		 * @param value
 		 */
-		public void put(Path p, Content value);
+		public void put(Trie p, Content value);
 
 		/**
 		 * Get the content regsitry associated with this sink.
@@ -209,7 +219,7 @@ public interface Content {
 		 * @param id
 		 * @return
 		 */
-		public Root subroot(Path path);
+		public Root subroot(Trie path);
 
 		/**
 		 * Synchronise this root against the underlying medium. This does two things. It
@@ -260,6 +270,27 @@ public interface Content {
 		 * @return <code>null</code> if none found.
 		 */
 		public Type<?> contentType(String suffix);
+	}
+
+	/**
+	 * Matches all possible content.
+	 */
+	public static final Filter<? extends Content> ANY = new Content.Filter<>() {
+		@Override
+		public boolean includes(Content.Type<?> ct, Trie p) {
+			return true;
+		}
+	};
+
+	public static <T extends Content> Filter<T> Filter(Content.Type<T> ct, Trie path) {
+		return new Content.Filter<T>() {
+
+			@Override
+			public boolean includes(Type<?> c, Trie p) {
+				return ct == c && path.matches(p);
+			}
+
+		};
 	}
 
 	/**

@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.zip.ZipEntry;
@@ -27,8 +26,6 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import wycc.lang.Content;
-import wycc.lang.Filter;
-import wycc.lang.Path;
 
 /**
  * A shim for handling ZipFiles in a uniform fashion within the Whiley File
@@ -46,7 +43,7 @@ public class ZipFile implements Content, Content.Source {
 		}
 
 		@Override
-		public ZipFile read(Path id, InputStream input, Content.Registry registry) throws IOException {
+		public ZipFile read(Trie id, InputStream input, Content.Registry registry) throws IOException {
 			return new ZipFile(registry, input);
 		}
 
@@ -62,11 +59,6 @@ public class ZipFile implements Content, Content.Source {
 				zout.closeEntry();
 			}
 			zout.finish();
-		}
-
-		@Override
-		public boolean includes(Class<?> kind) {
-			return kind == ZipFile.class;
 		}
 	};
 
@@ -105,7 +97,7 @@ public class ZipFile implements Content, Content.Source {
 			// example, a filename with no suffix will cause a crash here.
 			String[] ns = e.getName().split("\\.");
 			if(ns.length > 1) {
-				Path p = Path.fromString(ns[0]);
+				Trie p = Trie.fromString(ns[0]);
 				Content.Type<?> ct = registry.contentType(ns[1]);
 				entries.add(new Entry<>(ct, p, contents));
 			}
@@ -138,16 +130,16 @@ public class ZipFile implements Content, Content.Source {
 	 * @param i
 	 * @return
 	 */
-	public Entry get(int i) {
+	public Entry<?> get(int i) {
 		return entries.get(i);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Content> T get(Content.Type<T> kind, Path p) {
+	public <T extends Content> T get(Content.Type<T> kind, Trie p) {
 		for (int i = 0; i != entries.size(); ++i) {
 			Entry<?> ith = entries.get(i);
-			if (ith.getPath().equals(p) && ith.getContentType() == kind) {
+			if (ith.getTrie().equals(p) && ith.getContentType() == kind) {
 				return (T) ith.get();
 			}
 		}
@@ -157,11 +149,11 @@ public class ZipFile implements Content, Content.Source {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Content> List<T> getAll(Content.Type<T> kind, Filter f) {
+	public <T extends Content> List<T> getAll(Content.Filter<T> filter) {
 		ArrayList<T> rs = new ArrayList<>();
 		for (int i = 0; i != entries.size(); ++i) {
 			Entry<?> ith = entries.get(i);
-			if (f.matches(ith.getPath()) && ith.getContentType() == kind) {
+			if (filter.includes(ith.getContentType(),ith.getTrie())) {
 				rs.add((T) ith.get());
 			}
 		}
@@ -169,12 +161,12 @@ public class ZipFile implements Content, Content.Source {
 	}
 
 	@Override
-	public List<Path> match(Content.Type<? extends Content> ct, Filter f) {
+	public List<Trie> match(Content.Filter<? extends Content> filter) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public <T extends Content> List<Path> match(Content.Type<T> ct, Predicate<T> p) {
+	public <T extends Content> List<Trie> match(Content.Filter<T> ct, Predicate<T> p) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -193,18 +185,18 @@ public class ZipFile implements Content, Content.Source {
 	}
 
 	public final class Entry<T extends Content> {
-		public final Path path;
+		public final Trie path;
 		public final Content.Type<T> contentType;
 		public final byte[] bytes;
 		public T value;
 
-		public Entry(Content.Type<T> contentType, Path path, byte[] bytes) {
+		public Entry(Content.Type<T> contentType, Trie path, byte[] bytes) {
 			this.contentType = contentType;
 			this.path = path;
 			this.bytes = bytes;
 		}
 
-		public Path getPath() {
+		public Trie getTrie() {
 			return path;
 		}
 

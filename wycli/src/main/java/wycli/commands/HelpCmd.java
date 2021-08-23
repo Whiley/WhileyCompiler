@@ -18,14 +18,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import wycc.util.Trie;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
-import wycc.lang.Path;
 
-public class HelpSystem implements Command {
+public class HelpCmd implements Command {
 
     public static final Configuration.Schema SCHEMA = Configuration
-            .fromArray(Configuration.BOUND_INTEGER(Path.fromString("width"), "fix display width", false, 0));
+            .fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width", false, 0));
 
     public static final List<Option.Descriptor> OPTIONS = Arrays
             .asList(Command.OPTION_NONNEGATIVE_INTEGER("width", "fix display width", 80));
@@ -61,14 +61,14 @@ public class HelpSystem implements Command {
 
         @Override
         public Command initialise(Command.Environment environment) {
-            return new HelpSystem(System.out, environment);
+            return new HelpCmd(System.out, environment);
         }
     };
     //
     private final PrintStream out;
     private final Command.Environment environment;
 
-    public HelpSystem(PrintStream out, Command.Environment environment) {
+    public HelpCmd(PrintStream out, Command.Environment environment) {
         this.environment = environment;
         this.out = out;
     }
@@ -87,7 +87,7 @@ public class HelpSystem implements Command {
     }
 
     @Override
-    public boolean execute(Path path, Template template) throws Exception {
+    public boolean execute(Trie path, Template template) throws Exception {
         // Extract arguments
         List<String> args = template.getArguments();
         //

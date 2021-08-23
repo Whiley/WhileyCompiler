@@ -20,8 +20,8 @@ import wycc.io.SyntacticHeapReader;
 import wycc.lang.*;
 import wycc.lang.SyntacticHeap.Schema;
 import wycc.io.BinaryInputStream;
-import wycc.lang.Path;
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wyil.lang.WyilFile;
 
 /**
@@ -47,7 +47,7 @@ public final class WyilFileReader extends SyntacticHeapReader {
 		throw new IllegalArgumentException("deadcode reached");
 	}
 
-	public WyilFile read(Path ID) throws IOException {
+	public WyilFile read(Trie ID) throws IOException {
 		Pair<Integer, SyntacticItem[]> p = readItems();
 		return new WyilFile(ID, p.first(), p.second(), majorVersion, minorVersion);
 	}

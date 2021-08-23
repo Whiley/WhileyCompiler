@@ -17,7 +17,7 @@ import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Plugin;
 import wycc.lang.Content;
-import wycc.lang.Path;
+import wycc.util.Trie;
 import wycc.lang.Build.Artifact;
 import wycc.lang.Build.Repository;
 import wycc.lang.Build.SnapShot;
@@ -52,7 +52,7 @@ public class Activator implements Plugin.Activator {
 		}
 
 		@Override
-		public Build.Task initialise(Path path, Command.Environment environment) throws IOException {
+		public Build.Task initialise(Trie path, Command.Environment environment) throws IOException {
 			Configuration configuration = environment.get(path);
 			// Extract configuration options
 			int minInteger = configuration.get(Value.Int.class,MIN_CONFIG_OPTION).unwrap().intValue();
@@ -70,15 +70,15 @@ public class Activator implements Plugin.Activator {
 					.setTypeDepth(maxTypeDepth).setAliasingWidth(maxAliasingWidth).setLambdaWidth(maxRotationWidth)
 					.setIgnores(ignores).setSamplingRate(samplingRate).setSampleMin(limit)
 					.setTimeout(timeout);
-			Path pkg = Path.fromString(configuration.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
+			Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, PACKAGE_NAME).unwrap());
 			// Specify directory where generated WyIL files are dumped.
-			Path bindir = Path.fromString(configuration.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
-			final Path target = bindir.append(pkg);
+			Trie bindir = Trie.fromString(configuration.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
+			final Trie target = bindir.append(pkg);
 			//
 			return new Build.Task() {
 
 				@Override
-				public Path getPath() {
+				public Trie getPath() {
 					return target;
 				}
 

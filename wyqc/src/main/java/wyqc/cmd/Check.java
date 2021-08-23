@@ -17,13 +17,13 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.lang.*;
 import wycc.lang.Build.Repository;
 import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.Trie;
 import wyc.Activator;
 import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
-import wycli.commands.BuildSystem;
+import wycli.commands.BuildCmd;
 import wycli.lang.Command;
 import wyil.lang.WyilFile;
 import static wyqc.lang.QuickCheck.DEFAULT_CONTEXT;
@@ -70,16 +70,16 @@ import wyqc.lang.QuickCheck;
  */
 public class Check implements Command {
 	// Configuration Options
-	public static Path MIN_CONFIG_OPTION = Path.fromString("check/min");
-	public static Path MAX_CONFIG_OPTION = Path.fromString("check/max");
-	public static Path LENGTH_CONFIG_OPTION = Path.fromString("check/length");
-	public static Path DEPTH_CONFIG_OPTION = Path.fromString("check/depth");
-	public static Path WIDTH_CONFIG_OPTION = Path.fromString("check/width");
-	public static Path ROTATION_CONFIG_OPTION = Path.fromString("check/rotation");
-	public static Path SAMPLING_CONFIG_OPTION = Path.fromString("check/sample");
-	public static Path LIMIT_CONFIG_OPTION = Path.fromString("check/limit");
-	public static Path TIMEOUT_CONFIG_OPTION = Path.fromString("check/timeout");
-	public static Path IGNORES_CONFIG_OPTION = Path.fromString("check/ignores");
+	public static Trie MIN_CONFIG_OPTION = Trie.fromString("check/min");
+	public static Trie MAX_CONFIG_OPTION = Trie.fromString("check/max");
+	public static Trie LENGTH_CONFIG_OPTION = Trie.fromString("check/length");
+	public static Trie DEPTH_CONFIG_OPTION = Trie.fromString("check/depth");
+	public static Trie WIDTH_CONFIG_OPTION = Trie.fromString("check/width");
+	public static Trie ROTATION_CONFIG_OPTION = Trie.fromString("check/rotation");
+	public static Trie SAMPLING_CONFIG_OPTION = Trie.fromString("check/sample");
+	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
+	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
+	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -194,7 +194,7 @@ public class Check implements Command {
 	}
 
 	@Override
-	public boolean execute(Path path, Template template) throws Exception {
+	public boolean execute(Trie path, Template template) throws Exception {
 		Repository repository = environment.getRepository();
 		Configuration configuration = environment.get(path);
 		// Extract configuration options
@@ -208,7 +208,7 @@ public class Check implements Command {
 		double samplingRate = configuration.get(Value.Decimal.class,SAMPLING_CONFIG_OPTION).unwrap().doubleValue();
 		long timeout = configuration.get(Value.Int.class,TIMEOUT_CONFIG_OPTION).unwrap().longValue();
 		String[] ignores = toStringArray(configuration.get(Value.Array.class,IGNORES_CONFIG_OPTION));
-		Path pkg = Path.fromString(configuration.get(Value.UTF8.class, Activator.PACKAGE_NAME).unwrap());
+		Trie pkg = Trie.fromString(configuration.get(Value.UTF8.class, Activator.PACKAGE_NAME).unwrap());
 		// Extract command-line options
 		Command.Options options = template.getOptions();
 		//
@@ -234,7 +234,7 @@ public class Check implements Command {
 			timeout = options.get("timeout", Integer.class);
 		}
 		// Specify directory where generated WyIL files are dumped.
-		Path target = Path.fromString(configuration.get(Value.UTF8.class, Activator.BUILD_WHILEY_TARGET).unwrap());
+		Trie target = Trie.fromString(configuration.get(Value.UTF8.class, Activator.BUILD_WHILEY_TARGET).unwrap());
 		//
 		WyilFile binary = repository.get(WyilFile.ContentType,target.append(pkg));
 
@@ -247,7 +247,7 @@ public class Check implements Command {
 			// Perform the check
 			boolean OK = new QuickCheck(environment.getLogger()).check(environment, binary, context, template.getArguments());
 			if(!OK) {
-				BuildSystem.printSyntacticMarkers(syserr, binary);
+				BuildCmd.printSyntacticMarkers(syserr, binary);
 			}
 //			//
 //			if(!OK) {
@@ -277,7 +277,7 @@ public class Check implements Command {
 	 *
 	 * @throws IOException
 	 */
-//	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
+//	public static void printSyntacticMarkers(PrintStream output, Collection<Trie.Entry<?>> sources, Trie.Entry<?> target) throws IOException {
 //		// Extract all syntactic markers from entries in the build graph
 //		List<SyntacticItem.Marker> items = wycli.commands.Build.extractSyntacticMarkers(target);
 //		// For each marker, print out error messages appropriately

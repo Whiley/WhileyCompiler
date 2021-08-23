@@ -13,12 +13,11 @@
 // limitations under the License.
 package wycli.cfg;
 
-import wycc.lang.Filter;
-import wycc.lang.Path;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import wycc.util.Trie;
 
 /**
  * Provides a dynamic configuration (i.e. one which is not backed by a file on
@@ -29,7 +28,7 @@ import java.util.List;
  */
 public class HashMapConfiguration implements Configuration {
 	private final Configuration.Schema schema;
-	private final HashMap<Path,Object> entries;
+	private final HashMap<Trie,Object> entries;
 
 	public HashMapConfiguration(Configuration.Schema schema) {
 		this.schema = schema;
@@ -42,12 +41,12 @@ public class HashMapConfiguration implements Configuration {
 	}
 
 	@Override
-	public boolean hasKey(Path key) {
+	public boolean hasKey(Trie key) {
 		return entries.get(key) != null;
 	}
 
 	@Override
-	public <T> T get(Class<T> kind, Path key) {
+	public <T> T get(Class<T> kind, Trie key) {
 		// Get descriptor (i.e. check it exists)
 		KeyValueDescriptor<?> d = schema.getDescriptor(key);
 		//
@@ -62,7 +61,7 @@ public class HashMapConfiguration implements Configuration {
 	}
 
 	@Override
-	public <T> void write(Path key, T value) {
+	public <T> void write(Trie key, T value) {
 		KeyValueDescriptor d = schema.getDescriptor(key);
 		if (d.isValid(value)) {
 			entries.put(key, value);
@@ -72,9 +71,9 @@ public class HashMapConfiguration implements Configuration {
 	}
 
 	@Override
-	public List<Path> matchAll(Filter filter) {
-		ArrayList<Path> ids = new ArrayList<>();
-		for (Path id : entries.keySet()) {
+	public List<Trie> matchAll(Trie filter) {
+		ArrayList<Trie> ids = new ArrayList<>();
+		for (Trie id : entries.keySet()) {
 			if (filter.matches(id)) {
 				ids.add(id);
 			}

@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.lang.Filter;
 import wycc.util.AbstractCompilationUnit.Value;
 import wycc.util.ByteRepository;
 import wycc.lang.Build;
@@ -28,7 +27,7 @@ import wycc.util.DirectoryRoot;
 import wycc.util.Logger;
 import wycli.cfg.*;
 import wycli.cfg.Configuration.Schema;
-import wycli.commands.HelpSystem;
+import wycli.commands.*;
 import wycli.lang.Command;
 import wycli.lang.Package;
 import wycli.lang.Plugin;
@@ -37,8 +36,8 @@ import wycli.util.RemotePackageRepository;
 import wycli.util.StdPackageResolver;
 import wycli.util.CommandParser;
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wycc.util.ZipFile;
-import wycc.lang.Path;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -51,12 +50,14 @@ import wycc.lang.Path;
  */
 public class Main implements Command.Environment {
 	/**
-	 * Path to the dependency repository within the global root.
+	 * Trie to the dependency repository within the global root.
 	 */
-	public static final Path DEFAULT_REPOSITORY_PATH = Path.fromString("repository");
+	public static final Trie DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
 
 	public static final Command.Descriptor[] DEFAULT_COMMANDS = {
-			HelpSystem.DESCRIPTOR, wycli.commands.BuildSystem.DESCRIPTOR
+			HelpCmd.DESCRIPTOR, //
+			BuildCmd.DESCRIPTOR, //
+			CleanCmd.DESCRIPTOR
 	};
 
 	// ========================================================================
@@ -79,14 +80,19 @@ public class Main implements Command.Environment {
 	 */
 	private final Build.Repository repository;
 	/**
+	 * The working directoring where build artifacts are projected, etc.
+	 */
+	private final Content.Root workingRoot;
+	/**
 	 *
 	 */
 	private final Schema localSchema;
 
-	public Main(Plugin.Environment env, Iterable<Build.Artifact> entries, Content.Root packageRepository)
+	public Main(Plugin.Environment env, Iterable<Build.Artifact> entries, Content.Root workingRoot, Content.Root packageRepository)
 			throws IOException {
 		this.env = env;
 		this.repository = new ByteRepository(env, entries);
+		this.workingRoot = workingRoot;
 		this.localSchema = constructSchema();
 		// Setup package resolver
 		this.resolver = new StdPackageResolver(this, new RemotePackageRepository(this, packageRepository));
@@ -100,6 +106,11 @@ public class Main implements Command.Environment {
 	@Override
 	public List<Command.Platform> getCommandPlatforms() {
 		return env.getCommandPlatforms();
+	}
+
+	@Override
+	public Content.Root getWorkspaceRoot() {
+		return workingRoot;
 	}
 
 	@Override
@@ -118,7 +129,7 @@ public class Main implements Command.Environment {
 	}
 
 	@Override
-	public Configuration get(Path path) {
+	public Configuration get(Trie path) {
 		ArrayList<Configuration> files = new ArrayList<>();
 		// Pull out all configuration files upto the root
 		while (path != null) {
@@ -181,7 +192,7 @@ public class Main implements Command.Environment {
 		// entire ecosystem, such as the set of active plugins.
 		DirectoryRoot SystemDir = determineSystemRoot();
 		// Read the system configuration file
-		Configuration system = readConfigFile(SystemDir, Path.fromString("wy"), logger, Schemas.SYSTEM_CONFIG_SCHEMA);
+		Configuration system = readConfigFile(SystemDir, Trie.fromString("wy"), logger, Schemas.SYSTEM_CONFIG_SCHEMA);
 		// Construct plugin environment and activate plugins
 		Plugin.Environment penv = activatePlugins(system, logger);
 		// Register content type for configuration files
@@ -192,35 +203,35 @@ public class Main implements Command.Environment {
 		// Identify repository
 		Content.Root repositoryDir = globalDir.subroot(DEFAULT_REPOSITORY_PATH);
 		// Determine top-level directory and relative path
-		Pair<File, Path> lrp = determineLocalRootDirectory();
+		Pair<File, Trie> lrp = determineLocalRootDirectory();
 		File localDir = lrp.first();
-		Path path = lrp.second();
+		Trie path = lrp.second();
 		// Construct build directory
 		File buildDir = determineBuildDirectory(localDir, logger);
 		// Construct workding directory
-		DirectoryRoot dir = new DirectoryRoot(penv, localDir);
+		DirectoryRoot workingDir = new DirectoryRoot(penv, localDir);
 		// Extract build artifacts
 		List<Build.Artifact> artifacts = new ArrayList<>();
-		for (Content content : dir) {
+		for (Content content : workingDir) {
 			if (content instanceof Build.Artifact) {
 				artifacts.add((Build.Artifact) content);
 			}
 		}
 		// Construct command environment!
-		Main menv = new Main(penv, artifacts, repositoryDir);
+		Main menv = new Main(penv, artifacts, workingDir, repositoryDir);
 		// Execute the given command
 		int exitCode = exec(menv, path, args);
 		// Write back all artifacts to the working director
 		for(Build.Artifact b : menv.getRepository().last()) {
-			dir.put(b.getPath(), b);
+			workingDir.put(b.getPath(), b);
 		}
 		// Flush working directory to disk
-		dir.flush();
+		workingDir.flush();
 		// Done
 		System.exit(exitCode);
 	}
 
-	public static int exec(Main menv, Path path, String[] args) {
+	public static int exec(Main menv, Trie path, String[] args) {
 		// Add default descriptors
 		menv.getCommandDescriptors().addAll(Arrays.asList(DEFAULT_COMMANDS));
 		// Construct environment and execute arguments
@@ -323,7 +334,7 @@ public class Main implements Command.Environment {
 	 * @return
 	 * @throws IOException
 	 */
-	private static Pair<File, Path> determineLocalRootDirectory() throws IOException {
+	private static Pair<File, Trie> determineLocalRootDirectory() throws IOException {
 		// Search for inner configuration.
 		File inner = findConfigFile(new File("."));
 		if (inner == null) {
@@ -333,12 +344,12 @@ public class Main implements Command.Environment {
 		File outer = findConfigFile(inner.getParentFile());
 		if (outer == null) {
 			// No enclosing configuration found.
-			return new Pair<>(inner, Path.ROOT);
+			return new Pair<>(inner, Trie.ROOT);
 		} else {
 			// Calculate relative path
 			String path = inner.getPath().replace(outer.getPath(), "").replace(File.separatorChar, '/');
 			// Done
-			return new Pair<>(outer, Path.fromString(path));
+			return new Pair<>(outer, Trie.fromString(path));
 		}
 	}
 
@@ -354,9 +365,9 @@ public class Main implements Command.Environment {
 	private static Plugin.Environment activatePlugins(Configuration global, Logger logger) {
 		Plugin.Environment env = new Plugin.Environment(logger);
 		// Determine the set of install plugins
-		List<Path> plugins = global.matchAll(Filter.fromString("plugins/*"));
+		List<Trie> plugins = global.matchAll(Trie.fromString("plugins/*"));
 		// start modules
-		for (Path id : plugins) {
+		for (Trie id : plugins) {
 			Value.UTF8 activator = global.get(Value.UTF8.class, id);
 			// Only activate if enabled
 			try {
@@ -410,7 +421,7 @@ public class Main implements Command.Environment {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Configuration readConfigFile(DirectoryRoot root, Path id, Logger logger,
+	public static Configuration readConfigFile(DirectoryRoot root, Trie id, Logger logger,
 			Configuration.Schema... schemas) throws IOException {
 		// Combine schemas together
 		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);

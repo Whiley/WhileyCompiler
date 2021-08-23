@@ -37,7 +37,6 @@ import wycc.util.*;
 import wycc.util.SectionedSchema.Section;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wycc.lang.Path;
 import wycc.util.ArrayUtils;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
@@ -104,7 +103,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @throws IOException
 		 */
 		@Override
-		public WyilFile read(Path id, InputStream in, Content.Registry registry) throws IOException {
+		public WyilFile read(Trie id, InputStream in, Content.Registry registry) throws IOException {
 			return new WyilFileReader(in).read(id);
 		}
 
@@ -142,11 +141,6 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		@Override
 		public String getSuffix() {
 			return "wyil";
-		}
-
-		@Override
-		public boolean includes(Class<?> kind) {
-			return kind == WyilFile.class;
 		}
 	};
 
@@ -300,12 +294,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Constructors
 	// =========================================================================
 
-	private final Path ID;
+	private final Trie ID;
 	private final List<WhileyFile> sourceFiles;
 	private final int majorVersion;
 	private final int minorVersion;
 
-	public WyilFile(Path id, List<WhileyFile> sourceFiles) {
+	public WyilFile(Trie id, List<WhileyFile> sourceFiles) {
 		super();
 		this.ID = id;
 		Schema schema = WyilFile.getSchema();
@@ -347,7 +341,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		this.ID = wf.getPath();
 	}
 
-	public WyilFile(Path ID, int root, SyntacticItem[] items, int major, int minor) {
+	public WyilFile(Trie ID, int root, SyntacticItem[] items, int major, int minor) {
 		this.majorVersion = major;
 		this.minorVersion = minor;
 		// Allocate every item into this heap
@@ -366,7 +360,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// =========================================================================
 
 	@Override
-	public Path getPath() {
+	public Trie getPath() {
 		return ID;
 	}
 
@@ -7212,7 +7206,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Path getSource() {
+			public Trie getSource() {
 				// **************************************
 				// FIXME: this is really a temporary hack
 				// **************************************
