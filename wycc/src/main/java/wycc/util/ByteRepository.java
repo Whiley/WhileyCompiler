@@ -205,7 +205,7 @@ public class ByteRepository implements Build.Repository {
 			boolean firstTime=true;
 			for(Build.Artifact f : items) {
 				r = firstTime ? r : r + ",";
-				r += f.getPath();
+				r += f.getPath() + ":" + f.getContentType().getSuffix();
 				firstTime=false;
 			}
 			return r + "}";
