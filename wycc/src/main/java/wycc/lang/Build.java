@@ -30,14 +30,14 @@ public interface Build {
 	 */
 	public interface Repository extends Content.Ledger {
 		/**
-		 * Apply a given transformer to this repository. This will be given the latest
+		 * Apply a given transaction to this repository. This will be given the latest
 		 * snapshot when it is executed. The resulting snapshot well then become the
 		 * head (if no other snapshots have been written inbetween) or will be merged
 		 * (if possible).
 		 *
 		 * @param transformer
 		 */
-		public void apply(Function<SnapShot, SnapShot> transformer);
+		public boolean apply(Transaction transaction);
 
 		/**
 		 * Get the ith state within this repository
@@ -84,34 +84,52 @@ public interface Build {
 		public <T extends Artifact> SnapShot put(T entry);
 	}
 
-    /**
-     * Represents a given "build artifact" within a repository.  This could a SourceFile, or some kind of structured
-     * syntax tree or intermediate representation.  It could also be a binary target.
-     */
+	public interface Transaction extends Iterable<Task> {
+		/**
+		 * Returns the number of tasks in this transaction.
+		 *
+		 * @return
+		 */
+		public int size();
+
+		/**
+		 * Get the ith task in this transaction.
+		 *
+		 * @param ith
+		 * @return
+		 */
+		public Task get(int ith);
+	}
+
+	/**
+	 * Represents a given "build artifact" within a repository. This could a
+	 * SourceFile, or some kind of structured syntax tree or intermediate
+	 * representation. It could also be a binary target.
+	 */
 	public interface Artifact extends Content {
-    	/**
+		/**
 		 * Get the location within the build of this artifact.
 		 *
 		 * @return
 		 */
-        public Trie getPath();
+		public Trie getPath();
 
-        /**
+		/**
 		 * Get the content type of this artifact.
 		 *
 		 * @return
 		 */
-        @Override
+		@Override
 		public Content.Type<? extends Artifact> getContentType();
 
-        /**
+		/**
 		 * Get all the source artifacts that contributed to this artifact. Observe that,
 		 * if this is a source file, then this list is always empty!
 		 *
 		 * @return
 		 */
 		public List<? extends Build.Artifact> getSourceArtifacts();
-    }
+	}
 
 	/**
 	 * A shortlived unit of work responsible for generating a given build artifact
@@ -124,53 +142,54 @@ public interface Build {
 	public interface Task extends Artifact, Function<SnapShot, Pair<SnapShot, Boolean>> {
 	}
 
-    /**
-     * Responsible for recording detailed progress of a given task for both informational and profiling purposes. For
-     * example, providing feedback on expected time to completion in an IDE. Or, providing detailed feedback on number
-     * of steps executed by key components in a given task, etc.
-     *
-     * @author David J. Pearce
-     */
-    public interface Meter {
-        /**
-         * Create subtask of current task with a given name.
-         *
-         * @return
-         */
-        public Meter fork(String name);
+	/**
+	 * Responsible for recording detailed progress of a given task for both
+	 * informational and profiling purposes. For example, providing feedback on
+	 * expected time to completion in an IDE. Or, providing detailed feedback on
+	 * number of steps executed by key components in a given task, etc.
+	 *
+	 * @author David J. Pearce
+	 */
+	public interface Meter {
+		/**
+		 * Create subtask of current task with a given name.
+		 *
+		 * @return
+		 */
+		public Meter fork(String name);
 
-        /**
-         * Record an arbitrary step taking during this subtask for profiling purposes.
-         *
-         * @param tag
-         */
-        public void step(String tag);
+		/**
+		 * Record an arbitrary step taking during this subtask for profiling purposes.
+		 *
+		 * @param tag
+		 */
+		public void step(String tag);
 
-        /**
-         * Current (sub)task has completed.
-         */
-        public void done();
-    }
+		/**
+		 * Current (sub)task has completed.
+		 */
+		public void done();
+	}
 
-    public interface Stage {
+	public interface Stage {
 
-    }
+	}
 
-    public static final Build.Meter NULL_METER = new Build.Meter() {
+	public static final Build.Meter NULL_METER = new Build.Meter() {
 
-        @Override
-        public Meter fork(String name) {
-            return NULL_METER;
-        }
+		@Override
+		public Meter fork(String name) {
+			return NULL_METER;
+		}
 
-        @Override
-        public void step(String tag) {
+		@Override
+		public void step(String tag) {
 
-        }
+		}
 
-        @Override
-        public void done() {
-        }
+		@Override
+		public void done() {
+		}
 
-    };
+	};
 }

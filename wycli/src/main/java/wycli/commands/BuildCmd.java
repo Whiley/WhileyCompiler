@@ -40,6 +40,7 @@ import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.lang.Command;
 import wycc.util.Pair;
+import wycc.util.Transactions;
 import wycc.util.Trie;
 
 /**
@@ -137,33 +138,36 @@ public class BuildCmd implements Command {
 		// Extract configuration for this path
 		Repository repository = environment.getRepository();
 		// Construct pipeline
-		Pipeline pipeline = getBuildPlan(path, environment);
-		// Runs tasks
-		repository.apply(pipeline);
-		// Look for error messages
-		// At this point we need to figure out what the generated files are, and from
-		// them determine the sources which generated them.
-		for (Build.Task task : pipeline) {
-			Trie target = task.getPath();
-			Build.Artifact binary = repository.get(task.getContentType(), target);
-			printSyntacticMarkers(syserr, binary);
-			// Write back all artifacts to workspace
-			workspace.put(target, binary);
-		}
-		// Sync workspace to disk
-		workspace.synchronise();
-		// Success if all pipeline stages completed
-		if(pipeline.completed()) {
-			// Build succeeded
-			return true;
-		} else {
-			syserr.println("Build failed.");
-			// Build failure
-			return false;
+		Build.Transaction transaction = getBuildPlan(path, environment);
+		try {
+			// Runs tasks
+			boolean r = repository.apply(transaction);
+			// Success if all pipeline stages completed
+			if(r) {
+				// Build succeeded
+				return true;
+			} else {
+				syserr.println("Build failed.");
+				// Build failure
+				return false;
+			}
+		} finally {
+			// Look for error messages
+			for (Build.Task task : transaction) {
+				Trie target = task.getPath();
+				Build.Artifact binary = repository.get(task.getContentType(), target);
+				if (binary != null) {
+					printSyntacticMarkers(syserr, binary);
+					// Write back all artifacts to workspace
+					workspace.put(target, binary);
+				}
+			}
+			// Sync workspace to disk
+			workspace.synchronise();
 		}
 	}
 
-	public static Pipeline getBuildPlan(Trie path, Command.Environment environment) throws IOException {
+	public static Build.Transaction getBuildPlan(Trie path, Command.Environment environment) throws IOException {
 		// Extract configuration for this path
 		Configuration config = environment.get(path);
 		List<Build.Task> tasks = new ArrayList<>();
@@ -181,7 +185,7 @@ public class BuildCmd implements Command {
 			}
 		}
 		//
-		return new Pipeline(tasks);
+		return Transactions.create(tasks);
 	}
 
 	public static class Pipeline implements Function<SnapShot,SnapShot>, Iterable<Build.Task>  {

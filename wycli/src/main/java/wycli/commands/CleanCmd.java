@@ -108,7 +108,7 @@ public class CleanCmd implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		// Construct the build plan
-		BuildCmd.Pipeline plan = BuildCmd.getBuildPlan(path, environment);
+		Build.Transaction plan = BuildCmd.getBuildPlan(path, environment);
 		// Compare files in the build repository with those in the root.
 		for (Build.Task t : plan) {
 			if (verbose) {

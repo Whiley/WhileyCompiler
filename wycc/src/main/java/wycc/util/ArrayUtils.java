@@ -17,6 +17,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Iterator;
 
 public class ArrayUtils {
 
@@ -497,5 +498,28 @@ public class ArrayUtils {
 			}
 		}
 		return -1;
+	}
+
+	/**
+	 * Create an iterator from an array of items.
+	 *
+	 * @param <T>
+	 * @param items
+	 * @return
+	 */
+	public static <T> Iterator<T> iterator(T... items) {
+		return new Iterator<>() {
+			private int index = 0;
+			@Override
+			public boolean hasNext() {
+				return index < items.length;
+			}
+
+			@Override
+			public T next() {
+				return items[index++];
+			}
+
+		};
 	}
 }

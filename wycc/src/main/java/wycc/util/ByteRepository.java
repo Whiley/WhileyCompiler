@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import wycc.lang.Build;
+import wycc.lang.Build.Transaction;
 import wycc.lang.Content;
 import wycc.lang.Content.Registry;
 
@@ -71,8 +72,28 @@ public class ByteRepository implements Build.Repository {
 	}
 
 	@Override
-	public void apply(Function<Build.SnapShot, Build.SnapShot> transformer) {
-		states.add((SnapShot) transformer.apply(last()));
+	public boolean apply(Transaction transaction) {
+		SnapShot s = last();
+		try {
+			for (Build.Task t : transaction) {
+				Pair<Build.SnapShot, Boolean> p = t.apply(s);
+				if (!p.second()) {
+					// Lots of questions as to how rollback should be managed.
+					states.add((SnapShot) p.first());
+					return false;
+				} else {
+					s = (SnapShot) p.first();
+				}
+			}
+			states.add(s);
+			return true;
+		} catch (Throwable e) {
+			// NOTES: Unclear to me whether this makes sense. However, we need to get
+			// information out of the system when something goes wrong, and this is the only
+			// way.
+			states.add((SnapShot) s);
+			throw e;
+		}
 	}
 
 	@Override

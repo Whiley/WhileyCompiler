@@ -32,6 +32,7 @@ import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.ByteRepository;
 import wycc.util.DirectoryRoot;
 import wycc.util.Pair;
+import wycc.util.Transactions;
 import wycc.util.Trie;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
@@ -223,7 +224,7 @@ public class TestUtils {
 			// Construct compile task
 			CompileTask task = new CompileTask(path, source);
 			// Apply Whiley Compiler to repository
-			repository.apply(s -> task.apply(s).first());
+			repository.apply(Transactions.create(task));
 			// Read out binary file from build repository
 			WyilFile target = repository.get(WyilFile.ContentType, path);
 			// Write binary file to directory
