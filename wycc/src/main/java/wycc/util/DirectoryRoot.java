@@ -26,6 +26,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	};
     private final Content.Registry registry;
     private final File dir;
+    private final FileFilter filter;
     private final ArrayList<Entry<?>> items;
 
     public DirectoryRoot(Content.Registry registry, File dir) throws IOException {
@@ -35,6 +36,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
     public DirectoryRoot(Content.Registry registry, File dir, FileFilter filter) throws IOException {
 		this.registry = registry;
 		this.dir = dir;
+		this.filter = filter;
 		this.items = initialise(registry, dir, filter);
     }
 
@@ -113,7 +115,7 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		// FIXME: this method could be made more efficient
 		final java.nio.file.Path root = dir.toPath();
 		// FIXME: bug here if root created with specific file filter
-		List<File> files = findAll(64, dir, NULL_FILTER, new ArrayList<>());
+		List<File> files = findAll(64, dir, filter, new ArrayList<>());
 		for(File f : files) {
 			// Construct filename
 			String filename = root.relativize(f.toPath()).toString().replace(File.separatorChar, '/');
