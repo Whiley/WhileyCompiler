@@ -221,12 +221,6 @@ public class Main implements Command.Environment {
 		Main menv = new Main(penv, artifacts, workingDir, repositoryDir);
 		// Execute the given command
 		int exitCode = exec(menv, path, args);
-		// Write back all artifacts to the working director
-		for(Build.Artifact b : menv.getRepository().last()) {
-			workingDir.put(b.getPath(), b);
-		}
-		// Flush working directory to disk
-		workingDir.flush();
 		// Done
 		System.exit(exitCode);
 	}

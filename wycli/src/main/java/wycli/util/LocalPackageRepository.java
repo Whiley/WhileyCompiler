@@ -98,8 +98,6 @@ public class LocalPackageRepository implements Package.Repository {
 		// Dig out the file!
 		root.put(qpn, pkg);
 		//
-		root.flush();
-		//
 		environment.getLogger().logTimedMessage("Installed " + qpn, 0, 0);
 	}
 

@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -29,6 +30,7 @@ import wycc.lang.SyntacticItem;
 import wycc.lang.SourceFile;
 import wycc.lang.Build.Repository;
 import wycc.lang.Build.SnapShot;
+import wycc.lang.Content;
 import wycc.lang.Build;
 import wycc.lang.Build.Artifact;
 import wycc.util.AbstractCompilationUnit;
@@ -130,37 +132,28 @@ public class BuildCmd implements Command {
 
 	@Override
 	public boolean execute(Trie path, Template template) throws Exception {
+		// Access workspace root
+		Content.Root workspace = environment.getWorkspaceRoot();
 		// Extract configuration for this path
-		Configuration config = environment.get(path);
 		Repository repository = environment.getRepository();
-		List<Build.Task> tasks = new ArrayList<>();
-		// Determine active platforms
-		Value.Array platforms = config.get(Value.Array.class, BUILD_PLATFORMS);
-		// Construct tasks
-		for(Command.Platform p : environment.getCommandPlatforms()) {
-			// TODO: this is not pretty.
-			for (int i = 0; i != platforms.size(); ++i) {
-				Value.UTF8 ith = (Value.UTF8) platforms.get(i);
-				if(ith.toString().equals(p.getName())) {
-					// Yes, this platform is active
-					tasks.add(p.initialise(path, environment));
-				}
-			}
-		}
 		// Construct pipeline
-		Pipeline pipeline = new Pipeline(tasks);
+		Pipeline pipeline = getBuildPlan(path, environment);
 		// Runs tasks
 		repository.apply(pipeline);
 		// Look for error messages
 		// At this point we need to figure out what the generated files are, and from
 		// them determine the sources which generated them.
-		for (Build.Task task : tasks) {
+		for (Build.Task task : pipeline) {
 			Trie target = task.getPath();
 			Build.Artifact binary = repository.get(task.getContentType(), target);
 			printSyntacticMarkers(syserr, binary);
+			// Write back all artifacts to workspace
+			workspace.put(target, binary);
 		}
+		// Sync workspace to disk
+		workspace.synchronise();
 		// Success if all pipeline stages completed
-		if(pipeline.completed == tasks.size()) {
+		if(pipeline.completed()) {
 			// Build succeeded
 			return true;
 		} else {
@@ -170,7 +163,28 @@ public class BuildCmd implements Command {
 		}
 	}
 
-	private static class Pipeline implements Function<SnapShot,SnapShot> {
+	public static Pipeline getBuildPlan(Trie path, Command.Environment environment) throws IOException {
+		// Extract configuration for this path
+		Configuration config = environment.get(path);
+		List<Build.Task> tasks = new ArrayList<>();
+		// Determine active platforms
+		Value.Array platforms = config.get(Value.Array.class, BUILD_PLATFORMS);
+		// Construct tasks
+		for (Command.Platform p : environment.getCommandPlatforms()) {
+			// TODO: this is not pretty.
+			for (int i = 0; i != platforms.size(); ++i) {
+				Value.UTF8 ith = (Value.UTF8) platforms.get(i);
+				if (ith.toString().equals(p.getName())) {
+					// Yes, this platform is active
+					tasks.add(p.initialise(path, environment));
+				}
+			}
+		}
+		//
+		return new Pipeline(tasks);
+	}
+
+	public static class Pipeline implements Function<SnapShot,SnapShot>, Iterable<Build.Task>  {
 		private final List<Build.Task> tasks;
 		private int completed;
 
@@ -191,6 +205,15 @@ public class BuildCmd implements Command {
 				completed = completed + 1;
 			}
 			return s;
+		}
+
+		@Override
+		public Iterator<Build.Task> iterator() {
+			return tasks.iterator();
+		}
+
+		public boolean completed() {
+			return completed == tasks.size();
 		}
 	}
 

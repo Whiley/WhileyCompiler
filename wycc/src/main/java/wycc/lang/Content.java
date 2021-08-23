@@ -186,7 +186,7 @@ public interface Content {
 	 */
 	public interface Sink {
 		/**
-		 * Write a given piece of content into this sink,
+		 * Write a given piece of content into this sink.
 		 *
 		 * @param <T>
 		 * @param kind
@@ -194,6 +194,12 @@ public interface Content {
 		 * @param value
 		 */
 		public void put(Trie p, Content value);
+
+		/**
+		 * Remove a given piece of content from this sink.
+		 * @param p
+		 */
+		public void remove(Trie p, Content.Type<?> type);
 
 		/**
 		 * Get the content regsitry associated with this sink.
@@ -227,13 +233,6 @@ public interface Content {
 		 * items will then be reloaded on demand when next requested.
 		 */
 		public void synchronise() throws IOException;
-
-		/**
-		 * Flush all writes to the underlying medium. This is basically the half of a
-		 * sync which flushes writes, but it doesn't invalidate items which have been
-		 * changed.
-		 */
-		public void flush() throws IOException;
 	}
 
 	/**

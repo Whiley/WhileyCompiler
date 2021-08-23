@@ -109,8 +109,39 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 	}
 
 	@Override
-	public void synchronise() {
-		throw new UnsupportedOperationException();
+	public void synchronise() throws IOException {
+		// FIXME: this method could be made more efficient
+		final java.nio.file.Path root = dir.toPath();
+		// FIXME: bug here if root created with specific file filter
+		List<File> files = findAll(64, dir, NULL_FILTER, new ArrayList<>());
+		for(File f : files) {
+			// Construct filename
+			String filename = root.relativize(f.toPath()).toString().replace(File.separatorChar, '/');
+			// Decode filename into path and content type.
+			Pair<Trie,Content.Type<?>> p = decodeFilename(filename, registry);
+			// Check whether this file isrecognised or not
+			if(p != null) {
+				// Search for this item
+				boolean matched = false;
+				for (int i = 0; i != items.size(); ++i) {
+					Entry<?> ith = items.get(i);
+					if (ith.getPath().equals(p.first) && ith.getContentType() == p.second()) {
+						matched = true;
+						break;
+					}
+				}
+				// File has been removed, so delete it :)
+				if (!matched) {
+					f.delete();
+				}
+			}
+		}
+		//
+		for (int i = 0; i != items.size(); ++i) {
+			// FIXME: this should really sanity check that we have not had a concurrent
+			// modification.
+			items.get(i).flush();
+		}
 	}
 
 	@Override
@@ -152,15 +183,18 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		items.add(e);
 	}
 
-    /**
-	 * Flush all dirty files to disk. A dirty file is one which has been modified
-	 * since this content root was initialised.
-	 */
 	@Override
-	public void flush() throws IOException {
+	public void remove(Trie p, Content.Type<?> ct) {
+		// Update state
 		for (int i = 0; i != items.size(); ++i) {
-			items.get(i).flush();
+			Entry ith = items.get(i);
+			if (ith.getContentType() == ct && ith.getPath().equals(p)) {
+				// Yes, remove entry
+				items.remove(i);
+				return;
+			}
 		}
+		// Done
 	}
 
     /**
@@ -369,6 +403,11 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		}
 
 		@Override
+		public void remove(Trie p, Content.Type<?> value) {
+			DirectoryRoot.this.remove(path.append(p), value);
+		}
+
+		@Override
 		public Root subroot(Trie p) {
 			return DirectoryRoot.this.subroot(path.append(p));
 		}
@@ -376,11 +415,6 @@ public class DirectoryRoot implements Content.Root, Iterable<Content> {
 		@Override
 		public void synchronise() throws IOException {
 			DirectoryRoot.this.synchronise();
-		}
-
-		@Override
-		public void flush() throws IOException {
-			DirectoryRoot.this.flush();
 		}
 	}
 

@@ -242,7 +242,7 @@ public class TestUtils {
 			result = false;
 		} finally {
 			// Writeback any results
-			root.flush();
+			root.synchronise();
 		}
 		//
 		psyserr.flush();

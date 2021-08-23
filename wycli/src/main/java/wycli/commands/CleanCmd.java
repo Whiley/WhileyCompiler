@@ -103,27 +103,21 @@ public class CleanCmd implements Command {
 
 	@Override
 	public boolean execute(Trie path, Template template) throws Exception {
-		// NOTE: a better way of doing this might be to get the build plan associated
-		// with this path. That could be used to determine the full graph and identify
-		// those derived from others.
-		// Access build repository
-		Build.Repository repository = environment.getRepository();
 		// Access workspace root
 		Content.Root workspace = environment.getWorkspaceRoot();
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
+		// Construct the build plan
+		BuildCmd.Pipeline plan = BuildCmd.getBuildPlan(path, environment);
 		// Compare files in the build repository with those in the root.
-		for (Content f : repository.getAll(Content.ANY)) {
-			if (f instanceof Build.Artifact) {
-				Build.Artifact b = (Build.Artifact) f;
-				if (b.getSourceArtifacts().size() > 0) {
-					if(verbose) {
-						logger.logTimedMessage("removing  " + b.getPath(), 0, 0);
-					}
-					workspace.put(b.getPath(), null);
-				}
+		for (Build.Task t : plan) {
+			if (verbose) {
+				logger.logTimedMessage("removing  " + t.getPath() + ", " + t.getContentType(), 0, 0);
 			}
+			workspace.remove(t.getPath(), t.getContentType());
 		}
+		// Sync workspace to disk
+		workspace.synchronise();
 		//
 		return true;
 	}
