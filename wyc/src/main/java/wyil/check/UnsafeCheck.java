@@ -40,7 +40,6 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 
 	@Override
 	public void visitInvoke(Expr.Invoke expr) {
-		// Check whether invoking an impure method in a pure context
 		Decl.Link<Decl.Callable> name = expr.getLink();
 		Decl.Named<?> enclosing = expr.getAncestor(Decl.Named.class);
 		//
@@ -48,6 +47,19 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr);
+	}
+
+	@Override
+	public void visitLambdaAccess(Expr.LambdaAccess expr) {
+		Decl.Link<Decl.Callable> name = expr.getLink();
+		// At the moment there is no way to specify a modifier on a function or method
+		// type. Hence, we cannot ever take the address of such an unsafe function or
+		// method as, otherwise, this would provide an easy way to circumvent the
+		// protection.
+		if(isUnsafe(name.getTarget())) {
+			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
+		}
+		super.visitLambdaAccess(expr);
 	}
 
 	@Override
