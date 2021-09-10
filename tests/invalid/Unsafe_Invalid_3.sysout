@@ -1,0 +1,3 @@
+Unsafe_Invalid_3.whiley:6: unsafe invocation not permitted in safe context
+    return f(x)
+           ^^^^

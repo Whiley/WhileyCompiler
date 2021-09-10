@@ -577,6 +577,7 @@ public class WhileyFileLexer {
 			put("export", Token.Kind.Export);
 			put("package", Token.Kind.Package);
 			put("final", Token.Kind.Final);
+			put("unsafe", Token.Kind.Unsafe);
 			// lifetimes
 			put("this", Token.Kind.This);
 		}
@@ -642,6 +643,7 @@ public class WhileyFileLexer {
 			Native("native"),
 			Export("export"),
 			Final("final"),
+			Unsafe("unsafe"),
 			Function("function"),
 			Method("method"),
 			Property("property"),

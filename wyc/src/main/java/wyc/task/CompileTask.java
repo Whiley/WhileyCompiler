@@ -19,6 +19,7 @@ import wyil.check.FunctionalCheck;
 import wyil.check.RecursiveTypeCheck;
 import wyil.check.SignatureCheck;
 import wyil.check.StaticVariableCheck;
+import wyil.check.UnsafeCheck;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.transform.MoveAnalysis;
@@ -186,7 +187,7 @@ public class CompileTask implements Build.Task {
 
 	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
 		return new Compiler.Check[] { new DefiniteAssignmentCheck(m), new DefiniteUnassignmentCheck(m),
-				new FunctionalCheck(m), new SignatureCheck(m), new StaticVariableCheck(m) };
+				new FunctionalCheck(m), new SignatureCheck(m), new StaticVariableCheck(m), new UnsafeCheck(m) };
 	}
 
 	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
