@@ -182,6 +182,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int MOD_final = 50; // <ZERO operands, ZERO>
 	public static final int MOD_private = 52; // <ZERO operands, ZERO>
 	public static final int MOD_public = 53; // <ZERO operands, ZERO>
+	public static final int MOD_unsafe = 54; // <ZERO operands, ZERO>
 	public static final int TEMPLATE_type = 56; // <ONE operands, ONE>
 	public static final int ATTR_error = 65; // <MANY operands, TWO>
 	public static final int ATTR_stackframe = 68; // <TWO operands, ZERO>
@@ -7076,6 +7077,29 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				}
 			};
 		}
+
+		public static final class Unsafe extends AbstractSyntacticItem implements Modifier {
+			public Unsafe() {
+				super(MOD_unsafe);
+			}
+
+			@Override
+			public String toString() {
+				return "unsafe";
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Unsafe();
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_unsafe") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Modifier.Unsafe();
+				}
+			};
+		}
 	}
 
 	public interface Linkable {
@@ -7348,6 +7372,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int INVALID_LVAL_EXPRESSION = 610;
 	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
 	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
+	public static final int UNSAFECALL_NOT_PERMITTED = 613;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7522,6 +7547,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		builder.add("MOD", "protected", null);
 		builder.add("MOD", "private", Modifier.Private.DESCRIPTOR_0);
 		builder.add("MOD", "public", Modifier.Public.DESCRIPTOR_0);
+		builder.add("MOD", "unsafe", Modifier.Unsafe.DESCRIPTOR_0);
 		// Templates
 		builder.add("TEMPLATE", "type", Template.Type.DESCRIPTOR_0);
 		// Attributes

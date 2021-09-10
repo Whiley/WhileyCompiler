@@ -244,6 +244,7 @@ public class ErrorMessages {
 	public static final Message ALLOCATION_NOT_PERMITTED = new StaticMessage("object allocation not permitted");
 	public static final Message REFERENCE_NOT_PERMITTED = new StaticMessage("reference not permitted");
 	public static final Message METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
+	public static final Message UNSAFECALL_NOT_PERMITTED = new StaticMessage("unsafe invocation not permitted in safe context");
 	public static final Message REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
 
 	// ========================================================================
@@ -388,6 +389,7 @@ public class ErrorMessages {
 			INVALID_LVAL_EXPRESSION,   // 610;
 			DEREFERENCED_DYNAMICALLY_SIZED,   // 611;
 			DEREFERENCED_UNKNOWN_TYPE,   // 612;
+			UNSAFECALL_NOT_PERMITTED,   // 613
 		},
 		{
 			// Verification

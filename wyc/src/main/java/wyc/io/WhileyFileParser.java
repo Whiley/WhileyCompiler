@@ -90,6 +90,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Switch;
 import static wyc.io.WhileyFileLexer.Token.Kind.This;
 import static wyc.io.WhileyFileLexer.Token.Kind.Tilde;
 import static wyc.io.WhileyFileLexer.Token.Kind.QuestionMark;
+import static wyc.io.WhileyFileLexer.Token.Kind.Unsafe;
 import static wyc.io.WhileyFileLexer.Token.Kind.VerticalBar;
 import static wyc.io.WhileyFileLexer.Token.Kind.Where;
 import static wyc.io.WhileyFileLexer.Token.Kind.While;
@@ -226,7 +227,7 @@ public class WhileyFileParser {
 
 	private Decl.Named<? extends Type> parseNamedDeclaration(Build.Meter meter) {
 		// Parse any modifiers
-		Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final);
+		Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final, Unsafe);
 		checkNotEof();
 		//
 		Token lookahead = tokens.get(index);
@@ -366,6 +367,9 @@ public class WhileyFileParser {
 				break;
 			case Final:
 				mods.add(annotateSourceLocation(new Modifier.Final(), index - 1));
+				break;
+			case Unsafe:
+				mods.add(annotateSourceLocation(new Modifier.Unsafe(), index - 1));
 				break;
 			}
 		}
