@@ -107,6 +107,9 @@ public class TestUtils {
 		VALID_IGNORED.put("Infeasible_Function_4", "???");
 		// Type Invariant Failure (QuickCheck#10)
 		VALID_IGNORED.put("RecordAssign_Valid_17", "???");
+		// This test is fine, but the interpreter reports an error (correctly). In the
+		// future, I imagine the test format can allow for this.
+		VALID_IGNORED.put("Unsafe_Valid_6", "???");
 	}
 
 	/**

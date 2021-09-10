@@ -18,12 +18,20 @@ import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
-import wyil.util.AbstractConsumer;
 import wyil.util.AbstractVisitor;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
-import java.util.HashSet;
+/**
+ * Responsible for ensuring that the <code>unsafe</code> modifier is used
+ * correctly. For example, one cannot call an unsafe method or function from
+ * within an unsafe method or function. Likewise, one cannot take the address of
+ * an unsafe method or function (i.e. because we currently have no way to
+ * specify a modifier on a lambda type).
+ *
+ * @author David J. Pearce
+ *
+ */
 public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 	private boolean status = true;
 
@@ -60,6 +68,17 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
 		}
 		super.visitLambdaAccess(expr);
+	}
+
+	@Override
+	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr) {
+		Decl.Link<Decl.StaticVariable> name = expr.getLink();
+		Decl.Named<?> enclosing = expr.getAncestor(Decl.Named.class);
+		//
+		if(isUnsafe(name.getTarget()) && !isUnsafe(enclosing)) {
+			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
+		}
+		super.visitStaticVariableAccess(expr);
 	}
 
 	@Override

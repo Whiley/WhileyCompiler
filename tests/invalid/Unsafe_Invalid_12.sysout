@@ -1,0 +1,3 @@
+Unsafe_Invalid_12.whiley:7: unsafe invocation not permitted in safe context
+    assert x == 1
+           ^
