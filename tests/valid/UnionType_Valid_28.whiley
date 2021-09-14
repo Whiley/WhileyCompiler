@@ -1,0 +1,17 @@
+type Tree is null | Node
+
+type Node is { int data, Tree left, Tree right }
+// Data in nodes reachable from left must be below this
+where left is Node ==> left.data < data
+// Data in nodes reachable from right must be above this
+where right is Node ==> right.data > data
+
+public export method test():
+    Node n1 = { data: 1, left: null, right: null }
+    Node n2 = { data: 2, left: n1, right: null }
+    Node n3 = { data: 0, left: null, right: n1 }
+    //
+    assert n2.left == n1
+    assert n2.right == null
+    assert n3.left == null
+    assert n3.right == n1

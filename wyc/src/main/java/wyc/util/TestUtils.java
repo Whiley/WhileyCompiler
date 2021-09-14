@@ -110,6 +110,8 @@ public class TestUtils {
 		// This test is fine, but the interpreter reports an error (correctly). In the
 		// future, I imagine the test format can allow for this.
 		VALID_IGNORED.put("Unsafe_Valid_6", "???");
+		// Flow Typing Over Type Invariants
+		VALID_IGNORED.put("UnionType_Valid_28", "1095");
 	}
 
 	/**
