@@ -15,7 +15,7 @@ package wycc.lang;
 
 import java.util.List;
 
-import wycc.util.Trie;
+import jbfs.util.Trie;
 
 public interface SyntacticItem extends Comparable<SyntacticItem> {
 

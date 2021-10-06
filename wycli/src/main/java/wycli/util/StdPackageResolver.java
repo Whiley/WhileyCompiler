@@ -19,20 +19,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import wycc.lang.Build;
+import jbfs.core.Content;
+import jbfs.util.Pair;
+import jbfs.util.Trie;
+import jbfs.util.ZipFile;
 import wycc.util.AbstractCompilationUnit.Value.UTF8;
-import wycc.lang.Content;
 import wycli.Schemas;
 import wycli.cfg.ConfigFile;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Package;
-import wycli.lang.Semantic.Version;
 import wycli.lang.Package.Repository;
 import wycli.lang.Semantic;
-import wycc.util.Pair;
-import wycc.util.Trie;
-import wycc.util.ZipFile;
+
 
 /**
  * Provides a default and relatively simplistic approach for resolving packages.

@@ -31,9 +31,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import jbfs.core.Build;
+import jbfs.util.ArrayUtils;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -1148,14 +1149,14 @@ public class FlowTypeUtils {
 			 * @param n
 			 * @return
 			 */
-			public wycc.util.Pair<Row,Type.Existential[]> fresh(int n) {
+			public jbfs.util.Pair<Row,Type.Existential[]> fresh(int n) {
 				int m = constraints.maxVariable() + 1;
 				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != vars.length; ++i) {
 					vars[i] = new Type.Existential(m + i);
 				}
 				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
-				return new wycc.util.Pair<>(nrow,vars);
+				return new jbfs.util.Pair<>(nrow,vars);
 			}
 
 			public Row set(int index, Type type) {

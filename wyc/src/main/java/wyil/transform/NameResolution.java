@@ -19,10 +19,7 @@ import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Ref;
 import wycc.util.AbstractSyntacticHeap;
-
 import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
-import wycc.util.Trie;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -34,6 +31,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ArrayUtils;
+import jbfs.util.Trie;
 import wyil.util.AbstractConsumer;
 
 /**

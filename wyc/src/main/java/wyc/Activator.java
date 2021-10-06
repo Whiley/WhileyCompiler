@@ -19,13 +19,14 @@ import wycli.lang.Command;
 import wycli.lang.Plugin;
 import wycli.lang.Package;
 import wyil.lang.WyilFile;
-
 import java.io.IOException;
 import java.util.List;
 
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.Trie;
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.Trie;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Plugin.Activator {

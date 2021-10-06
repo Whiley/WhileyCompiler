@@ -22,9 +22,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jbfs.util.Pair;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
-import wycc.util.Pair;
+
 
 /**
  * <p>
