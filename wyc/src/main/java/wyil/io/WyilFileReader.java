@@ -16,12 +16,11 @@ package wyil.io;
 import java.io.IOException;
 import java.io.InputStream;
 
+import jbfs.util.Pair;
+import jbfs.util.Trie;
 import wycc.io.SyntacticHeapReader;
 import wycc.lang.*;
 import wycc.lang.SyntacticHeap.Schema;
-import wycc.io.BinaryInputStream;
-import wycc.util.Pair;
-import wycc.util.Trie;
 import wyil.lang.WyilFile;
 
 /**

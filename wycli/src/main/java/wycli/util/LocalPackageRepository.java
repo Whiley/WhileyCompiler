@@ -18,13 +18,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jbfs.core.Content;
+import jbfs.util.Trie;
+import jbfs.util.ZipFile;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Package;
 import wycli.lang.Semantic;
-import wycc.lang.Content;
-import wycc.util.Trie;
-import wycc.util.ZipFile;
 
 /**
  *

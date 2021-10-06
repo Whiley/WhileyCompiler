@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.function.Function;
 
+import jbfs.util.ArrayUtils;
+import jbfs.util.Trie;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;

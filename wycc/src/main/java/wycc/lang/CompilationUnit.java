@@ -13,6 +13,8 @@
 // limitations under the License.
 package wycc.lang;
 
+import jbfs.core.Build;
+
 public interface CompilationUnit extends SyntacticHeap, Build.Artifact {
 
 	public interface Identifier extends SyntacticItem {

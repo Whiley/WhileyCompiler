@@ -15,15 +15,12 @@ package wyil.transform;
 
 import static wyil.lang.WyilFile.*;
 
-import java.util.Set;
-
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
-import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Stmt;
 import wyil.util.AbstractConsumer;
 

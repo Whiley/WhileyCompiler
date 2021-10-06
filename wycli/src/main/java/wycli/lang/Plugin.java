@@ -13,12 +13,13 @@
 // limitations under the License.
 package wycli.lang;
 
-import wycc.lang.Content;
 import wycc.util.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import jbfs.core.Content;
 
 /**
  * <p>

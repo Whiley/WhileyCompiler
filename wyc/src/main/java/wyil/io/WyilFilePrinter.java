@@ -16,16 +16,13 @@ package wyil.io;
 import static wyil.lang.WyilFile.*;
 
 import java.io.*;
-import java.util.*;
 
-import wycc.lang.Build;
-import wycc.lang.SyntacticItem;
+import jbfs.core.Build;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
-import wyil.util.AbstractVisitor;
 
 /**
  * Prints the Abstract Syntax Tree (AST) of a given Whiley File in a textual form.

@@ -16,15 +16,8 @@ package wyqc;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Plugin;
-import wycc.lang.Content;
-import wycc.util.Trie;
-import wycc.lang.Build.Artifact;
-import wycc.lang.Build.Repository;
-import wycc.lang.Build.SnapShot;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.Pair;
 import wyil.lang.WyilFile;
-import wyqc.cmd.Check;
 import wyqc.lang.QuickCheck;
 
 import java.io.IOException;
@@ -32,7 +25,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.core.Build.Artifact;
+import jbfs.core.Build.SnapShot;
+import jbfs.util.Pair;
+import jbfs.util.Trie;
+
 import static wyqc.cmd.Check.*;
 import static wyc.Activator.*;
 import wyc.lang.WhileyFile;

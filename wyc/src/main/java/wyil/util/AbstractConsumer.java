@@ -15,7 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;

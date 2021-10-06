@@ -17,12 +17,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Predicate;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
-import wycc.lang.Build.Repository;
-import wycc.lang.Build.Meter;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.core.Build.Meter;
+import jbfs.core.Build.Repository;
+import jbfs.util.Trie;
 import wycc.util.Logger;
-import wycc.util.Trie;
 import wycli.cfg.Configuration;
 
 /**

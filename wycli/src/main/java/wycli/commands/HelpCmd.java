@@ -18,7 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import wycc.util.Trie;
+import jbfs.util.Trie;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 

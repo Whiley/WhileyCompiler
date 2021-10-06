@@ -16,7 +16,7 @@ package wycli.cfg;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.util.Trie;
+import jbfs.util.Trie;
 
 /**
  * Combines one or more configurations into a single configuration. The

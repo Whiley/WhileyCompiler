@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyil.util;
 
-import wycc.util.Pair;
+import jbfs.util.Pair;
 
 /**
  * Implements a binary relation between values of a given type.

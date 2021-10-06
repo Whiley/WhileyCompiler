@@ -23,17 +23,17 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ByteRepository;
+import jbfs.util.DirectoryRoot;
+import jbfs.util.Pair;
+import jbfs.util.Transactions;
+import jbfs.util.Trie;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.ByteRepository;
-import wycc.util.DirectoryRoot;
-import wycc.util.Pair;
-import wycc.util.Transactions;
-import wycc.util.Trie;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -129,7 +129,7 @@ public class TestUtils {
 		}
 
 		@Override
-		public wycc.lang.Content.Type<?> contentType(String suffix) {
+		public Content.Type<?> contentType(String suffix) {
 			switch(suffix) {
 			case "whiley":
 				return WhileyFile.ContentType;

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wycc.util.Trie;
+import jbfs.util.Trie;
 
 /**
  * Provides a dynamic configuration (i.e. one which is not backed by a file on

@@ -17,9 +17,9 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.lang.Build.Repository;
+import jbfs.core.Build.Repository;
+import jbfs.util.Trie;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.Trie;
 import wyc.Activator;
 import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
