@@ -17,9 +17,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
-import wycc.util.ZipFile;
+import jbfs.core.Content;
+import jbfs.util.ZipFile;
 import wycli.cfg.Configuration;
 
 public interface Package {

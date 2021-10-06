@@ -25,23 +25,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.core.SourceFile;
+import jbfs.core.Build.Artifact;
+import jbfs.core.Build.Repository;
+import jbfs.core.Build.SnapShot;
+import jbfs.util.Pair;
+import jbfs.util.Transactions;
+import jbfs.util.Trie;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
-import wycc.lang.SourceFile;
-import wycc.lang.Build.Repository;
-import wycc.lang.Build.SnapShot;
-import wycc.lang.Content;
-import wycc.lang.Build;
-import wycc.lang.Build.Artifact;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Value;
 import wycc.util.AbstractCompilationUnit.Attribute.Span;
 import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.lang.Command;
-import wycc.util.Pair;
-import wycc.util.Transactions;
-import wycc.util.Trie;
 
 /**
  *

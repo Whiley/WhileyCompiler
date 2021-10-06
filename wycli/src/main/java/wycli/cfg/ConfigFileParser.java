@@ -19,8 +19,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import jbfs.util.Trie;
 import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.Trie;
+
 import wycli.cfg.ConfigFile.*;
 import wycli.cfg.ConfigFileLexer.Token;
 import wycc.lang.SyntacticItem;

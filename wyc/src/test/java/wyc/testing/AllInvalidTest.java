@@ -28,8 +28,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import jbfs.util.Pair;
 import wyc.util.TestUtils;
-import wycc.util.Pair;
+
 
 /**
  * Run through all invalid test cases with verification enabled. Since every

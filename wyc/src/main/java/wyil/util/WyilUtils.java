@@ -17,7 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type.*;
 import wyil.lang.WyilFile.Type.Byte;

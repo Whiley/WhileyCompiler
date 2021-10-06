@@ -27,9 +27,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ArrayUtils;
+import jbfs.util.Trie;
 import wycc.lang.CompilationUnit;
-import wycc.lang.Content;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 import wycc.lang.SyntacticItem.Descriptor;
@@ -37,7 +39,6 @@ import wycc.util.*;
 import wycc.util.SectionedSchema.Section;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
@@ -249,6 +250,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int EXPR_integergreaterthan = 195; // <TWO operands, ZERO>
 	public static final int EXPR_integergreaterequal = 196; // <TWO operands, ZERO>
 	public static final int EXPR_is = 197; // <TWO operands, ZERO>
+	public static final int EXPR_old = 198; // <ONE operands, ZERO>
 	public static final int EXPR_integernegation = 199; // <TWO operands, ZERO>
 	public static final int EXPR_integeraddition = 200; // <THREE operands, ZERO>
 	public static final int EXPR_integersubtraction = 201; // <THREE operands, ZERO>
@@ -2945,6 +2947,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				}
 			};
 		}
+
+		/**
+		 * Represents an <i>old expression</i> of the form "<code>old(e)</code>". This
+		 * can only appear in specification elements (i.e. it is a ghost expression),
+		 * and signals that the given expression should be evaluated in the heap as it
+		 * was on entry to the function or method.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Old extends AbstractSyntacticItem implements Expr, UnaryOperator {
+			public Old(Expr expr) {
+				super(EXPR_old, expr);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) operands[0];
+			}
+
+			@Override
+			public void setType(Type type) {
+				operands[0] = type;
+			}
+
+			@Override
+			public Expr getOperand() {
+				return (Expr) get(0);
+			}
+
+			@Override
+			public Is clone(SyntacticItem[] operands) {
+				return new Is((Expr) operands[0], (Type) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return "old(" + getOperand() + ")";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "EXPR_old") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Old((Expr) operands[0]);
+				}
+			};
+		}
+
 
 		/**
 		 * Represents an abstract quantified expression of the form
@@ -7485,7 +7535,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @return
 	 */
 	private static Schema createSchema() {
-		return createSchema_2_0();
+		return createSchema_2_1();
 	}
 
 	/**
@@ -7494,8 +7544,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 *
 	 * @return
 	 */
-	private static SectionedSchema createSchema_2_0() {
-		SectionedSchema ROOT = new SectionedSchema(null, 2, 0, new Section[0]);
+	private static SectionedSchema createSchema_2_1() {
+		SectionedSchema ROOT = new SectionedSchema(null, 2, 1, new Section[0]);
 		SectionedSchema.Builder builder = ROOT.extend();
 		// Register the necessary sections
 		builder.register("ITEM", 16);
@@ -7637,7 +7687,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		builder.add("EXPR", "integergreaterthan", Expr.IntegerGreaterThan.DESCRIPTOR_0);
 		builder.add("EXPR", "integergreaterequal", Expr.IntegerGreaterThanOrEqual.DESCRIPTOR_0);
 		builder.add("EXPR", "is", Expr.Is.DESCRIPTOR_0);
-		builder.add("EXPR", null, null);
+		builder.add("EXPR", "old", Expr.Old.DESCRIPTOR_0);
 		// Arithmetic Expressions
 		builder.add("EXPR", "integernegation", Expr.IntegerNegation.DESCRIPTOR_0);
 		builder.add("EXPR", "integeraddition", Expr.IntegerAddition.DESCRIPTOR_0);

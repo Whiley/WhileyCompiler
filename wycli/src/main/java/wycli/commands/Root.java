@@ -6,7 +6,7 @@ import wycli.lang.Command;
 import java.util.Arrays;
 import java.util.List;
 
-import wycc.util.Trie;
+import jbfs.util.Trie;
 
 /**
  * The "root" command of the command tree.  This is the starting point for all command execution, and is really just a

@@ -105,7 +105,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
+import jbfs.util.Trie;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Attribute;
@@ -114,7 +115,6 @@ import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Pair;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.Trie;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;

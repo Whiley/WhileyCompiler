@@ -16,10 +16,11 @@ package wycli.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import jbfs.util.Pair;
 import wycli.lang.Command;
 import wycli.lang.Command.Option;
 import wycli.lang.Command.Template;
-import wycc.util.Pair;
+
 
 /**
  * <p>

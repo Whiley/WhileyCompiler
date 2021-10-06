@@ -17,10 +17,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.Trie;
 import wycc.util.Logger;
-import wycc.util.Trie;
 import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.lang.Command;
