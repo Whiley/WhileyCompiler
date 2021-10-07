@@ -10,6 +10,6 @@ public export method test():
     assert p.x == 1
     assert p.y == 2
     assert ptr->x == 123
-    assume ptr->y == 2
+    assert ptr->y == 2
     
     

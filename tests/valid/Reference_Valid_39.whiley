@@ -1,7 +1,8 @@
 type List is &{int data, null|List next }
 
 method fill(List l, int v)
-ensures l->data == v:
+ensures l->data == v
+ensures (l->next is List) ==> *(l->next) == old(*(l->next)):
     l->data = v
 
 public export method test():
@@ -16,6 +17,7 @@ public export method test():
     fill(l2,2)
     // Check postcondition
     assert l2->data == 2
+    assert l1->data == 1
     
 
 

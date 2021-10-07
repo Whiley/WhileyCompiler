@@ -1,4 +1,7 @@
-method read(int|&int p) -> (int r):
+method read(int|&int p) -> (int r)
+ensures (p is int) ==> (r == p)
+ensures (p is &int) ==> (r == *p)
+ensures (p is &int) ==> (*p == old(*p)):
     //
     if p is &int:
         return *p
@@ -10,10 +13,12 @@ public export method test():
     &int ptr = new 1
     // Check integers
     i = read(i)
-    assume i == 123
+    assert i == 123
     // Check references
     i = read(ptr)
-    assume i == 1
+    assert i == 1
     *ptr = 2
     i = read(ptr)    
-    assume i == 2
+    assert i == 2
+    // Check ptr unchanged
+    assert *ptr == 2

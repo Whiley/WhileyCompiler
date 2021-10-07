@@ -1,6 +1,8 @@
 
 
-method swap(&int x_ptr, &int y_ptr):
+method swap(&int x_ptr, &int y_ptr)
+ensures *x_ptr == old(*y_ptr)
+ensures *y_ptr == old(*x_ptr):
     int tmp = *x_ptr
     *x_ptr = *y_ptr
     *y_ptr = tmp

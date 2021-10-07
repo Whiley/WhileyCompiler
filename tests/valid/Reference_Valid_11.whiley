@@ -6,5 +6,5 @@ public export method test():
     // Make it cyclic!
     p->ptr = q
     //
-    assume p != q
-    assume p->data == q->data
+    assert p != q
+    assert p->data == q->data

@@ -11,8 +11,8 @@ public export method test():
     assert xs[0] == 1
     assert xs[1] == 2
     assert xs[2] == 3
-    assume (*ptr)[0] == 123
-    assume (*ptr)[1] == 2
-    assume (*ptr)[2] == 3    
+    assert (*ptr)[0] == 123
+    assert (*ptr)[1] == 2
+    assert (*ptr)[2] == 3    
     
     
