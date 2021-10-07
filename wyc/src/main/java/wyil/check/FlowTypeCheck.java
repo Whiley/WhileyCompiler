@@ -1440,6 +1440,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pushFieldDereference(var, (Expr.FieldDereference) expression, typing, environment);
 		case EXPR_new:
 			return pushNew(var, (Expr.New) expression, typing, environment);
+		case EXPR_old:
+			return pushOld(var, (Expr.Old) expression, typing, environment);
 		case EXPR_lambdaaccess:
 			return pushLambdaAccess(var, (Expr.LambdaAccess) expression, typing, environment);
 		case DECL_lambda:
@@ -1838,6 +1840,13 @@ public class FlowTypeCheck implements Compiler.Check {
 		return pushExpression(expr.getOperand(), r -> getReferenceElement(r.get(var)), nTyping, environment);
 	}
 
+	private Typing pushOld(int var, Expr.Old expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		return pushExpression(expr.getOperand(), r -> r.get(var), typing, environment);
+	}
+
 	private Typing pushRecordAccess(int var, Expr.RecordAccess expr, Typing typing, Environment environment) {
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
@@ -2018,6 +2027,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pullFieldDereference((Expr.FieldDereference) expression, typing, environment);
 		case EXPR_new:
 			return pullNew((Expr.New) expression, typing, environment);
+		case EXPR_old:
+			return pullOld((Expr.Old) expression, typing, environment);
 		case EXPR_lambdaaccess:
 			return pullLambdaAccess((Expr.LambdaAccess) expression, typing, environment);
 		case DECL_lambda:
@@ -2327,6 +2338,17 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing.register(typeStandardExpression(expr, element + 1));
 		//
 		return typing.map(row -> row.add(new Type.Reference(row.get(element))));
+	}
+
+	private Typing pullOld(Expr.Old expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		// <<< Propagate backwards
+		final int element = typing.top();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, element + 1));
+		//
+		return typing.map(row -> row.add(row.get(element)));
 	}
 
 	private Typing pullRecordAccess(Expr.RecordAccess expr, Typing typing, Environment environment) {

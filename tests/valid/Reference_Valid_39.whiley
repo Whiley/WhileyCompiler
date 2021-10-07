@@ -1,8 +1,13 @@
 type List is &{int data, null|List next }
 
+property unchanged(null|List l)
+where (l is List) ==> l->data == old(l->data)
+where (l is List) ==> unchanged(l->next)
+
 method fill(List l, int v)
 ensures l->data == v
-ensures (l->next is List) ==> *(l->next) == old(*(l->next)):
+// See #1099
+ensures unchanged(l->next):
     l->data = v
 
 public export method test():

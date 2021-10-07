@@ -240,7 +240,7 @@ public class TestUtils {
 			wycli.commands.BuildCmd.printSyntacticMarkers(psyserr, target, source);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
-			//e.outputSourceError(psyserr);
+			e.outputSourceError(psyserr);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error

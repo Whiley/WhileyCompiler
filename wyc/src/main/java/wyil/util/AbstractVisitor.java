@@ -392,6 +392,7 @@ public abstract class AbstractVisitor {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -473,6 +474,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_new:
 			visitNew((Expr.New) expr);
+			break;
+		case EXPR_old:
+			visitOld((Expr.Old) expr);
 			break;
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -780,6 +784,10 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitNew(Expr.New expr) {
+		visitExpression(expr.getOperand());
+	}
+
+	public void visitOld(Expr.Old expr) {
 		visitExpression(expr.getOperand());
 	}
 

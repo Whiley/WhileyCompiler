@@ -1,9 +1,9 @@
 
 
-public function repl(int old, int n, int[] str) -> int[]:
+public function repl(int o, int n, int[] str) -> int[]:
     int i = 0
     while i < |str| where i >= 0:
-        if str[i] == old:
+        if str[i] == o:
             str[i] = n
         i = i + 1
     return str

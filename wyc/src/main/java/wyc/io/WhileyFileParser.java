@@ -63,6 +63,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Native;
 import static wyc.io.WhileyFileLexer.Token.Kind.New;
 import static wyc.io.WhileyFileLexer.Token.Kind.NewLine;
 import static wyc.io.WhileyFileLexer.Token.Kind.NotEquals;
+import static wyc.io.WhileyFileLexer.Token.Kind.Old;
 import static wyc.io.WhileyFileLexer.Token.Kind.Package;
 import static wyc.io.WhileyFileLexer.Token.Kind.Percent;
 import static wyc.io.WhileyFileLexer.Token.Kind.Plus;
@@ -457,7 +458,7 @@ public class WhileyFileParser {
 		}
 		// Parse optional requires/ensures clauses
 		Tuple<Expr> requires = parseInvariant(scope, Requires);
-		Tuple<Expr> ensures = parseInvariant(scope, Ensures);
+		Tuple<Expr> ensures = parseInvariant(isFunction ? scope : scope.setContext(Context.METHOD_POSTCONDITION), Ensures);
 		// Parse function or method body (if not native)
 		Stmt.Block body;
 		int end;
@@ -466,7 +467,7 @@ public class WhileyFileParser {
 			match(Colon);
 			end = index;
 			matchEndLine();
-			body = parseBlock(scope, false);
+			body = parseBlock(scope, Context.OTHER);
 		} else {
 			end = index;
 			matchEndLine();
@@ -499,7 +500,7 @@ public class WhileyFileParser {
 		Identifier name = parseIdentifier();
 		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
 		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
-		Tuple<Expr> invariant = parseInvariant(scope, Where);
+		Tuple<Expr> invariant = parseInvariant(scope.setContext(Context.PROPERTY), Where);
 		//
 		int end = index;
 		matchEndLine();
@@ -740,18 +741,16 @@ public class WhileyFileParser {
 	 * @param parentIndent The indentation level of the parent, for which all
 	 *                     statements in this block must have a greater indent. May
 	 *                     not be <code>null</code>.
-	 * @param isLoop       Indicates whether or not this block represents the body
-	 *                     of a loop. This is important in order to setup the scope
-	 *                     for this block appropriately.
+	 * @param context      Indicates the context of this loop
 	 * @return
 	 */
-	private Stmt.Block parseBlock(EnclosingScope scope, boolean isLoop) {
+	private Stmt.Block parseBlock(EnclosingScope scope, Context context) {
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
 		// We must clone the environment here, in order to ensure variables
 		// declared within this block are properly scoped.
-		EnclosingScope blockScope = scope.newEnclosingScope(indent, isLoop);
+		EnclosingScope blockScope = scope.newEnclosingScope(indent, context);
 		// Second, check that this is indeed the initial indentation for this
 		// block (i.e. that it is strictly greater than parent indent).
 		if (indent == null || indent.lessThanEq(scope.getIndent())) {
@@ -885,7 +884,7 @@ public class WhileyFileParser {
 				matchEndLine();
 				scope = scope.newEnclosingScope();
 				// scope.declareLifetime(blockName);
-				Stmt.Block body = parseBlock(scope, false);
+				Stmt.Block body = parseBlock(scope, scope.getContext());
 				return annotateSourceLocation(new Stmt.NamedBlock(blockName, body), start);
 			} else {
 				index = start; // backtrack
@@ -1135,7 +1134,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Check that break statement makes sense at this point.
-		if (!scope.isInLoop()) {
+		if (scope.getContext() != Context.LOOP) {
 			syntaxError(WyilFile.BREAK_OUTSIDE_SWITCH_OR_LOOP, t);
 		}
 		// Done.
@@ -1163,7 +1162,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// Check that continue statement makes sense at this point.
-		if (!scope.isInLoop()) {
+		if (scope.getContext() != Context.LOOP) {
 			syntaxError(WyilFile.CONTINUE_OUTSIDE_LOOP, t);
 		}
 		// Done.
@@ -1221,12 +1220,12 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		// match the block
-		Stmt.Block blk = parseBlock(scope, true);
+		Stmt.Block blk = parseBlock(scope, Context.LOOP);
 		// match while and condition
 		match(While);
 		Expr condition = parseLogicalExpression(scope, false);
 		// Parse the loop invariants
-		Tuple<Expr> invariant = parseInvariant(scope, Where);
+		Tuple<Expr> invariant = parseInvariant(scope.setContext(Context.LOOPINVARIANT), Where);
 		matchEndLine();
 		return annotateSourceLocation(new Stmt.DoWhile(condition, invariant, new Tuple<>(), blk), start, end - 1);
 	}
@@ -1272,10 +1271,10 @@ public class WhileyFileParser {
 		decl = annotateSourceLocation(decl, start);
 		scope.declareVariable(decl);
 		// Parse the loop invariants
-		Tuple<Expr> invariants = parseInvariant(scope, Where);
+		Tuple<Expr> invariants = parseInvariant(scope.setContext(Context.LOOPINVARIANT), Where);
 		match(Colon);
 		matchEndLine();
-		Stmt.Block block = parseBlock(scope, true);
+		Stmt.Block block = parseBlock(scope, Context.LOOP);
 		return new Stmt.For(decl, invariants, new Tuple<>(), block);
 	}
 
@@ -1310,7 +1309,7 @@ public class WhileyFileParser {
 
 		int end = index;
 		// First, parse the true branch, which is required
-		Stmt.Block tblk = parseBlock(scope, scope.isInLoop());
+		Stmt.Block tblk = parseBlock(scope, scope.getContext());
 		// Second, attempt to parse the false branch, which is optional.
 		Stmt.Block fblk = null;
 		if (tryAndMatchAtIndent(true, scope.getIndent(), Else) != null) {
@@ -1322,7 +1321,7 @@ public class WhileyFileParser {
 			} else {
 				match(Colon);
 				matchEndLine();
-				fblk = parseBlock(scope, scope.isInLoop());
+				fblk = parseBlock(scope, scope.getContext());
 			}
 		}
 		Stmt.IfElse stmt;
@@ -1357,11 +1356,11 @@ public class WhileyFileParser {
 		// NOTE: expression terminated by ':'
 		Expr condition = parseLogicalExpression(scope, true);
 		// Parse the loop invariants
-		Tuple<Expr> invariants = parseInvariant(scope, Where);
+		Tuple<Expr> invariants = parseInvariant(scope.setContext(Context.LOOPINVARIANT), Where);
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		Stmt.Block blk = parseBlock(scope, true);
+		Stmt.Block blk = parseBlock(scope, Context.LOOP);
 		return annotateSourceLocation(new Stmt.While(condition, invariants, new Tuple<>(), blk), start, end - 1);
 	}
 
@@ -1551,7 +1550,7 @@ public class WhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		Stmt.Block stmts = parseBlock(scope, scope.isInLoop());
+		Stmt.Block stmts = parseBlock(scope, scope.getContext());
 		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start, end - 1);
 	}
 
@@ -2578,6 +2577,8 @@ public class WhileyFileParser {
 			return parseArrayInitialiserOrGeneratorExpression(scope, terminated);
 		case LeftCurly:
 			return parseRecordInitialiser(null, scope, terminated);
+		case Old:
+			return parseOldExpression(scope, terminated);
 		case Shreak:
 			return parseLogicalNotExpression(scope, terminated);
 		case Star:
@@ -2998,6 +2999,53 @@ public class WhileyFileParser {
 		Expr e = parseExpression(scope, terminated);
 		// Construct correct expression form
 		e = new Expr.New(Type.Void, e);
+		// Done
+		return annotateSourceLocation(e, start);
+	}
+
+	/**
+	 * Parse an old expression, which is of the form:
+	 *
+	 * <pre>
+	 * TermExpr::= ...
+	 *                 |  "old" "(" Expr ")"
+	 * </pre>
+	 *
+	 * @param scope      The enclosing scope for this statement, which determines
+	 *                   the set of visible (i.e. declared) variables and also the
+	 *                   current indentation level.
+	 * @param terminated This indicates that the expression is known to be
+	 *                   terminated (or not). An expression that's known to be
+	 *                   terminated is one which is guaranteed to be followed by
+	 *                   something. This is important because it means that we can
+	 *                   ignore any newline characters encountered in parsing this
+	 *                   expression, and that we'll never overrun the end of the
+	 *                   expression (i.e. because there's guaranteed to be something
+	 *                   which terminates this expression). A classic situation
+	 *                   where terminated is true is when parsing an expression
+	 *                   surrounded in braces. In such case, we know the right-brace
+	 *                   will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseOldExpression(EnclosingScope scope, boolean terminated) {
+		int start = index;
+		Token t = match(Old);
+		match(LeftBrace);
+		Expr e = parseExpression(scope, terminated);
+		match(RightBrace);
+		// Construct correct expression form
+		e = new Expr.Old(Type.Void,e);
+		//
+		// Check that break statement makes sense at this point.
+		switch(scope.getContext()) {
+		case LOOPINVARIANT:
+		case METHOD_POSTCONDITION:
+		case PROPERTY:
+			break;
+		default:
+			syntaxError(WyilFile.OLD_REQUIRES_TWOSTATES, t);
+		}
 		// Done
 		return annotateSourceLocation(e, start);
 	}
@@ -4688,6 +4736,14 @@ public class WhileyFileParser {
 	 */
 	private static final Indent ROOT_INDENT = new Indent("", 0);
 
+	public enum Context {
+		LOOP,
+		LOOPINVARIANT,
+		METHOD_POSTCONDITION,
+		PROPERTY,
+		OTHER
+	}
+
 	/**
 	 * The enclosing scope provides contextual information about the enclosing scope
 	 * for the given statement or expression being parsed.
@@ -4721,11 +4777,10 @@ public class WhileyFileParser {
 		private final HashSet<Identifier> typeVariables;
 
 		/**
-		 * A simple flag that tells us whether or not we are currently within a loop.
-		 * This is necessary to stop break or continue statements which are written
-		 * outside of a loop.
+		 * Provides some contextual information which is useful for parsing (e.g. if
+		 * we're within a loop then break makes sense, etc).
 		 */
-		private final boolean inLoop;
+		private final Context context;
 
 		public EnclosingScope(Build.Meter meter) {
 			this.meter = meter;
@@ -4733,25 +4788,25 @@ public class WhileyFileParser {
 			this.environment = new HashMap<>();
 			this.fieldAliases = new HashSet<>();
 			this.typeVariables = new HashSet<>();
-			this.inLoop = false;
+			this.context = Context.OTHER;
 		}
 
 		private EnclosingScope(Build.Meter meter, Indent indent, Map<Identifier, Decl.Variable> variables,
-				Set<Identifier> fieldAliases, Set<Identifier> typeVariables, boolean inLoop) {
+				Set<Identifier> fieldAliases, Set<Identifier> typeVariables, Context context) {
 			this.meter = meter;
 			this.indent = indent;
 			this.environment = new HashMap<>(variables);
 			this.fieldAliases = new HashSet<>(fieldAliases);
 			this.typeVariables = new HashSet<>(typeVariables);
-			this.inLoop = inLoop;
+			this.context = context;
 		}
 
 		public Indent getIndent() {
 			return indent;
 		}
 
-		public boolean isInLoop() {
-			return inLoop;
+		public Context getContext() {
+			return context;
 		}
 
 		/**
@@ -4851,6 +4906,15 @@ public class WhileyFileParser {
 		}
 
 		/**
+		 * Create a new enclosing scope for a given context.
+		 * @param context
+		 * @return
+		 */
+		public EnclosingScope setContext(Context context) {
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, context);
+		}
+
+		/**
 		 * Create a new enclosing scope in which variables can be declared which are
 		 * remain invisible to this enclosing scope. All variables declared in this
 		 * enclosing scope remain declared in the new enclosing scope.
@@ -4860,7 +4924,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope() {
-			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, context);
 		}
 
 		/**
@@ -4873,7 +4937,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent) {
-			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, context);
 		}
 
 		/**
@@ -4885,8 +4949,8 @@ public class WhileyFileParser {
 		 *
 		 * @return
 		 */
-		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
-			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, inLoop);
+		public EnclosingScope newEnclosingScope(Indent indent, Context context) {
+			return new EnclosingScope(meter, indent, environment, fieldAliases, typeVariables, context);
 		}
 
 		private boolean isAvailableName(Identifier name) {

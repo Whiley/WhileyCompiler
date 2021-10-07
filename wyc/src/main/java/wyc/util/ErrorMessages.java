@@ -187,6 +187,7 @@ public class ErrorMessages {
 	public static final Message MISSING_TYPE_VARIABLE = new StaticMessage("missing type variable(s)");
 	public static final Message BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
 	public static final Message CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
+	public static final Message OLD_REQUIRES_TWOSTATES = new StaticMessage("old requires context with pre- and post-states");
 
 	// ========================================================================
 	// Name Resolution
@@ -347,6 +348,7 @@ public class ErrorMessages {
 			MISSING_TYPE_VARIABLE, // 317
 			BREAK_OUTSIDE_SWITCH_OR_LOOP, // 318
 			CONTINUE_OUTSIDE_LOOP, // 319
+			OLD_REQUIRES_TWOSTATES, // 320
 		},
 		{
 			SUBTYPE_ERROR,     // 400

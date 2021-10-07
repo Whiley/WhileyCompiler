@@ -565,6 +565,7 @@ public class WhileyFileLexer {
 			put("is", Token.Kind.Is);
 			put("in", Token.Kind.In);
 			put("where", Token.Kind.Where);
+			put("old", Token.Kind.Old);
 			// declarations
 			put("import", Token.Kind.Import);
 			put("function", Token.Kind.Function);
@@ -656,6 +657,7 @@ public class WhileyFileLexer {
 			Is("is"),
 			In("in"),
 			Where("where"),
+			Old("old"),
 			Comma(","),
 			SemiColon(";"),
 			Colon(":"),

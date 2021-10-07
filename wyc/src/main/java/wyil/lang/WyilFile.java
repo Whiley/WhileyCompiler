@@ -2957,9 +2957,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Old extends AbstractSyntacticItem implements Expr, UnaryOperator {
-			public Old(Expr expr) {
-				super(EXPR_old, expr);
+		public static class Old extends AbstractExpr implements Expr, UnaryOperator {
+			public Old(Type type, Expr expr) {
+				super(EXPR_old, type, expr);
 			}
 
 			@Override
@@ -2974,12 +2974,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@Override
 			public Expr getOperand() {
-				return (Expr) get(0);
+				return (Expr) get(1);
 			}
 
 			@Override
-			public Is clone(SyntacticItem[] operands) {
-				return new Is((Expr) operands[0], (Type) operands[1]);
+			public Old clone(SyntacticItem[] operands) {
+				return new Old((Type) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -2987,10 +2987,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				return "old(" + getOperand() + ")";
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "EXPR_old") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_old") {
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-					return new Old((Expr) operands[0]);
+					return new Old((Type) operands[0], (Expr) operands[1]);
 				}
 			};
 		}
@@ -7389,6 +7389,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int MISSING_TYPE_VARIABLE = 317; // "missing type variable(s)"
 	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 318; // "break outside switch or loop"
 	public static final int CONTINUE_OUTSIDE_LOOP = 319; // "continue outside loop"
+	public static final int OLD_REQUIRES_TWOSTATES = 320; // "old requires context with pre- and post-states"
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;

@@ -34,6 +34,7 @@ import jbfs.core.Build.SnapShot;
 import jbfs.util.Pair;
 import jbfs.util.Transactions;
 import jbfs.util.Trie;
+import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit;
@@ -255,7 +256,7 @@ public class BuildCmd implements Command {
 	 */
 	public static void printSyntacticMarkers(PrintStream output, SyntacticItem.Marker marker, SourceFile... sources) {
 		// Identify enclosing source file
-		SourceFile source = getSourceEntry(marker.getSource(), sources);
+		SourceFile source = SyntacticException.getSourceEntry(marker.getSource(), sources);
 		String filename = source.getPath().toString() + "." + source.getContentType().getSuffix();
 		//
 		Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
@@ -266,7 +267,7 @@ public class BuildCmd implements Command {
 			// print the error message
 			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
 			// Finally print the line highlight
-			printLineHighlight(output, span, line);
+			SyntacticException.printLineHighlight(output, span, line);
 		} else {
 			output.println(filename + ":?: " + marker.getMessage());
 		}
@@ -275,7 +276,7 @@ public class BuildCmd implements Command {
 	public static void printSyntacticMarkers(PrintStream output, SyntacticItem.Marker marker,
 			List<? extends Build.Artifact> sources) {
 		// Identify enclosing source file
-		SourceFile source = getSourceEntry(marker.getSource(), sources);
+		SourceFile source = SyntacticException.getSourceEntry(marker.getSource(), sources);
 		String filename = source.getPath().toString();
 		//
 		Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
@@ -286,7 +287,7 @@ public class BuildCmd implements Command {
 			// print the error message
 			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
 			// Finally print the line highlight
-			printLineHighlight(output, span, line);
+			SyntacticException.printLineHighlight(output, span, line);
 		} else {
 			output.println(filename + ":?: " + marker.getMessage());
 		}
@@ -320,80 +321,5 @@ public class BuildCmd implements Command {
 		annotated.addAll(h.findAll(SyntacticItem.Marker.class));
 		//
 		return annotated;
-	}
-
-	private static SourceFile getSourceEntry(Trie id, SourceFile... sources) {
-		//
-		for (SourceFile s : sources) {
-			if (id.equals(s.getPath())) {
-				return s;
-			}
-		}
-		return null;
-	}
-
-	private static SourceFile getSourceEntry(Trie id, List<? extends Build.Artifact> sources) {
-		//
-		for (Build.Artifact s : sources) {
-			if (id.equals(s.getPath())) {
-				// FIXME: this is broken
-				return (SourceFile) s;
-			}
-		}
-		return null;
-	}
-
-	private static void printLineHighlight(PrintStream output,
-										   Span span,
-										   SourceFile.Line enclosing) {
-		// Extract line text
-		String text = enclosing.getText();
-		// Determine start and end of span
-		int start = span.getStart().get().intValue() - enclosing.getOffset();
-		int end = Math.min(text.length() - 1, span.getEnd().get().intValue() - enclosing.getOffset());
-		// NOTE: in the following lines I don't print characters
-		// individually. The reason for this is that it messes up the
-		// ANT task output.
-		output.println(text);
-		// First, mirror indendation
-		String str = "";
-		for (int i = 0; i < start; ++i) {
-			if (text.charAt(i) == '\t') {
-				str += "\t";
-			} else {
-				str += " ";
-			}
-		}
-		// Second, place highlights
-		for (int i = start; i <= end; ++i) {
-			str += "^";
-		}
-		output.println(str);
-	}
-
-	private static class EnclosingLine {
-		private int lineNumber;
-		private int start;
-		private int end;
-		private int lineStart;
-		private int lineEnd;
-		private String lineText;
-
-		public EnclosingLine(int start, int end, int lineNumber, int lineStart, int lineEnd, String lineText) {
-			this.start = start;
-			this.end = end;
-			this.lineNumber = lineNumber;
-			this.lineStart = lineStart;
-			this.lineEnd = lineEnd;
-			this.lineText = lineText;
-		}
-
-		public int columnStart() {
-			return start - lineStart;
-		}
-
-		public int columnEnd() {
-			return Math.min(end, lineEnd) - lineStart;
-		}
 	}
 }

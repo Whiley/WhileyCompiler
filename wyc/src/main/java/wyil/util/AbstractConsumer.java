@@ -389,6 +389,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -470,6 +471,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_new:
 			visitNew((Expr.New) expr, data);
+			break;
+		case EXPR_old:
+			visitOld((Expr.Old) expr, data);
 			break;
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -777,6 +781,10 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitNew(Expr.New expr, T data) {
+		visitExpression(expr.getOperand(), data);
+	}
+
+	public void visitOld(Expr.Old expr, T data) {
 		visitExpression(expr.getOperand(), data);
 	}
 

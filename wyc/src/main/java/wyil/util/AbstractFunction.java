@@ -384,6 +384,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -452,6 +453,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitFieldDereference((Expr.FieldDereference) expr, data);
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
+		case EXPR_old:
+			return visitOld((Expr.Old) expr, data);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return visitRecordAccess((Expr.RecordAccess) expr, data);
@@ -766,6 +769,11 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitNew(Expr.New expr, P data) {
+		visitExpression(expr.getOperand(), data);
+		return null;
+	}
+
+	public R visitOld(Expr.Old expr, P data) {
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}

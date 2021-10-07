@@ -463,6 +463,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -530,9 +531,10 @@ public abstract class AbstractTranslator<D, S, E> {
 			return visitDereference((Expr.Dereference) expr);
 		case EXPR_fielddereference:
 			return visitFieldDereference((Expr.FieldDereference) expr);
-		case EXPR_new: {
+		case EXPR_new:
 			return visitNew((Expr.New) expr);
-		}
+		case EXPR_old:
+			return visitOld((Expr.Old) expr);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return visitRecordAccess((Expr.RecordAccess) expr);
@@ -864,6 +866,11 @@ public abstract class AbstractTranslator<D, S, E> {
 		return constructNew(expr,operand);
 	}
 
+	public E visitOld(Expr.Old expr) {
+		E operand = visitExpression(expr.getOperand());
+		return constructOld(expr,operand);
+	}
+
 	public E visitNotEqual(Expr.NotEqual expr) {
 		E lhs = visitExpression(expr.getFirstOperand());
 		E rhs = visitExpression(expr.getSecondOperand());
@@ -1067,6 +1074,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructNew(Expr.New expr, E operand);
 
 	public abstract E constructNotEqual(Expr.NotEqual expr, E lhs, E rhs);
+
+	public abstract E constructOld(Expr.Old expr, E operand);
 
 	public abstract E constructRecordAccess(Expr.RecordAccess expr, E source);
 
