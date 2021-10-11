@@ -66,6 +66,7 @@ public abstract class AbstractFunction<P,R> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			return visitCallable((Decl.Callable) decl, data);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
@@ -136,6 +137,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl, data);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl, data);
+		case DECL_variant:
+			return visitVariant((Decl.Variant) decl, data);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -153,6 +156,13 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitProperty(Decl.Property decl, P data) {
+		visitVariables(decl.getParameters(), data);
+		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getInvariant(), data);
+		return null;
+	}
+
+	public R visitVariant(Decl.Variant decl, P data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
 		visitExpressions(decl.getInvariant(), data);

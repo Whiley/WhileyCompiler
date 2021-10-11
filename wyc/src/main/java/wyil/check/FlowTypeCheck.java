@@ -217,9 +217,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		case DECL_method:
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
 			break;
-		default:
 		case DECL_property:
 			checkPropertyDeclaration((Decl.Property) decl);
+			break;
+		default:
+		case DECL_variant:
+			checkVariantDeclaration((Decl.Variant) decl);
 		}
 	}
 
@@ -303,6 +306,13 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public void checkPropertyDeclaration(Decl.Property d) {
+		// Construct initial environment
+		Environment environment = new Environment();
+		// Check invariant (i.e. requires clauses) provided.
+		checkConditions(d.getInvariant(), true, environment);
+	}
+
+	public void checkVariantDeclaration(Decl.Variant d) {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Check invariant (i.e. requires clauses) provided.

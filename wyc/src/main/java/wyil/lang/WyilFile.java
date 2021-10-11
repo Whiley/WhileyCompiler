@@ -178,6 +178,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int DECL_variable = 29; // <THREE operands, ZERO>
 	public static final int DECL_link = 30; // <MANY operands, ZERO>
 	public static final int DECL_binding = 31; // <TWO operands, ZERO>
+	public static final int DECL_variant = 32; // <SIX operands, ZERO>
 	public static final int MOD_native = 48; // <ZERO operands, ZERO>
 	public static final int MOD_export = 49; // <ZERO operands, ZERO>
 	public static final int MOD_final = 50; // <ZERO operands, ZERO>
@@ -1168,6 +1169,60 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+				}
+			};
+		}
+
+		/**
+		 * A variant is a two state property.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Variant extends Callable {
+			public Variant(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
+					Tuple<Decl.Variable> parameters, Tuple<Expr> invariant) {
+				super(DECL_variant, modifiers, name, template, parameters, new Tuple<Decl.Variable>(), invariant);
+			}
+
+			public Variant(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> invariant) {
+				super(DECL_variant, modifiers, name, template, parameters, returns, invariant);
+			}
+
+			@Override
+			public WyilFile.Type.Property getType() {
+				return new WyilFile.Type.Property(project(getParameters()));
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getInvariant() {
+				return (Tuple<Expr>) get(5);
+			}
+
+			@Override
+			public Stmt getBody() {
+				// FIXME: this doesn't make sense for properties. Realistically, this should be
+				// resolved when properties are changed from their current form into something
+				// more useful.
+				throw new UnsupportedOperationException();
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Variant clone(SyntacticItem[] operands) {
+				return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
 				}
@@ -7424,6 +7479,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
 	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	public static final int UNSAFECALL_NOT_PERMITTED = 613;
+	public static final int VARIANTCALL_NOT_PERMITTED = 614;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7591,6 +7647,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		builder.add("DECL", "variable", Decl.Variable.DESCRIPTOR_0);
 		builder.add("DECL", "link", Decl.Link.DESCRIPTOR_0);
 		builder.add("DECL", "binding", Decl.Binding.DESCRIPTOR_0);
+		builder.add("DECL", "variant", Decl.Variant.DESCRIPTOR_0);
 		// Modifiers
 		builder.add("MOD", "native", Modifier.Native.DESCRIPTOR_0);
 		builder.add("MOD", "export", Modifier.Export.DESCRIPTOR_0);

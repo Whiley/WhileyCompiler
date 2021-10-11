@@ -73,6 +73,7 @@ public abstract class AbstractVisitor {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			visitCallable((Decl.Callable) decl);
 			break;
 		default:
@@ -136,6 +137,9 @@ public abstract class AbstractVisitor {
 		case DECL_property:
 			visitProperty((Decl.Property) decl);
 			break;
+		case DECL_variant:
+			visitVariant((Decl.Variant) decl);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -155,6 +159,12 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitProperty(Decl.Property decl) {
+		visitVariables(decl.getParameters());
+		visitVariables(decl.getReturns());
+		visitExpressions(decl.getInvariant());
+	}
+
+	public void visitVariant(Decl.Variant decl) {
 		visitVariables(decl.getParameters());
 		visitVariables(decl.getReturns());
 		visitExpressions(decl.getInvariant());

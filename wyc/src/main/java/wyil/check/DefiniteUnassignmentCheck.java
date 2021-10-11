@@ -130,6 +130,15 @@ public class DefiniteUnassignmentCheck
 	}
 
 	@Override
+	public ControlFlow visitVariant(Decl.Variant declaration, MaybeAssignedSet dummy) {
+		MaybeAssignedSet environment = new MaybeAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
+		//
+		return null;
+	}
+
+	@Override
 	public ControlFlow visitVariable(Decl.Variable decl, MaybeAssignedSet environment) {
 		throw new UnsupportedOperationException();
 	}

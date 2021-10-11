@@ -1,7 +1,7 @@
 type List is null|Node
 type Node is &{ int data, List next }
 
-property unchanged(List l)
+variant unchanged(List l)
 where (l is Node) ==> (l->data == old(l->data))
 where (l is Node) ==> unchanged(l->next)
 

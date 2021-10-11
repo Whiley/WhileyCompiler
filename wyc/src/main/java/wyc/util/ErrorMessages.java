@@ -247,6 +247,7 @@ public class ErrorMessages {
 	public static final Message METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
 	public static final Message UNSAFECALL_NOT_PERMITTED = new StaticMessage("unsafe invocation not permitted in safe context");
 	public static final Message REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+	public static final Message VARIANTCALL_NOT_PERMITTED = new StaticMessage("variant invocation not permitted");
 
 	// ========================================================================
 	// Ambiguous Coercion Check
@@ -392,6 +393,7 @@ public class ErrorMessages {
 			DEREFERENCED_DYNAMICALLY_SIZED,   // 611;
 			DEREFERENCED_UNKNOWN_TYPE,   // 612;
 			UNSAFECALL_NOT_PERMITTED,   // 613
+			VARIANTCALL_NOT_PERMITTED,   // 614
 		},
 		{
 			// Verification

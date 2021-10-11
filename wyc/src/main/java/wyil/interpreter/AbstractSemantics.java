@@ -15,10 +15,8 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
-import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
 
 /**
@@ -66,18 +64,11 @@ public interface AbstractSemantics {
 	public RValue.Int Int(BigInteger value);
 
 	/**
-	 * Create a new cell value.
-	 *
-	 * @return
-	 */
-	public RValue.Cell Cell(RValue value);
-
-	/**
 	 * Create a new reference value.
 	 *
 	 * @return
 	 */
-	public RValue.Reference Reference(RValue.Cell value);
+	public RValue.Reference Reference(int address);
 
 	/**
 	 * Create a new array value.
@@ -131,7 +122,7 @@ public interface AbstractSemantics {
 		 * @param type
 		 * @return
 		 */
-		public Bool is(Type type, Interpreter.CallStack frame);
+		public Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap);
 
 		/**
 		 * Convert this value into a given representation. In the case that this
@@ -481,41 +472,16 @@ public interface AbstractSemantics {
 		 *
 		 */
 		public interface Reference extends RValue {
-
 			/**
-			 * Return the cell to which this reference points.
+			 * Return the memory address to which this reference points.
 			 *
 			 * @return
 			 */
-			public Cell deref();
+			public int deref();
 
 		}
 
-		/**
-		 * Represents a heap-allocated object.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public interface Cell extends RValue {
-
-			/**
-			 * Return the value associated with this cell
-			 *
-			 * @return
-			 */
-			public RValue read();
-
-			/**
-			 * Write a value to this cell. This does not returned an updated
-			 * version of the cell but, rather, performs an in-place update.
-			 *
-			 * @param value
-			 */
-			public void write(RValue value);
-		}
-
-		public interface Undefined extends Null, Bool, Byte, Int, Array, Record, Lambda, Reference, Cell {
+		public interface Undefined extends Null, Bool, Byte, Int, Array, Record, Lambda, Reference {
 
 		}
 	}

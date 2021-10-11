@@ -88,7 +88,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	public enum Context {
-		PURE, FUNCTIONAL, IMPURE
+		PURE, ONESTATE, TWOSTATE, IMPURE
 	}
 
 	@Override
@@ -99,12 +99,17 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	@Override
 	public void visitType(Decl.Type decl, Context data) {
 		visitVariable(decl.getVariableDeclaration(), data);
-		visitExpressions(decl.getInvariant(), Context.FUNCTIONAL);
+		visitExpressions(decl.getInvariant(), Context.ONESTATE);
 	}
 
 	@Override
 	public void visitProperty(Decl.Property decl, Context data) {
-		visitExpressions(decl.getInvariant(), Context.FUNCTIONAL);
+		visitExpressions(decl.getInvariant(), Context.ONESTATE);
+	}
+
+	@Override
+	public void visitVariant(Decl.Variant decl, Context data) {
+		visitExpressions(decl.getInvariant(), Context.TWOSTATE);
 	}
 
 	@Override
@@ -119,8 +124,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	@Override
 	public void visitMethod(Decl.Method decl, Context data) {
 		// No need to visit variables here as no restrictions imposed.
-		visitExpressions(decl.getRequires(), Context.FUNCTIONAL);
-		visitExpressions(decl.getEnsures(), Context.FUNCTIONAL);
+		visitExpressions(decl.getRequires(), Context.ONESTATE);
+		visitExpressions(decl.getEnsures(), Context.TWOSTATE);
 		visitStatement(decl.getBody(), Context.IMPURE);
 	}
 
@@ -175,6 +180,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 		Decl.Link<Decl.Callable> name = expr.getLink();
 		if (context != Context.IMPURE && name.isResolved() && name.getTarget() instanceof Decl.Method) {
 			syntaxError(expr, METHODCALL_NOT_PERMITTED);
+		} else if (context != Context.TWOSTATE && name.isResolved() && name.getTarget() instanceof Decl.Variant) {
+			syntaxError(expr, VARIANTCALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr, context);
 	}
@@ -266,7 +273,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 		if (context == Context.PURE) {
 			return context;
 		} else {
-			return Context.FUNCTIONAL;
+			return Context.ONESTATE;
 		}
 	}
 

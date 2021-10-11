@@ -118,6 +118,18 @@ public class DefiniteAssignmentCheck
 	}
 
 	@Override
+	public ControlFlow visitVariant(Decl.Variant declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
+		// Iterate through each statement in the body of the function or method,
+		// updating the set of definitely assigned variables as appropriate.
+		visitExpressions(declaration.getInvariant(),environment);
+		//
+		return null;
+	}
+
+	@Override
 	public ControlFlow visitStaticVariable(Decl.StaticVariable declaration, DefinitelyAssignedSet dummy) {
 		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
 		//

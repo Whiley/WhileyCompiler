@@ -1,6 +1,6 @@
 type List is &{int data, null|List next }
 
-property unchanged(null|List l)
+variant unchanged(null|List l)
 where (l is List) ==> l->data == old(l->data)
 where (l is List) ==> unchanged(l->next)
 

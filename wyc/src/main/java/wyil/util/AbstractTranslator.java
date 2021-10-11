@@ -69,6 +69,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			return visitCallable((Decl.Callable) decl);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
@@ -109,6 +110,8 @@ public abstract class AbstractTranslator<D, S, E> {
 			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl);
+		case DECL_variant:
+			return visitVariant((Decl.Variant) decl);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -128,6 +131,11 @@ public abstract class AbstractTranslator<D, S, E> {
 	public D visitProperty(Decl.Property decl) {
 		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
 		return constructProperty(decl,clauses);
+	}
+
+	public D visitVariant(Decl.Variant decl) {
+		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
+		return constructVariant(decl,clauses);
 	}
 
 	public D visitFunction(Decl.Function decl) {
@@ -930,6 +938,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
 	public abstract D constructProperty(Decl.Property decl, List<E> clauses);
+
+	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
 	public abstract D constructFunction(Decl.Function d, List<E> precondition, List<E> postcondition, S body);
 

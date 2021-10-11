@@ -1,1 +1,3 @@
-Should report an error
+Old_Invalid_10.whiley:5: variant invocation not permitted
+requires broken(x):
+         ^^^^^^^^^

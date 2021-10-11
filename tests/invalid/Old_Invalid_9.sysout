@@ -1,2 +1,3 @@
- Should report error
- 
+Old_Invalid_9.whiley:2: old requires context with pre- and post-states
+where *p == old(*p)
+            ^^^

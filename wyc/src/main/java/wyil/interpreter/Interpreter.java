@@ -22,7 +22,9 @@ import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,7 +95,22 @@ public class Interpreter {
 	 * @return
 	 */
 	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
-		return execute(name, signature, frame, args, null);
+		return execute(name, signature, frame, new Heap(), args);
+	}
+
+	/**
+	 * Execute a function or method identified by a name and type signature with the
+	 * given arguments, producing a return value or null (if none). If the function
+	 * or method cannot be found, or the number of arguments is incorrect then an
+	 * exception is thrown.
+	 *
+	 * @param nid       The fully qualified identifier of the function or method
+	 * @param signature The exact type signature identifying the method.
+	 * @param args      The supplied arguments
+	 * @return
+	 */
+	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, Heap heap, RValue... args) {
+		return execute(name, signature, frame, heap, args, null);
 	}
 
 	/**
@@ -109,7 +126,7 @@ public class Interpreter {
 	 *                  when reporting precondition violations.
 	 * @return
 	 */
-	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue[] args,
+	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, Heap heap, RValue[] args,
 			SyntacticItem context) {
 		Decl.Callable lambda = frame.getCallable(name, signature);
 		if (lambda == null) {
@@ -121,7 +138,7 @@ public class Interpreter {
 		// Enter a new frame for executing this callable item
 		frame = frame.enter(lambda);
 		// Execute the lambda we've extracted
-		return execute(lambda, frame, args, context);
+		return execute(lambda, frame, heap, args, context);
 	}
 
 	/**
@@ -135,16 +152,14 @@ public class Interpreter {
 	 *                when reporting precondition violations.
 	 * @return
 	 */
-	public RValue execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem context) {
+	public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, SyntacticItem context) {
 		// Fourth, construct the stack frame for execution
 		extractParameters(frame, args, lambda);
 		// Check the precondition
 		if (lambda instanceof Decl.FunctionOrMethod) {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
 			// Check preconditions hold
-			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, fm.getRequires(), context);
-			// Stash any require prestate for checking postconditions
-			stashRequiredPrestate(frame, fm.getEnsures());
+			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, heap, fm.getRequires(), context);
 			// check function or method body exists
 			if (fm.getBody().size() == 0) {
 				// FIXME: Add support for native functions or methods. That is,
@@ -152,24 +167,43 @@ public class Interpreter {
 				// interpreter.
 				throw new IllegalArgumentException(
 						"no function or method body found: " + lambda.getQualifiedName() + " : " + lambda.getType());
+			} else if(fm instanceof Decl.Method) {
+				// Stash the prestate as it is
+				frame.putLocal(OLD, heap.clone());
 			}
 			// Execute the method or function body
-			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm, args));
+			executeBlock(fm.getBody(), frame, heap, new FunctionOrMethodScope(fm));
+			// Restore original parameter values
+			extractParameters(frame, args, fm);
 			// Check the postcondition holds
-			checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, fm.getEnsures(), context);
+			checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, heap, fm.getEnsures(), context);
 			// Extract the return values
 			return packReturns(frame, lambda);
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
-			return executeExpression(ANY_T, l.getBody(), frame);
-		} else {
+			return executeExpression(ANY_T, l.getBody(), frame, heap);
+		} else if(lambda instanceof Decl.Property) {
 			Decl.Property p = (Decl.Property) lambda;
 			Tuple<Expr> invariant = p.getInvariant();
 			// Evaluate clauses of property, and terminate early as soon as one doesn't
 			// hold.
-			for(int i=0;i!=invariant.size();++i) {
-				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame);
-				if(!retval.boolValue()) {
+			for (int i = 0; i != invariant.size(); ++i) {
+				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame, heap);
+				if (!retval.boolValue()) {
+					// Short circuit
+					return retval;
+				}
+			}
+			//
+			return RValue.True;
+		} else {
+			Decl.Variant p = (Decl.Variant) lambda;
+			Tuple<Expr> invariant = p.getInvariant();
+			// Evaluate clauses of property, and terminate early as soon as one doesn't
+			// hold.
+			for (int i = 0; i != invariant.size(); ++i) {
+				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame, heap);
+				if (!retval.boolValue()) {
 					// Short circuit
 					return retval;
 				}
@@ -197,16 +231,16 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue packReturns(CallStack frame, Decl.Callable decl) {
-		if (decl instanceof Decl.Property) {
+		if (decl instanceof Decl.Property || decl instanceof Decl.Variant) {
 			return RValue.True;
 		} else {
 			Tuple<Decl.Variable> returns = decl.getReturns();
-			if(returns.size() == 1) {
+			if (returns.size() == 1) {
 				Decl.Variable v = returns.get(0);
 				return frame.getLocal(v.getName());
 			} else {
 				RValue[] items = new RValue[returns.size()];
-				for(int i=0;i!=items.length;++i) {
+				for (int i = 0; i != items.length; ++i) {
 					Decl.Variable v = returns.get(i);
 					items[i] = frame.getLocal(v.getName());
 				}
@@ -225,10 +259,10 @@ public class Interpreter {
 	 *
 	 * @return
 	 */
-	private Status executeBlock(Stmt.Block block, CallStack frame, EnclosingScope scope) {
+	private Status executeBlock(Stmt.Block block, CallStack frame, Heap heap, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
-			Status r = executeStatement(stmt, frame, scope);
+			Status r = executeStatement(stmt, frame, heap, scope);
 			// Now, see whether we are continuing or not
 			if (r != Status.NEXT) {
 				return r;
@@ -244,99 +278,99 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeStatement(Stmt stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		checkForTimeout(frame);
 		//
 		switch (stmt.getOpcode()) {
 		case STMT_assert:
-			return executeAssert((Stmt.Assert) stmt, frame, scope);
+			return executeAssert((Stmt.Assert) stmt, frame, heap, scope);
 		case STMT_assume:
-			return executeAssume((Stmt.Assume) stmt, frame, scope);
+			return executeAssume((Stmt.Assume) stmt, frame, heap, scope);
 		case STMT_assign:
-			return executeAssign((Stmt.Assign) stmt, frame, scope);
+			return executeAssign((Stmt.Assign) stmt, frame, heap, scope);
 		case STMT_break:
-			return executeBreak((Stmt.Break) stmt, frame, scope);
+			return executeBreak((Stmt.Break) stmt, frame, heap, scope);
 		case STMT_continue:
-			return executeContinue((Stmt.Continue) stmt, frame, scope);
+			return executeContinue((Stmt.Continue) stmt, frame, heap, scope);
 		case STMT_debug:
-			return executeDebug((Stmt.Debug) stmt, frame, scope);
+			return executeDebug((Stmt.Debug) stmt, frame, heap, scope);
 		case STMT_dowhile:
-			return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
+			return executeDoWhile((Stmt.DoWhile) stmt, frame, heap, scope);
 		case STMT_fail:
-			return executeFail((Stmt.Fail) stmt, frame, scope);
+			return executeFail((Stmt.Fail) stmt, frame, heap, scope);
 		case STMT_for:
-			return executeFor((Stmt.For) stmt, frame, scope);
+			return executeFor((Stmt.For) stmt, frame, heap, scope);
 		case STMT_if:
 		case STMT_ifelse:
-			return executeIf((Stmt.IfElse) stmt, frame, scope);
+			return executeIf((Stmt.IfElse) stmt, frame, heap, scope);
 		case STMT_initialiser:
 		case STMT_initialiservoid:
-			return executeInitialiser((Stmt.Initialiser) stmt, frame, scope);
+			return executeInitialiser((Stmt.Initialiser) stmt, frame, heap, scope);
 		case EXPR_indirectinvoke:
-			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
+			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame, heap);
 			return Status.NEXT;
 		case EXPR_invoke:
-			executeInvoke((Expr.Invoke) stmt, frame);
+			executeInvoke((Expr.Invoke) stmt, frame, heap);
 			return Status.NEXT;
 		case STMT_namedblock:
-			return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
+			return executeNamedBlock((Stmt.NamedBlock) stmt, frame, heap, scope);
 		case STMT_while:
-			return executeWhile((Stmt.While) stmt, frame, scope);
+			return executeWhile((Stmt.While) stmt, frame, heap, scope);
 		case STMT_return:
 		case STMT_returnvoid:
-			return executeReturn((Stmt.Return) stmt, frame, scope);
+			return executeReturn((Stmt.Return) stmt, frame, heap, scope);
 		case STMT_skip:
-			return executeSkip((Stmt.Skip) stmt, frame, scope);
+			return executeSkip((Stmt.Skip) stmt, frame, heap, scope);
 		case STMT_switch:
-			return executeSwitch((Stmt.Switch) stmt, frame, scope);
+			return executeSwitch((Stmt.Switch) stmt, frame, heap, scope);
 		case DECL_variable:
-			return executeVariableDeclaration((Decl.Variable) stmt, frame);
+			return executeVariableDeclaration((Decl.Variable) stmt, frame, heap);
 		}
 		deadCode(stmt);
 		return null; // deadcode
 	}
 
-	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeAssign(Stmt.Assign stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		Tuple<Expr> rhs = stmt.getRightHandSide();
-		RValue[] rvals = executeExpressions(stmt.getRightHandSide(), frame);
+		RValue[] rvals = executeExpressions(stmt.getRightHandSide(), frame, heap);
 		//
 		for (int i = 0; i != rhs.size(); ++i) {
 			Expr r = rhs.get(i);
 			// Determine width of expression
-			executeAssignLVal(lhs.get(i), rvals[i], frame, scope, r);
+			executeAssignLVal(lhs.get(i), rvals[i], frame, heap, scope, r);
 		}
 		return Status.NEXT;
 	}
 
-	private void executeAssignLVal(LVal lval, RValue rval, CallStack frame, EnclosingScope scope,
+	private void executeAssignLVal(LVal lval, RValue rval, CallStack frame, Heap heap, EnclosingScope scope,
 			SyntacticItem context) {
 		switch (lval.getOpcode()) {
 		case EXPR_arrayborrow:
 		case EXPR_arrayaccess: {
-			executeAssignArray((Expr.ArrayAccess) lval, rval, frame, scope, context);
+			executeAssignArray((Expr.ArrayAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_dereference: {
-			executeAssignDereference((Expr.Dereference) lval, rval, frame, scope, context);
+			executeAssignDereference((Expr.Dereference) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_fielddereference: {
-			executeAssignFieldDereference((Expr.FieldDereference) lval, rval, frame, scope, context);
+			executeAssignFieldDereference((Expr.FieldDereference) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_recordaccess:
 		case EXPR_recordborrow: {
-			executeAssignRecord((Expr.RecordAccess) lval, rval, frame, scope, context);
+			executeAssignRecord((Expr.RecordAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_variablemove:
 		case EXPR_variablecopy: {
-			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, scope, context);
+			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_tupleinitialiser: {
-			executeAssignTuple((Expr.TupleInitialiser) lval, rval, frame, scope, context);
+			executeAssignTuple((Expr.TupleInitialiser) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		default:
@@ -344,66 +378,67 @@ public class Interpreter {
 		}
 	}
 
-	private void executeAssignArray(Expr.ArrayAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
-		RValue.Array array = executeExpression(ARRAY_T, lval.getFirstOperand(), frame);
-		RValue.Int index = executeExpression(INT_T, lval.getSecondOperand(), frame);
+	private void executeAssignArray(Expr.ArrayAccess lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
+		RValue.Array array = executeExpression(ARRAY_T, lval.getFirstOperand(), frame, heap);
+		RValue.Int index = executeExpression(INT_T, lval.getSecondOperand(), frame, heap);
 		// Sanity check access
 		checkArrayBounds(array, index, frame, lval.getSecondOperand());
 		// Update the array
 		array = array.write(index, rval);
 		// Write the results back
-		executeAssignLVal((LVal) lval.getFirstOperand(), array, frame, scope, context);
+		executeAssignLVal((LVal) lval.getFirstOperand(), array, frame, heap, scope, context);
 	}
 
-	private void executeAssignDereference(Expr.Dereference lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
-		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame);
+	private void executeAssignDereference(Expr.Dereference lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
+		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame, heap);
 		// FIXME: need to check type invariant here??
-		RValue.Cell cell = ref.deref();
-		cell.write(rval);
+		int address = ref.deref();
+		// Write to heap
+		heap.write(address, rval);
 	}
 
-	private void executeAssignFieldDereference(Expr.FieldDereference lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
-		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame);
+	private void executeAssignFieldDereference(Expr.FieldDereference lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
+		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame, heap);
 		// Extract target cell
-		RValue.Cell cell = ref.deref();
+		int address = ref.deref();
 		// FIXME: need to check type invariant here??
-		RValue.Record record = checkType(cell.read(), lval.getOperand(), RECORD_T);
+		RValue.Record record = checkType(heap.read(address), lval.getOperand(), RECORD_T);
 		// Update target
-		cell.write(record.write(lval.getField(), rval));
+		heap.write(address, record.write(lval.getField(), rval));
 	}
 
-	private void executeAssignRecord(Expr.RecordAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
-		RValue.Record record = executeExpression(RECORD_T, lval.getOperand(), frame);
+	private void executeAssignRecord(Expr.RecordAccess lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
+		RValue.Record record = executeExpression(RECORD_T, lval.getOperand(), frame, heap);
 		// Write rval to field
 		record = record.write(lval.getField(), rval);
 		//
-		executeAssignLVal((LVal) lval.getOperand(), record, frame, scope, context);
+		executeAssignLVal((LVal) lval.getOperand(), record, frame, heap, scope, context);
 	}
 
-	private void executeAssignVariable(Expr.VariableAccess lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
+	private void executeAssignVariable(Expr.VariableAccess lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
 		// Check type invariants for lval being assigned
-		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, context);
+		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, heap, context);
 		//
 		frame.putLocal(lval.getVariableDeclaration().getName(), rval);
 	}
 
-	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, EnclosingScope scope,
-			SyntacticItem context) {
+	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, SyntacticItem context) {
 		Tuple<Expr> operands = lval.getOperands();
 		// Check we have a tuple as expected!
 		RValue.Tuple tuple = checkType(rval, lval, TUPLE_T);
 		//
-		if(tuple.size() != operands.size()) {
+		if (tuple.size() != operands.size()) {
 			deadCode(lval);
 		}
 		//
-		for(int i=0;i!=operands.size();++i) {
-			executeAssignLVal((LVal) operands.get(i), tuple.get(i), frame, scope, context);
+		for (int i = 0; i != operands.size(); ++i) {
+			executeAssignLVal((LVal) operands.get(i), tuple.get(i), frame, heap, scope, context);
 		}
 
 	}
@@ -416,9 +451,9 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeAssert(Stmt.Assert stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeAssert(Stmt.Assert stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.RUNTIME_ASSERTION_FAILURE, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSERTION_FAILURE, frame, heap, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -430,9 +465,9 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeAssume(Stmt.Assume stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeAssume(Stmt.Assume stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		//
-		checkInvariants(WyilFile.RUNTIME_ASSUMPTION_FAILURE, frame, stmt.getCondition());
+		checkInvariants(WyilFile.RUNTIME_ASSUMPTION_FAILURE, frame, heap, stmt.getCondition());
 		return Status.NEXT;
 	}
 
@@ -444,7 +479,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeBreak(Stmt.Break stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeBreak(Stmt.Break stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		// TODO: the break bytecode supports a non-nearest exit and eventually
 		// this should be supported.
 		return Status.BREAK;
@@ -458,7 +493,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeContinue(Stmt.Continue stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeContinue(Stmt.Continue stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		return Status.CONTINUE;
 	}
 
@@ -470,9 +505,9 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeDebug(Stmt.Debug stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeDebug(Stmt.Debug stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		//
-		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame);
+		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame, heap);
 		//
 		for (RValue item : arr.getElements()) {
 			RValue.Int i = (RValue.Int) item;
@@ -491,17 +526,17 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r = Status.NEXT;
 		while (r == Status.NEXT || r == Status.CONTINUE) {
-			r = executeBlock(stmt.getBody(), frame, scope);
+			r = executeBlock(stmt.getBody(), frame, heap, scope);
 			if (r == Status.NEXT) {
 				// NOTE: only check loop invariant if normal execution, since breaks are handled
 				// differently.
-				checkInvariants(errcode, frame, stmt.getInvariant(), null);
+				checkInvariants(errcode, frame, heap, stmt.getInvariant(), null);
 				errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
-				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
+				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame, heap);
 				if (operand == RValue.False) {
 					return Status.NEXT;
 				}
@@ -525,7 +560,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeFail(Stmt.Fail stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeFail(Stmt.Fail stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, stmt);
 	}
 
@@ -538,23 +573,23 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeFor(Stmt.For stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeFor(Stmt.For stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		Decl.StaticVariable var = stmt.getVariable();
 		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r = Status.NEXT;
 		// Evaluate index array
-		RValue[] indices = executeExpression(ARRAY_T, var.getInitialiser(), frame).getElements();
+		RValue[] indices = executeExpression(ARRAY_T, var.getInitialiser(), frame, heap).getElements();
 		// Execute loop
-		for(int i=0;i!=indices.length;++i) {
+		for (int i = 0; i != indices.length; ++i) {
 			// Assign index variable
 			frame.putLocal(var.getName(), indices[i]);
 			// Check loop invariants
-			checkInvariants(errcode, frame, stmt.getInvariant(), null);
+			checkInvariants(errcode, frame, heap, stmt.getInvariant(), null);
 			// Keep executing the loop body until we exit it somehow.
-			r = executeBlock(stmt.getBody(), frame, scope);
-			if(r == Status.BREAK || r == Status.RETURN) {
+			r = executeBlock(stmt.getBody(), frame, heap, scope);
+			if (r == Status.BREAK || r == Status.RETURN) {
 				break;
-			} else if(r == Status.CONTINUE) {
+			} else if (r == Status.CONTINUE) {
 				r = Status.NEXT;
 			}
 			errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
@@ -576,40 +611,40 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeIf(Stmt.IfElse stmt, CallStack frame, EnclosingScope scope) {
-		RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
+	private Status executeIf(Stmt.IfElse stmt, CallStack frame, Heap heap, EnclosingScope scope) {
+		RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame, heap);
 		if (operand == RValue.True) {
 			// branch taken, so execute true branch
-			return executeBlock(stmt.getTrueBranch(), frame, scope);
+			return executeBlock(stmt.getTrueBranch(), frame, heap, scope);
 		} else if (stmt.hasFalseBranch()) {
 			// branch not taken, so execute false branch
-			return executeBlock(stmt.getFalseBranch(), frame, scope);
+			return executeBlock(stmt.getFalseBranch(), frame, heap, scope);
 		} else {
 			return Status.NEXT;
 		}
 	}
 
-	private Status executeInitialiser(Stmt.Initialiser stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeInitialiser(Stmt.Initialiser stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		Tuple<Decl.Variable> variables = stmt.getVariables();
 		//
-		if(!stmt.hasInitialiser()) {
+		if (!stmt.hasInitialiser()) {
 			// Do nothing as no initialiser!
-		} else if(variables.size() == 1) {
+		} else if (variables.size() == 1) {
 			// Easy case --- unit assignment
-			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
+			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame, heap);
 			// Check type invariants are established
-			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
+			checkTypeInvariants(stmt.getType(), value, frame, heap, stmt.getInitialiser());
 			// Assign variable
 			frame.putLocal(variables.get(0).getName(), value);
 		} else {
 			// Construct lhs type
 			Type type = Type.Tuple.create(variables.map(v -> v.getType()));
 			// Harder case --- tuple assignment
-			RValue.Tuple value = executeExpression(TUPLE_T, stmt.getInitialiser(), frame);
+			RValue.Tuple value = executeExpression(TUPLE_T, stmt.getInitialiser(), frame, heap);
 			// Check type invariants are established
-			checkTypeInvariants(type,value,frame,stmt.getInitialiser());
+			checkTypeInvariants(type, value, frame, heap, stmt.getInitialiser());
 			// Assign individual components
-			for(int i=0;i!=variables.size();++i) {
+			for (int i = 0; i != variables.size(); ++i) {
 				frame.putLocal(variables.get(i).getName(), value.get(i));
 			}
 		}
@@ -624,8 +659,8 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeNamedBlock(Stmt.NamedBlock stmt, CallStack frame, EnclosingScope scope) {
-		return executeBlock(stmt.getBlock(), frame, scope);
+	private Status executeNamedBlock(Stmt.NamedBlock stmt, CallStack frame, Heap heap, EnclosingScope scope) {
+		return executeBlock(stmt.getBlock(), frame, heap, scope);
 	}
 
 	/**
@@ -636,18 +671,18 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeWhile(Stmt.While stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeWhile(Stmt.While stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		int errcode = WyilFile.RUNTIME_LOOPINVARIANT_ESTABLISH_FAILURE;
 		Status r;
 		int count = 0;
 		do {
-			checkInvariants(errcode, frame, stmt.getInvariant(), null);
-			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
+			checkInvariants(errcode, frame, heap, stmt.getInvariant(), null);
+			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame, heap);
 			if (operand == RValue.False) {
 				return Status.NEXT;
 			}
 			// Keep executing the loop body until we exit it somehow.
-			r = executeBlock(stmt.getBody(), frame, scope);
+			r = executeBlock(stmt.getBody(), frame, heap, scope);
 			//
 			errcode = WyilFile.RUNTIME_LOOPINVARIANT_RESTORED_FAILURE;
 		} while (r == Status.NEXT || r == Status.CONTINUE);
@@ -667,7 +702,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeReturn(Stmt.Return stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeReturn(Stmt.Return stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		// We know that a return statement can only appear in either a function
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
@@ -677,15 +712,15 @@ public class Interpreter {
 		Decl.FunctionOrMethod context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
-		if(stmt.hasReturn()) {
+		if (stmt.hasReturn()) {
 			// Execute return expressions
-			RValue value = executeExpression(ANY_T, stmt.getReturn(), frame);
+			RValue value = executeExpression(ANY_T, stmt.getReturn(), frame, heap);
 			// Check type invariants
-			checkTypeInvariants(type.getReturn(), value, frame, stmt.getReturn());
+			checkTypeInvariants(type.getReturn(), value, frame, heap, stmt.getReturn());
 			//
-			if(returns.size() > 1) {
+			if (returns.size() > 1) {
 				RValue.Tuple t = (RValue.Tuple) value;
-				for(int i=0;i!=returns.size();++i) {
+				for (int i = 0; i != returns.size(); ++i) {
 					Decl.Variable r = returns.get(i);
 					frame.putLocal(r.getName(), t.get(i));
 				}
@@ -693,8 +728,6 @@ public class Interpreter {
 				Decl.Variable r = returns.get(0);
 				frame.putLocal(r.getName(), value);
 			}
-			// Restore original parameter values
-			extractParameters(frame, enclosingScope.getArguments(), context);
 		}
 		//
 		return Status.RETURN;
@@ -707,7 +740,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeSkip(Stmt.Skip stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeSkip(Stmt.Skip stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		// skip !
 		return Status.NEXT;
 	}
@@ -719,22 +752,22 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeSwitch(Stmt.Switch stmt, CallStack frame, EnclosingScope scope) {
+	private Status executeSwitch(Stmt.Switch stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		//
-		Object value = executeExpression(ANY_T, stmt.getCondition(), frame);
+		Object value = executeExpression(ANY_T, stmt.getCondition(), frame, heap);
 		for (int i = 0; i != cases.size(); ++i) {
 			Stmt.Case c = cases.get(i);
 			Stmt.Block body = c.getBlock();
 			if (c.isDefault()) {
-				return executeBlock(body, frame, scope);
+				return executeBlock(body, frame, heap, scope);
 			} else {
 				// FIXME: this is a temporary hack until a proper notion of
 				// ConstantExpr is introduced.
-				RValue[] values = executeExpressions(c.getConditions(), frame);
+				RValue[] values = executeExpressions(c.getConditions(), frame, heap);
 				for (RValue v : values) {
 					if (v.equals(value)) {
-						return executeBlock(body, frame, scope);
+						return executeBlock(body, frame, heap, scope);
 					}
 				}
 			}
@@ -750,15 +783,8 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame) {
+	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame, Heap heap) {
 		// We only need to do something if this has an initialiser
-//		if (stmt.hasInitialiser()) {
-//			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
-//			// Check type invariants are established
-//			checkTypeInvariants(stmt.getType(), value, frame, stmt.getInitialiser());
-//			//
-//			frame.putLocal(stmt.getName(), value);
-//		}
 		return Status.NEXT;
 	}
 
@@ -776,146 +802,149 @@ public class Interpreter {
 	 * @param frame    The frame in which the expression is executing
 	 * @return
 	 */
-	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
+	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame, Heap heap) {
 		checkForTimeout(frame);
 		//
 		RValue val;
 		switch (expr.getOpcode()) {
 		case EXPR_constant:
-			val = executeConst((Expr.Constant) expr, frame);
+			val = executeConst((Expr.Constant) expr, frame, heap);
 			break;
 		case EXPR_cast:
-			val = executeConvert((Expr.Cast) expr, frame);
+			val = executeConvert((Expr.Cast) expr, frame, heap);
 			break;
 		case EXPR_recordinitialiser:
-			val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
+			val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame, heap);
 			break;
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
-			val = executeRecordAccess((Expr.RecordAccess) expr, frame);
+			val = executeRecordAccess((Expr.RecordAccess) expr, frame, heap);
 			break;
 		case EXPR_indirectinvoke:
-			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
+			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame, heap);
 			break;
 		case EXPR_invoke:
-			val = executeInvoke((Expr.Invoke) expr, frame);
+			val = executeInvoke((Expr.Invoke) expr, frame, heap);
 			break;
 		case EXPR_variablemove:
 		case EXPR_variablecopy:
-			val = executeVariableAccess((Expr.VariableAccess) expr, frame);
+			val = executeVariableAccess((Expr.VariableAccess) expr, frame, heap);
 			break;
 		case EXPR_staticvariable:
-			val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
+			val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame, heap);
 			break;
 		case EXPR_is:
-			val = executeIs((Expr.Is) expr, frame);
+			val = executeIs((Expr.Is) expr, frame, heap);
 			break;
 		case EXPR_logicalnot:
-			val = executeLogicalNot((Expr.LogicalNot) expr, frame);
+			val = executeLogicalNot((Expr.LogicalNot) expr, frame, heap);
 			break;
 		case EXPR_logicaland:
-			val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
+			val = executeLogicalAnd((Expr.LogicalAnd) expr, frame, heap);
 			break;
 		case EXPR_logicalor:
-			val = executeLogicalOr((Expr.LogicalOr) expr, frame);
+			val = executeLogicalOr((Expr.LogicalOr) expr, frame, heap);
 			break;
 		case EXPR_logicalimplication:
-			val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
+			val = executeLogicalImplication((Expr.LogicalImplication) expr, frame, heap);
 			break;
 		case EXPR_logicaliff:
-			val = executeLogicalIff((Expr.LogicalIff) expr, frame);
+			val = executeLogicalIff((Expr.LogicalIff) expr, frame, heap);
 			break;
 		case EXPR_logicalexistential:
 		case EXPR_logicaluniversal:
-			val = executeQuantifier((Expr.Quantifier) expr, frame);
+			val = executeQuantifier((Expr.Quantifier) expr, frame, heap);
 			break;
 		case EXPR_equal:
-			val = executeEqual((Expr.Equal) expr, frame);
+			val = executeEqual((Expr.Equal) expr, frame, heap);
 			break;
 		case EXPR_notequal:
-			val = executeNotEqual((Expr.NotEqual) expr, frame);
+			val = executeNotEqual((Expr.NotEqual) expr, frame, heap);
 			break;
 		case EXPR_integernegation:
-			val = executeIntegerNegation((Expr.IntegerNegation) expr, frame);
+			val = executeIntegerNegation((Expr.IntegerNegation) expr, frame, heap);
 			break;
 		case EXPR_integeraddition:
-			val = executeIntegerAddition((Expr.IntegerAddition) expr, frame);
+			val = executeIntegerAddition((Expr.IntegerAddition) expr, frame, heap);
 			break;
 		case EXPR_integersubtraction:
-			val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame);
+			val = executeIntegerSubtraction((Expr.IntegerSubtraction) expr, frame, heap);
 			break;
 		case EXPR_integermultiplication:
-			val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame);
+			val = executeIntegerMultiplication((Expr.IntegerMultiplication) expr, frame, heap);
 			break;
 		case EXPR_integerdivision:
-			val = executeIntegerDivision((Expr.IntegerDivision) expr, frame);
+			val = executeIntegerDivision((Expr.IntegerDivision) expr, frame, heap);
 			break;
 		case EXPR_integerremainder:
-			val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame);
+			val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame, heap);
 			break;
 		case EXPR_integerlessthan:
-			val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame);
+			val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame, heap);
 			break;
 		case EXPR_integerlessequal:
-			val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
+			val = executeIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame, heap);
 			break;
 		case EXPR_integergreaterthan:
-			val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame);
+			val = executeIntegerGreaterThan((Expr.IntegerGreaterThan) expr, frame, heap);
 			break;
 		case EXPR_integergreaterequal:
-			val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
+			val = executeIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame, heap);
 			break;
 		case EXPR_bitwisenot:
-			val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
+			val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame, heap);
 			break;
 		case EXPR_bitwiseor:
-			val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
+			val = executeBitwiseOr((Expr.BitwiseOr) expr, frame, heap);
 			break;
 		case EXPR_bitwisexor:
-			val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
+			val = executeBitwiseXor((Expr.BitwiseXor) expr, frame, heap);
 			break;
 		case EXPR_bitwiseand:
-			val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
+			val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame, heap);
 			break;
 		case EXPR_bitwiseshl:
-			val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
+			val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame, heap);
 			break;
 		case EXPR_bitwiseshr:
-			val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
+			val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame, heap);
 			break;
 		case EXPR_arrayborrow:
 		case EXPR_arrayaccess:
-			val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
+			val = executeArrayAccess((Expr.ArrayAccess) expr, frame, heap);
 			break;
 		case EXPR_arraygenerator:
-			val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
+			val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame, heap);
 			break;
 		case EXPR_arraylength:
-			val = executeArrayLength((Expr.ArrayLength) expr, frame);
+			val = executeArrayLength((Expr.ArrayLength) expr, frame, heap);
 			break;
 		case EXPR_arrayinitialiser:
-			val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
+			val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame, heap);
 			break;
 		case EXPR_arrayrange:
-			val = executeArrayRange((Expr.ArrayRange) expr, frame);
+			val = executeArrayRange((Expr.ArrayRange) expr, frame, heap);
 			break;
 		case EXPR_new:
-			val = executeNew((Expr.New) expr, frame);
+			val = executeNew((Expr.New) expr, frame, heap);
+			break;
+		case EXPR_old:
+			val = executeOld((Expr.Old) expr, frame, heap);
 			break;
 		case EXPR_dereference:
-			val = executeDereference((Expr.Dereference) expr, frame);
+			val = executeDereference((Expr.Dereference) expr, frame, heap);
 			break;
 		case EXPR_fielddereference:
-			val = executeFieldDereference((Expr.FieldDereference) expr, frame);
+			val = executeFieldDereference((Expr.FieldDereference) expr, frame, heap);
 			break;
 		case EXPR_lambdaaccess:
-			val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
+			val = executeLambdaAccess((Expr.LambdaAccess) expr, frame, heap);
 			break;
 		case DECL_lambda:
-			val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
+			val = executeLambdaDeclaration((Decl.Lambda) expr, frame, heap);
 			break;
 		case EXPR_tupleinitialiser:
-			val = executeTupleInitialiser((Expr.TupleInitialiser) expr, frame);
+			val = executeTupleInitialiser((Expr.TupleInitialiser) expr, frame, heap);
 			break;
 		default:
 			return deadCode(expr);
@@ -930,7 +959,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private RValue executeConst(Expr.Constant expr, CallStack frame) {
+	private RValue executeConst(Expr.Constant expr, CallStack frame, Heap heap) {
 		Value v = expr.getValue();
 		switch (v.getOpcode()) {
 		case ITEM_null:
@@ -974,40 +1003,40 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private RValue executeConvert(Expr.Cast expr, CallStack frame) {
-		RValue operand = executeExpression(ANY_T, expr.getOperand(), frame);
+	private RValue executeConvert(Expr.Cast expr, CallStack frame, Heap heap) {
+		RValue operand = executeExpression(ANY_T, expr.getOperand(), frame, heap);
 		return operand.convert(expr.getType());
 	}
 
-	private RValue executeRecordAccess(Expr.RecordAccess expr, CallStack frame) {
-		RValue.Record rec = executeExpression(RECORD_T, expr.getOperand(), frame);
+	private RValue executeRecordAccess(Expr.RecordAccess expr, CallStack frame, Heap heap) {
+		RValue.Record rec = executeExpression(RECORD_T, expr.getOperand(), frame, heap);
 		return rec.read(expr.getField());
 	}
 
-	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame) {
+	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame, Heap heap) {
 		Tuple<Identifier> fields = expr.getFields();
 		Tuple<Expr> operands = expr.getOperands();
 		RValue.Field[] values = new RValue.Field[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
 			Identifier field = fields.get(i);
 			Expr operand = operands.get(i);
-			RValue value = executeExpression(ANY_T, operand, frame);
+			RValue value = executeExpression(ANY_T, operand, frame, heap);
 			values[i] = semantics.Field(field, value);
 		}
 		return semantics.Record(values);
 	}
 
-	private RValue executeTupleInitialiser(Expr.TupleInitialiser expr, CallStack frame) {
+	private RValue executeTupleInitialiser(Expr.TupleInitialiser expr, CallStack frame, Heap heap) {
 		Tuple<Expr> operands = expr.getOperands();
 		RValue[] values = new RValue[operands.size()];
 		for (int i = 0; i != values.length; ++i) {
-			values[i] = executeExpression(ANY_T, operands.get(i), frame);
+			values[i] = executeExpression(ANY_T, operands.get(i), frame, heap);
 		}
 		return semantics.Tuple(values);
 	}
 
-	private RValue executeQuantifier(Expr.Quantifier expr, CallStack frame) {
-		boolean r = executeQuantifier(0, expr, frame);
+	private RValue executeQuantifier(Expr.Quantifier expr, CallStack frame, Heap heap) {
+		boolean r = executeQuantifier(0, expr, frame, heap);
 		boolean q = (expr instanceof Expr.UniversalQuantifier);
 		return r == q ? RValue.True : RValue.False;
 	}
@@ -1021,22 +1050,22 @@ public class Interpreter {
 	 * @param context
 	 * @return
 	 */
-	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame) {
+	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame, Heap heap) {
 		Tuple<Decl.StaticVariable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
-			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame);
+			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame, heap);
 			boolean q = (expr instanceof Expr.UniversalQuantifier);
 			// If this evaluates to true, then we will continue executing the
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
 			Decl.StaticVariable var = vars.get(index);
-			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
+			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame, heap);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
 				frame.putLocal(var.getName(), elements[i]);
-				boolean r = executeQuantifier(index + 1, expr, frame);
+				boolean r = executeQuantifier(index + 1, expr, frame, heap);
 				if (!r) {
 					// early termination
 					return r;
@@ -1055,113 +1084,113 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private RValue executeVariableAccess(Expr.VariableAccess expr, CallStack frame) {
+	private RValue executeVariableAccess(Expr.VariableAccess expr, CallStack frame, Heap heap) {
 		Decl.Variable decl = expr.getVariableDeclaration();
 		return frame.getLocal(decl.getName());
 	}
 
-	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) {
+	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame, Heap heap) {
 		Decl.StaticVariable decl = expr.getLink().getTarget();
 		RValue v = frame.getStatic(decl.getQualifiedName());
 		if (v == null) {
 			// NOTE: it's possible to get here without the static variable having been
 			// initialised in the special case that we have just loaded a module.
 			frame = frame.enter(decl);
-			v = executeExpression(ANY_T, decl.getInitialiser(), frame);
+			v = executeExpression(ANY_T, decl.getInitialiser(), frame, heap);
 			frame.putStatic(decl.getQualifiedName(), v);
 		}
 		return v;
 	}
 
-	private RValue executeIs(Expr.Is expr, CallStack frame) {
-		RValue lhs = executeExpression(ANY_T, expr.getOperand(), frame);
-		return lhs.is(expr.getTestType(), frame);
+	private RValue executeIs(Expr.Is expr, CallStack frame, Heap heap) {
+		RValue lhs = executeExpression(ANY_T, expr.getOperand(), frame, heap);
+		return lhs.is(expr.getTestType(), frame, heap);
 	}
 
-	public RValue executeIntegerNegation(Expr.IntegerNegation expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(), frame);
+	public RValue executeIntegerNegation(Expr.IntegerNegation expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(), frame, heap);
 		return lhs.negate();
 	}
 
-	public RValue executeIntegerAddition(Expr.IntegerAddition expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerAddition(Expr.IntegerAddition expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.add(rhs);
 	}
 
-	public RValue executeIntegerSubtraction(Expr.IntegerSubtraction expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerSubtraction(Expr.IntegerSubtraction expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.subtract(rhs);
 	}
 
-	public RValue executeIntegerMultiplication(Expr.IntegerMultiplication expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerMultiplication(Expr.IntegerMultiplication expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.multiply(rhs);
 	}
 
-	public RValue executeIntegerDivision(Expr.IntegerDivision expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerDivision(Expr.IntegerDivision expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		checkDivisionByZero(rhs, frame, expr.getSecondOperand());
 		return lhs.divide(rhs);
 	}
 
-	public RValue executeIntegerRemainder(Expr.IntegerRemainder expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerRemainder(Expr.IntegerRemainder expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		checkDivisionByZero(rhs, frame, expr.getSecondOperand());
 		return lhs.remainder(rhs);
 	}
 
-	public RValue executeEqual(Expr.Equal expr, CallStack frame) {
-		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame);
-		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame);
+	public RValue executeEqual(Expr.Equal expr, CallStack frame, Heap heap) {
+		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame, heap);
+		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame, heap);
 		return lhs.equal(rhs);
 	}
 
-	public RValue executeNotEqual(Expr.NotEqual expr, CallStack frame) {
-		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame);
-		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame);
+	public RValue executeNotEqual(Expr.NotEqual expr, CallStack frame, Heap heap) {
+		RValue lhs = executeExpression(ANY_T, expr.getFirstOperand(), frame, heap);
+		RValue rhs = executeExpression(ANY_T, expr.getSecondOperand(), frame, heap);
 		return lhs.notEqual(rhs);
 	}
 
-	public RValue executeIntegerLessThan(Expr.IntegerLessThan expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerLessThan(Expr.IntegerLessThan expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.lessThan(rhs);
 	}
 
-	public RValue executeIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.lessThanOrEqual(rhs);
 	}
 
-	public RValue executeIntegerGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return rhs.lessThan(lhs);
 	}
 
-	public RValue executeIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return rhs.lessThanOrEqual(lhs);
 	}
 
-	public RValue executeLogicalNot(Expr.LogicalNot expr, CallStack frame) {
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(), frame);
+	public RValue executeLogicalNot(Expr.LogicalNot expr, CallStack frame, Heap heap) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(), frame, heap);
 		return lhs.not();
 	}
 
-	public RValue executeLogicalAnd(Expr.LogicalAnd expr, CallStack frame) {
+	public RValue executeLogicalAnd(Expr.LogicalAnd expr, CallStack frame, Heap heap) {
 		// This is a short-circuiting operator. Therefore, we fail as soon as one
 		// argument fails.
 		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame, heap);
 			if (b == RValue.False) {
 				return b;
 			}
@@ -1169,12 +1198,12 @@ public class Interpreter {
 		return RValue.True;
 	}
 
-	public RValue executeLogicalOr(Expr.LogicalOr expr, CallStack frame) {
+	public RValue executeLogicalOr(Expr.LogicalOr expr, CallStack frame, Heap heap) {
 		// This is a short-circuiting operator. Therefore, we succeed as soon as one
 		// argument succeeds.
 		Tuple<Expr> operands = expr.getOperands();
 		for (int i = 0; i != operands.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame, heap);
 			if (b == RValue.True) {
 				return b;
 			}
@@ -1182,83 +1211,83 @@ public class Interpreter {
 		return RValue.False;
 	}
 
-	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame);
+	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame, Heap heap) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame, heap);
 		if (lhs == RValue.False) {
 			return RValue.True;
 		} else {
-			RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame);
+			RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame, heap);
 			return lhs.equal(rhs);
 		}
 	}
 
-	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame);
-		RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame);
+	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame, Heap heap) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getFirstOperand(), frame, heap);
+		RValue.Bool rhs = executeExpression(BOOL_T, expr.getSecondOperand(), frame, heap);
 		return lhs.equal(rhs);
 	}
 
-	public RValue executeBitwiseNot(Expr.BitwiseComplement expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(), frame);
+	public RValue executeBitwiseNot(Expr.BitwiseComplement expr, CallStack frame, Heap heap) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(), frame, heap);
 		return lhs.invert();
 	}
 
-	public RValue executeBitwiseAnd(Expr.BitwiseAnd expr, CallStack frame) {
+	public RValue executeBitwiseAnd(Expr.BitwiseAnd expr, CallStack frame, Heap heap) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame, heap);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.and(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.and(executeExpression(BYTE_T, operands.get(i), frame, heap));
 		}
 		return val;
 	}
 
-	public RValue executeBitwiseOr(Expr.BitwiseOr expr, CallStack frame) {
+	public RValue executeBitwiseOr(Expr.BitwiseOr expr, CallStack frame, Heap heap) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame, heap);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.or(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.or(executeExpression(BYTE_T, operands.get(i), frame, heap));
 		}
 		return val;
 	}
 
-	public RValue executeBitwiseXor(Expr.BitwiseXor expr, CallStack frame) {
+	public RValue executeBitwiseXor(Expr.BitwiseXor expr, CallStack frame, Heap heap) {
 		Tuple<Expr> operands = expr.getOperands();
-		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame, heap);
 		for (int i = 1; i != operands.size(); ++i) {
-			val = val.xor(executeExpression(BYTE_T, operands.get(i), frame));
+			val = val.xor(executeExpression(BYTE_T, operands.get(i), frame, heap));
 		}
 		return val;
 	}
 
-	public RValue executeBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, CallStack frame, Heap heap) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.shl(rhs);
 	}
 
-	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame, Heap heap) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		return lhs.shr(rhs);
 	}
 
-	public RValue executeArrayLength(Expr.ArrayLength expr, CallStack frame) {
-		RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(), frame);
+	public RValue executeArrayLength(Expr.ArrayLength expr, CallStack frame, Heap heap) {
+		RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(), frame, heap);
 		return array.length();
 	}
 
-	public RValue executeArrayAccess(Expr.ArrayAccess expr, CallStack frame) {
-		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame);
-		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeArrayAccess(Expr.ArrayAccess expr, CallStack frame, Heap heap) {
+		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		// Sanity check access
 		checkArrayBounds(array, index, frame, expr.getSecondOperand());
 		// Perform the read
 		return array.read(index);
 	}
 
-	public RValue executeArrayGenerator(Expr.ArrayGenerator expr, CallStack frame) {
-		RValue element = executeExpression(ANY_T, expr.getFirstOperand(), frame);
-		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
+	public RValue executeArrayGenerator(Expr.ArrayGenerator expr, CallStack frame, Heap heap) {
+		RValue element = executeExpression(ANY_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		int n = count.intValue();
 		if (n < 0) {
 			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_LENGTH_FAILURE, frame, expr.getSecondOperand());
@@ -1270,18 +1299,18 @@ public class Interpreter {
 		return semantics.Array(values);
 	}
 
-	public RValue executeArrayInitialiser(Expr.ArrayInitialiser expr, CallStack frame) {
+	public RValue executeArrayInitialiser(Expr.ArrayInitialiser expr, CallStack frame, Heap heap) {
 		Tuple<Expr> operands = expr.getOperands();
 		RValue[] elements = new RValue[operands.size()];
 		for (int i = 0; i != elements.length; ++i) {
-			elements[i] = executeExpression(ANY_T, operands.get(i), frame);
+			elements[i] = executeExpression(ANY_T, operands.get(i), frame, heap);
 		}
 		return semantics.Array(elements);
 	}
 
-	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame) {
-		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
-		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
+	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame, Heap heap) {
+		int start = executeExpression(INT_T, expr.getFirstOperand(), frame, heap).intValue();
+		int end = executeExpression(INT_T, expr.getSecondOperand(), frame, heap).intValue();
 		if (start < 0 || end < start) {
 			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr.getSecondOperand());
 		}
@@ -1292,28 +1321,45 @@ public class Interpreter {
 		return semantics.Array(elements);
 	}
 
-	public RValue executeNew(Expr.New expr, CallStack frame) {
-		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame);
-		RValue.Cell cell = semantics.Cell(initialiser);
-		return semantics.Reference(cell);
+	public RValue executeNew(Expr.New expr, CallStack frame, Heap heap) {
+		// Evaluate operand
+		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame, heap);
+		// Allocate operand into heap
+		int address = heap.alloc(initialiser);
+		// Done
+		return semantics.Reference(address);
 	}
 
-	public RValue executeDereference(Expr.Dereference expr, CallStack frame) {
-		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
-		return ref.deref().read();
+	public RValue executeOld(Expr.Old expr, CallStack frame, Heap heap) {
+		// Extract prestate (if present)
+		Heap oldHeap = (Heap) frame.getLocal(OLD);
+		//
+		if(oldHeap == null) {
+			throw new RuntimeException("internal failure --- invalid old heap");
+		}
+		//
+		return executeExpression(ANY_T, expr.getOperand(), frame, oldHeap);
 	}
 
-	public RValue executeFieldDereference(Expr.FieldDereference expr, CallStack frame) {
-		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
+	public RValue executeDereference(Expr.Dereference expr, CallStack frame, Heap heap) {
+		// Evaluate operand
+		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame, heap);
+		// Read heap location
+		return heap.read(ref.deref());
+	}
+
+	public RValue executeFieldDereference(Expr.FieldDereference expr, CallStack frame, Heap heap) {
+		// Evaluate operand
+		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame, heap);
 		// Extract target
-		RValue.Cell cell = ref.deref();
+		RValue val = heap.read(ref.deref());
 		// Extract record value
-		RValue.Record rec = checkType(cell.read(),expr,RECORD_T);
+		RValue.Record rec = checkType(val, expr, RECORD_T);
 		// Read the given field
 		return rec.read(expr.getField());
 	}
 
-	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) {
+	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame, Heap heap) {
 		// Locate the function or method body in order to execute it
 		Decl.Callable decl = expr.getLink().getTarget();
 		//
@@ -1326,7 +1372,7 @@ public class Interpreter {
 		}
 	}
 
-	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame) {
+	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame, Heap heap) {
 		// FIXME: this needs a clone of the frame? Otherwise, it's just
 		// executing in the later environment.
 		return semantics.Lambda(decl, frame.clone());
@@ -1345,10 +1391,10 @@ public class Interpreter {
 	 * @param frame
 	 * @return
 	 */
-	private RValue[] executeExpressions(Tuple<Expr> expressions, CallStack frame) {
+	private RValue[] executeExpressions(Tuple<Expr> expressions, CallStack frame, Heap heap) {
 		RValue[] results = new RValue[expressions.size()];
 		for (int i = 0; i != expressions.size(); ++i) {
-			results[i] = executeExpression(ANY_T,expressions.get(i), frame);
+			results[i] = executeExpression(ANY_T, expressions.get(i), frame, heap);
 		}
 		return results;
 	}
@@ -1365,17 +1411,17 @@ public class Interpreter {
 	 * @param context --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private RValue executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
-		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(), frame);
-		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
+	private RValue executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame, Heap heap) {
+		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(), frame, heap);
+		RValue[] arguments = executeExpressions(expr.getArguments(), frame, heap);
 		// Extract concrete type
 		Type.Callable type = src.getType();
 		// Check parameter type invariants
-		checkTypeInvariants(type.getParameter(), arguments, expr.getArguments(), frame);
+		checkTypeInvariants(type.getParameter(), arguments, expr.getArguments(), frame, heap);
 		// Here we supply the enclosing frame when the lambda was created.
 		// The reason for this is that the lambda may try to access enclosing
 		// variables in the scope it was created.
-		return src.execute(this,arguments,expr);
+		return src.execute(this, arguments, heap, expr);
 	}
 
 	/**
@@ -1389,20 +1435,20 @@ public class Interpreter {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	private RValue executeInvoke(Expr.Invoke expr, CallStack frame) {
+	private RValue executeInvoke(Expr.Invoke expr, CallStack frame, Heap heap) {
 		// Resolve function or method being invoked to a concrete declaration
 		Decl.Callable decl = expr.getLink().getTarget();
 		// Evaluate argument expressions
-		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
+		RValue[] arguments = executeExpressions(expr.getOperands(), frame, heap);
 		// Extract the concrete type
 		Type.Callable type = expr.getBinding().getConcreteType();
 		// Check type invariants
-		checkTypeInvariants(type.getParameter(), arguments, expr.getOperands(), frame);
+		checkTypeInvariants(type.getParameter(), arguments, expr.getOperands(), frame, heap);
 		// Invoke the function or method in question
 		// FIXME: could potentially optimise this by calling execute with decl directly.
 		// This currently fails for external symbols which are represented as
 		// prototypes.
-		return execute(decl.getQualifiedName(), decl.getType(), frame, arguments, expr);
+		return execute(decl.getQualifiedName(), decl.getType(), frame, heap, arguments, expr);
 	}
 
 	// =============================================================
@@ -1425,18 +1471,18 @@ public class Interpreter {
 		}
 	}
 
-	public void checkTypeInvariants(Type variables, RValue[] values, Tuple<Expr> rvals, CallStack frame) {
+	public void checkTypeInvariants(Type variables, RValue[] values, Tuple<Expr> rvals, CallStack frame, Heap heap) {
 		// This is a bit tricky because we have to account for multi-expressions which,
 		// as always, are annoying.
 		int index = 0;
 		for (int i = 0; i != rvals.size(); ++i) {
 			Expr rval = rvals.get(i);
-			checkTypeInvariants(variables.dimension(index), values[index++], frame, rval);
+			checkTypeInvariants(variables.dimension(index), values[index++], frame, heap, rval);
 		}
 	}
 
-	public void checkTypeInvariants(Type type, RValue value, CallStack frame, SyntacticItem context) {
-		if (value.is(type, frame).boolValue() == false) {
+	public void checkTypeInvariants(Type type, RValue value, CallStack frame, Heap heap, SyntacticItem context) {
+		if (value.is(type, frame, heap).boolValue() == false) {
 			throw new RuntimeError(WyilFile.RUNTIME_TYPEINVARIANT_FAILURE, frame, context);
 		}
 	}
@@ -1449,14 +1495,14 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(int code, CallStack frame, Tuple<Expr> invariants, SyntacticItem context) {
+	public void checkInvariants(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, SyntacticItem context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
-			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame, heap);
 			// Check whether it holds or not
 			if (b == RValue.False) {
-				if(context == null) {
+				if (context == null) {
 					throw new RuntimeError(code, frame, invariant);
 				} else {
 					throw new RuntimeError(code, frame, context, invariant);
@@ -1464,34 +1510,6 @@ public class Interpreter {
 			}
 		}
 	}
-
-
-	/**
-	 * Store required parts of the prestate into the frame. For example, consider
-	 * this method:
-	 *
-	 * <pre>
-	 * method m(&int p)
-	 * ensures *p == old(*p):
-	 *    ...
-	 * </pre>
-	 *
-	 * In this method, we need to stash the value of <code>*p</code> on entry.
-	 */
-	private void stashRequiredPrestate(CallStack frame, Tuple<Expr> invariants) {
-		AbstractVisitor v = new AbstractVisitor(Build.NULL_METER) {
-			@Override
-			public void visitOld(Expr.Old expr) {
-				System.out.println("FOUND ONE!");
-			}
-		};
-		//
-		for(int i=0;i!=invariants.size();++i) {
-			v.visitExpression(invariants.get(i));
-		}
-		//
-	}
-
 
 	/**
 	 * Evaluate zero or more conditional expressions, and check whether any is
@@ -1501,11 +1519,11 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkPrecondition(int code, CallStack frame, Tuple<Expr> invariants, SyntacticItem context) {
+	public void checkPrecondition(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, SyntacticItem context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
-			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame, heap);
 			// Check whether it holds or not
 			if (b == RValue.False) {
 				if (context != null) {
@@ -1525,11 +1543,11 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(int code, CallStack frame, Expr... invariants) {
+	public void checkInvariants(int code, CallStack frame, Heap heap, Expr... invariants) {
 		for (int i = 0; i != invariants.length; ++i) {
 			Expr invariant = invariants[i];
 			// Execute invariant
-			RValue.Bool b = executeExpression(BOOL_T, invariant, frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariant, frame, heap);
 			// Check whether it holds or not
 			if (b == RValue.False) {
 				throw new RuntimeError(code, frame, invariant);
@@ -1565,7 +1583,7 @@ public class Interpreter {
 
 	private void checkForTimeout(CallStack frame) {
 		long time = System.currentTimeMillis();
-		if(time > frame.getTimeout()) {
+		if (time > frame.getTimeout()) {
 			throw new TimeoutException("timeout!");
 		}
 	}
@@ -1581,6 +1599,7 @@ public class Interpreter {
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
 
+	private static final Identifier OLD = new Identifier("old");
 	private static final Class<RValue> ANY_T = RValue.class;
 	private static final Class<RValue.Bool> BOOL_T = RValue.Bool.class;
 	private static final Class<RValue.Byte> BYTE_T = RValue.Byte.class;
@@ -1631,6 +1650,46 @@ public class Interpreter {
 		}
 	}
 
+	public final class Heap extends ConcreteSemantics.RValue {
+		private ArrayList<RValue> values;
+
+		public Heap() {
+			this.values = new ArrayList<>();
+		}
+
+		public Heap(Collection<RValue> values) {
+			this.values = new ArrayList<>(values);
+		}
+
+		public int alloc(RValue value) {
+			int address = values.size();
+			values.add(value);
+			return address;
+		}
+
+		public void dealloc(int address) {
+			values.set(address, null);
+		}
+
+		public RValue read(int address) {
+			return values.get(address);
+		}
+
+		public RValue write(int address, RValue val) {
+			return values.set(address, val);
+		}
+
+		@Override
+		public Heap clone() {
+			return new Heap(values);
+		}
+
+		@Override
+		public Value toValue() {
+			throw new UnsupportedOperationException();
+		}
+	}
+
 	public final class CallStack {
 		private CallStack parent;
 		private long timeout;
@@ -1649,10 +1708,14 @@ public class Interpreter {
 		}
 
 		private CallStack(CallStack parent, Decl.Named context) {
+			this(parent, new HashMap<>(), context);
+		}
+
+		private CallStack(CallStack parent, HashMap<Identifier, RValue> locals, Decl.Named context) {
 			this.parent = parent;
 			this.timeout = parent.timeout;
 			this.context = context;
-			this.locals = new HashMap<>();
+			this.locals = locals;
 			this.statics = parent.statics;
 			this.callables = parent.callables;
 		}
@@ -1669,11 +1732,11 @@ public class Interpreter {
 			locals.put(name, value);
 		}
 
-		public Map<Identifier,RValue> getLocals() {
+		public Map<Identifier, RValue> getLocals() {
 			return locals;
 		}
 
-		public Map<QualifiedName,RValue> getStatics() {
+		public Map<QualifiedName, RValue> getStatics() {
 			return statics;
 		}
 
@@ -1692,15 +1755,21 @@ public class Interpreter {
 		}
 
 		public CallStack enter(Decl.Named<?> context) {
-			return new CallStack(this, context);
+			CallStack cs = new CallStack(this, context);
+			// When a property is called, we cannot tell whether it requires a prestate or
+			// not.  Therefore, we copy over any existing prestate.
+			if(context instanceof Decl.Variant) {
+				cs.putLocal(OLD, locals.get(OLD));
+			}
+			return cs;
 		}
 
-		public <T extends RValue> T execute(Class<T> expected, Expr expr, CallStack frame) {
-			return Interpreter.this.executeExpression(expected, expr, frame);
+		public <T extends RValue> T execute(Class<T> expected, Expr expr, CallStack frame, Heap heap) {
+			return Interpreter.this.executeExpression(expected, expr, frame, heap);
 		}
 
 		public CallStack setTimeout(long timeout) {
-			if(timeout != Long.MAX_VALUE) {
+			if (timeout != Long.MAX_VALUE) {
 				long start = System.currentTimeMillis();
 				this.timeout = start + timeout;
 			}
@@ -1709,10 +1778,9 @@ public class Interpreter {
 
 		@Override
 		public CallStack clone() {
-			CallStack frame = new CallStack(this, this.context);
+			CallStack frame = new CallStack(this, new HashMap<>(locals), this.context);
 			// Reset parent
 			frame.parent = this.parent;
-			frame.locals.putAll(locals);
 			return frame;
 		}
 
@@ -1730,22 +1798,23 @@ public class Interpreter {
 		}
 
 		public StackFrame[] toStackFrame() {
-			if(context == null) {
+			if (context == null) {
 				return new StackFrame[0];
 			} else {
 				Value[] arguments;
 				//
-				switch(context.getOpcode()) {
+				switch (context.getOpcode()) {
 				case DECL_function:
 				case DECL_method:
-				case DECL_property: {
+				case DECL_property:
+				case DECL_variant: {
 					Decl.Callable fm = (Decl.Callable) context;
 					Tuple<Decl.Variable> parameters = fm.getParameters();
 					arguments = new Value[parameters.size()];
-					for(int i=0;i!=arguments.length;++i) {
+					for (int i = 0; i != arguments.length; ++i) {
 						Decl.Variable parameter = parameters.get(i);
 						// FIXME: why is this needed?
-						if(getLocal(parameter.getName()) != null) {
+						if (getLocal(parameter.getName()) != null) {
 							arguments[i] = getLocal(parameter.getName()).toValue();
 						} else {
 							arguments[i] = new Value.Null();
@@ -1771,7 +1840,7 @@ public class Interpreter {
 				// Extract parent stack frame (if applicable)
 				StackFrame[] sf = parent != null ? parent.toStackFrame() : new StackFrame[0];
 				// Append new item
-				return ArrayUtils.append(new StackFrame(context, new Tuple<>(arguments)),sf);
+				return ArrayUtils.append(new StackFrame(context, new Tuple<>(arguments)), sf);
 			}
 		}
 
@@ -1790,6 +1859,7 @@ public class Interpreter {
 					case DECL_function:
 					case DECL_method:
 					case DECL_property:
+					case DECL_variant:
 						Decl.Callable decl = (Decl.Callable) d;
 						Map<String, Decl.Callable> map = callables.get(decl.getQualifiedName());
 						if (map == null) {
@@ -1811,9 +1881,9 @@ public class Interpreter {
 						if (!statics.containsKey(decl.getQualifiedName())) {
 							// Static variable has not been initialised yet, therefore force its
 							// initialisation.
-							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this, null);
 							// Check type invariants.
-							checkTypeInvariants(decl.getType(), value, this, decl);
+							checkTypeInvariants(decl.getType(), value, this, null, decl);
 							// Done.
 							statics.put(decl.getQualifiedName(), value);
 						}
@@ -1872,24 +1942,14 @@ public class Interpreter {
 		 * The declaration being invoked
 		 */
 		private final Decl.FunctionOrMethod context;
-		/**
-		 * Arguments provided to the invocation.  These are needed for evaluating the post-condition at the point of a return.
-		 * @param context
-		 */
-		private final RValue[] args;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod context, RValue[] args) {
+		public FunctionOrMethodScope(Decl.FunctionOrMethod context) {
 			super(null);
 			this.context = context;
-			this.args = args;
 		}
 
 		public Decl.FunctionOrMethod getContext() {
 			return context;
-		}
-
-		public RValue[] getArguments() {
-			return args;
 		}
 	}
 }

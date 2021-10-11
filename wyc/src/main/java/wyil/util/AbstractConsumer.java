@@ -70,6 +70,7 @@ public abstract class AbstractConsumer<T> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			visitCallable((Decl.Callable) decl, data);
 			break;
 		default:
@@ -134,6 +135,9 @@ public abstract class AbstractConsumer<T> {
 		case DECL_property:
 			visitProperty((Decl.Property) decl, data);
 			break;
+		case DECL_variant:
+			visitVariant((Decl.Variant) decl, data);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -153,6 +157,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitProperty(Decl.Property decl, T data) {
+		visitVariables(decl.getParameters(), data);
+		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getInvariant(), data);
+	}
+
+	public void visitVariant(Decl.Variant decl, T data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
 		visitExpressions(decl.getInvariant(), data);

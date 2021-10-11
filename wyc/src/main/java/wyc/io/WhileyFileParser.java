@@ -92,6 +92,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.This;
 import static wyc.io.WhileyFileLexer.Token.Kind.Tilde;
 import static wyc.io.WhileyFileLexer.Token.Kind.QuestionMark;
 import static wyc.io.WhileyFileLexer.Token.Kind.Unsafe;
+import static wyc.io.WhileyFileLexer.Token.Kind.Variant;
 import static wyc.io.WhileyFileLexer.Token.Kind.VerticalBar;
 import static wyc.io.WhileyFileLexer.Token.Kind.Where;
 import static wyc.io.WhileyFileLexer.Token.Kind.While;
@@ -240,6 +241,8 @@ public class WhileyFileParser {
 			return parseFunctionOrMethodDeclaration(meter, modifiers, false);
 		} else if (lookahead.kind == Property) {
 			return parsePropertyDeclaration(meter, modifiers);
+		} else if (lookahead.kind == Variant) {
+			return parseVariantDeclaration(meter, modifiers);
 		} else {
 			// Fall back
 			return parseStaticVariableDeclaration(meter, modifiers);
@@ -500,11 +503,25 @@ public class WhileyFileParser {
 		Identifier name = parseIdentifier();
 		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
 		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
-		Tuple<Expr> invariant = parseInvariant(scope.setContext(Context.PROPERTY), Where);
+		Tuple<Expr> invariant = parseInvariant(scope, Where);
 		//
 		int end = index;
 		matchEndLine();
 		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, invariant), start);
+	}
+
+	private Decl.Variant parseVariantDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+		EnclosingScope scope = new EnclosingScope(meter);
+		int start = index;
+		match(Variant);
+		Identifier name = parseIdentifier();
+		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
+		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
+		Tuple<Expr> invariant = parseInvariant(scope.setContext(Context.VARIANT), Where);
+		//
+		int end = index;
+		matchEndLine();
+		return annotateSourceLocation(new Decl.Variant(modifiers, name, template, parameters, invariant), start);
 	}
 
 	public Tuple<Decl.Variable> parseParameters(EnclosingScope scope, Token.Kind terminator) {
@@ -3041,7 +3058,7 @@ public class WhileyFileParser {
 		switch(scope.getContext()) {
 		case LOOPINVARIANT:
 		case METHOD_POSTCONDITION:
-		case PROPERTY:
+		case VARIANT:
 			break;
 		default:
 			syntaxError(WyilFile.OLD_REQUIRES_TWOSTATES, t);
@@ -4740,7 +4757,7 @@ public class WhileyFileParser {
 		LOOP,
 		LOOPINVARIANT,
 		METHOD_POSTCONDITION,
-		PROPERTY,
+		VARIANT,
 		OTHER
 	}
 
