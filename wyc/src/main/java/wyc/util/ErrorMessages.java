@@ -15,10 +15,10 @@ package wyc.util;
 
 import java.util.*;
 
+import jbfs.util.ArrayUtils;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.ArrayUtils;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Template;
@@ -187,6 +187,7 @@ public class ErrorMessages {
 	public static final Message MISSING_TYPE_VARIABLE = new StaticMessage("missing type variable(s)");
 	public static final Message BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
 	public static final Message CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
+	public static final Message OLD_REQUIRES_TWOSTATES = new StaticMessage("old requires context with pre- and post-states");
 
 	// ========================================================================
 	// Name Resolution
@@ -246,6 +247,7 @@ public class ErrorMessages {
 	public static final Message METHODCALL_NOT_PERMITTED = new StaticMessage("method invocation not permitted");
 	public static final Message UNSAFECALL_NOT_PERMITTED = new StaticMessage("unsafe invocation not permitted in safe context");
 	public static final Message REFERENCE_ACCESS_NOT_PERMITTED = new StaticMessage("dereference not permitted");
+	public static final Message VARIANTCALL_NOT_PERMITTED = new StaticMessage("variant invocation not permitted");
 
 	// ========================================================================
 	// Ambiguous Coercion Check
@@ -347,6 +349,7 @@ public class ErrorMessages {
 			MISSING_TYPE_VARIABLE, // 317
 			BREAK_OUTSIDE_SWITCH_OR_LOOP, // 318
 			CONTINUE_OUTSIDE_LOOP, // 319
+			OLD_REQUIRES_TWOSTATES, // 320
 		},
 		{
 			SUBTYPE_ERROR,     // 400
@@ -390,6 +393,7 @@ public class ErrorMessages {
 			DEREFERENCED_DYNAMICALLY_SIZED,   // 611;
 			DEREFERENCED_UNKNOWN_TYPE,   // 612;
 			UNSAFECALL_NOT_PERMITTED,   // 613
+			VARIANTCALL_NOT_PERMITTED,   // 614
 		},
 		{
 			// Verification

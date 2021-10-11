@@ -18,12 +18,15 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ByteRepository;
+import jbfs.util.DirectoryRoot;
+import jbfs.util.Pair;
+import jbfs.util.Trie;
+import jbfs.util.ZipFile;
 import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.ByteRepository;
-import wycc.lang.Build;
-import wycc.lang.Content;
 import wycc.lang.SyntacticException;
-import wycc.util.DirectoryRoot;
 import wycc.util.Logger;
 import wycli.cfg.*;
 import wycli.cfg.Configuration.Schema;
@@ -35,9 +38,7 @@ import wycli.util.LocalPackageRepository;
 import wycli.util.RemotePackageRepository;
 import wycli.util.StdPackageResolver;
 import wycli.util.CommandParser;
-import wycc.util.Pair;
-import wycc.util.Trie;
-import wycc.util.ZipFile;
+
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -478,7 +479,7 @@ public class Main implements Command.Environment {
 				r.parent = this;
 				return r;
 			} else {
-				return wycc.lang.Build.NULL_METER;
+				return jbfs.core.Build.NULL_METER;
 			}
 		}
 

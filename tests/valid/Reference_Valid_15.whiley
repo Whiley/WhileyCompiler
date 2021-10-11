@@ -2,9 +2,9 @@ public export method test():
     &(null|int) c = new (null|int) 1
     &(null|int) d = c
     *c = 123
-    assume (*c) == 123
-    assume (*d) == 123
+    assert (*c) == 123
+    assert (*d) == 123
     *c = null
-    assume (*c) == null
-    assume (*d) == null
+    assert (*c) == null
+    assert (*d) == null
 

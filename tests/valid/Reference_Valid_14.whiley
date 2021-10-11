@@ -4,6 +4,6 @@ public export method test():
     (*c)[0] = 3
     (*c)[1] = 4
     (*c)[2] = 5    
-    assume (*c) == [3,4,5]
-    assume (*d) == [3,4,5]
+    assert (*c) == [3,4,5]
+    assert (*d) == [3,4,5]
 

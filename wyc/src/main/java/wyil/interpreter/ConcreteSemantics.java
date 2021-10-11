@@ -50,15 +50,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 	}
 
 	@Override
-	public RValue.Cell Cell(AbstractSemantics.RValue value) {
-		return new RValue.Cell((RValue) value);
-	}
-
-
-	@Override
-	public RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
-		RValue.Cell cell = (RValue.Cell) value;
-		return new RValue.Reference(cell);
+	public RValue.Reference Reference(int address) {
+		return new RValue.Reference(address);
 	}
 
 
@@ -122,13 +115,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 			return new RValue.Field(name,value);
 		}
 
-		public static RValue.Cell Cell(AbstractSemantics.RValue value) {
-			return new RValue.Cell((RValue) value);
-		}
-
-		public static RValue.Reference Reference(AbstractSemantics.RValue.Cell value) {
-			RValue.Cell cell = (RValue.Cell) value;
-			return new RValue.Reference(cell);
+		public static RValue.Reference Reference(int address) {
+			return new RValue.Reference(address);
 		}
 
 		public static RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame) {
@@ -143,7 +131,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @throws ResolutionError
 		 */
 		@Override
-		public Bool is(Type type, Interpreter.CallStack frame) {
+		public Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 			// Handle generic cases here
 			if (type instanceof Type.Void) {
 				return False;
@@ -151,16 +139,16 @@ public class ConcreteSemantics implements AbstractSemantics {
 				Type.Nominal nom = (Type.Nominal) type;
 				Decl.Type decl = nom.getLink().getTarget();
 				Decl.Variable var = decl.getVariableDeclaration();
-				if(is(nom.getConcreteType(), frame) == True) {
+				if(is(nom.getConcreteType(), frame, heap) == True) {
 					WyilFile.Tuple<Expr> invariant = decl.getInvariant();
-					return checkInvariant(var,invariant,frame);
+					return checkInvariant(var, invariant, frame, heap);
 				}
 				return False;
 			} else if (type instanceof Type.Union) {
 				Type.Union t = (Type.Union) type;
 				for (int i=0;i!=t.size();++i) {
 					Type element = t.get(i);
-					if (this.is(element, frame) == True) {
+					if (this.is(element, frame, heap) == True) {
 						return True;
 					}
 				}
@@ -175,7 +163,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				// equivalent to its element type.
 				Type.Tuple t = (Type.Tuple) type;
 				if(t.size() == 1) {
-					return this.is(t.get(0),frame);
+					return this.is(t.get(0),frame,heap);
 				}
 			}
 			// Default case.
@@ -240,7 +228,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @param invariant
 		 * @return
 		 */
-		public Bool checkInvariant(Decl.Variable var, WyilFile.Tuple<Expr> invariant, Interpreter.CallStack frame) {
+		public Bool checkInvariant(Decl.Variable var, WyilFile.Tuple<Expr> invariant, Interpreter.CallStack frame, Interpreter.Heap heap) {
 			if (invariant.size() > 0) {
 				// One or more type invariants to check. Therefore, we need
 				// to execute the invariant and determine whether or not it
@@ -248,7 +236,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				frame = frame.enter(var);
 				frame.putLocal(var.getName(), this);
 				for (int i = 0; i != invariant.size(); ++i) {
-					RValue.Bool b = frame.execute(Bool.class, invariant.get(i), frame);
+					RValue.Bool b = frame.execute(Bool.class, invariant.get(i), frame, heap);
 					if (b == False) {
 						return b;
 					}
@@ -263,11 +251,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			private Null() {
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Null) {
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 			@Override
@@ -307,11 +295,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return value;
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Bool) {
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 			@Override
@@ -362,11 +350,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if (type instanceof Type.Byte) {
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -442,11 +430,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.value = value;
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Int) {
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 			@Override
@@ -538,17 +526,17 @@ public class ConcreteSemantics implements AbstractSemantics {
 				this.elements = elements;
 			}
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Array) {
 					Type.Array t = (Type.Array) type;
 					for (int i = 0; i != elements.length; ++i) {
-						if (elements[i].is(t.getElement(), frame) == False) {
+						if (elements[i].is(t.getElement(), frame, heap) == False) {
 							return False;
 						}
 					}
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -633,20 +621,20 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Tuple) {
 					Type.Tuple t = (Type.Tuple) type;
 					if(t.size() != size()) {
 						return False;
 					}
 					for (int i = 0; i != elements.length; ++i) {
-						if (elements[i].is(t.get(i), frame) == False) {
+						if (elements[i].is(t.get(i), frame, heap) == False) {
 							return False;
 						}
 					}
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -764,7 +752,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
 					WyilFile.Tuple<Type.Field> tFields = t.getFields();
@@ -773,7 +761,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						if (hasField(f.getName())) {
 							RValue val = read(f.getName());
 							// Matching field
-							if (val.is(f.getType(), frame) == False) {
+							if (val.is(f.getType(), frame, heap) == False) {
 								// Field not member of type
 								return False;
 							}
@@ -784,7 +772,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					}
 					return (t.isOpen() || fields.length == tFields.size()) ? True : False;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -871,7 +859,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @param arguments
 			 * @return
 			 */
-			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context);
+			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem context);
 
 			/**
 			 * Get the callable type for this lambda
@@ -886,8 +874,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 					return new RValue.Lambda() {
 
 						@Override
-						public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
-							return RValue.Lambda.this.execute(interpreter, arguments, context);
+						public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem context) {
+							return RValue.Lambda.this.execute(interpreter, arguments, heap, context);
 						}
 
 						@Override
@@ -901,7 +889,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 						}
 
 						@Override
-						public RValue.Bool is(Type t, Interpreter.CallStack frame) {
+						public RValue.Bool is(Type t, Interpreter.CallStack frame, Interpreter.Heap heap) {
 							if(t instanceof Type.Callable) {
 								Type.Callable tc = (Type.Callable) t;
 								if(tc.equals(type)) {
@@ -910,7 +898,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 									return False;
 								}
 							} else {
-								return super.is(t, frame);
+								return super.is(t, frame, heap);
 							}
 						}
 					};
@@ -958,12 +946,12 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @return
 			 */
 			@Override
-			public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem item) {
-				return interpreter.execute(context, frame, arguments, item);
+			public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem item) {
+				return interpreter.execute(context, frame, heap, arguments, item);
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Callable) {
 					Type.Callable lhs = context.getType();
 					Type.Callable rhs = (Type.Callable) type;
@@ -972,7 +960,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					// questions as to what should and should not be support here.
 					return True;
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -999,24 +987,24 @@ public class ConcreteSemantics implements AbstractSemantics {
 		}
 
 		public final static class Reference extends RValue implements AbstractSemantics.RValue.Reference {
-			private final RValue.Cell referent;
+			private final int address;
 
-			private Reference(RValue.Cell referent) {
-				this.referent = referent;
+			private Reference(int address) {
+				this.address = address;
 			}
 
 			@Override
-			public RValue.Cell deref() {
-				return referent;
+			public int deref() {
+				return address;
 			}
 
 			@Override
-			public RValue.Bool is(Type type, Interpreter.CallStack frame) {
+			public RValue.Bool is(Type type, Interpreter.CallStack frame, Interpreter.Heap heap) {
 				if(type instanceof Type.Reference) {
 					Type.Reference ref = (Type.Reference) type;
-					return referent.value.is(ref.getElement(), frame);
+					return heap.read(address).is(ref.getElement(), frame, heap);
 				} else {
-					return super.is(type, frame);
+					return super.is(type, frame, heap);
 				}
 			}
 
@@ -1031,93 +1019,22 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 			@Override
 			public boolean equals(Object o) {
-				return (o instanceof RValue.Reference) && (referent == ((RValue.Reference) o).referent);
+				return (o instanceof RValue.Reference) && address == ((RValue.Reference)o).address;
 			}
 
 			@Override
 			public int hashCode() {
-				return System.identityHashCode(referent);
+				return address;
 			}
 
 			@Override
 			public String toString() {
-				return "&" + System.identityHashCode(referent) + "(" + referent.toString() + ")";
+				return "&" + address;
 			}
 
 			@Override
 			public Value toValue() {
 				return new Value.UTF8(toString());
-			}
-		}
-
-		public final static class Cell extends RValue implements AbstractSemantics.RValue.Cell {
-			private RValue value;
-
-			private Cell(RValue value) {
-				this.value = value;
-			}
-
-			@Override
-			public RValue read() {
-				return value;
-			}
-
-			@Override
-			public void write(AbstractSemantics.RValue value) {
-				this.value = (RValue) value;
-			}
-
-			@Override
-			public String toString() {
-				return toString(value);
-			}
-
-			@Override
-			public Value toValue() {
-				// FIXME: need to implement this
-				return new Value.Null();
-			}
-
-			/**
-			 * This method exists because we currently have a problem related to the storage of heap cells as Values in
-			 * the WyIL binary file.  Since the format of that file is likely to change in the near future, I'm going to
-			 * defer this.  See #1045.
-			 *
-			 * @param rval
-			 * @return
-			 */
-			private static String toString(RValue rval) {
-				if (rval instanceof RValue.Bool || rval instanceof RValue.Byte || rval instanceof RValue.Int || rval instanceof RValue.Null) {
-					return rval.toString();
-				} else if(rval instanceof RValue.Array){
-					RValue.Array arr = (RValue.Array) rval;
-					RValue[] elements = arr.elements;
-					String r = "[";
-					for(int i=0;i!=elements.length;++i) {
-						if(i != 0) {
-							r += ",";
-						}
-						r += toString(elements[i]);
-					}
-					return r + "]";
-				} else if(rval instanceof RValue.Record){
-					RValue.Record rec = (RValue.Record) rval;
-					RValue.Field[] elements = rec.fields;
-					String r = "{";
-					for(int i=0;i!=elements.length;++i) {
-						if(i != 0) {
-							r += ",";
-						}
-						r += elements[i].name + ": ";
-						r += toString(elements[i].value);
-					}
-					return r + "}";
-				} else if(rval instanceof RValue.Reference) {
-					RValue.Reference ref = (RValue.Reference) rval;
-					return "&" + System.identityHashCode(ref.referent);
-				} else {
-					return "...";
-				}
 			}
 		}
 	}

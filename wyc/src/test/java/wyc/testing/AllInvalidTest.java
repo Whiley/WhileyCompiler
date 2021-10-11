@@ -28,8 +28,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import jbfs.util.Pair;
 import wyc.util.TestUtils;
-import wycc.util.Pair;
+
 
 /**
  * Run through all invalid test cases with verification enabled. Since every
@@ -154,6 +155,8 @@ public class AllInvalidTest {
 		IGNORED.put("IntDiv_Invalid_1", "???");
 		IGNORED.put("Lambda_Invalid_3", "???");
 		IGNORED.put("Parsing_Invalid_32", "???");
+		IGNORED.put("Old_Invalid_7", "???");
+		IGNORED.put("Old_Invalid_8", "???");
 		IGNORED.put("Property_Invalid_2", "???");
 		IGNORED.put("Property_Invalid_3", "???");
 		IGNORED.put("Property_Invalid_4", "???");

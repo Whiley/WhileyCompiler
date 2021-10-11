@@ -15,10 +15,11 @@ package wycc.io;
 
 import java.io.*;
 
+import jbfs.util.Pair;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticHeap.Schema;
 import wycc.lang.SyntacticItem;
-import wycc.util.Pair;
+
 
 /**
  * <p>

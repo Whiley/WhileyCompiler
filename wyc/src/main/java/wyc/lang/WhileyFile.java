@@ -19,10 +19,10 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 
+import jbfs.core.Content;
+import jbfs.core.SourceFile;
+import jbfs.util.Trie;
 import wyc.io.WhileyFileLexer;
-import wycc.lang.Content;
-import wycc.lang.SourceFile;
-import wycc.util.Trie;
 
 public class WhileyFile extends SourceFile {
 	// =========================================================================

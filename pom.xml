@@ -11,7 +11,7 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc-all</artifactId>
-  <version>0.9.6</version>
+  <version>0.9.7</version>
   <packaging>pom</packaging>
   
   <modules>
@@ -59,11 +59,16 @@
 
    <dependencies>
      <dependency>
+      <groupId>org.whiley</groupId>
+      <artifactId>jbuildfs</artifactId>
+      <version>1.0.1</version>
+     </dependency>
+     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
       <scope>test</scope>
-    </dependency>
+    </dependency>     
   </dependencies>
 
   <!-- ============================================== -->

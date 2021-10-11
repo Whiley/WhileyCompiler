@@ -21,12 +21,13 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import jbfs.core.Build;
+import jbfs.util.ArrayUtils;
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
 import wyil.check.FlowTypeUtils.*;
 import static wyil.check.FlowTypeUtils.*;
 import wyil.util.*;
@@ -216,9 +217,12 @@ public class FlowTypeCheck implements Compiler.Check {
 		case DECL_method:
 			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
 			break;
-		default:
 		case DECL_property:
 			checkPropertyDeclaration((Decl.Property) decl);
+			break;
+		default:
+		case DECL_variant:
+			checkVariantDeclaration((Decl.Variant) decl);
 		}
 	}
 
@@ -302,6 +306,13 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	public void checkPropertyDeclaration(Decl.Property d) {
+		// Construct initial environment
+		Environment environment = new Environment();
+		// Check invariant (i.e. requires clauses) provided.
+		checkConditions(d.getInvariant(), true, environment);
+	}
+
+	public void checkVariantDeclaration(Decl.Variant d) {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Check invariant (i.e. requires clauses) provided.
@@ -1439,6 +1450,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pushFieldDereference(var, (Expr.FieldDereference) expression, typing, environment);
 		case EXPR_new:
 			return pushNew(var, (Expr.New) expression, typing, environment);
+		case EXPR_old:
+			return pushOld(var, (Expr.Old) expression, typing, environment);
 		case EXPR_lambdaaccess:
 			return pushLambdaAccess(var, (Expr.LambdaAccess) expression, typing, environment);
 		case DECL_lambda:
@@ -1837,6 +1850,13 @@ public class FlowTypeCheck implements Compiler.Check {
 		return pushExpression(expr.getOperand(), r -> getReferenceElement(r.get(var)), nTyping, environment);
 	}
 
+	private Typing pushOld(int var, Expr.Old expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// >>> Propagate forwards into children
+		return pushExpression(expr.getOperand(), r -> r.get(var), typing, environment);
+	}
+
 	private Typing pushRecordAccess(int var, Expr.RecordAccess expr, Typing typing, Environment environment) {
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
@@ -2017,6 +2037,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pullFieldDereference((Expr.FieldDereference) expression, typing, environment);
 		case EXPR_new:
 			return pullNew((Expr.New) expression, typing, environment);
+		case EXPR_old:
+			return pullOld((Expr.Old) expression, typing, environment);
 		case EXPR_lambdaaccess:
 			return pullLambdaAccess((Expr.LambdaAccess) expression, typing, environment);
 		case DECL_lambda:
@@ -2259,7 +2281,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
 			// fresh (existential) type for each position and subsitute them through.
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
 			row = p.first();
 			templateArguments = new Tuple<>(p.second());
 		}
@@ -2326,6 +2348,17 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing.register(typeStandardExpression(expr, element + 1));
 		//
 		return typing.map(row -> row.add(new Type.Reference(row.get(element))));
+	}
+
+	private Typing pullOld(Expr.Old expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into children
+		typing = pullExpression(expr.getOperand(), true, typing, environment);
+		// <<< Propagate backwards
+		final int element = typing.top();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, element + 1));
+		//
+		return typing.map(row -> row.add(row.get(element)));
 	}
 
 	private Typing pullRecordAccess(Expr.RecordAccess expr, Typing typing, Environment environment) {
@@ -2550,7 +2583,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// specific to individual rows.
 			return new Typing.Row[] { row.set(var, Type.AnyArray) };
 		} else if (type instanceof Type.Existential) {
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array arr_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
@@ -2610,7 +2643,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
 			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
 		} else if (type instanceof Type.Existential) {
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array rec_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
@@ -2669,7 +2702,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
@@ -2736,7 +2769,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Existential) {
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
 			Type.Existential[] elements = p.second();
 			Type tup_t = Type.Tuple.create(elements);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
@@ -2874,7 +2907,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
 			Type.Existential param = p.second()[0];
 			Type.Existential ret = p.second()[1];
 			Type.Callable fun_t = new Type.Function(param, ret);

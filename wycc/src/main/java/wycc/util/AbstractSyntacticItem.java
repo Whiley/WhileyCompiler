@@ -17,6 +17,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import jbfs.util.ArrayUtils;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 

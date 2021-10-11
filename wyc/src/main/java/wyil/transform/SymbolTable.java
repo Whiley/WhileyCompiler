@@ -34,7 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;

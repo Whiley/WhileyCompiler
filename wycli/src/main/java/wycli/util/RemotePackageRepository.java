@@ -17,13 +17,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+
+import jbfs.core.Content;
+import jbfs.util.Trie;
+import jbfs.util.ZipFile;
 import wycli.cfg.Configuration;
 import wycli.lang.Command;
 import wycli.lang.Package;
 import wycli.lang.Semantic;
-import wycc.lang.Content;
-import wycc.util.Trie;
-import wycc.util.ZipFile;
 
 public class RemotePackageRepository extends LocalPackageRepository {
 

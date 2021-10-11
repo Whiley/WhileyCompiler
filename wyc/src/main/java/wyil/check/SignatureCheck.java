@@ -13,7 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import wycc.lang.Build;
 import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
@@ -23,6 +22,8 @@ import wyil.util.TypeMangler;
 import wyc.util.ErrorMessages;
 
 import java.util.HashSet;
+
+import jbfs.core.Build;
 
 /**
  * <p>

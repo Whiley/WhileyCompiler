@@ -22,6 +22,7 @@ import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
+import jbfs.core.Build;
 import wycc.lang.*;
 import wyc.util.ErrorMessages;
 
@@ -106,6 +107,18 @@ public class DefiniteAssignmentCheck
 	 */
 	@Override
 	public ControlFlow visitProperty(Decl.Property declaration, DefinitelyAssignedSet dummy) {
+		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
+		// Iterate through each statement in the body of the function or method,
+		// updating the set of definitely assigned variables as appropriate.
+		visitExpressions(declaration.getInvariant(),environment);
+		//
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitVariant(Decl.Variant declaration, DefinitelyAssignedSet dummy) {
 		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
 		// Definitely assigned variables includes all parameters.
 		environment = environment.addAll(declaration.getParameters());

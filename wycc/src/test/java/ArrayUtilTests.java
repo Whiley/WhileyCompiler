@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 import org.junit.*;
 
-import wycc.util.ArrayUtils;
+import jbfs.util.ArrayUtils;
 
 public class ArrayUtilTests {
 	@Test public void range_1() {

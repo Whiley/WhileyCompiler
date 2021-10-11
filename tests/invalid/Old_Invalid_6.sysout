@@ -1,0 +1,3 @@
+Old_Invalid_6.whiley:2: unable to resolve name
+ensures old(x >= 0):
+            ^

@@ -22,10 +22,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.Trie;
 import wycc.lang.*;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractSyntacticItem;
-import wycc.util.Trie;
 
 public class ConfigFile extends AbstractCompilationUnit<ConfigFile> implements Build.Artifact {
 	// =========================================================================

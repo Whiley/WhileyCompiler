@@ -13,6 +13,10 @@
 // limitations under the License.
 package wyil.check;
 
+import java.util.BitSet;
+
+import jbfs.core.Build;
+
 import static wyil.lang.WyilFile.*;
 
 import wyc.util.ErrorMessages;
@@ -20,10 +24,6 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
-
-import java.util.BitSet;
-
-import wycc.lang.Build;
 import wycc.lang.SyntacticItem;
 
 /**
@@ -122,6 +122,15 @@ public class DefiniteUnassignmentCheck
 	 */
 	@Override
 	public ControlFlow visitProperty(Decl.Property declaration, MaybeAssignedSet dummy) {
+		MaybeAssignedSet environment = new MaybeAssignedSet();
+		// Definitely assigned variables includes all parameters.
+		environment = environment.addAll(declaration.getParameters());
+		//
+		return null;
+	}
+
+	@Override
+	public ControlFlow visitVariant(Decl.Variant declaration, MaybeAssignedSet dummy) {
 		MaybeAssignedSet environment = new MaybeAssignedSet();
 		// Definitely assigned variables includes all parameters.
 		environment = environment.addAll(declaration.getParameters());

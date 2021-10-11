@@ -1,10 +1,17 @@
 type Node is &{ List next, int data }
 type List is null | Node
 
+variant unchanged(List l)
+where l is null || l->data == old(l->data)
+where l is null || l->next == old(l->next)
+where l is null || unchanged(l->next)
+
 method next(Node n) -> (List l):
     return n->next
 
-method size(List s, List e) -> int:
+method size(List s, List e) -> int
+ensures unchanged(s)
+ensures unchanged(e):
     //
     int count = 0
     //
@@ -23,7 +30,11 @@ public export method test():
     assume s0 == 0
     int s1 = size(l1,l0)    
     assume s1 == 1
-    int s2 = size(l2,l0)
+    assert l1->data == 1
+    int s2 = size(l2,l0)    
     assume s2 == 2
+    assert l2->data == 2
     int s3 = size(l2,l1)
     assume s3 == 1
+    assert l2->data == 2
+    assert l1->data == 1

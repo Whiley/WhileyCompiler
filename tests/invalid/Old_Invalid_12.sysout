@@ -1,0 +1,3 @@
+Old_Invalid_12.whiley:6: variant invocation not permitted
+    assert broken(x)
+           ^^^^^^^^^

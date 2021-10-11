@@ -14,10 +14,11 @@
 package wycli;
 
 import wycc.util.AbstractCompilationUnit;
-import wycc.util.Trie;
 import wycli.cfg.Configuration;
 
 import java.util.regex.Pattern;
+
+import jbfs.util.Trie;
 
 /**
  * Provides a single point of truth for all schemas used within this tool.

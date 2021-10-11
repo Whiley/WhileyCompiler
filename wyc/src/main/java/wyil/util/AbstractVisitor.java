@@ -15,7 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
@@ -73,6 +73,7 @@ public abstract class AbstractVisitor {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			visitCallable((Decl.Callable) decl);
 			break;
 		default:
@@ -136,6 +137,9 @@ public abstract class AbstractVisitor {
 		case DECL_property:
 			visitProperty((Decl.Property) decl);
 			break;
+		case DECL_variant:
+			visitVariant((Decl.Variant) decl);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -155,6 +159,12 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitProperty(Decl.Property decl) {
+		visitVariables(decl.getParameters());
+		visitVariables(decl.getReturns());
+		visitExpressions(decl.getInvariant());
+	}
+
+	public void visitVariant(Decl.Variant decl) {
 		visitVariables(decl.getParameters());
 		visitVariables(decl.getReturns());
 		visitExpressions(decl.getInvariant());
@@ -392,6 +402,7 @@ public abstract class AbstractVisitor {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -473,6 +484,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_new:
 			visitNew((Expr.New) expr);
+			break;
+		case EXPR_old:
+			visitOld((Expr.Old) expr);
 			break;
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -780,6 +794,10 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitNew(Expr.New expr) {
+		visitExpression(expr.getOperand());
+	}
+
+	public void visitOld(Expr.Old expr) {
 		visitExpression(expr.getOperand());
 	}
 

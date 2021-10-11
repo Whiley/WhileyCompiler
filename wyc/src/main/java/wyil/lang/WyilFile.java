@@ -27,9 +27,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ArrayUtils;
+import jbfs.util.Trie;
 import wycc.lang.CompilationUnit;
-import wycc.lang.Content;
 import wycc.lang.SyntacticHeap;
 import wycc.lang.SyntacticItem;
 import wycc.lang.SyntacticItem.Descriptor;
@@ -37,7 +39,6 @@ import wycc.util.*;
 import wycc.util.SectionedSchema.Section;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wycc.util.ArrayUtils;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
@@ -177,6 +178,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int DECL_variable = 29; // <THREE operands, ZERO>
 	public static final int DECL_link = 30; // <MANY operands, ZERO>
 	public static final int DECL_binding = 31; // <TWO operands, ZERO>
+	public static final int DECL_variant = 32; // <SIX operands, ZERO>
 	public static final int MOD_native = 48; // <ZERO operands, ZERO>
 	public static final int MOD_export = 49; // <ZERO operands, ZERO>
 	public static final int MOD_final = 50; // <ZERO operands, ZERO>
@@ -249,6 +251,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int EXPR_integergreaterthan = 195; // <TWO operands, ZERO>
 	public static final int EXPR_integergreaterequal = 196; // <TWO operands, ZERO>
 	public static final int EXPR_is = 197; // <TWO operands, ZERO>
+	public static final int EXPR_old = 198; // <ONE operands, ZERO>
 	public static final int EXPR_integernegation = 199; // <TWO operands, ZERO>
 	public static final int EXPR_integeraddition = 200; // <THREE operands, ZERO>
 	public static final int EXPR_integersubtraction = 201; // <THREE operands, ZERO>
@@ -1166,6 +1169,60 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+				}
+			};
+		}
+
+		/**
+		 * A variant is a two state property.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Variant extends Callable {
+			public Variant(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
+					Tuple<Decl.Variable> parameters, Tuple<Expr> invariant) {
+				super(DECL_variant, modifiers, name, template, parameters, new Tuple<Decl.Variable>(), invariant);
+			}
+
+			public Variant(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> invariant) {
+				super(DECL_variant, modifiers, name, template, parameters, returns, invariant);
+			}
+
+			@Override
+			public WyilFile.Type.Property getType() {
+				return new WyilFile.Type.Property(project(getParameters()));
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getInvariant() {
+				return (Tuple<Expr>) get(5);
+			}
+
+			@Override
+			public Stmt getBody() {
+				// FIXME: this doesn't make sense for properties. Realistically, this should be
+				// resolved when properties are changed from their current form into something
+				// more useful.
+				throw new UnsupportedOperationException();
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Variant clone(SyntacticItem[] operands) {
+				return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
 				}
@@ -2945,6 +3002,54 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				}
 			};
 		}
+
+		/**
+		 * Represents an <i>old expression</i> of the form "<code>old(e)</code>". This
+		 * can only appear in specification elements (i.e. it is a ghost expression),
+		 * and signals that the given expression should be evaluated in the heap as it
+		 * was on entry to the function or method.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Old extends AbstractExpr implements Expr, UnaryOperator {
+			public Old(Type type, Expr expr) {
+				super(EXPR_old, type, expr);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) operands[0];
+			}
+
+			@Override
+			public void setType(Type type) {
+				operands[0] = type;
+			}
+
+			@Override
+			public Expr getOperand() {
+				return (Expr) get(1);
+			}
+
+			@Override
+			public Old clone(SyntacticItem[] operands) {
+				return new Old((Type) operands[0], (Expr) operands[1]);
+			}
+
+			@Override
+			public String toString() {
+				return "old(" + getOperand() + ")";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_old") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Old((Type) operands[0], (Expr) operands[1]);
+				}
+			};
+		}
+
 
 		/**
 		 * Represents an abstract quantified expression of the form
@@ -7339,6 +7444,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int MISSING_TYPE_VARIABLE = 317; // "missing type variable(s)"
 	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 318; // "break outside switch or loop"
 	public static final int CONTINUE_OUTSIDE_LOOP = 319; // "continue outside loop"
+	public static final int OLD_REQUIRES_TWOSTATES = 320; // "old requires context with pre- and post-states"
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;
@@ -7373,6 +7479,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static final int DEREFERENCED_DYNAMICALLY_SIZED = 611;
 	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	public static final int UNSAFECALL_NOT_PERMITTED = 613;
+	public static final int VARIANTCALL_NOT_PERMITTED = 614;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;
@@ -7485,7 +7592,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @return
 	 */
 	private static Schema createSchema() {
-		return createSchema_2_0();
+		return createSchema_2_1();
 	}
 
 	/**
@@ -7494,8 +7601,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 *
 	 * @return
 	 */
-	private static SectionedSchema createSchema_2_0() {
-		SectionedSchema ROOT = new SectionedSchema(null, 2, 0, new Section[0]);
+	private static SectionedSchema createSchema_2_1() {
+		SectionedSchema ROOT = new SectionedSchema(null, 2, 1, new Section[0]);
 		SectionedSchema.Builder builder = ROOT.extend();
 		// Register the necessary sections
 		builder.register("ITEM", 16);
@@ -7540,6 +7647,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		builder.add("DECL", "variable", Decl.Variable.DESCRIPTOR_0);
 		builder.add("DECL", "link", Decl.Link.DESCRIPTOR_0);
 		builder.add("DECL", "binding", Decl.Binding.DESCRIPTOR_0);
+		builder.add("DECL", "variant", Decl.Variant.DESCRIPTOR_0);
 		// Modifiers
 		builder.add("MOD", "native", Modifier.Native.DESCRIPTOR_0);
 		builder.add("MOD", "export", Modifier.Export.DESCRIPTOR_0);
@@ -7637,7 +7745,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		builder.add("EXPR", "integergreaterthan", Expr.IntegerGreaterThan.DESCRIPTOR_0);
 		builder.add("EXPR", "integergreaterequal", Expr.IntegerGreaterThanOrEqual.DESCRIPTOR_0);
 		builder.add("EXPR", "is", Expr.Is.DESCRIPTOR_0);
-		builder.add("EXPR", null, null);
+		builder.add("EXPR", "old", Expr.Old.DESCRIPTOR_0);
 		// Arithmetic Expressions
 		builder.add("EXPR", "integernegation", Expr.IntegerNegation.DESCRIPTOR_0);
 		builder.add("EXPR", "integeraddition", Expr.IntegerAddition.DESCRIPTOR_0);

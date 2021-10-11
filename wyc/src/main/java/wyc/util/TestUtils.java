@@ -23,17 +23,17 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
 
-import wycc.lang.Build;
-import wycc.lang.Content;
+import jbfs.core.Build;
+import jbfs.core.Content;
+import jbfs.util.ByteRepository;
+import jbfs.util.DirectoryRoot;
+import jbfs.util.Pair;
+import jbfs.util.Transactions;
+import jbfs.util.Trie;
 import wycc.lang.SyntacticException;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.ByteRepository;
-import wycc.util.DirectoryRoot;
-import wycc.util.Pair;
-import wycc.util.Transactions;
-import wycc.util.Trie;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -80,6 +80,8 @@ public class TestUtils {
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
+		VALID_IGNORED.put("Old_Valid_5", "986");
+		VALID_IGNORED.put("Old_Valid_6", "986");
 		// Interpreter handling of tagged unions
 		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
 		// Binding Against Union Types
@@ -110,6 +112,8 @@ public class TestUtils {
 		// This test is fine, but the interpreter reports an error (correctly). In the
 		// future, I imagine the test format can allow for this.
 		VALID_IGNORED.put("Unsafe_Valid_6", "???");
+		// Flow Typing Over Type Invariants
+		VALID_IGNORED.put("UnionType_Valid_28", "1095");
 	}
 
 	/**
@@ -127,7 +131,7 @@ public class TestUtils {
 		}
 
 		@Override
-		public wycc.lang.Content.Type<?> contentType(String suffix) {
+		public Content.Type<?> contentType(String suffix) {
 			switch(suffix) {
 			case "whiley":
 				return WhileyFile.ContentType;
@@ -238,7 +242,7 @@ public class TestUtils {
 			wycli.commands.BuildCmd.printSyntacticMarkers(psyserr, target, source);
 		} catch (SyntacticException e) {
 			// Print out the syntax error
-			//e.outputSourceError(psyserr);
+			e.outputSourceError(psyserr);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error

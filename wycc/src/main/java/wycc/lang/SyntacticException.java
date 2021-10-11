@@ -14,8 +14,13 @@
 package wycc.lang;
 
 import java.io.PrintStream;
+import java.util.List;
 
+import jbfs.core.Build;
+import jbfs.core.SourceFile;
+import jbfs.util.Trie;
 import wycc.util.AbstractCompilationUnit.Attribute;
+import wycc.util.AbstractCompilationUnit.Attribute.Span;
 
 /**
  * Represents an exception which has been raised on a synctic item. The purpose
@@ -91,7 +96,7 @@ public class SyntacticException extends RuntimeException {
 	 * included.
 	 */
 	public void outputSourceError(PrintStream output) {
-		outputSourceError(output,true);
+		outputSourceError(output,false);
 	}
 
 	/**
@@ -112,123 +117,100 @@ public class SyntacticException extends RuntimeException {
 			span = parent.getParent(element,Attribute.Span.class);
 		}
 		//
-		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
-		if(enclosing == null) {
+		SourceFile source = getSourceEntry(element);
+		// Read the enclosing line so we can print it
+		SourceFile.Line line = source.getEnclosingLine(span.getStart().get().intValue());
+		//
+		if(line == null) {
 			output.println("Internal failure: " + getMessage());
 		} else if(brief) {
-			printBriefError(output,entry,enclosing,getMessage());
+			printBriefError(output,entry,line,getMessage());
 		} else {
-			printFullError(output,entry,enclosing,getMessage());
+			printFullError(output,entry,span,line,getMessage());
 		}
 	}
 
-	private void printBriefError(PrintStream output, Build.Artifact entry, EnclosingLine enclosing, String message) {
-		output.print(entry.getPath() + ":" + enclosing.lineNumber + ":"
-				+ enclosing.columnStart() + ":"
-				+ enclosing.columnEnd() + ":\""
+	private void printBriefError(PrintStream output, Build.Artifact entry, SourceFile.Line enclosing, String message) {
+		int start = enclosing.getOffset();
+		int end = start + enclosing.getLength();
+		output.print(entry.getPath() + ":" + enclosing.getNumber() + ":"
+				+ start + ":" + end + ":\""
 				+ escapeMessage(message) + "\"");
 		// Done
 		output.println();
 	}
 
-	private void printFullError(PrintStream output, Build.Artifact entry, EnclosingLine enclosing, String message) {
-		output.println(entry.getPath() + ":" + enclosing.lineNumber + ": " + message);
-
-		printLineHighlight(output,enclosing);
+	private void printFullError(PrintStream output, Build.Artifact entry, Span span, SourceFile.Line enclosing, String message) {
+		output.println(entry.getPath() + ":" + enclosing.getNumber() + ": " + message);
+		printLineHighlight(output,span, enclosing);
 	}
 
-	private void printLineHighlight(PrintStream output,
-			EnclosingLine enclosing) {
+	public static void printLineHighlight(PrintStream output, Span span, SourceFile.Line enclosing) {
+		// Extract line text
+		String text = enclosing.getText();
+		// Determine start and end of span
+		int start = span.getStart().get().intValue() - enclosing.getOffset();
+		int end = Math.min(text.length() - 1, span.getEnd().get().intValue() - enclosing.getOffset());
 		// NOTE: in the following lines I don't print characters
 		// individually. The reason for this is that it messes up the
 		// ANT task output.
-		String str = enclosing.lineText;
-
-		if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
-			output.print(str);
-		} else {
-			// this must be the very last line of output and, in this
-			// particular case, there is no new-line character provided.
-			// Therefore, we need to provide one ourselves!
-			output.println(str);
-		}
-		str = "";
-		for (int i = 0; i < enclosing.columnStart(); ++i) {
-			if (enclosing.lineText.charAt(i) == '\t') {
+		output.println(text);
+		// First, mirror indendation
+		String str = "";
+		for (int i = 0; i < start; ++i) {
+			if (text.charAt(i) == '\t') {
 				str += "\t";
 			} else {
 				str += " ";
 			}
 		}
-		for (int i = enclosing.columnStart(); i <= enclosing.columnEnd(); ++i) {
+		// Second, place highlights
+		for (int i = start; i <= end; ++i) {
 			str += "^";
 		}
 		output.println(str);
 	}
 
-	private static int parseLine(StringBuilder buf, int index) {
-		while (index < buf.length() && buf.charAt(index) != '\n') {
-			index++;
-		}
-		return index + 1;
-	}
-
-	private static class EnclosingLine {
-		private int lineNumber;
-		private int start;
-		private int end;
-		private int lineStart;
-		private int lineEnd;
-		private String lineText;
-
-		public EnclosingLine(int start, int end, int lineNumber, int lineStart, int lineEnd, String lineText) {
-			this.start = start;
-			this.end = end;
-			this.lineNumber = lineNumber;
-			this.lineStart = lineStart;
-			this.lineEnd = lineEnd;
-			this.lineText = lineText;
-		}
-
-		public int columnStart() {
-			return start - lineStart;
-		}
-
-		public int columnEnd() {
-			return Math.min(end, lineEnd) - lineStart;
+	public static SourceFile getSourceEntry(SyntacticItem item) {
+		SyntacticHeap heap = item.getHeap();
+		//
+		if(heap instanceof Build.Artifact) {
+			Build.Artifact a = (Build.Artifact) heap;
+			Trie id = a.getPath();
+			return getSourceEntry(id,a.getSourceArtifacts());
+		} else {
+			return null;
 		}
 	}
 
-	private static EnclosingLine readEnclosingLine(Build.Artifact entry, Attribute.Span location) {
-//		int spanStart = location.getStart().get().intValue();
-//		int spanEnd = location.getEnd().get().intValue();
-//		int line = 0;
-//		int lineStart = 0;
-//		int lineEnd = 0;
-//		StringBuilder text = new StringBuilder();
-//		try {
-//			BufferedReader in = new BufferedReader(new InputStreamReader(entry.inputStream(), "UTF-8"));
-//
-//			// first, read whole file
-//			int len = 0;
-//			char[] buf = new char[1024];
-//			while ((len = in.read(buf)) != -1) {
-//				text.append(buf, 0, len);
-//			}
-//
-//			while (lineEnd < text.length() && lineEnd <= spanStart) {
-//				lineStart = lineEnd;
-//				lineEnd = parseLine(text, lineEnd);
-//				line = line + 1;
-//			}
-//		} catch (IOException e) {
-//			return null;
-//		}
-//		lineEnd = Math.min(lineEnd, text.length());
-//
-//		return new EnclosingLine(spanStart, spanEnd, line, lineStart, lineEnd,
-//				text.substring(lineStart, lineEnd));
-		throw new IllegalArgumentException("GOT HERE"); // Build.Entry should be a SourceFile
+	public static SourceFile getSourceEntry(Trie id, SourceFile... sources) {
+		//
+		for (SourceFile s : sources) {
+			if (id.equals(s.getPath())) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	public static SourceFile getSourceEntry(Trie id, List<? extends Build.Artifact> sources) {
+		//
+		for (Build.Artifact s : sources) {
+			if (id.equals(s.getPath())) {
+				// FIXME: this is broken
+				return (SourceFile) s;
+			}
+		}
+		return null;
+	}
+
+	private static SourceFile.Line readEnclosingLine(Build.Artifact entry, Attribute.Span span) {
+		if(entry instanceof SourceFile) {
+			return ((SourceFile)entry).getEnclosingLine(span.getStart().get().intValue());
+		} else {
+			System.out.println("GOT HERE " + entry.getClass().getName());
+			return null;
+		}
 	}
 
 	public static final long serialVersionUID = 1l;

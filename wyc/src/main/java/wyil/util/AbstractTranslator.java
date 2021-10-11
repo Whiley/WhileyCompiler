@@ -16,10 +16,10 @@ package wyil.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
+import jbfs.util.Pair;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -69,6 +69,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			return visitCallable((Decl.Callable) decl);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
@@ -109,6 +110,8 @@ public abstract class AbstractTranslator<D, S, E> {
 			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl);
+		case DECL_variant:
+			return visitVariant((Decl.Variant) decl);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -128,6 +131,11 @@ public abstract class AbstractTranslator<D, S, E> {
 	public D visitProperty(Decl.Property decl) {
 		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
 		return constructProperty(decl,clauses);
+	}
+
+	public D visitVariant(Decl.Variant decl) {
+		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
+		return constructVariant(decl,clauses);
 	}
 
 	public D visitFunction(Decl.Function decl) {
@@ -463,6 +471,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -530,9 +539,10 @@ public abstract class AbstractTranslator<D, S, E> {
 			return visitDereference((Expr.Dereference) expr);
 		case EXPR_fielddereference:
 			return visitFieldDereference((Expr.FieldDereference) expr);
-		case EXPR_new: {
+		case EXPR_new:
 			return visitNew((Expr.New) expr);
-		}
+		case EXPR_old:
+			return visitOld((Expr.Old) expr);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return visitRecordAccess((Expr.RecordAccess) expr);
@@ -864,6 +874,11 @@ public abstract class AbstractTranslator<D, S, E> {
 		return constructNew(expr,operand);
 	}
 
+	public E visitOld(Expr.Old expr) {
+		E operand = visitExpression(expr.getOperand());
+		return constructOld(expr,operand);
+	}
+
 	public E visitNotEqual(Expr.NotEqual expr) {
 		E lhs = visitExpression(expr.getFirstOperand());
 		E rhs = visitExpression(expr.getSecondOperand());
@@ -923,6 +938,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
 	public abstract D constructProperty(Decl.Property decl, List<E> clauses);
+
+	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
 	public abstract D constructFunction(Decl.Function d, List<E> precondition, List<E> postcondition, S body);
 
@@ -1067,6 +1084,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructNew(Expr.New expr, E operand);
 
 	public abstract E constructNotEqual(Expr.NotEqual expr, E lhs, E rhs);
+
+	public abstract E constructOld(Expr.Old expr, E operand);
 
 	public abstract E constructRecordAccess(Expr.RecordAccess expr, E source);
 

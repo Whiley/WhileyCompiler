@@ -15,7 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.lang.SyntacticItem;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -70,6 +70,7 @@ public abstract class AbstractConsumer<T> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			visitCallable((Decl.Callable) decl, data);
 			break;
 		default:
@@ -134,6 +135,9 @@ public abstract class AbstractConsumer<T> {
 		case DECL_property:
 			visitProperty((Decl.Property) decl, data);
 			break;
+		case DECL_variant:
+			visitVariant((Decl.Variant) decl, data);
+			break;
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -153,6 +157,12 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitProperty(Decl.Property decl, T data) {
+		visitVariables(decl.getParameters(), data);
+		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getInvariant(), data);
+	}
+
+	public void visitVariant(Decl.Variant decl, T data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
 		visitExpressions(decl.getInvariant(), data);
@@ -389,6 +399,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -470,6 +481,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_new:
 			visitNew((Expr.New) expr, data);
+			break;
+		case EXPR_old:
+			visitOld((Expr.Old) expr, data);
 			break;
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
@@ -777,6 +791,10 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitNew(Expr.New expr, T data) {
+		visitExpression(expr.getOperand(), data);
+	}
+
+	public void visitOld(Expr.Old expr, T data) {
 		visitExpression(expr.getOperand(), data);
 	}
 

@@ -15,7 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wycc.lang.Build;
+import jbfs.core.Build;
 import wycc.lang.SyntacticItem;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
@@ -66,6 +66,7 @@ public abstract class AbstractFunction<P,R> {
 		case DECL_function:
 		case DECL_method:
 		case DECL_property:
+		case DECL_variant:
 			return visitCallable((Decl.Callable) decl, data);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
@@ -136,6 +137,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl, data);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl, data);
+		case DECL_variant:
+			return visitVariant((Decl.Variant) decl, data);
 		default:
 			throw new IllegalArgumentException("unknown declaration encountered (" + decl.getClass().getName() + ")");
 		}
@@ -153,6 +156,13 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitProperty(Decl.Property decl, P data) {
+		visitVariables(decl.getParameters(), data);
+		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getInvariant(), data);
+		return null;
+	}
+
+	public R visitVariant(Decl.Variant decl, P data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
 		visitExpressions(decl.getInvariant(), data);
@@ -384,6 +394,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_dereference:
 		case EXPR_fielddereference:
 		case EXPR_new:
+		case EXPR_old:
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 		case EXPR_arraylength:
@@ -452,6 +463,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitFieldDereference((Expr.FieldDereference) expr, data);
 		case EXPR_new:
 			return visitNew((Expr.New) expr, data);
+		case EXPR_old:
+			return visitOld((Expr.Old) expr, data);
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return visitRecordAccess((Expr.RecordAccess) expr, data);
@@ -766,6 +779,11 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitNew(Expr.New expr, P data) {
+		visitExpression(expr.getOperand(), data);
+		return null;
+	}
+
+	public R visitOld(Expr.Old expr, P data) {
 		visitExpression(expr.getOperand(), data);
 		return null;
 	}
