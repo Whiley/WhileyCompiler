@@ -42,6 +42,7 @@ import wyil.lang.WyilFile.QualifiedName;
 import wyil.lang.WyilFile.Attr.StackFrame;
 import wyil.lang.WyilFile.Stmt;
 import wyil.lang.WyilFile.Type;
+import wyil.util.AbstractVisitor;
 
 /**
  * <p>
@@ -142,6 +143,8 @@ public class Interpreter {
 			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
 			// Check preconditions hold
 			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, fm.getRequires(), context);
+			// Stash any require prestate for checking postconditions
+			stashRequiredPrestate(frame, fm.getEnsures());
 			// check function or method body exists
 			if (fm.getBody().size() == 0) {
 				// FIXME: Add support for native functions or methods. That is,
@@ -152,7 +155,9 @@ public class Interpreter {
 			}
 			// Execute the method or function body
 			executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm, args));
-			// Extra the return values
+			// Check the postcondition holds
+			checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, fm.getEnsures(), context);
+			// Extract the return values
 			return packReturns(frame, lambda);
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
@@ -677,7 +682,7 @@ public class Interpreter {
 			RValue value = executeExpression(ANY_T, stmt.getReturn(), frame);
 			// Check type invariants
 			checkTypeInvariants(type.getReturn(), value, frame, stmt.getReturn());
-			// Configure return values
+			//
 			if(returns.size() > 1) {
 				RValue.Tuple t = (RValue.Tuple) value;
 				for(int i=0;i!=returns.size();++i) {
@@ -690,8 +695,6 @@ public class Interpreter {
 			}
 			// Restore original parameter values
 			extractParameters(frame, enclosingScope.getArguments(), context);
-			// Check the postcondition holds
-			checkInvariants(WyilFile.RUNTIME_POSTCONDITION_FAILURE, frame, context.getEnsures(), stmt);
 		}
 		//
 		return Status.RETURN;
@@ -1461,6 +1464,34 @@ public class Interpreter {
 			}
 		}
 	}
+
+
+	/**
+	 * Store required parts of the prestate into the frame. For example, consider
+	 * this method:
+	 *
+	 * <pre>
+	 * method m(&int p)
+	 * ensures *p == old(*p):
+	 *    ...
+	 * </pre>
+	 *
+	 * In this method, we need to stash the value of <code>*p</code> on entry.
+	 */
+	private void stashRequiredPrestate(CallStack frame, Tuple<Expr> invariants) {
+		AbstractVisitor v = new AbstractVisitor(Build.NULL_METER) {
+			@Override
+			public void visitOld(Expr.Old expr) {
+				System.out.println("FOUND ONE!");
+			}
+		};
+		//
+		for(int i=0;i!=invariants.size();++i) {
+			v.visitExpression(invariants.get(i));
+		}
+		//
+	}
+
 
 	/**
 	 * Evaluate zero or more conditional expressions, and check whether any is
