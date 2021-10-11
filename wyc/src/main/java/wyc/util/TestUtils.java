@@ -80,6 +80,8 @@ public class TestUtils {
 		VALID_IGNORED.put("Reference_Valid_14", "986");
 		VALID_IGNORED.put("Reference_Valid_17", "986");
 		VALID_IGNORED.put("Reference_Valid_18", "986");
+		VALID_IGNORED.put("Old_Valid_5", "986");
+		VALID_IGNORED.put("Old_Valid_6", "986");
 		// Interpreter handling of tagged unions
 		VALID_IGNORED.put("FunctionRef_Valid_13", "???");
 		// Binding Against Union Types
