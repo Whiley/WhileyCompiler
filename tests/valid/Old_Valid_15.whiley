@@ -1,0 +1,14 @@
+method copy(&int p, &int q)
+requires p != q
+ensures old(*p) == *p
+ensures *q == *p:
+   *q = *p
+
+public export method test():
+    &int r1 = new 1
+    &int r2 = new 2
+    //
+    copy(r1,r2)
+    //
+    assert *r1 == 1
+    assert *r2 == 1

@@ -157,6 +157,10 @@ public class AllInvalidTest {
 		IGNORED.put("Parsing_Invalid_32", "???");
 		IGNORED.put("Old_Invalid_7", "???");
 		IGNORED.put("Old_Invalid_8", "???");
+		IGNORED.put("Old_Invalid_13", "???");
+		IGNORED.put("Old_Invalid_14", "???");
+		IGNORED.put("Old_Invalid_15", "???");
+		IGNORED.put("Old_Invalid_16", "???");
 		IGNORED.put("Property_Invalid_2", "???");
 		IGNORED.put("Property_Invalid_3", "???");
 		IGNORED.put("Property_Invalid_4", "???");
