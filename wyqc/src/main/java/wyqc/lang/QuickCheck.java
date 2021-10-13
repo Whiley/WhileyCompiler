@@ -21,6 +21,7 @@ import wycli.lang.Command;
 import static wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.interpreter.Interpreter.CallStack;
+import wyil.interpreter.Interpreter.Heap;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -338,7 +339,8 @@ public class QuickCheck {
 	 * @return
 	 */
 	private boolean execute(Expr predicate, CallStack frame) {
-		RValue.Bool b = interpreter.executeExpression(RValue.Bool.class,predicate,frame);
+		// FIXME: there is a problem here related to the heap
+		RValue.Bool b = interpreter.executeExpression(RValue.Bool.class, predicate, frame, new Heap());
 		return b.boolValue();
 	}
 
@@ -511,25 +513,30 @@ public class QuickCheck {
 	 * @return
 	 */
 	private Domain.Big<RValue> constructGenerator(Type.Reference type, ExtendedContext context) {
-		int width = context.getAliasingWidth();
-		// NOTE: this is not done lazily which potentially could be problematic if
-		// sampling was used.
-		Domain.Big<RValue> element = constructGenerator(type.getElement(), context);
-		// Construct a unique object for each possible element value.
-		RValue.Reference[] refs = new RValue.Reference[element.bigSize().intValue() * width];
-		// Construct our set of references.
-		int i = 0;
-		for (RValue e : element) {
-			for (int j = 0; j != width; ++j) {
-				// Construct multiple references to a cell with the same value. This has the
-				// effect of ensuring the possibility of references to different cells which
-				// hold the same value.
-				refs[(i * width) + j] = RValue.Reference(RValue.Cell(e));
-			}
-			i = i + 1;
-		}
-		//
-		return Domains.Finite(refs);
+//		int width = context.getAliasingWidth();
+//		// NOTE: this is not done lazily which potentially could be problematic if
+//		// sampling was used.
+//		Domain.Big<RValue> element = constructGenerator(type.getElement(), context);
+//		// Construct a unique object for each possible element value.
+//		RValue.Reference[] refs = new RValue.Reference[element.bigSize().intValue() * width];
+//		// Construct our set of references.
+//		int i = 0;
+//		for (RValue e : element) {
+//			for (int j = 0; j != width; ++j) {
+//				// Construct multiple references to a cell with the same value. This has the
+//				// effect of ensuring the possibility of references to different cells which
+//				// hold the same value.
+//				refs[(i * width) + j] = RValue.Reference(RValue.Cell(e));
+//			}
+//			i = i + 1;
+//		}
+//		//
+//		return Domains.Finite(refs);
+
+		// FIXME: this needs to be put back in place. It is made more complicated
+		// because we now have a Heap variable to supply to the interpreter, rather than
+		// using the JVM heap.  Its not clear to me how best to resolve this.
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -645,7 +652,7 @@ public class QuickCheck {
 		}
 
 		@Override
-		public RValue execute(Interpreter interpreter, RValue[] arguments, SyntacticItem context) {
+		public RValue execute(Interpreter interpreter, RValue[] arguments, Heap heap, SyntacticItem context) {
 			// Check through previous memoizations
 			for(int i=0;i!=inputs.size();++i) {
 				if(Arrays.equals(arguments, inputs.get(i))) {
@@ -1043,13 +1050,13 @@ public class QuickCheck {
 		}
 
 		@Override
-		public RValue execute(Decl.Callable lambda, CallStack frame, RValue[] args, SyntacticItem item) {
+		public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, SyntacticItem item) {
 			if (lambda instanceof Decl.Method && lambda.getBody().size() == 0) {
 				Domain.Big<RValue> returns = constructGenerator(lambda.getType().getReturn(), context);
 				// FIXME: could return randomly here
 				return returns.iterator().next();
 			} else {
-				return super.execute(lambda, frame, args, item);
+				return super.execute(lambda, frame, heap, args, item);
 			}
 		}
 	}

@@ -1650,7 +1650,7 @@ public class Interpreter {
 		}
 	}
 
-	public final class Heap extends ConcreteSemantics.RValue {
+	public final static class Heap extends ConcreteSemantics.RValue {
 		private ArrayList<RValue> values;
 
 		public Heap() {
