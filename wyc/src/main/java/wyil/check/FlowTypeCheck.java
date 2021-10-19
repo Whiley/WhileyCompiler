@@ -1223,7 +1223,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// NOTE: must check lval first, not expression (#950)
 		Type src = checkLVal((LVal) lval.getFirstOperand(), environment);
 		// Attempt to view src as array
-		Type.Array arrT = src.as(Type.Array.class);
+		Type.Array arrT = (src == null) ? null : src.as(Type.Array.class);
 		// Check declared type
 		if (arrT == null) {
 			// Fall back on flow type
