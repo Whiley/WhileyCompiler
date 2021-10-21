@@ -37,7 +37,7 @@ import wycli.cfg.Configuration;
 import wycli.cfg.Configuration.Schema;
 import wycli.lang.Command;
 import wycli.lang.Package;
-import wycli.lang.SemanticVersion;
+import wycli.lang.Semantic;
 import wycli.lang.Command.Option;
 import wycli.lang.Command.Template;
 
@@ -124,16 +124,12 @@ public class InstallCmd implements Command {
 	public boolean execute(Trie path, Template template) throws Exception {
 		boolean deploy = template.getOptions().has("deploy");
 		// Extract configuration for this path
-		Repository repository = environment.getRepository();
-		// Extract configuration for this path
 		Configuration config = environment.get(path);
 		//
 		try {
 			List<Value.UTF8> includes = determineIncludes(config);
-			// Determine list of files to go in package
-			List<Build.Artifact> files = determinePackageContents(repository,includes);
 			// Construct zip file context representing package
-			ZipFile zf = createZipFile(files);
+			ZipFile zf = createZipFile(includes);
 			// Get top-level repository
 			Package.Repository repo = environment.getPackageResolver().getRepository();
 			// Extract package name from configuration
@@ -141,7 +137,7 @@ public class InstallCmd implements Command {
 			// Extract package version from
 			String version = config.get(Value.UTF8.class, Trie.fromString("package/version")).toString();
 			//
-			install(deploy ? 1 : 0, repo, zf, name, new SemanticVersion(version));
+			install(deploy ? 1 : 0, repo, zf, name, new Semantic.Version(version));
 			// Done
 			return true;
 		} catch (IOException e) {
@@ -161,68 +157,42 @@ public class InstallCmd implements Command {
 	private List<Value.UTF8> determineIncludes(Configuration config) {
 		ArrayList<Value.UTF8> includes = new ArrayList<>();
 		// Determine default included files
-		Value.UTF8[] items = project.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		Value.UTF8[] items = config.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
 		includes.addAll(Arrays.asList(items));
 		// Determine platform-specific included files
-		for (Path.ID id : project.matchAll(BUILD_PLATFORM_INCLUDES)) {
-			items = project.get(Value.Array.class, id).toArray(Value.UTF8.class);
+		for (Trie id : config.matchAll(BUILD_PLATFORM_INCLUDES)) {
+			items = config.get(Value.Array.class, id).toArray(Value.UTF8.class);
 			includes.addAll(Arrays.asList(items));
 		}
 		// Done
 		return includes;
 	}
 
-	/**
-	 * Identify which files are to be included in the package. This is determined by
-	 * the build/includes attribute in the package manifest.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	private List<Build.Artifact> determinePackageContents(Repository repo, List<Value.UTF8> includes)
+	private ZipFile createZipFile(List<Value.UTF8> includes)
 			throws IOException {
 		// Determine includes filter
-		ArrayList<Path.Entry<?>> files = new ArrayList<>();
+		ZipFile zf = new ZipFile(environment.getContentRegistry());
 		// Extract root of this project
-		Path.Root root = project.getRoot();
+		Content.Root root = environment.getWorkspaceRoot();
 		// Add all files from the includes filter
-		for(int i=0;i!=includes.size();++i) {
+		for (int i = 0; i != includes.size(); ++i) {
 			// Construct a filter from the attribute itself
-			Content.Filter<?> filter = createFilter(includes.get(i).toString());
+			String[] split = includes.get(i).toString().split("\\.");
+			Content.Type contentType = getContentType(split[1]);
+			Content.Filter<?> filter = Content.Filter(contentType, Trie.fromString(split[0]));
 			// Add all files matching the attribute
-			files.addAll(root.get(filter));
+			for (Trie p : root.match(filter)) {
+				long start = System.currentTimeMillis();
+				Build.Artifact file = (Build.Artifact) root.get(contentType, p);
+				// Extract bytes representing entry
+				byte[] contents = readFileContents(file);
+				zf.add(file.getContentType(), file.getPath(), contents);
+				long time = System.currentTimeMillis() - start;
+				logger.logTimedMessage("Packaging " + file.getPath() + "." + file.getContentType().getSuffix(), time,
+						0);
+			}
 		}
 		// Done
-		return files;
-	}
-
-	/**
-	 * Given a list of files construct a corresponding ZipFile containing them.
-	 *
-	 * @param files
-	 * @return
-	 * @throws IOException
-	 */
-	private ZipFile createZipFile(List<Build.Artifact> files) throws IOException {
-		// The set of known paths
-		HashSet<Trie> paths = new HashSet<>();
-		// The zip file we're creating
-		ZipFile zf = new ZipFile();
-		// Add each file to zip file
-		for (int i = 0; i != files.size(); ++i) {
-			long start = System.currentTimeMillis();
-			Trie file = files.get(i);
-			// Extract path
-			addPaths(file.id().parent(), paths, zf);
-			// Construct filename for given entry
-			String filename = file.id().toString() + "." + file.contentType().getSuffix();
-			// Extract bytes representing entry
-			byte[] contents = readFileContents(file);
-			zf.add(new ZipEntry(filename), contents);
-			long time = System.currentTimeMillis() - start;
-			logger.logTimedMessage("Packaging " + file.id() + "." + file.contentType().getSuffix(), time, 0);
-		}
-		//
 		return zf;
 	}
 
@@ -237,7 +207,7 @@ public class InstallCmd implements Command {
 	 * @param version
 	 * @throws IOException
 	 */
-	private void install(int count, Package.Repository repository, ZipFile pkg, String name, SemanticVersion version)
+	private void install(int count, Package.Repository repository, ZipFile pkg, String name, Semantic.Version version)
 			throws IOException {
 		repository.put(pkg, name, version);
 		//
@@ -249,26 +219,6 @@ public class InstallCmd implements Command {
 	}
 
 	/**
-	 * This is a slightly strange method. Basically, it recursively adds directory
-	 * entries into the ZipFile. Technically such entries should not be needed.
-	 * However, due to a quirk in the way that ZipFileRoot works (in fact,
-	 * AbstractFolder to be more precise) these entries are required for now.
-	 *
-	 * @param path
-	 * @param paths
-	 * @param zf
-	 */
-	private void addPaths(Trie path, HashSet<Trie> paths, ZipFile zf) {
-		if(path.size() > 0 && !paths.contains(path)) {
-			addPaths(path.parent(),paths,zf);
-			// A new path encountered
-			String directory = path.toString() + "/";
-			zf.add(new ZipEntry(directory), new byte[0]);
-			paths.add(path);
-		}
-	}
-
-	/**
 	 * Read the contents of a given file into a byte array.
 	 *
 	 * @param file
@@ -276,32 +226,12 @@ public class InstallCmd implements Command {
 	 * @throws IOException
 	 */
 	private byte[] readFileContents(Build.Artifact file) throws IOException {
-		InputStream in = file.inputStream();
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		int nRead;
-		// Read bytes in max 1024 chunks
-		byte[] data = new byte[1024];
-		// Read all bytes from the input stream
-		while ((nRead = in.read(data, 0, data.length)) != -1) {
-			buffer.write(data, 0, nRead);
-		}
+		Content.Type ct = file.getContentType();
+		ct.write(buffer, file);
 		// Done
 		buffer.flush();
 		return buffer.toByteArray();
-	}
-
-	/**
-	 * Create a content filter from the string representation.
-	 *
-	 * @param filter
-	 * @return
-	 */
-	private Content.Filter<?> createFilter(String filter) {
-		String[] split = filter.split("\\.");
-		//
-		Content.Type contentType = getContentType(split[1]);
-		//
-		return Content.filter(split[0], contentType);
 	}
 
 	/**
