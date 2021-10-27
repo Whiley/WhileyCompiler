@@ -34,6 +34,11 @@ import jbfs.core.Build;
  *
  */
 public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
+	/**
+	 * Strict mode requires that every method which calls an unsafe method is itself
+	 * unsafe.
+	 */
+	private boolean strict = false;
 	private boolean status = true;
 
 	public UnsafeCheck(Build.Meter meter) {
@@ -47,12 +52,16 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 		return status;
 	}
 
+	public void setStrictness(boolean strict) {
+		this.strict = strict;
+	}
+
 	@Override
 	public void visitInvoke(Expr.Invoke expr) {
 		Decl.Link<Decl.Callable> name = expr.getLink();
 		Decl.Named<?> enclosing = expr.getAncestor(Decl.Named.class);
 		//
-		if(isUnsafe(name.getTarget()) && !isUnsafe(enclosing)) {
+		if(strict && isUnsafe(name.getTarget()) && !isUnsafe(enclosing)) {
 			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr);
@@ -65,7 +74,7 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 		// type. Hence, we cannot ever take the address of such an unsafe function or
 		// method as, otherwise, this would provide an easy way to circumvent the
 		// protection.
-		if(isUnsafe(name.getTarget())) {
+		if(strict && isUnsafe(name.getTarget())) {
 			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
 		}
 		super.visitLambdaAccess(expr);
@@ -76,7 +85,7 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 		Decl.Link<Decl.StaticVariable> name = expr.getLink();
 		Decl.Named<?> enclosing = expr.getAncestor(Decl.Named.class);
 		//
-		if(isUnsafe(name.getTarget()) && !isUnsafe(enclosing)) {
+		if(strict && isUnsafe(name.getTarget()) && !isUnsafe(enclosing)) {
 			syntaxError(expr, UNSAFECALL_NOT_PERMITTED);
 		}
 		super.visitStaticVariableAccess(expr);
