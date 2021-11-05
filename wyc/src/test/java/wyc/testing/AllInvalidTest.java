@@ -262,7 +262,7 @@ public class AllInvalidTest {
 
 		// Translate any Windows file separators to Unix.
 		output = output.replaceAll("\\\\","/");
-		// Third, compare the output!
+		// Build failed, so check output
 		if(!TestUtils.compare(output,sampleOutputFile)) {
 			fail("Output does not match reference");
 		}

@@ -8,7 +8,7 @@ requires acyclic(l):
     //
     skip
 
-method main():
+public export method test():
     LinkedList l1 = new { data: 1, next: null }
     LinkedList l2 = new { data: 2, next: l1 }
     // create cyclic list
