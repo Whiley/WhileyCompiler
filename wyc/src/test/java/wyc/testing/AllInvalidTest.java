@@ -179,6 +179,7 @@ public class AllInvalidTest {
 		IGNORED.put("RecursiveType_Invalid_7", "???");
 		IGNORED.put("RecursiveType_Invalid_8", "???");
 		IGNORED.put("Reference_Invalid_6", "???");
+		IGNORED.put("Reference_Invalid_7", "???");
 		IGNORED.put("Remainder_Invalid_1", "???");
 		IGNORED.put("Requires_Invalid_1", "???");
 		IGNORED.put("StaticVar_Invalid_5", "???");

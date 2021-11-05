@@ -114,6 +114,10 @@ public class TestUtils {
 		VALID_IGNORED.put("Unsafe_Valid_6", "???");
 		// Flow Typing Over Type Invariants
 		VALID_IGNORED.put("UnionType_Valid_28", "1095");
+		// other
+		VALID_IGNORED.put("Old_Valid_19", "???");
+		VALID_IGNORED.put("Old_Valid_21", "???");
+		VALID_IGNORED.put("Old_Valid_22", "???");
 	}
 
 	/**
