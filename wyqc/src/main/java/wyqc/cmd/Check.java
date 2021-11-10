@@ -80,6 +80,17 @@ public class Check implements Command {
 	public static Trie LIMIT_CONFIG_OPTION = Trie.fromString("check/limit");
 	public static Trie TIMEOUT_CONFIG_OPTION = Trie.fromString("check/timeout");
 	public static Trie IGNORES_CONFIG_OPTION = Trie.fromString("check/ignores");
+	// Configuration Descriptions
+	public static String MIN_DESCRIPTION = "Specify minimum integer value which can be generated";
+	public static String MAX_DESCRIPTION = "Specify maximum integer value which can be generated";
+	public static String LENGTH_DESCRIPTION = "Specify maximum array length which can be generated";
+	public static String DEPTH_DESCRIPTION = "Specify maximum depth of a recurisive type";
+	public static String WIDTH_DESCRIPTION = "Specify maximum aliasing width for references";
+	public static String ROTATION_DESCRIPTION = "Specify maximum rotation for lambdas";
+	public static String TIMEOUT_DESCRIPTION = "Specify timeout (in seconds) to spend on each function or method";
+	public static String SAMPLING_DESCRIPTION = "Specify sample size on test inputs to try for each function or method";
+	public static String LIMIT_DESCRIPTION = "Specify limit above which sampling takes place";
+	public static String IGNORES_DESCRIPTION = "List of methods / functions to ignore";
 	// Configuration Defaults
 	public static Value.Int MIN_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMinimum());
 	public static Value.Int MAX_DEFAULT = new Value.Int(DEFAULT_CONTEXT.getIntegerMaximum());
@@ -109,21 +120,15 @@ public class Check implements Command {
 		public List<Option.Descriptor> getOptionDescriptors() {
 			return Arrays.asList(
 					Command.OPTION_BOUNDED_DOUBLE("sampling",
-							"Specify sample size on test inputs to try for each function or method", 0.0D, 10.0D),
+							SAMPLING_DESCRIPTION, 0.0D, 10.0D),
 					Command.OPTION_FLAG("logsampling",
 							"Specify log sample size  test inputs to try for each function or method"),
-					Command.OPTION_NONNEGATIVE_INTEGER("limit",
-							"Specify limit above which sampling takes place"),
-					Command.OPTION_NONNEGATIVE_INTEGER("min",
-						"Specify minimum integer value which can be generated"),
-					Command.OPTION_NONNEGATIVE_INTEGER("max",
-						"Specify maximum integer value which can be generated"),
-					Command.OPTION_NONNEGATIVE_INTEGER("length",
-						"Specify maximum length of a generated array"),
-					Command.OPTION_NONNEGATIVE_INTEGER("depth",
-						"Specify maximum depth of a recurisive type"),
-					Command.OPTION_NONNEGATIVE_INTEGER("timeout",
-							"Specify timeout (in seconds) to spend on each function or method")
+					Command.OPTION_NONNEGATIVE_INTEGER("limit",SAMPLING_DESCRIPTION),
+					Command.OPTION_NONNEGATIVE_INTEGER("min", MIN_DESCRIPTION),
+					Command.OPTION_NONNEGATIVE_INTEGER("max", MAX_DESCRIPTION),
+					Command.OPTION_NONNEGATIVE_INTEGER("length", LENGTH_DESCRIPTION),
+					Command.OPTION_NONNEGATIVE_INTEGER("depth", DEPTH_DESCRIPTION),
+					Command.OPTION_NONNEGATIVE_INTEGER("timeout", TIMEOUT_DESCRIPTION)
 					);
 		}
 

@@ -18,6 +18,7 @@ import wycli.lang.Command;
 import wycli.lang.Plugin;
 import wycc.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
+import wyqc.cmd.Check;
 import wyqc.lang.QuickCheck;
 
 import java.io.IOException;
@@ -47,7 +48,18 @@ public class Activator implements Plugin.Activator {
 
 		@Override
 		public Configuration.Schema getConfigurationSchema() {
-			return Configuration.EMPTY_SCHEMA;
+			return Configuration.fromArray(
+					Configuration.UNBOUND_INTEGER(MIN_CONFIG_OPTION, MIN_DESCRIPTION, MIN_DEFAULT),
+					Configuration.UNBOUND_INTEGER(MAX_CONFIG_OPTION, MAX_DESCRIPTION, MAX_DEFAULT),
+					Configuration.UNBOUND_INTEGER(LENGTH_CONFIG_OPTION, LENGTH_DESCRIPTION, LENGTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(DEPTH_CONFIG_OPTION, DEPTH_DESCRIPTION, DEPTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(WIDTH_CONFIG_OPTION, WIDTH_DESCRIPTION, WIDTH_DEFAULT),
+					Configuration.UNBOUND_INTEGER(ROTATION_CONFIG_OPTION, ROTATION_DESCRIPTION, ROTATION_DEFAULT),
+					Configuration.UNBOUND_INTEGER(LIMIT_CONFIG_OPTION, LIMIT_DESCRIPTION, LIMIT_DEFAULT),
+					Configuration.BOUND_DECIMAL(SAMPLING_CONFIG_OPTION, SAMPLING_DESCRIPTION, SAMPLING_DEFAULT, 0.0D, 10.0D),
+					Configuration.UNBOUND_INTEGER(TIMEOUT_CONFIG_OPTION, TIMEOUT_DESCRIPTION, TIMEOUT_DEFAULT),
+					Configuration.UNBOUND_STRING_ARRAY(IGNORES_CONFIG_OPTION, IGNORES_DESCRIPTION, IGNORES_DEFAULT)
+					);
 		}
 
 		@Override
