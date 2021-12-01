@@ -107,7 +107,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 		case DECL_method:
-			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl);
+			return visitFunctionOrMethod((Decl.FunctionOrMethodOrProperty) decl);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl);
 		case DECL_variant:
@@ -117,7 +117,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		}
 	}
 
-	public D visitFunctionOrMethod(Decl.FunctionOrMethod decl) {
+	public D visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl) {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 			return visitFunction((Decl.Function) decl);
@@ -129,8 +129,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
-		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
-		return constructProperty(decl,clauses);
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
+		return constructProperty(decl,body);
 	}
 
 	public D visitVariant(Decl.Variant decl) {
@@ -141,7 +141,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	public D visitFunction(Decl.Function decl) {
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
 		return constructFunction(decl,precondition,postcondition,body);
 	}
 
@@ -149,7 +149,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		// Construct environment relation
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
 		return constructMethod(decl,precondition,postcondition,body);
 	}
 
@@ -937,7 +937,7 @@ public abstract class AbstractTranslator<D, S, E> {
 
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
-	public abstract D constructProperty(Decl.Property decl, List<E> clauses);
+	public abstract D constructProperty(Decl.Property decl, S body);
 
 	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
@@ -1190,15 +1190,15 @@ public abstract class AbstractTranslator<D, S, E> {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Decl.FunctionOrMethod declaration;
+	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
+		private final Decl.FunctionOrMethodOrProperty declaration;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethodOrProperty declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Decl.FunctionOrMethod getDeclaration() {
+		public Decl.FunctionOrMethodOrProperty getDeclaration() {
 			return declaration;
 		}
 	}

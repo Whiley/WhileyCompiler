@@ -104,7 +104,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 
 	@Override
 	public void visitProperty(Decl.Property decl, Context data) {
-		visitExpressions(decl.getInvariant(), Context.ONESTATE);
+		visitStatement(decl.getBody(), Context.ONESTATE);
 	}
 
 	@Override

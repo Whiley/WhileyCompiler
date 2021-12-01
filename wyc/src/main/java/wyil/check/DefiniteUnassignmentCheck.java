@@ -103,7 +103,7 @@ public class DefiniteUnassignmentCheck
 	 * @return
 	 */
 	@Override
-	public ControlFlow visitFunctionOrMethod(Decl.FunctionOrMethod declaration, MaybeAssignedSet dummy) {
+	public ControlFlow visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty declaration, MaybeAssignedSet dummy) {
 		MaybeAssignedSet environment = new MaybeAssignedSet();
 		// Definitely assigned variables includes all parameters.
 		environment = environment.addAll(declaration.getParameters());
@@ -269,7 +269,7 @@ public class DefiniteUnassignmentCheck
 
 	public boolean isParameter(Decl.Variable var) {
 		// FIXME: this might be a little inefficient
-		Decl.FunctionOrMethod parent = var.getAncestor(Decl.FunctionOrMethod.class);
+		Decl.FunctionOrMethodOrProperty parent = var.getAncestor(Decl.FunctionOrMethodOrProperty.class);
 		Tuple<Decl.Variable> parameters = parent.getParameters();
 		for (int i = 0; i != parameters.size(); ++i) {
 			if (parameters.get(i) == var) {

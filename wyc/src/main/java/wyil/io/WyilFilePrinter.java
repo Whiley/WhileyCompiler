@@ -157,7 +157,7 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	}
 
 	@Override
-	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl, Integer indent) {
+	public void visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl, Integer indent) {
 		//
 		tabIndent(indent);
 		visitModifiers(decl.getModifiers());

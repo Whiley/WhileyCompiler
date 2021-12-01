@@ -430,7 +430,7 @@ public class WhileyFileParser {
 	 * exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Build.Meter meter, Tuple<Modifier> modifiers,
+	private Decl.FunctionOrMethodOrProperty parseFunctionOrMethodDeclaration(Build.Meter meter, Tuple<Modifier> modifiers,
 			boolean isFunction) {
 		int start = index;
 		// Create appropriate enclosing scope
@@ -478,7 +478,7 @@ public class WhileyFileParser {
 			body = new Stmt.Block();
 		}
 		//
-		WyilFile.Decl.FunctionOrMethod declaration;
+		WyilFile.Decl.FunctionOrMethodOrProperty declaration;
 		if (isFunction) {
 			declaration = new Decl.Function(modifiers, name, template, parameters, returns, requires, ensures, body);
 		} else {

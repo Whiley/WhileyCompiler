@@ -3,9 +3,11 @@
 
 // A recursive property capturing the concept of
 // the sum of an array
-property sum(int[] arr, int i, int s)
-where (i >= |arr|) ==> (s == 0)
-where (i >= 0 && i < |arr|) ==> sum(arr,i+1,s-arr[i])
+property sum(int[] arr, int i, int s) -> (bool r):
+    if i >= 0 && i < |arr|:
+        return sum(arr,i+1,s-arr[i])
+    else:
+        return s == 0
 
 public export method test():
     //

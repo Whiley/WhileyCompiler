@@ -132,7 +132,7 @@ public abstract class AbstractVisitor {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 		case DECL_method:
-			visitFunctionOrMethod((Decl.FunctionOrMethod) decl);
+			visitFunctionOrMethod((Decl.FunctionOrMethodOrProperty) decl);
 			break;
 		case DECL_property:
 			visitProperty((Decl.Property) decl);
@@ -145,7 +145,7 @@ public abstract class AbstractVisitor {
 		}
 	}
 
-	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl) {
+	public void visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl) {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 			visitFunction((Decl.Function) decl);
@@ -161,7 +161,7 @@ public abstract class AbstractVisitor {
 	public void visitProperty(Decl.Property decl) {
 		visitVariables(decl.getParameters());
 		visitVariables(decl.getReturns());
-		visitExpressions(decl.getInvariant());
+		visitStatement(decl.getBody());
 	}
 
 	public void visitVariant(Decl.Variant decl) {

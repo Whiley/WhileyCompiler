@@ -3,9 +3,11 @@
 
 // A recursive property capturing the concept of
 // the sum of an array
-property sum(int[] arr, int i, int j, int s)
-where (i >= j) ==> (s == 0)
-where i < j ==> sum(arr,i+1,j,s-arr[i])
+property sum(int[] arr, int i, int j, int s) -> (bool r):
+    if i >= j:
+        return (s == 0)
+    else:
+        return sum(arr,i+1,j,s-arr[i])
 
 function sum(int[] xs) -> (int r)
 // This really produces the sum

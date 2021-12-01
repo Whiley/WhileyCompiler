@@ -156,8 +156,8 @@ public class Interpreter {
 		// Fourth, construct the stack frame for execution
 		extractParameters(frame, args, lambda);
 		// Check the precondition
-		if (lambda instanceof Decl.FunctionOrMethod) {
-			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) lambda;
+		if (lambda instanceof Decl.FunctionOrMethodOrProperty) {
+			Decl.FunctionOrMethodOrProperty fm = (Decl.FunctionOrMethodOrProperty) lambda;
 			// Check preconditions hold
 			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, heap, fm.getRequires(), context);
 			// check function or method body exists
@@ -182,20 +182,6 @@ public class Interpreter {
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
 			return executeExpression(ANY_T, l.getBody(), frame, heap);
-		} else if(lambda instanceof Decl.Property) {
-			Decl.Property p = (Decl.Property) lambda;
-			Tuple<Expr> invariant = p.getInvariant();
-			// Evaluate clauses of property, and terminate early as soon as one doesn't
-			// hold.
-			for (int i = 0; i != invariant.size(); ++i) {
-				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame, heap);
-				if (!retval.boolValue()) {
-					// Short circuit
-					return retval;
-				}
-			}
-			//
-			return RValue.True;
 		} else {
 			Decl.Variant p = (Decl.Variant) lambda;
 			Tuple<Expr> invariant = p.getInvariant();
@@ -709,7 +695,7 @@ public class Interpreter {
 		// method.
 		FunctionOrMethodScope enclosingScope = scope.getEnclosingScope(FunctionOrMethodScope.class);
 		// Extract relevant information
-		Decl.FunctionOrMethod context = enclosingScope.getContext();
+		Decl.FunctionOrMethodOrProperty context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
 		if (stmt.hasReturn()) {
@@ -1363,8 +1349,8 @@ public class Interpreter {
 		// Locate the function or method body in order to execute it
 		Decl.Callable decl = expr.getLink().getTarget();
 		//
-		if (decl instanceof Decl.FunctionOrMethod) {
-			Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) decl;
+		if (decl instanceof Decl.FunctionOrMethodOrProperty) {
+			Decl.FunctionOrMethodOrProperty fm = (Decl.FunctionOrMethodOrProperty) decl;
 			// Clone frame to ensure it executes in this exact environment.
 			return semantics.Lambda(decl, frame.clone());
 		} else {
@@ -1941,14 +1927,14 @@ public class Interpreter {
 		/**
 		 * The declaration being invoked
 		 */
-		private final Decl.FunctionOrMethod context;
+		private final Decl.FunctionOrMethodOrProperty context;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod context) {
+		public FunctionOrMethodScope(Decl.FunctionOrMethodOrProperty context) {
 			super(null);
 			this.context = context;
 		}
 
-		public Decl.FunctionOrMethod getContext() {
+		public Decl.FunctionOrMethodOrProperty getContext() {
 			return context;
 		}
 	}

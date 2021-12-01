@@ -94,7 +94,7 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	}
 
 	@Override
-	public void visitFunctionOrMethod(Decl.FunctionOrMethod fm, Boolean consumed) {
+	public void visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty fm, Boolean consumed) {
 		visitExpressions(fm.getRequires(), false);
 		visitExpressions(fm.getEnsures(), false);
 		visitStatement((fm.getBody()), false);
