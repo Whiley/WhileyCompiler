@@ -1,7 +1,10 @@
 type LinkedList<T> is null | { LinkedList<T> next, T data }
 
-property length<T>(LinkedList<T> list, int n)
-where !(list is null) ==> length<T>(list.next,n-1)
+property length<T>(LinkedList<T> list, int n) -> (bool r):
+    if list is null:
+        return n == 0
+    else:
+        return length<T>(list.next,n-1)
 
 public export method test():
     LinkedList<int> l1 = null

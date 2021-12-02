@@ -1,4 +1,5 @@
-property nat(int x) where x >= 0
+property nat(int x) -> (bool r):
+    return x >= 0
 
 type nat is (int x) where nat(x)
 
