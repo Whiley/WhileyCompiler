@@ -1,7 +1,7 @@
 type nat is (int x) where x >= 0
 
-property mult(int[] a, int[] b, int[] c, int n)
-where all { i in 0..n | c[i] == a[i] * b[i] }
+property mult(int[] a, int[] b, int[] c, int n) -> (bool r):
+    all { i in 0..n | c[i] == a[i] * b[i] }
 
 function arrayMult(int[] a, int[] b) -> (int[] c)
 requires |a| == |b|

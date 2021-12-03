@@ -35,11 +35,12 @@ where HEARTS <= suite && suite <= SPADES
 where 2 <= ordinal && ordinal <= ACE
 
 // Define a "comparator" for cards
-property lessThan(Card c1, Card c2)
-where (c1.suite < c2.suite) || (c1.suite == c1.suite && c1.ordinal < c2.ordinal)
+property lessThan(Card c1, Card c2) -> (bool r):
+    (c1.suite == c2.suite && c1.ordinal < c2.ordinal) ||
+    (c1.suite != c2.suite && c1.suite < c2.suite)
 
-property sorted(Card[] cards)
-where |cards| == 0 || all { i in 1..|cards| | lessThan(cards[i-1],cards[i]) }
+property sorted(Card[] cards) -> (bool r):
+    |cards| == 0 || all { i in 1..|cards| | lessThan(cards[i-1],cards[i]) }
 
 // =======================================
 // Card Constants

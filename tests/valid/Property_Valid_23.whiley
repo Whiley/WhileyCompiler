@@ -1,9 +1,9 @@
 type List is null|Node
 type Node is { List next }
 
-property len(List l, int n)
-where (l is null) ==> (n == 0)
-where (l is null) || (n > 0 && len(l.next, n-1))
+property len(List l, int n) -> (bool r):
+    (l is null && n == 0) ||
+    (l is Node && n > 0 && len(l.next, n-1))
 
 function nop(List l, int n) -> (List r)
 requires len(l,n)

@@ -1129,31 +1129,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Expr> invariant) {
-				super(DECL_property, modifiers, name, template, parameters, new Tuple<Decl.Variable>(), invariant);
-			}
-
-			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> invariant) {
-				super(DECL_property, modifiers, name, template, parameters, returns, invariant);
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Expr body) {
+				super(DECL_property, modifiers, name, template, parameters, returns,
+						body);
 			}
 
 			@Override
 			public WyilFile.Type.Property getType() {
-				return new WyilFile.Type.Property(project(getParameters()));
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) get(5);
+				return new WyilFile.Type.Property(project(getParameters()), project(getReturns()));
 			}
 
 			@Override
-			public Stmt getBody() {
-				// FIXME: this doesn't make sense for properties. Realistically, this should be
-				// resolved when properties are changed from their current form into something
-				// more useful.
-				throw new UnsupportedOperationException();
+			@SuppressWarnings("unchecked")
+			public Expr getBody() {
+				return (Expr) get(5);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1161,16 +1150,27 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Tuple<Expr> es = (Tuple<Expr>) operands[5];
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
+							(Tuple<Decl.Variable>) operands[4], new Expr.LogicalAnd(es));
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
 				}
 			};
 		}
@@ -7592,7 +7592,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @return
 	 */
 	private static Schema createSchema() {
-		return createSchema_2_1();
+		return createSchema_2_2();
+	}
+
+	private static SectionedSchema createSchema_2_2() {
+		SectionedSchema schema = createSchema_2_1();
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("DECL", "property", Decl.Property.DESCRIPTOR_1);
+		return builder.done();
 	}
 
 	/**

@@ -275,7 +275,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// FIXME: Add the "this" lifetime
 		if (decl.getModifiers().match(Modifier.Native.class) == null) {
 			// Create scope representing this declaration
-			EnclosingScope scope = new FunctionOrMethodScope(decl);
+			EnclosingScope scope = new FunctionOrMethodOrPropertyScope(decl);
 			// Check type information throughout all statements in body.
 			Environment last = checkBlock(decl.getBody(), environment, scope);
 			// Check return value
@@ -309,7 +309,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Check invariant (i.e. requires clauses) provided.
-		checkConditions(d.getInvariant(), true, environment);
+		checkExpression(d.getBody(), d.getType().getReturn(), true, environment);
 	}
 
 	public void checkVariantDeclaration(Decl.Variant d) {
@@ -690,7 +690,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Determine the set of return types for the enclosing function or
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
-		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
+		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodOrPropertyScope.class).getDeclaration();
 		Type type = fm.getType().getReturn();
 		// Type check the operand for the return statement (if applicable)
 		if (stmt.hasReturn() && type instanceof Type.Void) {
@@ -3561,10 +3561,10 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope {
+	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
 		private final Decl.FunctionOrMethod declaration;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
 			super(null);
 			this.declaration = declaration;
 		}

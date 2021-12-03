@@ -1,9 +1,9 @@
 // Reverse a linked list
 type LinkedList<T> is null | &{ T data, LinkedList<T> next }
 
-property equiv<T>(LinkedList<T> l, int i, T[] items)
-where (i == |items|) ==> (l == null)
-where (i < |items|) ==> (!(l is null) && l->data == items[i] && equiv(l->next,i+1,items))
+property equiv<T>(LinkedList<T> l, int i, T[] items) -> (bool r):
+    (i >= |items| && l == null) ||
+    (!(l is null) && l->data == items[i] && equiv(l->next,i+1,items))
 
 public export method test():
     LinkedList<int> l1 = null

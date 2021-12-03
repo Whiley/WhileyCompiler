@@ -1,7 +1,7 @@
 type nat is (int x) where x >= 0
 
-property sorted(int[] arr, int n)
-where all { i in 1..n | arr[i-1] <= arr[i] }
+property sorted(int[] arr, int n) -> (bool r):
+    all { i in 1..n | arr[i-1] <= arr[i] }
 
 function create(int start, int end) -> (int[] result)
 requires start < end

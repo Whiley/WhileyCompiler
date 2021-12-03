@@ -1,8 +1,8 @@
 variant immutable(&int p)
 where *p == old(*p)
 
-property unchanged(&int p)
-where immutable(p)
+property unchanged(&int p) -> (bool r):
+    immutable(p)
 
 method m(&int p)
 ensures unchanged(p):

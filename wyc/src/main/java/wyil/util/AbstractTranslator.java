@@ -129,8 +129,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
-		List<E> clauses = visitHomogoneousExpressions(decl.getInvariant());
-		return constructProperty(decl,clauses);
+		E body = visitExpression(decl.getBody());
+		return constructProperty(decl,body);
 	}
 
 	public D visitVariant(Decl.Variant decl) {
@@ -141,7 +141,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	public D visitFunction(Decl.Function decl) {
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
 		return constructFunction(decl,precondition,postcondition,body);
 	}
 
@@ -149,7 +149,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		// Construct environment relation
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodScope(decl));
+		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
 		return constructMethod(decl,precondition,postcondition,body);
 	}
 
@@ -937,7 +937,7 @@ public abstract class AbstractTranslator<D, S, E> {
 
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
-	public abstract D constructProperty(Decl.Property decl, List<E> clauses);
+	public abstract D constructProperty(Decl.Property decl, E body);
 
 	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
@@ -1190,10 +1190,10 @@ public abstract class AbstractTranslator<D, S, E> {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope {
+	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
 		private final Decl.FunctionOrMethod declaration;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
 			super(null);
 			this.declaration = declaration;
 		}

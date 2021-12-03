@@ -1,7 +1,8 @@
-property nat(int x) where x >= 0
+property nat(int x) -> (bool r):
+   x >= 0
 
-property natArray(int[] xs)
-where all { i in 0..|xs| | nat(xs[i]) }
+property natArray(int[] xs) -> (bool r):
+   all { i in 0..|xs| | nat(xs[i]) }
 
 function id(int[] xs) -> (int[] ys)
 requires natArray(xs)

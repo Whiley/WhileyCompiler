@@ -1,4 +1,5 @@
-property nat(int x) where x > 0
+property nat(int x) -> (bool r):
+    x > 0
 
 function abs(int x) -> (int y)
 ensures nat(y)

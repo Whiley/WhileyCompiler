@@ -1,5 +1,5 @@
-property dup(int[] xs, int n)
-where some { i in n..|xs|, j in n..|xs| | i != j && xs[i] == xs[j] }
+property dup(int[] xs, int n) -> (bool r):
+    some { i in n..|xs|, j in n..|xs| | i != j && xs[i] == xs[j] }
 
 // NOTE: this has not been proven yet and I'd assume there are some
 // problems still getting it to verify.  It does pass the test cases

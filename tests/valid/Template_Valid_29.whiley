@@ -1,8 +1,8 @@
 // test case from std::collection
 public type uint is (int i) where i >= 0
 
-property equals<T>(T[] lhs, T[] rhs, int n)
-where all { k in 0..n | lhs[k] == rhs[k] }
+property equals<T>(T[] lhs, T[] rhs, int n) -> (bool r):
+    all { k in 0..n | lhs[k] == rhs[k] }
 
 public type Vector<T> is {
     T[] items,

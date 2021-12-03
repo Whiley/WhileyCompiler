@@ -6,11 +6,11 @@ type Link is {
 type LinkedList is null | Link
 
 // index i is "within bounds" of ls
-property within(Link ls, int i)
-// index cannot be negative
-where i >= 0
-// posiive index must be recurisvely satisfied
-where (i > 0) ==> (ls.next is Link && within(ls.next,i-1))
+property within(Link ls, int i) -> (bool r):
+    // posiive index must be recurisvely satisfied    
+    (i > 0 && ls.next is Link && within(ls.next,i-1)) ||
+    // index within bounds
+    i == 0
 
 function get(Link ls, int i) -> int
 // Index i is within bounds

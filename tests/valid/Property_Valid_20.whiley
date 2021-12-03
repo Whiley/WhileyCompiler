@@ -4,9 +4,9 @@ type Node is {List next}
 type List is null|Node
 
 // A given (sub)list is "reachable" from its enclosing list
-property reachable(List head, Node child)
-// Unroll in backwards direction
-where (head == child) || reachable(head,{next: child})
+property reachable(List head, Node child) -> (bool r):
+    // Unroll in backwards direction
+    (head == child) || reachable(head,{next: child})
 
 function len(List l) -> (int r):
     //

@@ -1,5 +1,8 @@
-property nat_a(int x) where x >= 0
-property nat_b(int x) where x >= 0
+property nat_a(int x) -> (bool r):
+    x >= 0
+
+property nat_b(int x) -> (bool r):
+    x >= 0
 
 function id(int x) -> (int y)
 requires nat_a(x)

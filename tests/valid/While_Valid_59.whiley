@@ -1,8 +1,8 @@
-property sum(int[] a, int[] b, int[] c, int n)
-where all { i in 0..n | c[i] == a[i] + b[i] }
+property sum(int[] a, int[] b, int[] c, int n) -> (bool r):
+    all { i in 0..n | c[i] == a[i] + b[i] }
 
-property equal(int[] a, int[] b, int n)
-where all { i in n..|a| | a[i] == b[i] }
+property equal(int[] a, int[] b, int n) -> (bool r):
+    all { i in n..|a| | a[i] == b[i] }
 
 function arraySum2(int[] a, int[] b) -> (int[] c)
 requires |a| == |b|

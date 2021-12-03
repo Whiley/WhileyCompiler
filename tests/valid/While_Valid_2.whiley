@@ -1,6 +1,5 @@
-property sorted(int[] items)
-//where all { i in 0 .. n-1 | items[i] < items[i+1] }
-where all { i in 0..|items|, j in 0..|items| | (i < j) ==> (items[i] < items[j]) }
+property sorted(int[] items) -> (bool r):
+    all { i in 0..|items|, j in 0..|items| | (i < j) ==> (items[i] < items[j]) }
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or

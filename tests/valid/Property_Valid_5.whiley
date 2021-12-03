@@ -1,7 +1,7 @@
 type nat is (int x) where x >= 0
 
-property absent(int[] items, int item, int end)
-where all { i in 0..end | items[i] != item }
+property absent(int[] items, int item, int end) -> (bool r):
+    all { i in 0..end | items[i] != item }
 
 function indexOf(int[] items, int item) -> (int r)
 ensures (r >= 0) ==> (items[r] == item)

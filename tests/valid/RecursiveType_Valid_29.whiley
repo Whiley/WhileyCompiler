@@ -2,9 +2,9 @@ type nat is (int x) where x >= 0
 type Link is { LinkedList next, int data }
 type LinkedList is null | Link
 
-property isLength(LinkedList list, nat len)
-where (list is null) ==> (len == 0)
-where (list is Link) ==> (isLength(list.next,len-1))
+property isLength(LinkedList list, nat len) -> (bool r):
+    (list is null && len == 0) ||
+    (list is Link && isLength(list.next,len-1))
 
 function length(LinkedList list) -> (nat r)
 ensures isLength(list,r):

@@ -503,11 +503,13 @@ public class WhileyFileParser {
 		Identifier name = parseIdentifier();
 		Tuple<Template.Variable> template = parseOptionalTemplate(scope);
 		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
-		Tuple<Expr> invariant = parseInvariant(scope, Where);
-		//
+		match(MinusGreater);
+		Tuple<Decl.Variable> returns = parseOptionalParameters(scope);
+		match(Colon);
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, invariant), start);
+		Expr body = parseExpression(scope, false);
+		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, body), start);
 	}
 
 	private Decl.Variant parseVariantDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {

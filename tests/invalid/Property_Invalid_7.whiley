@@ -1,10 +1,11 @@
 type nat is (int x) where x >= 0
 
-property max(int[] xs, int max, int n)
-// Max is not smaller than everything upto n
-where all { i in 0 .. n | max >= xs[i] }
-// Max is one of the values upto n
-where some { i in 0..n | max == xs[i] }
+property max(int[] xs, int max, int n) -> (bool r):
+    // Max is not smaller than everything upto n
+    all { i in 0 .. n | max >= xs[i] } && 
+    // Max is one of the values upto n
+    some { i in 0..n | max == xs[i] }
+
 
 // Determine the maximum value of an integer array
 function max(int[] items) -> (int r)

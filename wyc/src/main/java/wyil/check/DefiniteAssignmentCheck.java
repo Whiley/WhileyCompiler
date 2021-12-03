@@ -112,7 +112,7 @@ public class DefiniteAssignmentCheck
 		environment = environment.addAll(declaration.getParameters());
 		// Iterate through each statement in the body of the function or method,
 		// updating the set of definitely assigned variables as appropriate.
-		visitExpressions(declaration.getInvariant(),environment);
+		visitStatement(declaration.getBody(),environment);
 		//
 		return null;
 	}

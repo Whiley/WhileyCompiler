@@ -161,7 +161,7 @@ public abstract class AbstractVisitor {
 	public void visitProperty(Decl.Property decl) {
 		visitVariables(decl.getParameters());
 		visitVariables(decl.getReturns());
-		visitExpressions(decl.getInvariant());
+		visitStatement(decl.getBody());
 	}
 
 	public void visitVariant(Decl.Variant decl) {

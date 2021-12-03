@@ -1,6 +1,6 @@
-property sum(int n, int[] xs, int i)
-where (i >= |xs|) ==> (n == 0)
-where (i < |xs|) ==> sum(n-xs[i],xs,i+1)
+property sum(int n, int[] xs, int i) -> (bool r):
+   (i >= |xs| && n == 0) ||
+   (i < |xs| && sum(n-xs[i],xs,i+1))
 
 function fsum(int[] xs, int s, int[] ys) -> (int r)
 requires sum(s,xs,0) && sum(s,ys,0)

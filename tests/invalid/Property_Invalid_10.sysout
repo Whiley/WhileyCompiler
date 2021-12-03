@@ -1,0 +1,3 @@
+Property_Invalid_10.whiley:5: expected bool, found int
+    return inc(x)
+           ^^^^^^

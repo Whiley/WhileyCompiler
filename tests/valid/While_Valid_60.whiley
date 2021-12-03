@@ -1,7 +1,7 @@
 type nat is (int x) where x >= 0
 
-property sum(int[] a, int[] b, int[] c, int n)
-where all { i in 0..n | c[i] == a[i] + b[i] }
+property sum(int[] a, int[] b, int[] c, int n) -> (bool r):
+    all { i in 0..n | c[i] == a[i] + b[i] }
 
 function arraySum2(int[] a, int[] b) -> (int[] c)
 requires |a| == |b|

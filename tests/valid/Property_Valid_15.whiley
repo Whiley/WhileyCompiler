@@ -5,9 +5,9 @@ type List is null|Node
 
 // A recursive property capturing the concept of
 // the length of a List
-property length(List l, int len)
-where l is null ==> len == 0
-where l is Node ==> length(l.next, len-1)
+property length(List l, int len) -> (bool r):
+    (l is Node && length(l.next,len-1)) ||
+    (l is null && len == 0)
 
 function len(List l) -> (int r)
 // Ensure we capture the real length

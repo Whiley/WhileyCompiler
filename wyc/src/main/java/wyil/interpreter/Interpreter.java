@@ -182,21 +182,18 @@ public class Interpreter {
 		} else if (lambda instanceof Decl.Lambda) {
 			Decl.Lambda l = (Decl.Lambda) lambda;
 			return executeExpression(ANY_T, l.getBody(), frame, heap);
-		} else if(lambda instanceof Decl.Property) {
+		} else if (lambda instanceof Decl.Property) {
 			Decl.Property p = (Decl.Property) lambda;
-			Tuple<Expr> invariant = p.getInvariant();
-			// Evaluate clauses of property, and terminate early as soon as one doesn't
-			// hold.
-			for (int i = 0; i != invariant.size(); ++i) {
-				RValue.Bool retval = executeExpression(BOOL_T, invariant.get(i), frame, heap);
-				if (!retval.boolValue()) {
-					// Short circuit
-					return retval;
-				}
-			}
-			//
-			return RValue.True;
-		} else {
+			Type type = p.getType().getReturn();
+			Expr body = p.getBody();
+			// Execute return expressions
+			RValue value = executeExpression(ANY_T, body, frame, heap);
+			// Check type invariants
+			checkTypeInvariants(type, value, frame, heap, body);
+			// Done
+			return value;
+		}
+		else {
 			Decl.Variant p = (Decl.Variant) lambda;
 			Tuple<Expr> invariant = p.getInvariant();
 			// Evaluate clauses of property, and terminate early as soon as one doesn't

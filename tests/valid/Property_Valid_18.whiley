@@ -1,9 +1,9 @@
-property sum(int[] arr, int i, int s)
-where (i == 0) ==> (s == 0)
-where i > 0 ==> sum(arr, i-1, s - arr[i-1])
+property sum(int[] arr, int i, int s) -> (bool r):
+    (i <= 0 && s == 0) ||
+    (i > 0 && sum(arr, i-1, s - arr[i-1]))
 
-property sum(int[] arr, int s)
-where sum(arr,|arr|,s)
+property sum(int[] arr, int s) -> (bool r):
+    sum(arr,|arr|,s)
 
 function sum(int[] xs) -> (int r):
     //

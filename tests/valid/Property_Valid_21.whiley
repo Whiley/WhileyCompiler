@@ -4,9 +4,9 @@ type Node is {int data, List next}
 type List is null|Node
 
 // A given (sub)list is "reachable" from its enclosing list
-property reachable(List head, List child)
-// Either we met the child, or need to keep searching
-where (head == child) || (head is Node && reachable(head.next,child))
+property reachable(List head, List child) -> (bool r):
+    // Either we met the child, or need to keep searching
+    (head == child) || (head is Node && reachable(head.next,child))
 
 // Lemma is needed to go "against" the direction of unrolling.  This
 // may seem kind of strange.

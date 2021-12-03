@@ -159,7 +159,7 @@ public abstract class AbstractConsumer<T> {
 	public void visitProperty(Decl.Property decl, T data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
-		visitExpressions(decl.getInvariant(), data);
+		visitStatement(decl.getBody(), data);
 	}
 
 	public void visitVariant(Decl.Variant decl, T data) {

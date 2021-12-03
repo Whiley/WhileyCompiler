@@ -1,5 +1,5 @@
-property contains(int[] xs, int x)
-where some { i in 0..|xs| | xs[i] == x }
+property contains(int[] xs, int x) -> (bool r):
+    some { i in 0..|xs| | xs[i] == x }
 
 function id(int[] xs, int x) -> (int[] ys)
 requires contains(xs,x)

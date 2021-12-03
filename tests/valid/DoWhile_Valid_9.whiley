@@ -1,7 +1,7 @@
 type pos is (int x) where x >= 1
 
-property sorted(int[] arr, int n)
-where |arr| == 0 || (1 <= n && n <= |arr| && all { i in 1..n | arr[i-1] <= arr[i] })
+property sorted(int[] arr, int n) -> (bool r):
+    |arr| == 0 || (1 <= n && n <= |arr| && all { i in 1..n | arr[i-1] <= arr[i] })
 
 function bubbleSort(int[] items) -> (int[] result)
 // Resulting array is sorted
