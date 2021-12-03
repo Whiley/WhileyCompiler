@@ -215,6 +215,12 @@ public class TestUtils {
 	 */
 	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String arg)
 			throws IOException {
+		return compile(whileydir,verify,counterexamples,false,arg);
+	}
+
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, boolean strict, String arg)
+				throws IOException {
+
 		String filename = arg + ".whiley";
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
@@ -233,7 +239,7 @@ public class TestUtils {
 			// Construct build repository
 			Build.Repository repository = new ByteRepository(registry, source);
 			// Construct compile task
-			CompileTask task = new CompileTask(path, source);
+			CompileTask task = new CompileTask(path, source).setStrict(strict);
 			// Apply Whiley Compiler to repository
 			repository.apply(Transactions.create(task));
 			// Read out binary file from build repository

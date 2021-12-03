@@ -1,20 +1,19 @@
 // This is something of a verifier workout.  Its trying to trigger a
 // matching loop.
-property equals(int[] xs, int[] ys)
-where |xs| == |ys|
-where all { i in 0..|xs| | xs[i] == ys[i] }
+property equals(int[] xs, int[] ys) -> (bool r):
+   |xs| == |ys| && all { i in 0..|xs| | xs[i] == ys[i] }
 
-property sorted_a(int[] xs)
-where |xs| == 0 || all { i in 1 .. |xs| | xs[i-1] < xs[i] }
+property sorted_a(int[] xs) -> (bool r):
+   |xs| == 0 || all { i in 1 .. |xs| | xs[i-1] < xs[i] }
 
-property sorted_b(int[] xs)
-where |xs| == 0 || all { i in 0 .. |xs|-1 | xs[i] < xs[i+1] }
+property sorted_b(int[] xs) -> (bool r):
+   |xs| == 0 || all { i in 0 .. |xs|-1 | xs[i] < xs[i+1] }
 
-property consecutive_a(int[] xs)
-where |xs| == 0 || all { i in 1 .. |xs| | xs[i-1] + 1 == xs[i] }
+property consecutive_a(int[] xs) -> (bool r):
+   |xs| == 0 || all { i in 1 .. |xs| | xs[i-1] + 1 == xs[i] }
 
-property consecutive_b(int[] xs)
-where |xs| == 0 || all { i in 0 .. |xs|-1 | xs[i] + 1 == xs[i+1] }
+property consecutive_b(int[] xs) -> (bool r):
+   |xs| == 0 || all { i in 0 .. |xs|-1 | xs[i] + 1 == xs[i+1] }
 
 function f1(int[] xs) -> (int[] ys)
 requires sorted_a(xs)

@@ -1,8 +1,8 @@
 type Node is &{ int data, LinkedList next }
 type LinkedList is null | Node
 
-property acyclic(LinkedList l)
-where l is null || acyclic(l->next)
+property acyclic(LinkedList l) -> (bool r):
+    l is null || acyclic(l->next)
 
 variant unchanged(LinkedList l)
 where l is null || *l == old(*l)

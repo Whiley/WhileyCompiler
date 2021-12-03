@@ -244,6 +244,7 @@ public class AllInvalidTest {
 				whileySrcDir,      // location of source directory
 				true,              // enable verification
 				true,              // enable counterexample generation
+				true,	           // enable strict treatment of unsafe
 				name);             // name of test to compile
 
 		boolean r = p.first();

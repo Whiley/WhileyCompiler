@@ -33,8 +33,10 @@ public class Activator implements Plugin.Activator {
 	public static Trie PACKAGE_NAME = Trie.fromString("package/name");
 	public static Trie BUILD_WHILEY_SOURCE = Trie.fromString("build/whiley/source");
 	public static Trie BUILD_WHILEY_TARGET = Trie.fromString("build/whiley/target");
+	public static Trie BUILD_WHILEY_STRICT = Trie.fromString("build/whiley/strict");
 	private static Value.UTF8 SOURCE_DEFAULT = new Value.UTF8("src".getBytes());
 	private static Value.UTF8 TARGET_DEFAULT = new Value.UTF8("bin".getBytes());
+	private static Value.Bool STRICT_DEFAULT = new Value.Bool(false);
 
 	public static Command.Platform WHILEY_PLATFORM = new Command.Platform() {
 		//
@@ -47,7 +49,8 @@ public class Activator implements Plugin.Activator {
 		public Configuration.Schema getConfigurationSchema() {
 			return Configuration.fromArray(
 					Configuration.UNBOUND_STRING(BUILD_WHILEY_SOURCE, "Specify location for whiley source files", SOURCE_DEFAULT),
-					Configuration.UNBOUND_STRING(BUILD_WHILEY_TARGET, "Specify location for generated wyil files", TARGET_DEFAULT));
+					Configuration.UNBOUND_STRING(BUILD_WHILEY_TARGET, "Specify location for generated wyil files", TARGET_DEFAULT),
+					Configuration.UNBOUND_BOOLEAN(BUILD_WHILEY_STRICT, "Specify strict treatment of unsafe code", STRICT_DEFAULT));
 		}
 
 		@Override
@@ -62,6 +65,8 @@ public class Activator implements Plugin.Activator {
 			Trie source = Trie.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_SOURCE).unwrap());
 			// Specify directory where generated WyIL files are dumped.
 			Trie target = Trie.fromString(config.get(Value.UTF8.class, BUILD_WHILEY_TARGET).unwrap());
+			// Determine strictness
+			boolean strict = config.get(Value.Bool.class, BUILD_WHILEY_STRICT).get();
 			// Construct includes filter
 			Content.Filter<WhileyFile> includes = Content.Filter(WhileyFile.ContentType,source.append(Trie.EVERYTHING));
 			// Identify all Whiley source files
@@ -69,7 +74,7 @@ public class Activator implements Plugin.Activator {
 			// Resolve all packages declared in configuration
 			List<Content.Source> pkgs = resolver.resolve(config);
 			// Done
-			return new CompileTask(target.append(pkg), sources, pkgs);
+			return new CompileTask(target.append(pkg), sources, pkgs).setStrict(strict);
 		}
 	};
 

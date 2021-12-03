@@ -6,6 +6,7 @@ import java.util.*;
 import jbfs.core.Build;
 import jbfs.core.Content;
 import jbfs.core.Build.SnapShot;
+import jbfs.util.ArrayUtils;
 import jbfs.util.Pair;
 import jbfs.util.Trie;
 import wycc.util.AbstractCompilationUnit.Name;
@@ -83,6 +84,10 @@ public class CompileTask implements Build.Task {
 	 * Identifier for target of this build task.
 	 */
 	private final Trie target;
+	/**
+	 * Determines strictness around unsafe
+	 */
+	private boolean strict = false;
 
 	public CompileTask(Trie target, WhileyFile... sources) {
 		this.target = target;
@@ -94,6 +99,11 @@ public class CompileTask implements Build.Task {
 		this.target = target;
 		this.sources = new ArrayList<>(sources);
 		this.packages = new ArrayList<>(packages);
+	}
+
+	public CompileTask setStrict(boolean flag) {
+		this.strict = flag;
+		return this;
 	}
 
 	@Override
@@ -157,7 +167,7 @@ public class CompileTask implements Build.Task {
 		// ========================================================================
 		// Compiler Checks
 		// ========================================================================
-		Compiler.Check[] stages = instantiateChecks(meter);
+		Compiler.Check[] stages = instantiateChecks(meter, strict);
 		for (int i = 0; i != stages.length; ++i) {
 			r = r && stages[i].check(target);
 		}
@@ -185,9 +195,14 @@ public class CompileTask implements Build.Task {
 		return new Pair<>(target, r);
 	}
 
-	private static Compiler.Check[] instantiateChecks(Build.Meter m) {
-		return new Compiler.Check[] { new DefiniteAssignmentCheck(m), new DefiniteUnassignmentCheck(m),
-				new FunctionalCheck(m), new SignatureCheck(m), new StaticVariableCheck(m), new UnsafeCheck(m) };
+	private static Compiler.Check[] instantiateChecks(Build.Meter m, boolean strict) {
+		Compiler.Check[] checks = new Compiler.Check[] { new DefiniteAssignmentCheck(m),
+				new DefiniteUnassignmentCheck(m), new FunctionalCheck(m), new SignatureCheck(m),
+				new StaticVariableCheck(m) };
+		if (strict) {
+			checks = ArrayUtils.append(checks, new UnsafeCheck(m));
+		}
+		return checks;
 	}
 
 	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
