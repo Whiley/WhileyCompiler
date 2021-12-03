@@ -1136,7 +1136,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@Override
 			public WyilFile.Type.Property getType() {
-				return new WyilFile.Type.Property(project(getParameters()));
+				return new WyilFile.Type.Property(project(getParameters()), project(getReturns()));
 			}
 
 			@Override
