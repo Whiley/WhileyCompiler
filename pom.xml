@@ -11,7 +11,7 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc-all</artifactId>
-  <version>0.9.8</version>
+  <version>0.9.9</version>
   <packaging>pom</packaging>
   
   <modules>
