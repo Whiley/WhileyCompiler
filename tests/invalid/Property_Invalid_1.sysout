@@ -1,3 +1,3 @@
-Property_Invalid_1.whiley:10: variable may be uninitialised
+Property_Invalid_1.whiley:11: variable may be uninitialised
         return y
                ^
