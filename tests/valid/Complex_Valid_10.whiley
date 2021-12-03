@@ -43,10 +43,10 @@ where 2 <= ordinal && ordinal <= ACE
 
 // Define a "comparator" for cards
 property lessThan(Card c1, Card c2) -> bool:
-    return (c1.suite < c2.suite) || (c1.suite == c1.suite && c1.ordinal < c2.ordinal)
+    (c1.suite < c2.suite) || (c1.suite == c1.suite && c1.ordinal < c2.ordinal)
 
 property sorted(Card[] cards) -> bool:
-    return all { i in 1..|cards| | lessThan(cards[i-1],cards[i]) }
+    all { i in 1..|cards| | lessThan(cards[i-1],cards[i]) }
 
 // =======================================
 // Card Constants

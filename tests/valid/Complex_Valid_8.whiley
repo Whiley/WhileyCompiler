@@ -17,7 +17,7 @@ type Trie is {
 } where validTransitions(transitions)
 
 property validTransitions(Transition[] transitions) -> (bool r):
-    return all { k in 0..|transitions| | transitions[k].to <= |transitions| }
+    all { k in 0..|transitions| | transitions[k].to <= |transitions| }
 
 // Define the Empty Trie
 Transition DummyTransition = { from: 0, to: 1, character: 0 }

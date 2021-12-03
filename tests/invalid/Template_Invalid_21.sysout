@@ -1,3 +1,3 @@
 Template_Invalid_21.whiley:5: method invocation not permitted
-    return f(x)
-           ^^^^
+    f(x)
+    ^^^^

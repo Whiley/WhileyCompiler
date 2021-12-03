@@ -1,5 +1,5 @@
 property broken(&int p) -> (bool r):
-    return *p == old(*p)
+    *p == old(*p)
 
 method m(&int x):
     //

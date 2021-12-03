@@ -6,21 +6,15 @@ type List is null|Node
 // A recursive property capturing the concept of
 // the length of a List
 property length(List l, int len) -> (bool r):
-    if l is Node:
-        return length(l.next,len-1)
-    else:
-        return (len == 0)
+    (l is Node && length(l.next,len-1)) ||
+    (l is null && len == 0)
 
 // Another recursive property capturing the difference in length
 // between the head of a list and a given position within that
 // list.
 property diff(List head, List pos, int d) -> (bool r):
-    if (head == pos):
-        return (d == 0)
-    else if head is Node:
-        return diff(head.next, pos, d-1)
-    else:
-        return false
+    (head == pos && d == 0) ||
+    (head is Node && diff(head.next, pos, d-1))
 
 function len(List l) -> (int r)
 // Ensure we capture the real length

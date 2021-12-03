@@ -6,10 +6,8 @@ type List is null|Node
 // A recursive property capturing the concept of
 // the length of a List
 property sum(List l, int s) -> (bool r):
-    if l is Node:
-        return sum(l.next, s - l.data)
-    else:
-        return (s == 0)
+    (l is Node && sum(l.next, s - l.data)) ||
+    (l is null && s == 0)
 
 public export method test():
     // List of length 1

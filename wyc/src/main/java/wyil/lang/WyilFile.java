@@ -931,9 +931,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 *
 		 * @see Callable
 		 */
-		public static abstract class FunctionOrMethodOrProperty extends Callable {
+		public static abstract class FunctionOrMethod extends Callable {
 
-			public FunctionOrMethodOrProperty(int opcode, Tuple<Modifier> modifiers, Identifier name,
+			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name,
 					Tuple<Template.Variable> template, Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns,
 					Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
 				super(opcode, modifiers, name, template, parameters, returns,
@@ -983,12 +983,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * and <code>private</code>.
 		 * </p>
 		 *
-		 * @see FunctionOrMethodOrProperty
+		 * @see FunctionOrMethod
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Function extends FunctionOrMethodOrProperty {
+		public static class Function extends FunctionOrMethod {
 
 			public Function(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
 					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> requires,
@@ -1054,12 +1054,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * <code>private</code>.
 		 * </p>
 		 *
-		 * @see FunctionOrMethodOrProperty
+		 * @see FunctionOrMethod
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Method extends FunctionOrMethodOrProperty {
+		public static class Method extends FunctionOrMethod {
 
 			public Method(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
 					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> requires,
@@ -1126,11 +1126,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Property extends FunctionOrMethodOrProperty {
+		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Stmt.Block body) {
-				super(DECL_property, modifiers, name, template, parameters, returns, new Tuple<>(), new Tuple<>(),
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Expr body) {
+				super(DECL_property, modifiers, name, template, parameters, returns,
 						body);
 			}
 
@@ -1141,8 +1141,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@Override
 			@SuppressWarnings("unchecked")
-			public Stmt.Block getBody() {
-				return (Stmt.Block) get(7);
+			public Expr getBody() {
+				return (Expr) get(5);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1150,16 +1150,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[5]);
+						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
 			}
 
-			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.EIGHT, Data.ZERO, "DECL_property") {
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[7]);
+							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
 				}
 			};
 		}

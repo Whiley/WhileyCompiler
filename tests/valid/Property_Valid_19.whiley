@@ -1,6 +1,6 @@
 // Test of operator precedence
 property test(bool flag, int y) -> (bool r):
-    return flag && y >= 0 ==> y < 10
+    flag && y >= 0 ==> y < 10
 
 function f(bool flag, int y) -> (int x)
 requires test(flag,y)

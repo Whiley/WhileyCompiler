@@ -2,7 +2,7 @@
 public type uint is (int i) where i >= 0
 
 property equals<T>(T[] lhs, T[] rhs, int n) -> (bool r):
-    return all { k in 0..n | lhs[k] == rhs[k] }
+    all { k in 0..n | lhs[k] == rhs[k] }
 
 public type Vector<T> is {
     T[] items,

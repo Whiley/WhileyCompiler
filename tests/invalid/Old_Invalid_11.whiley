@@ -2,7 +2,7 @@ variant immutable(&int p)
 where *p == old(*p)
 
 property unchanged(&int p) -> (bool r):
-    return immutable(p)
+    immutable(p)
 
 method m(&int p)
 ensures unchanged(p):

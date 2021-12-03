@@ -120,7 +120,7 @@ public class QuickCheck {
 				switch (d.getOpcode()) {
 				case DECL_method:
 				case DECL_function:
-					return check((Decl.FunctionOrMethodOrProperty) d, parent, context);
+					return check((Decl.FunctionOrMethod) d, parent, context);
 				case DECL_rectype:
 				case DECL_type:
 					return check((Decl.Type) d, context);
@@ -154,7 +154,7 @@ public class QuickCheck {
 	 * @return
 	 * @throws IOException
 	 */
-	private boolean check(Decl.FunctionOrMethodOrProperty fm, WyilFile parent, ExtendedContext context) throws IOException {
+	private boolean check(Decl.FunctionOrMethod fm, WyilFile parent, ExtendedContext context) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long time = System.currentTimeMillis();
 		long memory = runtime.freeMemory();

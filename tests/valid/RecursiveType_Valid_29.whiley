@@ -3,10 +3,8 @@ type Link is { LinkedList next, int data }
 type LinkedList is null | Link
 
 property isLength(LinkedList list, nat len) -> (bool r):
-    if list is null:
-        return len == 0
-    else:
-        return isLength(list.next,len-1)
+    (list is null && len == 0) ||
+    (list is Link && isLength(list.next,len-1))
 
 function length(LinkedList list) -> (nat r)
 ensures isLength(list,r):

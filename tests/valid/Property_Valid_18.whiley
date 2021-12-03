@@ -1,11 +1,9 @@
 property sum(int[] arr, int i, int s) -> (bool r):
-    if i <= 0:
-        return s == 0
-    else:
-        return sum(arr, i-1, s - arr[i-1])
+    (i <= 0 && s == 0) ||
+    (i > 0 && sum(arr, i-1, s - arr[i-1]))
 
 property sum(int[] arr, int s) -> (bool r):
-    return sum(arr,|arr|,s)
+    sum(arr,|arr|,s)
 
 function sum(int[] xs) -> (int r):
     //

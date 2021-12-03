@@ -2,12 +2,8 @@
 type LinkedList<T> is null | &{ T data, LinkedList<T> next }
 
 property equiv<T>(LinkedList<T> l, int i, T[] items) -> (bool r):
-    if i >= |items|:
-        return l == null
-    else if !(l is null) && l->data == items[i]:
-        return equiv(l->next,i+1,items)
-    else:
-        return false
+    (i >= |items| && l == null) ||
+    (!(l is null) && l->data == items[i] && equiv(l->next,i+1,items))
 
 public export method test():
     LinkedList<int> l1 = null

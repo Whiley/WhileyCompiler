@@ -721,7 +721,7 @@ public class NameResolution {
 			case DECL_method: {
 				if (stubsOnly) {
 					// drop the body from the function, making it a stub
-					return allocateStub((Decl.FunctionOrMethodOrProperty) item);
+					return allocateStub((Decl.FunctionOrMethod) item);
 				} else {
 					return super.allocate(item);
 				}
@@ -758,7 +758,7 @@ public class NameResolution {
 		 * @param fm
 		 * @return
 		 */
-		private SyntacticItem allocateStub(Decl.FunctionOrMethodOrProperty fm) {
+		private SyntacticItem allocateStub(Decl.FunctionOrMethod fm) {
 			SyntacticItem item = map.get(fm);
 			if (item != null) {
 				// item is already allocated as a stub, therefore must return that.

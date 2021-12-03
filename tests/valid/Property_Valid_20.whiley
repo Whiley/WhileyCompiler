@@ -6,7 +6,7 @@ type List is null|Node
 // A given (sub)list is "reachable" from its enclosing list
 property reachable(List head, Node child) -> (bool r):
     // Unroll in backwards direction
-    return (head == child) || reachable(head,{next: child})
+    (head == child) || reachable(head,{next: child})
 
 function len(List l) -> (int r):
     //

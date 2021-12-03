@@ -81,7 +81,7 @@ public class DefiniteAssignmentCheck
 	 * @return
 	 */
 	@Override
-	public ControlFlow visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty declaration, DefinitelyAssignedSet dummy) {
+	public ControlFlow visitFunctionOrMethod(Decl.FunctionOrMethod declaration, DefinitelyAssignedSet dummy) {
 		DefinitelyAssignedSet environment = new DefinitelyAssignedSet();
 		// Definitely assigned variables includes all parameters.
 		environment = environment.addAll(declaration.getParameters());

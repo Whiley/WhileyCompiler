@@ -7,12 +7,10 @@ type LinkedList is null | Link
 
 // index i is "within bounds" of ls
 property within(Link ls, int i) -> (bool r):
-    if i > 0 && ls.next is Link:
-        // posiive index must be recurisvely satisfied    
-        return within(ls.next,i-1)
-    else:
-        // index cannot be negative    
-        return i >= 0
+    // posiive index must be recurisvely satisfied    
+    (i > 0 && ls.next is Link && within(ls.next,i-1)) ||
+    // index within bounds
+    i == 0
 
 function get(Link ls, int i) -> int
 // Index i is within bounds

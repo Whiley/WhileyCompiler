@@ -2,10 +2,8 @@
 type LinkedList<T> is null | &{ T data, LinkedList<T> next }
 
 property equiv<T>(LinkedList<T> l, int i, T[] items) -> (bool r):
-    if 0 <= i && i < |items|:
-        return !(l is null) && l->data == items[i] && equiv(l->next,i+1,items)
-    else:
-        return i == |items| && l == null
+    (i < |items| && !(l is null) && l->data == items[i] && equiv(l->next,i+1,items)) ||
+    (i == |items| && l == null)
 
 method reverse<T>(LinkedList<T> v) -> (LinkedList<T> r):
     //

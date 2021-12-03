@@ -6,21 +6,15 @@ type List is null|Node
 // A recursive property capturing the concept of
 // the sum of a List
 property sum(List l, int s) -> (bool r):
-    if l is Node:
-        return sum(l.next, s - l.data)
-    else:
-        return s == 0
+    (l is Node && sum(l.next, s - l.data)) ||
+    (l is null && s == 0)
 
 // Another recursive property capturing the different in length
 // between the head of a list and a given position within that
 // list.
 property diff(List head, List pos, int d) -> (bool r):
-    if (head == pos):
-        return (d == 0)
-    else if head is Node:
-        return diff(head.next, pos, d-1)
-    else:
-        return false
+    (head == pos && d == 0) ||
+    (head is Node && diff(head.next, pos, d - head.data))
 
 function sum(List l) -> (int r)
 // Ensure we capture the real length

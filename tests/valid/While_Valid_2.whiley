@@ -1,5 +1,5 @@
 property sorted(int[] items) -> (bool r):
-    return all { i in 0..|items|, j in 0..|items| | (i < j) ==> (items[i] < items[j]) }
+    all { i in 0..|items|, j in 0..|items| | (i < j) ==> (items[i] < items[j]) }
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or

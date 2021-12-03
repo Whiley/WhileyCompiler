@@ -107,7 +107,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 		case DECL_method:
-			return visitFunctionOrMethod((Decl.FunctionOrMethodOrProperty) decl);
+			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl);
 		case DECL_variant:
@@ -117,7 +117,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		}
 	}
 
-	public D visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl) {
+	public D visitFunctionOrMethod(Decl.FunctionOrMethod decl) {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 			return visitFunction((Decl.Function) decl);
@@ -129,7 +129,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
+		E body = visitExpression(decl.getBody());
 		return constructProperty(decl,body);
 	}
 
@@ -937,7 +937,7 @@ public abstract class AbstractTranslator<D, S, E> {
 
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
-	public abstract D constructProperty(Decl.Property decl, S body);
+	public abstract D constructProperty(Decl.Property decl, E body);
 
 	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
@@ -1191,14 +1191,14 @@ public abstract class AbstractTranslator<D, S, E> {
 	 *
 	 */
 	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
-		private final Decl.FunctionOrMethodOrProperty declaration;
+		private final Decl.FunctionOrMethod declaration;
 
-		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethodOrProperty declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Decl.FunctionOrMethodOrProperty getDeclaration() {
+		public Decl.FunctionOrMethod getDeclaration() {
 			return declaration;
 		}
 	}

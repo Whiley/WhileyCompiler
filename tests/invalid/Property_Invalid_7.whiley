@@ -2,7 +2,7 @@ type nat is (int x) where x >= 0
 
 property max(int[] xs, int max, int n) -> (bool r):
     // Max is not smaller than everything upto n
-    return all { i in 0 .. n | max >= xs[i] } && 
+    all { i in 0 .. n | max >= xs[i] } && 
     // Max is one of the values upto n
     some { i in 0..n | max == xs[i] }
 

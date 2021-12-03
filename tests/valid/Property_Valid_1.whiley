@@ -1,5 +1,5 @@
 property nat(int x) -> (bool r):
-    return x >= 0
+     x >= 0
 
 function abs(int x) -> (int y)
 ensures nat(y)

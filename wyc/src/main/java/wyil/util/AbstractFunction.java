@@ -134,7 +134,7 @@ public abstract class AbstractFunction<P,R> {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 		case DECL_method:
-			return visitFunctionOrMethod((Decl.FunctionOrMethodOrProperty) decl, data);
+			return visitFunctionOrMethod((Decl.FunctionOrMethod) decl, data);
 		case DECL_property:
 			return visitProperty((Decl.Property) decl, data);
 		case DECL_variant:
@@ -144,7 +144,7 @@ public abstract class AbstractFunction<P,R> {
 		}
 	}
 
-	public R visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl, P data) {
+	public R visitFunctionOrMethod(Decl.FunctionOrMethod decl, P data) {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 			return visitFunction((Decl.Function) decl, data);

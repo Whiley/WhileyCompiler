@@ -1,5 +1,5 @@
 property nat(int x) -> (bool r):
-    return x >= 0
+    x >= 0
 
 type nat is (int x) where nat(x)
 

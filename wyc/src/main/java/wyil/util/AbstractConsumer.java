@@ -130,7 +130,7 @@ public abstract class AbstractConsumer<T> {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 		case DECL_method:
-			visitFunctionOrMethod((Decl.FunctionOrMethodOrProperty) decl, data);
+			visitFunctionOrMethod((Decl.FunctionOrMethod) decl, data);
 			break;
 		case DECL_property:
 			visitProperty((Decl.Property) decl, data);
@@ -143,7 +143,7 @@ public abstract class AbstractConsumer<T> {
 		}
 	}
 
-	public void visitFunctionOrMethod(Decl.FunctionOrMethodOrProperty decl, T data) {
+	public void visitFunctionOrMethod(Decl.FunctionOrMethod decl, T data) {
 		switch (decl.getOpcode()) {
 		case DECL_function:
 			visitFunction((Decl.Function) decl, data);

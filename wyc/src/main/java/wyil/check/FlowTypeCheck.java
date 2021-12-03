@@ -215,8 +215,10 @@ public class FlowTypeCheck implements Compiler.Check {
 			break;
 		case DECL_function:
 		case DECL_method:
+			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
+			break;
 		case DECL_property:
-			checkFunctionOrMethodOrPropertyDeclaration((Decl.FunctionOrMethodOrProperty) decl);
+			checkPropertyDeclaration((Decl.Property) decl);
 			break;
 		default:
 		case DECL_variant:
@@ -263,7 +265,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param decl Function or method declaration to check.
 	 * @throws IOException
 	 */
-	public void checkFunctionOrMethodOrPropertyDeclaration(Decl.FunctionOrMethodOrProperty decl) {
+	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod decl) {
 		// Construct initial environment
 		Environment environment = new Environment();
 		// Check any preconditions (i.e. requires clauses) provided.
@@ -293,7 +295,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param d
 	 * @param last
 	 */
-	private void checkReturnValue(Decl.FunctionOrMethodOrProperty d, Environment last) {
+	private void checkReturnValue(Decl.FunctionOrMethod d, Environment last) {
 		if (d.match(Modifier.Native.class) == null && last != FlowTypeUtils.BOTTOM && d.getReturns().size() != 0) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
@@ -301,6 +303,13 @@ public class FlowTypeCheck implements Compiler.Check {
 			// execution path.
 			syntaxError(d, MISSING_RETURN_STATEMENT);
 		}
+	}
+
+	public void checkPropertyDeclaration(Decl.Property d) {
+		// Construct initial environment
+		Environment environment = new Environment();
+		// Check invariant (i.e. requires clauses) provided.
+		checkExpression(d.getBody(), d.getType().getReturn(), true, environment);
 	}
 
 	public void checkVariantDeclaration(Decl.Variant d) {
@@ -681,7 +690,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Determine the set of return types for the enclosing function or
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
-		Decl.FunctionOrMethodOrProperty fm = scope.getEnclosingScope(FunctionOrMethodOrPropertyScope.class).getDeclaration();
+		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodOrPropertyScope.class).getDeclaration();
 		Type type = fm.getType().getReturn();
 		// Type check the operand for the return statement (if applicable)
 		if (stmt.hasReturn() && type instanceof Type.Void) {
@@ -3553,14 +3562,14 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *
 	 */
 	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
-		private final Decl.FunctionOrMethodOrProperty declaration;
+		private final Decl.FunctionOrMethod declaration;
 
-		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethodOrProperty declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Decl.FunctionOrMethodOrProperty getDeclaration() {
+		public Decl.FunctionOrMethod getDeclaration() {
 			return declaration;
 		}
 
