@@ -1157,6 +1157,17 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				@SuppressWarnings("unchecked")
 				@Override
 				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					Tuple<Expr> es = (Tuple<Expr>) operands[5];
+					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+							(Tuple<Decl.Variable>) operands[4], new Expr.LogicalAnd(es));
+				}
+			};
+
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
+				@SuppressWarnings("unchecked")
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
@@ -7581,7 +7592,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @return
 	 */
 	private static Schema createSchema() {
-		return createSchema_2_1();
+		return createSchema_2_2();
+	}
+
+	private static SectionedSchema createSchema_2_2() {
+		SectionedSchema schema = createSchema_2_1();
+		SectionedSchema.Builder builder = schema.extend();
+		builder.replace("DECL", "property", Decl.Property.DESCRIPTOR_1);
+		return builder.done();
 	}
 
 	/**
