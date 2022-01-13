@@ -71,7 +71,6 @@ import wyil.util.AbstractConsumer;
  */
 public class NameResolution {
 	private static final Content.Filter<WyilFile> ALL_WYILFILES = Content.Filter(WyilFile.ContentType, Trie.EVERYTHING);
-	private final Build.Meter meter;
 	private final WyilFile target;
 	/**
 	 * The resolver identifies unresolved names and produces patches based on them.
@@ -84,8 +83,7 @@ public class NameResolution {
 
 	private boolean status = true;
 
-	public NameResolution(Build.Meter meter, List<Content.Source> packages, WyilFile target) throws IOException {
-		this.meter = meter.fork(NameResolution.class.getSimpleName());
+	public NameResolution(List<Content.Source> packages, WyilFile target) throws IOException {
 		this.packages = packages;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
@@ -99,7 +97,7 @@ public class NameResolution {
 	 */
 	public boolean apply() {
 		// FIXME: need to make this incremental
-		checkImports(meter,target);
+		checkImports(target);
 		// Create initial set of patches.
 		List<Patch> patches = resolver.apply(target);
 		// Keep iterating until all patches are resolved

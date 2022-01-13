@@ -21,12 +21,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import jbfs.core.Build;
-import jbfs.util.ArrayUtils;
-import wycc.lang.*;
-import wycc.util.AbstractCompilationUnit;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jbuildgraph.util.ArrayUtils;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wyil.check.FlowTypeUtils.*;
 import static wyil.check.FlowTypeUtils.*;
@@ -171,12 +170,7 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public class FlowTypeCheck implements Compiler.Check {
-	private final Build.Meter meter;
 	private boolean status = true;
-
-	public FlowTypeCheck(Build.Meter meter) {
-		this.meter = meter.fork(FlowTypeCheck.class.getSimpleName());
-	}
 
 	// =========================================================================
 	// WhileyFile(s)
@@ -187,7 +181,6 @@ public class FlowTypeCheck implements Compiler.Check {
 		for (Decl decl : wf.getModule().getUnits()) {
 			checkDeclaration(decl);
 		}
-		meter.done();
 		return status;
 	}
 
@@ -196,7 +189,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	// =========================================================================
 
 	public void checkDeclaration(Decl decl) {
-		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			checkUnit((Decl.Unit) decl);
@@ -1377,8 +1369,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Typing pushExpression(int var, Expr expression, Typing typing, Environment environment) {
-		meter.step("expression");
-		//
 		switch (expression.getOpcode()) {
 		case EXPR_constant:
 			return pushConstant(var, (Expr.Constant) expression, typing, environment);
@@ -1966,7 +1956,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Typing  pullExpression(Expr expression, boolean required, Typing typing, Environment environment) {
-		meter.step("expression");
 		//
 		switch (expression.getOpcode()) {
 		case EXPR_constant:
@@ -2281,7 +2270,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
 			// fresh (existential) type for each position and subsitute them through.
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
 			row = p.first();
 			templateArguments = new Tuple<>(p.second());
 		}
@@ -2489,7 +2478,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param rhs The right-hand side which must be a superset of the left-hand side
 	 * @return
 	 */
-	private static <T extends SyntacticItem> boolean isSubset(Tuple<T> lhs, Tuple<T> rhs) {
+	private static <T extends Syntactic.Item> boolean isSubset(Tuple<T> lhs, Tuple<T> rhs) {
 		for (int i = 0; i != lhs.size(); ++i) {
 			final T ith = lhs.get(i);
 			boolean matched = false;
@@ -2583,7 +2572,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// specific to individual rows.
 			return new Typing.Row[] { row.set(var, Type.AnyArray) };
 		} else if (type instanceof Type.Existential) {
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array arr_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
@@ -2643,7 +2632,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
 			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
 		} else if (type instanceof Type.Existential) {
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array rec_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
@@ -2702,7 +2691,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
@@ -2769,7 +2758,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Existential) {
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
 			Type.Existential[] elements = p.second();
 			Type tup_t = Type.Tuple.create(elements);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
@@ -2907,7 +2896,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			jbfs.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
 			Type.Existential param = p.second()[0];
 			Type.Existential ret = p.second()[1];
 			Type.Callable fun_t = new Type.Function(param, ret);
@@ -3243,7 +3232,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private static Predicate<Typing.Row[]> typeStandardExpression(Expr e, int var) {
-		SyntacticHeap heap = e.getHeap();
+		Syntactic.Heap heap = e.getHeap();
 		return rows -> {
 			if (rows.length != 1 || var < 0) {
 				// invalid typing
@@ -3349,18 +3338,18 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private boolean isPure(Expr e) {
-		FlowTypeUtils.PurityVisitor visitor = new FlowTypeUtils.PurityVisitor(meter);
+		FlowTypeUtils.PurityVisitor visitor = new FlowTypeUtils.PurityVisitor();
 		visitor.visitExpression(e);
 		return visitor.pure;
 	}
 
-	private void checkIsWritable(Type type, SyntacticItem element) {
+	private void checkIsWritable(Type type, Syntactic.Item element) {
 		if (type != null && !type.isWriteable()) {
 			syntaxError(element, DEREFERENCED_DYNAMICALLY_SIZED, element);
 		}
 	}
 
-	private void checkIsSubtype(Type lhs, Type rhs, Subtyping.Environment subtyping, SyntacticItem element) {
+	private void checkIsSubtype(Type lhs, Type rhs, Subtyping.Environment subtyping, Syntactic.Item element) {
 		if (lhs == null || rhs == null) {
 			// A type error of some kind has occurred which has produced null instead of a
 			// type. At this point, we proceed assuming everything is hunky dory untill we
@@ -3402,7 +3391,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private <T extends Type> T extractType(Class<T> kind, Type type, int errcode, SyntacticItem item) {
+	private <T extends Type> T extractType(Class<T> kind, Type type, int errcode, Syntactic.Item item) {
 		if (type == null) {
 			// indicates failure upstream
 			return null;
@@ -3428,7 +3417,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param lhs
 	 * @param rhs
 	 */
-	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, Type rhs) {
+	private void checkForError(Syntactic.Item element, Typing before, Typing after, int lhs, Type rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3437,7 +3426,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, Typing before, Typing after, Type lhs, int rhs) {
+	private void checkForError(Syntactic.Item element, Typing before, Typing after, Type lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3446,7 +3435,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, Typing before, Typing after, Tuple<Type> lhs, int rhs) {
+	private void checkForError(Syntactic.Item element, Typing before, Typing after, Tuple<Type> lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3455,7 +3444,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, int code, Typing before, Typing after, int lhs, int rhs) {
+	private void checkForError(Syntactic.Item element, int code, Typing before, Typing after, int lhs, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3464,7 +3453,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, int code, Typing before, Typing after) {
+	private void checkForError(Syntactic.Item element, int code, Typing before, Typing after) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
 			before = before.concretise();
@@ -3473,7 +3462,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs, int rhs,
+	private void checkForError(Syntactic.Item element, Typing before, Typing after, int lhs, int rhs,
 			Function<Type, Type> projection) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
@@ -3483,7 +3472,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void checkForError(SyntacticItem element, Typing before, Typing after, int lhs,
+	private void checkForError(Syntactic.Item element, Typing before, Typing after, int lhs,
 			Function<Type, Type> projection, int rhs) {
 		if (!before.isEmpty() && after.isEmpty()) {
 			// Concretise to avoid variables in error messages
@@ -3493,22 +3482,22 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}
 
-	private void syntaxError(SyntacticItem e, int code, List<? extends SyntacticItem> context) {
+	private void syntaxError(Syntactic.Item e, int code, List<? extends Syntactic.Item> context) {
 		status = false;
-		ErrorMessages.syntaxError(e, code, context.toArray(new SyntacticItem[context.size()]));
+		ErrorMessages.syntaxError(e, code, context.toArray(new Syntactic.Item[context.size()]));
 	}
 
-	private static <T> T internalFailure(String msg, SyntacticItem e) {
+	private static <T> T internalFailure(String msg, Syntactic.Item e) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntacticException(msg, cu, e);
 	}
 
-	private <T> T internalFailure(String msg, SyntacticItem e, Throwable ex) {
+	private <T> T internalFailure(String msg, Syntactic.Item e, Throwable ex) {
 		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntacticException(msg, cu, e, ex);
 	}

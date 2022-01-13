@@ -19,12 +19,12 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 
-import jbfs.core.Content;
-import jbfs.core.SourceFile;
-import jbfs.util.Trie;
+import jbuildstore.core.Content;
+import jbuildstore.util.TextFile;
+import jbuildgraph.util.Trie;
 import wyc.io.WhileyFileLexer;
 
-public class WhileyFile extends SourceFile {
+public class WhileyFile extends TextFile {
 	// =========================================================================
 	// Source Content Type
 	// =========================================================================

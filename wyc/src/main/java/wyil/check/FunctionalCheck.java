@@ -13,17 +13,13 @@
 // limitations under the License.
 package wyil.check;
 
-import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
-
-import java.util.HashSet;
-
-import jbfs.core.Build;
+import jsynheap.lang.Syntactic;
 
 /**
  * <p>
@@ -76,14 +72,9 @@ import jbfs.core.Build;
 public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> implements Compiler.Check {
 	private boolean status = true;
 
-	public FunctionalCheck(Build.Meter meter) {
-		super(meter.fork(FunctionalCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file, null);
-		meter.done();
 		return status;
 	}
 
@@ -277,7 +268,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 		}
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

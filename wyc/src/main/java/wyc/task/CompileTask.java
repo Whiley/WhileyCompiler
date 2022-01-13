@@ -3,14 +3,13 @@ package wyc.task;
 import java.io.IOException;
 import java.util.*;
 
-import jbfs.core.Build;
-import jbfs.core.Content;
-import jbfs.core.Build.SnapShot;
-import jbfs.util.ArrayUtils;
-import jbfs.util.Pair;
-import jbfs.util.Trie;
-import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jbuildgraph.core.Build;
+import jbuildstore.core.Content;
+import jbuildgraph.util.ArrayUtils;
+import jbuildgraph.util.Pair;
+import jbuildgraph.util.Trie;
+import jsynheap.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyil.check.DefiniteAssignmentCheck;
@@ -71,7 +70,6 @@ import wyil.transform.NameResolution;
  *
  */
 public class CompileTask implements Build.Task {
-	private final Build.Meter meter = Build.NULL_METER;
 	/**
 	 * The set of build packages that this task relies on.
 	 */
@@ -145,11 +143,11 @@ public class CompileTask implements Build.Task {
 			// Construct parser
 			WhileyFileParser wyp = new WhileyFileParser(target, source);
 			// Parse it
-			r &= wyp.read(meter);
+			r &= wyp.read();
 		}
 		// Perform name resolution.
 		try {
-			r = r && new NameResolution(meter, packages, target).apply();
+			r = r && new NameResolution(packages, target).apply();
 		} catch (IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);
@@ -157,17 +155,17 @@ public class CompileTask implements Build.Task {
 		// ========================================================================
 		// Recursive Type Check
 		// ========================================================================
-		new RecursiveTypeCheck(meter).check(target);
+		new RecursiveTypeCheck().check(target);
 		// ========================================================================
 		// Flow Type Checking
 		// ========================================================================
 		// Instantiate type checker
-		FlowTypeCheck checker = new FlowTypeCheck(meter);
+		FlowTypeCheck checker = new FlowTypeCheck();
 		r = r && checker.check(target);
 		// ========================================================================
 		// Compiler Checks
 		// ========================================================================
-		Compiler.Check[] stages = instantiateChecks(meter, strict);
+		Compiler.Check[] stages = instantiateChecks(strict);
 		for (int i = 0; i != stages.length; ++i) {
 			r = r && stages[i].check(target);
 		}
@@ -179,7 +177,7 @@ public class CompileTask implements Build.Task {
 //		}
 		// Transforms
 		if (r) {
-			Compiler.Transform[] transforms = instantiateTransforms(meter);
+			Compiler.Transform[] transforms = instantiateTransforms();
 			// Only apply if previous stages have all passed.
 			for (int i = 0; i != transforms.length; ++i) {
 				transforms[i].apply(target);
@@ -195,18 +193,18 @@ public class CompileTask implements Build.Task {
 		return new Pair<>(target, r);
 	}
 
-	private static Compiler.Check[] instantiateChecks(Build.Meter m, boolean strict) {
-		Compiler.Check[] checks = new Compiler.Check[] { new DefiniteAssignmentCheck(m),
-				new DefiniteUnassignmentCheck(m), new FunctionalCheck(m), new SignatureCheck(m),
-				new StaticVariableCheck(m) };
+	private static Compiler.Check[] instantiateChecks(boolean strict) {
+		Compiler.Check[] checks = new Compiler.Check[] { new DefiniteAssignmentCheck(),
+				new DefiniteUnassignmentCheck(), new FunctionalCheck(), new SignatureCheck(),
+				new StaticVariableCheck() };
 		if (strict) {
-			checks = ArrayUtils.append(checks, new UnsafeCheck(m));
+			checks = ArrayUtils.append(checks, new UnsafeCheck());
 		}
 		return checks;
 	}
 
-	private static Compiler.Transform[] instantiateTransforms(Build.Meter meter) {
-		return new Compiler.Transform[] { new MoveAnalysis(meter),
+	private static Compiler.Transform[] instantiateTransforms() {
+		return new Compiler.Transform[] { new MoveAnalysis(),
 //				new RecursiveTypeAnalysis(meter)
 		};
 	}

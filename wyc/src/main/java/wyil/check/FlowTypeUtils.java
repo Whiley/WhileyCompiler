@@ -13,16 +13,16 @@
 // limitations under the License.
 package wyil.check;
 
-import wycc.lang.*;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Pair;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Pair;
 
-import static wycc.util.AbstractCompilationUnit.ITEM_bool;
-import static wycc.util.AbstractCompilationUnit.ITEM_byte;
-import static wycc.util.AbstractCompilationUnit.ITEM_int;
-import static wycc.util.AbstractCompilationUnit.ITEM_null;
-import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_bool;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_byte;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_int;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_null;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
@@ -31,10 +31,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import jbfs.core.Build;
-import jbfs.util.ArrayUtils;
-import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.AbstractCompilationUnit.Value;
+import jbuildgraph.util.ArrayUtils;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -252,10 +251,6 @@ public class FlowTypeUtils {
 
 	public static class PurityVisitor extends AbstractVisitor {
 		public boolean pure = true;
-
-		public PurityVisitor(Build.Meter meter) {
-			super(meter);
-		}
 
 		@Override
 		public void visitExternalUnit(Decl.Unit unit) {
@@ -1149,14 +1144,14 @@ public class FlowTypeUtils {
 			 * @param n
 			 * @return
 			 */
-			public jbfs.util.Pair<Row,Type.Existential[]> fresh(int n) {
+			public jbuildgraph.util.Pair<Row,Type.Existential[]> fresh(int n) {
 				int m = constraints.maxVariable() + 1;
 				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != vars.length; ++i) {
 					vars[i] = new Type.Existential(m + i);
 				}
 				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
-				return new jbfs.util.Pair<>(nrow,vars);
+				return new jbuildgraph.util.Pair<>(nrow,vars);
 			}
 
 			public Row set(int index, Type type) {
@@ -1214,7 +1209,7 @@ public class FlowTypeUtils {
 				int n = constraints.maxVariable();
 				Subtyping.Constraints.Solution solution = constraints.solve(n);
 				// Creating the necessary binding function for substitution
-				Function<Object, SyntacticItem> binder = o -> o instanceof Integer ? solution.get((Integer) o) : null;
+				Function<Object, Syntactic.Item> binder = o -> o instanceof Integer ? solution.get((Integer) o) : null;
 				Type[] nTypes = substitute(types,binder);
 				// Create new row only if something changes
 				if(nTypes == types) {
@@ -1249,7 +1244,7 @@ public class FlowTypeUtils {
 
 	}
 
-	private static Type[] substitute(Type[] types, Function<Object, SyntacticItem> binder) {
+	private static Type[] substitute(Type[] types, Function<Object, Syntactic.Item> binder) {
 		// NOTE: optimisation to prevent allocation
 		Type[] nTypes = types;
 		for (int j = 0; j != nTypes.length; ++j) {

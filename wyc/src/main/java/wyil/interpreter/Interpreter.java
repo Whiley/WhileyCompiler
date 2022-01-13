@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jbuildgraph.util.ArrayUtils;
+import jsynheap.lang.Syntactic;
 import jsynheap.util.AbstractCompilationUnit.Identifier;
 import jsynheap.util.AbstractCompilationUnit.Tuple;
 import jsynheap.util.AbstractCompilationUnit.Value;
