@@ -13,7 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -23,7 +22,7 @@ import wyc.util.ErrorMessages;
 
 import java.util.HashSet;
 
-import jbfs.core.Build;
+import jsynheap.lang.Syntactic;
 
 /**
  * <p>
@@ -51,14 +50,9 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 	private static final TypeMangler mangler = new TypeMangler.Default();
 	private boolean status = true;
 
-	public SignatureCheck(Build.Meter meter) {
-		super(meter.fork(SignatureCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file, new Context());
-		meter.done();
 		return status;
 	}
 
@@ -166,7 +160,7 @@ public class SignatureCheck extends AbstractConsumer<SignatureCheck.Context> imp
 		}
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

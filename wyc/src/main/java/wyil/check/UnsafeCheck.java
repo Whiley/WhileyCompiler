@@ -13,7 +13,6 @@
 // limitations under the License.
 package wyil.check;
 
-import wycc.lang.SyntacticItem;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -21,7 +20,7 @@ import wyil.util.AbstractVisitor;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
-import jbfs.core.Build;
+import jsynheap.lang.Syntactic;
 
 /**
  * Responsible for ensuring that the <code>unsafe</code> modifier is used
@@ -40,14 +39,9 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 	 */
 	private boolean status = true;
 
-	public UnsafeCheck(Build.Meter meter) {
-		super(meter.fork(UnsafeCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile file) {
 		visitModule(file);
-		meter.done();
 		return status;
 	}
 
@@ -97,7 +91,7 @@ public class UnsafeCheck extends AbstractVisitor implements Compiler.Check {
 		return named.getModifiers().match(Modifier.Unsafe.class) != null;
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

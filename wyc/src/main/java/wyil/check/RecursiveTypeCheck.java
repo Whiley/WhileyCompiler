@@ -17,8 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
-import jbfs.core.Build;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl.Link;
@@ -60,14 +59,10 @@ import wyil.util.AbstractVisitor;
 public class RecursiveTypeCheck extends AbstractVisitor implements Compiler.Check {
 	private boolean status = true;
 
-	public RecursiveTypeCheck(Build.Meter meter) {
-		super(meter.fork(RecursiveTypeCheck.class.getSimpleName()));
-	}
 
 	@Override
 	public boolean check(WyilFile wf) {
 		visitModule(wf);
-		meter.done();
 		return status;
 	}
 
@@ -102,7 +97,6 @@ public class RecursiveTypeCheck extends AbstractVisitor implements Compiler.Chec
 	}
 
 	protected Template.Variance infer(Identifier variable, Type type, Set<QualifiedName> cache) {
-		meter.step("infer");
 		switch (type.getOpcode()) {
 		case TYPE_any:
 		case TYPE_bool:

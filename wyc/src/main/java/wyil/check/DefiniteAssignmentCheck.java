@@ -22,8 +22,7 @@ import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import jbfs.core.Build;
-import wycc.lang.*;
+import jsynheap.lang.Syntactic;
 import wyc.util.ErrorMessages;
 
 /**
@@ -54,16 +53,10 @@ public class DefiniteAssignmentCheck
 		implements Compiler.Check {
 	private boolean status = true;
 
-	public DefiniteAssignmentCheck(Build.Meter meter) {
-		super(meter.fork(DefiniteAssignmentCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile wf) {
 		//
 		visitModule(wf, null);
-		//
-		meter.done();
 		//
 		return status;
 	}
@@ -533,7 +526,7 @@ public class DefiniteAssignmentCheck
 		/**
 		 * Useful for debugging
 		 */
-		public String toString(SyntacticHeap src) {
+		public String toString(Syntactic.Heap src) {
 			String r = "";
 			for (int i = variables.nextSetBit(0); i != -1; i = variables.nextSetBit(i + 1)) {
 				if(r.length() != 0) {
@@ -547,7 +540,7 @@ public class DefiniteAssignmentCheck
 		}
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

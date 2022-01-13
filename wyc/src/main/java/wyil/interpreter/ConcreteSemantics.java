@@ -17,9 +17,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import wycc.lang.SyntacticItem;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Value;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -859,7 +859,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @param arguments
 			 * @return
 			 */
-			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem context);
+			public abstract RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, Syntactic.Item context);
 
 			/**
 			 * Get the callable type for this lambda
@@ -874,7 +874,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					return new RValue.Lambda() {
 
 						@Override
-						public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem context) {
+						public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, Syntactic.Item context) {
 							return RValue.Lambda.this.execute(interpreter, arguments, heap, context);
 						}
 
@@ -946,7 +946,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 * @return
 			 */
 			@Override
-			public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, SyntacticItem item) {
+			public RValue execute(Interpreter interpreter, RValue[] arguments, Interpreter.Heap heap, Syntactic.Item item) {
 				return interpreter.execute(context, frame, heap, arguments, item);
 			}
 

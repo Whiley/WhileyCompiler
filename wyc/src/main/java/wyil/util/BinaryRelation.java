@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyil.util;
 
-import jbfs.util.Pair;
+import jbuildgraph.util.Pair;
 
 /**
  * Implements a binary relation between values of a given type.

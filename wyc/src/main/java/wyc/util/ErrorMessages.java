@@ -15,10 +15,10 @@ package wyc.util;
 
 import java.util.*;
 
-import jbfs.util.ArrayUtils;
-import wycc.lang.SyntacticItem;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jbuildgraph.util.ArrayUtils;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Template;
@@ -47,7 +47,7 @@ import wyil.lang.WyilFile.Type;
 public class ErrorMessages {
 
 	private interface Message {
-		public String getMessage(Tuple<SyntacticItem> context);
+		public String getMessage(Tuple<Syntactic.Item> context);
 	}
 
 	/**
@@ -64,7 +64,7 @@ public class ErrorMessages {
 		}
 
 		@Override
-		public String getMessage(Tuple<SyntacticItem> context) {
+		public String getMessage(Tuple<Syntactic.Item> context) {
 			return message;
 		}
 	}
@@ -84,7 +84,7 @@ public class ErrorMessages {
 		}
 
 		@Override
-		public String getMessage(Tuple<SyntacticItem> context) {
+		public String getMessage(Tuple<Syntactic.Item> context) {
 			String output = "";
 			for(int i=0;i!=parts.length;++i) {
 				output += parts[i];
@@ -104,7 +104,7 @@ public class ErrorMessages {
 		}
 
 		@Override
-		public String getMessage(Tuple<SyntacticItem> context) {
+		public String getMessage(Tuple<Syntactic.Item> context) {
 			String output = "";
 			for(int i=0;i!=parts.length;++i) {
 				output += parts[i];
@@ -115,7 +115,7 @@ public class ErrorMessages {
 			return output;
 		}
 
-		private String toString(SyntacticItem context) {
+		private String toString(Syntactic.Item context) {
 			if(context instanceof Tuple<?>) {
 				String r = "";
 				Tuple<?> t = (Tuple) context;
@@ -153,7 +153,7 @@ public class ErrorMessages {
 		}
 
 		@Override
-		public String getMessage(Tuple<SyntacticItem> context) {
+		public String getMessage(Tuple<Syntactic.Item> context) {
 			String output = message;
 			for(int i=0;i!=context.size();++i) {
 				output = output + "\n";
@@ -194,7 +194,7 @@ public class ErrorMessages {
 	// ========================================================================
 	public static final Message AMBIGUOUS_RESOLUTION = new Message() {
 		@Override
-		public String getMessage(Tuple<SyntacticItem> context) {
+		public String getMessage(Tuple<Syntactic.Item> context) {
 			String msg = "unable to resolve name (is ambiguous)";
 			return msg + foundCandidatesString((Tuple) context);
 		}
@@ -431,7 +431,7 @@ public class ErrorMessages {
 	};
 
 	//
-	public static String getErrorMessage(int code, Tuple<SyntacticItem> context) {
+	public static String getErrorMessage(int code, Tuple<Syntactic.Item> context) {
 		int base = code / 100;
 		int offset = code % 100;
 		Message m = ERROR_MESSAGES[base][offset];
@@ -447,13 +447,13 @@ public class ErrorMessages {
 	 * @param code
 	 * @param context
 	 */
-	public static void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	public static void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		if(e == null) {
 			throw new IllegalArgumentException("Syntactic item cannot be null");
 		}
 		WyilFile wf = (WyilFile) e.getHeap();
 		// Allocate syntax error in the heap));
-		SyntacticItem.Marker m = wf.allocate(new WyilFile.Attr.SyntaxError(code, e, new Tuple<>(context)));
+		Syntactic.Marker m = wf.allocate(new WyilFile.Attr.SyntaxError(code, e, new Tuple<>(context)));
 		// Record marker to ensure it gets written to disk
 		wf.getModule().addAttribute(m);
 	}
@@ -476,7 +476,7 @@ public class ErrorMessages {
 		return msg.toString();
 	}
 
-	private static String candidateString(Decl.Callable decl, Map<Identifier, SyntacticItem> binding) {
+	private static String candidateString(Decl.Callable decl, Map<Identifier, Syntactic.Item> binding) {
 		String r;
 		if (decl instanceof Decl.Method) {
 			r = "method ";
@@ -519,7 +519,7 @@ public class ErrorMessages {
 //		return msg.toString();
 //	}
 
-	private static String bindingString(Decl.Callable decl, Map<Identifier, SyntacticItem> binding) {
+	private static String bindingString(Decl.Callable decl, Map<Identifier, Syntactic.Item> binding) {
 		if (binding != null && decl instanceof Decl.Method) {
 			Decl.Method method = (Decl.Method) decl;
 			String r = "<";

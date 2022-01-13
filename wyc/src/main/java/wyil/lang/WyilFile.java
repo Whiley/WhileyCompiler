@@ -27,16 +27,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import jbfs.core.Build;
-import jbfs.core.Content;
-import jbfs.util.ArrayUtils;
-import jbfs.util.Trie;
-import wycc.lang.CompilationUnit;
-import wycc.lang.SyntacticHeap;
-import wycc.lang.SyntacticItem;
-import wycc.lang.SyntacticItem.Descriptor;
-import wycc.util.*;
-import wycc.util.SectionedSchema.Section;
+import jbuildgraph.core.Build;
+import jbuildstore.core.Content;
+import jbuildgraph.util.ArrayUtils;
+import jbuildgraph.util.Trie;
+import jsynheap.lang.Syntactic;
+import jsynheap.lang.Syntactic.Schema;
+import jsynheap.util.AbstractItem;
+import jsynheap.util.SectionedSchema;
+import jsynheap.util.AbstractCompilationUnit;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Ref;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Value;
+import jsynheap.util.SectionedSchema.Section;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
 import wyil.io.WyilFilePrinter;
@@ -85,7 +90,7 @@ import wyil.util.AbstractConsumer;
  * @author David J. Pearce
  *
  */
-public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build.Artifact {
+public class WyilFile extends AbstractCompilationUnit {
 
 	// =========================================================================
 	// Binary Content Type
@@ -121,11 +126,11 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 //			};
 //			int total = 0;
 //			for(Class c : kinds) {
-//				int size = value.getSyntacticItems(c).size();
+//				int size = value.getSyntactic.Items(c).size();
 //				System.out.println(c.getSimpleName() + ": " + size);
 //				total = total + size;
 //			}
-//			System.out.println("Other: " + (value.getSyntacticItems(SyntacticItem.class).size()-total));
+//			System.out.println("Other: " + (value.getSyntactic.Items(Syntactic.Item.class).size()-total));
 			new WyilFileWriter(output).write(value);
 //			WyilFileWriter.printMetrics(WyilFile.SCHEMA);
 		}
@@ -322,30 +327,30 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		this.minorVersion = wf.minorVersion;
 		// Create initial copies
 		for (int i = 0; i != wf.size(); ++i) {
-			SyntacticItem item = wf.getSyntacticItem(i);
+			Syntactic.Item item = wf.getSyntactic.Item(i);
 			// Construct unlinked item
-			item = SCHEMA.getDescriptor(item.getOpcode()).construct(item.getOpcode(), new SyntacticItem[item.size()],
+			item = SCHEMA.getDescriptor(item.getOpcode()).construct(item.getOpcode(), new Syntactic.Item[item.size()],
 					item.getData());
 			syntacticItems.add(item);
 			item.allocate(this, i);
 		}
 		// Link operands up
 		for (int i = 0; i != wf.size(); ++i) {
-			SyntacticItem item = wf.getSyntacticItem(i);
-			SyntacticItem nItem = syntacticItems.get(i);
+			Syntactic.Item item = wf.getSyntactic.Item(i);
+			Syntactic.Item nItem = syntacticItems.get(i);
 			for(int j=0;j!=item.size();++j) {
 				int operand = item.get(j).getIndex();
 				nItem.setOperand(j, syntacticItems.get(operand));
 			}
 		}
 		// Set the distinguished root item
-		setRootItem(getSyntacticItem(root));
+		setRootItem(getSyntactic.Item(root));
 		//
 		this.sourceFiles = new ArrayList<>(wf.sourceFiles);
 		this.ID = wf.getPath();
 	}
 
-	public WyilFile(Trie ID, int root, SyntacticItem[] items, int major, int minor) {
+	public WyilFile(Trie ID, int root, Syntactic.Item[] items, int major, int minor) {
 		this.majorVersion = major;
 		this.minorVersion = minor;
 		// Allocate every item into this heap
@@ -354,7 +359,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			items[i].allocate(this, i);
 		}
 		// Set the distinguished root item
-		setRootItem(getSyntacticItem(root));
+		setRootItem(getSyntactic.Item(root));
 		this.sourceFiles = new ArrayList<>();
 		this.ID = ID;
 	}
@@ -379,7 +384,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	}
 
 	public boolean isValid() {
-		return findAll(SyntacticItem.Marker.class).size() == 0;
+		return findAll(Syntactic.Marker.class).size() == 0;
 	}
 
 	public int getMajorVersion() {
@@ -396,7 +401,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 	public Decl.Unit getUnit() {
 		// The first node is always the declaration root.
-		List<Decl.Unit> modules = getSyntacticItems(Decl.Unit.class);
+		List<Decl.Unit> modules = getSyntactic.Items(Decl.Unit.class);
 		if (modules.size() != 1) {
 			throw new RuntimeException("expecting one module, found " + modules.size());
 		}
@@ -404,7 +409,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	}
 
 	public <S extends Decl.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
-		List<S> matches = super.getSyntacticItems(kind);
+		List<S> matches = super.getSyntactic.Items(kind);
 		for (int i = 0; i != matches.size(); ++i) {
 			S match = matches.get(i);
 			if (match.getName().equals(name)) {
@@ -419,15 +424,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	}
 
 	@Override
-	public <T extends SyntacticItem> void replace(T from, T to) {
+	public <T extends Syntactic.Item> void replace(T from, T to) {
 		BitSet matches = findReachable(from, new BitSet());
 		Decl.Module module = getModule();
 		// Carefully remove all markers for items within that being replaced.
-		Tuple<SyntacticItem.Marker> markers = module.getAttributes();
-		ArrayList<SyntacticItem> items = new ArrayList<>();
+		Tuple<Syntactic.Marker> markers = module.getAttributes();
+		ArrayList<Syntactic.Item> items = new ArrayList<>();
 		//
 		for(int i=0;i!=markers.size();++i) {
-			SyntacticItem marker = markers.get(i);
+			Syntactic.Item marker = markers.get(i);
 			for(int j=0;j!=marker.size();++j) {
 				if(matches.get(marker.get(j).getIndex())) {
 					// Found a match
@@ -522,22 +527,22 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @author David J. Pearce
 	 *
 	 */
-	public static interface Decl extends CompilationUnit.Declaration {
+	public static interface Decl extends Syntactic.Item {
 
-		public static class Unknown extends AbstractSyntacticItem implements Decl {
+		public static class Unknown extends AbstractItem implements Decl {
 			public Unknown() {
 				super(DECL_unknown);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Unknown();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "DECL_unknown") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Unknown();
 				}
 			};
@@ -550,10 +555,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Module extends AbstractSyntacticItem {
+		public static class Module extends AbstractItem {
 
 			public Module(Name name, Tuple<Decl.Unit> modules, Tuple<Decl.Unit> externs,
-					Tuple<SyntacticItem.Marker> attributes) {
+					Tuple<Syntactic.Marker> attributes) {
 				super(DECL_module, name, modules, externs, attributes);
 			}
 
@@ -569,8 +574,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				return (Tuple<Decl.Unit>) get(2);
 			}
 
-			public Tuple<SyntacticItem.Marker> getAttributes() {
-				return (Tuple<SyntacticItem.Marker>) get(3);
+			public Tuple<Syntactic.Marker> getAttributes() {
+				return (Tuple<Syntactic.Marker>) get(3);
 			}
 
 			public Decl.Unit putUnit(Decl.Unit unit) {
@@ -608,26 +613,26 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				return null;
 			}
 
-			public void addAttribute(SyntacticItem.Marker attribute) {
+			public void addAttribute(Syntactic.Marker attribute) {
 				setOperand(3, getHeap().allocate(getAttributes().append(attribute)));
 			}
 
-			public void setAttributes(Tuple<SyntacticItem.Marker> attributes) {
+			public void setAttributes(Tuple<Syntactic.Marker> attributes) {
 				setOperand(3, getHeap().allocate(attributes));
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1], (Tuple<Decl.Unit>) operands[2],
-						(Tuple<SyntacticItem.Marker>) operands[3]);
+						(Tuple<Syntactic.Marker>) operands[3]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "DECL_module") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Module((Name) operands[0], (Tuple<Decl.Unit>) operands[1],
-							(Tuple<Decl.Unit>) operands[2], (Tuple<SyntacticItem.Marker>) operands[3]);
+							(Tuple<Decl.Unit>) operands[2], (Tuple<Syntactic.Marker>) operands[3]);
 				}
 			};
 		}
@@ -639,7 +644,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Unit extends AbstractSyntacticItem implements Decl {
+		public static class Unit extends AbstractItem implements Decl {
 
 			public Unit(Name name, Tuple<Decl> declarations) {
 				super(DECL_unit, name, declarations);
@@ -656,14 +661,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "DECL_unit") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Unit((Name) operands[0], (Tuple<Decl>) operands[1]);
 				}
 			};
@@ -687,7 +692,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Import extends AbstractSyntacticItem implements Decl {
+		public static class Import extends AbstractItem implements Decl {
 			public Import(Tuple<Identifier> path) {
 				super(DECL_import, path);
 			}
@@ -741,7 +746,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Import clone(SyntacticItem[] operands) {
+			public Import clone(Syntactic.Item[] operands) {
 				switch(opcode) {
 				case DECL_import:
 					return new Import((Tuple<Identifier>) operands[0]);
@@ -782,20 +787,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.ONE, Data.ZERO, "DECL_import") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Import((Tuple<Identifier>) operands[0]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importfrom") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Import((Tuple<Identifier>) operands[0], false, (Tuple<Identifier>) operands[1]);
 				}
 			};
 			public static final Descriptor DESCRIPTOR_0c = new Descriptor(Operands.TWO, Data.ZERO, "DECL_importwith") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Import((Tuple<Identifier>) operands[0], true, (Tuple<Identifier>) operands[1]);
 				}
 			};
@@ -807,10 +812,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static abstract class Named<T extends WyilFile.Type> extends AbstractSyntacticItem implements Decl {
+		public static abstract class Named<T extends WyilFile.Type> extends AbstractItem implements Decl {
 
-			public Named(int opcode, Tuple<Modifier> modifiers, Identifier name, SyntacticItem... rest) {
-				super(opcode, ArrayUtils.append(new SyntacticItem[] { modifiers, name }, rest));
+			public Named(int opcode, Tuple<Modifier> modifiers, Identifier name, Syntactic.Item... rest) {
+				super(opcode, ArrayUtils.append(new Syntactic.Item[] { modifiers, name }, rest));
 			}
 
 			@SuppressWarnings("unchecked")
@@ -842,9 +847,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		public static abstract class Callable extends Named<WyilFile.Type.Callable> {
 
 			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, SyntacticItem... rest) {
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Syntactic.Item... rest) {
 				super(opcode, modifiers, name,
-						ArrayUtils.append(new SyntacticItem[] { template, parameters, returns }, rest));
+						ArrayUtils.append(new Syntactic.Item[] { template, parameters, returns }, rest));
 			}
 
 			@Override
@@ -935,9 +940,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name,
 					Tuple<Template.Variable> template, Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns,
-					Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
+					Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, Syntactic.Item... rest) {
 				super(opcode, modifiers, name, template, parameters, returns,
-						ArrayUtils.append(new SyntacticItem[] { requires, ensures, body }, rest));
+						ArrayUtils.append(new Syntactic.Item[] { requires, ensures, body }, rest));
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1003,7 +1008,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@Override
 			@SuppressWarnings("unchecked")
-			public Function clone(SyntacticItem[] operands) {
+			public Function clone(Syntactic.Item[] operands) {
 				return new Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
@@ -1018,7 +1023,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.EIGHT, Data.ZERO, "DECL_function") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
@@ -1077,7 +1082,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Method clone(SyntacticItem[] operands) {
+			public Method clone(Syntactic.Item[] operands) {
 				return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
@@ -1092,7 +1097,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.EIGHT, Data.ZERO, "DECL_method") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6],
@@ -1147,7 +1152,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Property clone(SyntacticItem[] operands) {
+			public Property clone(Syntactic.Item[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
@@ -1156,7 +1161,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Tuple<Expr> es = (Tuple<Expr>) operands[5];
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
@@ -1167,7 +1172,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
@@ -1212,7 +1217,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Variant clone(SyntacticItem[] operands) {
+			public Variant clone(Syntactic.Item[] operands) {
 				return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
@@ -1221,7 +1226,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Variant((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5]);
@@ -1263,8 +1268,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				super(DECL_lambda, modifiers, name, template, parameters, returns, body, signature);
 			}
 
-			public Set<Decl.Variable> getCapturedVariables(Build.Meter meter) {
-				UsedVariableExtractor usedVariableExtractor = new UsedVariableExtractor(meter);
+			public Set<Decl.Variable> getCapturedVariables() {
+				UsedVariableExtractor usedVariableExtractor = new UsedVariableExtractor();
 				HashSet<Decl.Variable> captured = new HashSet<>();
 				usedVariableExtractor.visitExpression(getBody(), captured);
 				Tuple<Decl.Variable> parameters = getParameters();
@@ -1288,7 +1293,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public void setType(WyilFile.Type type) {
 				// FIXME: this is a hack which should be removed.
 				type = type.as(WyilFile.Type.Callable.class);
-				SyntacticHeap heap = getHeap();
+				Syntactic.Heap heap = getHeap();
 				//
 				if (type instanceof WyilFile.Type.Callable) {
 					// Set the type
@@ -1300,7 +1305,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5], (WyilFile.Type.Callable) operands[6]);
@@ -1309,7 +1314,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SEVEN, Data.ZERO, "DECL_lambda") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5],
@@ -1371,7 +1376,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Decl.Type clone(SyntacticItem[] operands) {
+			public Decl.Type clone(Syntactic.Item[] operands) {
 				return new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
 			}
@@ -1379,7 +1384,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.FIVE, Data.ZERO, "DECL_type") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3], (Tuple<Expr>) operands[4]);
 				}
@@ -1388,7 +1393,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.FIVE, Data.ZERO, "DECL_rectype") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Decl.Type r = new Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Decl.Variable) operands[3],
 							(Tuple<Expr>) operands[4]);
@@ -1435,7 +1440,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Decl.Variable clone(SyntacticItem[] operands) {
+			public Decl.Variable clone(Syntactic.Item[] operands) {
 				return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(WyilFile.Type) operands[2]);
 			}
@@ -1448,7 +1453,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "DECL_variable") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WyilFile.Type) operands[2]);
 				}
@@ -1492,7 +1497,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public StaticVariable clone(SyntacticItem[] operands) {
+			public StaticVariable clone(Syntactic.Item[] operands) {
 				return new StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(WyilFile.Type) operands[2], (Expr) operands[3]);
 			}
@@ -1500,7 +1505,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "DECL_staticvar") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WyilFile.Type) operands[2], (Expr) operands[3]);
 				}
@@ -1516,12 +1521,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 *
 		 * @param <T>
 		 */
-		public static class Link<T extends Decl.Named<?>> extends AbstractSyntacticItem {
+		public static class Link<T extends Decl.Named<?>> extends AbstractItem {
 			public Link(Name name) {
 				super(DECL_link,name);
 			}
 
-			private Link(int opcode, SyntacticItem... operands) {
+			private Link(int opcode, Syntactic.Item... operands) {
 				super(opcode, operands);
 			}
 
@@ -1567,8 +1572,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			public void resolve(T... items) {
-				SyntacticHeap heap = getHeap();
-				SyntacticItem first = operands[0];
+				Syntactic.Heap heap = getHeap();
+				Syntactic.Item first = operands[0];
 				this.operands = Arrays.copyOf(operands, items.length + 1);
 				this.operands[0] = first;
 				for(int i=1;i!=operands.length;++i) {
@@ -1577,13 +1582,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Link<T>(DECL_link, operands);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "DECL_link") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Link(DECL_link, operands);
 				}
 			};
@@ -1597,7 +1602,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 *
 		 * @param <T>
 		 */
-		public static class Binding<S extends WyilFile.Type, T extends Decl.Named<S>> extends AbstractSyntacticItem {
+		public static class Binding<S extends WyilFile.Type, T extends Decl.Named<S>> extends AbstractItem {
 			private S concreteType;
 
 			public Binding(Link<T> link, Tuple<WyilFile.Type> arguments) {
@@ -1644,7 +1649,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Binding((Link) operands[0], (Tuple<Type>) operands[1]);
 			}
 
@@ -1658,7 +1663,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "DECL_binding") {
 				@SuppressWarnings({ "unchecked", "rawtypes" })
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Binding((Decl.Link) operands[0], (Tuple<Type>) operands[1]);
 				}
 			};
@@ -1671,7 +1676,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		public enum Variance {
 			UNKNOWN, INVARIANT, COVARIANT, CONTRAVARIANT
 		}
-		public static abstract class Variable extends AbstractSyntacticItem {
+		public static abstract class Variable extends AbstractItem {
 			public Variable(int opcode, Identifier name, Variance variance) {
 				super(opcode, new byte[] { (byte) variance.ordinal() }, name);
 			}
@@ -1709,7 +1714,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Type((Identifier) operands[0], getVariance());
 			}
 
@@ -1720,7 +1725,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ONE, "TEMPLATE_type") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Template.Type((Identifier) operands[0], getVariance(data[0]));
 				}
 			};
@@ -1733,13 +1738,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	/**
 	 * Provides classes for representing statements in Whiley's source language.
 	 * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
-	 * etc. Each class is an instance of <code>SyntacticItem</code> and, hence, can
+	 * etc. Each class is an instance of <code>Syntactic.Item</code> and, hence, can
 	 * be adorned with certain information (such as source location, etc).
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Stmt extends SyntacticItem {
+	public interface Stmt extends Syntactic.Item {
 
 		public interface Loop extends Stmt {
 			//Expr getCondition();
@@ -1780,7 +1785,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Block extends AbstractSyntacticItem implements Stmt {
+		public static class Block extends AbstractItem implements Stmt {
 			public Block(Stmt... stmts) {
 				super(STMT_block, stmts);
 			}
@@ -1791,13 +1796,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Block clone(SyntacticItem[] operands) {
+			public Block clone(Syntactic.Item[] operands) {
 				return new Block(ArrayUtils.toArray(Stmt.class, operands));
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "STMT_block") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Block(ArrayUtils.toArray(Stmt.class, operands));
 				}
 			};
@@ -1819,7 +1824,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 *     &myblock:int y = new:myblock y
 		 * </pre>
 		 */
-		public static class NamedBlock extends AbstractSyntacticItem implements Stmt {
+		public static class NamedBlock extends AbstractItem implements Stmt {
 			public NamedBlock(Identifier name, Stmt.Block block) {
 				super(STMT_namedblock, name, block);
 			}
@@ -1833,13 +1838,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public NamedBlock clone(SyntacticItem[] operands) {
+			public NamedBlock clone(Syntactic.Item[] operands) {
 				return new NamedBlock((Identifier) operands[0], (Block) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "STMT_namedblock") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new NamedBlock((Identifier) operands[0], (Stmt.Block) operands[1]);
 				}
 			};
@@ -1867,7 +1872,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Assert extends AbstractSyntacticItem implements Stmt {
+		public static class Assert extends AbstractItem implements Stmt {
 			public Assert(Expr condition) {
 				super(STMT_assert, condition);
 			}
@@ -1877,13 +1882,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Assert((Expr) operands[0]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "STMT_assert") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Assert((Expr) operands[0]);
 				}
 			};
@@ -1914,7 +1919,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Assign extends AbstractSyntacticItem implements Stmt {
+		public static class Assign extends AbstractItem implements Stmt {
 			public Assign(Tuple<LVal> lvals, Tuple<Expr> rvals) {
 				super(STMT_assign, lvals, rvals);
 			}
@@ -1931,14 +1936,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "STMT_assign") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -1966,7 +1971,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Assume extends AbstractSyntacticItem implements Stmt {
+		public static class Assume extends AbstractItem implements Stmt {
 			public Assume(Expr condition) {
 				super(STMT_assume, condition);
 			}
@@ -1976,13 +1981,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Assume((Expr) operands[0]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "STMT_assume") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Assume((Expr) operands[0]);
 				}
 			};
@@ -1996,7 +2001,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Debug extends AbstractSyntacticItem implements Stmt {
+		public static class Debug extends AbstractItem implements Stmt {
 			public Debug(Expr condition) {
 				super(STMT_debug, condition);
 			}
@@ -2006,13 +2011,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Debug((Expr) operands[0]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "STMT_debug") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Debug((Expr) operands[0]);
 				}
 			};
@@ -2025,19 +2030,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Skip extends AbstractSyntacticItem implements Stmt {
+		public static class Skip extends AbstractItem implements Stmt {
 			public Skip() {
 				super(STMT_skip);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Skip();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_skip") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Skip();
 				}
 			};
@@ -2050,19 +2055,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Break extends AbstractSyntacticItem implements Stmt {
+		public static class Break extends AbstractItem implements Stmt {
 			public Break() {
 				super(STMT_break);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Break();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_break") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Break();
 				}
 			};
@@ -2076,19 +2081,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Continue extends AbstractSyntacticItem implements Stmt {
+		public static class Continue extends AbstractItem implements Stmt {
 			public Continue() {
 				super(STMT_continue);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Continue();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_continue") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Continue();
 				}
 			};
@@ -2122,7 +2127,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class DoWhile extends AbstractSyntacticItem implements Loop {
+		public static class DoWhile extends AbstractItem implements Loop {
 			public DoWhile(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body) {
 				super(STMT_dowhile, condition, invariant, modified, body);
 			}
@@ -2154,7 +2159,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
 						(Stmt.Block) operands[3]);
 			}
@@ -2162,7 +2167,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "STMT_dowhile") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new DoWhile((Expr) operands[0], (Tuple<Expr>) operands[1],
 							(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
 				}
@@ -2173,19 +2178,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * Represents a fail statement for the form "<code>fail</code>". This causes an
 		 * abrupt termination of the program and should represent dead-code if present.
 		 */
-		public static class Fail extends AbstractSyntacticItem implements Stmt {
+		public static class Fail extends AbstractItem implements Stmt {
 			public Fail() {
 				super(STMT_fail);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Fail();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_fail") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Fail();
 				}
 			};
@@ -2208,13 +2213,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class For extends AbstractSyntacticItem implements Loop {
+		public static class For extends AbstractItem implements Loop {
 			public For(Decl.StaticVariable var, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block trueBranch) {
 				super(STMT_for, var, invariant, modified, trueBranch);
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
 			}
 
@@ -2243,7 +2248,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "STMT_for") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new For((Decl.StaticVariable) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[2]);
 				}
 			};
@@ -2269,7 +2274,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IfElse extends AbstractSyntacticItem implements Stmt {
+		public static class IfElse extends AbstractItem implements Stmt {
 			public IfElse(Expr condition, Stmt.Block trueBranch) {
 				super(STMT_if, condition, trueBranch);
 			}
@@ -2296,7 +2301,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				if (operands.length == 2) {
 					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1]);
 				} else {
@@ -2306,14 +2311,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.TWO, Data.ZERO, "STMT_if") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.THREE, Data.ZERO, "STMT_ifelse") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IfElse((Expr) operands[0], (Stmt.Block) operands[1], (Stmt.Block) operands[2]);
 				}
 			};
@@ -2331,7 +2336,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Initialiser extends AbstractSyntacticItem implements Stmt {
+		public static class Initialiser extends AbstractItem implements Stmt {
 			public Initialiser(Tuple<Decl.Variable> variables) {
 				super(STMT_initialiservoid, variables);
 			}
@@ -2356,7 +2361,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				if(hasInitialiser()) {
 					return new Initialiser((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 				} else {
@@ -2367,7 +2372,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.TWO, Data.ZERO, "STMT_initialiser") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Initialiser((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -2375,7 +2380,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.ONE, Data.ZERO, "STMT_initialiservoid") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Initialiser((Tuple<Decl.Variable>) operands[0]);
 				}
 			};
@@ -2402,7 +2407,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Return extends AbstractSyntacticItem implements Stmt {
+		public static class Return extends AbstractItem implements Stmt {
 			public Return() {
 				super(STMT_returnvoid);
 			}
@@ -2420,7 +2425,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				if(hasReturn()) {
 					return new Return((Expr) operands[0]);
 				} else {
@@ -2430,7 +2435,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.ONE, Data.ZERO, "STMT_return") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Return((Expr) operands[0]);
 				}
 			};
@@ -2438,7 +2443,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.ZERO, Data.ZERO, "STMT_returnvoid") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Return();
 				}
 			};
@@ -2464,7 +2469,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Switch extends AbstractSyntacticItem implements Stmt {
+		public static class Switch extends AbstractItem implements Stmt {
 			public Switch(Expr condition, Tuple<Case> cases) {
 				super(STMT_switch, condition, cases);
 			}
@@ -2480,20 +2485,20 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Switch((Expr) operands[0], (Tuple<Case>) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "STMT_switch") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Switch((Expr) operands[0], (Tuple<Stmt.Case>) operands[1]);
 				}
 			};
 		}
 
-		public static class Case extends AbstractSyntacticItem {
+		public static class Case extends AbstractItem {
 
 			public Case(Tuple<Expr> conditions, Stmt.Block block) {
 				super(STMT_caseblock, conditions, block);
@@ -2514,14 +2519,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "STMT_caseblock") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
 				}
 			};
@@ -2553,7 +2558,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class While extends AbstractSyntacticItem implements Loop {
+		public static class While extends AbstractItem implements Loop {
 			public While(Expr condition, Tuple<Expr> invariant, Tuple<Decl.Variable> modified, Stmt.Block body) {
 				super(STMT_while, condition, invariant, modified, body);
 			}
@@ -2585,7 +2590,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new While((Expr) operands[0], (Tuple<Expr>) operands[1], (Tuple<Decl.Variable>) operands[2],
 						(Stmt.Block) operands[3]);
 			}
@@ -2593,7 +2598,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "STMT_while") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new While((Expr) operands[0], (Tuple<Expr>) operands[1],
 							(Tuple<Decl.Variable>) operands[2], (Stmt.Block) operands[3]);
 				}
@@ -2709,8 +2714,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public Tuple<Expr> getOperands();
 		}
 
-		public abstract static class AbstractExpr extends AbstractSyntacticItem implements Expr {
-			public AbstractExpr(int opcode, Type type, SyntacticItem... items) {
+		public abstract static class AbstractExpr extends AbstractItem implements Expr {
+			public AbstractExpr(int opcode, Type type, Syntactic.Item... items) {
 				super(opcode, ArrayUtils.append(type, items));
 			}
 
@@ -2744,7 +2749,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Cast clone(SyntacticItem[] operands) {
+			public Cast clone(Syntactic.Item[] operands) {
 				return new Cast((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -2755,7 +2760,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_cast") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Cast((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -2778,7 +2783,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Constant clone(SyntacticItem[] operands) {
+			public Constant clone(Syntactic.Item[] operands) {
 				return new Constant((Type) operands[0], (Value) operands[1]);
 			}
 
@@ -2789,7 +2794,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_constant") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Constant((Type) operands[0], (Value) operands[1]);
 				}
 			};
@@ -2814,7 +2819,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public StaticVariableAccess clone(SyntacticItem[] operands) {
+			public StaticVariableAccess clone(Syntactic.Item[] operands) {
 				return new StaticVariableAccess((Type) operands[0], (Decl.Link<Decl.StaticVariable>) operands[1]);
 			}
 
@@ -2825,7 +2830,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_staticvariable") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new StaticVariableAccess((Type) operands[0],
 							(Decl.Link<Decl.StaticVariable>) operands[1]);
 				}
@@ -2840,7 +2845,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Is extends AbstractSyntacticItem implements Expr, UnaryOperator {
+		public static class Is extends AbstractItem implements Expr, UnaryOperator {
 			public Is(Expr lhs, Type rhs) {
 				super(EXPR_is, lhs, rhs);
 			}
@@ -2867,7 +2872,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Is clone(SyntacticItem[] operands) {
+			public Is clone(Syntactic.Item[] operands) {
 				return new Is((Expr) operands[0], (Type) operands[1]);
 			}
 
@@ -2878,7 +2883,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_is") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Is((Expr) operands[0], (Type) operands[1]);
 				}
 			};
@@ -2893,7 +2898,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator, Bindable {
+		public static class Invoke extends AbstractItem implements Expr, NaryOperator, Bindable {
 
 			public Invoke(Decl.Binding<Type.Callable, Decl.Callable> binding, Tuple<Expr> arguments) {
 				super(EXPR_invoke, binding, arguments);
@@ -2927,7 +2932,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Invoke clone(SyntacticItem[] operands) {
+			public Invoke clone(Syntactic.Item[] operands) {
 				return new Invoke((Decl.Binding<Type.Callable, Decl.Callable>) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
@@ -2939,7 +2944,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_invoke") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Invoke((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 							(Tuple<Expr>) operands[1]);
 				}
@@ -2954,7 +2959,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IndirectInvoke extends AbstractSyntacticItem implements Expr {
+		public static class IndirectInvoke extends AbstractItem implements Expr {
 
 			public IndirectInvoke(Type type, Expr source, Tuple<Expr> arguments) {
 				super(EXPR_indirectinvoke, type, source, arguments);
@@ -2981,7 +2986,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public IndirectInvoke clone(SyntacticItem[] operands) {
+			public IndirectInvoke clone(Syntactic.Item[] operands) {
 				return new IndirectInvoke((Type) operands[0], (Expr) operands[1],
 						(Tuple<Expr>) operands[2]);
 			}
@@ -2996,7 +3001,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_indirectinvoke") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IndirectInvoke((Type) operands[0], (Expr) operands[1],
 							(Tuple<Expr>) operands[2]);
 				}
@@ -3033,7 +3038,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Old clone(SyntacticItem[] operands) {
+			public Old clone(Syntactic.Item[] operands) {
 				return new Old((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -3044,7 +3049,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_old") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Old((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3061,7 +3066,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr, UnaryOperator {
+		public abstract static class Quantifier extends AbstractItem implements Expr, UnaryOperator {
 			public Quantifier(int opcode, Decl.StaticVariable[] parameters, Expr body) {
 				super(opcode, new Tuple<>(parameters), body);
 			}
@@ -3093,7 +3098,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public abstract Expr clone(SyntacticItem[] operands);
+			public abstract Expr clone(Syntactic.Item[] operands);
 		}
 
 		/**
@@ -3114,9 +3119,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				super(EXPR_logicaluniversal, parameters, body);
 			}
 
+			@Override
+			@Override
+			@Override
+			@Override
+			@Override
+			@Override
 			@SuppressWarnings("unchecked")
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new UniversalQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 			}
 
@@ -3132,7 +3143,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_logicaluniversal") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new UniversalQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3156,9 +3167,15 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 				super(EXPR_logicalexistential, parameters, body);
 			}
 
+			@Override
+			@Override
+			@Override
+			@Override
+			@Override
+			@Override
 			@SuppressWarnings("unchecked")
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new ExistentialQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 			}
 
@@ -3174,7 +3191,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_logicalexistential") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ExistentialQuantifier((Tuple<Decl.StaticVariable>) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3210,7 +3227,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public VariableAccess clone(SyntacticItem[] operands) {
+			public VariableAccess clone(Syntactic.Item[] operands) {
 				return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 			}
 
@@ -3221,14 +3238,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_variablecopy") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_variablemove") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Expr.VariableAccess v = new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 					v.setMove();
 					return v;
@@ -3247,7 +3264,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalAnd extends AbstractSyntacticItem implements NaryOperator {
+		public static class LogicalAnd extends AbstractItem implements NaryOperator {
 			public LogicalAnd(Tuple<Expr> operands) {
 				super(EXPR_logicaland, operands);
 			}
@@ -3270,7 +3287,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new LogicalAnd((Tuple<Expr>) operands[0]);
 			}
 
@@ -3281,7 +3298,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "EXPR_logicaland") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LogicalAnd((Tuple<Expr>) operands[0]);
 				}
 			};
@@ -3295,7 +3312,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalOr extends AbstractSyntacticItem implements NaryOperator {
+		public static class LogicalOr extends AbstractItem implements NaryOperator {
 			public LogicalOr(Tuple<Expr> operands) {
 				super(EXPR_logicalor, operands);
 			}
@@ -3318,7 +3335,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new LogicalOr((Tuple<Expr>) operands[0]);
 			}
 
@@ -3329,7 +3346,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "EXPR_logicalor") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LogicalOr((Tuple<Expr>) operands[0]);
 				}
 			};
@@ -3342,7 +3359,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalImplication extends AbstractSyntacticItem implements BinaryOperator {
+		public static class LogicalImplication extends AbstractItem implements BinaryOperator {
 			public LogicalImplication(Expr lhs, Expr rhs) {
 				super(EXPR_logicalimplication, lhs, rhs);
 			}
@@ -3370,7 +3387,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new LogicalImplication((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3381,7 +3398,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_logicalimplication") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LogicalImplication((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3395,7 +3412,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalIff extends AbstractSyntacticItem implements BinaryOperator {
+		public static class LogicalIff extends AbstractItem implements BinaryOperator {
 			public LogicalIff(Expr lhs, Expr rhs) {
 				super(EXPR_logicaliff, lhs, rhs);
 			}
@@ -3423,7 +3440,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new LogicalIff((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3434,7 +3451,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_logicaliff") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LogicalIff((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3447,7 +3464,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalNot extends AbstractSyntacticItem implements UnaryOperator {
+		public static class LogicalNot extends AbstractItem implements UnaryOperator {
 			public LogicalNot(Expr operand) {
 				super(EXPR_logicalnot, operand);
 			}
@@ -3470,13 +3487,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new LogicalNot((Expr) operands[0]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "EXPR_logicalnot") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LogicalNot((Expr) operands[0]);
 				}
 			};
@@ -3493,7 +3510,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Equal extends AbstractSyntacticItem implements BinaryOperator {
+		public static class Equal extends AbstractItem implements BinaryOperator {
 			public Equal(Expr lhs, Expr rhs) {
 				super(EXPR_equal, lhs, rhs);
 			}
@@ -3521,7 +3538,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new Equal((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3532,7 +3549,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_equal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Equal((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3545,7 +3562,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class NotEqual extends AbstractSyntacticItem implements BinaryOperator {
+		public static class NotEqual extends AbstractItem implements BinaryOperator {
 			public NotEqual(Expr lhs, Expr rhs) {
 				super(EXPR_notequal, lhs, rhs);
 			}
@@ -3573,7 +3590,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new NotEqual((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3584,7 +3601,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_notequal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new NotEqual((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3598,7 +3615,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerLessThan extends AbstractSyntacticItem implements BinaryOperator {
+		public static class IntegerLessThan extends AbstractItem implements BinaryOperator {
 			public IntegerLessThan(Expr lhs, Expr rhs) {
 				super(EXPR_integerlessthan, lhs, rhs);
 			}
@@ -3626,7 +3643,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerLessThan((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3637,7 +3654,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_integerlessthan") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerLessThan((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3651,7 +3668,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerLessThanOrEqual extends AbstractSyntacticItem implements BinaryOperator {
+		public static class IntegerLessThanOrEqual extends AbstractItem implements BinaryOperator {
 			public IntegerLessThanOrEqual(Expr lhs, Expr rhs) {
 				super(EXPR_integerlessequal, lhs, rhs);
 			}
@@ -3679,7 +3696,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerLessThanOrEqual((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3690,7 +3707,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_integerlessequal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerLessThanOrEqual((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3704,7 +3721,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerGreaterThan extends AbstractSyntacticItem implements BinaryOperator {
+		public static class IntegerGreaterThan extends AbstractItem implements BinaryOperator {
 			public IntegerGreaterThan(Expr lhs, Expr rhs) {
 				super(EXPR_integergreaterthan, lhs, rhs);
 			}
@@ -3732,7 +3749,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerGreaterThan((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3743,7 +3760,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_integergreaterthan") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerGreaterThan((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3757,7 +3774,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class IntegerGreaterThanOrEqual extends AbstractSyntacticItem implements BinaryOperator {
+		public static class IntegerGreaterThanOrEqual extends AbstractItem implements BinaryOperator {
 			public IntegerGreaterThanOrEqual(Expr lhs, Expr rhs) {
 				super(EXPR_integergreaterequal, lhs, rhs);
 			}
@@ -3785,7 +3802,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerGreaterThanOrEqual((Expr) operands[0], (Expr) operands[1]);
 			}
 
@@ -3796,7 +3813,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_integergreaterequal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerGreaterThanOrEqual((Expr) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -3830,7 +3847,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerAddition((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -3841,7 +3858,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integeraddition") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerAddition((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -3871,7 +3888,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerSubtraction((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -3882,7 +3899,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integersubtraction") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerSubtraction((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -3912,7 +3929,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerMultiplication((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -3923,7 +3940,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integermultiplication") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerMultiplication((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -3953,7 +3970,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerDivision((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -3964,7 +3981,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integerdivision") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerDivision((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -3994,7 +4011,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerRemainder((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -4005,7 +4022,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integerremainder") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerRemainder((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -4029,7 +4046,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new IntegerNegation((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -4040,7 +4057,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_integernegation") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new IntegerNegation((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -4082,7 +4099,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -4093,7 +4110,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_bitwiseshl") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -4131,7 +4148,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -4142,7 +4159,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_bitwiseshr") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -4166,7 +4183,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
@@ -4177,7 +4194,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_bitwiseand") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -4201,7 +4218,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
@@ -4212,7 +4229,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_bitwiseor") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -4236,7 +4253,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
@@ -4247,7 +4264,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_bitwisexor") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -4275,13 +4292,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new BitwiseComplement((Type) operands[0], (Expr) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_bitwisenot") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new BitwiseComplement((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -4313,7 +4330,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new Dereference((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -4324,7 +4341,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_dereference") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Dereference((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -4357,7 +4374,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 
@@ -4368,7 +4385,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_fielddereference") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new FieldDereference((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 				}
 			};
@@ -4398,7 +4415,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
+			public Expr clone(Syntactic.Item[] operands) {
 				return new New((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -4409,13 +4426,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_new") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new New((Type) operands[0], (Expr) operands[1]);
 				}
 			};
 		}
 
-		public static class LambdaAccess extends AbstractSyntacticItem implements Expr, Bindable {
+		public static class LambdaAccess extends AbstractItem implements Expr, Bindable {
 
 			public LambdaAccess(Decl.Binding<Type.Callable,Decl.Callable> name, Type parameters) {
 				super(EXPR_lambdaaccess, name, parameters);
@@ -4450,7 +4467,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 						(Type.Tuple) operands[1]);
 			}
@@ -4458,7 +4475,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_lambdaaccess") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new LambdaAccess((Decl.Binding<Type.Callable, Decl.Callable>) operands[0],
 							(Type) operands[1]);
 				}
@@ -4511,7 +4528,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayAccess clone(SyntacticItem[] operands) {
+			public ArrayAccess clone(Syntactic.Item[] operands) {
 				return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
@@ -4522,14 +4539,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_arrayaccess") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_arrayborrow") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Expr.ArrayAccess r = new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 					r.setMove();
 					return r;
@@ -4581,7 +4598,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayUpdate clone(SyntacticItem[] operands) {
+			public ArrayUpdate clone(Syntactic.Item[] operands) {
 				return new ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2], (Expr) operands[3]);
 			}
 
@@ -4592,7 +4609,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "EXPR_arrayupdate") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2],
 							(Expr) operands[3]);
 				}
@@ -4619,18 +4636,18 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayInitialiser clone(SyntacticItem[] operands) {
+			public ArrayInitialiser clone(Syntactic.Item[] operands) {
 				return new ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
 			public String toString() {
-				return Arrays.toString(toArray(SyntacticItem.class));
+				return Arrays.toString(toArray(Syntactic.Item.class));
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_arrayinitialiser") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -4670,13 +4687,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayGenerator clone(SyntacticItem[] operands) {
+			public ArrayGenerator clone(Syntactic.Item[] operands) {
 				return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_arraygenerator") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -4715,13 +4732,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayRange clone(SyntacticItem[] operands) {
+			public ArrayRange clone(Syntactic.Item[] operands) {
 				return new ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_arrayrange") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 				}
 			};
@@ -4746,7 +4763,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public ArrayLength clone(SyntacticItem[] operands) {
+			public ArrayLength clone(Syntactic.Item[] operands) {
 				return new ArrayLength((Type) operands[0], (Expr) operands[1]);
 			}
 
@@ -4757,7 +4774,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_arraylength") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new ArrayLength((Type) operands[0], (Expr) operands[1]);
 				}
 			};
@@ -4806,7 +4823,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public RecordAccess clone(SyntacticItem[] operands) {
+			public RecordAccess clone(Syntactic.Item[] operands) {
 				return new RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 
@@ -4817,14 +4834,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0a = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_recordaccess") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 				}
 			};
 
 			public static final Descriptor DESCRIPTOR_0b = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_recordborrow") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Expr.RecordAccess r = new RecordAccess((Type) operands[0], (Expr) operands[1],
 							(Identifier) operands[2]);
 					r.setMove();
@@ -4847,7 +4864,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new TupleInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
@@ -4873,7 +4890,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "EXPR_tupleinitialiser") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new TupleInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 				}
 			};
@@ -4908,7 +4925,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public RecordInitialiser clone(SyntacticItem[] operands) {
+			public RecordInitialiser clone(Syntactic.Item[] operands) {
 				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
 						(Tuple<Expr>) operands[2]);
 			}
@@ -4916,7 +4933,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_recordinitialiser") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1],
 							(Tuple<Expr>) operands[2]);
 				}
@@ -4966,7 +4983,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public RecordUpdate clone(SyntacticItem[] operands) {
+			public RecordUpdate clone(Syntactic.Item[] operands) {
 				return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
 						(Expr) operands[3]);
 			}
@@ -4978,7 +4995,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.FOUR, Data.ZERO, "EXPR_recordupdate") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
 							(Expr) operands[3]);
 				}
@@ -4990,7 +5007,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Syntactic Type
 	// =========================================================================
 
-	public static interface Type extends SyntacticItem {
+	public static interface Type extends Syntactic.Item {
 
 		public static final Any Any = new Any();
 		public static final Void Void = new Void();
@@ -5039,7 +5056,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 * @param binding A function which returns
 		 * @return
 		 */
-		public Type substitute(java.util.function.Function<Object, SyntacticItem> binding);
+		public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding);
 
 		/**
 		 * Expose the underlying type of this type. For example, consider this:
@@ -5104,16 +5121,16 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 		}
 
-		static abstract class AbstractType extends AbstractSyntacticItem implements Type {
+		static abstract class AbstractType extends AbstractItem implements Type {
 			AbstractType(int opcode) {
 				super(opcode);
 			}
 
-			AbstractType(int opcode, SyntacticItem operand) {
+			AbstractType(int opcode, Syntactic.Item operand) {
 				super(opcode, operand);
 			}
 
-			AbstractType(int opcode, SyntacticItem... operands) {
+			AbstractType(int opcode, Syntactic.Item... operands) {
 				super(opcode, operands);
 			}
 
@@ -5182,7 +5199,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public Type getReturn();
 
 			@Override
-			public Type.Callable substitute(java.util.function.Function<Object, SyntacticItem> binding);
+			public Type.Callable substitute(java.util.function.Function<Object, Syntactic.Item> binding);
 		}
 
 		/**
@@ -5201,12 +5218,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Void clone(SyntacticItem[] operands) {
+			public Void clone(Syntactic.Item[] operands) {
 				return new Void();
 			}
 
@@ -5232,7 +5249,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_void") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Void();
 				}
 			};
@@ -5253,12 +5270,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Any clone(SyntacticItem[] operands) {
+			public Any clone(Syntactic.Item[] operands) {
 				return new Any();
 			}
 
@@ -5284,7 +5301,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_any") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Any();
 				}
 			};
@@ -5309,12 +5326,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Null clone(SyntacticItem[] operands) {
+			public Null clone(Syntactic.Item[] operands) {
 				return new Null();
 			}
 
@@ -5330,7 +5347,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_null") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Null();
 				}
 			};
@@ -5348,12 +5365,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Bool clone(SyntacticItem[] operands) {
+			public Bool clone(Syntactic.Item[] operands) {
 				return new Bool();
 			}
 
@@ -5369,7 +5386,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_bool") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Bool();
 				}
 			};
@@ -5391,12 +5408,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Byte clone(SyntacticItem[] operands) {
+			public Byte clone(Syntactic.Item[] operands) {
 				return new Byte();
 			}
 
@@ -5412,7 +5429,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_byte") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Byte();
 				}
 			};
@@ -5432,12 +5449,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Int clone(SyntacticItem[] operands) {
+			public Int clone(Syntactic.Item[] operands) {
 				return new Int();
 			}
 
@@ -5453,7 +5470,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_int") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Int();
 				}
 			};
@@ -5487,7 +5504,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Array substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Array substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				Type before = getElement();
 				Type after = before.substitute(binding);
 				if (before == after) {
@@ -5500,7 +5517,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Array clone(SyntacticItem[] operands) {
+			public Type.Array clone(Syntactic.Item[] operands) {
 				return new Array((Type) operands[0]);
 			}
 
@@ -5516,7 +5533,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_array") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Array((Type) operands[0]);
 				}
 			};
@@ -5549,7 +5566,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Reference substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Reference substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				Type elementBefore = getElement();
 				Type elementAfter = elementBefore.substitute(binding);
 				if(elementBefore != elementAfter) {
@@ -5563,7 +5580,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Reference clone(SyntacticItem[] operands) {
+			public Type.Reference clone(Syntactic.Item[] operands) {
 					return new Reference((Type) operands[0]);
 			}
 
@@ -5579,7 +5596,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_reference") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Reference((Type) operands[0]);
 				}
 			};
@@ -5670,7 +5687,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Record substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Record substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				WyilFile.Tuple<Type.Field> before = getFields();
 				WyilFile.Tuple<Type.Field> after = substitute(before, binding);
 				if (before == after) {
@@ -5683,7 +5700,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Record clone(SyntacticItem[] operands) {
+			public Type.Record clone(Syntactic.Item[] operands) {
 				return new Record((Value.Bool) operands[0], (WyilFile.Tuple<Type.Field>) operands[1]);
 			}
 
@@ -5695,7 +5712,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			 * @return
 			 */
 			private static WyilFile.Tuple<Type.Field> substitute(WyilFile.Tuple<Type.Field> fields,
-					java.util.function.Function<Object, SyntacticItem> binding) {
+					java.util.function.Function<Object, Syntactic.Item> binding) {
 				//
 				for (int i = 0; i != fields.size(); ++i) {
 					Type.Field field = fields.get(i);
@@ -5783,13 +5800,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_record") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Record((Value.Bool) operands[0], (WyilFile.Tuple<Type.Field>) operands[1]);
 				}
 			};
 		}
 
-		public static class Field extends AbstractSyntacticItem {
+		public static class Field extends AbstractItem {
 
 			public Field(Identifier name, Type type) {
 				super(TYPE_field, name, type);
@@ -5804,7 +5821,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Field((Identifier) operands[0], (Type) operands[1]);
 			}
 
@@ -5825,7 +5842,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_field") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Field((Identifier) operands[0], (Type) operands[1]);
 				}
 			};
@@ -5957,7 +5974,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Tuple substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Tuple substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				for(int i=0;i!=size();++i) {
 					Type before = get(i);
 					Type after = before.substitute(binding);
@@ -5976,7 +5993,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Tuple clone(SyntacticItem[] operands) {
+			public Type.Tuple clone(Syntactic.Item[] operands) {
 				return new Tuple(ArrayUtils.toArray(Type.class, operands));
 			}
 
@@ -6011,7 +6028,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "TYPE_tuple") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Tuple(ArrayUtils.toArray(Type.class, operands));
 				}
 			};
@@ -6031,7 +6048,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		 *
 		 * @return
 		 */
-		public static class Nominal extends AbstractSyntacticItem implements Type, Linkable {
+		public static class Nominal extends AbstractItem implements Type, Linkable {
 
 			public Nominal(Decl.Link<Decl.Type> name, WyilFile.Tuple<Type> parameters) {
 				super(TYPE_nominal, name, parameters);
@@ -6121,7 +6138,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Nominal substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Nominal substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				WyilFile.Tuple<Type> o_parameters = getParameters();
 				WyilFile.Tuple<Type> n_parameters = WyilFile.substitute(o_parameters, binding);
 				if(n_parameters == null) {
@@ -6134,7 +6151,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Nominal clone(SyntacticItem[] operands) {
+			public Nominal clone(Syntactic.Item[] operands) {
 				return new Nominal((Decl.Link<Decl.Type>) operands[0], ((WyilFile.Tuple<Type>) operands[1]));
 			}
 
@@ -6156,7 +6173,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_nominal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Nominal((Decl.Link<Decl.Type>) operands[0], (WyilFile.Tuple<Type>) operands[1]);
 				}
 			};
@@ -6259,7 +6276,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				Type[] before = getAll();
 				Type[] after = WyilFile.substitute(before, binding);
 				if(after == null) {
@@ -6272,7 +6289,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Union clone(SyntacticItem[] operands) {
+			public Type.Union clone(Syntactic.Item[] operands) {
 				return new Union(ArrayUtils.toArray(Type.class, operands));
 			}
 
@@ -6315,7 +6332,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "TYPE_union") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Union(ArrayUtils.toArray(Type.class, operands));
 				}
 			};
@@ -6348,7 +6365,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Function substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Function substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				Type parameterBefore = getParameter();
 				Type parameterAfter = parameterBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6364,7 +6381,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Function clone(SyntacticItem[] operands) {
+			public Function clone(Syntactic.Item[] operands) {
 				return new Function((Type.Tuple) operands[0], (Type.Tuple) operands[1]);
 			}
 
@@ -6382,7 +6399,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_function") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Function((Type) operands[0], (Type) operands[1]);
 				}
 			};
@@ -6401,7 +6418,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		public static class Method extends AbstractType implements Type.Callable {
 
 			public Method(Type parameters, Type returns) {
-				super(TYPE_method, new SyntacticItem[] { parameters, returns });
+				super(TYPE_method, new Syntactic.Item[] { parameters, returns });
 			}
 
 			@Override
@@ -6417,7 +6434,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Method substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Method substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				// Proceed with the potentially updated binding
 				Type parametersBefore = getParameter();
 				Type parametersAfter = parametersBefore.substitute(binding);
@@ -6442,14 +6459,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Method clone(SyntacticItem[] operands) {
+			public Method clone(Syntactic.Item[] operands) {
 				return new Method((Type.Tuple) operands[0], (Type.Tuple) operands[1]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_method") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Method((Type) operands[0], (Type) operands[1]);
 				}
 			};
@@ -6485,7 +6502,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Property substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Property substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				Type parametersBefore = getParameter();
 				Type parametersAfter = parametersBefore.substitute(binding);
 				Type returnBefore = getReturn();
@@ -6499,7 +6516,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Property clone(SyntacticItem[] operands) {
+			public Property clone(Syntactic.Item[] operands) {
 				return new Property((Type.Tuple) operands[0], (Type.Tuple) operands[1]);
 			}
 
@@ -6516,7 +6533,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "TYPE_property") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Property((Type.Tuple) operands[0], (Type.Tuple) operands[1]);
 				}
 			};
@@ -6539,12 +6556,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Type.Unknown substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Type.Unknown substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				throw new UnsupportedOperationException();
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Unknown();
 			}
 
@@ -6560,7 +6577,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "TYPE_unknown") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Unknown();
 				}
 			};
@@ -6593,13 +6610,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Existential(new BigInteger(data).intValue());
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
-				SyntacticItem i = binding.apply(get());
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
+				Syntactic.Item i = binding.apply(get());
 				if(i instanceof Type) {
 					return (Type) i;
 				} else {
@@ -6619,7 +6636,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.MANY, "TYPE_existential") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Existential(new BigInteger(data).intValue());
 				}
 			};
@@ -6650,13 +6667,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Universal((Identifier) operands[0]);
 			}
 
 			@Override
-			public Type substitute(java.util.function.Function<Object, SyntacticItem> binding) {
-				SyntacticItem expanded = binding.apply(getOperand());
+			public Type substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
+				Syntactic.Item expanded = binding.apply(getOperand());
 				if (expanded instanceof Type) {
 					return (Type) expanded;
 				} else {
@@ -6676,7 +6693,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_universal") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Universal((Identifier) operands[0]);
 				}
 			};
@@ -6713,12 +6730,12 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public Recursive substitute(java.util.function.Function<Object, SyntacticItem> binding) {
+			public Recursive substitute(java.util.function.Function<Object, Syntactic.Item> binding) {
 				return this;
 			}
 
 			@Override
-			public Recursive clone(SyntacticItem[] operands) {
+			public Recursive clone(Syntactic.Item[] operands) {
 				return new Recursive((Ref<Type>) operands[0]);
 			}
 
@@ -6740,7 +6757,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "TYPE_recursive") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Recursive((Ref<Type>) operands[0]);
 				}
 			};
@@ -6946,7 +6963,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	}
 
 	private static Tuple<Type> substitute(Tuple<Type> types,
-			java.util.function.Function<Object, SyntacticItem> binding) {
+			java.util.function.Function<Object, Syntactic.Item> binding) {
 		for (int i = 0; i != types.size(); ++i) {
 			Type before = types.get(i);
 			Type after = before.substitute(binding);
@@ -6967,7 +6984,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		return types;
 	}
 
-	private static Type[] substitute(Type[] types, java.util.function.Function<Object, SyntacticItem> binding) {
+	private static Type[] substitute(Type[] types, java.util.function.Function<Object, Syntactic.Item> binding) {
 		Type[] nTypes = types;
 		for (int i = 0; i != nTypes.length; ++i) {
 			Type before = types[i];
@@ -6997,7 +7014,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 */
 	public static Type.Callable substituteTypeCallable(Type.Callable fmp, Tuple<Template.Variable> templateParameters,
 			Tuple<WyilFile.Type> templateArguments) {
-		Function<Object,SyntacticItem> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
+		Function<Object,Syntactic.Item> binding = WyilFile.bindingFunction(templateParameters,templateArguments);
 		// Proceed with the potentially updated binding
 		Type parameters = fmp.getParameter().substitute(binding);
 		Type ret = fmp.getReturn().substitute(binding);
@@ -7019,10 +7036,10 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		}
 	}
 
-	public static String toString(Tuple<? extends SyntacticItem> items) {
+	public static String toString(Tuple<? extends Syntactic.Item> items) {
 		String r = "";
 		for (int i = 0; i != items.size(); ++i) {
-			SyntacticItem ith = items.get(i);
+			Syntactic.Item ith = items.get(i);
 			if (i != 0) {
 				r += ",";
 			}
@@ -7066,9 +7083,9 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Modifier extends SyntacticItem {
+	public interface Modifier extends Syntactic.Item {
 
-		public static final class Public extends AbstractSyntacticItem implements Modifier {
+		public static final class Public extends AbstractItem implements Modifier {
 			public Public() {
 				super(MOD_public);
 			}
@@ -7079,19 +7096,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Public();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_public") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Public();
 				}
 			};
 		}
 
-		public static final class Private extends AbstractSyntacticItem implements Modifier {
+		public static final class Private extends AbstractItem implements Modifier {
 			public Private() {
 				super(MOD_private);
 			}
@@ -7102,19 +7119,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Private();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_private") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Private();
 				}
 			};
 		}
 
-		public static final class Native extends AbstractSyntacticItem implements Modifier {
+		public static final class Native extends AbstractItem implements Modifier {
 			public Native() {
 				super(MOD_native);
 			}
@@ -7125,19 +7142,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Native();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_native") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Native();
 				}
 			};
 		}
 
-		public static final class Export extends AbstractSyntacticItem implements Modifier {
+		public static final class Export extends AbstractItem implements Modifier {
 			public Export() {
 				super(MOD_export);
 			}
@@ -7148,19 +7165,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Export();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_export") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Export();
 				}
 			};
 		}
 
-		public static final class Final extends AbstractSyntacticItem implements Modifier {
+		public static final class Final extends AbstractItem implements Modifier {
 			public Final() {
 				super(MOD_final);
 			}
@@ -7171,19 +7188,19 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Final();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_final") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Final();
 				}
 			};
 		}
 
-		public static final class Unsafe extends AbstractSyntacticItem implements Modifier {
+		public static final class Unsafe extends AbstractItem implements Modifier {
 			public Unsafe() {
 				super(MOD_unsafe);
 			}
@@ -7194,13 +7211,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new Unsafe();
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ZERO, Data.ZERO, "MOD_unsafe") {
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Modifier.Unsafe();
 				}
 			};
@@ -7215,7 +7232,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 		Decl.Link<? extends Decl.Named> getLink();
 	}
 
-	public interface Bindable extends Linkable, SyntacticItem {
+	public interface Bindable extends Linkable, Syntactic.Item {
 		/**
 		 * Get the binding associated with this bindable expression.
 		 *
@@ -7232,7 +7249,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @param arguments
 	 * @return
 	 */
-	public static <T extends SyntacticItem> java.util.function.Function<Object, SyntacticItem> bindingFunction(
+	public static <T extends Syntactic.Item> java.util.function.Function<Object, Syntactic.Item> bindingFunction(
 			Tuple<Template.Variable> variables, Tuple<T> arguments) {
 		//
 		return (Object var) -> {
@@ -7254,7 +7271,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @param arguments
 	 * @return
 	 */
-	public static java.util.function.Function<Object, SyntacticItem> bindingFunction(
+	public static java.util.function.Function<Object, Syntactic.Item> bindingFunction(
 			Tuple<Template.Variable> variables, Type.Tuple arguments) {
 		//
 		return (Object var) -> {
@@ -7277,8 +7294,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	 * @param variables
 	 * @return
 	 */
-	public static java.util.function.Function<Object, SyntacticItem> removeFromBinding(
-			java.util.function.Function<Object, SyntacticItem> binding, Tuple<Identifier> variables) {
+	public static java.util.function.Function<Object, Syntactic.Item> removeFromBinding(
+			java.util.function.Function<Object, Syntactic.Item> binding, Tuple<Identifier> variables) {
 		return (Object var) -> {
 			// Sanity check whether this is a variable which is being removed
 			for (int i = 0; i != variables.size(); ++i) {
@@ -7295,23 +7312,23 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	// Attributes
 	// ============================================================
 	public interface Attr {
-		public static class SyntaxError extends AbstractSyntacticItem implements SyntacticItem.Marker {
+		public static class SyntaxError extends AbstractItem implements Syntactic.Marker {
 
-			public SyntaxError(int errcode, SyntacticItem target) {
+			public SyntaxError(int errcode, Syntactic.Item target) {
 				super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, new Tuple<>());
 			}
 
-			public SyntaxError(int errcode, SyntacticItem target, Tuple<SyntacticItem> context) {
+			public SyntaxError(int errcode, Syntactic.Item target, Tuple<Syntactic.Item> context) {
 				super(ATTR_error, BigInteger.valueOf(errcode).toByteArray(), target, context);
 			}
 
 			@Override
-			public SyntacticItem getTarget() {
+			public Syntactic.Item getTarget() {
 				return operands[0];
 			}
 
-			public Tuple<SyntacticItem> getContext() {
-				return (Tuple<SyntacticItem>) operands[1];
+			public Tuple<Syntactic.Item> getContext() {
+				return (Tuple<Syntactic.Item>) operands[1];
 			}
 
 			/**
@@ -7324,8 +7341,8 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new SyntaxError(getErrorCode(), operands[0], (Tuple<SyntacticItem>) operands[1]);
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
+				return new SyntaxError(getErrorCode(), operands[0], (Tuple<Syntactic.Item>) operands[1]);
 			}
 
 			@Override
@@ -7355,14 +7372,14 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.TWO, "ATTR_error") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					int errcode = new BigInteger(data).intValue();
-					return new SyntaxError(errcode, operands[0], (Tuple<SyntacticItem>) operands[1]);
+					return new SyntaxError(errcode, operands[0], (Tuple<Syntactic.Item>) operands[1]);
 				}
 			};
 		}
 
-		public static class StackFrame extends AbstractSyntacticItem {
+		public static class StackFrame extends AbstractItem {
 			public StackFrame(Decl.Named<?> context, Tuple<Value> arguments) {
 				super(ATTR_stackframe,context,arguments);
 			}
@@ -7376,7 +7393,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new StackFrame((Decl.Callable) operands[0], (Tuple) operands[1]);
 			}
 
@@ -7388,13 +7405,13 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.TWO, Data.ZERO, "ATTR_stackframe") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new StackFrame((Decl.Named) operands[0], (Tuple<Value>) operands[1]);
 				}
 			};
 		}
 
-		public static class CounterExample extends AbstractSyntacticItem {
+		public static class CounterExample extends AbstractItem {
 			public CounterExample(Value.Dictionary mapping) {
 				super(ATTR_counterexample,mapping);
 			}
@@ -7404,7 +7421,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			}
 
 			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
+			public Syntactic.Item clone(Syntactic.Item[] operands) {
 				return new CounterExample((Value.Dictionary) operands[0]);
 			}
 
@@ -7416,7 +7433,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.ONE, Data.ZERO, "ATTR_counterexample") {
 				@SuppressWarnings("unchecked")
 				@Override
-				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new CounterExample((Value.Dictionary) operands[0]);
 				}
 			};
@@ -7810,7 +7827,7 @@ public class WyilFile extends AbstractCompilationUnit<WyilFile> implements Build
 	public static void main(String[] args) {
 		Schema current = createSchema();
 		for (int i = 0; i <= 255; ++i) {
-			Descriptor desc = current.getDescriptor(i);
+			Syntactic.Item.Descriptor desc = current.getDescriptor(i);
 			if (desc != null) {
 				System.out.println("public static final int " + desc.getMnemonic() + " = " + i + "; // " + desc);
 			}

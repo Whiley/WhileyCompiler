@@ -107,16 +107,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jbfs.core.Build;
-import jbfs.util.Trie;
-import wycc.lang.SyntacticException;
-import wycc.lang.SyntacticItem;
-import wycc.util.AbstractCompilationUnit.Attribute;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Pair;
-import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.AbstractCompilationUnit.Value;
+import jbuildgraph.core.Build;
+import jbuildgraph.util.Trie;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Attribute;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Pair;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Value;
 import wyc.io.WhileyFileLexer.Token;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
@@ -162,7 +161,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	public boolean read(Build.Meter meter) {
+	public boolean read() {
 		boolean status = true;
 		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = new Name(new Identifier(source.getPath().last()));
@@ -216,8 +215,7 @@ public class WhileyFileParser {
 		return new Name(bits);
 	}
 
-	private Decl parseDeclaration(Build.Meter meter) {
-		meter.step("declaration");
+	private Decl parseDeclaration() {
 		int start = index;
 		Token lookahead = tokens.get(index);
 		if (lookahead.kind == Import) {
@@ -227,7 +225,7 @@ public class WhileyFileParser {
 		}
 	}
 
-	private Decl.Named<? extends Type> parseNamedDeclaration(Build.Meter meter) {
+	private Decl.Named<? extends Type> parseNamedDeclaration() {
 		// Parse any modifiers
 		Tuple<Modifier> modifiers = parseModifiers(Public, Private, Native, Export, Final, Unsafe);
 		checkNotEof();
@@ -256,9 +254,9 @@ public class WhileyFileParser {
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( '::' ('*' | Identifier) )*
 	 * </pre>
 	 */
-	private Decl parseImportDeclaration(Build.Meter meter) {
+	private Decl parseImportDeclaration() {
 		int start = index;
-		EnclosingScope scope = new EnclosingScope(meter);
+		EnclosingScope scope = new EnclosingScope();
 		match(Import);
 		Tuple<Identifier> names = parseOptionalFroms(scope);
 		Tuple<Identifier> filterPath = parseFilterPath(scope);
@@ -430,11 +428,11 @@ public class WhileyFileParser {
 	 * exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Build.Meter meter, Tuple<Modifier> modifiers,
+	private Decl.FunctionOrMethod parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers,
 			boolean isFunction) {
 		int start = index;
 		// Create appropriate enclosing scope
-		EnclosingScope scope = new EnclosingScope(meter);
+		EnclosingScope scope = new EnclosingScope();
 		//
 		if (isFunction) {
 			match(Function);
@@ -496,7 +494,7 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 */
-	private Decl.Property parsePropertyDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+	private Decl.Property parsePropertyDeclaration(, Tuple<Modifier> modifiers) {
 		EnclosingScope scope = new EnclosingScope(meter);
 		int start = index;
 		match(Property);
@@ -512,7 +510,7 @@ public class WhileyFileParser {
 		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, body), start);
 	}
 
-	private Decl.Variant parseVariantDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+	private Decl.Variant parseVariantDeclaration(, Tuple<Modifier> modifiers) {
 		EnclosingScope scope = new EnclosingScope(meter);
 		int start = index;
 		match(Variant);
@@ -616,7 +614,7 @@ public class WhileyFileParser {
 	 * @param modifiers --- The list of modifiers for this declaration (which were
 	 *                  already parsed before this method was called).
 	 */
-	public Decl.Type parseTypeDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+	public Decl.Type parseTypeDeclaration(, Tuple<Modifier> modifiers) {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope(meter);
 		//
@@ -694,7 +692,7 @@ public class WhileyFileParser {
 	 * @param modifiers --- The list of modifiers for this declaration (which were
 	 *                  already parsed before this method was called).
 	 */
-	private Decl.StaticVariable parseStaticVariableDeclaration(Build.Meter meter, Tuple<Modifier> modifiers) {
+	private Decl.StaticVariable parseStaticVariableDeclaration(, Tuple<Modifier> modifiers) {
 		//
 		int start = index;
 		EnclosingScope scope = new EnclosingScope(meter);
@@ -4774,7 +4772,7 @@ public class WhileyFileParser {
 		/**
 		 * Enclosing meter for profiling information
 		 */
-		private final Build.Meter meter;
+		private final ;
 		/**
 		 * The indent level of the enclosing scope.
 		 */
@@ -4801,7 +4799,7 @@ public class WhileyFileParser {
 		 */
 		private final Context context;
 
-		public EnclosingScope(Build.Meter meter) {
+		public EnclosingScope() {
 			this.meter = meter;
 			this.indent = ROOT_INDENT;
 			this.environment = new HashMap<>();
@@ -4810,7 +4808,7 @@ public class WhileyFileParser {
 			this.context = Context.OTHER;
 		}
 
-		private EnclosingScope(Build.Meter meter, Indent indent, Map<Identifier, Decl.Variable> variables,
+		private EnclosingScope(Indent indent, Map<Identifier, Decl.Variable> variables,
 				Set<Identifier> fieldAliases, Set<Identifier> typeVariables, Context context) {
 			this.meter = meter;
 			this.indent = indent;

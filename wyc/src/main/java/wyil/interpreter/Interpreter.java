@@ -13,11 +13,11 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import static wycc.util.AbstractCompilationUnit.ITEM_bool;
-import static wycc.util.AbstractCompilationUnit.ITEM_byte;
-import static wycc.util.AbstractCompilationUnit.ITEM_int;
-import static wycc.util.AbstractCompilationUnit.ITEM_null;
-import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_bool;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_byte;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_int;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_null;
+import static jsynheap.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
@@ -28,12 +28,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import jbfs.core.Build;
-import jbfs.util.ArrayUtils;
-import wycc.lang.*;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.AbstractCompilationUnit.Value;
+import jbuildgraph.util.ArrayUtils;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
@@ -127,7 +125,7 @@ public class Interpreter {
 	 * @return
 	 */
 	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, Heap heap, RValue[] args,
-			SyntacticItem context) {
+			Syntactic.Item context) {
 		Decl.Callable lambda = frame.getCallable(name, signature);
 		if (lambda == null) {
 			throw new IllegalArgumentException("no function or method found: " + name + ", " + signature);
@@ -152,7 +150,7 @@ public class Interpreter {
 	 *                when reporting precondition violations.
 	 * @return
 	 */
-	public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, SyntacticItem context) {
+	public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, Syntactic.Item context) {
 		// Fourth, construct the stack frame for execution
 		extractParameters(frame, args, lambda);
 		// Check the precondition
@@ -341,7 +339,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignLVal(LVal lval, RValue rval, CallStack frame, Heap heap, EnclosingScope scope,
-			SyntacticItem context) {
+			Syntactic.Item context) {
 		switch (lval.getOpcode()) {
 		case EXPR_arrayborrow:
 		case EXPR_arrayaccess: {
@@ -376,7 +374,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignArray(Expr.ArrayAccess lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		RValue.Array array = executeExpression(ARRAY_T, lval.getFirstOperand(), frame, heap);
 		RValue.Int index = executeExpression(INT_T, lval.getSecondOperand(), frame, heap);
 		// Sanity check access
@@ -388,7 +386,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignDereference(Expr.Dereference lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame, heap);
 		// FIXME: need to check type invariant here??
 		int address = ref.deref();
@@ -397,7 +395,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignFieldDereference(Expr.FieldDereference lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		RValue.Reference ref = executeExpression(REF_T, lval.getOperand(), frame, heap);
 		// Extract target cell
 		int address = ref.deref();
@@ -408,7 +406,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignRecord(Expr.RecordAccess lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		RValue.Record record = executeExpression(RECORD_T, lval.getOperand(), frame, heap);
 		// Write rval to field
 		record = record.write(lval.getField(), rval);
@@ -417,7 +415,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignVariable(Expr.VariableAccess lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		// Check type invariants for lval being assigned
 		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, heap, context);
 		//
@@ -425,7 +423,7 @@ public class Interpreter {
 	}
 
 	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, Heap heap,
-			EnclosingScope scope, SyntacticItem context) {
+			EnclosingScope scope, Syntactic.Item context) {
 		Tuple<Expr> operands = lval.getOperands();
 		// Check we have a tuple as expected!
 		RValue.Tuple tuple = checkType(rval, lval, TUPLE_T);
@@ -1452,7 +1450,7 @@ public class Interpreter {
 	// Constants
 	// =============================================================
 
-	public void checkArrayBounds(RValue.Array array, RValue.Int index, CallStack frame, SyntacticItem context) {
+	public void checkArrayBounds(RValue.Array array, RValue.Int index, CallStack frame, Syntactic.Item context) {
 		int len = array.length().intValue();
 		int idx = index.intValue();
 		if (idx < 0) {
@@ -1462,7 +1460,7 @@ public class Interpreter {
 		}
 	}
 
-	public void checkDivisionByZero(RValue.Int value, CallStack frame, SyntacticItem context) {
+	public void checkDivisionByZero(RValue.Int value, CallStack frame, Syntactic.Item context) {
 		if (value.intValue() == 0) {
 			throw new RuntimeError(WyilFile.RUNTIME_DIVIDEBYZERO_FAILURE, frame, context);
 		}
@@ -1478,7 +1476,7 @@ public class Interpreter {
 		}
 	}
 
-	public void checkTypeInvariants(Type type, RValue value, CallStack frame, Heap heap, SyntacticItem context) {
+	public void checkTypeInvariants(Type type, RValue value, CallStack frame, Heap heap, Syntactic.Item context) {
 		if (value.is(type, frame, heap).boolValue() == false) {
 			throw new RuntimeError(WyilFile.RUNTIME_TYPEINVARIANT_FAILURE, frame, context);
 		}
@@ -1492,7 +1490,7 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, SyntacticItem context) {
+	public void checkInvariants(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, Syntactic.Item context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
@@ -1516,7 +1514,7 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkPrecondition(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, SyntacticItem context) {
+	public void checkPrecondition(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, Syntactic.Item context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
@@ -1560,7 +1558,7 @@ public class Interpreter {
 	 * @param types   --- Types to be checked against
 	 */
 	@SafeVarargs
-	public static <T extends RValue> T checkType(RValue operand, SyntacticItem context, Class<T>... types) {
+	public static <T extends RValue> T checkType(RValue operand, Syntactic.Item context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
 			if (types[i].isInstance(operand)) {
@@ -1591,7 +1589,7 @@ public class Interpreter {
 	 *
 	 * @param context --- Context in which bytecodes are executed
 	 */
-	private <T> T deadCode(SyntacticItem element) {
+	private <T> T deadCode(Syntactic.Item element) {
 		// FIXME: do more here
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
@@ -1611,7 +1609,7 @@ public class Interpreter {
 		private final int code;
 		private final CallStack frame;
 
-		public RuntimeError(int code, CallStack frame, SyntacticItem element, SyntacticItem... context) {
+		public RuntimeError(int code, CallStack frame, Syntactic.Item element, Syntactic.Item... context) {
 			super(ErrorMessages.getErrorMessage(code, new Tuple<>(context)), extractEntry(element), element);
 			this.code = code;
 			this.frame = frame;
@@ -1625,7 +1623,7 @@ public class Interpreter {
 			return frame;
 		}
 
-		private static Build.Artifact extractEntry(SyntacticItem item) {
+		private static Build.Artifact extractEntry(Syntactic.Item item) {
 			// FIXME: this feels like a hack
 			SyntacticHeap h = item.getHeap();
 			if (h instanceof WyilFile) {

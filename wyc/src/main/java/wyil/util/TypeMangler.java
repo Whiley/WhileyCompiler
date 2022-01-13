@@ -15,9 +15,8 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.lang.CompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
 
 /**

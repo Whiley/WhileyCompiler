@@ -13,12 +13,11 @@
 // limitations under the License.
 package wyil.transform;
 
-import wycc.lang.*;
-import wycc.util.AbstractCompilationUnit;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Name;
-import wycc.util.AbstractCompilationUnit.Ref;
-import wycc.util.AbstractSyntacticHeap;
+import jsynheap.util.AbstractCompilationUnit;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Ref;
+import jsynheap.util.AbstractHeap;
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -31,10 +30,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jbfs.core.Build;
-import jbfs.core.Content;
-import jbfs.util.ArrayUtils;
-import jbfs.util.Trie;
+import jbuildstore.core.Content;
+import jbuildgraph.util.ArrayUtils;
+import jbuildgraph.util.Trie;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -206,10 +204,6 @@ public class NameResolution {
 		 * relevant members should themselves be exposed).
 		 */
 		private boolean isVisible = false;
-
-		public Resolver(Build.Meter meter) {
-			super(meter);
-		}
 
 		public List<Patch> apply(WyilFile module) {
 			super.visitModule(module, null);

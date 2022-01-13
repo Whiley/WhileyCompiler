@@ -15,8 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import jbfs.core.Build;
-import wycc.lang.SyntacticItem;
+import jsynheap.lang.Syntactic;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
@@ -31,12 +30,6 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractConsumer<T> {
-	protected final Build.Meter meter;
-
-	public AbstractConsumer(Build.Meter meter) {
-		this.meter = meter;
-	}
-
 	public void visitModule(WyilFile wf, T data) {
 		//
 		Decl.Module module = wf.getModule();
@@ -49,8 +42,6 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitDeclaration(Decl decl, T data) {
-		meter.step("declaration");
-		//
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl, data);
@@ -79,7 +70,6 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitUnit(Decl.Unit unit, T data) {
-		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl, data);
 		}
@@ -185,8 +175,6 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitStatement(Stmt stmt, T data) {
-		meter.step("statement");
-		//
 		switch (stmt.getOpcode()) {
 		case STMT_assert:
 			visitAssert((Stmt.Assert) stmt, data);
@@ -365,8 +353,6 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitExpression(Expr expr, T data) {
-		meter.step("expression");
-		//
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -773,7 +759,7 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitInvoke(Expr.Invoke expr, T data) {
-		for(SyntacticItem arg : expr.getBinding().getArguments()) {
+		for(Syntactic.Item arg : expr.getBinding().getArguments()) {
 			if(arg instanceof Type) {
 				visitType((Type) arg, data);
 			}
@@ -829,8 +815,6 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitType(Type type, T data) {
-		meter.step("type");
-		//
 		switch (type.getOpcode()) {
 		case TYPE_any:
 			visitTypeAny((Type.Any) type, data);

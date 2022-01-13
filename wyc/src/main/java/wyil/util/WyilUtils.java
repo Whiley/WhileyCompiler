@@ -17,8 +17,7 @@ import static wyil.lang.WyilFile.*;
 
 import java.util.*;
 
-import jbfs.core.Build;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type.*;
 import wyil.lang.WyilFile.Type.Byte;
 import wyil.lang.WyilFile.Type.Void;
@@ -174,7 +173,7 @@ public class WyilUtils {
 	 * @param stmt
 	 * @return
 	 */
-	public static boolean hasInterference(Stmt.Assign stmt, Build.Meter meter) {
+	public static boolean hasInterference(Stmt.Assign stmt) {
 		Tuple<LVal> lhs = stmt.getLeftHandSide();
 		Tuple<Expr> rhs = stmt.getRightHandSide();
 		//
@@ -183,12 +182,12 @@ public class WyilUtils {
 		// Identify all defs and uses
 		for (int i = 0; i != lhs.size(); ++i) {
 			LVal lv = lhs.get(i);
-			if (!extractDefinedVariable(lhs.get(i), defs, meter)) {
+			if (!extractDefinedVariable(lhs.get(i), defs)) {
 				// Couldn't tell what was being defined.
 				return true;
 			}
-			extractUsedVariables(lhs.get(i), uses, meter);
-			extractUsedVariables(rhs.get(i), uses, meter);
+			extractUsedVariables(lhs.get(i), uses);
+			extractUsedVariables(rhs.get(i), uses);
 		}
 		// Check for interference
 		for (Decl.Variable def : defs) {
@@ -201,12 +200,12 @@ public class WyilUtils {
 		return false;
 	}
 
-	private static boolean extractDefinedVariable(LVal lval, Set<Decl.Variable> defs, Build.Meter meter) {
+	private static boolean extractDefinedVariable(LVal lval, Set<Decl.Variable> defs) {
 		switch (lval.getOpcode()) {
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
-			return extractDefinedVariable((LVal) e.getFirstOperand(), defs, meter);
+			return extractDefinedVariable((LVal) e.getFirstOperand(), defs);
 		}
 		case EXPR_fielddereference:
 		case EXPR_dereference: {
@@ -218,7 +217,7 @@ public class WyilUtils {
 			Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
 			Tuple<Expr> operands = e.getOperands();
 			for (int i = 0; i != operands.size(); ++i) {
-				if (!extractDefinedVariable((LVal) operands.get(i), defs, meter)) {
+				if (!extractDefinedVariable((LVal) operands.get(i), defs)) {
 					return false;
 				}
 			}
@@ -227,7 +226,7 @@ public class WyilUtils {
 		case EXPR_recordaccess:
 		case EXPR_recordborrow: {
 			Expr.RecordAccess e = (Expr.RecordAccess) lval;
-			return extractDefinedVariable((LVal) e.getOperand(), defs, meter);
+			return extractDefinedVariable((LVal) e.getOperand(), defs);
 		}
 		case EXPR_variablecopy:
 		case EXPR_variablemove: {
@@ -240,31 +239,31 @@ public class WyilUtils {
 		}
 	}
 
-	private static void extractUsedVariables(LVal lval, Set<Decl.Variable> uses, Build.Meter meter) {
+	private static void extractUsedVariables(LVal lval, Set<Decl.Variable> uses) {
 		switch (lval.getOpcode()) {
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) lval;
-			extractUsedVariables((LVal) e.getFirstOperand(), uses, meter);
-			extractUsedVariables(e.getSecondOperand(), uses, meter);
+			extractUsedVariables((LVal) e.getFirstOperand(), uses);
+			extractUsedVariables(e.getSecondOperand(), uses);
 			break;
 		}
 		case EXPR_dereference: {
 			Expr.Dereference e = (Expr.Dereference) lval;
-			extractUsedVariables(e.getOperand(), uses, meter);
+			extractUsedVariables(e.getOperand(), uses);
 			break;
 		}
 		case EXPR_recordaccess:
 		case EXPR_recordborrow: {
 			Expr.RecordAccess e = (Expr.RecordAccess) lval;
-			extractUsedVariables((LVal) e.getOperand(), uses, meter);
+			extractUsedVariables((LVal) e.getOperand(), uses);
 			break;
 		}
 		case EXPR_tupleinitialiser: {
 			Expr.TupleInitialiser e = (Expr.TupleInitialiser) lval;
 			Tuple<Expr> operands = e.getOperands();
 			for (int i = 0; i != operands.size(); ++i) {
-				extractUsedVariables((LVal) operands.get(i), uses, meter);
+				extractUsedVariables((LVal) operands.get(i), uses);
 			}
 			break;
 		}
@@ -285,9 +284,9 @@ public class WyilUtils {
 	 * @param e
 	 * @param uses
 	 */
-	private static void extractUsedVariables(Stmt e, Set<Decl.Variable> uses, Build.Meter meter) {
+	private static void extractUsedVariables(Stmt e, Set<Decl.Variable> uses) {
 		// Construct appropriate visitor
-		AbstractVisitor visitor = new AbstractVisitor(meter) {
+		AbstractVisitor visitor = new AbstractVisitor() {
 			@Override
 			public void visitVariableAccess(Expr.VariableAccess e) {
 				uses.add(e.getVariableDeclaration());
@@ -356,9 +355,9 @@ public class WyilUtils {
 	 * @param meter
 	 * @return
 	 */
-	public static Set<Decl.Variable> determineUsedVariables(Stmt stmt, Build.Meter meter) {
+	public static Set<Decl.Variable> determineUsedVariables(Stmt stmt) {
 		HashSet<Decl.Variable> used = new HashSet<>();
-		extractUsedVariables(stmt, used, meter);
+		extractUsedVariables(stmt, used);
 		return used;
 	}
 
@@ -370,10 +369,10 @@ public class WyilUtils {
 	 * @param t
 	 * @return
 	 */
-	public static Tuple<Template.Variable> extractTemplate(Type type, Build.Meter meter) {
+	public static Tuple<Template.Variable> extractTemplate(Type type) {
 		HashSet<Template.Variable> holes = new HashSet<>();
 		// Traverse the type looking for universals
-		new AbstractVisitor(meter) {
+		new AbstractVisitor() {
 			@Override
 			public void visitTypeVariable(Type.Universal t) {
 				// FIXME: unsure what the appropriate variance would be.

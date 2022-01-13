@@ -15,7 +15,6 @@ package wyil.check;
 
 import java.util.BitSet;
 
-import jbfs.core.Build;
 
 import static wyil.lang.WyilFile.*;
 
@@ -24,7 +23,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
-import wycc.lang.SyntacticItem;
+import jsynheap.lang.Syntactic;
 
 /**
  * <p>
@@ -77,15 +76,10 @@ public class DefiniteUnassignmentCheck
 
 	private boolean status = true;
 
-	public DefiniteUnassignmentCheck(Build.Meter meter) {
-		super(meter.fork(DefiniteUnassignmentCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile wf) {
 		// Only proceed if no errors in earlier stages
 		visitModule(wf, null);
-		meter.done();
 		//
 		return status;
 	}
@@ -532,7 +526,7 @@ public class DefiniteUnassignmentCheck
 		}
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

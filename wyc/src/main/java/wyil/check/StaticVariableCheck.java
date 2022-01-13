@@ -16,8 +16,7 @@ package wyil.check;
 import java.util.HashSet;
 import java.util.Set;
 
-import jbfs.core.Build;
-import wycc.lang.SyntacticItem;
+import jsynheap.lang.Syntactic;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -58,14 +57,9 @@ import static wyil.lang.WyilFile.*;
 public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> implements Compiler.Check {
 	private boolean status = true;
 
-	public StaticVariableCheck(Build.Meter meter) {
-		super(meter.fork(StaticVariableCheck.class.getSimpleName()));
-	}
-
 	@Override
 	public boolean check(WyilFile wf) {
 		visitModule(wf, null);
-		meter.done();
 		return status;
 	}
 
@@ -117,7 +111,7 @@ public class StaticVariableCheck extends AbstractConsumer<Set<QualifiedName>> im
 		// Don't need to visit types at all
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

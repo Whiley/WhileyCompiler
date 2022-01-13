@@ -15,8 +15,6 @@ package wyil.transform;
 
 import static wyil.lang.WyilFile.*;
 
-import jbfs.core.Build;
-import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
@@ -69,14 +67,9 @@ import wyil.util.AbstractConsumer;
  */
 public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.Transform {
 
-	public MoveAnalysis(Build.Meter meter) {
-		super(meter.fork(MoveAnalysis.class.getSimpleName()));
-	}
-
 	@Override
 	public void apply(WyilFile module) {
 		visitModule(module, null);
-		meter.done();
 	}
 
 	// ===========================================================================

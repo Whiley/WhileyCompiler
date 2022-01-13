@@ -15,9 +15,7 @@ package wyil.util;
 
 import static wyil.lang.WyilFile.*;
 
-import jbfs.core.Build;
-import wycc.lang.SyntacticItem;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.lang.Syntactic;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -35,11 +33,6 @@ import wyil.lang.WyilFile.Type;
  *
  */
 public abstract class AbstractVisitor {
-	protected final Build.Meter meter;
-
-	public AbstractVisitor(Build.Meter meter) {
-		this.meter = meter;
-	}
 
 	public void visitModule(WyilFile wf) {
 		Decl.Module module = wf.getModule();
@@ -53,7 +46,6 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitDeclaration(Decl decl) {
-		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			visitUnit((Decl.Unit) decl);
@@ -82,7 +74,6 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitUnit(Decl.Unit unit) {
-		meter.step("unit");
 		for (Decl decl : unit.getDeclarations()) {
 			visitDeclaration(decl);
 		}
@@ -187,7 +178,6 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitStatement(Stmt stmt) {
-		meter.step("statement");
 		switch (stmt.getOpcode()) {
 		case DECL_variable:
 			visitVariable((Decl.Variable) stmt);
@@ -369,7 +359,6 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitExpression(Expr expr) {
-		meter.step("expression");
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
@@ -776,7 +765,7 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitInvoke(Expr.Invoke expr) {
-		for(SyntacticItem arg : expr.getBinding().getArguments()) {
+		for(Syntactic.Item arg : expr.getBinding().getArguments()) {
 			if(arg instanceof Type) {
 				visitType((Type) arg);
 			}
@@ -832,7 +821,6 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitType(Type type) {
-		meter.step("type");
 		switch (type.getOpcode()) {
 		case TYPE_any:
 			visitTypeAny((Type.Any) type);

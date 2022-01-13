@@ -34,9 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import jbfs.core.Build;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.Named;
@@ -197,10 +196,9 @@ public class SymbolTable {
 	 *
 	 * @return
 	 */
-	public void consolidate(Build.Meter meter) {
+	public void consolidate() {
 		Decl.Module module = target.getModule();
 		for(ExternalGroup group : consolidations) {
-			meter.step("consolidate");
 			// TODO: this could be made way more efficient by collecting all consolidate
 			// units into one batch
 			module.putExtern(group.consolidate());

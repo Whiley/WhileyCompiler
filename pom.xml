@@ -11,12 +11,10 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc-all</artifactId>
-  <version>0.9.9</version>
+  <version>0.9.10</version>
   <packaging>pom</packaging>
   
   <modules>
-    <module>wycc</module>
-    <module>wycli</module>      
     <module>wyc</module>
     <module>wyqc</module>
   </modules>
@@ -57,12 +55,22 @@
     </developer>
   </developers>
 
-   <dependencies>
+  <dependencies>
      <dependency>
       <groupId>org.whiley</groupId>
-      <artifactId>jbuildfs</artifactId>
-      <version>1.0.1</version>
+      <artifactId>jbuildstore</artifactId>
+      <version>0.1.3</version>
+     </dependency>    
+     <dependency>
+      <groupId>org.whiley</groupId>
+      <artifactId>jbuildgraph</artifactId>
+      <version>0.2.2</version>      
      </dependency>
+     <dependency>
+      <groupId>org.whiley</groupId>
+      <artifactId>jsynheap</artifactId>
+      <version>0.1.1</version>      
+     </dependency>     
      <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

@@ -18,7 +18,6 @@ import static wyil.lang.WyilFile.*;
 import java.util.*;
 import java.util.function.Function;
 
-import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
 
 /**
