@@ -5,19 +5,21 @@
   
   <modelVersion>4.0.0</modelVersion>
 
+  <repositories>
+    <repository>
+      <id>central</id>
+      <url>https://repo1.maven.org/maven2/</url>
+    </repository>
+  </repositories>
+    
   <!-- ============================================== -->
   <!-- Configuration -->
   <!-- ============================================== -->
 
   <groupId>org.whiley</groupId>
-  <artifactId>wyc-all</artifactId>
+  <artifactId>wyc</artifactId>
   <version>0.9.10</version>
-  <packaging>pom</packaging>
-  
-  <modules>
-    <module>wyc</module>
-    <module>wyqc</module>
-  </modules>
+  <packaging>jar</packaging>
   
   <licenses>
     <license>
@@ -70,7 +72,12 @@
       <groupId>org.whiley</groupId>
       <artifactId>jsynheap</artifactId>
       <version>0.1.2</version>      
-     </dependency>     
+     </dependency>
+    <dependency>
+      <groupId>org.whiley</groupId>
+      <artifactId>jmodelgen</artifactId>
+      <version>[0.4.0,0.5.0)</version>
+    </dependency>     
      <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

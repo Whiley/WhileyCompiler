@@ -1,4 +1,4 @@
-package wyqc.lang;
+package wyc.task;
 
 import static wyil.lang.WyilFile.*;
 
@@ -11,13 +11,13 @@ import java.util.*;
 import jmodelgen.core.Domain;
 import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
-import wycc.lang.*;
-import wycc.util.AbstractCompilationUnit.Tuple;
-import wycc.util.AbstractCompilationUnit.Value;
-import wycc.util.Logger;
-import wycc.util.AbstractCompilationUnit.Name;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Value;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Name;
 import wyc.util.ErrorMessages;
-import wycli.lang.Command;
+import wyc.util.Logger;
+
 import static wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.interpreter.Interpreter.CallStack;
@@ -64,14 +64,14 @@ public class QuickCheck {
 		};
 	}
 
-	public boolean check(Command.Environment project, WyilFile parent, Context context, List<String> targets)
+	public boolean check(WyilFile parent, Context context, List<String> targets)
 			throws IOException {
 		// Initialise Interpreter
 		this.interpreter = new ExtendedInterpreter(System.err, context);
 		// Construct extended context
 		ExtendedContext eContext = interpreter.getExtendedContext();
 		// Initialise by context
-		if(eContext.initialise(project,parent)) {
+		if(eContext.initialise(parent)) {
 			//
 			return check(parent, eContext, targets);
 		} else {
@@ -652,7 +652,7 @@ public class QuickCheck {
 		}
 
 		@Override
-		public RValue execute(Interpreter interpreter, RValue[] arguments, Heap heap, SyntacticItem context) {
+		public RValue execute(Interpreter interpreter, RValue[] arguments, Heap heap, Syntactic.Item context) {
 			// Check through previous memoizations
 			for(int i=0;i!=inputs.size();++i) {
 				if(Arrays.equals(arguments, inputs.get(i))) {
@@ -739,7 +739,7 @@ public class QuickCheck {
 		}
 	}
 
-	private static String toMethodParametersString(Tuple<? extends SyntacticItem> variables) {
+	private static String toMethodParametersString(Tuple<? extends Syntactic.Item> variables) {
 		if(variables.size() == 0) {
 			return "";
 		} else  {
@@ -761,7 +761,6 @@ public class QuickCheck {
 		Decl.Module module = parent.getModule();
 		// Add all declarations listed
 		for (Decl.Unit unit : module.getUnits()) {
-			CompilationUnit.Name un = unit.getName();
 			for (Decl d : unit.getDeclarations()) {
 				if (d instanceof Decl.Named) {
 					Decl.Named n = (Decl.Named) d;
@@ -991,7 +990,7 @@ public class QuickCheck {
 		 * to execute functions and methods within the project. This includes all
 		 * modules which this project depends upon.
 		 */
-		public boolean initialise(Command.Environment project, WyilFile context) throws IOException {
+		public boolean initialise(WyilFile context) throws IOException {
 			try {
 				// Load all relevant modules
 				frame.load(context);
@@ -1050,7 +1049,7 @@ public class QuickCheck {
 		}
 
 		@Override
-		public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, SyntacticItem item) {
+		public RValue execute(Decl.Callable lambda, CallStack frame, Heap heap, RValue[] args, Syntactic.Item item) {
 			if (lambda instanceof Decl.Method && lambda.getBody().size() == 0) {
 				Domain.Big<RValue> returns = constructGenerator(lambda.getType().getReturn(), context);
 				// FIXME: could return randomly here
