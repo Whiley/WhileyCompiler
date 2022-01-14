@@ -28,8 +28,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import jbfs.util.Pair;
-import jbfs.util.Trie;
+import jbuildgraph.util.Pair;
+import jbuildgraph.util.Trie;
 import wyc.util.TestUtils;
 
 

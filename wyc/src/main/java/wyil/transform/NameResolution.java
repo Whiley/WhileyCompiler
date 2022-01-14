@@ -13,6 +13,7 @@
 // limitations under the License.
 package wyil.transform;
 
+import jsynheap.lang.Syntactic;
 import jsynheap.util.AbstractCompilationUnit;
 import jsynheap.util.AbstractCompilationUnit.Identifier;
 import jsynheap.util.AbstractCompilationUnit.Name;
@@ -70,7 +71,6 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class NameResolution {
-	private static final Content.Filter<WyilFile> ALL_WYILFILES = Content.Filter(WyilFile.ContentType, Trie.EVERYTHING);
 	private final WyilFile target;
 	/**
 	 * The resolver identifies unresolved names and produces patches based on them.
@@ -79,15 +79,15 @@ public class NameResolution {
 
 	private final SymbolTable symbolTable;
 
-	private final List<Content.Source> packages;
+	private final List<Content.Source<Trie>> packages;
 
 	private boolean status = true;
 
-	public NameResolution(List<Content.Source> packages, WyilFile target) throws IOException {
+	public NameResolution(List<Content.Source<Trie>> packages, WyilFile target) throws IOException {
 		this.packages = packages;
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,getExternals());
-		this.resolver = new Resolver(meter);
+		this.resolver = new Resolver();
 	}
 
 	/**
@@ -103,7 +103,7 @@ public class NameResolution {
 		// Keep iterating until all patches are resolved
 		while (patches.size() > 0) {
 			// Create importer
-			Importer importer = new Importer(meter, target, true);
+			Importer importer = new Importer(target, true);
 			// Now continue importing until patches all resolved.
 			for (int i = 0; i != patches.size(); ++i) {
 				// Import and link the given patch
@@ -113,9 +113,7 @@ public class NameResolution {
 			patches = importer.getPatches();
 		}
 		// Consolidate any imported declarations as externals.
-		symbolTable.consolidate(meter);
-		//
-		meter.done();
+		symbolTable.consolidate();
 		//
 		return status;
 	}
@@ -129,10 +127,10 @@ public class NameResolution {
 		ArrayList<WyilFile> externals = new ArrayList<>();
 		// Consider each package in turn and identify all contained WyilFiles
 		for (int i = 0; i != packages.size(); ++i) {
-			Content.Source p = packages.get(i);
+			Content.Source<Trie> p = packages.get(i);
 			// FIXME: This is kind broken me thinks. Potentially, we should be able to
 			// figure out what modules are supplied via the configuration.
-			List<WyilFile> entries = p.getAll(ALL_WYILFILES);
+			List<WyilFile> entries = p.getAll(k -> k.contentType() == WyilFile.ContentType);
 			for (int j = 0; j != entries.size(); ++j) {
 				externals.add(entries.get(j));
 			}
@@ -146,10 +144,9 @@ public class NameResolution {
 	 *
 	 * @param target
 	 */
-	private void checkImports(Build.Meter meter, WyilFile target) {
+	private void checkImports(WyilFile target) {
 		for(Decl.Unit unit : target.getModule().getUnits()) {
 			for(Decl d : unit.getDeclarations()) {
-				meter.step("check");
 				if(d instanceof Decl.Import) {
 					// Found one to check!
 					Decl.Import imp = (Decl.Import) d;
@@ -440,9 +437,9 @@ public class NameResolution {
 		public final boolean isPublic;
 		public final QualifiedName name;
 		public final Type type;
-		private final SyntacticItem target;
+		private final Syntactic.Item target;
 
-		public Patch(boolean isPublic, QualifiedName name, Type type, SyntacticItem target) {
+		public Patch(boolean isPublic, QualifiedName name, Type type, Syntactic.Item target) {
 			if(name == null || target == null) {
 				throw new IllegalArgumentException("name cannot be null");
 			}
@@ -675,8 +672,7 @@ public class NameResolution {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class Importer extends AbstractSyntacticHeap.Allocator {
-		private final Build.Meter meter;
+	private class Importer extends AbstractHeap.Allocator {
 		/**
 		 * Signals whether or not to only import stubs.
 		 */
@@ -686,22 +682,20 @@ public class NameResolution {
 		 */
 		private final ArrayList<Patch> patches = new ArrayList<>();
 
-		private final SyntacticItem REF_UNKNOWN;
+		private final Syntactic.Item REF_UNKNOWN;
 
-		public Importer(Build.Meter meter, AbstractSyntacticHeap heap, boolean stubsOnly) {
+		public Importer(AbstractHeap heap, boolean stubsOnly) {
 			super(heap);
-			this.meter = meter;
 			this.stubsOnly = stubsOnly;
 			this.REF_UNKNOWN = super.allocate(REF_UNKNOWN_DECL);
 		}
 
 		@Override
-		public SyntacticItem allocate(SyntacticItem item) {
-			meter.step("import");
+		public Syntactic.Item allocate(Syntactic.Item item) {
 			switch (item.getOpcode()) {
 			case ITEM_ref:
 				Ref<?> ref = (Ref<?>) item;
-				SyntacticItem referent = ref.get();
+				Syntactic.Item referent = ref.get();
 				if (referent.getHeap() != heap && referent instanceof Decl.Named) {
 					// This is a deference to a named declaration in a different module. This will
 					// need to be patched.
@@ -750,8 +744,8 @@ public class NameResolution {
 		 * @param fm
 		 * @return
 		 */
-		private SyntacticItem allocateStub(Decl.FunctionOrMethod fm) {
-			SyntacticItem item = map.get(fm);
+		private Syntactic.Item allocateStub(Decl.FunctionOrMethod fm) {
+			Syntactic.Item item = map.get(fm);
 			if (item != null) {
 				// item is already allocated as a stub, therefore must return that.
 				return item;
@@ -792,7 +786,7 @@ public class NameResolution {
 		return decl.getModifiers().match(Modifier.Public.class) != null;
 	}
 
-	private void syntaxError(SyntacticItem e, int code, SyntacticItem... context) {
+	private void syntaxError(Syntactic.Item e, int code, Syntactic.Item... context) {
 		status = false;
 		ErrorMessages.syntaxError(e, code, context);
 	}

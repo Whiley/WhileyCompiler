@@ -1270,8 +1270,7 @@ public class FlowTypeUtils {
 		return ss;
 	}
 
-	private static <T> T internalFailure(String msg, SyntacticItem e) {
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu, e);
+	private static <T> T internalFailure(String msg, Syntactic.Item e) {
+		throw new Syntactic.Exception(msg, e.getHeap(), e);
 	}
 }

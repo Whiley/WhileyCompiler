@@ -16,11 +16,11 @@ package wyil.io;
 import java.io.IOException;
 import java.io.InputStream;
 
-import jbfs.util.Pair;
-import jbfs.util.Trie;
-import wycc.io.SyntacticHeapReader;
-import wycc.lang.*;
-import wycc.lang.SyntacticHeap.Schema;
+import jbuildgraph.util.Pair;
+import jbuildgraph.util.Trie;
+import jsynheap.io.HeapReader;
+import jsynheap.lang.Syntactic;
+import jsynheap.lang.Syntactic.Schema;
 import wyil.lang.WyilFile;
 
 /**
@@ -30,7 +30,7 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  *
  */
-public final class WyilFileReader extends SyntacticHeapReader {
+public final class WyilFileReader extends HeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
 	private int minorVersion;
 	private int majorVersion;
@@ -47,7 +47,7 @@ public final class WyilFileReader extends SyntacticHeapReader {
 	}
 
 	public WyilFile read(Trie ID) throws IOException {
-		Pair<Integer, SyntacticItem[]> p = readItems();
+		Pair<Integer, Syntactic.Item[]> p = readItems();
 		return new WyilFile(ID, p.first(), p.second(), majorVersion, minorVersion);
 	}
 
@@ -70,7 +70,7 @@ public final class WyilFileReader extends SyntacticHeapReader {
 				|| (majorVersion == schema.getMajorVersion() && minorVersion > schema.getMinorVersion())) {
 			String msg = "WyilFile compiled with newer version of WyC [" + majorVersion + "." + minorVersion
 					+ " > " + schema.getMajorVersion() + "." + schema.getMinorVersion() + "]";
-			throw new SyntacticException(msg, null, null);
+			throw new Syntactic.Exception(msg, null, null);
 		} else {
 			schema = selectSchema(majorVersion,minorVersion,schema);
 		}
@@ -89,7 +89,7 @@ public final class WyilFileReader extends SyntacticHeapReader {
 	 * @param current
 	 * @return
 	 */
-	private static SyntacticHeap.Schema selectSchema(int major, int minor, SyntacticHeap.Schema current) {
+	private static Syntactic.Schema selectSchema(int major, int minor, Syntactic.Schema current) {
 		if (current.getMajorVersion() == major && current.getMinorVersion() == minor) {
 			return current;
 		} else {

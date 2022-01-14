@@ -15,7 +15,7 @@ package wyil.io;
 
 import java.io.*;
 
-import wycc.io.SyntacticHeapWriter;
+import jsynheap.io.HeapWriter;
 import wyil.lang.WyilFile;
 
 
@@ -29,7 +29,7 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  *
  */
-public final class WyilFileWriter extends SyntacticHeapWriter {
+public final class WyilFileWriter extends HeapWriter {
 
 	public WyilFileWriter(OutputStream output) {
 		super(output, WyilFile.getSchema());

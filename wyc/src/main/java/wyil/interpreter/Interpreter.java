@@ -1364,7 +1364,7 @@ public class Interpreter {
 			// Clone frame to ensure it executes in this exact environment.
 			return semantics.Lambda(decl, frame.clone());
 		} else {
-			throw new SyntacticException("cannot take address of property", null, expr);
+			throw new Syntactic.Exception("cannot take address of property", null, expr);
 		}
 	}
 
@@ -1569,9 +1569,9 @@ public class Interpreter {
 		}
 		// No match, therefore throw an error
 		if (operand == null) {
-			throw new SyntacticException("null operand", null, context);
+			throw new Syntactic.Exception("null operand", null, context);
 		} else {
-			throw new SyntacticException(
+			throw new Syntactic.Exception(
 					"operand returned " + operand.getClass().getName() + ", expecting one of " + Arrays.toString(types),
 					null, context);
 		}
@@ -1606,7 +1606,7 @@ public class Interpreter {
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 	private static final Class<RValue.Tuple> TUPLE_T = RValue.Tuple.class;
 
-	public final static class RuntimeError extends SyntacticException {
+	public final static class RuntimeError extends Syntactic.Exception {
 		private final int code;
 		private final CallStack frame;
 
@@ -1624,9 +1624,9 @@ public class Interpreter {
 			return frame;
 		}
 
-		private static Build.Artifact extractEntry(Syntactic.Item item) {
+		private static Syntactic.Heap extractEntry(Syntactic.Item item) {
 			// FIXME: this feels like a hack
-			SyntacticHeap h = item.getHeap();
+			Syntactic.Heap h = item.getHeap();
 			if (h instanceof WyilFile) {
 				return ((WyilFile) h);
 			} else {

@@ -23,17 +23,15 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.util.*;
 
-import jbfs.core.Build;
-import jbfs.core.Content;
-import jbfs.util.ByteRepository;
-import jbfs.util.DirectoryRoot;
-import jbfs.util.Pair;
-import jbfs.util.Transactions;
-import jbfs.util.Trie;
-import wycc.lang.SyntacticException;
-import wycc.lang.SyntacticItem;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Name;
+import jbuildgraph.core.Build;
+import jbuildstore.core.Content;
+import jbuildstore.core.Key;
+import jbuildstore.util.DirectoryStore;
+import jbuildgraph.util.Pair;
+import jbuildgraph.util.Trie;
+import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Name;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -51,6 +49,17 @@ import wyil.lang.WyilFile.*;
  */
 public class TestUtils {
 	private final static boolean DEBUG = false;
+	/**
+	 * Used for reading the various configuration files prior to instantiating the
+	 * main tool itself.
+	 */
+	public static SuffixRegistry REGISTRY = new SuffixRegistry() {
+		{
+			add(WhileyFile.ContentType);
+			add(WyilFile.ContentType);
+		}
+	};
+
 	//
 	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
 
@@ -121,32 +130,6 @@ public class TestUtils {
 	}
 
 	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Registry implements Content.Registry {
-
-		@Override
-		public String suffix(Content.Type<?> t) {
-			return t.getSuffix();
-		}
-
-		@Override
-		public Content.Type<?> contentType(String suffix) {
-			switch(suffix) {
-			case "whiley":
-				return WhileyFile.ContentType;
-			case "wyil":
-				return WyilFile.ContentType;
-			}
-			return null;
-		}
-	}
-
-	/**
 	 * Parse a Whiley type from a string.
 	 *
 	 * @param from
@@ -157,7 +140,7 @@ public class TestUtils {
 		WhileyFile sf = new WhileyFile(id,from.getBytes());
 		WyilFile wf = new WyilFile(id, Arrays.asList(sf));
 		WhileyFileParser parser = new WhileyFileParser(wf, sf);
-		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope(Build.NULL_METER);
+		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
 	}
 
@@ -201,10 +184,6 @@ public class TestUtils {
 		return testcases;
 	}
 
-	/**
-	 * A simple default registry which knows about whiley files and wyil files.
-	 */
-	private static final Content.Registry registry = new Registry();
 
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.
@@ -229,7 +208,7 @@ public class TestUtils {
 		//
 		boolean result = true;
 		// Construct the directory root
-		DirectoryRoot root = new DirectoryRoot(registry, whileydir, f -> {
+		DirectoryStore<Trie> root = new DirectoryStore<>(REGISTRY, whileydir, f -> {
 			return f.getName().equals(filename);
 		});
 		//
@@ -250,7 +229,7 @@ public class TestUtils {
 			result = target.isValid();
 			// Print out syntactic markers
 			wycli.commands.BuildCmd.printSyntacticMarkers(psyserr, target, source);
-		} catch (SyntacticException e) {
+		} catch (Syntactic.Exception e) {
 			// Print out the syntax error
 			e.outputSourceError(psyserr);
 			result = false;
@@ -296,7 +275,7 @@ public class TestUtils {
 	 * @param visited
 	 * @return
 	 */
-	public static boolean findSyntaxErrors(SyntacticItem item, BitSet visited) {
+	public static boolean findSyntaxErrors(Syntactic.Item item, BitSet visited) {
 		int index = item.getIndex();
 		// Check whether already visited this item
 		if(!visited.get(index)) {
@@ -328,7 +307,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		Content.Source root = new DirectoryRoot(registry, wyildir, f -> {
+		Content.Source<Trie> root = new DirectoryStore<>(REGISTRY, wyildir, f -> {
 			return f.getName().equals(filename);
 		});
 		// Empty signature
@@ -341,14 +320,14 @@ public class TestUtils {
 		//
 		try {
 			// Load the relevant WyIL module
-			stack.load(root.get(WyilFile.ContentType, id));
+			stack.load(root.get(new Key.Pair<>(id, WyilFile.ContentType)));
 			// Sanity check modifiers on test method
 			Decl.Callable lambda = stack.getCallable(name, sig);
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
 				WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
-				new SyntacticException("test method must be exported and public", srcfile, lambda)
+				new Syntactic.Exception("test method must be exported and public", srcfile, lambda)
 						.outputSourceError(System.out, false);
 				throw new RuntimeException("test method must be exported and public");
 			} else {
@@ -362,7 +341,7 @@ public class TestUtils {
 		} catch (Interpreter.RuntimeError e) {
 			WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
 			// FIXME: this is a hack based on current available API.
-			new SyntacticException(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
+			new Syntactic.Exception(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
 			throw e;
 		}
 	}

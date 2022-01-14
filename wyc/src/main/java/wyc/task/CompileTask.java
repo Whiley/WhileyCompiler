@@ -5,6 +5,7 @@ import java.util.*;
 
 import jbuildgraph.core.Build;
 import jbuildstore.core.Content;
+import jbuildstore.core.Key;
 import jbuildgraph.util.ArrayUtils;
 import jbuildgraph.util.Pair;
 import jbuildgraph.util.Trie;
@@ -73,7 +74,7 @@ public class CompileTask implements Build.Task {
 	/**
 	 * The set of build packages that this task relies on.
 	 */
-	private final List<Content.Source> packages;
+	private final List<Content.Source<Trie>> packages;
 	/**
 	 * The set of source files that this task will compiler from.
 	 */
@@ -93,7 +94,7 @@ public class CompileTask implements Build.Task {
 		this.packages = Collections.emptyList();
 	}
 
-	public CompileTask(Trie target, List<WhileyFile> sources, Collection<Content.Source> packages) {
+	public CompileTask(Trie target, List<WhileyFile> sources, Collection<Content.Source<Trie>> packages) {
 		this.target = target;
 		this.sources = new ArrayList<>(sources);
 		this.packages = new ArrayList<>(packages);
@@ -104,29 +105,27 @@ public class CompileTask implements Build.Task {
 		return this;
 	}
 
-	@Override
 	public Trie getPath() {
 		return target;
 	}
 
-	@Override
 	public Content.Type<WyilFile> getContentType() {
 		return WyilFile.ContentType;
 	}
 
-	@Override
 	public List<WhileyFile> getSourceArtifacts() {
 		return sources;
 	}
 
 	@Override
-	public Pair<SnapShot, Boolean> apply(SnapShot t) {
+	public boolean apply(Content.Store<Trie> store) {
+		Key<Trie, WyilFile> bin_k = new Key.Pair<>(target, WyilFile.ContentType);
 		// Compile into a single binary target
 		Pair<WyilFile, Boolean> r = compile(sources);
 		// Write target into snapshot
-		t = t.put(r.first());
+		store.put(bin_k, r.first());
 		// Done
-		return new Pair<>(t, r.second());
+		return r.second();
 	}
 
 	private Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
@@ -185,9 +184,6 @@ public class CompileTask implements Build.Task {
 		}
 		// Collect garbage
 		// target.gc();
-		//
-		meter.done();
-		//
 		// FIXME: how to handle errors?
 		//
 		return new Pair<>(target, r);

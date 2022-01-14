@@ -345,7 +345,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @return
 	 */
 	private Environment checkStatement(Stmt stmt, Environment environment, EnclosingScope scope) {
-		meter.step("statement");
 		try {
 			if (environment == FlowTypeUtils.BOTTOM) {
 				// Sanity check incoming environment
@@ -401,7 +400,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			default:
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
-		} catch (SyntacticException e) {
+		} catch (Syntactic.Exception e) {
 			throw e;
 		} catch (Throwable e) {
 			return internalFailure(e.getMessage(), stmt, e);
@@ -3493,13 +3492,11 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private static <T> T internalFailure(String msg, Syntactic.Item e) {
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu, e);
+		throw new Syntactic.Exception(msg, e.getHeap(), e);
 	}
 
 	private <T> T internalFailure(String msg, Syntactic.Item e, Throwable ex) {
-		CompilationUnit cu = (CompilationUnit) e.getHeap();
-		throw new SyntacticException(msg, cu, e, ex);
+		throw new Syntactic.Exception(msg, e.getHeap(), e, ex);
 	}
 
 	// ==========================================================================

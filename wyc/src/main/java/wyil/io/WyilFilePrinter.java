@@ -17,9 +17,8 @@ import static wyil.lang.WyilFile.*;
 
 import java.io.*;
 
-import jbfs.core.Build;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
@@ -41,12 +40,10 @@ public final class WyilFilePrinter extends AbstractConsumer<Integer> {
 	private boolean verbose = false;
 
 	public WyilFilePrinter(PrintWriter visitr) {
-		super(Build.NULL_METER);
 		this.out = visitr;
 	}
 
 	public WyilFilePrinter(OutputStream stream) {
-		super(Build.NULL_METER);
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 

@@ -109,7 +109,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		 * @throws IOException
 		 */
 		@Override
-		public WyilFile read(Trie id, InputStream in, Content.Registry registry) throws IOException {
+		public WyilFile read(InputStream in) throws IOException {
 			return new WyilFileReader(in).read(id);
 		}
 
@@ -145,7 +145,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		}
 
 		@Override
-		public String getSuffix() {
+		public String suffix() {
 			return "wyil";
 		}
 	};
@@ -327,7 +327,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		this.minorVersion = wf.minorVersion;
 		// Create initial copies
 		for (int i = 0; i != wf.size(); ++i) {
-			Syntactic.Item item = wf.getSyntactic.Item(i);
+			Syntactic.Item item = wf.getSyntacticItem(i);
 			// Construct unlinked item
 			item = SCHEMA.getDescriptor(item.getOpcode()).construct(item.getOpcode(), new Syntactic.Item[item.size()],
 					item.getData());
@@ -336,7 +336,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		}
 		// Link operands up
 		for (int i = 0; i != wf.size(); ++i) {
-			Syntactic.Item item = wf.getSyntactic.Item(i);
+			Syntactic.Item item = wf.getSyntacticItem(i);
 			Syntactic.Item nItem = syntacticItems.get(i);
 			for(int j=0;j!=item.size();++j) {
 				int operand = item.get(j).getIndex();
@@ -344,7 +344,7 @@ public class WyilFile extends AbstractCompilationUnit {
 			}
 		}
 		// Set the distinguished root item
-		setRootItem(getSyntactic.Item(root));
+		setRootItem(getSyntacticItem(root));
 		//
 		this.sourceFiles = new ArrayList<>(wf.sourceFiles);
 		this.ID = wf.getPath();
@@ -359,7 +359,7 @@ public class WyilFile extends AbstractCompilationUnit {
 			items[i].allocate(this, i);
 		}
 		// Set the distinguished root item
-		setRootItem(getSyntactic.Item(root));
+		setRootItem(getSyntacticItem(root));
 		this.sourceFiles = new ArrayList<>();
 		this.ID = ID;
 	}
@@ -368,17 +368,15 @@ public class WyilFile extends AbstractCompilationUnit {
 	// Accessors
 	// =========================================================================
 
-	@Override
 	public Trie getPath() {
 		return ID;
 	}
 
 	@Override
-	public Content.Type<WyilFile> getContentType() {
+	public Content.Type<WyilFile> contentType() {
 		return WyilFile.ContentType;
 	}
 
-	@Override
 	public List<WhileyFile> getSourceArtifacts() {
 		return sourceFiles;
 	}
@@ -401,7 +399,7 @@ public class WyilFile extends AbstractCompilationUnit {
 
 	public Decl.Unit getUnit() {
 		// The first node is always the declaration root.
-		List<Decl.Unit> modules = getSyntactic.Items(Decl.Unit.class);
+		List<Decl.Unit> modules = getSyntacticItems(Decl.Unit.class);
 		if (modules.size() != 1) {
 			throw new RuntimeException("expecting one module, found " + modules.size());
 		}
@@ -409,7 +407,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	}
 
 	public <S extends Decl.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
-		List<S> matches = super.getSyntactic.Items(kind);
+		List<S> matches = super.getSyntacticItems(kind);
 		for (int i = 0; i != matches.size(); ++i) {
 			S match = matches.get(i);
 			if (match.getName().equals(name)) {
@@ -3119,12 +3117,7 @@ public class WyilFile extends AbstractCompilationUnit {
 				super(EXPR_logicaluniversal, parameters, body);
 			}
 
-			@Override
-			@Override
-			@Override
-			@Override
-			@Override
-			@Override
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(Syntactic.Item[] operands) {
@@ -3167,12 +3160,6 @@ public class WyilFile extends AbstractCompilationUnit {
 				super(EXPR_logicalexistential, parameters, body);
 			}
 
-			@Override
-			@Override
-			@Override
-			@Override
-			@Override
-			@Override
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(Syntactic.Item[] operands) {
@@ -7360,7 +7347,7 @@ public class WyilFile extends AbstractCompilationUnit {
 				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
 				String nameStr = unit.getName().toString().replace("::", "/");
 				//
-				for(Build.Artifact s : bin.getSourceArtifacts()) {
+				for(WhileyFile s : bin.getSourceArtifacts()) {
 					String n = s.getPath().toString();
 					if(n.endsWith(nameStr)) {
 						return s.getPath();
@@ -7558,9 +7545,6 @@ public class WyilFile extends AbstractCompilationUnit {
 	}
 
 	private static class UsedVariableExtractor extends AbstractConsumer<HashSet<Decl.Variable>> {
-		public UsedVariableExtractor(Build.Meter meter) {
-			super(meter);
-		}
 
 		@Override
 		public void visitVariableAccess(WyilFile.Expr.VariableAccess expr, HashSet<Decl.Variable> used) {

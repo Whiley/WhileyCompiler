@@ -16,6 +16,7 @@ package wyc.lang;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,14 +43,13 @@ public class WhileyFile extends TextFile {
 		 * @throws IOException
 		 */
 		@Override
-		public WhileyFile read(Trie id, InputStream in, Content.Registry registry) throws IOException {
-			return new WhileyFile(id,in.readAllBytes());
+		public WhileyFile read(InputStream in) throws IOException {
+			return new WhileyFile(in.readAllBytes());
 		}
 
 		@Override
 		public void write(OutputStream output, WhileyFile value) throws IOException {
-
-			output.write(value.getBytes());
+			output.write(value.getBytes(StandardCharsets.UTF_8));
 		}
 
 		@Override
@@ -58,41 +58,33 @@ public class WhileyFile extends TextFile {
 		}
 
 		@Override
-		public String getSuffix() {
+		public String suffix() {
 			return "whiley";
 		}
 	};
 
+	private final List<WhileyFileLexer.Token> tokens;
 	private final Trie path;
 
-	private final List<WhileyFileLexer.Token> tokens;
-
 	public WhileyFile(Trie ID, byte[] bytes) {
-		this(ID,new String(bytes));
+		this(ID, new String(bytes));
 	}
 
 	public WhileyFile(Trie ID, String content) {
-		super(ID, content);
-		this.tokens = new WhileyFileLexer(content).scan();
+		super(ContentType, content);
 		this.path = ID;
+		this.tokens = new WhileyFileLexer(content).scan();
 	}
 
-	@Override
 	public Trie getPath() {
 		return path;
 	}
 
-	@Override
 	public Content.Type<WhileyFile> getContentType() {
 		return WhileyFile.ContentType;
 	}
 
 	public List<WhileyFileLexer.Token> getTokens() {
 		return Collections.unmodifiableList(tokens);
-	}
-
-	@Override
-	public String toString() {
-		return path + ":whiley";
 	}
 }

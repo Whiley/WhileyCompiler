@@ -16,10 +16,9 @@ package wyil.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import jbfs.core.Build;
-import jbfs.util.Pair;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Tuple;
+import jbuildgraph.util.Pair;
+import jsynheap.util.AbstractCompilationUnit.Identifier;
+import jsynheap.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -44,16 +43,13 @@ import static wyil.lang.WyilFile.*;
  *
  */
 public abstract class AbstractTranslator<D, S, E> {
-	protected final Build.Meter meter;
 	protected final Subtyping.Environment subtypeOperator;
 
-	public AbstractTranslator(Build.Meter meter, Subtyping.Environment subtypeOperator) {
-		this.meter = meter;
+	public AbstractTranslator(Subtyping.Environment subtypeOperator) {
 		this.subtypeOperator = subtypeOperator;
 	}
 
 	public D visitDeclaration(Decl decl) {
-		meter.step("declaration");
 		switch (decl.getOpcode()) {
 		case DECL_unit:
 			return visitUnit((Decl.Unit) decl);
@@ -154,8 +150,6 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public S visitStatement(Stmt stmt, EnclosingScope scope) {
-		meter.step("statement");
-		//
 		switch (stmt.getOpcode()) {
 		case STMT_assert:
 			return visitAssert((Stmt.Assert) stmt, scope);
@@ -443,8 +437,6 @@ public abstract class AbstractTranslator<D, S, E> {
 	 * @param target
 	 */
 	public E visitExpression(Expr expr) {
-		meter.step("expression");
-		//
 		switch (expr.getOpcode()) {
 		// Terminals
 		case EXPR_constant:
