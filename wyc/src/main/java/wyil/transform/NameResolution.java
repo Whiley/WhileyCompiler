@@ -79,14 +79,11 @@ public class NameResolution {
 
 	private final SymbolTable symbolTable;
 
-	private final List<Content.Source<Trie>> packages;
-
 	private boolean status = true;
 
-	public NameResolution(List<Content.Source<Trie>> packages, WyilFile target) throws IOException {
-		this.packages = packages;
+	public NameResolution(List<WyilFile> dependencies, WyilFile target) throws IOException {
 		this.target = target;
-		this.symbolTable = new SymbolTable(target,getExternals());
+		this.symbolTable = new SymbolTable(target,dependencies);
 		this.resolver = new Resolver();
 	}
 
@@ -116,26 +113,6 @@ public class NameResolution {
 		symbolTable.consolidate();
 		//
 		return status;
-	}
-
-	/**
-	 * Read in all external packages so they can be used for name resolution. This
-	 * amounts to loading in every WyilFile contained within an external package
-	 * dependency.
-	 */
-	private List<WyilFile> getExternals() throws IOException {
-		ArrayList<WyilFile> externals = new ArrayList<>();
-		// Consider each package in turn and identify all contained WyilFiles
-		for (int i = 0; i != packages.size(); ++i) {
-			Content.Source<Trie> p = packages.get(i);
-			// FIXME: This is kind broken me thinks. Potentially, we should be able to
-			// figure out what modules are supplied via the configuration.
-			List<WyilFile> entries = p.getAll(k -> k.contentType() == WyilFile.ContentType);
-			for (int j = 0; j != entries.size(); ++j) {
-				externals.add(entries.get(j));
-			}
-		}
-		return externals;
 	}
 
 	/**

@@ -16,6 +16,8 @@ package wyc.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +39,7 @@ import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
+import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -50,17 +53,8 @@ import wyil.lang.WyilFile.*;
 public class TestUtils {
 	private final static boolean DEBUG = false;
 	/**
-	 * Used for reading the various configuration files prior to instantiating the
-	 * main tool itself.
+	 * List of tests marked as ignored.
 	 */
-	public static SuffixRegistry REGISTRY = new SuffixRegistry() {
-		{
-			add(WhileyFile.ContentType);
-			add(WyilFile.ContentType);
-		}
-	};
-
-	//
 	public final static Map<String, String> VALID_IGNORED = new HashMap<>();
 
 	static {
@@ -207,39 +201,28 @@ public class TestUtils {
 		Trie path = Trie.fromString(arg);
 		//
 		boolean result = true;
-		// Construct the directory root
-		DirectoryStore<Trie> root = new DirectoryStore<>(REGISTRY, whileydir, f -> {
-			return f.getName().equals(filename);
-		});
 		//
 		try {
 			// Extract source file
-			WhileyFile source = root.get(WhileyFile.ContentType, path);
-			// Construct build repository
-			Build.Repository repository = new ByteRepository(registry, source);
+			WhileyFile source = readWhileyFile(path, whileydir, filename);
 			// Construct compile task
-			CompileTask task = new CompileTask(path, source).setStrict(strict);
-			// Apply Whiley Compiler to repository
-			repository.apply(Transactions.create(task));
+			CompileTask task = new CompileTask(path).setStrict(strict);
+			Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
 			// Read out binary file from build repository
-			WyilFile target = repository.get(WyilFile.ContentType, path);
-			// Write binary file to directory
-			root.put(path, target);
+			WyilFile target = r.first();
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
-			wycli.commands.BuildCmd.printSyntacticMarkers(psyserr, target, source);
+			ErrorMessages.printSyntacticMarkers(psyserr, target);
 		} catch (Syntactic.Exception e) {
 			// Print out the syntax error
-			e.outputSourceError(psyserr);
+			System.out.println("ERROR!");
+			//e.outputSourceError(psyserr);
 			result = false;
 		} catch (Exception e) {
 			// Print out the syntax error
 			printStackTrace(psyserr, e);
 			result = false;
-		} finally {
-			// Writeback any results
-			root.synchronise();
 		}
 		//
 		psyserr.flush();
@@ -307,9 +290,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		Content.Source<Trie> root = new DirectoryStore<>(REGISTRY, wyildir, f -> {
-			return f.getName().equals(filename);
-		});
+		WyilFile target = readWyilFile(id, wyildir, filename);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
@@ -320,15 +301,12 @@ public class TestUtils {
 		//
 		try {
 			// Load the relevant WyIL module
-			stack.load(root.get(new Key.Pair<>(id, WyilFile.ContentType)));
+			stack.load(target);
 			// Sanity check modifiers on test method
 			Decl.Callable lambda = stack.getCallable(name, sig);
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {
-				WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
-				new Syntactic.Exception("test method must be exported and public", srcfile, lambda)
-						.outputSourceError(System.out, false);
 				throw new RuntimeException("test method must be exported and public");
 			} else {
 				//
@@ -339,10 +317,20 @@ public class TestUtils {
 				// }
 			}
 		} catch (Interpreter.RuntimeError e) {
-			WhileyFile srcfile = root.get(WhileyFile.ContentType, id);
-			// FIXME: this is a hack based on current available API.
-			new Syntactic.Exception(e.getMessage(), srcfile, e.getElement()).outputSourceError(System.out, false);
 			throw e;
+		}
+	}
+
+	private static WhileyFile readWhileyFile(Trie id, File dir, String filename) throws IOException {
+		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
+			return new WhileyFile(id, fin.readAllBytes());
+		}
+	}
+
+
+	private static WyilFile readWyilFile(Trie id, File dir, String filename) throws IOException {
+		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
+			return new WyilFileReader(fin).read(id);
 		}
 	}
 

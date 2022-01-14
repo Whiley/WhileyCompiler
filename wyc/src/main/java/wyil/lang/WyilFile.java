@@ -13,10 +13,6 @@
 // limitations under the License.
 package wyil.lang;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import jbuildgraph.core.Build;
 import jbuildstore.core.Content;
 import jbuildgraph.util.ArrayUtils;
 import jbuildgraph.util.Trie;
@@ -36,17 +31,9 @@ import jsynheap.lang.Syntactic.Schema;
 import jsynheap.util.AbstractItem;
 import jsynheap.util.SectionedSchema;
 import jsynheap.util.AbstractCompilationUnit;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Name;
-import jsynheap.util.AbstractCompilationUnit.Ref;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
-import jsynheap.util.AbstractCompilationUnit.Value;
 import jsynheap.util.SectionedSchema.Section;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
-import wyil.io.WyilFilePrinter;
-import wyil.io.WyilFileReader;
-import wyil.io.WyilFileWriter;
 import wyil.util.AbstractConsumer;
 
 /**
@@ -91,65 +78,6 @@ import wyil.util.AbstractConsumer;
  *
  */
 public class WyilFile extends AbstractCompilationUnit {
-
-	// =========================================================================
-	// Binary Content Type
-	// =========================================================================
-
-	public static final Content.Type<WyilFile> ContentType = new Content.Type<>() {
-
-		/**
-		 * This method simply parses a whiley file into an abstract syntax tree. It
-		 * makes little effort to check whether or not the file is syntactically
-		 * correct. In particular, it does not determine the correct type of all
-		 * declarations, expressions, etc.
-		 *
-		 * @param file
-		 * @return
-		 * @throws IOException
-		 */
-		@Override
-		public WyilFile read(InputStream in) throws IOException {
-			return new WyilFileReader(in).read(id);
-		}
-
-		@Override
-		public void write(OutputStream output, WyilFile value) throws IOException {
-//			Class[] kinds = {
-//				Decl.class,
-//				Stmt.class,
-//				Expr.class,
-//				Type.class,
-//				Value.class,
-//				Tuple.class,
-//				Identifier.class
-//			};
-//			int total = 0;
-//			for(Class c : kinds) {
-//				int size = value.getSyntactic.Items(c).size();
-//				System.out.println(c.getSimpleName() + ": " + size);
-//				total = total + size;
-//			}
-//			System.out.println("Other: " + (value.getSyntactic.Items(Syntactic.Item.class).size()-total));
-			new WyilFileWriter(output).write(value);
-//			WyilFileWriter.printMetrics(WyilFile.SCHEMA);
-		}
-
-//		public void print(PrintStream output, WyilFile content) throws IOException {
-//			new WyilFilePrinter(output).apply(content);
-//		}
-
-		@Override
-		public String toString() {
-			return "Content-Type: wyil";
-		}
-
-		@Override
-		public String suffix() {
-			return "wyil";
-		}
-	};
-
 	// =========================================================================
 	// Schema
 	// =========================================================================
@@ -370,11 +298,6 @@ public class WyilFile extends AbstractCompilationUnit {
 
 	public Trie getPath() {
 		return ID;
-	}
-
-	@Override
-	public Content.Type<WyilFile> contentType() {
-		return WyilFile.ContentType;
 	}
 
 	public List<WhileyFile> getSourceArtifacts() {

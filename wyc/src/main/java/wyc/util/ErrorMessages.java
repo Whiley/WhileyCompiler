@@ -13,12 +13,19 @@
 // limitations under the License.
 package wyc.util;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 
 import jbuildgraph.util.ArrayUtils;
+import jbuildgraph.util.Trie;
+import jbuildstore.core.Content;
+import jbuildstore.util.TextFile;
 import jsynheap.lang.Syntactic;
+import jsynheap.util.AbstractCompilationUnit;
 import jsynheap.util.AbstractCompilationUnit.Identifier;
 import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wyc.lang.WhileyFile;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Template;
@@ -456,6 +463,132 @@ public class ErrorMessages {
 		Syntactic.Marker m = wf.allocate(new WyilFile.Attr.SyntaxError(code, e, new Tuple<>(context)));
 		// Record marker to ensure it gets written to disk
 		wf.getModule().addAttribute(m);
+	}
+
+	// =============================================================================
+	// Print Markers
+	// =============================================================================
+
+	/**
+	 * Print out all syntactic markers active within a given piece of content.
+	 *
+	 * @param executor
+	 * @throws IOException
+	 */
+	public static void printSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
+		// Extract all syntactic markers from entries in the build graph
+		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
+		// For each marker, print out error messages appropriately
+		for (int i = 0; i != items.size(); ++i) {
+			// Log the error message
+			printSyntacticMarkers(output, items.get(i), target.getSourceArtifacts());
+		}
+	}
+
+	/**
+	 * Print a given syntactic marker.
+	 *
+	 * @param output
+	 * @param marker
+	 * @param sources
+	 */
+	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker,
+			List<WhileyFile> sources) {
+		// Identify enclosing source file
+		WhileyFile source = getSourceEntry(marker.getSource(), sources);
+		String filename = marker.getSource().toString() + ".whiley";
+		// Determine the source-file span for the given syntactic marker.
+		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// Read the enclosing line so we can print it
+		TextFile.Line line = source.getEnclosingLine(span.getStart());
+		// Sanity check we found it
+		if (line != null) {
+			// print the error message
+			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
+			// Finally print the line highlight
+			printLineHighlight(output, span, line);
+		} else {
+			output.println(filename + ":?: " + marker.getMessage());
+		}
+	}
+
+	public static List<Syntactic.Marker> extractSyntacticMarkers(Content... binaries) throws IOException {
+		List<Syntactic.Marker> annotated = new ArrayList<>();
+		//
+		for (Content b : binaries) {
+			// If the object in question can be decoded as a syntactic heap then we can look
+			// for syntactic messages.
+			if (b instanceof Syntactic.Heap) {
+				annotated.addAll(extractSyntacticMarkers((Syntactic.Heap) b));
+			}
+		}
+		//
+		return annotated;
+	}
+
+	/**
+	 * Traverse the various binaries which have been generated looking for error
+	 * messages.
+	 *
+	 * @param binaries
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<Syntactic.Marker> extractSyntacticMarkers(Syntactic.Heap h) throws IOException {
+		List<Syntactic.Marker> annotated = new ArrayList<>();
+		// FIXME: this just reports all syntactic markers
+		annotated.addAll(h.findAll(Syntactic.Marker.class));
+		//
+		return annotated;
+	}
+
+	private static void printLineHighlight(PrintStream output, Syntactic.Span span, TextFile.Line enclosing) {
+		// Extract line text
+		String text = enclosing.getText();
+		// Determine start and end of span
+		int start = span.getStart() - enclosing.getOffset();
+		int end = Math.min(text.length() - 1, span.getEnd() - enclosing.getOffset());
+		// NOTE: in the following lines I don't print characters
+		// individually. The reason for this is that it messes up the
+		// ANT task output.
+		output.println(text);
+		// First, mirror indendation
+		String str = "";
+		for (int i = 0; i < start; ++i) {
+			if (text.charAt(i) == '\t') {
+				str += "\t";
+			} else {
+				str += " ";
+			}
+		}
+		// Second, place highlights
+		for (int i = start; i <= end; ++i) {
+			str += "^";
+		}
+		output.println(str);
+	}
+
+
+	public static WhileyFile getSourceEntry(Syntactic.Item item) {
+		Syntactic.Heap heap = item.getHeap();
+		//
+		if(heap instanceof WyilFile) {
+			WyilFile a = (WyilFile) heap;
+			Trie id = a.getPath();
+			return getSourceEntry(id,a.getSourceArtifacts());
+		} else {
+			return null;
+		}
+	}
+
+	public static WhileyFile getSourceEntry(Trie id, List<WhileyFile> sources) {
+		//
+		for (WhileyFile s : sources) {
+			if (id.equals(s.getPath())) {
+				return s;
+			}
+		}
+		return null;
 	}
 
 	// =============================================================================

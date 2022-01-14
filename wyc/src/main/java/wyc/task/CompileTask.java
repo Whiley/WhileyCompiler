@@ -3,9 +3,6 @@ package wyc.task;
 import java.io.IOException;
 import java.util.*;
 
-import jbuildgraph.core.Build;
-import jbuildstore.core.Content;
-import jbuildstore.core.Key;
 import jbuildgraph.util.ArrayUtils;
 import jbuildgraph.util.Pair;
 import jbuildgraph.util.Trie;
@@ -70,15 +67,11 @@ import wyil.transform.NameResolution;
  * @author David J. Pearce
  *
  */
-public class CompileTask implements Build.Task {
+public class CompileTask {
 	/**
 	 * The set of build packages that this task relies on.
 	 */
-	private final List<Content.Source<Trie>> packages;
-	/**
-	 * The set of source files that this task will compiler from.
-	 */
-	private final List<WhileyFile> sources;
+	private final List<WyilFile> packages;
 	/**
 	 * Identifier for target of this build task.
 	 */
@@ -88,16 +81,14 @@ public class CompileTask implements Build.Task {
 	 */
 	private boolean strict = false;
 
-	public CompileTask(Trie target, WhileyFile... sources) {
+	public CompileTask(Trie target) {
 		this.target = target;
-		this.sources = Arrays.asList(sources);
 		this.packages = Collections.emptyList();
 	}
 
-	public CompileTask(Trie target, List<WhileyFile> sources, Collection<Content.Source<Trie>> packages) {
+	public CompileTask(Trie target, Collection<WyilFile> dependencies) {
 		this.target = target;
-		this.sources = new ArrayList<>(sources);
-		this.packages = new ArrayList<>(packages);
+		this.packages = new ArrayList<>(dependencies);
 	}
 
 	public CompileTask setStrict(boolean flag) {
@@ -105,30 +96,7 @@ public class CompileTask implements Build.Task {
 		return this;
 	}
 
-	public Trie getPath() {
-		return target;
-	}
-
-	public Content.Type<WyilFile> getContentType() {
-		return WyilFile.ContentType;
-	}
-
-	public List<WhileyFile> getSourceArtifacts() {
-		return sources;
-	}
-
-	@Override
-	public boolean apply(Content.Store<Trie> store) {
-		Key<Trie, WyilFile> bin_k = new Key.Pair<>(target, WyilFile.ContentType);
-		// Compile into a single binary target
-		Pair<WyilFile, Boolean> r = compile(sources);
-		// Write target into snapshot
-		store.put(bin_k, r.first());
-		// Done
-		return r.second();
-	}
-
-	private Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
+	public Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
 		WyilFile target = new WyilFile(this.target, sources);
 		// Construct root entry
 		target.setRootItem(
