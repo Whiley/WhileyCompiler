@@ -23,7 +23,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.Compiler;
 import wyil.util.AbstractFunction;
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 
 /**
  * <p>

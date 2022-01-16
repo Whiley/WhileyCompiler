@@ -16,7 +16,7 @@ package wyil.check;
 import java.util.HashSet;
 import java.util.Set;
 
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 import wyil.lang.Compiler;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;

@@ -13,12 +13,12 @@
 // limitations under the License.
 package wyil.transform;
 
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Name;
-import jsynheap.util.AbstractCompilationUnit.Ref;
-import jsynheap.util.AbstractHeap;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Ref;
+import wycc.util.AbstractHeap;
 import wyc.util.ErrorMessages;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import jbuildstore.core.Content;
-import jbuildgraph.util.ArrayUtils;
-import jbuildgraph.util.Trie;
+import wycc.util.ArrayUtils;
+import wycc.util.Trie;
 import wyil.util.AbstractConsumer;
 
 /**

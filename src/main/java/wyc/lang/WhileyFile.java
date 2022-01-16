@@ -22,7 +22,7 @@ import java.util.List;
 
 import jbuildstore.core.Content;
 import jbuildstore.util.TextFile;
-import jbuildgraph.util.Trie;
+import wycc.util.Trie;
 import wyc.io.WhileyFileLexer;
 
 public class WhileyFile extends TextFile {

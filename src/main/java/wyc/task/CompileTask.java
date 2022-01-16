@@ -3,11 +3,11 @@ package wyc.task;
 import java.io.IOException;
 import java.util.*;
 
-import jbuildgraph.util.ArrayUtils;
-import jbuildgraph.util.Pair;
-import jbuildgraph.util.Trie;
-import jsynheap.util.AbstractCompilationUnit.Name;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
+import wycc.util.Pair;
+import wycc.util.Trie;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyil.check.DefiniteAssignmentCheck;

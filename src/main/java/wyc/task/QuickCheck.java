@@ -11,10 +11,10 @@ import java.util.*;
 import jmodelgen.core.Domain;
 import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
-import jsynheap.util.AbstractCompilationUnit.Value;
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit.Name;
 import wyc.util.ErrorMessages;
 import wyc.util.Logger;
 

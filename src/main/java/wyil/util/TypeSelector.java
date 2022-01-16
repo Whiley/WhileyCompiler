@@ -29,7 +29,7 @@ import static wyil.lang.WyilFile.TYPE_tuple;
 import static wyil.lang.WyilFile.TYPE_universal;
 import static wyil.lang.WyilFile.TYPE_void;
 
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 

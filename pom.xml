@@ -62,17 +62,7 @@
       <groupId>org.whiley</groupId>
       <artifactId>jbuildstore</artifactId>
       <version>0.1.3</version>
-     </dependency>    
-     <dependency>
-      <groupId>org.whiley</groupId>
-      <artifactId>jbuildgraph</artifactId>
-      <version>0.2.2</version>      
-     </dependency>
-     <dependency>
-      <groupId>org.whiley</groupId>
-      <artifactId>jsynheap</artifactId>
-      <version>0.1.2</version>      
-     </dependency>
+     </dependency>              
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>jmodelgen</artifactId>

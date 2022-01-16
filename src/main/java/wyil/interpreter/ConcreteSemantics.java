@@ -17,9 +17,9 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Value;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;

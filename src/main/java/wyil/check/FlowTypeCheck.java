@@ -21,11 +21,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import jbuildgraph.util.ArrayUtils;
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyc.util.ErrorMessages;
 import wyil.check.FlowTypeUtils.*;
 import static wyil.check.FlowTypeUtils.*;
@@ -2269,7 +2269,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		if (template.size() > 0 && templateArguments.size() == 0) {
 			// Template required, but no explicit arguments given. Therefore, we create
 			// fresh (existential) type for each position and subsitute them through.
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(template.size());
 			row = p.first();
 			templateArguments = new Tuple<>(p.second());
 		}
@@ -2571,7 +2571,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			// specific to individual rows.
 			return new Typing.Row[] { row.set(var, Type.AnyArray) };
 		} else if (type instanceof Type.Existential) {
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array arr_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, arr_t);
@@ -2631,7 +2631,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Tuple<Type.Field> fs = fields.map(n -> new Type.Field(n, Type.Any));
 			return new Typing.Row[] { row.set(var, new Type.Record(false, fs)) };
 		} else if (type instanceof Type.Existential) {
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Array rec_t = new Type.Array(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
@@ -2690,7 +2690,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Reference t = new Type.Reference(Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(1);
 			Type.Existential element = p.second()[0];
 			Type.Reference ref_t = new Type.Reference(element);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, ref_t);
@@ -2757,7 +2757,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	private static Typing.Row[] forkOnTuple(Typing.Row row, int var, int n, Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Existential) {
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(n);
 			Type.Existential[] elements = p.second();
 			Type tup_t = Type.Tuple.create(elements);
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, tup_t);
@@ -2895,7 +2895,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Type.Callable t = new Type.Method(Type.Void, Type.Any);
 			return new Typing.Row[] { row.set(var, t) };
 		} else if (type instanceof Type.Existential) {
-			jbuildgraph.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
+			wycc.util.Pair<Typing.Row, Type.Existential[]> p = row.fresh(2);
 			Type.Existential param = p.second()[0];
 			Type.Existential ret = p.second()[1];
 			Type.Callable fun_t = new Type.Function(param, ret);

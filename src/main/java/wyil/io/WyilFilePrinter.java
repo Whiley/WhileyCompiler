@@ -17,8 +17,8 @@ import static wyil.lang.WyilFile.*;
 
 import java.io.*;
 
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;

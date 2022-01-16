@@ -34,8 +34,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Decl.Named;

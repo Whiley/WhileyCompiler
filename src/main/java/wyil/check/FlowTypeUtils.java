@@ -13,16 +13,16 @@
 // limitations under the License.
 package wyil.check;
 
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Name;
-import jsynheap.util.AbstractCompilationUnit.Pair;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Name;
+import wycc.util.AbstractCompilationUnit.Pair;
 
-import static jsynheap.util.AbstractCompilationUnit.ITEM_bool;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_byte;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_int;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_null;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_utf8;
+import static wycc.util.AbstractCompilationUnit.ITEM_bool;
+import static wycc.util.AbstractCompilationUnit.ITEM_byte;
+import static wycc.util.AbstractCompilationUnit.ITEM_int;
+import static wycc.util.AbstractCompilationUnit.ITEM_null;
+import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyc.util.ErrorMessages.syntaxError;
 import static wyil.lang.WyilFile.*;
 
@@ -31,9 +31,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import jbuildgraph.util.ArrayUtils;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
-import jsynheap.util.AbstractCompilationUnit.Value;
+import wycc.util.ArrayUtils;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
@@ -1144,14 +1144,14 @@ public class FlowTypeUtils {
 			 * @param n
 			 * @return
 			 */
-			public jbuildgraph.util.Pair<Row,Type.Existential[]> fresh(int n) {
+			public wycc.util.Pair<Row,Type.Existential[]> fresh(int n) {
 				int m = constraints.maxVariable() + 1;
 				Type.Existential[] vars = new Type.Existential[n];
 				for (int i = 0; i != vars.length; ++i) {
 					vars[i] = new Type.Existential(m + i);
 				}
 				Typing.Row nrow = new Typing.Row(constraints.fresh(n), types);
-				return new jbuildgraph.util.Pair<>(nrow,vars);
+				return new wycc.util.Pair<>(nrow,vars);
 			}
 
 			public Row set(int index, Type type) {

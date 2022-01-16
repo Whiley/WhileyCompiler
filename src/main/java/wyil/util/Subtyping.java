@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Type;
 
 public interface Subtyping {
