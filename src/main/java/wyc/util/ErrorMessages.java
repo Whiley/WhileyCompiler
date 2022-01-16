@@ -19,8 +19,7 @@ import java.util.*;
 
 import wycc.util.ArrayUtils;
 import wycc.util.Trie;
-import jbuildstore.core.Content;
-import jbuildstore.util.TextFile;
+import wycc.util.TextFile;
 import wycc.lang.Syntactic;
 import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Identifier;
@@ -512,10 +511,10 @@ public class ErrorMessages {
 		}
 	}
 
-	public static List<Syntactic.Marker> extractSyntacticMarkers(Content... binaries) throws IOException {
+	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
 		List<Syntactic.Marker> annotated = new ArrayList<>();
 		//
-		for (Content b : binaries) {
+		for (WyilFile b : binaries) {
 			// If the object in question can be decoded as a syntactic heap then we can look
 			// for syntactic messages.
 			if (b instanceof Syntactic.Heap) {

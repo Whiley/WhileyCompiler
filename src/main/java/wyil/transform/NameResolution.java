@@ -14,7 +14,6 @@
 package wyil.transform;
 
 import wycc.lang.Syntactic;
-import wycc.util.AbstractCompilationUnit;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
 import wycc.util.AbstractCompilationUnit.Ref;
@@ -31,9 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import jbuildstore.core.Content;
 import wycc.util.ArrayUtils;
-import wycc.util.Trie;
 import wyil.util.AbstractConsumer;
 
 /**

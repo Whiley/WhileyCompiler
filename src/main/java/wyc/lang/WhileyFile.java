@@ -13,22 +13,14 @@
 // limitations under the License.
 package wyc.lang;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
-import jbuildstore.core.Content;
-import jbuildstore.util.TextFile;
+import wycc.util.TextFile;
 import wycc.util.Trie;
 import wyc.io.WhileyFileLexer;
 
 public class WhileyFile extends TextFile {
-	// =========================================================================
-	// Source Content Type
-	// =========================================================================
 	private final List<WhileyFileLexer.Token> tokens;
 	private final Trie path;
 
@@ -37,8 +29,7 @@ public class WhileyFile extends TextFile {
 	}
 
 	public WhileyFile(Trie ID, String content) {
-		// FIXME: content type!
-		super(null, content);
+		super(content);
 		this.path = ID;
 		this.tokens = new WhileyFileLexer(content).scan();
 	}
