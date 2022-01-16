@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
-import jbuildstore.core.Content;
 import wycc.util.ArrayUtils;
 import wycc.util.Trie;
 import wycc.lang.Syntactic;
