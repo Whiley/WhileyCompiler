@@ -16,7 +16,6 @@ package wyc.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,12 +28,12 @@ import wycc.util.Trie;
 import wycc.lang.Syntactic;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
+import wyc.Main;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
-import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
@@ -199,7 +198,7 @@ public class TestUtils {
 		//
 		try {
 			// Extract source file
-			WhileyFile source = readWhileyFile(path, whileydir, filename);
+			WhileyFile source = Main.readWhileyFile(path, whileydir, filename);
 			// Construct compile task
 			CompileTask task = new CompileTask(path).setStrict(strict);
 			Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
@@ -208,7 +207,7 @@ public class TestUtils {
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
-			ErrorMessages.printSyntacticMarkers(psyserr, target);
+			Main.printSyntacticMarkers(psyserr, target);
 		} catch (Syntactic.Exception e) {
 			// Print out the syntax error
 			System.out.println("ERROR!");
@@ -285,7 +284,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		WyilFile target = readWyilFile(id, wyildir, filename);
+		WyilFile target = Main.readWyilFile(id, wyildir, filename);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
@@ -313,19 +312,6 @@ public class TestUtils {
 			}
 		} catch (Interpreter.RuntimeError e) {
 			throw e;
-		}
-	}
-
-	private static WhileyFile readWhileyFile(Trie id, File dir, String filename) throws IOException {
-		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
-			return new WhileyFile(id, fin.readAllBytes());
-		}
-	}
-
-
-	private static WyilFile readWyilFile(Trie id, File dir, String filename) throws IOException {
-		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
-			return new WyilFileReader(fin).read(id);
 		}
 	}
 
