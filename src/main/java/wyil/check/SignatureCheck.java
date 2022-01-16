@@ -22,7 +22,7 @@ import wyc.util.ErrorMessages;
 
 import java.util.HashSet;
 
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 
 /**
  * <p>

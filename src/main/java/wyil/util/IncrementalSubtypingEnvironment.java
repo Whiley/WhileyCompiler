@@ -41,8 +41,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import jbuildgraph.util.ArrayUtils;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.ArrayUtils;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;
 import wyil.lang.WyilFile.QualifiedName;

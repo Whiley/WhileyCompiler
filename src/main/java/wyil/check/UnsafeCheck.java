@@ -20,7 +20,7 @@ import wyil.util.AbstractVisitor;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
 
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 
 /**
  * Responsible for ensuring that the <code>unsafe</code> modifier is used

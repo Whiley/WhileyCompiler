@@ -15,7 +15,7 @@ package wyil.interpreter;
 
 import java.math.BigInteger;
 
-import jsynheap.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Identifier;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Type;
 

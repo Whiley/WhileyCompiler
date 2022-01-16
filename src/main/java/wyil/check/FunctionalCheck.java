@@ -19,7 +19,7 @@ import wyil.lang.WyilFile.Decl;
 import wyil.util.AbstractConsumer;
 import wyc.util.ErrorMessages;
 import static wyil.lang.WyilFile.*;
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 
 /**
  * <p>

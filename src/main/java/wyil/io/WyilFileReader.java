@@ -16,11 +16,11 @@ package wyil.io;
 import java.io.IOException;
 import java.io.InputStream;
 
-import jbuildgraph.util.Pair;
-import jbuildgraph.util.Trie;
-import jsynheap.io.HeapReader;
-import jsynheap.lang.Syntactic;
-import jsynheap.lang.Syntactic.Schema;
+import wycc.util.Pair;
+import wycc.util.Trie;
+import wycc.io.HeapReader;
+import wycc.lang.Syntactic;
+import wycc.lang.Syntactic.Schema;
 import wyil.lang.WyilFile;
 
 /**

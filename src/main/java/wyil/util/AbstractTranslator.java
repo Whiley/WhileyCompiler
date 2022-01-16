@@ -16,9 +16,9 @@ package wyil.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import jbuildgraph.util.Pair;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
+import wycc.util.Pair;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Expr;

@@ -22,7 +22,7 @@ import wyil.util.AbstractFunction;
 
 import java.util.BitSet;
 
-import jsynheap.lang.Syntactic;
+import wycc.lang.Syntactic;
 import wyc.util.ErrorMessages;
 
 /**

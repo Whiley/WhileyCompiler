@@ -13,11 +13,11 @@
 // limitations under the License.
 package wyil.interpreter;
 
-import static jsynheap.util.AbstractCompilationUnit.ITEM_bool;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_byte;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_int;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_null;
-import static jsynheap.util.AbstractCompilationUnit.ITEM_utf8;
+import static wycc.util.AbstractCompilationUnit.ITEM_bool;
+import static wycc.util.AbstractCompilationUnit.ITEM_byte;
+import static wycc.util.AbstractCompilationUnit.ITEM_int;
+import static wycc.util.AbstractCompilationUnit.ITEM_null;
+import static wycc.util.AbstractCompilationUnit.ITEM_utf8;
 import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
@@ -28,11 +28,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import jbuildgraph.util.ArrayUtils;
-import jsynheap.lang.Syntactic;
-import jsynheap.util.AbstractCompilationUnit.Identifier;
-import jsynheap.util.AbstractCompilationUnit.Tuple;
-import jsynheap.util.AbstractCompilationUnit.Value;
+import wycc.util.ArrayUtils;
+import wycc.lang.Syntactic;
+import wycc.util.AbstractCompilationUnit.Identifier;
+import wycc.util.AbstractCompilationUnit.Tuple;
+import wycc.util.AbstractCompilationUnit.Value;
 import wyc.util.ErrorMessages;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
