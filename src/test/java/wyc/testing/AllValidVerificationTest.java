@@ -54,7 +54,7 @@ public class AllValidVerificationTest {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "../tests/valid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "tests/valid".replace('/', File.separatorChar);
 
 	/**
 	 * Ignored tests and a reason why we ignore them.
