@@ -126,7 +126,7 @@ public class TestUtils {
 	public static Type fromString(String from) {
 		Trie id = Trie.fromString("main");
 		WhileyFile sf = new WhileyFile(id,from.getBytes());
-		WyilFile wf = new WyilFile(id, Arrays.asList(sf));
+		WyilFile wf = new WyilFile(Arrays.asList(sf));
 		WhileyFileParser parser = new WhileyFileParser(wf, sf);
 		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
 		return parser.parseType(scope);
@@ -284,7 +284,7 @@ public class TestUtils {
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
 		String filename = id.toString() + ".wyil";
-		WyilFile target = Main.readWyilFile(id, wyildir, filename);
+		WyilFile target = Main.readWyilFile(wyildir, filename);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));

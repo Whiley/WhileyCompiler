@@ -82,7 +82,7 @@ public class Main {
 		// Print out syntactic markers
 		printSyntacticMarkers(System.err, binary);
 		// Write generated WyIL file
-		writeWyilFile(binary,wyildir);
+		writeWyilFile(target,binary,wyildir);
 		//
 		return binary.isValid();
 	}
@@ -113,9 +113,7 @@ public class Main {
 			ZipEntry e = entries.nextElement();
 			String suffix = getSuffix(e.getName());
 			if(suffix != null && suffix.equals("wyil")) {
-				Trie path = getPath(e.getName());
-				WyilFile wf = new WyilFileReader(zf.getInputStream(e)).read(path);
-				System.out.println("READ: " + wf.getPath());
+				WyilFile wf = new WyilFileReader(zf.getInputStream(e)).read();
 				dependencies.add(wf);
 			}
 		}
@@ -176,9 +174,9 @@ public class Main {
 	 * @return
 	 * @throws IOException
 	 */
-	public static WyilFile readWyilFile(Trie id, File dir, String filename) throws IOException {
+	public static WyilFile readWyilFile(File dir, String filename) throws IOException {
 		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
-			return new WyilFileReader(fin).read(id);
+			return new WyilFileReader(fin).read();
 		}
 	}
 
@@ -189,9 +187,9 @@ public class Main {
 	 * @param dir
 	 * @throws IOException
 	 */
-	public static void writeWyilFile(WyilFile wf, File dir) throws IOException {
-		String filename = wf.getPath().toNativeString() + ".wyil";
-		try(FileOutputStream fout = new FileOutputStream(new File(dir,filename))) {
+	public static void writeWyilFile(Trie target, WyilFile wf, File dir) throws IOException {
+		String filename = target.toNativeString() + ".wyil";
+		try (FileOutputStream fout = new FileOutputStream(new File(dir, filename))) {
 			new WyilFileWriter(fout).write(wf);
 			fout.flush();
 		}
@@ -298,19 +296,6 @@ public class Main {
 			str += "^";
 		}
 		output.println(str);
-	}
-
-
-	public static WhileyFile getSourceEntry(Syntactic.Item item) {
-		Syntactic.Heap heap = item.getHeap();
-		//
-		if(heap instanceof WyilFile) {
-			WyilFile a = (WyilFile) heap;
-			Trie id = a.getPath();
-			return getSourceEntry(id,a.getSourceArtifacts());
-		} else {
-			return null;
-		}
 	}
 
 	public static WhileyFile getSourceEntry(Trie id, List<WhileyFile> sources) {
