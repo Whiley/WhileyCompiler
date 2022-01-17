@@ -204,6 +204,8 @@ public class TestUtils {
 			Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
 			// Read out binary file from build repository
 			WyilFile target = r.first();
+			// Write out binary target
+			Main.writeWyilFile(path, target, whileydir);
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
