@@ -362,7 +362,7 @@ public final class OptArg {
 	public static void usage(PrintStream output, OptArg...options) {
 		// first, work out gap information
 		int gap = 0;
-		ArrayList<OptArg> opts = new ArrayList();
+		ArrayList<OptArg> opts = new ArrayList<>();
 		for (OptArg opt : options) {
 			opts.add(opt);
 			int len = opt.option.length();

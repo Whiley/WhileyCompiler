@@ -15,10 +15,10 @@ package wyc;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.*;
 
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
-import wyc.util.ErrorMessages;
 import wycc.lang.Syntactic;
 import wycc.util.*;
 import wyil.io.WyilFileReader;
@@ -42,7 +42,8 @@ public class Main {
 			new OptArg("strict","s","set strict mode"),
 			new OptArg("output","o",OptArg.STRING,"set output file","main"),
 			new OptArg("whileydir", OptArg.FILEDIR, "Specify where to find Whiley source files", new File(".")),
-			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to place binary (WyIL) files", new File("."))
+			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to place binary (WyIL) files", new File(".")),
+			new OptArg("whileypath", OptArg.FILELIST, "Specify additional dependencies", new ArrayList<>())
 	};
 	//
 	public static void main(String[] _args) throws IOException {
@@ -53,13 +54,14 @@ public class Main {
 		File whileydir = (File) options.get("whileydir");
 		File wyildir = (File) options.get("wyildir");
 		Trie target = Trie.fromString((String) options.get("output"));
+		ArrayList<File> whileypath = (ArrayList) options.get("whileypath");
 		// Compile Whiley source file(s).
-		boolean result = compile(whileydir,wyildir,args,target);
+		boolean result = compile(whileydir, wyildir, args, target, whileypath);
 		// Produce exit code
 		System.exit(result ? 0 : 1);
 	}
 
-	public static boolean compile(File whileydir, File wyildir, List<String> srcfiles, Trie target) throws IOException {
+	public static boolean compile(File whileydir, File wyildir, List<String> srcfiles, Trie target, List<File> whileypath) throws IOException {
 		List<WhileyFile> whileyfiles = new ArrayList<>();
 		boolean strict = false;
 		// Read source files
@@ -67,8 +69,13 @@ public class Main {
 			Trie path = Trie.fromString(wf.replace(".whiley", ""));
 			whileyfiles.add(readWhileyFile(path, whileydir, wf));
 		}
+		ArrayList<WyilFile> dependencies = new ArrayList<>();
+		// Extract any dependencies
+		for(File dep : whileypath) {
+			extractDependencies(dep,dependencies);
+		}
 		// Compile WyilFile
-		CompileTask task = new CompileTask(target).setStrict(strict);
+		CompileTask task = new CompileTask(target, dependencies).setStrict(strict);
 		Pair<WyilFile, Boolean> r = task.compile(whileyfiles);
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
@@ -78,6 +85,72 @@ public class Main {
 		writeWyilFile(binary,wyildir);
 		//
 		return binary.isValid();
+	}
+
+	public static void extractDependencies(File dep, List<WyilFile> dependencies) throws IOException {
+		String suffix = getSuffix(dep.getName());
+		//
+		switch(suffix) {
+		case "zip":
+			extractFromZip(dep,dependencies);
+			break;
+		default:
+			throw new IllegalArgumentException("invalid whileypath entry \"" + dep.getName() + "\"");
+		}
+	}
+
+	/**
+	 * Extract all WyilFiles contained in a zipfile.
+	 *
+	 * @param dep
+	 * @param dependencies
+	 * @throws IOException
+	 */
+	public static void extractFromZip(File dep, List<WyilFile> dependencies) throws IOException {
+		ZipFile zf = new ZipFile(dep);
+		Enumeration<? extends ZipEntry> entries = zf.entries();
+		while(entries.hasMoreElements()) {
+			ZipEntry e = entries.nextElement();
+			String suffix = getSuffix(e.getName());
+			if(suffix != null && suffix.equals("wyil")) {
+				Trie path = getPath(e.getName());
+				WyilFile wf = new WyilFileReader(zf.getInputStream(e)).read(path);
+				System.out.println("READ: " + wf.getPath());
+				dependencies.add(wf);
+			}
+		}
+		zf.close();
+	}
+
+	/**
+	 * Get the path associated with a given filename. For example, given
+	 * "std/collections/stuff.wyil"
+	 *
+	 * @param t
+	 * @return
+	 */
+	private static Trie getPath(String t) {
+		int i = t.lastIndexOf('.');
+		if (i >= 0) {
+			t = t.substring(0,i);
+		}
+		return Trie.fromString(t.replace(File.separatorChar, '/'));
+	}
+
+	/**
+	 * Extract the suffix from a given filename. For example, given "std-0.3.2.zip"
+	 * we return "zip".
+	 *
+	 * @param t
+	 * @return
+	 */
+	private static String getSuffix(String t) {
+		int i = t.lastIndexOf('.');
+		if (i >= 0) {
+			return t.substring(i + 1);
+		} else {
+			return null;
+		}
 	}
 
 	/**
@@ -109,6 +182,13 @@ public class Main {
 		}
 	}
 
+	/**
+	 * Write a given WyilFile to disk using the given directory as a root.
+	 *
+	 * @param wf
+	 * @param dir
+	 * @throws IOException
+	 */
 	public static void writeWyilFile(WyilFile wf, File dir) throws IOException {
 		String filename = wf.getPath().toNativeString() + ".wyil";
 		try(FileOutputStream fout = new FileOutputStream(new File(dir,filename))) {
