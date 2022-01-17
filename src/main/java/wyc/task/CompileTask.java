@@ -97,7 +97,7 @@ public class CompileTask {
 	}
 
 	public Pair<WyilFile, Boolean> compile(List<WhileyFile> sources) {
-		WyilFile target = new WyilFile(this.target, sources);
+		WyilFile target = new WyilFile(sources);
 		// Construct root entry
 		target.setRootItem(
 				new WyilFile.Decl.Module(new Name(this.target), new Tuple<>(), new Tuple<>(), new Tuple<>()));

@@ -230,14 +230,12 @@ public class WyilFile extends AbstractCompilationUnit {
 	// Constructors
 	// =========================================================================
 
-	private final Trie ID;
 	private final List<WhileyFile> sourceFiles;
 	private final int majorVersion;
 	private final int minorVersion;
 
-	public WyilFile(Trie id, List<WhileyFile> sourceFiles) {
+	public WyilFile(List<WhileyFile> sourceFiles) {
 		super();
-		this.ID = id;
 		Schema schema = WyilFile.getSchema();
 		this.sourceFiles = new ArrayList<>(sourceFiles);
 		this.majorVersion = schema.getMajorVersion();
@@ -274,10 +272,9 @@ public class WyilFile extends AbstractCompilationUnit {
 		setRootItem(getSyntacticItem(root));
 		//
 		this.sourceFiles = new ArrayList<>(wf.sourceFiles);
-		this.ID = wf.getPath();
 	}
 
-	public WyilFile(Trie ID, int root, Syntactic.Item[] items, int major, int minor) {
+	public WyilFile(int root, Syntactic.Item[] items, int major, int minor) {
 		this.majorVersion = major;
 		this.minorVersion = minor;
 		// Allocate every item into this heap
@@ -288,16 +285,11 @@ public class WyilFile extends AbstractCompilationUnit {
 		// Set the distinguished root item
 		setRootItem(getSyntacticItem(root));
 		this.sourceFiles = new ArrayList<>();
-		this.ID = ID;
 	}
 
 	// =========================================================================
 	// Accessors
 	// =========================================================================
-
-	public Trie getPath() {
-		return ID;
-	}
 
 	public List<WhileyFile> getSourceArtifacts() {
 		return sourceFiles;

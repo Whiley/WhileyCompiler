@@ -41,14 +41,8 @@ public final class WyilFileReader extends HeapReader {
 
 	@Override
 	public WyilFile read() throws IOException {
-//		Pair<Integer,SyntacticItem[]> p = readItems();
-//		return new WyilFile(p.first(), p.second(), majorVersion, minorVersion);
-		throw new IllegalArgumentException("deadcode reached");
-	}
-
-	public WyilFile read(Trie ID) throws IOException {
 		Pair<Integer, Syntactic.Item[]> p = readItems();
-		return new WyilFile(ID, p.first(), p.second(), majorVersion, minorVersion);
+		return new WyilFile(p.first(), p.second(), majorVersion, minorVersion);
 	}
 
 	@Override
