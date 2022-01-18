@@ -7,13 +7,13 @@ type nat is (int x) where x >= 0
 // =======================================
 
 // Suites
-int HEARTS = 1
-int CLUBS = 2
+final int HEARTS = 1
+final int CLUBS = 2
 
 // Ordinals
-int TWO = 2
-int THREE = 3
-int FOUR = 4
+final int TWO = 2
+final int THREE = 3
+final int FOUR = 4
 
 type Card is { int suite, int ordinal }
 // Suite between hearts and clubs
@@ -25,13 +25,13 @@ where 2 <= ordinal && ordinal <= FOUR
 // Card Constants
 // =======================================
 
-Card TWO_HEARTS = { suite: HEARTS, ordinal: TWO }
-Card THREE_HEARTS = { suite: HEARTS, ordinal: THREE }
-Card FOUR_HEARTS = { suite: HEARTS, ordinal: FOUR }
+final Card TWO_HEARTS = { suite: HEARTS, ordinal: TWO }
+final Card THREE_HEARTS = { suite: HEARTS, ordinal: THREE }
+final Card FOUR_HEARTS = { suite: HEARTS, ordinal: FOUR }
 
-Card TWO_CLUBS = { suite: CLUBS, ordinal: TWO }
-Card THREE_CLUBS = { suite: CLUBS, ordinal: THREE }
-Card FOUR_CLUBS = { suite: CLUBS, ordinal: FOUR }
+final Card TWO_CLUBS = { suite: CLUBS, ordinal: TWO }
+final Card THREE_CLUBS = { suite: CLUBS, ordinal: THREE }
+final Card FOUR_CLUBS = { suite: CLUBS, ordinal: FOUR }
 
 // =======================================
 // DECK

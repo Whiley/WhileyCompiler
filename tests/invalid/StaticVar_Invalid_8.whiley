@@ -1,1 +1,1 @@
-int x = [x;1][0]
+final int x = [x;1][0]

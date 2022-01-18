@@ -1,7 +1,7 @@
-int ADD = 1
-int SUB = 2
-int MUL = 3
-int DIV = 4
+final int ADD = 1
+final int SUB = 2
+final int MUL = 3
+final int DIV = 4
 
 type binop is ({int op, Expr left, Expr right} _this) where _this.op == ADD || _this.op ==  SUB || _this.op ==  MUL || _this.op ==  DIV
 

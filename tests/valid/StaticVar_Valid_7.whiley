@@ -1,6 +1,5 @@
 // Test static variable initialiser order
-Color color = RED
-
+final Color color = RED
 final Color RED = 1
 final Color BLUE = 2
 final Color GREEN = 3

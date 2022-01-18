@@ -221,10 +221,12 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 
 	@Override
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Context context) {
-		// FIXME: we should prohibit static variable accesses in certain contexts.
-		// However, at the moment, there is no way to indicate a final static variable
-		// access. As such, prohibiting them would prevent the use of constants within
-		// any functional context.
+		Decl.StaticVariable v = expr.getLink().getTarget();
+		// Prohibit static variable accesses in pure contexts.
+		if (context != Context.IMPURE && v.getModifiers().match(Modifier.Final.class) == null) {
+			syntaxError(expr, STATIC_ACCESS_NOT_PERMITTED);
+		}
+
 	}
 
 	@Override

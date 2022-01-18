@@ -1,1 +1,1 @@
-int x = {f:x}.f
+final int x = {f:x}.f

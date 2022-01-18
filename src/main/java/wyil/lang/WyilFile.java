@@ -7398,6 +7398,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	public static final int DEREFERENCED_UNKNOWN_TYPE = 612;
 	public static final int UNSAFECALL_NOT_PERMITTED = 613;
 	public static final int VARIANTCALL_NOT_PERMITTED = 614;
+	public static final int STATIC_ACCESS_NOT_PERMITTED = 615;
 	// Runtime Failure Subset
 	public static final int RUNTIME_PRECONDITION_FAILURE = 700;
 	public static final int RUNTIME_POSTCONDITION_FAILURE = 701;

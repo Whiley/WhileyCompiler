@@ -1,5 +1,5 @@
-int Short = 3
-int Int = 4
+final int Short = 3
+final int Int = 4
 
 type string is int[]
 type char is int

@@ -1,28 +1,28 @@
 type string is int[]
 
-PieceKind PAWN = 0
-PieceKind KNIGHT = 1
-PieceKind BISHOP = 2
-PieceKind ROOK = 3
-PieceKind QUEEN = 4
-PieceKind KING = 5
-int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
+final PieceKind PAWN = 0
+final PieceKind KNIGHT = 1
+final PieceKind BISHOP = 2
+final PieceKind ROOK = 3
+final PieceKind QUEEN = 4
+final PieceKind KING = 5
+final int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
 
 type PieceKind is (int x) where PAWN <= x && x <= KING
 type Piece is {bool colour, PieceKind kind}
 
-Piece WHITE_PAWN = {colour: true, kind: PAWN}
-Piece WHITE_KNIGHT = {colour: true, kind: KNIGHT}
-Piece WHITE_BISHOP = {colour: true, kind: BISHOP}
-Piece WHITE_ROOK = {colour: true, kind: ROOK}
-Piece WHITE_QUEEN = {colour: true, kind: QUEEN}
-Piece WHITE_KING = {colour: true, kind: KING}
-Piece BLACK_PAWN = {colour: false, kind: PAWN}
-Piece BLACK_KNIGHT = {colour: false, kind: KNIGHT}
-Piece BLACK_BISHOP = {colour: false, kind: BISHOP}
-Piece BLACK_ROOK = {colour: false, kind: ROOK}
-Piece BLACK_QUEEN = {colour: false, kind: QUEEN}
-Piece BLACK_KING = {colour: false, kind: KING}
+final Piece WHITE_PAWN = {colour: true, kind: PAWN}
+final Piece WHITE_KNIGHT = {colour: true, kind: KNIGHT}
+final Piece WHITE_BISHOP = {colour: true, kind: BISHOP}
+final Piece WHITE_ROOK = {colour: true, kind: ROOK}
+final Piece WHITE_QUEEN = {colour: true, kind: QUEEN}
+final Piece WHITE_KING = {colour: true, kind: KING}
+final Piece BLACK_PAWN = {colour: false, kind: PAWN}
+final Piece BLACK_KNIGHT = {colour: false, kind: KNIGHT}
+final Piece BLACK_BISHOP = {colour: false, kind: BISHOP}
+final Piece BLACK_ROOK = {colour: false, kind: ROOK}
+final Piece BLACK_QUEEN = {colour: false, kind: QUEEN}
+final Piece BLACK_KING = {colour: false, kind: KING}
 
 type RowCol is int
 type Pos is {RowCol col, RowCol row}
@@ -35,11 +35,11 @@ type CastleMove is {bool isWhite, bool kingSide}
 type CheckMove is {Move check}
 type Move is CheckMove | CastleMove | SimpleMove
 
-Pos A1 = {col: 0, row: 0}
-Pos A2 = {col: 0, row: 1}
-Pos A3 = {col: 0, row: 2}
-Pos D3 = {col: 3, row: 2}
-Pos H1 = {col: 8, row: 1}
+final Pos A1 = {col: 0, row: 0}
+final Pos A2 = {col: 0, row: 1}
+final Pos A3 = {col: 0, row: 2}
+final Pos D3 = {col: 3, row: 2}
+final Pos H1 = {col: 8, row: 1}
 
 function append(int[] xs, int[] ys) -> (int[] zs)
 ensures |zs| == |xs| + |ys|:

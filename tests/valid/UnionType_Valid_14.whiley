@@ -1,7 +1,7 @@
-BOp ADD = 0
-BOp SUB = 1
-BOp MUL = 2
-BOp DIV = 3
+final BOp ADD = 0
+final BOp SUB = 1
+final BOp MUL = 2
+final BOp DIV = 3
 
 type BOp is (int op) where op == ADD || op ==  SUB || op ==  MUL || op ==  DIV
 

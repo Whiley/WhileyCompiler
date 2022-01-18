@@ -5,25 +5,25 @@ type nat is (int x) where x >= 0
 // =======================================
 
 // Suites
-int HEARTS = 1
-int CLUBS = 2
-int DIAMONDS = 3
-int SPADES = 4
+final int HEARTS = 1
+final int CLUBS = 2
+final int DIAMONDS = 3
+final int SPADES = 4
 
 // Ordinals
-int TWO = 2
-int THREE = 3
-int FOUR = 4
-int FIVE = 5
-int SIX = 6
-int SEVEN = 7
-int EIGHT = 8
-int NINE = 9
-int TEN = 10
-int JACK = 11
-int QUEEN = 12
-int KING = 13
-int ACE = 14
+final int TWO = 2
+final int THREE = 3
+final int FOUR = 4
+final int FIVE = 5
+final int SIX = 6
+final int SEVEN = 7
+final int EIGHT = 8
+final int NINE = 9
+final int TEN = 10
+final int JACK = 11
+final int QUEEN = 12
+final int KING = 13
+final int ACE = 14
 
 type Card is {
     int suite,
@@ -46,61 +46,61 @@ property sorted(Card[] cards) -> (bool r):
 // Card Constants
 // =======================================
 
-Card TWO_HEARTS = { suite: HEARTS, ordinal: TWO }
-Card THREE_HEARTS = { suite: HEARTS, ordinal: THREE }
-Card FOUR_HEARTS = { suite: HEARTS, ordinal: FOUR }
-Card FIVE_HEARTS = { suite: HEARTS, ordinal: FIVE }
-Card SIX_HEARTS = { suite: HEARTS, ordinal: SIX }
-Card SEVEN_HEARTS = { suite: HEARTS, ordinal: SEVEN }
-Card EIGHT_HEARTS = { suite: HEARTS, ordinal: EIGHT }
-Card NINE_HEARTS = { suite: HEARTS, ordinal: NINE }
-Card TEN_HEARTS = { suite: HEARTS, ordinal: TEN }
-Card JACK_HEARTS = { suite: HEARTS, ordinal: JACK }
-Card QUEEN_HEARTS = { suite: HEARTS, ordinal: QUEEN }
-Card KING_HEARTS = { suite: HEARTS, ordinal: KING }
-Card ACE_HEARTS = { suite: HEARTS, ordinal: ACE }
+final Card TWO_HEARTS = { suite: HEARTS, ordinal: TWO }
+final Card THREE_HEARTS = { suite: HEARTS, ordinal: THREE }
+final Card FOUR_HEARTS = { suite: HEARTS, ordinal: FOUR }
+final Card FIVE_HEARTS = { suite: HEARTS, ordinal: FIVE }
+final Card SIX_HEARTS = { suite: HEARTS, ordinal: SIX }
+final Card SEVEN_HEARTS = { suite: HEARTS, ordinal: SEVEN }
+final Card EIGHT_HEARTS = { suite: HEARTS, ordinal: EIGHT }
+final Card NINE_HEARTS = { suite: HEARTS, ordinal: NINE }
+final Card TEN_HEARTS = { suite: HEARTS, ordinal: TEN }
+final Card JACK_HEARTS = { suite: HEARTS, ordinal: JACK }
+final Card QUEEN_HEARTS = { suite: HEARTS, ordinal: QUEEN }
+final Card KING_HEARTS = { suite: HEARTS, ordinal: KING }
+final Card ACE_HEARTS = { suite: HEARTS, ordinal: ACE }
 
-Card TWO_CLUBS = { suite: CLUBS, ordinal: TWO }
-Card THREE_CLUBS = { suite: CLUBS, ordinal: THREE }
-Card FOUR_CLUBS = { suite: CLUBS, ordinal: FOUR }
-Card FIVE_CLUBS = { suite: CLUBS, ordinal: FIVE }
-Card SIX_CLUBS = { suite: CLUBS, ordinal: SIX }
-Card SEVEN_CLUBS = { suite: CLUBS, ordinal: SEVEN }
-Card EIGHT_CLUBS = { suite: CLUBS, ordinal: EIGHT }
-Card NINE_CLUBS = { suite: CLUBS, ordinal: NINE }
-Card TEN_CLUBS = { suite: CLUBS, ordinal: TEN }
-Card JACK_CLUBS = { suite: CLUBS, ordinal: JACK }
-Card QUEEN_CLUBS = { suite: CLUBS, ordinal: QUEEN }
-Card KING_CLUBS = { suite: CLUBS, ordinal: KING }
-Card ACE_CLUBS = { suite: CLUBS, ordinal: ACE }
+final Card TWO_CLUBS = { suite: CLUBS, ordinal: TWO }
+final Card THREE_CLUBS = { suite: CLUBS, ordinal: THREE }
+final Card FOUR_CLUBS = { suite: CLUBS, ordinal: FOUR }
+final Card FIVE_CLUBS = { suite: CLUBS, ordinal: FIVE }
+final Card SIX_CLUBS = { suite: CLUBS, ordinal: SIX }
+final Card SEVEN_CLUBS = { suite: CLUBS, ordinal: SEVEN }
+final Card EIGHT_CLUBS = { suite: CLUBS, ordinal: EIGHT }
+final Card NINE_CLUBS = { suite: CLUBS, ordinal: NINE }
+final Card TEN_CLUBS = { suite: CLUBS, ordinal: TEN }
+final Card JACK_CLUBS = { suite: CLUBS, ordinal: JACK }
+final Card QUEEN_CLUBS = { suite: CLUBS, ordinal: QUEEN }
+final Card KING_CLUBS = { suite: CLUBS, ordinal: KING }
+final Card ACE_CLUBS = { suite: CLUBS, ordinal: ACE }
 
-Card TWO_DIAMONDS = { suite: DIAMONDS, ordinal: TWO }
-Card THREE_DIAMONDS = { suite: DIAMONDS, ordinal: THREE }
-Card FOUR_DIAMONDS = { suite: DIAMONDS, ordinal: FOUR }
-Card FIVE_DIAMONDS = { suite: DIAMONDS, ordinal: FIVE }
-Card SIX_DIAMONDS = { suite: DIAMONDS, ordinal: SIX }
-Card SEVEN_DIAMONDS = { suite: DIAMONDS, ordinal: SEVEN }
-Card EIGHT_DIAMONDS = { suite: DIAMONDS, ordinal: EIGHT }
-Card NINE_DIAMONDS = { suite: DIAMONDS, ordinal: NINE }
-Card TEN_DIAMONDS = { suite: DIAMONDS, ordinal: TEN }
-Card JACK_DIAMONDS = { suite: DIAMONDS, ordinal: JACK }
-Card QUEEN_DIAMONDS = { suite: DIAMONDS, ordinal: QUEEN }
-Card KING_DIAMONDS = { suite: DIAMONDS, ordinal: KING }
-Card ACE_DIAMONDS = { suite: DIAMONDS, ordinal: ACE }
+final Card TWO_DIAMONDS = { suite: DIAMONDS, ordinal: TWO }
+final Card THREE_DIAMONDS = { suite: DIAMONDS, ordinal: THREE }
+final Card FOUR_DIAMONDS = { suite: DIAMONDS, ordinal: FOUR }
+final Card FIVE_DIAMONDS = { suite: DIAMONDS, ordinal: FIVE }
+final Card SIX_DIAMONDS = { suite: DIAMONDS, ordinal: SIX }
+final Card SEVEN_DIAMONDS = { suite: DIAMONDS, ordinal: SEVEN }
+final Card EIGHT_DIAMONDS = { suite: DIAMONDS, ordinal: EIGHT }
+final Card NINE_DIAMONDS = { suite: DIAMONDS, ordinal: NINE }
+final Card TEN_DIAMONDS = { suite: DIAMONDS, ordinal: TEN }
+final Card JACK_DIAMONDS = { suite: DIAMONDS, ordinal: JACK }
+final Card QUEEN_DIAMONDS = { suite: DIAMONDS, ordinal: QUEEN }
+final Card KING_DIAMONDS = { suite: DIAMONDS, ordinal: KING }
+final Card ACE_DIAMONDS = { suite: DIAMONDS, ordinal: ACE }
 
-Card TWO_SPADES = { suite: SPADES, ordinal: TWO }
-Card THREE_SPADES = { suite: SPADES, ordinal: THREE }
-Card FOUR_SPADES = { suite: SPADES, ordinal: FOUR }
-Card FIVE_SPADES = { suite: SPADES, ordinal: FIVE }
-Card SIX_SPADES = { suite: SPADES, ordinal: SIX }
-Card SEVEN_SPADES = { suite: SPADES, ordinal: SEVEN }
-Card EIGHT_SPADES = { suite: SPADES, ordinal: EIGHT }
-Card NINE_SPADES = { suite: SPADES, ordinal: NINE }
-Card TEN_SPADES = { suite: SPADES, ordinal: TEN }
-Card JACK_SPADES = { suite: SPADES, ordinal: JACK }
-Card QUEEN_SPADES = { suite: SPADES, ordinal: QUEEN }
-Card KING_SPADES = { suite: SPADES, ordinal: KING }
-Card ACE_SPADES = { suite: SPADES, ordinal: ACE }
+final Card TWO_SPADES = { suite: SPADES, ordinal: TWO }
+final Card THREE_SPADES = { suite: SPADES, ordinal: THREE }
+final Card FOUR_SPADES = { suite: SPADES, ordinal: FOUR }
+final Card FIVE_SPADES = { suite: SPADES, ordinal: FIVE }
+final Card SIX_SPADES = { suite: SPADES, ordinal: SIX }
+final Card SEVEN_SPADES = { suite: SPADES, ordinal: SEVEN }
+final Card EIGHT_SPADES = { suite: SPADES, ordinal: EIGHT }
+final Card NINE_SPADES = { suite: SPADES, ordinal: NINE }
+final Card TEN_SPADES = { suite: SPADES, ordinal: TEN }
+final Card JACK_SPADES = { suite: SPADES, ordinal: JACK }
+final Card QUEEN_SPADES = { suite: SPADES, ordinal: QUEEN }
+final Card KING_SPADES = { suite: SPADES, ordinal: KING }
+final Card ACE_SPADES = { suite: SPADES, ordinal: ACE }
 
 // =======================================
 // Hand

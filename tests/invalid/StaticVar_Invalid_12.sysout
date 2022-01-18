@@ -1,0 +1,3 @@
+StaticVar_Invalid_12.whiley:4: static access not permitted
+    return GLOBAL
+           ^^^^^^

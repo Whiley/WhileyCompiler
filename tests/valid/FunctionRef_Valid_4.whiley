@@ -1,4 +1,4 @@
-func[] table = [&f1, &f2]
+final func[] table = [&f1, &f2]
 
 function f1(int x) -> int:
     return x

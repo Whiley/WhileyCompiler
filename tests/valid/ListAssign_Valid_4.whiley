@@ -1,15 +1,15 @@
-PieceKind PAWN = 0
-PieceKind KNIGHT = 1
-PieceKind BISHOP = 2
-PieceKind ROOK = 3
-PieceKind QUEEN = 4
-PieceKind KING = 5
+final PieceKind PAWN = 0
+final PieceKind KNIGHT = 1
+final PieceKind BISHOP = 2
+final PieceKind ROOK = 3
+final PieceKind QUEEN = 4
+final PieceKind KING = 5
 
 type PieceKind is (int x) where PAWN <= x && x <= KING
 type Piece is {bool colour, PieceKind kind}
 
-Piece WHITE_PAWN = {colour: true, kind: PAWN}
-Piece BLACK_PAWN = {colour: false, kind: PAWN}
+final Piece WHITE_PAWN = {colour: true, kind: PAWN}
+final Piece BLACK_PAWN = {colour: false, kind: PAWN}
 
 type Board is {bool flag, Piece[] rows}
 

@@ -1,9 +1,9 @@
-int IHDR_TYPE = 1380206665
-int IEND_TYPE = 1145980233
-int IDAT_TYPE = 1413563465
-int PLTE_TYPE = 1163152464
-int PHYS_TYPE = 1935231088
-int TIME_TYPE = 1162692980
+final int IHDR_TYPE = 1380206665
+final int IEND_TYPE = 1145980233
+final int IDAT_TYPE = 1413563465
+final int PLTE_TYPE = 1163152464
+final int PHYS_TYPE = 1935231088
+final int TIME_TYPE = 1162692980
 
 public function f(int type) -> int:
     switch type:

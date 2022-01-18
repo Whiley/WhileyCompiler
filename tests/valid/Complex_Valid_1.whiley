@@ -1,26 +1,26 @@
-PieceKind PAWN = 0
-PieceKind KNIGHT = 1
-PieceKind BISHOP = 2
-PieceKind ROOK = 3
-PieceKind QUEEN = 4
-PieceKind KING = 5
-int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
+final PieceKind PAWN = 0
+final PieceKind KNIGHT = 1
+final PieceKind BISHOP = 2
+final PieceKind ROOK = 3
+final PieceKind QUEEN = 4
+final PieceKind KING = 5
+final int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
 
 type PieceKind is (int x) where PAWN <= x && x <= KING
 type Piece is {bool colour, PieceKind kind}
 
-Piece WHITE_PAWN = {colour: true, kind: PAWN}
-Piece WHITE_KNIGHT = {colour: true, kind: KNIGHT}
-Piece WHITE_BISHOP = {colour: true, kind: BISHOP}
-Piece WHITE_ROOK = {colour: true, kind: ROOK}
-Piece WHITE_QUEEN = {colour: true, kind: QUEEN}
-Piece WHITE_KING = {colour: true, kind: KING}
-Piece BLACK_PAWN = {colour: false, kind: PAWN}
-Piece BLACK_KNIGHT = {colour: false, kind: KNIGHT}
-Piece BLACK_BISHOP = {colour: false, kind: BISHOP}
-Piece BLACK_ROOK = {colour: false, kind: ROOK}
-Piece BLACK_QUEEN = {colour: false, kind: QUEEN}
-Piece BLACK_KING = {colour: false, kind: KING}
+final Piece WHITE_PAWN = {colour: true, kind: PAWN}
+final Piece WHITE_KNIGHT = {colour: true, kind: KNIGHT}
+final Piece WHITE_BISHOP = {colour: true, kind: BISHOP}
+final Piece WHITE_ROOK = {colour: true, kind: ROOK}
+final Piece WHITE_QUEEN = {colour: true, kind: QUEEN}
+final Piece WHITE_KING = {colour: true, kind: KING}
+final Piece BLACK_PAWN = {colour: false, kind: PAWN}
+final Piece BLACK_KNIGHT = {colour: false, kind: KNIGHT}
+final Piece BLACK_BISHOP = {colour: false, kind: BISHOP}
+final Piece BLACK_ROOK = {colour: false, kind: ROOK}
+final Piece BLACK_QUEEN = {colour: false, kind: QUEEN}
+final Piece BLACK_KING = {colour: false, kind: KING}
 
 type RowCol is (int x) where x >= 0 && x < 8
 
@@ -38,7 +38,7 @@ type Board is ({
     bool whiteCastleKingSide
 } b) where |b.rows| == 8
 
-Row[] startingChessRows = [
+final Row[] startingChessRows = [
     [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], 
     [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN], 
     [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], 
@@ -47,7 +47,7 @@ Row[] startingChessRows = [
     [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]
 ]
 
-Board startingChessBoard = {blackCastleKingSide: true, whiteCastleQueenSide: true, blackCastleQueenSide: true, rows: startingChessRows, whiteCastleKingSide: true}
+final Board startingChessBoard = {blackCastleKingSide: true, whiteCastleQueenSide: true, blackCastleQueenSide: true, rows: startingChessRows, whiteCastleKingSide: true}
 
 function sign(int x, int y) -> (int r)
 ensures x < y ==> r == 1
@@ -75,10 +75,10 @@ function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     //
     return true
 
-Pos A1 = {col: 1, row: 1}
-Pos H1 = {col: 7, row: 1}
-Pos A3 = {col: 1, row: 3}
-Pos D3 = {col: 4, row: 3}
+final Pos A1 = {col: 1, row: 1}
+final Pos H1 = {col: 7, row: 1}
+final Pos A3 = {col: 1, row: 3}
+final Pos D3 = {col: 4, row: 3}
 
 public export method test() :
     assume clearRowExcept(A1, H1, startingChessBoard) == false

@@ -11,13 +11,13 @@ type Reducer is function(LinkedList)->(int)
 function apply(Reducer r, LinkedList l) -> int:
     return r(l)
 
-LinkedList LIST_1 = null
-LinkedList LIST_2 = {data: 1, next: LIST_1}
-LinkedList LIST_3 = {data: -1, next: LIST_2}
-LinkedList LIST_4 = {data: 10, next: LIST_3}
-LinkedList LIST_5 = {data: 3, next: LIST_4}
+final LinkedList LIST_1 = null
+final LinkedList LIST_2 = {data: 1, next: LIST_1}
+final LinkedList LIST_3 = {data: -1, next: LIST_2}
+final LinkedList LIST_4 = {data: 10, next: LIST_3}
+final LinkedList LIST_5 = {data: 3, next: LIST_4}
 
-Reducer[] FUNCTIONS = [ &sum ]
+final Reducer[] FUNCTIONS = [ &sum ]
 
 public export method test():
     int i = 0

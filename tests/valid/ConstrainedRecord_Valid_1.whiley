@@ -1,5 +1,5 @@
-int RET = 169
-int NOP = 0
+final int RET = 169
+final int NOP = 0
 
 type unitCode is (int x) where x == NOP || x == RET
 
