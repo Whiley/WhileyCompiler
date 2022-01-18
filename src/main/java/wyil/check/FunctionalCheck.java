@@ -79,7 +79,22 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	public enum Context {
-		PURE, ONESTATE, TWOSTATE, IMPURE
+		/**
+		 * Represents the body of a function, including specification elements.
+		 */
+		PURE,
+		/**
+		 * Represents the body of a type invariant, property or method precondition.
+		 */
+		ONESTATE,
+		/**
+		 * Represents the body of a variant or method postcondition.
+		 */
+		TWOSTATE,
+		/**
+		 * Represents the body of a method.
+		 */
+		IMPURE
 	}
 
 	@Override
