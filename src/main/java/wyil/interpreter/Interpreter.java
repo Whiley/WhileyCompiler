@@ -360,13 +360,17 @@ public class Interpreter {
 			executeAssignRecord((Expr.RecordAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
-		case EXPR_variablemove:
-		case EXPR_variablecopy: {
-			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, heap, scope, context);
+		case EXPR_staticvariable: {
+			executeStaticAssignVariable((Expr.StaticVariableAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		case EXPR_tupleinitialiser: {
 			executeAssignTuple((Expr.TupleInitialiser) lval, rval, frame, heap, scope, context);
+			break;
+		}
+		case EXPR_variablemove:
+		case EXPR_variablecopy: {
+			executeAssignVariable((Expr.VariableAccess) lval, rval, frame, heap, scope, context);
 			break;
 		}
 		default:
@@ -421,6 +425,15 @@ public class Interpreter {
 		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, heap, context);
 		//
 		frame.putLocal(lval.getVariableDeclaration().getName(), rval);
+	}
+
+	private void executeStaticAssignVariable(Expr.StaticVariableAccess lval, RValue rval, CallStack frame, Heap heap,
+			EnclosingScope scope, Syntactic.Item context) {
+		Decl.StaticVariable decl = lval.getLink().getTarget();
+		// Check type invariants for lval being assigned
+		checkTypeInvariants(decl.getType(), rval, frame, heap, context);
+		//
+		frame.putStatic(decl.getQualifiedName(), rval);
 	}
 
 	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, Heap heap,

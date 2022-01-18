@@ -84,17 +84,63 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 		 */
 		PURE,
 		/**
-		 * Represents the body of a type invariant, property or method precondition.
+		 * Represents the body of a type invariant, property or function loop invariant.
 		 */
 		ONESTATE,
 		/**
-		 * Represents the body of a variant or method postcondition.
+		 * Represents the body of a variant.
 		 */
 		TWOSTATE,
 		/**
+		 * Represents the body of a method precondition, loop invariant or
+		 * assumption/assertion.
+		 */
+		ONESTATE_IMPURE,
+		/**
+		 * Represents the body of a method postcondition.
+		 */
+		TWOSTATE_IMPURE,
+		/**
 		 * Represents the body of a method.
 		 */
-		IMPURE
+		IMPURE;
+
+		/**
+		 * Determine whether we can call a method from this context, or not.
+		 *
+		 * @return
+		 */
+		public boolean canCallMethod() {
+			return this == IMPURE;
+		}
+
+		/**
+		 * Determine whether we can call a variant from this context, or not.
+		 *
+		 * @return
+		 */
+		public boolean canCallVariant() {
+			return this == TWOSTATE || this == TWOSTATE_IMPURE;
+		}
+
+		/**
+		 * Determine whether heap allocations are permitted in this context or not.
+		 *
+		 * @return
+		 */
+		public boolean canHeapAllocate() {
+			return this == IMPURE;
+		}
+
+		/**
+		 * Determine whether can access (non-final) static variable in this context or
+		 * not.
+		 *
+		 * @return
+		 */
+		public boolean canAccessStatic() {
+			return this == IMPURE || this == ONESTATE_IMPURE || this == TWOSTATE_IMPURE;
+		}
 	}
 
 	@Override
@@ -130,8 +176,8 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	@Override
 	public void visitMethod(Decl.Method decl, Context data) {
 		// No need to visit variables here as no restrictions imposed.
-		visitExpressions(decl.getRequires(), Context.ONESTATE);
-		visitExpressions(decl.getEnsures(), Context.TWOSTATE);
+		visitExpressions(decl.getRequires(), Context.ONESTATE_IMPURE);
+		visitExpressions(decl.getEnsures(), Context.TWOSTATE_IMPURE);
 		visitStatement(decl.getBody(), Context.IMPURE);
 	}
 
@@ -184,9 +230,9 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	public void visitInvoke(Expr.Invoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
 		Decl.Link<Decl.Callable> name = expr.getLink();
-		if (context != Context.IMPURE && name.isResolved() && name.getTarget() instanceof Decl.Method) {
+		if (!context.canCallMethod() && name.isResolved() && name.getTarget() instanceof Decl.Method) {
 			syntaxError(expr, METHODCALL_NOT_PERMITTED);
-		} else if (context != Context.TWOSTATE && name.isResolved() && name.getTarget() instanceof Decl.Variant) {
+		} else if (!context.canCallVariant() && name.isResolved() && name.getTarget() instanceof Decl.Variant) {
 			syntaxError(expr, VARIANTCALL_NOT_PERMITTED);
 		}
 		super.visitInvoke(expr, context);
@@ -195,7 +241,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	@Override
 	public void visitIndirectInvoke(Expr.IndirectInvoke expr, Context context) {
 		// Check whether invoking an impure method in a pure context
-		if (context != Context.IMPURE && isMethodType(expr.getSource().getType())) {
+		if (!context.canCallMethod() && isMethodType(expr.getSource().getType())) {
 			syntaxError(expr, METHODCALL_NOT_PERMITTED);
 		}
 		super.visitIndirectInvoke(expr, context);
@@ -228,7 +274,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 
 	@Override
 	public void visitNew(Expr.New expr, Context context) {
-		if (context != Context.IMPURE) {
+		if (!context.canHeapAllocate()) {
 			syntaxError(expr, ALLOCATION_NOT_PERMITTED);
 		}
 		super.visitNew(expr, context);
@@ -238,7 +284,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	public void visitStaticVariableAccess(Expr.StaticVariableAccess expr, Context context) {
 		Decl.StaticVariable v = expr.getLink().getTarget();
 		// Prohibit static variable accesses in pure contexts.
-		if (context != Context.IMPURE && v.getModifiers().match(Modifier.Final.class) == null) {
+		if (!context.canAccessStatic() && v.getModifiers().match(Modifier.Final.class) == null) {
 			syntaxError(expr, STATIC_ACCESS_NOT_PERMITTED);
 		}
 
@@ -281,7 +327,7 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 		if (context == Context.PURE) {
 			return context;
 		} else {
-			return Context.ONESTATE;
+			return Context.ONESTATE_IMPURE;
 		}
 	}
 

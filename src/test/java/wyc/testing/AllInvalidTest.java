@@ -183,6 +183,8 @@ public class AllInvalidTest {
 		IGNORED.put("Remainder_Invalid_1", "???");
 		IGNORED.put("Requires_Invalid_1", "???");
 		IGNORED.put("StaticVar_Invalid_5", "???");
+		IGNORED.put("StaticVar_Invalid_13", "???");
+		IGNORED.put("StaticVar_Invalid_14", "???");
 		IGNORED.put("Subtype_Invalid_1", "???");
 		IGNORED.put("Subtype_Invalid_10", "???");
 		IGNORED.put("Subtype_Invalid_2", "???");

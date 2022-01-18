@@ -238,9 +238,13 @@ public class FlowTypeUtils {
 			for (int i = 0; i != operands.size(); ++i) {
 				addAssignedVariables((LVal) operands.get(i), modified);
 			}
-		} else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
+		} else if (lval instanceof Expr.StaticVariableAccess) {
+			Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) lval;
+			modified.add(e.getLink().getTarget());
+		}else if (lval instanceof Expr.Dereference || lval instanceof Expr.FieldDereference) {
 
 		} else {
+			System.out.println("GOT HERE");
 			syntaxError(lval, WyilFile.INVALID_LVAL_EXPRESSION);
 		}
 	}

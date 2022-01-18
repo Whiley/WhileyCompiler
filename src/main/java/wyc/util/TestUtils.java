@@ -100,6 +100,8 @@ public class TestUtils {
 		// Limitations of Type Inference
 		VALID_IGNORED.put("Template_Valid_61", "1004");
 		VALID_IGNORED.put("Template_Valid_62", "1004");
+		// Runtime checking Old Static Variable Accesses
+		VALID_IGNORED.put("StaticVar_Valid_15","#1122");
 		// Interpreter Infinite Loop.
 		VALID_IGNORED.put("Infeasible_Function_2", "???");
 		VALID_IGNORED.put("Infeasible_Function_3", "???");

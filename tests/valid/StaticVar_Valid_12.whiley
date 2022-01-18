@@ -8,7 +8,7 @@ public export method test():
         int i = 0
         //
         while i < 10
-        where i >= 0 && var >= 0
+        where i >= 0 && var >= 0:
             i = i + 1
             var = var + 1
         //
