@@ -34,36 +34,51 @@ import wyil.lang.WyilFile;
  */
 public class Main {
 	/**
-	 * Command-line options
+	 * Source directory containing whiley files.
 	 */
-	private static final OptArg[] OPTIONS = {
-			// Standard options
-			new OptArg("verbose","v","set verbose output"),
-			new OptArg("strict","s","set strict mode"),
-			new OptArg("output","o",OptArg.STRING,"set output file","main"),
-			new OptArg("whileydir", OptArg.FILEDIR, "Specify where to find Whiley source files", new File(".")),
-			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to place binary (WyIL) files", new File(".")),
-			new OptArg("whileypath", OptArg.FILELIST, "Specify additional dependencies", new ArrayList<>())
-	};
-	//
-	public static void main(String[] _args) throws IOException {
-		List<String> args = new ArrayList<>(Arrays.asList(_args));
-		Map<String, Object> options = OptArg.parseOptions(args, OPTIONS);
-		// Extract config options
-		boolean strict = options.containsKey("strict");
-		File whileydir = (File) options.get("whileydir");
-		File wyildir = (File) options.get("wyildir");
-		Trie target = Trie.fromString((String) options.get("output"));
-		ArrayList<File> whileypath = (ArrayList) options.get("whileypath");
-		// Compile Whiley source file(s).
-		boolean result = compile(whileydir, wyildir, args, target, whileypath);
-		// Produce exit code
-		System.exit(result ? 0 : 1);
+	private File whileydir = new File(".");
+	/**
+	 * Destination directory of Wyil files.
+	 */
+	private File wyildir = new File(".");
+	/**
+	 * WyIL dependencies to include during compilation.
+	 */
+	private List<File> whileypath;
+	private boolean strict;
+	private boolean brief;
+
+	public Main() {
+		this.whileypath = Collections.EMPTY_LIST;
 	}
 
-	public static boolean compile(File whileydir, File wyildir, List<String> srcfiles, Trie target, List<File> whileypath) throws IOException {
+	public Main setStrict(boolean b) {
+		this.strict = b;
+		return this;
+	}
+
+	public Main setBrief(boolean b) {
+		this.brief = b;
+		return this;
+	}
+
+	public Main setWhileyPath(List<File> whileypath) {
+		this.whileypath = whileypath;
+		return this;
+	}
+
+	public Main setWhileyDir(File whileydir) {
+		this.whileydir = whileydir;
+		return this;
+	}
+
+	public Main setWyilDir(File wyildir) {
+		this.wyildir = wyildir;
+		return this;
+	}
+
+	public boolean compile(List<String> srcfiles, Trie target) throws IOException {
 		List<WhileyFile> whileyfiles = new ArrayList<>();
-		boolean strict = false;
 		// Read source files
 		for (String wf : srcfiles) {
 			Trie path = Trie.fromString(wf.replace(".whiley", ""));
@@ -80,11 +95,45 @@ public class Main {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		printSyntacticMarkers(System.err, binary);
+		printSyntacticMarkers(System.err, binary, brief);
 		// Write generated WyIL file
 		writeWyilFile(target,binary,wyildir);
 		//
 		return binary.isValid();
+	}
+
+
+	/**
+	 * Command-line options
+	 */
+	private static final OptArg[] OPTIONS = {
+			// Standard options
+			new OptArg("verbose","v","set verbose output"),
+			new OptArg("strict","s","set strict mode"),
+			new OptArg("brief","b","set brief mode"),
+			new OptArg("output","o",OptArg.STRING,"set output file","main"),
+			new OptArg("whileydir", OptArg.FILEDIR, "Specify where to find Whiley source files", new File(".")),
+			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to place binary (WyIL) files", new File(".")),
+			new OptArg("whileypath", OptArg.FILELIST, "Specify additional dependencies", new ArrayList<>())
+	};
+	//
+	public static void main(String[] _args) throws IOException {
+		List<String> args = new ArrayList<>(Arrays.asList(_args));
+		Map<String, Object> options = OptArg.parseOptions(args, OPTIONS);
+		// Extract config options
+		boolean strict = options.containsKey("strict");
+		boolean brief = options.containsKey("brief");
+		File whileydir = (File) options.get("whileydir");
+		File wyildir = (File) options.get("wyildir");
+		Trie target = Trie.fromString((String) options.get("output"));
+		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
+		// Construct Main object
+		Main main = new Main().setStrict(strict).setBrief(brief).setWhileyDir(whileydir).setWyilDir(wyildir)
+				.setWhileyPath(whileypath);
+		// Compile Whiley source file(s).
+		boolean result = main.compile(args, target);
+		// Produce exit code
+		System.exit(result ? 0 : 1);
 	}
 
 	public static void extractDependencies(File dep, List<WyilFile> dependencies) throws IOException {
@@ -205,25 +254,18 @@ public class Main {
 	 * @param executor
 	 * @throws IOException
 	 */
-	public static void printSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
+	public static void printSyntacticMarkers(PrintStream output, WyilFile target, boolean brief) throws IOException {
 		// Extract all syntactic markers from entries in the build graph
 		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			// Log the error message
-			printSyntacticMarkers(output, items.get(i), target.getSourceArtifacts());
+			printSyntacticMarkers(output, items.get(i), target.getSourceArtifacts(), brief);
 		}
 	}
 
-	/**
-	 * Print a given syntactic marker.
-	 *
-	 * @param output
-	 * @param marker
-	 * @param sources
-	 */
-	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker,
-			List<WhileyFile> sources) {
+	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker, List<WhileyFile> sources,
+			boolean brief) {
 		// Identify enclosing source file
 		WhileyFile source = getSourceEntry(marker.getSource(), sources);
 		String filename = marker.getSource().toString() + ".whiley";
@@ -235,8 +277,10 @@ public class Main {
 		if (line != null) {
 			// print the error message
 			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
-			// Finally print the line highlight
-			printLineHighlight(output, span, line);
+			if(!brief) {
+				// Finally print the line highlight
+				printLineHighlight(output, span, line);
+			}
 		} else {
 			output.println(filename + ":?: " + marker.getMessage());
 		}

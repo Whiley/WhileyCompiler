@@ -211,7 +211,7 @@ public class TestUtils {
 			// Check whether result valid (or not)
 			result = target.isValid();
 			// Print out syntactic markers
-			Main.printSyntacticMarkers(psyserr, target);
+			Main.printSyntacticMarkers(psyserr, target, false);
 		} catch (Syntactic.Exception e) {
 			// Print out the syntax error
 			System.out.println("ERROR!");
