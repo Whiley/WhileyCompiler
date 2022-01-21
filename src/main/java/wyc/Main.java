@@ -271,19 +271,21 @@ public class Main {
 		String filename = marker.getSource().toString() + ".whiley";
 		// Determine the source-file span for the given syntactic marker.
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
-		// Read the enclosing line so we can print it
-		TextFile.Line line = source.getEnclosingLine(span.getStart());
 		// Sanity check we found it
-		if (line != null) {
 			// print the error message
-			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
-			if(!brief) {
-				// Finally print the line highlight
-				printLineHighlight(output, span, line);
+			if(brief) {
+				output.println(filename + ":" + span.getStart() + ":" + span.getEnd() + ": " + marker.getMessage());
+			} else {
+				// Read the enclosing line so we can print it
+				TextFile.Line line = source.getEnclosingLine(span.getStart());
+				if (line != null) {
+					output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
+					// Finally print the line highlight
+					printLineHighlight(output, span, line);
+				} else {
+					output.println(filename + ":?: " + marker.getMessage());
+				}
 			}
-		} else {
-			output.println(filename + ":?: " + marker.getMessage());
-		}
 	}
 
 	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
