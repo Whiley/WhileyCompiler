@@ -257,6 +257,10 @@ public abstract class AbstractTranslator<D, S, E> {
 			Expr.VariableAccess e = (Expr.VariableAccess) lval;
 			return constructVariableAccessLVal(e);
 		}
+		case EXPR_staticvariable: {
+			Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) lval;
+			return constructStaticVariableAccessLVal(e);
+		}
 		default:
 			throw new IllegalArgumentException("invalid lval: " + lval);
 		}
@@ -996,6 +1000,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructTupleInitialiserLVal(Expr.TupleInitialiser expr, List<E> source);
 
 	public abstract E constructVariableAccessLVal(Expr.VariableAccess expr);
+
+	public abstract E constructStaticVariableAccessLVal(Expr.StaticVariableAccess expr);
 
 	// ====================================================================================
 	// Expression Constructors
