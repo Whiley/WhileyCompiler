@@ -17,9 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assume;
@@ -273,7 +271,8 @@ public class AllValidVerificationTest {
 		Pair<Boolean, String> p = TestUtils.compile(whileySrcDir, // location of source directory
 				true,  // enable verification
 				false, // no counterexample generation
-				name); // name of test to compile
+				name, // name of test to compile
+				Collections.emptyList()); // no dependencies
 
 		boolean r = p.first();
 		System.out.print(p.second());

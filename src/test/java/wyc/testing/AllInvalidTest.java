@@ -17,9 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.junit.Assume;
 import org.junit.Before;
@@ -247,7 +245,8 @@ public class AllInvalidTest {
 				true,              // enable verification
 				true,              // enable counterexample generation
 				true,	           // enable strict treatment of unsafe
-				name);             // name of test to compile
+				name,             // name of test to compile
+				Collections.emptyList()); // no dependencies
 
 		boolean r = p.first();
 		String output = p.second();

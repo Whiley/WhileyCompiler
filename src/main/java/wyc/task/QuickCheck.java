@@ -14,9 +14,9 @@ import jmodelgen.util.AbstractSmallDomain;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
 import wycc.lang.Syntactic;
+import wycc.util.Logger;
 import wycc.util.AbstractCompilationUnit.Name;
 import wyc.util.ErrorMessages;
-import wyc.util.Logger;
 
 import static wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;

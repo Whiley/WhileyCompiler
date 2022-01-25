@@ -182,19 +182,19 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String arg)
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String name, List<WyilFile> deps)
 			throws IOException {
-		return compile(whileydir,verify,counterexamples,false,arg);
+		return compile(whileydir, verify, counterexamples, false, name, deps);
 	}
 
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, boolean strict, String arg)
+	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, boolean strict, String name, List<WyilFile> deps)
 				throws IOException {
 
-		String filename = arg + ".whiley";
+		String filename = name + ".whiley";
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		PrintStream psyserr = new PrintStream(syserr);
 		// Determine the ID of the test being compiler
-		Trie path = Trie.fromString(arg);
+		Trie path = Trie.fromString(name);
 		//
 		boolean result = true;
 		//
@@ -202,7 +202,7 @@ public class TestUtils {
 			// Extract source file
 			WhileyFile source = Main.readWhileyFile(path, whileydir, filename);
 			// Construct compile task
-			CompileTask task = new CompileTask(path).setStrict(strict);
+			CompileTask task = new CompileTask(path, deps).setStrict(strict);
 			Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
 			// Read out binary file from build repository
 			WyilFile target = r.first();
