@@ -75,12 +75,8 @@ public class AllValidTest {
 	protected void runTest(String testName) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 		//
-		Pair<Boolean,String> p = TestUtils.compile(
-				whileySrcDir,      // location of source directory
-				false,             // no verification
-				false,             // no counterexample generation
-				testName,          // name of test to compile
-				Collections.emptyList()); // no dependencies
+		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
+				.setTestName(testName).run();
 
 		boolean r = p.first();
 

@@ -268,11 +268,8 @@ public class AllValidVerificationTest {
 	protected void runTest(String name) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 
-		Pair<Boolean, String> p = TestUtils.compile(whileySrcDir, // location of source directory
-				true,  // enable verification
-				false, // no counterexample generation
-				name, // name of test to compile
-				Collections.emptyList()); // no dependencies
+		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
+				.setTestName(testName).setVerification(true).run();
 
 		boolean r = p.first();
 		System.out.print(p.second());

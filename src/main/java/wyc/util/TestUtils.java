@@ -174,61 +174,132 @@ public class TestUtils {
 		return testcases;
 	}
 
-
 	/**
-	 * Run the Whiley Compiler with the given list of arguments.
+	 * A simple configurable instance of the WhileyCompiler suitable for testing.
 	 *
-	 * @param whileydir --- list of tests to compile.
-	 * @return
-	 * @throws IOException
+	 * @author David J. Pearce
+	 *
 	 */
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, String name, List<WyilFile> deps)
-			throws IOException {
-		return compile(whileydir, verify, counterexamples, false, name, deps);
-	}
+	public static class Compiler {
+		/**
+		 * Name of the test in question.
+		 */
+		private String name;
+		/**
+		 * Location of Whiley source files.
+		 */
+		private File whileydir;
+		/**
+		 * Location of Whiley binary files.
+		 */
+		private File wyildir;
+		/**
+		 * Signal whether to enable verification.
+		 */
+		private boolean verify;
+		/**
+		 * Signal whether to generate counterexamples.
+		 */
+		private boolean counterexamples;
+		/**
+		 * Signal whether to employ strict unsafe checking or not.
+		 */
+		private boolean strict;
+		/**
+		 * Dependencies to include during compilation.
+		 */
+		private final ArrayList<WyilFile> dependencies;
 
-	public static Pair<Boolean, String> compile(File whileydir, boolean verify, boolean counterexamples, boolean strict, String name, List<WyilFile> deps)
-				throws IOException {
-
-		String filename = name + ".whiley";
-		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
-		PrintStream psyserr = new PrintStream(syserr);
-		// Determine the ID of the test being compiler
-		Trie path = Trie.fromString(name);
-		//
-		boolean result = true;
-		//
-		try {
-			// Extract source file
-			WhileyFile source = Main.readWhileyFile(path, whileydir, filename);
-			// Construct compile task
-			CompileTask task = new CompileTask(path, deps).setStrict(strict);
-			Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
-			// Read out binary file from build repository
-			WyilFile target = r.first();
-			// Write out binary target
-			Main.writeWyilFile(path, target, whileydir);
-			// Check whether result valid (or not)
-			result = target.isValid();
-			// Print out syntactic markers
-			Main.printSyntacticMarkers(psyserr, target, false);
-		} catch (Syntactic.Exception e) {
-			// Print out the syntax error
-			System.out.println("ERROR!");
-			//e.outputSourceError(psyserr);
-			result = false;
-		} catch (Exception e) {
-			// Print out the syntax error
-			printStackTrace(psyserr, e);
-			result = false;
+		public Compiler() {
+			this.whileydir = new File(".");
+			this.wyildir = whileydir;
+			this.name = "test";
+			this.dependencies = new ArrayList<>();
 		}
-		//
-		psyserr.flush();
-		// Convert bytes produced into resulting string.
-		byte[] errBytes = syserr.toByteArray();
-		String output = new String(errBytes);
-		return new Pair<>(result, output);
+
+		public Compiler setTestName(String name) {
+			this.name = name;
+			return this;
+		}
+
+		public Compiler setWhileyDir(File whileydir) {
+			this.whileydir = whileydir;
+			return this;
+		}
+
+		public Compiler setWyilDir(File wyildir) {
+			this.wyildir = wyildir;
+			return this;
+		}
+
+		public Compiler setVerification(boolean flag) {
+			this.verify = flag;
+			return this;
+		}
+
+		public Compiler setCounterExamples(boolean flag) {
+			this.counterexamples = flag;
+			return this;
+		}
+
+		public Compiler setStrict(boolean flag) {
+			this.strict = flag;
+			return this;
+		}
+
+		public Compiler addDependency(WyilFile dep) {
+			this.dependencies.add(dep);
+			return this;
+		}
+
+		/**
+		 * Run the Whiley Compiler in the given configuration.
+		 *
+		 * @return
+		 * @throws IOException
+		 */
+		public Pair<Boolean,String> run() {
+
+			String filename = name + ".whiley";
+			ByteArrayOutputStream syserr = new ByteArrayOutputStream();
+			PrintStream psyserr = new PrintStream(syserr);
+			// Determine the ID of the test being compiler
+			Trie path = Trie.fromString(name);
+			//
+			boolean result = true;
+			//
+			try {
+				// Extract source file
+				WhileyFile source = Main.readWhileyFile(path, whileydir, filename);
+				// Construct compile task
+				CompileTask task = new CompileTask(path, dependencies).setStrict(strict);
+				Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
+				// Read out binary file from build repository
+				WyilFile target = r.first();
+				// Write out binary target
+				Main.writeWyilFile(path, target, wyildir);
+				// Check whether result valid (or not)
+				result = target.isValid();
+				// Print out syntactic markers
+				Main.printSyntacticMarkers(psyserr, target, false);
+			} catch (Syntactic.Exception e) {
+				// Print out the syntax error
+				e.outputSourceError(psyserr,false);
+				result = false;
+			} catch (Exception e) {
+				// Print out the syntax error
+				printStackTrace(psyserr, e);
+				result = false;
+			}
+			//
+			psyserr.flush();
+			// Convert bytes produced into resulting string.
+			byte[] errBytes = syserr.toByteArray();
+			String output = new String(errBytes);
+			return new Pair<>(result, output);
+		}
 	}
+
 
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()

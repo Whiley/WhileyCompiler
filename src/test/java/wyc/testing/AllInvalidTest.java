@@ -240,13 +240,8 @@ public class AllInvalidTest {
 	protected void runTest(String name) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 
-		Pair<Boolean,String> p = TestUtils.compile(
-				whileySrcDir,      // location of source directory
-				true,              // enable verification
-				true,              // enable counterexample generation
-				true,	           // enable strict treatment of unsafe
-				name,             // name of test to compile
-				Collections.emptyList()); // no dependencies
+		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
+				.setTestName(testName).setVerification(true).setCounterExamples(true).setStrict(true).run();
 
 		boolean r = p.first();
 		String output = p.second();
