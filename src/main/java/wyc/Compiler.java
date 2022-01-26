@@ -57,15 +57,12 @@ public class Compiler {
 	/**
 	 * WyIL dependencies to include during compilation.
 	 */
-	private List<File> whileypath;
+	private List<File> whileypath = Collections.EMPTY_LIST;
+	private List<WyilFile> dependencies = new ArrayList<>();
 	private boolean verification;
 	private boolean counterexamples;
 	private boolean strict;
 	private boolean brief;
-
-	public Compiler() {
-		this.whileypath = Collections.EMPTY_LIST;
-	}
 
 	public Compiler setOutput(PrintStream pout) {
 		this.out = pout;
@@ -107,6 +104,11 @@ public class Compiler {
 		return this;
 	}
 
+	public Compiler addDependency(WyilFile dep) {
+		this.dependencies.add(dep);
+		return this;
+	}
+
 	public Compiler setWhileyDir(File whileydir) {
 		this.whileydir = whileydir;
 		return this;
@@ -123,13 +125,13 @@ public class Compiler {
 		for (Trie sf : sources) {
 			whileyfiles.add(readWhileyFile(whileydir, sf));
 		}
-		ArrayList<WyilFile> dependencies = new ArrayList<>();
-		// Extract any dependencies
+		ArrayList<WyilFile> deps = new ArrayList<>(this.dependencies);
+		// Extract any dependencies from zips
 		for(File dep : whileypath) {
-			extractDependencies(dep,dependencies);
+			extractDependencies(dep,deps);
 		}
 		// Compile WyilFile
-		CompileTask task = new CompileTask(target, dependencies).setStrict(strict);
+		CompileTask task = new CompileTask(target, deps).setStrict(strict);
 		Pair<WyilFile, Boolean> r = task.compile(whileyfiles);
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
