@@ -14,6 +14,7 @@
 package wyc;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -37,7 +38,7 @@ public class Compiler {
 	/**
 	 * The output stream from this compiler.
 	 */
-	private PrintStream out = System.err;
+	private PrintStream out = System.out;
 	/**
 	 * Source directory containing whiley files.
 	 */
@@ -123,7 +124,8 @@ public class Compiler {
 		List<WhileyFile> whileyfiles = new ArrayList<>();
 		// Read source files
 		for (Trie sf : sources) {
-			whileyfiles.add(readWhileyFile(whileydir, sf));
+			WhileyFile wf = readWhileyFile(whileydir, sf);
+			whileyfiles.add(wf);
 		}
 		ArrayList<WyilFile> deps = new ArrayList<>(this.dependencies);
 		// Extract any dependencies from zips
@@ -172,6 +174,7 @@ public class Compiler {
 				.setWyilDir(wyildir).setWhileyPath(whileypath);
 		//
 		for(String arg : args) {
+			arg = arg.replace(".whiley", "");
 			main.addSource(Trie.fromString(arg));
 		}
 		// Compile Whiley source file(s).
