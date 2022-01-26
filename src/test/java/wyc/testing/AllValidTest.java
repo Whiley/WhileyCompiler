@@ -72,20 +72,16 @@ public class AllValidTest {
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 */
-	protected void runTest(String testName) throws IOException {
+	protected void runTest(Trie path) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
 		//
-		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
-				.setTestName(testName).run();
-
-		boolean r = p.first();
-
-		System.out.print(p.second());
+		boolean r = new wyc.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir).setTarget(path).addSource(path)
+				.run();
 		if (!r) {
 			fail("Test failed to compile!");
 		}
 		// Execute the compile WyIL file
-		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+		TestUtils.execWyil(whileySrcDir, path);
 	}
 
 	// ======================================================================
@@ -94,9 +90,9 @@ public class AllValidTest {
 
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
-	private final String testName;
+	private final Trie testName;
 	public AllValidTest(String testName) {
-		this.testName = testName;
+		this.testName = Trie.fromString(testName);
 	}
 
 	// Here we enumerate all available test cases.
@@ -108,7 +104,7 @@ public class AllValidTest {
 	// Skip ignored tests
 	@Before
 	public void beforeMethod() {
-		String ignored = IGNORED.get(this.testName);
+		String ignored = IGNORED.get(this.testName.toString());
 		Assume.assumeTrue("Test " + this.testName + " skipped: " + ignored, ignored == null);
 	}
 

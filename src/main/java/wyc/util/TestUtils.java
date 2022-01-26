@@ -13,25 +13,18 @@
 // limitations under the License.
 package wyc.util;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.StringReader;
 import java.util.*;
 
-import wycc.util.Pair;
 import wycc.util.Trie;
 import wycc.lang.Syntactic;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Name;
-import wyc.Main;
+import wyc.Compiler;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wyc.task.CompileTask;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile;
@@ -174,132 +167,6 @@ public class TestUtils {
 		return testcases;
 	}
 
-	/**
-	 * A simple configurable instance of the WhileyCompiler suitable for testing.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Compiler {
-		/**
-		 * Name of the test in question.
-		 */
-		private String name;
-		/**
-		 * Location of Whiley source files.
-		 */
-		private File whileydir;
-		/**
-		 * Location of Whiley binary files.
-		 */
-		private File wyildir;
-		/**
-		 * Signal whether to enable verification.
-		 */
-		private boolean verify;
-		/**
-		 * Signal whether to generate counterexamples.
-		 */
-		private boolean counterexamples;
-		/**
-		 * Signal whether to employ strict unsafe checking or not.
-		 */
-		private boolean strict;
-		/**
-		 * Dependencies to include during compilation.
-		 */
-		private final ArrayList<WyilFile> dependencies;
-
-		public Compiler() {
-			this.whileydir = new File(".");
-			this.wyildir = whileydir;
-			this.name = "test";
-			this.dependencies = new ArrayList<>();
-		}
-
-		public Compiler setTestName(String name) {
-			this.name = name;
-			return this;
-		}
-
-		public Compiler setWhileyDir(File whileydir) {
-			this.whileydir = whileydir;
-			return this;
-		}
-
-		public Compiler setWyilDir(File wyildir) {
-			this.wyildir = wyildir;
-			return this;
-		}
-
-		public Compiler setVerification(boolean flag) {
-			this.verify = flag;
-			return this;
-		}
-
-		public Compiler setCounterExamples(boolean flag) {
-			this.counterexamples = flag;
-			return this;
-		}
-
-		public Compiler setStrict(boolean flag) {
-			this.strict = flag;
-			return this;
-		}
-
-		public Compiler addDependency(WyilFile dep) {
-			this.dependencies.add(dep);
-			return this;
-		}
-
-		/**
-		 * Run the Whiley Compiler in the given configuration.
-		 *
-		 * @return
-		 * @throws IOException
-		 */
-		public Pair<Boolean,String> run() {
-
-			String filename = name + ".whiley";
-			ByteArrayOutputStream syserr = new ByteArrayOutputStream();
-			PrintStream psyserr = new PrintStream(syserr);
-			// Determine the ID of the test being compiler
-			Trie path = Trie.fromString(name);
-			//
-			boolean result = true;
-			//
-			try {
-				// Extract source file
-				WhileyFile source = Main.readWhileyFile(path, whileydir, filename);
-				// Construct compile task
-				CompileTask task = new CompileTask(path, dependencies).setStrict(strict);
-				Pair<WyilFile, Boolean> r = task.compile(Arrays.asList(source));
-				// Read out binary file from build repository
-				WyilFile target = r.first();
-				// Write out binary target
-				Main.writeWyilFile(path, target, wyildir);
-				// Check whether result valid (or not)
-				result = target.isValid();
-				// Print out syntactic markers
-				Main.printSyntacticMarkers(psyserr, target, false);
-			} catch (Syntactic.Exception e) {
-				// Print out the syntax error
-				e.outputSourceError(psyserr,false);
-				result = false;
-			} catch (Exception e) {
-				// Print out the syntax error
-				printStackTrace(psyserr, e);
-				result = false;
-			}
-			//
-			psyserr.flush();
-			// Convert bytes produced into resulting string.
-			byte[] errBytes = syserr.toByteArray();
-			String output = new String(errBytes);
-			return new Pair<>(result, output);
-		}
-	}
-
 
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
@@ -358,8 +225,7 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
-		String filename = id.toString() + ".wyil";
-		WyilFile target = Main.readWyilFile(wyildir, filename);
+		WyilFile target = Compiler.readWyilFile(wyildir, id);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
@@ -387,86 +253,6 @@ public class TestUtils {
 			}
 		} catch (Interpreter.RuntimeError e) {
 			throw e;
-		}
-	}
-
-	/**
-	 * Compare the output of executing java on the test case with a reference
-	 * file. If the output differs from the reference output, then the offending
-	 * line is written to the stdout and an exception is thrown.
-	 *
-	 * @param output
-	 *            This provides the output from executing java on the test case.
-	 * @param referenceFile
-	 *            The full path to the reference file. This should use the
-	 *            appropriate separator char for the host operating system.
-	 * @throws IOException
-	 */
-	public static boolean compare(String output, String referenceFile) throws IOException {
-		BufferedReader outReader = new BufferedReader(new StringReader(output));
-		BufferedReader refReader = new BufferedReader(new FileReader(new File(referenceFile)));
-		try {
-			boolean match = true;
-			while (true) {
-				String l1 = refReader.readLine();
-				String l2 = outReader.readLine();
-				if (l1 != null && l2 != null) {
-					if (!l1.equals(l2)) {
-						System.err.println(" < " + l1);
-						System.err.println(" > " + l2);
-						match = false;
-					}
-				} else if (l1 != null) {
-					System.err.println(" < " + l1);
-					match = false;
-				} else if (l2 != null) {
-					System.err.println(" > " + l2);
-					match = false;
-				} else {
-					break;
-				}
-			}
-			if (!match) {
-				System.err.println();
-				return false;
-			}
-			return true;
-		} finally {
-			outReader.close();
-			refReader.close();
-		}
-	}
-
-	/**
-	 * Grab everything produced by a given input stream until the End-Of-File
-	 * (EOF) is reached. This is implemented as a separate thread to ensure that
-	 * reading from other streams can happen concurrently. For example, we can
-	 * read concurrently from <code>stdin</code> and <code>stderr</code> for
-	 * some process without blocking that process.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	static public class StreamGrabber extends Thread {
-		private InputStream input;
-		private StringBuffer buffer;
-
-		public StreamGrabber(InputStream input, StringBuffer buffer) {
-			this.input = input;
-			this.buffer = buffer;
-			start();
-		}
-
-		@Override
-		public void run() {
-			try {
-				int nextChar;
-				// keep reading!!
-				while ((nextChar = input.read()) != -1) {
-					buffer.append((char) nextChar);
-				}
-			} catch (IOException ioe) {
-			}
 		}
 	}
 }

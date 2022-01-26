@@ -30,6 +30,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wyc.util.TestUtils;
 
 
@@ -265,15 +266,10 @@ public class AllValidVerificationTest {
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 * @throws IOException
 	 */
-	protected void runTest(String name) throws IOException {
+	protected void runTest(Trie path) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
-
-		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
-				.setTestName(testName).setVerification(true).run();
-
-		boolean r = p.first();
-		System.out.print(p.second());
-
+		boolean r = new wyc.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir).setTarget(path).addSource(path)
+				.setVerification(true).run();
 		if (!r) {
 			fail("Test failed to compile!");
 		}
@@ -285,9 +281,10 @@ public class AllValidVerificationTest {
 
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
-	private final String testName;
+	private final Trie testName;
+
 	public AllValidVerificationTest(String testName) {
-		this.testName = testName;
+		this.testName = Trie.fromString(testName);
 	}
 
 	// Here we enumerate all available test cases.

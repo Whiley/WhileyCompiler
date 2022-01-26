@@ -15,8 +15,13 @@ package wyc.testing;
 
 import static org.junit.Assert.fail;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.*;
 
 import org.junit.Assume;
@@ -27,6 +32,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wycc.util.Pair;
+import wycc.util.Trie;
 import wyc.util.TestUtils;
 
 
@@ -237,31 +243,76 @@ public class AllInvalidTest {
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 * @throws IOException
 	 */
-	protected void runTest(String name) throws IOException {
+	protected void runTest(Trie path) throws IOException {
 		File whileySrcDir = new File(WHILEY_SRC_DIR);
+		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
+		PrintStream psyserr = new PrintStream(syserr);
+		//
+		boolean r = new wyc.Compiler().setOutput(psyserr).setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
+				.setTarget(path).addSource(path).setVerification(true).setCounterExamples(true).setStrict(true).run();
+		if (r) {
+			fail("Test should not have compiled!");
+		} else {
+			// Now, let's check the expected output against the file which
+			// contains the sample output for this test
+			String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + path + ".sysout";
+			psyserr.flush();
+			// Convert bytes produced into resulting string.
+			byte[] errBytes = syserr.toByteArray();
+			String output = new String(errBytes);
+			// Translate any Windows file separators to Unix.
+			output = output.replaceAll("\\\\","/");
+			// Build failed, so check output
+			if(!compare(output,sampleOutputFile)) {
+				fail("Output does not match reference");
+			}
+		}
+	}
 
-		Pair<Boolean, String> p = new TestUtils.Compiler().setWhileyDir(whileySrcDir).setWyilDir(whileySrcDir)
-				.setTestName(testName).setVerification(true).setCounterExamples(true).setStrict(true).run();
-
-		boolean r = p.first();
-		String output = p.second();
-		// Now, let's check the expected output against the file which
-		// contains the sample output for this test
-		String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
-				+ ".sysout";
-
-		//			Following used when sample output changed.
-//					try {
-//						FileWriter fw = new FileWriter(sampleOutputFile);
-//						fw.write(output);
-//						fw.close();
-//					} catch(Exception e) {}
-
-		// Translate any Windows file separators to Unix.
-		output = output.replaceAll("\\\\","/");
-		// Build failed, so check output
-		if(!TestUtils.compare(output,sampleOutputFile)) {
-			fail("Output does not match reference");
+	/**
+	 * Compare the output of executing java on the test case with a reference
+	 * file. If the output differs from the reference output, then the offending
+	 * line is written to the stdout and an exception is thrown.
+	 *
+	 * @param output
+	 *            This provides the output from executing java on the test case.
+	 * @param referenceFile
+	 *            The full path to the reference file. This should use the
+	 *            appropriate separator char for the host operating system.
+	 * @throws IOException
+	 */
+	public static boolean compare(String output, String referenceFile) throws IOException {
+		BufferedReader outReader = new BufferedReader(new StringReader(output));
+		BufferedReader refReader = new BufferedReader(new FileReader(new File(referenceFile)));
+		try {
+			boolean match = true;
+			while (true) {
+				String l1 = refReader.readLine();
+				String l2 = outReader.readLine();
+				if (l1 != null && l2 != null) {
+					if (!l1.equals(l2)) {
+						System.err.println(" < " + l1);
+						System.err.println(" > " + l2);
+						match = false;
+					}
+				} else if (l1 != null) {
+					System.err.println(" < " + l1);
+					match = false;
+				} else if (l2 != null) {
+					System.err.println(" > " + l2);
+					match = false;
+				} else {
+					break;
+				}
+			}
+			if (!match) {
+				System.err.println();
+				return false;
+			}
+			return true;
+		} finally {
+			outReader.close();
+			refReader.close();
 		}
 	}
 
@@ -271,9 +322,9 @@ public class AllInvalidTest {
 
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
-	private final String testName;
+	private final Trie testName;
 	public AllInvalidTest(String testName) {
-		this.testName = testName;
+		this.testName = Trie.fromString(testName);
 	}
 
 	// Here we enumerate all available test cases.
@@ -285,7 +336,7 @@ public class AllInvalidTest {
 	// Skip ignored tests
 	@Before
 	public void beforeMethod() {
-		String ignored = IGNORED.get(this.testName);
+		String ignored = IGNORED.get(this.testName.toString());
 		Assume.assumeTrue("Test " + this.testName + " skipped: " + ignored, ignored == null);
 	}
 

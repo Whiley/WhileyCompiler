@@ -15,6 +15,7 @@ package wyc;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.*;
 
 import wyc.lang.WhileyFile;
@@ -32,7 +33,11 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  *
  */
-public class Main {
+public class Compiler {
+	/**
+	 * The output stream from this compiler.
+	 */
+	private PrintStream out = System.err;
 	/**
 	 * Source directory containing whiley files.
 	 */
@@ -42,47 +47,81 @@ public class Main {
 	 */
 	private File wyildir = new File(".");
 	/**
+	 * Identify paths for source files to compile.
+	 */
+	private List<Trie> sources = new ArrayList<>();
+	/**
+	 * Identify path for binary target to generate.
+	 */
+	private Trie target = Trie.fromString("main");
+	/**
 	 * WyIL dependencies to include during compilation.
 	 */
 	private List<File> whileypath;
+	private boolean verification;
+	private boolean counterexamples;
 	private boolean strict;
 	private boolean brief;
 
-	public Main() {
+	public Compiler() {
 		this.whileypath = Collections.EMPTY_LIST;
 	}
 
-	public Main setStrict(boolean b) {
+	public Compiler setOutput(PrintStream pout) {
+		this.out = pout;
+		return this;
+	}
+
+	public Compiler setStrict(boolean b) {
 		this.strict = b;
 		return this;
 	}
 
-	public Main setBrief(boolean b) {
+	public Compiler setVerification(boolean b) {
+		this.verification = b;
+		return this;
+	}
+
+	public Compiler setCounterExamples(boolean b) {
+		this.counterexamples = b;
+		return this;
+	}
+
+	public Compiler setBrief(boolean b) {
 		this.brief = b;
 		return this;
 	}
 
-	public Main setWhileyPath(List<File> whileypath) {
+	public Compiler setTarget(Trie target) {
+		this.target = target;
+		return this;
+	}
+
+	public Compiler addSource(Trie source) {
+		this.sources.add(source);
+		return this;
+	}
+
+	public Compiler setWhileyPath(List<File> whileypath) {
 		this.whileypath = whileypath;
 		return this;
 	}
 
-	public Main setWhileyDir(File whileydir) {
+	public Compiler setWhileyDir(File whileydir) {
 		this.whileydir = whileydir;
 		return this;
 	}
 
-	public Main setWyilDir(File wyildir) {
+	public Compiler setWyilDir(File wyildir) {
 		this.wyildir = wyildir;
 		return this;
 	}
 
-	public boolean compile(List<String> srcfiles, Trie target) throws IOException {
+	public boolean run() throws IOException {
 		List<WhileyFile> whileyfiles = new ArrayList<>();
 		// Read source files
-		for (String wf : srcfiles) {
-			Trie path = Trie.fromString(wf.replace(".whiley", ""));
-			whileyfiles.add(readWhileyFile(path, whileydir, wf));
+		for (Trie sf : sources) {
+			whileyfiles.add(readWhileyFile(whileydir, sf));
 		}
 		ArrayList<WyilFile> dependencies = new ArrayList<>();
 		// Extract any dependencies
@@ -95,13 +134,12 @@ public class Main {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		printSyntacticMarkers(System.err, binary, brief);
+		printSyntacticMarkers(out, binary, brief);
 		// Write generated WyIL file
-		writeWyilFile(target,binary,wyildir);
+		writeWyilFile(wyildir,target,binary);
 		//
 		return binary.isValid();
 	}
-
 
 	/**
 	 * Command-line options
@@ -128,10 +166,14 @@ public class Main {
 		Trie target = Trie.fromString((String) options.get("output"));
 		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
 		// Construct Main object
-		Main main = new Main().setStrict(strict).setBrief(brief).setWhileyDir(whileydir).setWyilDir(wyildir)
-				.setWhileyPath(whileypath);
+		Compiler main = new Compiler().setTarget(target).setStrict(strict).setBrief(brief).setWhileyDir(whileydir)
+				.setWyilDir(wyildir).setWhileyPath(whileypath);
+		//
+		for(String arg : args) {
+			main.addSource(Trie.fromString(arg));
+		}
 		// Compile Whiley source file(s).
-		boolean result = main.compile(args, target);
+		boolean result = main.run();
 		// Produce exit code
 		System.exit(result ? 0 : 1);
 	}
@@ -209,9 +251,10 @@ public class Main {
 	 * @return
 	 * @throws IOException
 	 */
-	public static WhileyFile readWhileyFile(Trie id, File dir, String filename) throws IOException {
-		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
-			return new WhileyFile(id, fin.readAllBytes());
+	public static WhileyFile readWhileyFile(File dir, Trie path) throws IOException {
+		String filename = path.toString() + ".whiley";
+		try (FileInputStream fin = new FileInputStream(new File(dir, filename))) {
+			return new WhileyFile(path, fin.readAllBytes());
 		}
 	}
 	/**
@@ -223,7 +266,8 @@ public class Main {
 	 * @return
 	 * @throws IOException
 	 */
-	public static WyilFile readWyilFile(File dir, String filename) throws IOException {
+	public static WyilFile readWyilFile(File dir, Trie path) throws IOException {
+		String filename = path.toString() + ".wyil";
 		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
 			return new WyilFileReader(fin).read();
 		}
@@ -236,7 +280,7 @@ public class Main {
 	 * @param dir
 	 * @throws IOException
 	 */
-	public static void writeWyilFile(Trie target, WyilFile wf, File dir) throws IOException {
+	public static void writeWyilFile(File dir, Trie target, WyilFile wf) throws IOException {
 		String filename = target.toNativeString() + ".wyil";
 		try (FileOutputStream fout = new FileOutputStream(new File(dir, filename))) {
 			new WyilFileWriter(fout).write(wf);
@@ -295,7 +339,7 @@ public class Main {
 			// If the object in question can be decoded as a syntactic heap then we can look
 			// for syntactic messages.
 			if (b instanceof Syntactic.Heap) {
-				annotated.addAll(extractSyntacticMarkers((Syntactic.Heap) b));
+				annotated.addAll(extractSyntacticMarkers(b));
 			}
 		}
 		//
