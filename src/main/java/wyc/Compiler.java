@@ -138,7 +138,7 @@ public class Compiler {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		printSyntacticMarkers(out, binary, brief);
+		printSyntacticMarkers(out, binary, whileyfiles, brief);
 		// Write generated WyIL file
 		writeWyilFile(wyildir,target,binary);
 		//
@@ -297,26 +297,30 @@ public class Compiler {
 	// Print Markers
 	// =============================================================================
 
+	public static void printBriefSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
+		// When printing brief syntactic markers, we don't need the source WhileyFiles.
+		printSyntacticMarkers(output,target,Collections.EMPTY_LIST,true);
+	}
+
 	/**
 	 * Print out all syntactic markers active within a given piece of content.
 	 *
 	 * @param executor
 	 * @throws IOException
 	 */
-	public static void printSyntacticMarkers(PrintStream output, WyilFile target, boolean brief) throws IOException {
+	public static void printSyntacticMarkers(PrintStream output, WyilFile target, List<WhileyFile> sources, boolean brief) throws IOException {
 		// Extract all syntactic markers from entries in the build graph
 		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			// Log the error message
-			printSyntacticMarkers(output, items.get(i), target.getSourceArtifacts(), brief);
+			printSyntacticMarkers(output, items.get(i), sources, brief);
 		}
 	}
 
 	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker, List<WhileyFile> sources,
 			boolean brief) {
 		// Identify enclosing source file
-		WhileyFile source = getSourceEntry(marker.getSource(), sources);
 		String filename = marker.getSource().toString() + ".whiley";
 		// Determine the source-file span for the given syntactic marker.
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
@@ -325,6 +329,7 @@ public class Compiler {
 			if(brief) {
 				output.println(filename + ":" + span.getStart() + ":" + span.getEnd() + ": " + marker.getMessage());
 			} else {
+				WhileyFile source = getSourceEntry(marker.getSource(), sources);
 				// Read the enclosing line so we can print it
 				TextFile.Line line = source.getEnclosingLine(span.getStart());
 				if (line != null) {

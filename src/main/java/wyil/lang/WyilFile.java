@@ -291,9 +291,9 @@ public class WyilFile extends AbstractCompilationUnit {
 	// Accessors
 	// =========================================================================
 
-	public List<WhileyFile> getSourceArtifacts() {
-		return sourceFiles;
-	}
+//	public List<WhileyFile> getSourceArtifacts() {
+//		return sourceFiles;
+//	}
 
 	public boolean isValid() {
 		return findAll(Syntactic.Marker.class).size() == 0;
@@ -7254,20 +7254,10 @@ public class WyilFile extends AbstractCompilationUnit {
 
 			@Override
 			public Trie getSource() {
-				// **************************************
-				// FIXME: this is really a temporary hack
-				// **************************************
 				WyilFile bin = (WyilFile) getTarget().getHeap();
 				Decl.Unit unit = getTarget().getAncestor(Decl.Unit.class);
 				String nameStr = unit.getName().toString().replace("::", "/");
-				//
-				for(WhileyFile s : bin.getSourceArtifacts()) {
-					String n = s.getPath().toString();
-					if(n.endsWith(nameStr)) {
-						return s.getPath();
-					}
-				}
-				return null;
+				return Trie.fromString(nameStr);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.TWO, "ATTR_error") {
