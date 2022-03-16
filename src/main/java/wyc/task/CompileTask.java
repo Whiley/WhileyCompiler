@@ -80,6 +80,10 @@ public class CompileTask {
 	 * Determines strictness around unsafe
 	 */
 	private boolean strict = false;
+	/**
+	 * Determines whether to fully a link a binary (or not).
+	 */
+	private boolean linking = false;
 
 	public CompileTask(Trie target) {
 		this.target = target;
@@ -93,6 +97,11 @@ public class CompileTask {
 
 	public CompileTask setStrict(boolean flag) {
 		this.strict = flag;
+		return this;
+	}
+
+	public CompileTask setLinking(boolean flag) {
+		this.linking = flag;
 		return this;
 	}
 
@@ -114,7 +123,7 @@ public class CompileTask {
 		}
 		// Perform name resolution.
 		try {
-			r = r && new NameResolution(packages, target).apply();
+			r = r && new NameResolution(packages, target, linking).apply();
 		} catch (IOException e) {
 			// FIXME: this is clearly broken.
 			throw new RuntimeException(e);

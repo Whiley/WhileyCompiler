@@ -63,6 +63,7 @@ public class Compiler {
 	private boolean verification;
 	private boolean counterexamples;
 	private boolean strict;
+	private boolean linking;
 	private boolean brief;
 
 	public Compiler setOutput(PrintStream pout) {
@@ -72,6 +73,11 @@ public class Compiler {
 
 	public Compiler setStrict(boolean b) {
 		this.strict = b;
+		return this;
+	}
+
+	public Compiler setLinking(boolean b) {
+		this.linking = b;
 		return this;
 	}
 
@@ -133,7 +139,7 @@ public class Compiler {
 			extractDependencies(dep,deps);
 		}
 		// Compile WyilFile
-		CompileTask task = new CompileTask(target, deps).setStrict(strict);
+		CompileTask task = new CompileTask(target, deps).setStrict(strict).setLinking(linking);
 		Pair<WyilFile, Boolean> r = task.compile(whileyfiles);
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
@@ -153,6 +159,7 @@ public class Compiler {
 			new OptArg("verbose","v","set verbose output"),
 			new OptArg("strict","s","set strict mode"),
 			new OptArg("brief","b","set brief mode"),
+			new OptArg("linking","l","set linking mode"),
 			new OptArg("output","o",OptArg.STRING,"set output file","main"),
 			new OptArg("whileydir", OptArg.FILEDIR, "Specify where to find Whiley source files", new File(".")),
 			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to place binary (WyIL) files", new File(".")),
@@ -165,13 +172,14 @@ public class Compiler {
 		// Extract config options
 		boolean strict = options.containsKey("strict");
 		boolean brief = options.containsKey("brief");
+		boolean linking = options.containsKey("linking");
 		File whileydir = (File) options.get("whileydir");
 		File wyildir = (File) options.get("wyildir");
 		Trie target = Trie.fromString((String) options.get("output"));
 		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
 		// Construct Main object
-		Compiler main = new Compiler().setTarget(target).setStrict(strict).setBrief(brief).setWhileyDir(whileydir)
-				.setWyilDir(wyildir).setWhileyPath(whileypath);
+		Compiler main = new Compiler().setTarget(target).setStrict(strict).setLinking(linking).setBrief(brief)
+				.setWhileyDir(whileydir).setWyilDir(wyildir).setWhileyPath(whileypath);
 		//
 		for(String arg : args) {
 			arg = arg.replace(".whiley", "");

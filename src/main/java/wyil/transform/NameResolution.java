@@ -76,12 +76,18 @@ public class NameResolution {
 
 	private final SymbolTable symbolTable;
 
+	/**
+	 * If enabled, import all referenced symbols in full (i.e. rather than stubs).
+	 */
+	private boolean linking = false;
+
 	private boolean status = true;
 
-	public NameResolution(List<WyilFile> dependencies, WyilFile target) throws IOException {
+	public NameResolution(List<WyilFile> dependencies, WyilFile target, boolean link) throws IOException {
 		this.target = target;
 		this.symbolTable = new SymbolTable(target,dependencies);
 		this.resolver = new Resolver();
+		this.linking = link;
 	}
 
 	/**
@@ -97,7 +103,7 @@ public class NameResolution {
 		// Keep iterating until all patches are resolved
 		while (patches.size() > 0) {
 			// Create importer
-			Importer importer = new Importer(target, true);
+			Importer importer = new Importer(target, !linking);
 			// Now continue importing until patches all resolved.
 			for (int i = 0; i != patches.size(); ++i) {
 				// Import and link the given patch
