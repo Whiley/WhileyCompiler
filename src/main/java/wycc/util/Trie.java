@@ -14,6 +14,8 @@
 package wycc.util;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -103,6 +105,14 @@ public final class Trie implements Iterable<String>, Comparable<Trie> {
 			throw new IllegalArgumentException("index out-of-bounds");
 		} else {
 			return parent.get(index);
+		}
+	}
+
+	public Path toPath() {
+		if(parent == null) {
+			return Paths.get(component);
+		} else {
+			return parent.toPath().resolve(component);
 		}
 	}
 
@@ -230,7 +240,7 @@ public final class Trie implements Iterable<String>, Comparable<Trie> {
 		if(parent == null || parent == ROOT) {
 			return component;
 		} else {
-			return parent.toString() + File.separatorChar + component;
+			return parent.toNativeString() + File.separatorChar + component;
 		}
 	}
 

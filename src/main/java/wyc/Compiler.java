@@ -15,6 +15,7 @@ package wyc;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -265,7 +266,9 @@ public class Compiler {
 	 * @throws IOException
 	 */
 	public static WhileyFile readWhileyFile(File dir, Trie path) throws IOException {
-		String filename = path.toString() + ".whiley";
+		// First, determine filename
+		String filename = path.toNativeString() + ".whiley";
+		// Second Read the file
 		try (FileInputStream fin = new FileInputStream(new File(dir, filename))) {
 			return new WhileyFile(path, fin.readAllBytes());
 		}
@@ -280,8 +283,10 @@ public class Compiler {
 	 * @throws IOException
 	 */
 	public static WyilFile readWyilFile(File dir, Trie path) throws IOException {
-		String filename = path.toString() + ".wyil";
-		try(FileInputStream fin = new FileInputStream(new File(dir,filename))) {
+		// First, determine filename
+		String filename = path.toNativeString() + ".wyil";
+		// Second Read the file
+		try (FileInputStream fin = new FileInputStream(new File(dir, filename))) {
 			return new WyilFileReader(fin).read();
 		}
 	}
@@ -294,7 +299,9 @@ public class Compiler {
 	 * @throws IOException
 	 */
 	public static void writeWyilFile(File dir, Trie target, WyilFile wf) throws IOException {
+		// First, determine filename
 		String filename = target.toNativeString() + ".wyil";
+		// First, determine filename
 		try (FileOutputStream fout = new FileOutputStream(new File(dir, filename))) {
 			new WyilFileWriter(fout).write(wf);
 			fout.flush();
