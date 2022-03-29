@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -260,6 +261,22 @@ public final class Trie implements Iterable<String>, Comparable<Trie> {
 	}
 
 	public static Trie fromStrings(String... components) {
+		Trie r = ROOT;
+		for(int i=0;i!=components.length;++i) {
+			r = r.append(components[i]);
+		}
+		return r;
+	}
+
+	/**
+	 * Construct a Trie from a native string, where the separator is determined by
+	 * the native filesystem separator char. s
+	 *
+	 * @param str
+	 * @return
+	 */
+	public static Trie fromNativeString(String str) {
+		String[] components = str.split(Pattern.quote(File.separator));
 		Trie r = ROOT;
 		for(int i=0;i!=components.length;++i) {
 			r = r.append(components[i]);

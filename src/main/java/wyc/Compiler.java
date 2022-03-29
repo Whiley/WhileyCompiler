@@ -184,7 +184,7 @@ public class Compiler {
 		//
 		for(String arg : args) {
 			arg = arg.replace(".whiley", "");
-			main.addSource(Trie.fromString(arg));
+			main.addSource(Trie.fromNativeString(arg));
 		}
 		// Compile Whiley source file(s).
 		boolean result = main.run();
