@@ -1498,6 +1498,11 @@ public class WyilFile extends AbstractCompilationUnit {
 				return new Link<T>(DECL_link, operands);
 			}
 
+			@Override
+			public String toString() {
+				return "<link:" + getName() + ">";
+			}
+
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.MANY, Data.ZERO, "DECL_link") {
 				@Override
 				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {

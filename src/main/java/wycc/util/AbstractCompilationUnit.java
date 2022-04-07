@@ -262,7 +262,7 @@ public abstract class AbstractCompilationUnit extends AbstractHeap {
 		@Override
 		public Iterator<T> iterator() {
 			// Create annonymous iterator for iterating over elements.
-			return new Iterator<T>() {
+			return new Iterator<>() {
 				private int index = 0;
 
 				@Override
