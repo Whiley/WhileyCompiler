@@ -101,6 +101,9 @@ public class CompileTask {
 	}
 
 	public CompileTask setLinking(boolean flag) {
+		if(flag) {
+			throw new IllegalArgumentException("Linking is not supported as it is currently not viable. See #1131");
+		}
 		this.linking = flag;
 		return this;
 	}
