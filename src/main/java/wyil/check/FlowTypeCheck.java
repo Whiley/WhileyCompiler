@@ -1803,16 +1803,15 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Typing pushLambdaDeclaration(int var, Decl.Lambda expr, Typing typing, Environment environment) {
-		System.out.println("PUSHING LAMBDA: " + expr + ":" + expr.getType() + " with " + typing.types(var));
 		// Extract parameters from declaration
 		Type params = Decl.Callable.project(expr.getParameters());
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
 		// Split out incoming lambda types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
-		// Type check the body of the lambda using the expected return types
+		// Type check the body of the lambda using the expected return types.
+		// TODO: identify expected returns (see #1132).
 		Type returns = checkExpression(expr.getBody(), null, false, environment);
-		System.out.println("TYPED RETURN: " + returns);
 		//
 		if (returns == null) {
 			// Some kind of error has occurred upstream
