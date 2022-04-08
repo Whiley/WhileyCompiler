@@ -1809,7 +1809,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing.register(typeStandardExpression(expr, var));
 		// Split out incoming lambda types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
-		// Type check the body of the lambda using the expected return types
+		// Type check the body of the lambda using the expected return types.
+		// TODO: identify expected returns (see #1132).
 		Type returns = checkExpression(expr.getBody(), null, false, environment);
 		//
 		if (returns == null) {
