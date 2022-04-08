@@ -1809,24 +1809,10 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing.register(typeStandardExpression(expr, var));
 		// Split out incoming lambda types
 		Typing nTyping = typing.project(row -> forkOnLambda(row, var, params, environment));
-		// Type check the body of the lambda using the expected return types.
-		// TODO: identify expected returns (see #1132).
-		Type returns = checkExpression(expr.getBody(), null, false, environment);
-		//
-		if (returns == null) {
-			// Some kind of error has occurred upstream
-			return nTyping.invalidate();
-		} else {
-			// Determine whether or not this is a pure or impure lambda.
-			Type.Callable type = constructLambdaType(expr, params, returns);
-			// Filter out problematic cases
-			Typing nnTyping = nTyping.map(row -> filterOnSubtype(row, var, type, environment));
-			// Report errors
-			checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
-			checkForError(expr, nTyping, nnTyping, var, type);
-			//
-			return nnTyping;
-		}
+		// Report errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into children
+		return pushExpression(expr.getBody(), r -> getLambdaReturn(r.get(var)), nTyping, environment);
 	}
 
 	private Typing pushNew(int var, Expr.New expr, Typing typing, Environment environment) {
@@ -3104,7 +3090,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		Type supertype = row.get(var);
 		if (supertype instanceof Type.Any) {
 			return row.set(var, subtype);
-		} else if(subtype instanceof Type.Void) {
+		} else if(!(supertype instanceof Type.Void) && subtype instanceof Type.Void) {
 			// NOTE: This is an edge case when we try to use the return value from a
 			// function which returns void. In such case, we want to kill the typing row
 			// dead.

@@ -96,8 +96,8 @@ public class TestUtils {
 		// Runtime checking Old Static Variable Accesses
 		VALID_IGNORED.put("StaticVar_Valid_15","#1122");
 		// Lambda Typing Bug
-		VALID_IGNORED.put("Lambda_Valid_32","#1132");
-		VALID_IGNORED.put("Lambda_Valid_34","#1132");
+//		VALID_IGNORED.put("Lambda_Valid_32","#1132");
+//		VALID_IGNORED.put("Lambda_Valid_34","#1132");
 		// Interpreter Infinite Loop.
 		VALID_IGNORED.put("Infeasible_Function_2", "???");
 		VALID_IGNORED.put("Infeasible_Function_3", "???");
