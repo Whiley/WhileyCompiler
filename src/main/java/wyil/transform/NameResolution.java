@@ -37,7 +37,7 @@ import wyil.util.AbstractConsumer;
  * <p>
  * Responsible for resolving a name which occurs at some position in a
  * compilation unit. This takes into account the context and, if necessary, will
- * traverse important statements to resolve the query. For example, consider a
+ * traverse import statements to resolve the query. For example, consider a
  * compilation unit entitled "file":
  * </p>
  *
@@ -418,6 +418,7 @@ public class NameResolution {
 		public final QualifiedName name;
 		public final Type type;
 		private final Syntactic.Item target;
+		private Patch parent;
 
 		public Patch(boolean isPublic, QualifiedName name, Type type, Syntactic.Item target) {
 			if(name == null || target == null) {
@@ -427,6 +428,28 @@ public class NameResolution {
 			this.name = name;
 			this.type = type;
 			this.target = target;
+		}
+
+		/**
+		 * Set the parent of this patch.
+		 *
+		 * @param parent
+		 */
+		public void setParent(Patch parent) {
+			this.parent = parent;
+		}
+
+		/**
+		 * Get qualified name being resolved at the top-level.
+		 *
+		 * @return
+		 */
+		public QualifiedName getRootName() {
+			if(parent == null) {
+				return name;
+			} else {
+				return parent.getRootName();
+			}
 		}
 
 		/**
@@ -452,7 +475,7 @@ public class NameResolution {
 				ArrayList<Decl.Named> imported = new ArrayList<>();
 				for (Decl.Named d : symbolTable.getRegisteredDeclarations(name)) {
 					// Sanity check import
-					imported.add((Decl.Named) importer.allocate(d));
+					imported.add((Decl.Named) importer.allocate(d, this));
 				}
 				symbolTable.addAvailable(name, imported);
 			} else {
@@ -474,7 +497,7 @@ public class NameResolution {
 			switch (target.getOpcode()) {
 			case EXPR_staticvariable: {
 				Expr.StaticVariableAccess e = (Expr.StaticVariableAccess) target;
-				Decl.StaticVariable d = select(name, Decl.StaticVariable.class);
+				Decl.StaticVariable d = select(Decl.StaticVariable.class);
 				if(d != null) {
 					e.getLink().resolve(d);
 				}
@@ -485,12 +508,12 @@ public class NameResolution {
 				Decl.Link<Decl.Callable> link = e.getLink();
 				if(type != null) {
 					// do nothing?
-					Decl.Callable resolved = select(name, type, Decl.Callable.class);
+					Decl.Callable resolved = select(type, Decl.Callable.class);
 					if (resolved != null) {
 						e.getLink().resolve(resolved);
 					}
 				} else {
-					Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
+					Decl.Callable[] resolved = selectAll(Decl.Callable.class);
 					if (resolved != null) {
 						e.getLink().resolve(resolved);
 					}
@@ -499,7 +522,7 @@ public class NameResolution {
 			}
 			case EXPR_lambdaaccess: {
 				Expr.LambdaAccess e = (Expr.LambdaAccess) target;
-				Decl.Callable[] resolved = selectAll(name, Decl.Callable.class);
+				Decl.Callable[] resolved = selectAll(Decl.Callable.class);
 				if(resolved != null) {
 					e.getLink().resolve(filterParameters(e.getParameterTypes().size(), resolved));
 				}
@@ -508,7 +531,7 @@ public class NameResolution {
 			default:
 			case TYPE_nominal: {
 				Type.Nominal e = (Type.Nominal) target;
-				Decl.Type d = select(name, Decl.Type.class);
+				Decl.Type d = select(Decl.Type.class);
 				if(d != null && e.getParameters().size() != d.getTemplate().size()) {
 					if(e.getParameters().size() > d.getTemplate().size()) {
 						syntaxError(e.getLink().getName(), TOOMANY_TEMPLATE_PARAMETERS);
@@ -537,7 +560,7 @@ public class NameResolution {
 		 *            Declaration kind we are resolving.
 		 * @return
 		 */
-		private <T extends Decl> T select(QualifiedName name, Class<T> kind) {
+		private <T extends Decl> T select(Class<T> kind) {
 			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
 			Identifier id = name.getName();
 			for (int i = 0; i != declarations.size(); ++i) {
@@ -548,7 +571,11 @@ public class NameResolution {
 					return (T) d;
 				}
 			}
-			syntaxError(id, RESOLUTION_ERROR);
+			if(parent == null) {
+				syntaxError(name.getName(), RESOLUTION_ERROR);
+			} else {
+				syntaxError(getRootName().getName(), INTERNAL_RESOLUTION_ERROR, name.getUnit(), name.getName());
+			}
 			return null;
 		}
 
@@ -562,7 +589,7 @@ public class NameResolution {
 		 *            Declaration kind we are resolving.
 		 * @return
 		 */
-		private <T extends Decl> T select(QualifiedName name, Type type, Class<T> kind) {
+		private <T extends Decl> T select(Type type, Class<T> kind) {
 			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
 			Identifier id = name.getName();
 			for (int i = 0; i != declarations.size(); ++i) {
@@ -573,7 +600,11 @@ public class NameResolution {
 					return (T) d;
 				}
 			}
-			syntaxError(id, RESOLUTION_ERROR);
+			if(parent == null) {
+				syntaxError(name.getName(), RESOLUTION_ERROR);
+			} else {
+				syntaxError(getRootName().getName(), INTERNAL_RESOLUTION_ERROR, name.getUnit(), name.getName());
+			}
 			return null;
 		}
 
@@ -588,7 +619,7 @@ public class NameResolution {
 		 *            Declaration kind we are resolving.
 		 * @return
 		 */
-		private <T extends Decl> T[] selectAll(QualifiedName name, Class<T> kind) {
+		private <T extends Decl> T[] selectAll(Class<T> kind) {
 			List<Decl.Named> declarations = symbolTable.getAvailableDeclarations(name);
 			Identifier id = name.getName();
 			// Determine how many matches
@@ -611,7 +642,11 @@ public class NameResolution {
 			}
 			// Check for resolution error
 			if (matches.length == 0) {
-				syntaxError(id, RESOLUTION_ERROR);
+				if(parent == null) {
+					syntaxError(name.getName(), RESOLUTION_ERROR);
+				} else {
+					syntaxError(getRootName().getName(), INTERNAL_RESOLUTION_ERROR, name.getUnit(), name.getName());
+				}
 				return null;
 			} else {
 				return matches;
@@ -668,6 +703,25 @@ public class NameResolution {
 			super(heap);
 			this.stubsOnly = stubsOnly;
 			this.REF_UNKNOWN = super.allocate(REF_UNKNOWN_DECL);
+		}
+
+		/**
+		 * Import a given item as a result of a given patch.
+		 *
+		 * @param item
+		 * @param parent
+		 * @return
+		 */
+		public Syntactic.Item allocate(Syntactic.Item item, Patch parent) {
+			int index = patches.size();
+			// Allocate the item
+			Syntactic.Item r = allocate(item);
+			// Set parent for patches
+			for(int i=index;i<patches.size();++i) {
+				patches.get(i).setParent(parent);
+			}
+			//
+			return r;
 		}
 
 		@Override
