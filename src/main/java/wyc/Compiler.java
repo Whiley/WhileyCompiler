@@ -149,7 +149,7 @@ public class Compiler {
 		// Write generated WyIL file
 		writeWyilFile(wyildir,target,binary);
 		//
-		return binary.isValid();
+		return r.second() && binary.isValid();
 	}
 
 	/**
@@ -342,7 +342,7 @@ public class Compiler {
 		// Sanity check we found it
 			// print the error message
 			if(brief) {
-				output.println(filename + ":" + span.getStart() + ":" + span.getEnd() + ": " + marker.getMessage());
+				output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage());
 			} else {
 				WhileyFile source = getSourceEntry(marker.getSource(), sources);
 				// Read the enclosing line so we can print it
