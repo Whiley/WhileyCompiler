@@ -25,3 +25,9 @@ follows:
    * **Miscellaneous**. 
 
 ## Intermediate Language
+
+### Syntactic Heaps
+
+### Error Markers
+
+### Spans
