@@ -1,6 +1,6 @@
-# The Whiley Compiler
+# Overview
 
-The Whiley Compiler (WyC) is one component of the larger [Whiley Build Tool](https://github.com/Whiley/WhileyBuildTool).  When you run `wy build` on the command line, you are running the build tool which, in turn, runs the Whiley Compiler (amongst other things).
+The Whiley Compiler (WyC) is one component of the larger [Whiley Build Tool](https://github.com/Whiley/WhileyBuildTool).  When you run `wy build` on the command line, you are running the build tool which, in turn, runs the Whiley Compiler (amongst other things).  The compiler is responsible for turning `whiley` source files into `wyil` intermediate language files.  The compiler doesn't generate JavaScript or other binary code, as these aspects are handled by other components (e.g. the [Whiley JavaScript backend](https://github.com/Whiley/Whiley2JavaScript/)).
 
 ## Installation
 
@@ -14,4 +14,4 @@ CONTRIBUTORS file for more details.
 
 ## Documentation
 
-An overview of the compiler's architecture is provided in [ARCHITECTURE.md](ARCHITECTURE.md]
+An overview of the compiler's architecture is provided in [ARCHITECTURE.md](ARCHITECTURE.md).
