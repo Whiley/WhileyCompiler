@@ -94,6 +94,11 @@ public class MoveAnalysis extends AbstractConsumer<Boolean> implements Compiler.
 	}
 
 	@Override
+	public void visitProperty(Decl.Property fm, Boolean consumed) {
+		visitStatement((fm.getBody()), false);
+	}
+
+	@Override
 	public void visitStaticVariable(Decl.StaticVariable stmt, Boolean consumed) {
 		visitExpression(stmt.getInitialiser(), true);
 	}

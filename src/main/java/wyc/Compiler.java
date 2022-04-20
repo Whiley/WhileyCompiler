@@ -41,6 +41,10 @@ public class Compiler {
 	 */
 	private PrintStream out = System.out;
 	/**
+	 * Indicate whether or not to produce "brief" output. Brief is the default.
+	 */
+	private boolean brief = false;
+	/**
 	 * Source directory containing whiley files.
 	 */
 	private File whileydir = new File(".");
@@ -96,6 +100,11 @@ public class Compiler {
 		return this;
 	}
 
+	public Compiler setBrief(boolean flag) {
+		this.brief = flag;
+		return this;
+	}
+
 	public Compiler addSource(Trie source) {
 		this.sources.add(source);
 		return this;
@@ -139,7 +148,11 @@ public class Compiler {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		printSyntacticMarkers(out, binary);
+		if(brief) {
+			printSyntacticMarkers(out, binary);
+		} else {
+			printSyntacticMarkers(out, whileyfiles, binary);
+		}
 		// Write generated WyIL file
 		writeWyilFile(wyildir,target,binary);
 		//
@@ -320,6 +333,7 @@ public class Compiler {
 		}
 	}
 
+
 	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker) {
 		// Identify enclosing source file
 		String filename = marker.getSource().toString() + ".whiley";
@@ -327,6 +341,40 @@ public class Compiler {
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
 		// print the error message
 		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage().replace("\n", "\\n"));
+	}
+
+	/**
+	 * Print out all syntactic markers active within a given piece of content.
+	 *
+	 * @param executor
+	 * @throws IOException
+	 */
+	public static void printSyntacticMarkers(PrintStream output, List<WhileyFile> whileyfiles, WyilFile target) throws IOException {
+		// Extract all syntactic markers from entries in the build graph
+		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
+		// For each marker, print out error messages appropriately
+		for (int i = 0; i != items.size(); ++i) {
+			// Log the error message
+			printSyntacticMarkers(output, items.get(i), whileyfiles);
+		}
+	}
+
+	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker, List<WhileyFile> sources) {
+		// Identify enclosing source file
+		String filename = marker.getSource().toString() + ".whiley";
+		// Determine the source-file span for the given syntactic marker.
+		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// print the error message
+		WhileyFile source = getSourceEntry(marker.getSource(), sources);
+		// Read the enclosing line so we can print it
+		TextFile.Line line = source.getEnclosingLine(span.getStart());
+		if (line != null) {
+			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
+			// Finally print the line highlight
+			printLineHighlight(output, span, line);
+		} else {
+			output.println(filename + ":?: " + marker.getMessage());
+		}
 	}
 
 	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
@@ -357,5 +405,41 @@ public class Compiler {
 		annotated.addAll(h.findAll(Syntactic.Marker.class));
 		//
 		return annotated;
+	}
+
+	private static void printLineHighlight(PrintStream output, Syntactic.Span span, TextFile.Line enclosing) {
+		// Extract line text
+		String text = enclosing.getText();
+		// Determine start and end of span
+		int start = span.getStart() - enclosing.getOffset();
+		int end = Math.min(text.length() - 1, span.getEnd() - enclosing.getOffset());
+		// NOTE: in the following lines I don't print characters
+		// individually. The reason for this is that it messes up the
+		// ANT task output.
+		output.println(text);
+		// First, mirror indendation
+		String str = "";
+		for (int i = 0; i < start; ++i) {
+			if (text.charAt(i) == '\t') {
+				str += "\t";
+			} else {
+				str += " ";
+			}
+		}
+		// Second, place highlights
+		for (int i = start; i <= end; ++i) {
+			str += "^";
+		}
+		output.println(str);
+	}
+
+	public static WhileyFile getSourceEntry(Trie id, List<WhileyFile> sources) {
+		//
+		for (WhileyFile s : sources) {
+			if (id.equals(s.getPath())) {
+				return s;
+			}
+		}
+		return null;
 	}
 }
