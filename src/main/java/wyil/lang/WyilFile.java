@@ -6555,9 +6555,7 @@ public class WyilFile extends AbstractCompilationUnit {
 
 			@Override
 			public boolean isWriteable() {
-				// It never makes sense to ask this question of a type variable, since we cannot
-				// possible known the answer.
-				throw new UnsupportedOperationException();
+				return false;
 			}
 
 			@Override
