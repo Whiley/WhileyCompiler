@@ -660,13 +660,16 @@ public class WhileyFileParser {
 	 * @param scope
 	 */
 	private void addFieldAliases(Decl.Variable p, EnclosingScope scope) {
-		Type t = p.getType();
-		if (t instanceof Type.Record) {
-			// This is currently the only situation in which field aliases can
-			// arise.
-			Type.Record r = (Type.Record) t;
-			for (Type.Field fd : r.getFields()) {
-				scope.declareFieldAlias(fd.getName());
+		// Only add field aliases if no explicit declaration is given.
+		if(p.getName().get().equals("$")) {
+			Type t = p.getType();
+			if (t instanceof Type.Record) {
+				// This is currently the only situation in which field aliases can
+				// arise.
+				Type.Record r = (Type.Record) t;
+				for (Type.Field fd : r.getFields()) {
+					scope.declareFieldAlias(fd.getName());
+				}
 			}
 		}
 	}
@@ -4793,7 +4796,6 @@ public class WhileyFileParser {
 		 * refer directly to the field, rather than through a declared variable.
 		 */
 		private final HashSet<Identifier> fieldAliases;
-
 		/**
 		 * The set of declared type variables in the enclosing scope.
 		 */
@@ -4977,6 +4979,11 @@ public class WhileyFileParser {
 				String str = name.toString();
 				return !str.equals("*") && !str.equals("this");
 			}
+		}
+
+		@Override
+		public String toString() {
+			return environment.toString() + ":" + fieldAliases + ":" + typeVariables;
 		}
 	}
 
