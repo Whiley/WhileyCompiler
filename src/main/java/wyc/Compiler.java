@@ -65,7 +65,6 @@ public class Compiler {
 	private boolean counterexamples;
 	private boolean strict;
 	private boolean linking;
-	private boolean brief;
 
 	public Compiler setOutput(PrintStream pout) {
 		this.out = pout;
@@ -89,11 +88,6 @@ public class Compiler {
 
 	public Compiler setCounterExamples(boolean b) {
 		this.counterexamples = b;
-		return this;
-	}
-
-	public Compiler setBrief(boolean b) {
-		this.brief = b;
 		return this;
 	}
 
@@ -145,7 +139,7 @@ public class Compiler {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		printSyntacticMarkers(out, binary, whileyfiles, brief);
+		printSyntacticMarkers(out, binary);
 		// Write generated WyIL file
 		writeWyilFile(wyildir,target,binary);
 		//
@@ -159,7 +153,6 @@ public class Compiler {
 			// Standard options
 			new OptArg("verbose","v","set verbose output"),
 			new OptArg("strict","s","set strict mode"),
-			new OptArg("brief","b","set brief mode"),
 			new OptArg("linking","l","set linking mode"),
 			new OptArg("output","o",OptArg.STRING,"set output file","main"),
 			new OptArg("whileydir", OptArg.FILEDIR, "Specify where to find Whiley source files", new File(".")),
@@ -172,15 +165,14 @@ public class Compiler {
 		Map<String, Object> options = OptArg.parseOptions(args, OPTIONS);
 		// Extract config options
 		boolean strict = options.containsKey("strict");
-		boolean brief = options.containsKey("brief");
 		boolean linking = options.containsKey("linking");
 		File whileydir = (File) options.get("whileydir");
 		File wyildir = (File) options.get("wyildir");
 		Trie target = Trie.fromString((String) options.get("output"));
 		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
 		// Construct Main object
-		Compiler main = new Compiler().setTarget(target).setStrict(strict).setLinking(linking).setBrief(brief)
-				.setWhileyDir(whileydir).setWyilDir(wyildir).setWhileyPath(whileypath);
+		Compiler main = new Compiler().setTarget(target).setStrict(strict).setLinking(linking).setWhileyDir(whileydir)
+				.setWyilDir(wyildir).setWhileyPath(whileypath);
 		//
 		for(String arg : args) {
 			arg = arg.replace(".whiley", "");
@@ -312,49 +304,29 @@ public class Compiler {
 	// Print Markers
 	// =============================================================================
 
-	public static void printBriefSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
-		// When printing brief syntactic markers, we don't need the source WhileyFiles.
-		printSyntacticMarkers(output,target,Collections.EMPTY_LIST,true);
-	}
-
 	/**
 	 * Print out all syntactic markers active within a given piece of content.
 	 *
 	 * @param executor
 	 * @throws IOException
 	 */
-	public static void printSyntacticMarkers(PrintStream output, WyilFile target, List<WhileyFile> sources, boolean brief) throws IOException {
+	public static void printSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
 		// Extract all syntactic markers from entries in the build graph
 		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			// Log the error message
-			printSyntacticMarkers(output, items.get(i), sources, brief);
+			printSyntacticMarkers(output, items.get(i));
 		}
 	}
 
-	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker, List<WhileyFile> sources,
-			boolean brief) {
+	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker) {
 		// Identify enclosing source file
 		String filename = marker.getSource().toString() + ".whiley";
 		// Determine the source-file span for the given syntactic marker.
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
-		// Sanity check we found it
-			// print the error message
-			if(brief) {
-				output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage());
-			} else {
-				WhileyFile source = getSourceEntry(marker.getSource(), sources);
-				// Read the enclosing line so we can print it
-				TextFile.Line line = source.getEnclosingLine(span.getStart());
-				if (line != null) {
-					output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
-					// Finally print the line highlight
-					printLineHighlight(output, span, line);
-				} else {
-					output.println(filename + ":?: " + marker.getMessage());
-				}
-			}
+		// print the error message
+		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage());
 	}
 
 	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
@@ -386,41 +358,4 @@ public class Compiler {
 		//
 		return annotated;
 	}
-
-	private static void printLineHighlight(PrintStream output, Syntactic.Span span, TextFile.Line enclosing) {
-		// Extract line text
-		String text = enclosing.getText();
-		// Determine start and end of span
-		int start = span.getStart() - enclosing.getOffset();
-		int end = Math.min(text.length() - 1, span.getEnd() - enclosing.getOffset());
-		// NOTE: in the following lines I don't print characters
-		// individually. The reason for this is that it messes up the
-		// ANT task output.
-		output.println(text);
-		// First, mirror indendation
-		String str = "";
-		for (int i = 0; i < start; ++i) {
-			if (text.charAt(i) == '\t') {
-				str += "\t";
-			} else {
-				str += " ";
-			}
-		}
-		// Second, place highlights
-		for (int i = start; i <= end; ++i) {
-			str += "^";
-		}
-		output.println(str);
-	}
-
-	public static WhileyFile getSourceEntry(Trie id, List<WhileyFile> sources) {
-		//
-		for (WhileyFile s : sources) {
-			if (id.equals(s.getPath())) {
-				return s;
-			}
-		}
-		return null;
-	}
-
 }
