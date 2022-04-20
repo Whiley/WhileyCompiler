@@ -161,7 +161,9 @@ public final class OptArg {
 	}
 
 	public final static STRING STRING = new STRING();
+	public final static STRINGARRAY STRINGARRAY = new STRINGARRAY();
 	public final static INT INT = new INT();
+	public final static LONG LONG  = new LONG();
 	public final static FILE FILE = new FILE();
 	public final static FILEDIR FILEDIR = new FILEDIR();
 	public final static FILELIST FILELIST = new FILELIST();
@@ -178,6 +180,18 @@ public final class OptArg {
 		}
 	}
 
+	private static final class STRINGARRAY implements Kind {
+		@Override
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] array = option.split(":");
+			options.put(arg,array);
+		}
+		@Override
+		public String toString() {
+			return "<string array>";
+		}
+	}
+
 	private static final class INT implements Kind {
 		@Override
 		public void process(String arg, String option, Map<String,Object> options) {
@@ -186,6 +200,17 @@ public final class OptArg {
 		@Override
 		public String toString() {
 			return "<int>";
+		}
+	}
+
+	private static final class LONG implements Kind {
+		@Override
+		public void process(String arg, String option, Map<String,Object> options) {
+			options.put(arg,Long.parseLong(option));
+		}
+		@Override
+		public String toString() {
+			return "<long>";
 		}
 	}
 
