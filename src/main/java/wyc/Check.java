@@ -133,9 +133,9 @@ public class Check {
 			new OptArg("max",OptArg.INT, "Specify maximum integer value", QuickCheck.DEFAULT_CONTEXT.getIntegerMaximum()),
 			new OptArg("length",OptArg.INT, "Specify maximum array length", QuickCheck.DEFAULT_CONTEXT.getMaxArrayLength()),
 			new OptArg("depth",OptArg.INT, "Specify maximum recursive type depth", QuickCheck.DEFAULT_CONTEXT.getRecursiveTypeDepth()),
+			new OptArg("width",OptArg.INT, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getAliasingWidth()),
 			new OptArg("rotation",OptArg.INT, "Specify lambda rotation", QuickCheck.DEFAULT_CONTEXT.getLambdaWidth()),
-			new OptArg("aliases",OptArg.INT, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getAliasingWidth()),
-			new OptArg("timeout",OptArg.INT, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getTimeout()),
+			new OptArg("timeout",OptArg.LONG, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getTimeout()),
 			new OptArg("ignores",OptArg.STRINGARRAY, "Specify methods to ignore", QuickCheck.DEFAULT_CONTEXT.getIgnores())
 	};
 	//
@@ -150,13 +150,13 @@ public class Check {
 		int maxInt = (Integer) options.get("max");
 		int maxArrayLength = (Integer) options.get("length");
 		int maxTypeDepth = (Integer) options.get("depth");
-		int maxAliases = (Integer) options.get("aliases");
+		int maxAliasWidth = (Integer) options.get("width");
 		int rotation = (Integer) options.get("rotation");
-		int timeout = (Integer) options.get("timeout");
+		long timeout = (Long) options.get("timeout");
 		String[] ignores = (String[]) options.get("ignores");
 		// Construct Main object
 		Check main = new Check().setVerbose(verbose).setWyilDir(wyildir).setWhileyPath(whileypath)
-				.addConfig(c -> c.setIntegerRange(minInt, maxInt)).addConfig(c -> c.setAliasingWidth(maxAliases))
+				.addConfig(c -> c.setIntegerRange(minInt, maxInt)).addConfig(c -> c.setAliasingWidth(maxAliasWidth))
 				.addConfig(c -> c.setArrayLength(maxArrayLength)).addConfig(c -> c.setTypeDepth(maxTypeDepth))
 				.addConfig(c -> c.setLambdaWidth(rotation)).addConfig(c -> c.setTimeout(timeout))
 				.addConfig(c -> c.setIgnores(ignores));
