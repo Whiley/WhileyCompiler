@@ -17,12 +17,14 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.*;
 
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.task.QuickCheck;
+import wyc.task.QuickCheck.Context;
 import wycc.lang.Syntactic;
 import wycc.util.*;
 import wyil.io.WyilFileReader;
@@ -57,6 +59,15 @@ public class Check {
 	 * WyIL dependencies to include during compilation.
 	 */
 	private List<File> whileypath = Collections.EMPTY_LIST;
+	/**
+	 * List of config modifiers.
+	 */
+	private List<Function<QuickCheck.Context,QuickCheck.Context>> configs = new ArrayList<>();
+
+	public Check addConfig(Function<Context,Context> config) {
+		configs.add(config);
+		return this;
+	}
 
 	public Check setOutput(PrintStream pout) {
 		this.out = pout;
@@ -91,7 +102,10 @@ public class Check {
 		QuickCheck task = new QuickCheck(logger);
 		// Start with default context
 		QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
-		// FIXME: modify context!
+		// Apply all configurations
+		for(Function<Context,Context> c : configs) {
+			context = c.apply(context);
+		}
 		// FIXME: dependencies!
 		// Check each WyIL file requested
 		for(Trie source : sources) {
@@ -114,7 +128,15 @@ public class Check {
 			// Standard options
 			new OptArg("verbose","v","set verbose output"),
 			new OptArg("wyildir", OptArg.FILEDIR, "Specify where to find binary (WyIL) files", new File(".")),
-			new OptArg("whileypath", OptArg.FILELIST, "Specify additional dependencies", new ArrayList<>())
+			new OptArg("whileypath", OptArg.FILELIST, "Specify additional dependencies", new ArrayList<>()),
+			new OptArg("min",OptArg.INT, "Specify minimum integer value", QuickCheck.DEFAULT_CONTEXT.getIntegerMinimum()),
+			new OptArg("max",OptArg.INT, "Specify maximum integer value", QuickCheck.DEFAULT_CONTEXT.getIntegerMaximum()),
+			new OptArg("length",OptArg.INT, "Specify maximum array length", QuickCheck.DEFAULT_CONTEXT.getMaxArrayLength()),
+			new OptArg("depth",OptArg.INT, "Specify maximum recursive type depth", QuickCheck.DEFAULT_CONTEXT.getRecursiveTypeDepth()),
+			new OptArg("rotation",OptArg.INT, "Specify lambda rotation", QuickCheck.DEFAULT_CONTEXT.getLambdaWidth()),
+			new OptArg("aliases",OptArg.INT, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getAliasingWidth()),
+			new OptArg("timeout",OptArg.INT, "Specify maximum alias width", QuickCheck.DEFAULT_CONTEXT.getTimeout()),
+			new OptArg("ignores",OptArg.STRINGARRAY, "Specify methods to ignore", QuickCheck.DEFAULT_CONTEXT.getIgnores())
 	};
 	//
 	public static void main(String[] _args) throws IOException {
@@ -124,8 +146,20 @@ public class Check {
 		boolean verbose = options.containsKey("verbose");
 		File wyildir = (File) options.get("wyildir");
 		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
+		int minInt = (Integer) options.get("min");
+		int maxInt = (Integer) options.get("max");
+		int maxArrayLength = (Integer) options.get("length");
+		int maxTypeDepth = (Integer) options.get("depth");
+		int maxAliases = (Integer) options.get("aliases");
+		int rotation = (Integer) options.get("rotation");
+		int timeout = (Integer) options.get("timeout");
+		String[] ignores = (String[]) options.get("ignores");
 		// Construct Main object
-		Check main = new Check().setVerbose(verbose).setWyilDir(wyildir).setWhileyPath(whileypath);
+		Check main = new Check().setVerbose(verbose).setWyilDir(wyildir).setWhileyPath(whileypath)
+				.addConfig(c -> c.setIntegerRange(minInt, maxInt)).addConfig(c -> c.setAliasingWidth(maxAliases))
+				.addConfig(c -> c.setArrayLength(maxArrayLength)).addConfig(c -> c.setTypeDepth(maxTypeDepth))
+				.addConfig(c -> c.setLambdaWidth(rotation)).addConfig(c -> c.setTimeout(timeout))
+				.addConfig(c -> c.setIgnores(ignores));
 		//
 		for(String arg : args) {
 			main.addSource(Trie.fromString(arg));

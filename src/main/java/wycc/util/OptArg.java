@@ -161,6 +161,7 @@ public final class OptArg {
 	}
 
 	public final static STRING STRING = new STRING();
+	public final static STRINGARRAY STRINGARRAY = new STRINGARRAY();
 	public final static INT INT = new INT();
 	public final static FILE FILE = new FILE();
 	public final static FILEDIR FILEDIR = new FILEDIR();
@@ -175,6 +176,18 @@ public final class OptArg {
 		@Override
 		public String toString() {
 			return "<string>";
+		}
+	}
+
+	private static final class STRINGARRAY implements Kind {
+		@Override
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] array = option.split(":");
+			options.put(arg,array);
+		}
+		@Override
+		public String toString() {
+			return "<string array>";
 		}
 	}
 
