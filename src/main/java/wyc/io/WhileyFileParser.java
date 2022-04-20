@@ -3842,6 +3842,8 @@ public class WhileyFileParser {
 			return parseBracketedType(scope);
 		case LeftCurly:
 			return parseRecordType(scope);
+		case LogicalAnd:
+			return parseReferenceReferenceType(scope);
 		case Ampersand:
 			return parseReferenceType(scope);
 		case Identifier:
@@ -3875,6 +3877,17 @@ public class WhileyFileParser {
 		// Parse bound
 		Type element = parseArrayType(scope);
 		Type type = new Type.Reference(element);
+		return annotateSourceLocation(type, start);
+	}
+
+	private Type parseReferenceReferenceType(EnclosingScope scope) {
+		int start = index;
+		match(LogicalAnd);
+		// Parse bound
+		Type element = parseArrayType(scope);
+		Type type = new Type.Reference(element);
+		type = annotateSourceLocation(type, start);
+		type = new Type.Reference(type);
 		return annotateSourceLocation(type, start);
 	}
 

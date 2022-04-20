@@ -1,5 +1,5 @@
 method m(&&int p)
-ensures **p = 0:
+ensures **p == 0:
     **p = 0
 
 public export method test():
