@@ -326,7 +326,7 @@ public class Compiler {
 		// Determine the source-file span for the given syntactic marker.
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
 		// print the error message
-		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage());
+		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage().replace("\n", "\\n"));
 	}
 
 	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
