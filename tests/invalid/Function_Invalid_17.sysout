@@ -1,0 +1,3 @@
+Function_Invalid_17.whiley:2: dereference not permitted
+    if p->f == 0:
+          ^

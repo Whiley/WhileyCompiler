@@ -206,6 +206,14 @@ public class FunctionalCheck extends AbstractConsumer<FunctionalCheck.Context> i
 	}
 
 	@Override
+	public void visitFieldDereference(Expr.FieldDereference expr, Context context) {
+		if (context == Context.PURE) {
+			syntaxError(expr, REFERENCE_ACCESS_NOT_PERMITTED);
+		}
+		super.visitFieldDereference(expr, context);
+	}
+
+	@Override
 	public void visitDoWhile(Stmt.DoWhile stmt, Context context) {
 		visitStatement(stmt.getBody(), context);
 		visitExpression(stmt.getCondition(), context);
