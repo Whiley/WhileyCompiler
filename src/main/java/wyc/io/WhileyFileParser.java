@@ -1673,7 +1673,7 @@ public class WhileyFileParser {
 			switch (token.kind) {
 			case LeftSquare: {
 				// NOTE: expression is terminated by ']'
-				Expr rhs = parseAdditiveExpression(scope, true);
+				Expr rhs = parseArithmeticExpression(scope, true);
 				match(RightSquare);
 				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
 				break;
@@ -1903,22 +1903,24 @@ public class WhileyFileParser {
 	private Expr parseAndOrExpression(EnclosingScope scope, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseOrExpression(scope, terminated);
+		Expr lhs = parseBitwiseExpression(scope, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
-			switch (lookahead.kind) {
-			case LogicalAnd: {
-				Expr rhs = parseAndOrExpression(scope, terminated);
-				lhs = annotateSourceLocation(new Expr.LogicalAnd(new Tuple<>(lhs, rhs)), start);
-				break;
-			}
-			case LogicalOr: {
-				Expr rhs = parseAndOrExpression(scope, terminated);
-				lhs = annotateSourceLocation(new Expr.LogicalOr(new Tuple<>(lhs, rhs)), start);
-				break;
-			}
-			default:
-				throw new RuntimeException("deadcode"); // dead-code
+			do {
+				Expr rhs = parseBitwiseExpression(scope, terminated);
+				switch(lookahead.kind) {
+				case LogicalAnd:
+					lhs = new Expr.LogicalAnd(new Tuple<>(lhs, rhs));
+					break;
+				case LogicalOr:
+					lhs = new Expr.LogicalOr(new Tuple<>(lhs, rhs));
+					break;
+				}
+				lhs = annotateSourceLocation(lhs, start);
+			} while (tryAndMatch(terminated, lookahead.kind) != null);
+			// Error reporting
+			if((lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr)) != null) {
+				syntaxError(WyilFile.BRACES_REQUIRED_TO_DISAMBIGUATE, lookahead);
 			}
 		}
 		return lhs;
@@ -1944,79 +1946,34 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseBitwiseOrExpression(EnclosingScope scope, boolean terminated) {
-		int start = index;
-		Expr lhs = parseBitwiseXorExpression(scope, terminated);
-
-		if (tryAndMatch(terminated, VerticalBar) != null) {
-			Expr rhs = parseBitwiseOrExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseOr(Type.Byte, new Tuple<>(lhs, rhs)), start);
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse an bitwise "exclusive or" expression
-	 *
-	 * @param scope      The enclosing scope for this statement, which determines
-	 *                   the set of visible (i.e. declared) variables and also the
-	 *                   current indentation level.
-	 * @param terminated This indicates that the expression is known to be
-	 *                   terminated (or not). An expression that's known to be
-	 *                   terminated is one which is guaranteed to be followed by
-	 *                   something. This is important because it means that we can
-	 *                   ignore any newline characters encountered in parsing this
-	 *                   expression, and that we'll never overrun the end of the
-	 *                   expression (i.e. because there's guaranteed to be something
-	 *                   which terminates this expression). A classic situation
-	 *                   where terminated is true is when parsing an expression
-	 *                   surrounded in braces. In such case, we know the right-brace
-	 *                   will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseBitwiseXorExpression(EnclosingScope scope, boolean terminated) {
-		int start = index;
-		Expr lhs = parseBitwiseAndExpression(scope, terminated);
-
-		if (tryAndMatch(terminated, Caret) != null) {
-			Expr rhs = parseBitwiseXorExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseXor(Type.Byte, new Tuple<>(lhs, rhs)), start);
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse an bitwise "and" expression
-	 *
-	 * @param scope      The enclosing scope for this statement, which determines
-	 *                   the set of visible (i.e. declared) variables and also the
-	 *                   current indentation level.
-	 * @param terminated This indicates that the expression is known to be
-	 *                   terminated (or not). An expression that's known to be
-	 *                   terminated is one which is guaranteed to be followed by
-	 *                   something. This is important because it means that we can
-	 *                   ignore any newline characters encountered in parsing this
-	 *                   expression, and that we'll never overrun the end of the
-	 *                   expression (i.e. because there's guaranteed to be something
-	 *                   which terminates this expression). A classic situation
-	 *                   where terminated is true is when parsing an expression
-	 *                   surrounded in braces. In such case, we know the right-brace
-	 *                   will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseBitwiseAndExpression(EnclosingScope scope, boolean terminated) {
+	private Expr parseBitwiseExpression(EnclosingScope scope, boolean terminated) {
+		checkNotEof();
 		int start = index;
 		Expr lhs = parseConditionExpression(scope, terminated);
-
-		if (tryAndMatch(terminated, Ampersand) != null) {
-			Expr rhs = parseBitwiseAndExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseAnd(Type.Byte, new Tuple<>(lhs, rhs)), start);
+		// Check if have a bitwise binary expression
+		Token lookahead = tryAndMatch(terminated, VerticalBar, Caret, Ampersand);
+		if(lookahead != null) {
+			do {
+				Expr rhs = parseConditionExpression(scope, terminated);
+				switch(lookahead.kind) {
+				case VerticalBar:
+					lhs = new Expr.BitwiseOr(Type.Byte, new Tuple<>(lhs, rhs));
+					break;
+				case Caret:
+					lhs = new Expr.BitwiseXor(Type.Byte, new Tuple<>(lhs, rhs));
+					break;
+				case Ampersand:
+					lhs = new Expr.BitwiseAnd(Type.Byte, new Tuple<>(lhs, rhs));
+					break;
+				}
+				lhs = annotateSourceLocation(lhs, start);
+			} while(tryAndMatch(terminated, lookahead.kind) != null);
+			// Error reporting
+			if((lookahead = tryAndMatch(terminated, VerticalBar, Caret, Ampersand)) != null) {
+				syntaxError(WyilFile.BRACES_REQUIRED_TO_DISAMBIGUATE, lookahead);
+			}
 		}
-
+		// Done
 		return lhs;
 	}
 
@@ -2041,6 +1998,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseConditionExpression(EnclosingScope scope, boolean terminated) {
+		checkNotEof();
 		int start = index;
 		Token lookahead;
 
@@ -2185,9 +2143,9 @@ public class WhileyFileParser {
 	private Expr parseRangeExpression(EnclosingScope scope, boolean terminated) {
 		skipWhiteSpace();
 		int start = index;
-		Expr lhs = parseAdditiveExpression(scope, true);
+		Expr lhs = parseArithmeticExpression(scope, true);
 		match(DotDot);
-		Expr rhs = parseAdditiveExpression(scope, true);
+		Expr rhs = parseArithmeticExpression(scope, true);
 		Expr range = new Expr.ArrayRange(Type.Void, lhs, rhs);
 		return annotateSourceLocation(range, start);
 	}
@@ -2218,11 +2176,11 @@ public class WhileyFileParser {
 	 */
 	private Expr parseShiftExpression(EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAdditiveExpression(scope, terminated);
+		Expr lhs = parseArithmeticExpression(scope, terminated);
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, LeftAngleLeftAngle, RightAngleRightAngle)) != null) {
-			Expr rhs = parseAdditiveExpression(scope, terminated);
+			Expr rhs = parseArithmeticExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case LeftAngleLeftAngle:
 				lhs = new Expr.BitwiseShiftLeft(Type.Byte, lhs, rhs);
@@ -2257,71 +2215,39 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseAdditiveExpression(EnclosingScope scope, boolean terminated) {
-		int start = index;
-		Expr lhs = parseMultiplicativeExpression(scope, terminated);
-
-		Token lookahead;
-		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
-			Expr rhs = parseMultiplicativeExpression(scope, terminated);
-			switch (lookahead.kind) {
-			case Plus:
-				lhs = new Expr.IntegerAddition(Type.Void, lhs, rhs);
-				break;
-			case Minus:
-				lhs = new Expr.IntegerSubtraction(Type.Void, lhs, rhs);
-				break;
-			default:
-				throw new RuntimeException("deadcode"); // dead-code
-			}
-			lhs = annotateSourceLocation(lhs, start);
-		}
-		return lhs;
-	}
-
-	/**
-	 * Parse a multiplicative expression.
-	 *
-	 * @param scope      The enclosing scope for this statement, which determines
-	 *                   the set of visible (i.e. declared) variables and also the
-	 *                   current indentation level.
-	 * @param terminated This indicates that the expression is known to be
-	 *                   terminated (or not). An expression that's known to be
-	 *                   terminated is one which is guaranteed to be followed by
-	 *                   something. This is important because it means that we can
-	 *                   ignore any newline characters encountered in parsing this
-	 *                   expression, and that we'll never overrun the end of the
-	 *                   expression (i.e. because there's guaranteed to be something
-	 *                   which terminates this expression). A classic situation
-	 *                   where terminated is true is when parsing an expression
-	 *                   surrounded in braces. In such case, we know the right-brace
-	 *                   will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseMultiplicativeExpression(EnclosingScope scope, boolean terminated) {
+	private Expr parseArithmeticExpression(EnclosingScope scope, boolean terminated) {
 		int start = index;
 		Expr lhs = parseAccessExpression(scope, terminated);
 
-		Token lookahead = tryAndMatch(terminated, Star, RightSlash, Percent);
-		if (lookahead != null) {
-			Expr rhs = parseAccessExpression(scope, terminated);
-			switch (lookahead.kind) {
-			case Star:
-				lhs = new Expr.IntegerMultiplication(Type.Void, lhs, rhs);
-				break;
-			case RightSlash:
-				lhs = new Expr.IntegerDivision(Type.Void, lhs, rhs);
-				break;
-			case Percent:
-				lhs = new Expr.IntegerRemainder(Type.Void, lhs, rhs);
-				break;
-			default:
-				throw new RuntimeException("deadcode"); // dead-code
+		Token lookahead = tryAndMatch(terminated, Plus, Minus, Star, RightSlash, Percent);
+		//
+		if(lookahead != null) {
+			do {
+				Expr rhs = parseAccessExpression(scope, terminated);
+				switch (lookahead.kind) {
+				case Plus:
+					lhs = new Expr.IntegerAddition(Type.Void, lhs, rhs);
+					break;
+				case Minus:
+					lhs = new Expr.IntegerSubtraction(Type.Void, lhs, rhs);
+					break;
+				case Star:
+					lhs = new Expr.IntegerMultiplication(Type.Void, lhs, rhs);
+					break;
+				case RightSlash:
+					lhs = new Expr.IntegerDivision(Type.Void, lhs, rhs);
+					break;
+				case Percent:
+					lhs = new Expr.IntegerRemainder(Type.Void, lhs, rhs);
+					break;
+				}
+				lhs = annotateSourceLocation(lhs, start);
+			} while (tryAndMatch(terminated, lookahead.kind) != null);
+			// Error reporting
+			if((lookahead = tryAndMatch(terminated, Plus, Minus, Star, RightSlash, Percent)) != null) {
+				syntaxError(WyilFile.BRACES_REQUIRED_TO_DISAMBIGUATE, lookahead);
 			}
-			lhs = annotateSourceLocation(lhs, start);
 		}
-
 		return lhs;
 	}
 
@@ -2382,7 +2308,7 @@ public class WhileyFileParser {
 			switch (token.kind) {
 			case LeftSquare:
 				// NOTE: expression guaranteed to be terminated by ']'.
-				Expr rhs = parseAdditiveExpression(scope, true);
+				Expr rhs = parseArithmeticExpression(scope, true);
 				// This is a plain old array access expression
 				match(RightSquare);
 				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);

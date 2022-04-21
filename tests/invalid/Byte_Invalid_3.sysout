@@ -1,0 +1,3 @@
+Byte_Invalid_3.whiley:2: braces required to disambiguate expression
+    return x & y | z
+                 ^

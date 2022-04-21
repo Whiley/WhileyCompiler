@@ -194,6 +194,7 @@ public class ErrorMessages {
 	public static final Message BREAK_OUTSIDE_SWITCH_OR_LOOP = new StaticMessage("break outside switch or loop");
 	public static final Message CONTINUE_OUTSIDE_LOOP = new StaticMessage("continue outside loop");
 	public static final Message OLD_REQUIRES_TWOSTATES = new StaticMessage("old requires context with pre- and post-states");
+	public static final Message BRACES_REQUIRED_TO_DISAMBIGUATE = new StaticMessage("braces required to disambiguate expression");
 
 	// ========================================================================
 	// Name Resolution
@@ -358,6 +359,7 @@ public class ErrorMessages {
 			BREAK_OUTSIDE_SWITCH_OR_LOOP, // 318
 			CONTINUE_OUTSIDE_LOOP, // 319
 			OLD_REQUIRES_TWOSTATES, // 320
+			BRACES_REQUIRED_TO_DISAMBIGUATE, // 321
 		},
 		{
 			SUBTYPE_ERROR,     // 400

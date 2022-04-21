@@ -7356,6 +7356,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	public static final int BREAK_OUTSIDE_SWITCH_OR_LOOP = 318; // "break outside switch or loop"
 	public static final int CONTINUE_OUTSIDE_LOOP = 319; // "continue outside loop"
 	public static final int OLD_REQUIRES_TWOSTATES = 320; // "old requires context with pre- and post-states"
+	public static final int BRACES_REQUIRED_TO_DISAMBIGUATE = 321; // "braces required to disambiguate expression"
 	// Types
 	public static final int SUBTYPE_ERROR = 400;
 	public static final int EMPTY_TYPE = 401;

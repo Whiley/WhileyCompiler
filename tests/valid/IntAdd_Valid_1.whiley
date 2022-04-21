@@ -2,7 +2,7 @@ function swap2(int x, int y) -> (int r, int s)
     ensures true:
     assume x == 10
     assume y == 11
-    x = 2 * x + y
+    x = (2 * x) + y
     y = x - y
     x = x - y
     assert x == 11 && y == 2 * 10
