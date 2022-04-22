@@ -14,10 +14,7 @@
 package wyc;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.zip.*;
 
 import wyc.lang.WhileyFile;
@@ -27,6 +24,7 @@ import wycc.util.*;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 
 /**
  * Responsible for parsing command-line arguments and executing the
@@ -37,13 +35,10 @@ import wyil.lang.WyilFile;
  */
 public class Compiler {
 	/**
-	 * The output stream from this compiler.
+	 * The outgoing mailbox for this compiler. Essentially, all generated syntax
+	 * errors are sent here.
 	 */
-	private PrintStream out = System.out;
-	/**
-	 * Indicate whether or not to produce "brief" output. Brief is the default.
-	 */
-	private boolean brief = false;
+	private MailBox<SyntaxError> mailbox = new PrintStreamErrorHandler(System.out);
 	/**
 	 * Source directory containing whiley files.
 	 */
@@ -70,8 +65,8 @@ public class Compiler {
 	private boolean strict;
 	private boolean linking;
 
-	public Compiler setOutput(PrintStream pout) {
-		this.out = pout;
+	public Compiler setErrorHandler(MailBox<SyntaxError> mailbox) {
+		this.mailbox = mailbox;
 		return this;
 	}
 
@@ -97,11 +92,6 @@ public class Compiler {
 
 	public Compiler setTarget(Trie target) {
 		this.target = target;
-		return this;
-	}
-
-	public Compiler setBrief(boolean flag) {
-		this.brief = flag;
 		return this;
 	}
 
@@ -148,11 +138,7 @@ public class Compiler {
 		// Read out binary file from build repository
 		WyilFile binary = r.first();
 		// Print out syntactic markers
-		if(brief) {
-			printSyntacticMarkers(out, binary);
-		} else {
-			printSyntacticMarkers(out, whileyfiles, binary);
-		}
+		writeSyntacticMarkers(mailbox,binary);
 		// Write generated WyIL file
 		writeWyilFile(wyildir,target,binary);
 		//
@@ -231,21 +217,6 @@ public class Compiler {
 	}
 
 	/**
-	 * Get the path associated with a given filename. For example, given
-	 * "std/collections/stuff.wyil"
-	 *
-	 * @param t
-	 * @return
-	 */
-	private static Trie getPath(String t) {
-		int i = t.lastIndexOf('.');
-		if (i >= 0) {
-			t = t.substring(0,i);
-		}
-		return Trie.fromString(t.replace(File.separatorChar, '/'));
-	}
-
-	/**
 	 * Extract the suffix from a given filename. For example, given "std-0.3.2.zip"
 	 * we return "zip".
 	 *
@@ -314,7 +285,7 @@ public class Compiler {
 	}
 
 	// =============================================================================
-	// Print Markers
+	// Syntactic Markers
 	// =============================================================================
 
 	/**
@@ -323,76 +294,33 @@ public class Compiler {
 	 * @param executor
 	 * @throws IOException
 	 */
-	public static void printSyntacticMarkers(PrintStream output, WyilFile target) throws IOException {
+	public static void writeSyntacticMarkers(MailBox<SyntaxError> mailbox, WyilFile target) throws IOException {
 		// Extract all syntactic markers from entries in the build graph
 		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
+			WyilFile.Attr.SyntaxError marker = (WyilFile.Attr.SyntaxError) items.get(i);
 			// Log the error message
-			printSyntacticMarkers(output, items.get(i));
+			mailbox.send(marker);
 		}
 	}
 
-
-	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker) {
-		// Identify enclosing source file
-		String filename = marker.getSource().toString() + ".whiley";
-		// Determine the source-file span for the given syntactic marker.
-		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
-		// print the error message
-		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage().replace("\n", "\\n"));
-	}
+//	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
+//		List<Syntactic.Marker> annotated = new ArrayList<>();
+//		//
+//		for (WyilFile b : binaries) {
+//			// If the object in question can be decoded as a syntactic heap then we can look
+//			// for syntactic messages.
+//			if (b instanceof Syntactic.Heap) {
+//				annotated.addAll(extractSyntacticMarkers(b));
+//			}
+//		}
+//		//
+//		return annotated;
+//	}
 
 	/**
-	 * Print out all syntactic markers active within a given piece of content.
-	 *
-	 * @param executor
-	 * @throws IOException
-	 */
-	public static void printSyntacticMarkers(PrintStream output, List<WhileyFile> whileyfiles, WyilFile target) throws IOException {
-		// Extract all syntactic markers from entries in the build graph
-		List<Syntactic.Marker> items = extractSyntacticMarkers(target);
-		// For each marker, print out error messages appropriately
-		for (int i = 0; i != items.size(); ++i) {
-			// Log the error message
-			printSyntacticMarkers(output, items.get(i), whileyfiles);
-		}
-	}
-
-	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker, List<WhileyFile> sources) {
-		// Identify enclosing source file
-		String filename = marker.getSource().toString() + ".whiley";
-		// Determine the source-file span for the given syntactic marker.
-		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
-		// print the error message
-		WhileyFile source = getSourceEntry(marker.getSource(), sources);
-		// Read the enclosing line so we can print it
-		TextFile.Line line = source.getEnclosingLine(span.getStart());
-		if (line != null) {
-			output.println(filename + ":" + line.getNumber() + ": " + marker.getMessage());
-			// Finally print the line highlight
-			printLineHighlight(output, span, line);
-		} else {
-			output.println(filename + ":?: " + marker.getMessage());
-		}
-	}
-
-	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
-		List<Syntactic.Marker> annotated = new ArrayList<>();
-		//
-		for (WyilFile b : binaries) {
-			// If the object in question can be decoded as a syntactic heap then we can look
-			// for syntactic messages.
-			if (b instanceof Syntactic.Heap) {
-				annotated.addAll(extractSyntacticMarkers(b));
-			}
-		}
-		//
-		return annotated;
-	}
-
-	/**
-	 * Traverse the various binaries which have been generated looking for error
+	 * Traverse a binary which has been generated looking for error
 	 * messages.
 	 *
 	 * @param binaries
@@ -407,39 +335,29 @@ public class Compiler {
 		return annotated;
 	}
 
-	private static void printLineHighlight(PrintStream output, Syntactic.Span span, TextFile.Line enclosing) {
-		// Extract line text
-		String text = enclosing.getText();
-		// Determine start and end of span
-		int start = span.getStart() - enclosing.getOffset();
-		int end = Math.min(text.length() - 1, span.getEnd() - enclosing.getOffset());
-		// NOTE: in the following lines I don't print characters
-		// individually. The reason for this is that it messes up the
-		// ANT task output.
-		output.println(text);
-		// First, mirror indendation
-		String str = "";
-		for (int i = 0; i < start; ++i) {
-			if (text.charAt(i) == '\t') {
-				str += "\t";
-			} else {
-				str += " ";
-			}
-		}
-		// Second, place highlights
-		for (int i = start; i <= end; ++i) {
-			str += "^";
-		}
-		output.println(str);
-	}
+	/**
+	 * A super simplistic error handler which is used for writing error messages to
+	 * a given output stream (e.g. stdout).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class PrintStreamErrorHandler implements MailBox<SyntaxError> {
+		private final PrintStream output;
 
-	public static WhileyFile getSourceEntry(Trie id, List<WhileyFile> sources) {
-		//
-		for (WhileyFile s : sources) {
-			if (id.equals(s.getPath())) {
-				return s;
-			}
+		public PrintStreamErrorHandler(PrintStream output) {
+			this.output = output;
 		}
-		return null;
+
+		@Override
+		public void send(SyntaxError marker) {
+			// Identify enclosing source file
+			String filename = marker.getSource().toString() + ".whiley";
+			// Determine the source-file span for the given syntactic marker.
+			Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+			// print the error message
+			output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "|" + marker.getErrorCode() + "|"
+					+ marker.getMessage().replace("\n", "\\n"));
+		}
 	}
 }
