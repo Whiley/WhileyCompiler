@@ -63,36 +63,47 @@ public class WhileyCompilerTests {
 	 * @param testName
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
-	 */	protected void runTest(Trie path) throws IOException {
+	 */
+	protected void runTest(Trie path) throws IOException {
 		Path srcDir = Path.of(WHILEY_SRC_DIR);
 		TestFile tf = readTestFile(srcDir.toFile(), path);
 		Path testDir = srcDir.resolve(path.toPath());
 		forceDelete(testDir);
 		testDir.toFile().mkdirs();
 		int index = 0;
-		HashMap<Trie,TextFile> state = new HashMap<>();
-		for(TestFile.Frame f : tf) {
+		HashMap<Trie, TextFile> state = new HashMap<>();
+		for (TestFile.Frame f : tf) {
 			// Construct frame directory
 			Path frameDir = testDir.resolve("_" + index);
 			index++;
 			// Mirror state in frame directory
 			f.apply(state);
-			mirror(state,frameDir);
+			mirror(state, frameDir);
 			// Configure compiler
-			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile()).setTarget(path);
+			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile())
+					.setTarget(path);
 			// Add source files
-			for(Trie sf : state.keySet()) {
+			for (Trie sf : state.keySet()) {
 				sf = Trie.fromString(sf.toString().replace(".whiley", ""));
 				wyc.addSource(sf);
 			}
-			// Run the compiler
-			if(!wyc.run()) {
-				fail("Test failed to compile!");
+			// Check whether build succeeded
+			boolean compiled = wyc.run();
+			// Check whether build should have succeeded
+			boolean shouldCompile = (f.markers.length == 0);
+			// Interpreter what happened
+			if (compiled && shouldCompile) {
+				// Test was expected to compile, so attempt to run the code.
+				String unit = tf.get(String.class, "main.file").orElse("main");
+				TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
+			} else if (compiled) {
+				fail("Test should not have compiled!");
+			} else if (!compiled && !shouldCompile) {
+				throw new IllegalArgumentException("NEED TO CHECK MARKERS");
+			} else {
+				fail("Test should have compiled!");
 			}
-			// Execute the compile WyIL file
-			TestUtils.execWyil(frameDir.toFile(), path);
 		}
-
 	}
 
 	public static void mirror(Map<Trie,TextFile> state, Path dir) throws IOException {

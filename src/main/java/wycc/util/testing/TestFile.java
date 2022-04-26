@@ -245,6 +245,9 @@ public class TestFile implements Iterable<TestFile.Frame> {
 				String val = split[1];
 				if(config.containsKey(key)) {
 					throw new IllegalArgumentException("duplicate key encountered (\"" + key + "\")");
+				} if(val.charAt(0) == '"') {
+					// Strip quotes
+					config.put(key, val.substring(1, val.length() - 1));
 				} else if(Character.isDigit(val.charAt(0))) {
 					config.put(key, Integer.parseInt(val));
 				} else {

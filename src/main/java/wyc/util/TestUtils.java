@@ -258,10 +258,14 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
+		execWyil(wyildir,id,id);
+	}
+
+	public static void execWyil(File wyildir, Trie id, Trie unit) throws IOException {
 		WyilFile target = Compiler.readWyilFile(wyildir, id);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
-		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
+		QualifiedName name = new QualifiedName(new Name(unit), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);
 		// Create the initial stack
