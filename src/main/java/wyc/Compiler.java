@@ -272,7 +272,7 @@ public class Compiler {
 	 */
 	public static WhileyFile readWhileyFile(File dir, Trie path) throws IOException {
 		// First, determine filename
-		String filename = path.toNativeString() + ".whiley";
+		String filename = path.toNativeString().replace(".whiley", "") + ".whiley";
 		// Second Read the file
 		try (FileInputStream fin = new FileInputStream(new File(dir, filename))) {
 			return new WhileyFile(path, fin.readAllBytes());
