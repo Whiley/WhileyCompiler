@@ -81,7 +81,7 @@ public class WhileyCompilerTests {
 			mirror(state, frameDir);
 			// Configure compiler
 			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile())
-					.setTarget(path);
+					.setTarget(path).setBrief(true);
 			// Add source files
 			for (Trie sf : state.keySet()) {
 				sf = Trie.fromString(sf.toString().replace(".whiley", ""));

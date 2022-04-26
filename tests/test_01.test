@@ -1,0 +1,9 @@
+main.file="pkg/test"
+======
+>>> pkg/test.whiley
+package pkg
+
+public export method test():
+       assert 1 == 2
+---
+E103 pkg/test.whiley 1,1:2

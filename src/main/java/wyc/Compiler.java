@@ -185,7 +185,7 @@ public class Compiler {
 		ArrayList<File> whileypath = (ArrayList<File>) options.get("whileypath");
 		// Construct Main object
 		Compiler main = new Compiler().setTarget(target).setStrict(strict).setLinking(linking).setWhileyDir(whileydir)
-				.setWyilDir(wyildir).setWhileyPath(whileypath);
+				.setWyilDir(wyildir).setWhileyPath(whileypath).setBrief(true);
 		//
 		for(String arg : args) {
 			arg = arg.replace(".whiley", "");
