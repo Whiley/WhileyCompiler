@@ -11,10 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.util;
+package wycc.util.testing;
 
 import java.io.*;
 import java.util.*;
+
+import wycc.util.TextFile;
+import wycc.util.Trie;
 
 /**
  * Represents a test-file as described in the <code>test_file_format</code> RFC.
@@ -62,6 +65,12 @@ public class TestFile implements Iterable<TestFile.Frame> {
 		public Frame(List<Action> actions, List<Error> markers) {
 			this.actions = actions.toArray(new Action[actions.size()]);
 			this.markers = markers.toArray(new Error[markers.size()]);
+		}
+
+		public void apply(Map<Trie,TextFile> state) {
+			for(Action a : actions) {
+				a.apply(state);
+			}
 		}
 
 		@Override
@@ -169,6 +178,23 @@ public class TestFile implements Iterable<TestFile.Frame> {
 			this.filename = filename;
 			this.range = range;
 			this.lines = lines.toArray(new String[lines.size()]);
+		}
+
+		public void apply(Map<Trie,TextFile> state) {
+			if (kind == Kind.REMOVE && state.containsKey(filename)) {
+				// Easy case
+				state.remove(filename);
+			} else if (kind == Kind.REMOVE) {
+				throw new IllegalArgumentException("Invalid remove action");
+			} else if(state.containsKey(filename)) {
+				TextFile tf = state.get(filename);
+				state.put(filename, tf.replace(range.start, range.end, lines));
+			} else if(range == null){
+				// Create entirely new file.
+				state.put(filename, new TextFile(lines));
+			} else {
+				throw new IllegalArgumentException("Invalid insert action");
+			}
 		}
 
 		@Override
@@ -317,8 +343,11 @@ public class TestFile implements Iterable<TestFile.Frame> {
 		for(String key : tf.keys()) {
 			System.out.println(key + " = " + tf.get(Object.class, key).get());
 		}
+		HashMap<Trie,TextFile> state = new HashMap<>();
 		for(TestFile.Frame f : tf) {
 			System.out.println(">" + f);
+			f.apply(state);
+			System.out.println("STATE: " + state.toString());
 		}
 	}
 }
