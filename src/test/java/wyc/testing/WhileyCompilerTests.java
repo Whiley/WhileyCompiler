@@ -17,8 +17,7 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 
 import org.junit.Assume;
@@ -68,7 +67,7 @@ public class WhileyCompilerTests {
 		Path srcDir = Path.of(WHILEY_SRC_DIR);
 		TestFile tf = readTestFile(srcDir.toFile(), path);
 		Path testDir = srcDir.resolve(path.toPath());
-		testDir.toFile().delete();
+		forceDelete(testDir);
 		testDir.toFile().mkdirs();
 		int index = 0;
 		HashMap<Trie,TextFile> state = new HashMap<>();
@@ -83,6 +82,7 @@ public class WhileyCompilerTests {
 			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile()).setTarget(path);
 			// Add source files
 			for(Trie sf : state.keySet()) {
+				sf = Trie.fromString(sf.toString().replace(".whiley", ""));
 				wyc.addSource(sf);
 			}
 			// Run the compiler
@@ -105,6 +105,17 @@ public class WhileyCompilerTests {
 				fout.write(f.getBytes(StandardCharsets.US_ASCII));
 			}
 		}
+	}
+
+	public void forceDelete(Path path) throws IOException {
+		if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+			try (DirectoryStream<Path> entries = Files.newDirectoryStream(path)) {
+				for (Path entry : entries) {
+					forceDelete(entry);
+				}
+			}
+		}
+		Files.delete(path);
 	}
 
 	public static TestFile readTestFile(File dir, Trie path) throws IOException {
