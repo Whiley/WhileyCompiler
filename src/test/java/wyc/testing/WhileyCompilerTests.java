@@ -161,7 +161,9 @@ public class WhileyCompilerTests {
 				}
 			}
 		}
-		Files.delete(path);
+		if(path.toFile().exists()) {
+			Files.delete(path);
+		}
 	}
 
 	public static TestFile readTestFile(File dir, Trie path) throws IOException {
@@ -237,5 +239,29 @@ public class WhileyCompilerTests {
 	@Test
 	public void valid() throws IOException {
 		runTest(this.testName);
+	}
+
+	public static void main(String[] args) throws IOException {
+		String srcdir = "tests/valid".replace('/',File.separatorChar);
+		String targetdir = "tests";
+		Collection<Object[]> results = TestUtils.findTestNames(srcdir);
+		System.out.println("Found " + results.size() + ".");
+		for(Object[] r : results) {
+			String name = (String) r[0];
+			String filename = name + ".whiley";
+			FileInputStream fin = new FileInputStream(srcdir + "/" + filename);
+			byte[] bytes = fin.readAllBytes();
+			fin.close();
+			String contents = new String(bytes);
+			FileOutputStream fout = new FileOutputStream(targetdir + "/" + name + ".test");
+			PrintStream pout = new PrintStream(fout);
+			pout.println("======");
+			pout.println(">>> main.whiley");
+			pout.println(contents);
+			pout.println("---");
+			pout.flush();
+			fout.flush();
+			fout.close();
+		}
 	}
 }
