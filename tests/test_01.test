@@ -4,6 +4,6 @@ main.file="pkg/test"
 package pkg
 
 public export method test():
-       assert 1 == 2
+       assert 1 == trye
 ---
 E103 pkg/test.whiley 1,1:2

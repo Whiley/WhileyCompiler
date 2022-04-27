@@ -334,13 +334,14 @@ public class Compiler {
 	}
 
 
-	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker marker) {
+	public static void printSyntacticMarkers(PrintStream output, Syntactic.Marker _marker) {
+		WyilFile.Attr.SyntaxError marker = (WyilFile.Attr.SyntaxError) _marker;
 		// Identify enclosing source file
 		String filename = marker.getSource().toString() + ".whiley";
 		// Determine the source-file span for the given syntactic marker.
 		Syntactic.Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
 		// print the error message
-		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "| " + marker.getMessage().replace("\n", "\\n"));
+		output.println(filename + "|" + span.getStart() + "|" + span.getEnd() + "|" + marker.getErrorCode() + "|" + marker.getMessage().replace("\n", "\\n"));
 	}
 
 	/**
