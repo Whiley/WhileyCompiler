@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_16"
+======
+>>> main.whiley
+function f() -> {int x, int y}:
+     return {x: 1, x: 2, y: 3}
+
+---
+E315 main.whiley 2,19

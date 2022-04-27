@@ -1,0 +1,16 @@
+original.name="TypeEquals_Invalid_1"
+======
+>>> main.whiley
+type expr is int[] | int
+
+method f(expr e) :
+    if e is int[]:
+        debug ("GOT [INT]")
+    else:
+        if e is int:
+            debug ("GOT INT")
+        else:
+            debug ("GOT SOMETHING ELSE?")
+
+---
+E506 main.whiley 7,11:18

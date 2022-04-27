@@ -1,0 +1,9 @@
+original.name="DefiniteAssign_Invalid_3"
+======
+>>> main.whiley
+function f(int x) -> int
+requires (x >= 0) && (y > 0):
+    return x
+
+---
+E407 main.whiley 2,22

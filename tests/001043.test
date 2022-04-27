@@ -1,0 +1,8 @@
+original.name="Old_Invalid_3"
+======
+>>> main.whiley
+method m(&int p):
+    //
+    int x = old(*p)
+---
+E320 main.whiley 3,12:14

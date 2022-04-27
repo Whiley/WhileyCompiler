@@ -1,0 +1,12 @@
+original.name="Reference_Valid_4"
+======
+>>> main.whiley
+
+
+public export method test():
+    &int c = new 5
+    *c = 4
+    assume (*c) == 4
+
+
+---

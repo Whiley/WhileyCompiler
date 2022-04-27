@@ -1,0 +1,14 @@
+original.name="Ensures_Invalid_1"
+======
+>>> main.whiley
+
+function f() -> (int r)
+ensures (2 * r) == 1:
+    //
+    return 1
+
+public export method test():
+       assume f() == 1
+---
+E701 main.whiley 8,14:16
+E717 main.whiley 5,4:11

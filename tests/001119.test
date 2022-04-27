@@ -1,0 +1,13 @@
+original.name="Record_Invalid_3"
+======
+>>> main.whiley
+type Record is { int tag }
+
+function Record(int tag) -> Record:
+    Record r
+    r.tag = tag
+    return r
+
+---
+E601 main.whiley 5,4
+E601 main.whiley 6,11

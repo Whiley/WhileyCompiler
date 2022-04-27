@@ -1,0 +1,22 @@
+original.name="Process_Valid_5"
+======
+>>> main.whiley
+
+
+type MyProc is &{bool flag}
+
+method run(MyProc _this) -> bool:
+    if _this->flag:
+        return true
+    else:
+        return false
+
+public export method test() :
+    MyProc mproc = new {flag: false}
+    bool result = run(mproc) 
+    assume result == false
+    mproc = new {flag: true}
+    result = run(mproc) 
+    assume result == true
+
+---

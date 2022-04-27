@@ -1,0 +1,9 @@
+original.name="Lambda_Invalid_7"
+======
+>>> main.whiley
+type fun_t<T> is function(T)->(int)
+
+function id(fun_t<int> fn) -> fun_t<int|bool>:
+    return fn
+---
+E400 main.whiley 4,11:12

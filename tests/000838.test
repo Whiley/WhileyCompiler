@@ -1,0 +1,11 @@
+original.name="ArrayEmpty_Invalid_1"
+======
+>>> main.whiley
+function f(int x) -> int:
+    return 1
+
+public export method test():
+    f([0;0])
+
+---
+E400 main.whiley 5,6:10

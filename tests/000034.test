@@ -1,0 +1,12 @@
+original.name="BoolAssign_Valid_1"
+======
+>>> main.whiley
+
+
+public export method test() :
+    bool x = true
+    assert x == true
+    x = false
+    assert x == false
+
+---

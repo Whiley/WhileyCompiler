@@ -1,0 +1,14 @@
+original.name="Function_Invalid_9"
+======
+>>> main.whiley
+
+function f(int x) -> int
+requires x >= 0:
+    return x
+
+function f(int x) -> int
+requires x >= 0:
+    return x
+
+---
+E316 main.whiley 6,9

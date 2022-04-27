@@ -1,0 +1,9 @@
+original.name="Subtype_Valid_7"
+======
+>>> main.whiley
+public export method test() :
+    int[] x = [1,2]
+    x[0] = 2
+    assert x == [2,2]
+
+---

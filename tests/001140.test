@@ -1,0 +1,35 @@
+original.name="Reference_Invalid_6"
+======
+>>> main.whiley
+type LinkedList is null | &{ int data, LinkedList next }
+
+method append(LinkedList head, LinkedList tail) -> LinkedList:
+    if head is null:
+        return tail
+    else if tail is null:
+        return head
+    else:
+        // quickcheck should catch this
+        assert head != tail
+        //
+        return new { data: head->data, next: append(head->next,tail) }
+
+public export method test():
+    LinkedList l1 = null
+    LinkedList l2 = new { data: 2, next: l1 }
+    LinkedList l3 = new { data: 3, next: l1 }
+    // Tests
+    LinkedList r1 = append(l2,l1)
+    LinkedList r2 = append(l1,l2)
+    assume r1 == l2
+    assume r2 == l2
+    LinkedList r3 = append(l2,l3)    
+    assume !(r3 is null)
+    LinkedList r4 = r3->next
+    assume !(r4 is null)
+    assume r3->data == 2 && r4->data == 3 && r4->next == null
+    // finally, break it
+    LinkedList r5 = append(l2,l2)
+---
+E705 main.whiley 10,15:26
+E722 main.whiley 10,15:26

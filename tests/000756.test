@@ -1,0 +1,10 @@
+original.name="VarDecl_Valid_1"
+======
+>>> main.whiley
+
+
+public export method test() :
+    int x = 1
+    assert x == 1
+
+---

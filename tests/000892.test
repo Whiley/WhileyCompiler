@@ -1,0 +1,13 @@
+original.name="Coercion_Invalid_1"
+======
+>>> main.whiley
+type nat is (int n) where n >= 0
+type neg is (int n) where n <= 0
+
+type knackered is nat|neg
+
+function f(int x) -> (knackered r):
+    return x
+
+---
+E400 main.whiley 7,11

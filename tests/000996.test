@@ -1,0 +1,11 @@
+original.name="If_Invalid_2"
+======
+>>> main.whiley
+function f(bool z) -> bool:
+    if z:
+        return true
+    else:
+        return 0
+
+---
+E400 main.whiley 5,15

@@ -1,0 +1,9 @@
+original.name="XOR_Invalid_1"
+======
+>>> main.whiley
+public export method test() -> int:
+    int crc = 4294967295
+    return crc ^ 0b11010101
+
+---
+E400 main.whiley 3,11:13

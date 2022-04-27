@@ -1,0 +1,15 @@
+original.name="ArrayEquals_Invalid_1"
+======
+>>> main.whiley
+
+function f(int[] xs) -> bool
+requires xs != [0;0]:
+    return true
+
+public export method test() :
+    f([1, 4])
+    f([0;0])
+
+---
+E700 main.whiley 8,4:11
+E716 main.whiley 8,4:11

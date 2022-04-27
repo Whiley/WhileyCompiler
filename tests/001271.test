@@ -1,0 +1,11 @@
+original.name="UnionType_Invalid_12"
+======
+>>> main.whiley
+public export method test():
+    (&int)|(&bool) x = new 1
+    *x = false
+    (&int)|(&bool) y = ((&int)|(&bool)) new 1
+    *y = false
+---
+E400 main.whiley 3,9:13
+E404 main.whiley 5,5

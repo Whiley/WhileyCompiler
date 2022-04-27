@@ -1,0 +1,14 @@
+original.name="Type_Invalid_4"
+======
+>>> main.whiley
+type Point is {
+    Point f
+}
+
+function toString(int p) -> Point:
+    return null
+
+
+---
+E401 main.whiley 1,5:9
+E400 main.whiley 6,11:14

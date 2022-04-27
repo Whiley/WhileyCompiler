@@ -1,0 +1,9 @@
+original.name="UnionType_Invalid_15"
+======
+>>> main.whiley
+public export method test():
+    (&bool)|(&int) x
+    x = false
+
+---
+E400 main.whiley 3,8:12

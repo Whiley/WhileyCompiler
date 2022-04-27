@@ -1,0 +1,12 @@
+original.name="ConstrainedList_Valid_12"
+======
+>>> main.whiley
+
+
+function f(int x) -> int[]:
+    return [x]
+
+public export method test() :
+    assume f(0) == [0]
+
+---

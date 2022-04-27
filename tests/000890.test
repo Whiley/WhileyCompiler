@@ -1,0 +1,8 @@
+original.name="Byte_Invalid_5"
+======
+>>> main.whiley
+function f(byte x, byte y, byte z) -> (byte r):
+    return x ^ y & z
+
+---
+E321 main.whiley 2,17

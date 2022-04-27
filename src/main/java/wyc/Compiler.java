@@ -305,20 +305,6 @@ public class Compiler {
 		}
 	}
 
-//	public static List<Syntactic.Marker> extractSyntacticMarkers(WyilFile... binaries) throws IOException {
-//		List<Syntactic.Marker> annotated = new ArrayList<>();
-//		//
-//		for (WyilFile b : binaries) {
-//			// If the object in question can be decoded as a syntactic heap then we can look
-//			// for syntactic messages.
-//			if (b instanceof Syntactic.Heap) {
-//				annotated.addAll(extractSyntacticMarkers(b));
-//			}
-//		}
-//		//
-//		return annotated;
-//	}
-
 	/**
 	 * Traverse a binary which has been generated looking for error
 	 * messages.

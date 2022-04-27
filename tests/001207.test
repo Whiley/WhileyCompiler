@@ -1,0 +1,7 @@
+original.name="Template_Invalid_22"
+======
+>>> main.whiley
+function f<T>(&T ptr, S value) -> (bool x):
+    return false
+---
+E407 main.whiley 1,22

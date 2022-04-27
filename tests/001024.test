@@ -1,0 +1,9 @@
+original.name="MethodCall_Invalid_8"
+======
+>>> main.whiley
+function f() -> int:
+    &int x = new 1
+    return 1
+
+---
+E607 main.whiley 2,13:17

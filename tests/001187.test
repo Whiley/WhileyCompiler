@@ -1,0 +1,12 @@
+original.name="Switch_Invalid_2"
+======
+>>> main.whiley
+function f(int x) -> int:
+    switch x:
+        default:
+            return 0
+        case 1:
+            return -1
+
+---
+E504 main.whiley 5,0:14

@@ -1,0 +1,21 @@
+original.name="Lambda_Invalid_3"
+======
+>>> main.whiley
+type func_t is function(int)->int
+
+function f(int x) -> int
+requires x > 1:
+    return x + 1
+
+function g(int p) -> int
+requires p >= 0:
+    func_t func = &(int x -> f(x + 1))
+    return func(p)
+
+public export method test():
+    assume g(1) == 3
+    assume g(2) == 4
+    assume g(0) == 2
+---
+E700 main.whiley 9,29:36
+E716 main.whiley 9,29:36

@@ -1,0 +1,12 @@
+original.name="Old_Invalid_10"
+======
+>>> main.whiley
+variant broken(&int p)
+where *p == old(*p)
+
+method m(&int x)
+requires broken(x):
+    //
+    skip
+---
+E614 main.whiley 5,9:17

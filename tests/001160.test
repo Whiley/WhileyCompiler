@@ -1,0 +1,8 @@
+original.name="StaticVar_Invalid_10"
+======
+>>> main.whiley
+void[] x = []
+
+    
+---
+E407 main.whiley 1,0:3

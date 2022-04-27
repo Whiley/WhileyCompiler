@@ -1,0 +1,7 @@
+original.name="Parsing_Invalid_29"
+======
+>>> main.whiley
+function f(void z) :
+
+---
+E407 main.whiley 1,11:14

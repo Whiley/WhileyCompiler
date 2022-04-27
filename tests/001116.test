@@ -1,0 +1,7 @@
+original.name="Quantifiers_Invalid_9"
+======
+>>> main.whiley
+type arr_t is (int[] xs)
+where all { i in *xs .. |xs| | xs[i] >= 0 }
+---
+E400 main.whiley 2,18:19

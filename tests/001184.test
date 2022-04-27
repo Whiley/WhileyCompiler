@@ -1,0 +1,16 @@
+original.name="Subtype_Invalid_8"
+======
+>>> main.whiley
+type scf8nat is (int n) where n > 0
+type scf8tup is ({scf8nat f, int g} r) where r.g > r.f
+
+function f(scf8tup[] xs) -> int:
+    return |xs|
+
+public export method test() :
+    {int f, int g}[] x = [{f: 1, g: 2}, {f: 4, g: 8}]
+    x[0].f = 2
+    f((scf8tup[]) x)
+---
+E702 main.whiley 10,6:18
+E718 main.whiley 10,18

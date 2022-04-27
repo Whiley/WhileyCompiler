@@ -1,0 +1,14 @@
+original.name="If_Invalid_5"
+======
+>>> main.whiley
+function greater(int x,int y) -> (int z)
+requires x != y
+ensures z == x || z == y:
+    if (x > y):
+        return x
+    else if (y > x):
+        return y
+
+
+---
+E500 main.whiley 1,0:81

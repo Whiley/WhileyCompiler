@@ -1,0 +1,32 @@
+original.name="Ensures_Invalid_4"
+======
+>>> main.whiley
+// find first index after a given start point in list which matches character.
+// If no match, then return null.
+public function first_index_of<T>(T[] items, T item, int start) -> (int|null index)
+// Starting point cannot be negative
+requires start >= 0 && start <= |items|
+// If null returned, no element in items matches item
+ensures index is null ==> all { i in start .. |items| | items[i] != item }:
+    //
+    int i = start
+    //
+    while i < |items|
+    // i is positive
+    where i >= start
+    // No element seen so far matches item
+    where all { j in start .. i | items[j] != item }:
+        //
+        if items[i] == item:
+            return i
+        i = i + 1
+    //
+    return null
+
+public export method test():
+   assume first_index_of([1,2,3],1,0) == 0
+   assume first_index_of([1,2,3],1,1) == null
+   assume first_index_of([1,2,3,2],2,2) == 3
+   assume first_index_of([true,false,false,true],true,0) == 0
+   assume first_index_of([true,false,false,true],true,1) == 3
+---

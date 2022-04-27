@@ -1,0 +1,26 @@
+original.name="RecursiveType_Invalid_1"
+======
+>>> main.whiley
+
+type nat is (int n) where n >= 0
+
+type LinkedList is int | {LinkedList next, int data}
+
+function sum(LinkedList list) -> nat:
+    if list is int:
+        return 0
+    else:
+        return list.data + sum(list.next)
+
+public export method test():
+   LinkedList l1 = 0
+   LinkedList l2 = {next:l1, data:1}
+   LinkedList l3 = {next:l2, data:2}
+   LinkedList l4 = {next:l3, data:-100}
+   assume sum(l1) == 0
+   assume sum(l2) == 1
+   assume sum(l3) == 3
+   assume sum(l4) == -97
+---
+E702 main.whiley 10,15:40
+E718 main.whiley 10,15:40

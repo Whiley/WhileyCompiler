@@ -1,0 +1,14 @@
+original.name="TupleDefine_Invalid_1"
+======
+>>> main.whiley
+type point is {bool y, bool x}
+
+function f(int x) -> int:
+    return x
+
+public export method test() -> int:
+    point p = {y: false, x: true}
+    return f(p.y)
+
+---
+E400 main.whiley 8,15

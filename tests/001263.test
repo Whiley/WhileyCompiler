@@ -1,0 +1,8 @@
+original.name="Type_Invalid_5"
+build.whiley.ignore=true
+WhileyCompiler.issue=885
+======
+>>> main.whiley
+type Contractive is Contractive | int
+---
+E401 main.whiley 1,5:15

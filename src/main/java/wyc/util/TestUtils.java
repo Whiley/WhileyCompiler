@@ -46,8 +46,8 @@ public class TestUtils {
 
 	static {
 		// Problem Type Checking Union Type
-		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
-		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
+		VALID_IGNORED.put("RecordSubtype_Valid_1", "696");
+		VALID_IGNORED.put("RecordSubtype_Valid_2", "696");
 		// Semantics of Runtime Type Tests
 		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
 		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
@@ -94,7 +94,7 @@ public class TestUtils {
 		VALID_IGNORED.put("Template_Valid_61", "1004");
 		VALID_IGNORED.put("Template_Valid_62", "1004");
 		// Runtime checking Old Static Variable Accesses
-		VALID_IGNORED.put("StaticVar_Valid_15","#1122");
+		VALID_IGNORED.put("StaticVar_Valid_15","1122");
 		// Interpreter Infinite Loop.
 		VALID_IGNORED.put("Infeasible_Function_2", "???");
 		VALID_IGNORED.put("Infeasible_Function_3", "???");

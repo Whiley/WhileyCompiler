@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_27"
+======
+>>> main.whiley
+function f(void[] xs) -> (int r):
+     return 1
+
+---
+E407 main.whiley 1,11:14

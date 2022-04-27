@@ -1,0 +1,8 @@
+original.name="Reference_Invalid_4"
+======
+>>> main.whiley
+method main():
+    int x = 0
+    &int ptr = new *x
+---
+E400 main.whiley 3,20

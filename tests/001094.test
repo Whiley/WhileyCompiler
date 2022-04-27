@@ -1,0 +1,23 @@
+original.name="Property_Invalid_8"
+======
+>>> main.whiley
+property nat(int x) -> bool:
+   x >= 0
+property pos(int x) -> bool:
+   x > 0
+
+type nat is (int x) where nat(x)
+type pos is (int x) where pos(x)
+
+function f1(pos x) -> (nat y):
+    return (nat) x
+
+function f2(nat x) -> (pos y):
+    return (pos) x
+
+public export method test():
+   assume f1(1) == 1
+   assume f2(0) == 0
+---
+E702 main.whiley 13,11:17
+E718 main.whiley 11,17

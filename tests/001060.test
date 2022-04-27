@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_10"
+======
+>>> main.whiley
+method f():
+     break
+
+---
+E318 main.whiley 2,5:9

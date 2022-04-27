@@ -1,0 +1,8 @@
+original.name="Type_Invalid_11"
+======
+>>> main.whiley
+int ZERO = 0
+
+type nat is (int x) where x >= ZERO
+---
+E615 main.whiley 3,31:34

@@ -1,0 +1,10 @@
+original.name="ReferenceType_Valid_1"
+======
+>>> main.whiley
+function f() -> &null | int:
+    return 1
+
+public export method test() :
+    assume f() == 1
+
+---

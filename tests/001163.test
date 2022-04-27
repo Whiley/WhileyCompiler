@@ -1,0 +1,15 @@
+original.name="StaticVar_Invalid_13"
+======
+>>> main.whiley
+int var = -1
+
+method inc()
+requires var >= 0
+ensures old(var) < var:
+    var = var + 1
+
+public export method test():
+    inc()
+---
+E700 main.whiley 9,4:8
+E716 main.whiley 9,4:8

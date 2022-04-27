@@ -1,0 +1,26 @@
+original.name="Coercion_Invalid_10"
+======
+>>> main.whiley
+type pos is (int n) where n > 0
+type neg is (int n) where n < 0
+
+type intr is pos|neg|bool
+
+function f(intr[] e) -> int[]:
+    if e is int[]:
+        return e
+    else:
+        return [1, 2, 3]
+
+public export method test() :
+    assume f([1, 2, 3, 4, 5, 6, 7]) == [1, 2, 3, 4, 5, 6, 7]
+    assume f([]) == [0;0]
+    assume f([1, 2, true]) == [1,2,3]
+    assume f([false, 2, true]) == [1,2,3]
+
+---
+E400 main.whiley 7,11:16
+E400 main.whiley 7,11:16
+E400 main.whiley 13,14
+E400 main.whiley 15,14
+E400 main.whiley 16,21

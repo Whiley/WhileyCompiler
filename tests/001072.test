@@ -1,0 +1,9 @@
+original.name="Parsing_Invalid_28"
+======
+>>> main.whiley
+type Rec is  {
+     void[] xs
+}
+
+---
+E407 main.whiley 2,5:8

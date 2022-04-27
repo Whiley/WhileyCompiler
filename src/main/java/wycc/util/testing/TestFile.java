@@ -119,6 +119,18 @@ public class TestFile implements Iterable<TestFile.Frame> {
 			}
 			return c;
 		}
+
+		public int getErrorNumber() {
+			return errno;
+		}
+
+		public Trie getFilename() {
+			return filename;
+		}
+
+		public Coordinate getLocation() {
+			return location;
+		}
 	}
 
 	/**

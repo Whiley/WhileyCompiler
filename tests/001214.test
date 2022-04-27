@@ -1,0 +1,14 @@
+original.name="Template_Invalid_29"
+======
+>>> main.whiley
+type Box<T> is { T val }
+type Option<T> is null | Box<T>
+
+function empty<T>() -> (Option<T> a, Option<T> b):
+    return null,null
+
+public export method test():
+    (Option<int> i, Option<bool> j) = empty()
+
+---
+E400 main.whiley 8,38:44

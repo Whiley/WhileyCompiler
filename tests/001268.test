@@ -1,0 +1,10 @@
+original.name="UnionType_Invalid_1"
+======
+>>> main.whiley
+type IntBool is int | bool
+
+function f(IntBool x) -> int:
+    return x
+
+---
+E400 main.whiley 4,11

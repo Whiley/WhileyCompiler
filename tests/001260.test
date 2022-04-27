@@ -1,0 +1,10 @@
+original.name="Type_Invalid_2"
+======
+>>> main.whiley
+type nat is (int x) where g(x)
+
+method g(int x) -> int:
+    return x
+
+---
+E400 main.whiley 1,26:29

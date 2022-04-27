@@ -1,0 +1,10 @@
+original.name="StaticVar_Invalid_12"
+======
+>>> main.whiley
+int GLOBAL = 0
+
+function f() -> (int r):
+    return GLOBAL
+
+---
+E615 main.whiley 4,11:16

@@ -1,0 +1,10 @@
+original.name="NegationType_Valid_5"
+======
+>>> main.whiley
+function f() -> int[] | int:
+    return 1
+
+public export method test() :
+    assume f() == 1
+
+---

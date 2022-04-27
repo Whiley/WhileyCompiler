@@ -1,0 +1,13 @@
+original.name="Lambda_Invalid_9"
+======
+>>> main.whiley
+type fun_t is method(int)->(int)
+
+function alert() -> fun_t:
+    return &(int x -> drop(x))
+
+
+method drop(int x):
+    skip
+---
+E400 main.whiley 4,22:28

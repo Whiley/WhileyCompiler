@@ -1,0 +1,13 @@
+original.name="ArrayAssign_Invalid_2"
+======
+>>> main.whiley
+
+public export method test():
+    int[] arr1 = [1, 2, 3]
+    int[] arr2 = arr1
+    arr2[2] = 2
+    assert arr2[2] == |arr1|
+
+---
+E705 main.whiley 6,11:27
+E722 main.whiley 6,11:27

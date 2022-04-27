@@ -1,0 +1,13 @@
+original.name="MethodRef_Invalid_3"
+======
+>>> main.whiley
+type MyMeth is method(int)->int
+
+method read(int x) -> int:
+    return x + 123
+
+function test(MyMeth m) -> int:
+    return m(1)
+
+---
+E608 main.whiley 7,11:14

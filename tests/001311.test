@@ -1,0 +1,9 @@
+original.name="VarDecl_Invalid_1"
+======
+>>> main.whiley
+public export method test() -> int:
+    int x = y
+    return x
+
+---
+E407 main.whiley 2,12

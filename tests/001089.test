@@ -1,0 +1,19 @@
+original.name="Property_Invalid_3"
+======
+>>> main.whiley
+property nat(int x) -> bool:
+   x >= 0
+
+property natArray(int[] xs) -> bool:
+   all { i in 0..|xs| | nat(xs[i]) }
+
+function id(int[] xs) -> (int[] ys)
+ensures natArray(ys):
+    return xs
+
+public export method test():
+   assume id([0,1,2]) == [0,1,2]
+   assume id([-1,1,2]) == [-1,1,2]
+---
+E701 main.whiley 13,10:21
+E717 main.whiley 8,4:12

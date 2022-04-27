@@ -1,0 +1,6 @@
+original.name="Type_Invalid_6"
+======
+>>> main.whiley
+type Contractive is Contractive | Contractive | Contractive
+---
+E401 main.whiley 1,34:44

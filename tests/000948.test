@@ -1,0 +1,15 @@
+original.name="Final_Invalid_10"
+======
+>>> main.whiley
+function f(int x) -> (int r):
+    //
+    final int y
+    //
+    y = x
+    //    
+    if x >= 0:
+        y = y + 1
+    //
+    return y
+---
+E606 main.whiley 8,8

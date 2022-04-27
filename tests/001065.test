@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_2"
+======
+>>> main.whiley
+type nat is int
+type nat is {int x, int y}
+
+---
+E316 main.whiley 2,5:7

@@ -1,0 +1,9 @@
+original.name="UnknownReference_Invalid_5"
+======
+>>> main.whiley
+method main():
+    &(int[]) p = new [1,2,3]
+    //
+    *p = [4,5,6]
+---
+E611 main.whiley 4,5

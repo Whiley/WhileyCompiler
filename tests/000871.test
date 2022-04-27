@@ -1,0 +1,11 @@
+original.name="Array_Invalid_7"
+======
+>>> main.whiley
+function List(int tag) -> int[]:
+    int[] r
+    r[0] = tag
+    return r
+
+---
+E601 main.whiley 3,4
+E601 main.whiley 4,11

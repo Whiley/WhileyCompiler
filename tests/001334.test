@@ -1,0 +1,15 @@
+original.name="While_Invalid_4"
+======
+>>> main.whiley
+function sum(int[] ls) -> int:
+    int i = 0
+    int r = 0
+    //
+    while i < |ls|:
+        r = [ls[i]; 1]
+        i = i + 1
+    //
+    return r
+
+---
+E400 main.whiley 6,12:21
