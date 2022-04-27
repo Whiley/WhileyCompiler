@@ -92,7 +92,7 @@ public class TestFile implements Iterable<TestFile.Frame> {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Error {
+	public static class Error implements Comparable<Error> {
 		final int errno;
 		final Trie filename;
 		final Coordinate location;
@@ -107,6 +107,18 @@ public class TestFile implements Iterable<TestFile.Frame> {
 		public String toString() {
 			return "(E" + errno + "," + filename + "," + location + ")";
 		}
+
+		@Override
+		public int compareTo(Error other) {
+			int c = filename.compareTo(other.filename);
+			if (c == 0) {
+				c = location.compareTo(other.location);
+				if (c == 0) {
+					c = Integer.compare(errno, other.errno);
+				}
+			}
+			return c;
+		}
 	}
 
 	/**
@@ -115,7 +127,7 @@ public class TestFile implements Iterable<TestFile.Frame> {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Coordinate {
+	public static class Coordinate implements Comparable<Coordinate> {
 		public final int line;
 		public final Range range;
 
@@ -128,6 +140,15 @@ public class TestFile implements Iterable<TestFile.Frame> {
 		public String toString() {
 			return line + "," + range;
 		}
+
+		@Override
+		public int compareTo(Coordinate other) {
+			int c = Integer.compare(this.line, other.line);
+			if(c == 0) {
+				return range.compareTo(other.range);
+			}
+			return c;
+		}
 	}
 
 	/**
@@ -136,7 +157,7 @@ public class TestFile implements Iterable<TestFile.Frame> {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Range {
+	public static class Range implements Comparable<Range> {
 		public final int start;
 		public final int end;
 
@@ -152,6 +173,15 @@ public class TestFile implements Iterable<TestFile.Frame> {
 			} else {
 				return start + ":" + end;
 			}
+		}
+
+		@Override
+		public int compareTo(Range other) {
+			int c = Integer.compare(start, other.start);
+			if(c == 0) {
+				return Integer.compare(end, other.end);
+			}
+			return c;
 		}
 	}
 

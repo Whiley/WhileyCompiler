@@ -6,4 +6,4 @@ package pkg
 public export method test():
        assert 1 == trye
 ---
-E103 pkg/test.whiley 1,1:2
+E407 pkg/test.whiley 4,19:22
