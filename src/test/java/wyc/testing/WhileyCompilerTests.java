@@ -70,13 +70,18 @@ public class WhileyCompilerTests {
 	protected void runTest(Trie path) throws IOException {
 		Path srcDir = Path.of(WHILEY_SRC_DIR);
 		TestFile tf = readTestFile(srcDir.toFile(), path);
+		// Check whether this test should be ignored or not.
+		boolean ignored = tf.get(Boolean.class, "build.whiley.ignore").orElse(false);
+		// Yes, test file indicates it should be ignored (for whatever reason).
+		Assume.assumeTrue("Test " + path + " skipped", !ignored);
+		// NOTE: if we get here, then ignored == false
 		Path testDir = srcDir.resolve(path.toPath());
 		forceDelete(testDir);
 		testDir.toFile().mkdirs();
 		int index = 0;
 		HashMap<Trie, TextFile> state = new HashMap<>();
 		for (TestFile.Frame f : tf) {
-			MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<SyntaxError>();
+			MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<>();
 			// Construct frame directory
 			Path frameDir = testDir.resolve("_" + index);
 			index++;
@@ -103,12 +108,16 @@ public class WhileyCompilerTests {
 			} else if (compiled) {
 				fail("Test should not have compiled!");
 			} else if (!compiled && !shouldCompile) {
-				TestFile.Error[] actual = handler.stream().map(se -> toError(state, se)).toArray(TestFile.Error[]::new);
+				TestFile.Error[] actual = handler.stream().map(se -> toError(state, se))
+						.toArray(TestFile.Error[]::new);
 				compareReportedErrors(actual, f.markers);
 			} else {
 				fail("Test should have compiled!");
 			}
 		}
+		// Finally clean up if we get here. Otherwise, leave files in place for
+		// debugging.
+		forceDelete(testDir);
 	}
 
 	/**
@@ -246,6 +255,7 @@ public class WhileyCompilerTests {
 		String targetdir = "tests";
 		Collection<Object[]> results = TestUtils.findTestNames(srcdir);
 		System.out.println("Found " + results.size() + ".");
+		int count = 0;
 		for(Object[] r : results) {
 			String name = (String) r[0];
 			String filename = name + ".whiley";
@@ -253,8 +263,19 @@ public class WhileyCompilerTests {
 			byte[] bytes = fin.readAllBytes();
 			fin.close();
 			String contents = new String(bytes);
-			FileOutputStream fout = new FileOutputStream(targetdir + "/" + name + ".test");
+			// Construct test name with padding.
+			String testname = String.format("%1$6s",Integer.toString(count)).replace(" ", "0");
+			FileOutputStream fout = new FileOutputStream(targetdir + "/" + testname + ".test");
 			PrintStream pout = new PrintStream(fout);
+			pout.println("original.name=\"" + name + "\"");
+			if(TestUtils.VALID_IGNORED.containsKey(name)) {
+				String issue = TestUtils.VALID_IGNORED.get(name);
+				pout.println("build.whiley.ignore=true");
+				if (!issue.equals("???")) {
+					int number = Integer.parseInt(issue);
+					pout.println("WhileyCompiler.issue=" + number);
+				}
+			}
 			pout.println("======");
 			pout.println(">>> main.whiley");
 			pout.println(contents);
@@ -262,6 +283,7 @@ public class WhileyCompilerTests {
 			pout.flush();
 			fout.flush();
 			fout.close();
+			count = count + 1;
 		}
 	}
 }
