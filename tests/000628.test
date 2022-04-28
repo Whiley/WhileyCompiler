@@ -1,0 +1,17 @@
+original.name="Template_Valid_4"
+======
+>>> main.whiley
+type NonEmptyArray<T> is (T[] arr) where |arr| > 0
+
+public export method test():
+    NonEmptyArray<int> a1 = [0]
+    NonEmptyArray<int> a2 = [1,2]
+    //
+    assert a1[0] == 0
+    assert |a1| == 1
+    //
+    assert a2[0] == 1
+    assert a2[1] == 2
+    assert |a2| == 2
+
+---

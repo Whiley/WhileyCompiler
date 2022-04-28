@@ -1,0 +1,55 @@
+original.name="BoolList_Valid_4"
+======
+>>> main.whiley
+type Board is (bool[][] flags)
+where |flags| == 3
+where all { k in 0 .. |flags| | |flags[k]| == 3 }
+
+function update(Board board) -> Board:
+    Board nboard = board
+    int i = 0
+    while i < 3 
+        where i >= 0:
+        int j = 0
+        while j < 3 
+            where j >= 0:
+            int c = countLiving(board, i, j)
+            if board[i][j]:
+                switch c:
+                    case 0, 1:
+                        nboard[i][j] = false
+                    case 2, 3:
+            j = j + 1
+        i = i + 1
+    return nboard
+
+function countLiving(Board board, int row, int col) -> int:
+    int count = isAlive(board, row - 1, col - 1)
+    count = count + isAlive(board, row - 1, col)
+    count = count + isAlive(board, row - 1, col + 1)
+    count = count + isAlive(board, row, col - 1)
+    count = count + isAlive(board, row, col + 1)
+    count = count + isAlive(board, row + 1, col - 1)
+    count = count + isAlive(board, row + 1, col)
+    count = count + isAlive(board, row + 1, col + 1)
+    return count
+
+function isAlive(Board board, int row, int col) -> int:
+    int nrows = |board|
+    if (row < 0) || (row >= nrows):
+        return 0
+    int ncols = |board[0]|
+    if (col < 0) || (col >= ncols):
+        return 0
+    if board[row][col]:
+        return 1
+    else:
+        return 0
+
+public export method test() :
+    Board board = [[false, true, false], [false, true, false], [false, true, false]]
+    Board nboard = update(board)
+    assume board == [[false, true, false], [false, true, false], [false, true, false]]
+    assume nboard == [[false, false, false], [false, true, false], [false, false, false]]
+
+---

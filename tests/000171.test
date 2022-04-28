@@ -1,0 +1,22 @@
+original.name="Fail_Valid_3"
+======
+>>> main.whiley
+type pos is (int x) where x > 0
+
+function f(pos|null x) -> null:
+    //
+    if x is pos && x < 10:
+        return null
+    else if x is null:
+        return x
+    else if x >= 0:
+        return null
+    else:
+        fail
+
+public export method test():
+    assume f(1) == null
+    assume f(2) == null
+    assume f(null) == null
+    
+---

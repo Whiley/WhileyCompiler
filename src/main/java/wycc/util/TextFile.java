@@ -79,6 +79,10 @@ public class TextFile implements Iterable<String> {
 		return new TextFile(nlines);
 	}
 
+	public String getLine(int line) {
+		return lines[line-1];
+	}
+
     public Line getEnclosingLine(int offset) {
         int index = 0;
         for(int i=0;i!=lines.length;++i) {

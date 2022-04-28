@@ -1,0 +1,17 @@
+original.name="Reference_Valid_16"
+======
+>>> main.whiley
+type Point is {int x, int y}
+
+public export method test():
+    &(null|Point) c = new (null|Point) {x:1,y:1}
+    &(null|Point) d = c
+    *c = {x:2,y:2}
+    assert (*c) == {x:2,y:2}
+    assert (*d) == {x:2,y:2}
+    *c = null
+    assert (*c) == null
+    assert (*d) == null
+
+
+---

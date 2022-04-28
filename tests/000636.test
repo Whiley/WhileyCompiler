@@ -1,0 +1,19 @@
+original.name="Template_Valid_47"
+======
+>>> main.whiley
+type Handler<T> is { function handler(T)->T }
+type nHandler<T> is null | Handler<T>
+
+function instanceof<T>(nHandler<T> attr) -> bool:
+    if attr is Handler<T>:
+        return true
+    else:
+        return false
+
+function id(int x) -> (int y):
+    return x
+
+public export method test():
+    assume instanceof<int>(null) == false
+    assume instanceof<int>({handler: &id}) == true
+---

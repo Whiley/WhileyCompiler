@@ -1,0 +1,15 @@
+original.name="MethodCall_Valid_2"
+======
+>>> main.whiley
+method get() -> int:
+    return 1
+
+method f() -> int[]:
+    return [1, 2, 3, get()]
+
+public export method test() :
+    &{int state} proc = new {state: 1}
+    int[] result = f()
+    assume result == [1,2,3,1]
+
+---

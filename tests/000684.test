@@ -1,0 +1,23 @@
+original.name="TypeEquals_Valid_33"
+======
+>>> main.whiley
+
+
+type pos is (int p) where p > 0
+
+type neg is (int n) where n < 0
+
+type expr is pos | neg
+
+function f(expr e) -> bool:
+    if e is pos:
+        return true
+    else:
+        return false
+
+public export method test() :
+    assume f((neg) -1) == false
+    assume f((pos) 1) == true
+    assume f((pos) 1234) == true
+
+---

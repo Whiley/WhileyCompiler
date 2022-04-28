@@ -1,0 +1,255 @@
+original.name="Complex_Valid_10"
+======
+>>> main.whiley
+// This is something of a performance test for the verifier because of
+// the relatively large constants involved.  In particular, assigning
+// a large constant array of 52 items to a variable with a type
+// invariant.
+//
+// I suppose we could consider this a stretch goal of sorts.  In
+// particular, it'll be an exciting day when Whiley can verify this in
+// any reasonable amount of time...
+
+
+type nat is (int x) where x >= 0
+
+// =======================================
+// Card Definition
+// =======================================
+
+// Suites
+final int HEARTS = 1
+final int CLUBS = 2
+final int DIAMONDS = 3
+final int SPADES = 4
+
+// Ordinals
+final int TWO = 2
+final int THREE = 3
+final int FOUR = 4
+final int FIVE = 5
+final int SIX = 6
+final int SEVEN = 7
+final int EIGHT = 8
+final int NINE = 9
+final int TEN = 10
+final int JACK = 11
+final int QUEEN = 12
+final int KING = 13
+final int ACE = 14
+
+type Card is { int suite, int ordinal }
+// Suite between hearts and clubs
+where HEARTS <= suite && suite <= SPADES
+// Ordinal between 2 and ACE (high)
+where 2 <= ordinal && ordinal <= ACE
+
+// Define a "comparator" for cards
+property lessThan(Card c1, Card c2) -> bool:
+    (c1.suite < c2.suite) || (c1.suite == c1.suite && c1.ordinal < c2.ordinal)
+
+property sorted(Card[] cards) -> bool:
+    all { i in 1..|cards| | lessThan(cards[i-1],cards[i]) }
+
+// =======================================
+// Card Constants
+// =======================================
+
+final Card TWO_HEARTS = { suite: HEARTS, ordinal: TWO }
+final Card THREE_HEARTS = { suite: HEARTS, ordinal: THREE }
+final Card FOUR_HEARTS = { suite: HEARTS, ordinal: FOUR }
+final Card FIVE_HEARTS = { suite: HEARTS, ordinal: FIVE }
+final Card SIX_HEARTS = { suite: HEARTS, ordinal: SIX }
+final Card SEVEN_HEARTS = { suite: HEARTS, ordinal: SEVEN }
+final Card EIGHT_HEARTS = { suite: HEARTS, ordinal: EIGHT }
+final Card NINE_HEARTS = { suite: HEARTS, ordinal: NINE }
+final Card TEN_HEARTS = { suite: HEARTS, ordinal: TEN }
+final Card JACK_HEARTS = { suite: HEARTS, ordinal: JACK }
+final Card QUEEN_HEARTS = { suite: HEARTS, ordinal: QUEEN }
+final Card KING_HEARTS = { suite: HEARTS, ordinal: KING }
+final Card ACE_HEARTS = { suite: HEARTS, ordinal: ACE }
+
+final Card TWO_CLUBS = { suite: CLUBS, ordinal: TWO }
+final Card THREE_CLUBS = { suite: CLUBS, ordinal: THREE }
+final Card FOUR_CLUBS = { suite: CLUBS, ordinal: FOUR }
+final Card FIVE_CLUBS = { suite: CLUBS, ordinal: FIVE }
+final Card SIX_CLUBS = { suite: CLUBS, ordinal: SIX }
+final Card SEVEN_CLUBS = { suite: CLUBS, ordinal: SEVEN }
+final Card EIGHT_CLUBS = { suite: CLUBS, ordinal: EIGHT }
+final Card NINE_CLUBS = { suite: CLUBS, ordinal: NINE }
+final Card TEN_CLUBS = { suite: CLUBS, ordinal: TEN }
+final Card JACK_CLUBS = { suite: CLUBS, ordinal: JACK }
+final Card QUEEN_CLUBS = { suite: CLUBS, ordinal: QUEEN }
+final Card KING_CLUBS = { suite: CLUBS, ordinal: KING }
+final Card ACE_CLUBS = { suite: CLUBS, ordinal: ACE }
+
+final Card TWO_DIAMONDS = { suite: DIAMONDS, ordinal: TWO }
+final Card THREE_DIAMONDS = { suite: DIAMONDS, ordinal: THREE }
+final Card FOUR_DIAMONDS = { suite: DIAMONDS, ordinal: FOUR }
+final Card FIVE_DIAMONDS = { suite: DIAMONDS, ordinal: FIVE }
+final Card SIX_DIAMONDS = { suite: DIAMONDS, ordinal: SIX }
+final Card SEVEN_DIAMONDS = { suite: DIAMONDS, ordinal: SEVEN }
+final Card EIGHT_DIAMONDS = { suite: DIAMONDS, ordinal: EIGHT }
+final Card NINE_DIAMONDS = { suite: DIAMONDS, ordinal: NINE }
+final Card TEN_DIAMONDS = { suite: DIAMONDS, ordinal: TEN }
+final Card JACK_DIAMONDS = { suite: DIAMONDS, ordinal: JACK }
+final Card QUEEN_DIAMONDS = { suite: DIAMONDS, ordinal: QUEEN }
+final Card KING_DIAMONDS = { suite: DIAMONDS, ordinal: KING }
+final Card ACE_DIAMONDS = { suite: DIAMONDS, ordinal: ACE }
+
+final Card TWO_SPADES = { suite: SPADES, ordinal: TWO }
+final Card THREE_SPADES = { suite: SPADES, ordinal: THREE }
+final Card FOUR_SPADES = { suite: SPADES, ordinal: FOUR }
+final Card FIVE_SPADES = { suite: SPADES, ordinal: FIVE }
+final Card SIX_SPADES = { suite: SPADES, ordinal: SIX }
+final Card SEVEN_SPADES = { suite: SPADES, ordinal: SEVEN }
+final Card EIGHT_SPADES = { suite: SPADES, ordinal: EIGHT }
+final Card NINE_SPADES = { suite: SPADES, ordinal: NINE }
+final Card TEN_SPADES = { suite: SPADES, ordinal: TEN }
+final Card JACK_SPADES = { suite: SPADES, ordinal: JACK }
+final Card QUEEN_SPADES = { suite: SPADES, ordinal: QUEEN }
+final Card KING_SPADES = { suite: SPADES, ordinal: KING }
+final Card ACE_SPADES = { suite: SPADES, ordinal: ACE }
+
+// =======================================
+// DECK
+// =======================================
+
+type Deck is (Card[] cards)
+// Exactly 52 cards in a deck
+where |cards| == 52
+// No two cards are the same in a deck
+where all { i in 0..|cards|, j in 0..|cards| | (i != j) ==> (cards[i] != cards[j]) }
+
+// A real test of verifier performance!!
+Deck deck = [
+        // Hearts
+        TWO_HEARTS,
+        THREE_HEARTS,
+        FOUR_HEARTS,
+        FIVE_HEARTS,
+        SIX_HEARTS,
+        SEVEN_HEARTS,
+        EIGHT_HEARTS,
+        NINE_HEARTS,
+        TEN_HEARTS,
+        JACK_HEARTS,
+        QUEEN_HEARTS,
+        KING_HEARTS,
+        ACE_HEARTS,
+        // Clubs
+        TWO_CLUBS,
+        THREE_CLUBS,
+        FOUR_CLUBS,
+        FIVE_CLUBS,
+        SIX_CLUBS,
+        SEVEN_CLUBS,
+        EIGHT_CLUBS,
+        NINE_CLUBS,
+        TEN_CLUBS,
+        JACK_CLUBS,
+        QUEEN_CLUBS,
+        KING_CLUBS,
+        ACE_CLUBS,
+        // Diamonds
+        TWO_DIAMONDS,
+        THREE_DIAMONDS,
+        FOUR_DIAMONDS,
+        FIVE_DIAMONDS,
+        SIX_DIAMONDS,
+        SEVEN_DIAMONDS,
+        EIGHT_DIAMONDS,
+        NINE_DIAMONDS,
+        TEN_DIAMONDS,
+        JACK_DIAMONDS,
+        QUEEN_DIAMONDS,
+        KING_DIAMONDS,
+        ACE_DIAMONDS,
+        // Spades
+        TWO_SPADES,
+        THREE_SPADES,
+        FOUR_SPADES,
+        FIVE_SPADES,
+        SIX_SPADES,
+        SEVEN_SPADES,
+        EIGHT_SPADES,
+        NINE_SPADES,
+        TEN_SPADES,
+        JACK_SPADES,
+        QUEEN_SPADES,
+        KING_SPADES,
+        ACE_SPADES
+    ]
+
+// =======================================
+// RANDOM
+// =======================================
+type Random is {nat index, nat[] sequence}
+// index is valid position in random sequence
+where index < |sequence|
+// Sequence is valid card index
+where all { i in 0..|sequence| | sequence[i] < 52 }
+
+function Random(nat[] sequence) -> Random
+requires |sequence| > 0
+requires all { i in 0..|sequence| | sequence[i] < 52 }:
+    return { index: 0, sequence: sequence }
+
+function next(Random r) -> (nat index, Random nr)
+ensures index < 52:
+    // Get item from random sequence
+    nat result = r.sequence[r.index]
+    // Move to next item
+    nat tmp = r.index + 1
+    // Check for overflow
+    if tmp == |r.sequence|:
+        tmp = 0
+    //
+    r.index = tmp
+    //
+    return result, r
+
+// =======================================
+// SHUFFLE
+// =======================================
+
+function swap(Deck deck, nat from, nat to) -> Deck
+requires from < 52 && to < 52:
+    // Create copy of deck, which is necessary to temporarily break the
+    // invariant.
+    Card[] tmp = deck
+    // Swap two cards around    
+    tmp[from] = deck[to]
+    tmp[to] = deck[from]
+    //
+    return deck
+
+// "Randomly" shuffle the deck
+function shuffle(Deck deck, Random rand, nat count) -> Deck:
+    //
+    nat i = 0
+    //
+    while i < count:
+       nat from
+       nat to    
+       (from,rand) = next(rand)
+       (to,rand) = next(rand)
+       deck = swap(deck,from,to)
+       i = i + 1
+    //
+    return deck
+    
+// =======================================
+// TEST
+// =======================================
+
+public export method test():
+    // Not a very long "random" sequence
+    Random rand = Random([51,43,33,45,22,21,6,0,11,12,14])
+    // Shuffle the deck ten times
+    Deck d = shuffle(deck,rand,10)
+    //
+    assert |d| == 52
+
+
+---

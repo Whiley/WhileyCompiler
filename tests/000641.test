@@ -1,0 +1,30 @@
+original.name="Template_Valid_51"
+======
+>>> main.whiley
+type Box<S,T> is { S first, T second }
+type Option<S,T> is null | Box<S,T>
+
+function empty<S,T>(S dummy) -> Option<S,T>:
+    return null
+
+function id<T>(T x) -> (T r):
+    return x
+
+public export method test():
+    Option<int,int> i1 = empty(1)
+    Option<int,bool> i2 = empty(1)
+    Option<bool,int> i3 = empty(true)
+    //
+    Option<int,int> j1 = id(id(empty(1)))
+    Option<int,bool> j2 = id(id(empty(1)))
+    Option<bool,int> j3 = id(id(empty(true)))
+    //
+    Option<int,int> k1 = id(id(empty(1)))
+    Option<int,bool> k2 = id(id(empty(1)))
+    Option<bool,int> k3 = id(id(empty(true)))
+    //
+    assume i1 == null && i2 == null && i3 == null
+    assume j1 == null && j2 == null && j3 == null
+    assume k1 == null && k2 == null && k3 == null    
+
+---
