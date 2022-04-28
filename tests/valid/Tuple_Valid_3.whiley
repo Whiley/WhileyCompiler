@@ -1,9 +1,0 @@
-public export method test():
-    //
-    (int a, int b) = (2,1)
-    //
-    assert a == 2
-    //
-    assert b == 1
-    //
-    assert (a,b) == (2,1)

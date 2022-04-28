@@ -280,11 +280,11 @@ public class WhileyCompilerTests {
 	}
 
 	public static void main(String[] args) throws IOException {
-		String srcdir = "tests/valid".replace('/', File.separatorChar);
+		String srcdir = "tests/invalid".replace('/', File.separatorChar);
 		String targetdir = "tests";
 		Collection<Object[]> results = TestUtils.findTestNames(srcdir);
 		System.out.println("Found " + results.size() + ".");
-		int count = 0;
+		int count = 827;
 		for (Object[] r : results) {
 			String name = (String) r[0];
 			String filename = name + ".whiley";
@@ -297,14 +297,6 @@ public class WhileyCompilerTests {
 			FileOutputStream fout = new FileOutputStream(targetdir + "/" + testname + ".test");
 			PrintStream pout = new PrintStream(fout);
 			pout.println("original.name=\"" + name + "\"");
-			if (TestUtils.VALID_IGNORED.containsKey(name)) {
-				String issue = TestUtils.VALID_IGNORED.get(name);
-				pout.println("build.whiley.ignore=true");
-				if (!issue.equals("???")) {
-					int number = Integer.parseInt(issue);
-					pout.println("WhileyCompiler.issue=" + number);
-				}
-			}
 			pout.println("======");
 			pout.println(">>> main.whiley");
 			pout.println(contents);
