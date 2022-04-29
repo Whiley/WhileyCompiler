@@ -33,6 +33,8 @@ import wycc.util.*;
 import wycc.util.testing.TestFile;
 import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyc.lang.WhileyFile;
+import wyc.util.ErrorMessages;
+import wyc.util.ErrorMessages.Message;
 import wyc.util.TestUtils;
 
 /**
@@ -283,28 +285,86 @@ public class WhileyCompilerTests {
 		String srcdir = "tests/invalid".replace('/', File.separatorChar);
 		String targetdir = "tests";
 		Collection<Object[]> results = TestUtils.findTestNames(srcdir);
+//		Collection<Object[]> results = new ArrayList<>();
+//		results.add(new Object[]{"DoWhile_Invalid_6"});
 		System.out.println("Found " + results.size() + ".");
 		int count = 827;
 		for (Object[] r : results) {
 			String name = (String) r[0];
 			String filename = name + ".whiley";
-			FileInputStream fin = new FileInputStream(srcdir + "/" + filename);
-			byte[] bytes = fin.readAllBytes();
-			fin.close();
-			String contents = new String(bytes);
-			// Construct test name with padding.
-			String testname = String.format("%1$6s", Integer.toString(count)).replace(" ", "0");
-			FileOutputStream fout = new FileOutputStream(targetdir + "/" + testname + ".test");
-			PrintStream pout = new PrintStream(fout);
-			pout.println("original.name=\"" + name + "\"");
-			pout.println("======");
-			pout.println(">>> main.whiley");
-			pout.println(contents);
-			pout.println("---");
-			pout.flush();
-			fout.flush();
-			fout.close();
-			count = count + 1;
+			try(FileInputStream fin = new FileInputStream(srcdir + "/" + filename)) {
+				byte[] bytes = fin.readAllBytes();
+				List<TestFile.Error> expected = determineExpectedErrors(srcdir + "/" + name + ".sysout");
+				String contents = new String(bytes);
+				// Construct test name with padding.
+				String testname = String.format("%1$6s", Integer.toString(count)).replace(" ", "0");
+				FileOutputStream fout = new FileOutputStream(targetdir + "/" + testname + ".test");
+				PrintStream pout = new PrintStream(fout);
+				pout.println("original.name=\"" + name + "\"");
+				pout.println("======");
+				pout.println(">>> main.whiley");
+				pout.println(contents);
+				pout.println("---");
+				// Print out expected errors
+				for (TestFile.Error e : expected) {
+					pout.println("E" + e.getErrorNumber() + " " + e.getFilename() + " " + e.getLocation());
+				}
+				pout.flush();
+				fout.flush();
+				fout.close();
+				count = count + 1;
+			}
 		}
+	}
+
+	public static List<TestFile.Error> determineExpectedErrors(String filename) throws IOException {
+		ArrayList<TestFile.Error> errs = new ArrayList<>();
+		try {
+			try (FileInputStream fin = new FileInputStream(filename)) {
+				String[] lines = new String(fin.readAllBytes()).split("\n");
+				int i = 0;
+				while (i < lines.length) {
+					i = parseError(i, lines, errs);
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("*** ERROR PARSING " + filename);
+		}
+		return errs;
+	}
+
+	public static int parseError(int index, String[] lines, List<TestFile.Error> errs) {
+		String[] split = lines[index].split(":");
+		int line = Integer.parseInt(split[1]);
+		int errno = guessErrorNumber(split[2].substring(1));
+		index = index + 1;
+		while (lines[index].startsWith("\tfound")) {
+			index = index + 1;
+		}
+		index = index + 1; // skip line highlighted
+		String highlight = lines[index];
+		index = index + 1; // skip highlight
+		int start = highlight.indexOf('^');
+		int end = highlight.lastIndexOf('^');
+		TestFile.Range range = new TestFile.Range(start, end);
+		TestFile.Coordinate loc = new TestFile.Coordinate(line,range);
+		errs.add(new TestFile.Error(errno, Trie.fromString("main.whiley"), loc));
+		return index;
+	}
+
+	public static int guessErrorNumber(String msg) {
+		int base = 0;
+		for(Message[] group : ErrorMessages.ERROR_MESSAGES) {
+			if(group != null) {
+				for(int i=0;i!=group.length;++i) {
+					if(group[i] != null && group[i].match(msg)) {
+						return base + i;
+					}
+				}
+			}
+			base += 100;
+		}
+		//
+		throw new IllegalArgumentException("Did not match " + msg);
 	}
 }
