@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_11"
+======
+>>> main.whiley
+method f():
+     continue
+
+---
+E319 main.whiley 2,5:12

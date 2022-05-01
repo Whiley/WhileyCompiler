@@ -1,0 +1,14 @@
+original.name="FunctionRef_Invalid_3"
+======
+>>> main.whiley
+function f(int x) -> int:
+    return x + 1
+
+function g(function func(bool)->int) -> int:
+    return func(0b010)
+
+method h() -> int
+    return g(&f)
+
+---
+E300 main.whiley 8,4:9

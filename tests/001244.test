@@ -1,0 +1,14 @@
+original.name="TypeEquals_Invalid_11"
+======
+>>> main.whiley
+type List is null | { int data, List next }
+
+function f(int|null|bool x) -> (bool r):
+    //
+    if x is null || x is int:
+        return false
+    else:
+        return x == 0
+
+---
+E602 main.whiley 8,15:20

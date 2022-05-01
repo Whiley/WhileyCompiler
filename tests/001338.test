@@ -1,0 +1,15 @@
+original.name="While_Invalid_8"
+======
+>>> main.whiley
+
+function extract(int[] ls, int[] r) -> int[] requires |ls| == |r|:
+    int i = 0
+    //
+    while i < |ls| where |r| > 0:
+        r[i] = ls[i]
+        i = i + 1
+    //
+    return r
+
+---
+E720 main.whiley 5,25:31

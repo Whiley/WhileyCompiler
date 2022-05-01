@@ -1,0 +1,8 @@
+original.name="IntArith_Invalid_2"
+======
+>>> main.whiley
+method m():
+    int x = 1 - 2 + 3
+
+---
+E321 main.whiley 2,18

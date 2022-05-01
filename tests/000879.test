@@ -1,0 +1,8 @@
+original.name="Assign_Invalid_3"
+======
+>>> main.whiley
+function f(int x, int y) -> bool:
+    return x + y
+
+---
+E400 main.whiley 2,11:15

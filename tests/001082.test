@@ -1,0 +1,12 @@
+original.name="ProcessAccess_Invalid_2"
+======
+>>> main.whiley
+type state is {int y, int x}
+
+type pState is &state
+
+method f(pState _this) :
+    _this = new {z: 4, x: 3}
+
+---
+E400 main.whiley 6,16:27

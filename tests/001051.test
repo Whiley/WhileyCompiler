@@ -1,0 +1,17 @@
+original.name="OpenRecord_Invalid_2"
+======
+>>> main.whiley
+type OpenRecord is {int x, ...}
+
+function getField(OpenRecord r) -> int:
+    if r is {int x}:
+        return 0
+    else:
+        if r is {int z, int y}:
+            return 1
+        else:
+            return 2
+
+---
+E400 main.whiley 7,16:29
+E400 main.whiley 7,16:29

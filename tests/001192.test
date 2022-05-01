@@ -1,0 +1,15 @@
+original.name="Switch_Invalid_7"
+======
+>>> main.whiley
+function f(byte[] data, int pos) -> int:
+    method = data[pos]
+    pos = pos + 1
+    switch method:
+        case 0:
+            return 1
+        case 1:
+            return 0
+    return 2
+
+---
+E307 main.whiley 2,4:9

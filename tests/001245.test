@@ -1,0 +1,15 @@
+original.name="TypeEquals_Invalid_12"
+======
+>>> main.whiley
+function f(int|null x, int|null y) -> (int r)
+ensures r == 0 || r == x:
+    //
+    x = y
+    //
+    if x is int && x >= 0:
+        return x
+    else:
+        return 0
+
+---
+E717 main.whiley 7,8:15

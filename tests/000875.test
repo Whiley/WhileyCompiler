@@ -1,0 +1,12 @@
+original.name="Assert_Invalid_2"
+======
+>>> main.whiley
+
+public method m(int x, int y) -> bool:
+    return x < y
+
+public export method test() :
+    assert m(10, 20)
+
+---
+E608 main.whiley 6,11:19

@@ -1,0 +1,11 @@
+original.name="ArrayGenerator_Invalid_2"
+======
+>>> main.whiley
+function f(int n) -> int[]:
+    return [0; n]
+
+public export method test():
+    int[] xs = f(-1)
+---
+E709 main.whiley 2,15
+E726 main.whiley 2,11:16

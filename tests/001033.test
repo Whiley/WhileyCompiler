@@ -1,0 +1,10 @@
+original.name="Native_Invalid_1"
+======
+>>> main.whiley
+
+native export function f(int x) -> int
+
+native export function f(int[] x) -> int
+
+---
+E316 main.whiley 4,23

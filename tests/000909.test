@@ -1,0 +1,22 @@
+original.name="ConstrainedArray_Invalid_2"
+======
+>>> main.whiley
+
+type i8 is (int x) where (x >= -128) && (x <= 127)
+
+function g(int x) -> (int r)
+ensures (r > 0) && (r <= 256):
+    //
+    if x <= 0:
+        return 1
+    else:
+        return x
+
+function f(int x) -> i8[]:
+    return [(i8) g(x)]
+
+public export method test():
+    assume f(256) == [256]
+---
+E702 main.whiley 13,11:21
+E717 main.whiley 10,8:15

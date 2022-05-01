@@ -1,0 +1,20 @@
+original.name="Property_Invalid_2"
+======
+>>> main.whiley
+property nat_a(int x) -> bool:
+   x >= 0
+
+property nat_b(int x) -> bool:
+   x > 0
+
+function id(int x) -> (int y)
+requires nat_a(x)
+ensures nat_b(x):
+    return x
+
+public export method test():
+   assume id(1) == 1
+   assume id(0) == 0
+---
+E701 main.whiley 14,10:14
+E717 main.whiley 8,4:11

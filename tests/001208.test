@@ -1,0 +1,12 @@
+original.name="Template_Invalid_23"
+======
+>>> main.whiley
+type Ref<T> is (&T r)
+ 
+public export method test():
+    Ref<Int> r1 = new 1
+    //
+    assert *r1 == 1
+
+---
+E407 main.whiley 4,8:10

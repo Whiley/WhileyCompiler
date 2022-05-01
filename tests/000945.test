@@ -1,0 +1,9 @@
+original.name="Fail_Invalid_2"
+======
+>>> main.whiley
+function incr(int x) -> int:
+  fail
+  return x + 1
+
+---
+E504 main.whiley 3,2:13

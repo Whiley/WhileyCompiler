@@ -1,0 +1,10 @@
+original.name="Template_Invalid_9"
+======
+>>> main.whiley
+function f<T>(T x) -> (T y):
+    return x
+
+method main():
+    bool x = f(1)
+---
+E400 main.whiley 5,15

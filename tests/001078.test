@@ -1,0 +1,9 @@
+original.name="Parsing_Invalid_5"
+======
+>>> main.whiley
+function f(int x) -> (int r):
+    int x = x
+    return x
+
+---
+E316 main.whiley 2,8

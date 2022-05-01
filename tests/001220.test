@@ -1,0 +1,7 @@
+original.name="Template_Invalid_34"
+======
+>>> main.whiley
+method m<T>(&T p, T x):
+    *p = x
+---
+E611 main.whiley 2,5

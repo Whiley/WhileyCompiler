@@ -1,0 +1,14 @@
+original.name="MethodRef_Invalid_1"
+======
+>>> main.whiley
+type FileReader is {int position, byte[] data}
+
+type Reader is {
+    method(FileReader, int)->int read
+}
+
+function f(Reader r, FileReader state) -> int:
+    return r.read(state,0)
+
+---
+E608 main.whiley 8,13:25

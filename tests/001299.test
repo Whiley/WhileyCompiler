@@ -1,0 +1,12 @@
+original.name="Unsafe_Invalid_1"
+======
+>>> main.whiley
+unsafe function f(int x) -> (int y):
+    assert x >= 0
+    return x
+
+public export method test():
+    assert f(1) == 1
+
+---
+E613 main.whiley 6,11:14

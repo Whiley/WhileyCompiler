@@ -1,0 +1,12 @@
+original.name="Parsing_Invalid_25"
+======
+>>> main.whiley
+function f(int y) -> int:
+    switch(y):
+      default:
+        int x = 0
+    //
+    return x
+
+---
+E407 main.whiley 6,11

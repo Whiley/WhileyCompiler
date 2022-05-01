@@ -1,0 +1,10 @@
+original.name="Function_Invalid_17"
+======
+>>> main.whiley
+function f(&{int f} p) -> bool:
+    if p->f == 0:
+        return false
+    else:
+        return true
+---
+E609 main.whiley 2,10

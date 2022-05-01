@@ -1,0 +1,11 @@
+original.name="ConstrainedInt_Invalid_5"
+======
+>>> main.whiley
+type c2nat is (int x) where x < 10
+
+function f(c2nat x) -> c2nat:
+    x = x + 1
+    return x
+
+---
+E718 main.whiley 4,8:12

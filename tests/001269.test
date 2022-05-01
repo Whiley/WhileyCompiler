@@ -1,0 +1,16 @@
+original.name="UnionType_Invalid_10"
+======
+>>> main.whiley
+type nat is (int n) where n >= 0
+type natlist is nat[]
+
+type nlt is nat | natlist
+
+function g(int y) -> nlt:
+    return (nlt) y
+
+public export method test() :
+    g(-1)
+
+---
+E718 main.whiley 7,17

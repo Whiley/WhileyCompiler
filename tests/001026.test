@@ -1,0 +1,17 @@
+original.name="MethodRef_Invalid_2"
+======
+>>> main.whiley
+type MyMeth is method(int) -> int
+
+method read(int x) -> int:
+    return x + 123
+
+method test(MyMeth m) -> int:
+    return m(false)
+
+public export method test() -> int:
+    return test(&read)
+    
+
+---
+E400 main.whiley 7,13:17

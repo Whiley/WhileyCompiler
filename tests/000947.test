@@ -1,0 +1,11 @@
+original.name="Final_Invalid_1"
+======
+>>> main.whiley
+function f(final int x) -> (int r):
+    //
+    x = x + 1
+    //
+    return x
+
+---
+E606 main.whiley 3,4

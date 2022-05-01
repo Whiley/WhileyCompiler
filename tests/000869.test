@@ -1,0 +1,8 @@
+original.name="Array_Invalid_5"
+======
+>>> main.whiley
+function f() -> int[]:
+    return 1
+
+---
+E400 main.whiley 2,11

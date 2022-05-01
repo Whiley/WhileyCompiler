@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import wycc.util.ArrayUtils;
+import wycc.util.Trie;
 import wycc.lang.Syntactic;
 import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.util.AbstractCompilationUnit.Tuple;
@@ -1645,6 +1646,12 @@ public class Interpreter {
 			} else {
 				return null;
 			}
+		}
+		
+		public Trie getSource() {
+			Decl.Unit unit = getElement().getAncestor(Decl.Unit.class);
+			String nameStr = unit.getName().toString().replace("::", "/");
+			return Trie.fromString(nameStr);
 		}
 	}
 

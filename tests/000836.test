@@ -1,0 +1,11 @@
+original.name="ArrayAssign_Invalid_4"
+======
+>>> main.whiley
+type Board is { bool[][] cells }
+
+method set(Board b, int x, int y):
+    b[y][x] = true
+
+---
+E400 main.whiley 4,4
+E402 main.whiley 4,4

@@ -1,0 +1,9 @@
+original.name="Array_Invalid_4"
+======
+>>> main.whiley
+public export method test():
+    int x = 1
+    int y = x[0]
+
+---
+E400 main.whiley 3,12

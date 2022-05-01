@@ -1,0 +1,8 @@
+original.name="Type_Invalid_12"
+======
+>>> main.whiley
+function f(void[] p) -> int:
+    return 0
+    
+---
+E407 main.whiley 1,11:14

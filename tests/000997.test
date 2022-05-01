@@ -1,0 +1,12 @@
+original.name="If_Invalid_4"
+======
+>>> main.whiley
+function f(int x) -> int:
+    if x < 10:
+        return 1
+    else:
+        if x > 10:
+            return 2
+
+---
+E500 main.whiley 1,0:24

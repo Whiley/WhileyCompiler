@@ -1,0 +1,22 @@
+original.name="DoWhile_Invalid_4"
+======
+>>> main.whiley
+function count(int n) -> (int r)
+requires n > 0
+ensures r == n:
+    //
+    int i = 1
+    //
+    do:
+        i = i - 1
+    while i < n where i >= 0 && i <= n
+    //
+    return i
+
+public export method test():
+    assume count(1) == 1
+    assume count(2) == 2        
+
+---
+E704 main.whiley 9,22:37
+E721 main.whiley 9,22:37

@@ -1,0 +1,9 @@
+original.name="Record_Invalid_2"
+======
+>>> main.whiley
+type Global is {Broken field}
+Global Broken = {y: 2, x: 1}
+
+
+---
+E407 main.whiley 1,16:21

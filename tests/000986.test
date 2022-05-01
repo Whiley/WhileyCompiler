@@ -1,0 +1,14 @@
+original.name="Function_Invalid_14"
+======
+>>> main.whiley
+function g() -> int:
+    return f()
+    
+function f():
+    return h()
+
+function h()->int:
+    return 0
+---
+E400 main.whiley 2,11:13
+E400 main.whiley 5,11:13

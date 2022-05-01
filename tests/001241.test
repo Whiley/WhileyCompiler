@@ -1,0 +1,9 @@
+original.name="Tuple_Invalid_9"
+======
+>>> main.whiley
+public export method test():
+    //
+    (int a, bool b) = (1,2)
+
+---
+E400 main.whiley 3,25

@@ -1,0 +1,13 @@
+original.name="Quantifiers_Invalid_1"
+======
+>>> main.whiley
+
+function f(int[] ls) -> bool
+requires some { i in 0..|ls| | ls[i] < 0 }:
+    return true
+
+public export method test() :
+    f([1, 2, 3])
+
+---
+E716 main.whiley 7,4:15

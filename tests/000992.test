@@ -1,0 +1,11 @@
+original.name="Function_Invalid_4"
+======
+>>> main.whiley
+method g(int x) -> int:
+    return x
+
+function f(int x) -> int:
+    return g(x)
+
+---
+E608 main.whiley 5,11:14

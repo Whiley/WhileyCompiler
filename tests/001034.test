@@ -1,0 +1,10 @@
+original.name="Old_Invalid_1"
+======
+>>> main.whiley
+function f(&int p) -> int
+// old doesn't make sense in this context
+ensures *p == old(*p):
+    //
+    return 0
+---
+E320 main.whiley 3,14:16

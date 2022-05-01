@@ -1,0 +1,11 @@
+original.name="While_Invalid_25"
+======
+>>> main.whiley
+function count(int n) -> (int|null r):
+   int|null i = 0
+   //
+   while i < n:
+      i = null
+   //
+   return i
+---

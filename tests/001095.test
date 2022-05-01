@@ -1,0 +1,7 @@
+original.name="Property_Invalid_9"
+======
+>>> main.whiley
+property inc(int x) -> (bool r):
+    x + 1
+---
+E400 main.whiley 2,4:8

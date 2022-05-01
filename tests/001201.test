@@ -1,0 +1,11 @@
+original.name="Template_Invalid_17"
+======
+>>> main.whiley
+function id<T>(T x) -> (T y):
+    return x
+
+function f(int x) -> (int y):
+    return id<x>(x)
+
+---
+E407 main.whiley 5,14

@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_15"
+======
+>>> main.whiley
+method f():
+    void x
+
+---
+E407 main.whiley 2,4:7

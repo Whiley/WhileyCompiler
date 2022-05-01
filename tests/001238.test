@@ -1,0 +1,14 @@
+original.name="Tuple_Invalid_6"
+======
+>>> main.whiley
+function g() -> (int x, bool r):
+    return 1, false
+
+function f() -> int:
+    int x
+    int y
+    (x,y) = g()
+    return 1
+
+---
+E400 main.whiley 7,12:14

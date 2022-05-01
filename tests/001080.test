@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_8"
+======
+>>> main.whiley
+function f() -> (int r):
+     x = 1
+
+---
+E407 main.whiley 2,5

@@ -1,0 +1,13 @@
+original.name="AddressExpression_Invalid_2"
+======
+>>> main.whiley
+type fun is function()->int
+
+function foo() -> int:
+    return 42
+
+public export method test():
+    fun x = &foo((->)
+
+---
+E305 main.whiley 7,18:19

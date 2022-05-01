@@ -1,0 +1,7 @@
+original.name="StaticVar_Invalid_2"
+======
+>>> main.whiley
+int[] x = 1
+
+---
+E400 main.whiley 1,10

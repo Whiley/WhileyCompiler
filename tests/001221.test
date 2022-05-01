@@ -1,0 +1,6 @@
+original.name="Template_Invalid_4"
+======
+>>> main.whiley
+final int field<T> = 1
+---
+E300 main.whiley 1,15

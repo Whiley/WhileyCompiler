@@ -1,0 +1,9 @@
+original.name="Public_Invalid_1"
+======
+>>> main.whiley
+type Hidden is (int x) where x >= 5
+public type Visible is {Hidden field}
+
+
+---
+E411 main.whiley 2,24:29

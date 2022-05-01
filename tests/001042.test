@@ -1,0 +1,10 @@
+original.name="Old_Invalid_2"
+======
+>>> main.whiley
+method m(&int p)
+// old doesn't make sense in this context
+ensures *p == old(p):
+    //
+    skip
+---
+E602 main.whiley 3,8:19

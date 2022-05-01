@@ -1,0 +1,8 @@
+original.name="Return_Invalid_11"
+======
+>>> main.whiley
+function f(int x) :
+    return x
+
+---
+E400 main.whiley 2,11

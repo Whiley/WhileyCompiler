@@ -1,0 +1,16 @@
+original.name="While_Invalid_11"
+======
+>>> main.whiley
+
+function sumOver(int[] ls) -> int:
+    int i = 0
+    int sum = 0
+    //
+    while i < |ls| where (i >= 0) && (sum >= 0):
+        sum = sum + ls[i]
+        i = i + 1
+    //
+    return sum
+
+---
+E721 main.whiley 6,25:46

@@ -31,6 +31,7 @@ import org.junit.runners.Parameterized.Parameters;
 import wycc.lang.Syntactic;
 import wycc.util.*;
 import wycc.util.testing.TestFile;
+import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyc.lang.WhileyFile;
 import wyc.util.ErrorMessages;
@@ -81,6 +82,8 @@ public class WhileyCompilerTests {
 		int index = 0;
 		HashMap<Trie, TextFile> state = new HashMap<>();
 		for (TestFile.Frame f : tf) {
+			// Filter available markers (ignoring those requiring verification)
+			TestFile.Error[] markers = filterStaticMarkers(f.markers);
 			MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<>();
 			// Construct frame directory
 			Path frameDir = testDir.resolve("_" + index);
@@ -99,17 +102,25 @@ public class WhileyCompilerTests {
 			// Check whether build succeeded
 			boolean compiled = wyc.run();
 			// Check whether build should have succeeded
-			boolean shouldCompile = (f.markers.length == 0);
+			boolean shouldCompile = (markers.length == 0);
 			// Interpreter what happened
 			if (compiled && shouldCompile) {
-				// Test was expected to compile, so attempt to run the code.
+				TestFile.Error[] runtime_markers = filterRuntimeMarkers(f.markers);
+				TestFile.Error[] actual = new TestFile.Error[0];
+				// Test was expected to compile, so attempt to run the code.				
 				String unit = tf.get(String.class, "main.file").orElse("main");
-				TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
+				try {
+					TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
+				} catch (Interpreter.RuntimeError e) {					
+					actual = new TestFile.Error[1];
+					actual[0] = toError(state,e);
+				}
+				compareReportedErrors(actual, runtime_markers);
 			} else if (compiled) {
 				fail("Test should not have compiled!");
 			} else if (!compiled && !shouldCompile) {
 				TestFile.Error[] actual = handler.stream().map(se -> toError(state, se)).toArray(TestFile.Error[]::new);
-				compareReportedErrors(actual, f.markers);
+				compareReportedErrors(actual, markers);
 			} else {
 				// Report errors
 				for (SyntaxError syserr : handler) {
@@ -151,6 +162,28 @@ public class WhileyCompilerTests {
 	}
 
 	/**
+	 * Filter out markers which cannot be discovered using static checks in WyC. For
+	 * example, markers which can only be detected with more sophisticated
+	 * verification techniques.
+	 * 
+	 * @param markers
+	 * @return
+	 */
+	private static TestFile.Error[] filterStaticMarkers(TestFile.Error[] markers) {
+		return Arrays.asList(markers).stream().filter(m -> m.getErrorNumber() < 700).toArray(TestFile.Error[]::new);
+	}
+	
+	/**
+	 * Filter out markers which do not arise at runtime.
+	 * 
+	 * @param markers
+	 * @return
+	 */
+	private static TestFile.Error[] filterRuntimeMarkers(TestFile.Error[] markers) {
+		return Arrays.asList(markers).stream().filter(m -> m.getErrorNumber() < 716).toArray(TestFile.Error[]::new);
+	}
+	
+	/**
 	 * Convert a syntax error into a testfile error, so that we can perform a simple
 	 * and direct comparison. This is not completely straightforward because syntax
 	 * errors are in terms of "spans", whilst testfile errors are in terms of
@@ -180,6 +213,26 @@ public class WhileyCompilerTests {
 		return new TestFile.Error(errno, filename, location);
 	}
 
+	public static TestFile.Error toError(Map<Trie, TextFile> files, Interpreter.RuntimeError err) {
+		int errno = err.getErrorCode();
+		// Identify enclosing source file
+		Trie filename = Trie.fromString(err.getSource().toString() + ".whiley");
+		// Determine the source-file span for the given syntactic marker.
+		Syntactic.Span span = err.getElement().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// Extract source file
+		TextFile sf = files.get(filename);
+		// Extract enclosing line
+		TextFile.Line l = sf.getEnclosingLine(span.getStart());
+		// Convert space into coordinate
+		int start = span.getStart() - l.getOffset();
+		int end = span.getEnd() - l.getOffset();
+		//
+		TestFile.Range range = new TestFile.Range(start, end);
+		TestFile.Coordinate location = new TestFile.Coordinate(l.getNumber(), range);
+		// Done
+		return new TestFile.Error(errno, filename, location);
+	}
+	
 	public static void mirror(Map<Trie, TextFile> state, Path dir) throws IOException {
 		for (Map.Entry<Trie, TextFile> e : state.entrySet()) {
 			Path p = dir.resolve(e.getKey().toPath());
@@ -249,7 +302,7 @@ public class WhileyCompilerTests {
 		}
 		// Print missing
 		for (; ai < actual.length; ai = ai + 1) {
-			TestFile.Error aith = expected[ai];
+			TestFile.Error aith = actual[ai];
 			System.out.println("<<< " + aith);
 		}
 		//
@@ -294,7 +347,7 @@ public class WhileyCompilerTests {
 			String filename = name + ".whiley";
 			try(FileInputStream fin = new FileInputStream(srcdir + "/" + filename)) {
 				byte[] bytes = fin.readAllBytes();
-				List<TestFile.Error> expected = determineExpectedErrors(srcdir + "/" + name + ".sysout");
+				List<TestFile.Error> expected = determineExpectedErrors(srcdir + "/" + name + ".sysout",count);
 				String contents = new String(bytes);
 				// Construct test name with padding.
 				String testname = String.format("%1$6s", Integer.toString(count)).replace(" ", "0");
@@ -317,7 +370,7 @@ public class WhileyCompilerTests {
 		}
 	}
 
-	public static List<TestFile.Error> determineExpectedErrors(String filename) throws IOException {
+	public static List<TestFile.Error> determineExpectedErrors(String filename, int count) throws IOException {
 		ArrayList<TestFile.Error> errs = new ArrayList<>();
 		try {
 			try (FileInputStream fin = new FileInputStream(filename)) {
@@ -328,7 +381,7 @@ public class WhileyCompilerTests {
 				}
 			}
 		} catch (Exception e) {
-			System.out.println("*** ERROR PARSING " + filename);
+			System.out.println("*** ERROR PARSING " + filename + "(=> test " + count + ")");
 		}
 		return errs;
 	}

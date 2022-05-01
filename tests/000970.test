@@ -1,0 +1,11 @@
+original.name="For_Invalid_7"
+======
+>>> main.whiley
+method f(int[] xs):
+    int r = 0
+    //
+    for i in 0..5:
+        r = r + xs[i]
+
+---
+E725 main.whiley 5,15:20

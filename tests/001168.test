@@ -1,0 +1,9 @@
+original.name="StaticVar_Invalid_5"
+======
+>>> main.whiley
+type nat is (int x) where x >= 0
+
+nat x = -1
+
+---
+E718 main.whiley 3,8:9

@@ -1,0 +1,16 @@
+original.name="Function_Invalid_15"
+======
+>>> main.whiley
+type fn_t is function()->()
+
+function g() -> int:
+    fn_t fn = &f
+    return fn()
+    
+function f():
+    return h()
+
+function h()->int:
+    return 0
+---
+E305 main.whiley 1,26

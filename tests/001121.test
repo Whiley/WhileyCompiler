@@ -1,0 +1,10 @@
+original.name="Record_Invalid_5"
+======
+>>> main.whiley
+type Point is { int x, int y }
+
+function fromXY(bool x, int y) -> (Point p):
+    return Point{x:x, y:y}
+
+---
+E400 main.whiley 4,19

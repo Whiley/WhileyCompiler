@@ -1,0 +1,9 @@
+original.name="UnionType_Invalid_18"
+======
+>>> main.whiley
+type named is null | &int
+
+method f(named f) -> int:
+    return *f
+---
+E400 main.whiley 4,12

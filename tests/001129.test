@@ -1,0 +1,16 @@
+original.name="RecursiveType_Invalid_2"
+======
+>>> main.whiley
+
+type nat is (int n) where n >= 0
+
+type expr is nat | {int op, expr left, expr right}
+
+function f(expr e) -> expr:
+    return e
+
+public export method test() -> expr:
+    return f(-1)
+
+---
+E718 main.whiley 10,13:14

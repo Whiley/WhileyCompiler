@@ -1,0 +1,17 @@
+original.name="Import_Invalid_1"
+======
+>>> main.whiley
+
+function f(int x) -> int[]:
+    return toString(x)
+
+import toString from std::ascii
+
+function g(any x) -> int[]:
+    return toString(x)
+
+---
+E407 main.whiley 5,26:30
+E407 main.whiley 3,11:18
+E407 main.whiley 7,11:13
+E407 main.whiley 8,11:18

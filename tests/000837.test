@@ -1,0 +1,11 @@
+original.name="ArrayConversion_Invalid_1"
+======
+>>> main.whiley
+function f(byte[] ls) -> int:
+    return 0
+
+public export method test():
+    f([1, 2, 3])
+
+---
+E400 main.whiley 5,7

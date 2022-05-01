@@ -1,0 +1,16 @@
+original.name="ArrayAccess_Invalid_4"
+======
+>>> main.whiley
+
+function f(int[] x) -> bool:
+    int y = x[0]
+    int z = x[1]
+    assert y == z
+    return false
+
+public export method test():
+    assume f([1])
+
+---
+E725 main.whiley 3,12:15
+E708 main.whiley 4,14

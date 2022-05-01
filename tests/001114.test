@@ -1,0 +1,14 @@
+original.name="Quantifiers_Invalid_7"
+======
+>>> main.whiley
+
+function f(int[] ls) -> bool
+requires some { i in 0 .. 4 | (i >= 0) && (i < |ls|) && (ls[i] < 0) }:
+    return true
+
+function g(int[] ls) 
+requires |ls| > 0:
+    f(ls)
+
+---
+E716 main.whiley 8,4:8

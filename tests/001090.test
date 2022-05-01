@@ -1,0 +1,17 @@
+original.name="Property_Invalid_4"
+======
+>>> main.whiley
+property contains(int[] xs, int x) -> bool:
+   some { i in 0..|xs| | xs[i] == x }
+
+function id(int[] xs, int x, int y) -> (int[] ys)
+requires contains(xs,y)
+ensures contains(ys,x):
+    return xs
+
+public export method test():
+   assume id([1,2,3],1,2) == [1,2,3]
+   assume id([1,2,3],4,1) == [1,2,3]
+---
+E701 main.whiley 11,10:24
+E717 main.whiley 7,4:12

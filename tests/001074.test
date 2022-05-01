@@ -1,0 +1,8 @@
+original.name="Parsing_Invalid_30"
+======
+>>> main.whiley
+function f(int x, void z) :
+    return
+
+---
+E407 main.whiley 1,18:21

@@ -1,0 +1,10 @@
+original.name="IntDiv_Invalid_1"
+======
+>>> main.whiley
+
+function f(int x, int y) 
+requires y >= 0:
+    x = x / y
+
+---
+E728 main.whiley 4,8:12

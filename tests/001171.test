@@ -1,0 +1,6 @@
+original.name="StaticVar_Invalid_8"
+======
+>>> main.whiley
+final int x = [x;1][0]
+---
+E509 main.whiley 1,14:21

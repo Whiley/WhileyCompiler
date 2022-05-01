@@ -1,0 +1,8 @@
+original.name="Remainder_Invalid_2"
+======
+>>> main.whiley
+function f(int x, byte y) -> int:
+    return x % y
+
+---
+E400 main.whiley 2,15

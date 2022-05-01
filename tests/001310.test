@@ -1,0 +1,9 @@
+original.name="Unsafe_Invalid_9"
+======
+>>> main.whiley
+unsafe function f(int x) -> (int r):
+    return x
+
+int x = f(1)
+---
+E613 main.whiley 4,8:11

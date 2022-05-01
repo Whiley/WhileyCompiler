@@ -1,0 +1,18 @@
+original.name="Ensures_Invalid_3"
+======
+>>> main.whiley
+
+function g(int y) -> (int x)
+requires y >= 0
+ensures x > 0:
+    //
+    return y
+
+function f(int y) -> (int x)
+requires y > 0
+ensures x >= 0:
+    //
+    return g(y)
+
+---
+E717 main.whiley 6,4:11

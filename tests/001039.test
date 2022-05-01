@@ -1,0 +1,8 @@
+original.name="Old_Invalid_14"
+======
+>>> main.whiley
+method copy(&int p, &int q)
+ensures old(*p) == *p:
+   *q = 1
+
+---

@@ -1,0 +1,8 @@
+original.name="Return_Invalid_8"
+======
+>>> main.whiley
+function f(bool x, bool y) -> int:
+    return x && !y
+
+---
+E400 main.whiley 2,11:17

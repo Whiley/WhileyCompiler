@@ -1,0 +1,10 @@
+original.name="Byte_Invalid_1"
+======
+>>> main.whiley
+public export method test() :
+    byte b = 0b00000001
+    int i = b * 2
+    assert i != 0
+
+---
+E400 main.whiley 3,12

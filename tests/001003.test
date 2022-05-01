@@ -1,0 +1,13 @@
+original.name="Infeasible_Function_6"
+======
+>>> main.whiley
+function f(int x) -> (int q)
+ensures q >= 0 && q < 0:
+    return x
+
+function g(int x) -> (int y)
+ensures y >= 0:
+    return x
+
+---
+E717 main.whiley 3,4:11

@@ -1,0 +1,13 @@
+original.name="MethodCall_Invalid_6"
+======
+>>> main.whiley
+type wmccf6tup is {int y, int x}
+
+function f(int y) -> wmccf6tup:
+    return {y: get(), x: 1}
+
+method get() -> int:
+    return 1
+
+---
+E608 main.whiley 4,15:19
