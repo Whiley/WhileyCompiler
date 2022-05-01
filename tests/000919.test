@@ -11,5 +11,8 @@ ensures r <= 5:
 function f() -> c4nat:
     return h() * 2
 
+public export method test():
+       assume f() == 10
 ---
+E702 main.whiley 9,11:17
 E718 main.whiley 9,11:17

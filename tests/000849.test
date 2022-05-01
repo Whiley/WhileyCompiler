@@ -5,5 +5,9 @@ function f(int[] xs) -> int[]:
     xs[0] = 1
     return xs
 
+public export method test():
+       assume f([0]) == [1]
+       assume f([]) == [0]
 ---
+E708 main.whiley 2,7
 E725 main.whiley 2,4:8

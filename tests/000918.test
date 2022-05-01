@@ -10,5 +10,12 @@ function f(c3num x) -> int:
 function g(int z) -> int:
     return f((c3num) z)
 
+public export method test():
+       assume g(1) == 1
+       assume g(2) == 2
+       assume g(3) == 3
+       assume g(4) == 4
+       assume g(5) == 5
 ---
+E702 main.whiley 8,13:21
 E718 main.whiley 8,21

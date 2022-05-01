@@ -11,6 +11,5 @@ public export method test():
     //
     assert f(0)
 
-
 ---
 E716 main.whiley 9,11:14

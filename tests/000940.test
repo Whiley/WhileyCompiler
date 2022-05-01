@@ -14,5 +14,9 @@ ensures x >= 0:
     //
     return g(y)
 
+public export method test():
+       assume f(1) == 1
+       assume g(0) == 0
 ---
+E701 main.whiley 16,14:17
 E717 main.whiley 6,4:11
