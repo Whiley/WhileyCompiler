@@ -13,5 +13,10 @@ function f(int|null x) -> bool|null:
     else:
         fail
 
+public export method test():
+    assume f(1) == true
+    assume f(null) == false
+    assume f(-1) == null
 ---
+E712 main.whiley 11,8:11
 E729 main.whiley 11,8:11

@@ -7,7 +7,11 @@ requires all { i in 0..|ls| | ls[i] > 0 }:
     return true
 
 public export method test() :
+    f([])
+    f([1])
+    f([1,2])
+    f([1,2,3])
     f([0, 1, 2, 3])
-
 ---
-E716 main.whiley 7,4:18
+E700 main.whiley 11,4:18
+E716 main.whiley 11,4:18

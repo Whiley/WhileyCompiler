@@ -7,5 +7,9 @@ method f(int[] xs):
     for i in 0..5:
         r = r + xs[i]
 
+public export method test():
+     f([0,1,2,3,4])
+     f([0])
 ---
+E708 main.whiley 5,19
 E725 main.whiley 5,15:20

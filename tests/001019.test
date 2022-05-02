@@ -5,4 +5,4 @@ public export method test(int[] _this) :
     _this.f(1)
 
 ---
-E400 main.whiley 2,4:8
+E403 main.whiley 2,4:8

@@ -2,9 +2,14 @@ original.name="IntDiv_Invalid_1"
 ======
 >>> main.whiley
 
-function f(int x, int y) 
+function f(int x, int y) -> (int r)
 requires y >= 0:
-    x = x / y
-
+    return x / y
+    
+public export method test():
+       assume f(4,2) == 2
+       assume f(4,1) == 4
+       assume f(4,0) == 0
 ---
-E728 main.whiley 4,8:12
+E711 main.whiley 4,15
+E728 main.whiley 4,11:15

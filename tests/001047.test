@@ -6,4 +6,8 @@ ensures *p == old(*p):
     //
     *p = 1
 
+public export method test():
+    m(new 1)
+    m(new 2)
 ---
+E701 main.whiley 8,4:11

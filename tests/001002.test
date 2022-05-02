@@ -9,5 +9,8 @@ function g(int x) -> (int y)
 ensures y >= 0:
     return x
 
+public export method test():
+       f()
 ---
+E701 main.whiley 10,7:9
 E717 main.whiley 3,4:12
