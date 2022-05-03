@@ -9,8 +9,9 @@ type nlt is nat | natlist
 function g(int y) -> nlt:
     return (nlt) y
 
-public export method test() :
+public export method test():
+    g(0)
     g(-1)
-
 ---
+E702 main.whiley 7,11:17
 E718 main.whiley 7,17

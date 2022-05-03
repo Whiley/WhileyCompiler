@@ -9,4 +9,4 @@ public export method test():
 
 ---
 E400 main.whiley 3,10:14
-E400 main.whiley 5,4
+E403 main.whiley 5,4

@@ -12,8 +12,7 @@ public export method test() -> int[]:
     IntBoolList y = [1, 2, 3]
     y[0] = false
     return f(x)
-
 ---
-E400 main.whiley 8,4
+E402 main.whiley 8,4
 E400 main.whiley 10,11:15
 E400 main.whiley 11,13

@@ -3,8 +3,8 @@ original.name="While_Invalid_18"
 >>> main.whiley
 type nat is (int x) where x >= 0
 
-property same(int[] arr, int n)
-where all { i in 1..n | arr[i-1] == arr[i] }
+property same(int[] arr, int n) -> (bool r):
+   all { i in 1..n | arr[i-1] == arr[i] }
 
 function create(int start, int end) -> (int[] result)
 requires start < end
@@ -31,4 +31,5 @@ public export method test():
     assume create(0,3) == [0,0,0]
 
 ---
+E703 main.whiley 15,10:35
 E720 main.whiley 15,10:35

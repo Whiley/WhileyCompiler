@@ -1,4 +1,5 @@
 original.name="Unsafe_Invalid_6"
+build.whiley.strict=true
 ======
 >>> main.whiley
 type meth_t is method(int)->(int)

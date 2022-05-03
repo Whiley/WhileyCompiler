@@ -1,4 +1,6 @@
 original.name="While_Invalid_25"
+build.whiley.ignore=true
+WhileyCompiler.issue=956
 ======
 >>> main.whiley
 function count(int n) -> (int|null r):
@@ -9,3 +11,4 @@ function count(int n) -> (int|null r):
    //
    return i
 ---
+E400 main.whiley 7,9 

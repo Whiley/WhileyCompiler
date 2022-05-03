@@ -10,6 +10,6 @@ requires x >= 0:
 public export method test() :
     f(10)
     f(0)
-
 ---
+E711 main.whiley 4,17
 E728 main.whiley 4,12:17

@@ -1,4 +1,5 @@
 original.name="Unsafe_Invalid_7"
+build.whiley.strict=true
 ======
 >>> main.whiley
 type fun_t is function(int)->(int)

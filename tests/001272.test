@@ -7,6 +7,5 @@ function f(arr_t xs) -> arr_t:
     //
     xs[0] = 1
     return xs
-
 ---
-E400 main.whiley 5,4:5
+E402 main.whiley 5,4:5

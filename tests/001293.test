@@ -16,5 +16,9 @@ function f(int x) -> plt
 requires x >= 0:
     return (plt) g(x)
 
+public export method test():
+   assume f(1) == 1
+   assume f(0) == 0
 ---
+E702 main.whiley 14,11:20
 E718 main.whiley 14,17:20

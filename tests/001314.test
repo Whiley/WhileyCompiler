@@ -7,5 +7,10 @@ function f(int x) -> (nat r):
     nat y = (nat) x
     return y
 
+public export method test():
+   assume f(0) == 0
+   assume f(1) == 1
+   assume f(-1) == -1
 ---
+E702 main.whiley 4,12:18
 E718 main.whiley 4,18

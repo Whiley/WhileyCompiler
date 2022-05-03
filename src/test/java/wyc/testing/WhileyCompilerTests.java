@@ -73,6 +73,7 @@ public class WhileyCompilerTests {
 		TestFile tf = readTestFile(srcDir.toFile(), path);
 		// Check whether this test should be ignored or not.
 		boolean ignored = tf.get(Boolean.class, "build.whiley.ignore").orElse(false);
+		boolean strict = tf.get(Boolean.class, "build.whiley.strict").orElse(false);
 		// Yes, test file indicates it should be ignored (for whatever reason).
 		Assume.assumeTrue("Test " + path + " skipped", !ignored);
 		// NOTE: if we get here, then ignored == false
@@ -93,7 +94,7 @@ public class WhileyCompilerTests {
 			mirror(state, frameDir);
 			// Configure compiler
 			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile())
-					.setTarget(path).setErrorHandler(handler);
+					.setTarget(path).setErrorHandler(handler).setStrict(strict);
 			// Add source files
 			for (Trie sf : state.keySet()) {
 				sf = Trie.fromString(sf.toString().replace(".whiley", ""));
@@ -107,11 +108,11 @@ public class WhileyCompilerTests {
 			if (compiled && shouldCompile) {
 				TestFile.Error[] runtime_markers = filterRuntimeMarkers(f.markers);
 				TestFile.Error[] actual = new TestFile.Error[0];
-				// Test was expected to compile, so attempt to run the code.				
+				// Test was expected to compile, so attempt to run the code.
 				String unit = tf.get(String.class, "main.file").orElse("main");
 				try {
 					TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
-				} catch (Interpreter.RuntimeError e) {					
+				} catch (Interpreter.RuntimeError e) {
 					actual = new TestFile.Error[1];
 					actual[0] = toError(state,e);
 				}
@@ -165,24 +166,24 @@ public class WhileyCompilerTests {
 	 * Filter out markers which cannot be discovered using static checks in WyC. For
 	 * example, markers which can only be detected with more sophisticated
 	 * verification techniques.
-	 * 
+	 *
 	 * @param markers
 	 * @return
 	 */
 	private static TestFile.Error[] filterStaticMarkers(TestFile.Error[] markers) {
 		return Arrays.asList(markers).stream().filter(m -> m.getErrorNumber() < 700).toArray(TestFile.Error[]::new);
 	}
-	
+
 	/**
 	 * Filter out markers which do not arise at runtime.
-	 * 
+	 *
 	 * @param markers
 	 * @return
 	 */
 	private static TestFile.Error[] filterRuntimeMarkers(TestFile.Error[] markers) {
 		return Arrays.asList(markers).stream().filter(m -> m.getErrorNumber() < 716).toArray(TestFile.Error[]::new);
 	}
-	
+
 	/**
 	 * Convert a syntax error into a testfile error, so that we can perform a simple
 	 * and direct comparison. This is not completely straightforward because syntax
@@ -232,7 +233,7 @@ public class WhileyCompilerTests {
 		// Done
 		return new TestFile.Error(errno, filename, location);
 	}
-	
+
 	public static void mirror(Map<Trie, TextFile> state, Path dir) throws IOException {
 		for (Map.Entry<Trie, TextFile> e : state.entrySet()) {
 			Path p = dir.resolve(e.getKey().toPath());

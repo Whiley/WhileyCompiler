@@ -1,4 +1,6 @@
 original.name="Type_Invalid_8"
+build.whiley.ignore=true
+WhileyCompiler.issue=885
 ======
 >>> main.whiley
 type Other is Contractive

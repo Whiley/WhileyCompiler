@@ -1,11 +1,8 @@
 original.name="UnionType_Invalid_8"
 ======
 >>> main.whiley
-
 type urf1nat is (int n) where n > 0
-
 type turf1nat is (int x) where x > 10
-
 type wurf1nat is urf1nat | turf1nat
 
 function f(wurf1nat x) -> int:
@@ -14,5 +11,9 @@ function f(wurf1nat x) -> int:
 function g(int x) -> int:
     return f((urf1nat) x)
 
+public export method test():
+   assume g(1) == 1
+   assume g(0) == 0
 ---
-E718 main.whiley 12,23
+E702 main.whiley 9,13:23
+E718 main.whiley 9,23

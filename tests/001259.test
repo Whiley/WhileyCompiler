@@ -21,4 +21,18 @@ ensures index < 52:
     //
     return (nat) result, r
 
+public export method test():
+   int item
+   Random r = {index:0, sequence:[5,10,2]}
+   //
+   (item,r) = next(r)
+   assume item == 5
+   //
+   (item,r) = next(r)
+   assume item == 10
+   //
+   (item,r) = next(r)
+   assume item == 2
 ---
+E702 main.whiley 14,14:24
+E718 main.whiley 14,14:24

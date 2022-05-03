@@ -1,4 +1,5 @@
 original.name="Unsafe_Invalid_3"
+build.whiley.strict=true
 ======
 >>> main.whiley
 unsafe function f(int x) -> (int y):

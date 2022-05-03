@@ -7,4 +7,4 @@ method f(named rec) -> (named r):
     *rec = 1
     return rec
 ---
-E400 main.whiley 4,5:7
+E404 main.whiley 4,5:7

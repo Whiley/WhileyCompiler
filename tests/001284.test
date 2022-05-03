@@ -7,4 +7,4 @@ function f(named rec) -> (named r):
     rec.f = 1
     return rec
 ---
-E400 main.whiley 4,4:6
+E403 main.whiley 4,4:6

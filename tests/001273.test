@@ -7,5 +7,5 @@ function f(rec_t r) -> int:
     r.y = 1
     return r.x
 ---
-E400 main.whiley 4,4
+E403 main.whiley 4,4
 E400 main.whiley 5,11

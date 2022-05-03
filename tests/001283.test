@@ -7,4 +7,4 @@ function f(named f) -> (named r):
     f[0] = 1
     return f
 ---
-E400 main.whiley 4,4
+E402 main.whiley 4,4

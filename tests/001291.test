@@ -1,10 +1,10 @@
 original.name="UnionType_Invalid_7"
 ======
 >>> main.whiley
-int ADD = 1
-int SUB = 2
-int MUL = 3
-int DIV = 4
+final int ADD = 1
+final int SUB = 2
+final int MUL = 3
+final int DIV = 4
 
 type bop is ({int op, int rhs, int lhs} r) where ADD <= r.op && r.op <= DIV
 
@@ -16,4 +16,5 @@ public export method test():
     f(b)
 
 ---
+E702 main.whiley 12,12:34
 E718 main.whiley 12,12:34

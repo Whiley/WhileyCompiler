@@ -6,7 +6,6 @@ public export method test():
     *x = false
     (&int)|(&bool) y = ((&int)|(&bool)) new 1
     *y = false
-
 ---
 E400 main.whiley 3,9:13
-E400 main.whiley 5,5
+E404 main.whiley 5,5
