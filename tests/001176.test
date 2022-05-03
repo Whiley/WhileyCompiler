@@ -8,5 +8,6 @@ public export method test():
     a[0] = -1
     //
     assume a == [-1,1,2]
-
 ---
+E702 main.whiley 5,11:12
+E718 main.whiley 5,11:12

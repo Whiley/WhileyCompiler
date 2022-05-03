@@ -10,6 +10,6 @@ function f(scf1nat x) -> int:
 public export method test() :
     int x = -1
     f((scf1nat) x)
-
 ---
+E702 main.whiley 9,6:16
 E718 main.whiley 9,16

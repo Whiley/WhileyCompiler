@@ -12,4 +12,4 @@ function f(Vector[] vec) -> int:
     //
     return 0
 ---
-E400 main.whiley 8,4:6
+E403 main.whiley 8,4:6

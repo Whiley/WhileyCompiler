@@ -1,7 +1,6 @@
 original.name="Subtype_Invalid_3"
 ======
 >>> main.whiley
-
 type scf3nat is (int x) where x > 0
 
 function f(scf3nat[] xs) -> int:
@@ -11,6 +10,6 @@ public export method test() :
     int[] x = [1]
     x[0] = -1
     f((scf3nat[]) x)
-
 ---
-E718 main.whiley 10,18
+E702 main.whiley 9,6:18
+E718 main.whiley 9,18

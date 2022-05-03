@@ -3,8 +3,8 @@ original.name="Reference_Invalid_7"
 >>> main.whiley
 type LinkedList is null | &{ int data, LinkedList next }
 
-property acyclic(LinkedList l)
-where l is null || acyclic(l->next)
+property acyclic(LinkedList l) -> (bool r):
+   l is null || acyclic(l->next)
 
 method nop(LinkedList l)
 requires acyclic(l):
@@ -18,5 +18,4 @@ public export method test():
     l1->next = l2
     //
     nop(l2)
-
 ---

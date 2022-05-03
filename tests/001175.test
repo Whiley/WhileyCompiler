@@ -9,6 +9,6 @@ public export method test():
     t.x = 1
     //
     assume t == {x:1,y:1}
-
 ---
-E717 main.whiley 5,4:11
+E702 main.whiley 6,10
+E718 main.whiley 6,10

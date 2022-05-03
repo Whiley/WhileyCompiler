@@ -10,5 +10,6 @@ ensures old(var) < var:
 
 public export method test():
     inc()
-
 ---
+E700 main.whiley 9,4:8
+E716 main.whiley 9,4:8

@@ -7,7 +7,8 @@ requires some { i in 0..5 | (i >= 0) && ((i < |ls|) && (ls[i] < 0)) }:
     return true
 
 public export method test() :
+    f([-1])
     f([1, 2, 3])
-
 ---
-E716 main.whiley 7,4:15
+E700 main.whiley 8,4:15
+E716 main.whiley 8,4:15

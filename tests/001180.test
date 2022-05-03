@@ -1,7 +1,6 @@
 original.name="Subtype_Invalid_4"
 ======
 >>> main.whiley
-
 type scf4list is (int[] list) where |list| > 0
 
 function f(scf4list x) -> int:
@@ -10,6 +9,6 @@ function f(scf4list x) -> int:
 public export method test() :
     int[] x = [0;0]
     f((scf4list) x)
-
 ---
-E718 main.whiley 9,17
+E702 main.whiley 8,6:17
+E718 main.whiley 8,17

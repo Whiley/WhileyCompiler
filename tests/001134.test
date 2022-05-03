@@ -1,24 +1,23 @@
 original.name="RecursiveType_Invalid_8"
 ======
 >>> main.whiley
-public int ADD = 1
-public int SUB = 2
-public int MUL = 3
-public int DIV = 4
+final int ADD = 1
+final int SUB = 2
+final int MUL = 3
+final int DIV = 4
 
-public type binop is ({int op, expr left, expr right} r) where r.op == ADD || r.op == SUB || r.op == MUL || r.op == DIV
+type binop is ({int op, expr left, expr right} r) where r.op == ADD || r.op == SUB || r.op == MUL || r.op == DIV
 type asbinop is ({int op, expr left, expr right} r) where r.op == ADD || r.op == SUB
 
-public type expr is int | binop
-
+type expr is int | binop
 type asexpr is int | asbinop
 
 function f(asexpr e) -> asexpr:
     return e
 
-public export method test() -> expr:
+public export method test():
     expr e1 = {op: MUL, left: 1, right: 2}
-    return (expr) f((asexpr) e1)
-
+    asexpr a1 = (asexpr) e1
 ---
-E718 main.whiley 18,29:30
+E702 main.whiley 17,16:26
+E718 main.whiley 17,16:26

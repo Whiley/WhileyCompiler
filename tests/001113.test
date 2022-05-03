@@ -9,5 +9,10 @@ requires all { i in 0..|ls| | ls[i] > 0 }:
 function g(int[] ls) :
     f(ls)
 
+public export method test():
+    g([])
+    g([1,2,3])
+    g([1,2,-2])
 ---
+E700 main.whiley 7,4:8
 E716 main.whiley 7,4:8

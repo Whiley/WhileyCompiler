@@ -1,4 +1,6 @@
 original.name="Quantifiers_Invalid_8"
+build.whiley.ignore=true
+WhileyCompiler.issue=1142
 ======
 >>> main.whiley
 
@@ -10,5 +12,10 @@ function g(int[] ls)
 requires |ls| > 0:
     f(ls)
 
+public export method test():
+    g([1,2,3])
+    g([1,2,3,4])
+    g([1,2,3,4,5,-1])
 ---
+E700 main.whiley 8,4:8
 E716 main.whiley 8,4:8

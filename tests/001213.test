@@ -28,6 +28,5 @@ function add<T>(Vector<T> vec, T item) -> Vector<T>:
     vec.length = vec.length + 1        
     //
     return vec
-
 ---
-E400 main.whiley 23,8:10
+E402 main.whiley 23,8:10

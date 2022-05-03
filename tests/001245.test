@@ -11,5 +11,10 @@ ensures r == 0 || r == x:
     else:
         return 0
 
+public export method test():
+    assume f(0,0) == 0
+    assume f(1,0) == 0
+    assume f(0,1) == 1
 ---
+E701 main.whiley 14,11:16
 E717 main.whiley 7,8:15
