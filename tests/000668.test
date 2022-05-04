@@ -1,0 +1,18 @@
+original.name="TypeEquals_Valid_16"
+======
+>>> main.whiley
+type src is int | src[]
+
+function f(src e) -> bool:
+    if e is src[]:
+        return true
+    else:
+        return false
+
+public export method test() :
+    assume f([1]) == true
+    assume f([[1]]) == true
+    assume f([[[1]]]) == true
+    assume f(1) == false
+
+---

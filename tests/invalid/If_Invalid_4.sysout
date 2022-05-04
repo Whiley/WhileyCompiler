@@ -1,3 +1,0 @@
-If_Invalid_4.whiley:1: missing return statement
-function f(int x) -> int:
-^^^^^^^^^^^^^^^^^^^^^^^^^

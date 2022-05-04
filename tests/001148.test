@@ -1,0 +1,8 @@
+original.name="Return_Invalid_10"
+======
+>>> main.whiley
+function f() :
+    return 1
+
+---
+E400 main.whiley 2,11

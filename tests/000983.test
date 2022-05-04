@@ -1,0 +1,11 @@
+original.name="Function_Invalid_11"
+======
+>>> main.whiley
+type fun is function(int)->(int)
+
+function foo():
+    fun f = &(int x, int y -> y)
+
+
+---
+E400 main.whiley 4,12:31

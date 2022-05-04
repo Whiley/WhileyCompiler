@@ -1,3 +1,0 @@
-DoWhile_Invalid_5.whiley:5: method invocation not permitted
-    while i < x where i >= g(x)
-                           ^^^^

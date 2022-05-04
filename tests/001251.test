@@ -1,0 +1,12 @@
+original.name="TypeEquals_Invalid_7"
+======
+>>> main.whiley
+function f(int|null x) -> (bool|null r):
+    //
+    if x is int && x >= 0:
+        return false
+    else:
+        return x
+
+---
+E400 main.whiley 6,15

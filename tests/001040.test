@@ -1,0 +1,16 @@
+original.name="Old_Invalid_15"
+======
+>>> main.whiley
+method copy(&int p, &int q)
+ensures *p == 1
+ensures *q == 2:
+   *q = 2
+   *p = 1
+
+public export method test():
+    &int a = new 123
+    &int b = new 456
+    copy(a,b)
+    copy(a,a)
+---
+E701 main.whiley 11,4:12

@@ -1,3 +1,0 @@
-Infeasible_Function_1.whiley:5: postcondition may not be satisfied {}
-    return 1
-    ^^^^^^^^

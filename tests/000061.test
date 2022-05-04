@@ -1,0 +1,20 @@
+original.name="Coercion_Valid_10"
+======
+>>> main.whiley
+type pos is (int x) where x >= 0
+type neg is (int x) where x < 0
+
+function f(pos x) -> (pos[]|neg[] r):
+    return [x]
+
+function g(neg x) -> (pos[]|neg[] r):
+    return [x]
+
+public export method test():
+    //
+    assume f(1) == [1]
+    //
+    assume g(-1) == [-1]    
+
+
+---

@@ -1,3 +1,0 @@
-IntArith_Invalid_3.whiley:2: braces required to disambiguate expression
-    int x = 1 + 2 * 3
-                  ^

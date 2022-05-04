@@ -1,0 +1,13 @@
+original.name="Final_Invalid_3"
+======
+>>> main.whiley
+final int CONSTANT = 0
+
+function f(int x) -> (int r):
+    //
+    CONSTANT = CONSTANT + x
+    //
+    return CONSTANT
+
+---
+E606 main.whiley 5,4:11

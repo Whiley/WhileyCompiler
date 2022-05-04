@@ -1,0 +1,24 @@
+original.name="Coercion_Invalid_14"
+======
+>>> main.whiley
+type nat is (int x) where x >= 0
+type Point is {int x, int y}
+
+public export method test():
+    Point p = {x:1,y:1}
+    // Force impossible casts
+    assert ((Point) {x:1}) == {x:1,y:1}
+    assert ((int) {x:1}) == 2
+    assert ((int[]) {x:1}) == 2
+    assert ((Point) [1]) == {x:1,y:1}
+    assert ((int) new 1) == 2
+    assert ((int[]) [p]) == 2   
+    // Force possible casts
+    assert ((nat) 1) == 1
+---
+E400 main.whiley 7,20:24
+E400 main.whiley 8,18:22
+E400 main.whiley 9,20:24
+E400 main.whiley 10,20:22
+E400 main.whiley 11,18:22
+E400 main.whiley 12,20:22

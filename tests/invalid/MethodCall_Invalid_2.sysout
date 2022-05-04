@@ -1,3 +1,0 @@
-MethodCall_Invalid_2.whiley:7: expected dummy, found &int
-    f(_this, 1)
-      ^^^^^

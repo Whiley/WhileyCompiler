@@ -1,0 +1,12 @@
+original.name="OpenRecord_Invalid_7"
+======
+>>> main.whiley
+type OpenRecord1 is {int field, ...}
+
+type OpenRecord2 is {int field, int aField}
+
+function getField(OpenRecord1 r) -> OpenRecord2:
+    return r
+
+---
+E400 main.whiley 6,11

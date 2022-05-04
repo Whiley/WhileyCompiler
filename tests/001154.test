@@ -1,0 +1,8 @@
+original.name="Return_Invalid_5"
+======
+>>> main.whiley
+function f(int x, int y) -> bool:
+    return x + y
+
+---
+E400 main.whiley 2,11:15

@@ -1,0 +1,8 @@
+original.name="ArrayGenerator_Invalid_4"
+======
+>>> main.whiley
+function f(byte n) -> int[]:
+    return [0; n]
+
+---
+E400 main.whiley 2,15

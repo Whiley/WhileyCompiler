@@ -1,0 +1,18 @@
+original.name="TypeEquals_Invalid_14"
+======
+>>> main.whiley
+type State is {
+    int|null current
+}
+
+method f(State s) -> {int current}:
+    //
+    if s.current is int:
+        s.current = null
+        return s
+    else:
+        return {current:0}
+      
+
+---
+E400 main.whiley 9,15

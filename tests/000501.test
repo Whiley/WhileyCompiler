@@ -1,0 +1,15 @@
+original.name="Reference_Valid_15"
+======
+>>> main.whiley
+public export method test():
+    &(null|int) c = new (null|int) 1
+    &(null|int) d = c
+    *c = 123
+    assert (*c) == 123
+    assert (*d) == 123
+    *c = null
+    assert (*c) == null
+    assert (*d) == null
+
+
+---

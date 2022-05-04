@@ -1,3 +1,0 @@
-Public_Invalid_9.whiley:3: exposing private declaration
-public method f({Hidden field} x) -> (int r):
-                 ^^^^^^

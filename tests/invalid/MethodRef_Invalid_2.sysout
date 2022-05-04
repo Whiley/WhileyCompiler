@@ -1,3 +1,0 @@
-MethodRef_Invalid_2.whiley:7: expected int, found bool
-    return m(false)
-             ^^^^^

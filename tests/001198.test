@@ -1,0 +1,8 @@
+original.name="Template_Invalid_14"
+======
+>>> main.whiley
+function f<T>({T data} rec) -> (int r):
+    return rec.data
+
+---
+E400 main.whiley 2,15:18

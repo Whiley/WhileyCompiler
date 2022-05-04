@@ -1,9 +1,0 @@
-Coercion_Invalid_11.whiley:10: expected intlist, found int
-    if x is int:
-            ^^^
-Coercion_Invalid_11.whiley:10: expected intlist, found int
-    if x is int:
-            ^^^
-Coercion_Invalid_11.whiley:17: expected intlist, found int
-    x = f(123)
-          ^^^

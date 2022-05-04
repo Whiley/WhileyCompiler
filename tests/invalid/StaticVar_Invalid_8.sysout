@@ -1,3 +1,0 @@
-StaticVar_Invalid_8.whiley:1: cyclic static initialiser
-final int x = [x;1][0]
-              ^^^^^^^^

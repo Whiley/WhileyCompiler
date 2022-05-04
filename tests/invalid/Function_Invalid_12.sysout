@@ -1,3 +1,0 @@
-Function_Invalid_12.whiley:16: expected gun_t, found function(int)->(int)
-    gun_t z = &g
-              ^^

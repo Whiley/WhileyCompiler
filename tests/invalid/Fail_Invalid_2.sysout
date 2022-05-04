@@ -1,3 +1,0 @@
-Fail_Invalid_2.whiley:3: unreachable code encountered (i.e. execution can never reach this statement)
-  return x + 1
-  ^^^^^^^^^^^^

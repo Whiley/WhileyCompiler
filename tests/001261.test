@@ -1,0 +1,10 @@
+original.name="Type_Invalid_3"
+======
+>>> main.whiley
+type contractive is { contractive next }
+
+function f(contractive x) -> contractive:
+    return x
+
+---
+E401 main.whiley 1,5:15

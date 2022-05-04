@@ -1,0 +1,19 @@
+original.name="Array_Valid_10"
+======
+>>> main.whiley
+type nint is int|null
+
+function update(nint[] current, int mode) -> (nint[] r)
+requires |current| > 0:
+    // Adapted from #950
+    if current is int[]:
+        current[0] = null
+    else:
+        current[0] = mode
+    //
+    return current
+
+public export method test():
+    assume update([null],123) == [123]
+    assume update([123],123) == [null]
+---

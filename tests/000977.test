@@ -1,0 +1,20 @@
+original.name="FunctionRef_Invalid_5"
+======
+>>> main.whiley
+type Proc is &{int data}
+
+method read(Proc _this, int x) -> int:
+    return x + 1
+
+type Func is {
+    function reader(int)->int
+}
+
+function id(int x) -> int:
+    return x
+
+function test(Func f, int arg) -> int:
+    return f.read(arg)
+
+---
+E406 main.whiley 14,13:16

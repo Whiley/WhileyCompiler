@@ -1,0 +1,12 @@
+original.name="Template_Invalid_19"
+======
+>>> main.whiley
+method f<T>(T x) -> (bool y):
+    return false
+
+function f(int x) -> (int y)
+requires f(x):
+    //
+    return x
+---
+E608 main.whiley 5,9:12

@@ -1,0 +1,9 @@
+original.name="VarDecl_Invalid_3"
+======
+>>> main.whiley
+function f() -> int:
+    int x = 0b010
+    return x
+
+---
+E400 main.whiley 2,12:16

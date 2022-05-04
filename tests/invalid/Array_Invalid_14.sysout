@@ -1,3 +1,0 @@
-Array_Invalid_14.whiley:14: precondition may not be satisfied 
-    assume g(f([0])) == 0
-           ^^^^^^^^^

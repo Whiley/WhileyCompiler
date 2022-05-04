@@ -1,0 +1,13 @@
+original.name="Reference_Subtype_Variant_Invalid_1"
+======
+>>> main.whiley
+method f(&int x, &(int|bool) y) -> (int r):
+    *y = true
+    return *x
+
+method g() -> (int r):
+    &int p = new 1
+    return f(p,p)
+
+---
+E400 main.whiley 7,15

@@ -1,6 +1,0 @@
-StaticVar_Invalid_6.whiley:1: cyclic static initialiser
-final int x = y + 1
-              ^^^^^
-StaticVar_Invalid_6.whiley:2: cyclic static initialiser
-final int y = x
-              ^

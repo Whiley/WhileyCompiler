@@ -52,8 +52,17 @@ import wyil.lang.WyilFile.Type;
  */
 public class ErrorMessages {
 
-	private interface Message {
+	public interface Message {
 		public String getMessage(Tuple<Syntactic.Item> context);
+
+		/**
+		 * Determine whether an actual error message was generated from this template
+		 * (or not).
+		 *
+		 * @param message
+		 * @return
+		 */
+		public boolean match(String message);
 	}
 
 	/**
@@ -73,6 +82,11 @@ public class ErrorMessages {
 		public String getMessage(Tuple<Syntactic.Item> context) {
 			return message;
 		}
+
+		@Override
+		public boolean match(String message) {
+			return this.message.equals(message);
+		}
 	}
 
 	/**
@@ -87,6 +101,11 @@ public class ErrorMessages {
 
 		public MultiPartMessage(String... parts) {
 			this.parts = parts;
+		}
+
+		@Override
+		public boolean match(String message) {
+			return message.startsWith(parts[0]) || parts[0].startsWith(message);
 		}
 
 		@Override
@@ -119,6 +138,11 @@ public class ErrorMessages {
 				}
 			}
 			return output;
+		}
+
+		@Override
+		public boolean match(String message) {
+			return message.startsWith(parts[0]);
 		}
 
 		private String toString(Syntactic.Item context) {
@@ -167,6 +191,11 @@ public class ErrorMessages {
 			}
 			return output;
 		}
+
+		@Override
+		public boolean match(String message) {
+			return false;
+		}
 	}
 
 	// ========================================================================
@@ -204,6 +233,11 @@ public class ErrorMessages {
 		public String getMessage(Tuple<Syntactic.Item> context) {
 			String msg = "unable to resolve name (is ambiguous)";
 			return msg + foundCandidatesString((Tuple) context);
+		}
+
+		@Override
+		public boolean match(String message) {
+			return message.startsWith("unable to resolve name");
 		}
 	};
 	// ========================================================================
@@ -333,7 +367,7 @@ public class ErrorMessages {
 //	public static final StaticMessage RETURN_FROM_VOID = new StaticMessage("cannot return value from method with void return type");
 //	public static final StaticMessage MISSING_RETURN_VALUE = new StaticMessage("missing return value");
 
-	private static final Message[][] ERROR_MESSAGES = {
+	public static final Message[][] ERROR_MESSAGES = {
 		null, // 00
 		null, // 01
 		null, // 02

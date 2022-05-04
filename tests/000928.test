@@ -1,0 +1,11 @@
+original.name="DefiniteAssign_Invalid_4"
+======
+>>> main.whiley
+method f(int|null p) :
+    skip
+
+method g() :
+    f(x)
+
+---
+E407 main.whiley 5,6

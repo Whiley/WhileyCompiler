@@ -1,3 +1,0 @@
-Unsafe_Invalid_5.whiley:8: unsafe invocation not permitted in safe context
-    fun_t x = &f
-              ^^

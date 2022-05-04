@@ -1,0 +1,10 @@
+original.name="Reference_Invalid_1"
+======
+>>> main.whiley
+function f(int[] vec) -> int:
+    // made a typo here :)
+    *vec = 1
+    //
+    return 0
+---
+E404 main.whiley 3,5:7

@@ -1,0 +1,8 @@
+original.name="ListLength_Valid_2"
+======
+>>> main.whiley
+public export method test() :
+    int[] arr = [1, 2, 3]
+    assert |arr| == 3
+
+---

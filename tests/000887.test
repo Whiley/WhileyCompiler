@@ -1,0 +1,14 @@
+original.name="Byte_Invalid_2"
+======
+>>> main.whiley
+public function broken(byte b) -> (byte r)
+ensures r != 0b0:
+    //
+    return b
+
+public export method test():
+       assume broken(0b1) == 0b1
+       assume broken(0b0) == 0b0
+---
+E701 main.whiley 8,14:24
+E717 main.whiley 4,4:11

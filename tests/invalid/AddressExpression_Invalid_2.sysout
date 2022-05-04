@@ -1,3 +1,0 @@
-AddressExpression_Invalid_2.whiley:7: unknown type encountered
-    fun x = &foo((->)
-                  ^^

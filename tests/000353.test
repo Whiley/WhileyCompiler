@@ -1,0 +1,12 @@
+original.name="MultiLineComment_Valid_1"
+======
+>>> main.whiley
+
+
+/**
+ * This is a multiline comment
+ */
+public export method test() :
+    assert true == true
+
+---

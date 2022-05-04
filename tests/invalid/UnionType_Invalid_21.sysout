@@ -1,3 +1,0 @@
-UnionType_Invalid_21.whiley:4: expected {LinkedList next, ...}, found LinkedList
-    return list.next
-           ^^^^

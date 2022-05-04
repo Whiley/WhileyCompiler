@@ -1,3 +1,0 @@
-TypeEquals_Invalid_5.whiley:15: type invariant may not be satisfied 
-    rec12 r3 = {f1: "hello", f2: 0}
-               ^^^^^^^^^^^^^^^^^^^^

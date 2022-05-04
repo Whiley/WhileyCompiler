@@ -1,3 +1,0 @@
-Lambda_Invalid_9.whiley:4: expected int, found void
-    return &(int x -> drop(x))
-                      ^^^^^^^

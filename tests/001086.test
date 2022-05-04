@@ -1,0 +1,10 @@
+original.name="Property_Invalid_10"
+======
+>>> main.whiley
+property inc(int x) -> (int r):
+    x + 1
+
+function f(int x) -> (bool r):
+    return inc(x)
+---
+E400 main.whiley 5,11:16

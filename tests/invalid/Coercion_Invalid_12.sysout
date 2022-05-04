@@ -1,3 +1,0 @@
-Coercion_Invalid_12.whiley:6: expected obj_x|obj_y, found obj_xy
-    return o
-           ^

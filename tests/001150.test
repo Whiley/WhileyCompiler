@@ -1,0 +1,9 @@
+original.name="Return_Invalid_12"
+======
+>>> main.whiley
+function f():
+  return
+  return
+
+---
+E504 main.whiley 3,2:7

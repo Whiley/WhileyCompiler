@@ -1,3 +1,0 @@
-DefiniteAssign_Invalid_3.whiley:2: unable to resolve name
-requires (x >= 0) && (y > 0):
-                      ^

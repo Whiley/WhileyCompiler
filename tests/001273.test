@@ -1,0 +1,11 @@
+original.name="UnionType_Invalid_14"
+======
+>>> main.whiley
+type rec_t is {int x, int y}|{int x, bool y}
+
+function f(rec_t r) -> int:
+    r.y = 1
+    return r.x
+---
+E403 main.whiley 4,4
+E400 main.whiley 5,11

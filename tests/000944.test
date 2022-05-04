@@ -1,0 +1,22 @@
+original.name="Fail_Invalid_1"
+======
+>>> main.whiley
+type nat1 is (int x) where x >= 1
+type neg is (int x) where x < 0
+
+function f(int|null x) -> bool|null:
+    //
+    if x is nat1:
+        return true
+    else if x is neg:
+        return false
+    else:
+        fail
+
+public export method test():
+    assume f(1) == true
+    assume f(-1) == false
+    assume f(null) == null
+---
+E712 main.whiley 11,8:11
+E729 main.whiley 11,8:11

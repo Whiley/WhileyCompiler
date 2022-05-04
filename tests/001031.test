@@ -1,0 +1,20 @@
+original.name="Method_Invalid_9"
+======
+>>> main.whiley
+type fun_t is function(int)->(int)
+type meth_t is method(int)->(int)
+
+function f(int x) -> (int y):
+    return 0
+
+method m(int x) -> (int y):
+    return 0
+
+method test2():
+    //    
+    meth_t x = &f
+    //
+    fun_t y = &m
+
+---
+E400 main.whiley 14,14:15

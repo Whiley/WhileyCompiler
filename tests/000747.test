@@ -1,0 +1,23 @@
+original.name="UnknownReference_Valid_2"
+======
+>>> main.whiley
+type OpenPoint is {int x, int y, ...}
+
+public export method test():
+    &OpenPoint p = new (OpenPoint) {x:1,y:2,z:3}
+    // Declare an unknown reference
+    &{int x, ...} q = p
+    //
+    assume p->x == 1
+    assume p->y == 2
+    assume q->x == 1
+    //
+    q->x = 3
+    //
+    assume p->x == 3
+    assume p->y == 2
+    assume q->x == 3
+
+
+
+---

@@ -1,0 +1,11 @@
+original.name="UnionType_Invalid_13"
+======
+>>> main.whiley
+type arr_t is (int[]|bool[] t)
+
+function f(arr_t xs) -> arr_t:
+    //
+    xs[0] = 1
+    return xs
+---
+E402 main.whiley 5,4:5

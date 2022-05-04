@@ -1,3 +1,0 @@
-OpenRecord_Invalid_3.whiley:6: expected OpenRecord2, found OpenRecord1
-    return r
-           ^

@@ -1,0 +1,6 @@
+original.name="Type_Invalid_7"
+======
+>>> main.whiley
+type Contractive is Contractive
+---
+E401 main.whiley 1,5:15

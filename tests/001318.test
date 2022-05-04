@@ -1,0 +1,27 @@
+original.name="While_Invalid_12"
+======
+>>> main.whiley
+type nat is (int x) where x > 0
+
+function f(int v) -> (int r)
+ensures r >= 0:
+    //
+    int i = 0
+    while i < 100 where i >= 0:
+        i = i - 1
+        if i == v:
+            break
+        i = i + 2
+    //
+    return i
+
+public export method test():
+   assume f(0) == 0
+   assume f(1) == 1
+   assume f(13) == 13
+   assume f(98) == 98
+   assume f(99) == 100
+   assume f(-1) == 0
+---
+E701 main.whiley 21,10:14
+E717 main.whiley 14,4:11

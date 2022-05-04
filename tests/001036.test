@@ -1,0 +1,20 @@
+original.name="Old_Invalid_11"
+======
+>>> main.whiley
+variant immutable(&int p)
+where *p == old(*p)
+
+property unchanged(&int p) -> (bool r):
+    immutable(p)
+
+method m(&int p)
+ensures unchanged(p):
+    skip
+
+public export method test():
+    &int p = new 1
+    m(p)
+    assert *p == 1
+    
+---
+E614 main.whiley 5,4:15

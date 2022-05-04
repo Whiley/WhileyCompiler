@@ -1,6 +1,0 @@
-Template_Invalid_33.whiley:5: expected Outer<int|bool>, found Outer<int>
-    return b
-           ^
-Template_Invalid_33.whiley:8: expected Outer<int>, found Outer<int|bool>
-    return b
-           ^

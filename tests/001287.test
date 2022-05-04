@@ -1,0 +1,13 @@
+original.name="UnionType_Invalid_3"
+======
+>>> main.whiley
+type IntList is int | int[]
+
+function f(int[] xs) -> int:
+    return |xs|
+
+function g(IntList xs) -> int:
+    return f(xs)
+
+---
+E400 main.whiley 7,13:14

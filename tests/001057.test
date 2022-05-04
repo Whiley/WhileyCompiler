@@ -1,0 +1,8 @@
+original.name="Parameter_Invalid_1"
+======
+>>> main.whiley
+function f(int x, int x) -> int:
+    return x
+
+---
+E316 main.whiley 1,22

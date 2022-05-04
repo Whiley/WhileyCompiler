@@ -1,3 +1,0 @@
-ConstrainedInt_Invalid_7.whiley:9: type invariant may not be satisfied 
-    return h() * 2
-           ^^^^^^^

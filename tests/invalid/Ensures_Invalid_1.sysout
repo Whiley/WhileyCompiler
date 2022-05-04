@@ -1,3 +1,0 @@
-Ensures_Invalid_1.whiley:5: postcondition may not be satisfied {}
-    return 1
-    ^^^^^^^^

@@ -1,0 +1,8 @@
+original.name="Parameter_Invalid_2"
+======
+>>> main.whiley
+function f(int $) -> int:
+    return 1
+
+---
+E300 main.whiley 1,15

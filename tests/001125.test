@@ -1,0 +1,7 @@
+original.name="Record_Invalid_9"
+======
+>>> main.whiley
+type Node is ({ int data } n) where data >= 0
+
+---
+E407 main.whiley 1,36:39

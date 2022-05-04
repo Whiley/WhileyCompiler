@@ -1,0 +1,15 @@
+original.name="ConstrainedInt_Invalid_4"
+======
+>>> main.whiley
+function f(int x) -> (int y)
+requires x != 0
+ensures y != 1:
+    //
+    return x
+
+public export method test():
+    assume f(1) == 1
+
+---
+E701 main.whiley 8,11:14
+E717 main.whiley 5,4:11

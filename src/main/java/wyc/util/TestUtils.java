@@ -46,8 +46,8 @@ public class TestUtils {
 
 	static {
 		// Problem Type Checking Union Type
-		VALID_IGNORED.put("RecordSubtype_Valid_1", "#696");
-		VALID_IGNORED.put("RecordSubtype_Valid_2", "#696");
+		VALID_IGNORED.put("RecordSubtype_Valid_1", "696");
+		VALID_IGNORED.put("RecordSubtype_Valid_2", "696");
 		// Semantics of Runtime Type Tests
 		VALID_IGNORED.put("TypeEquals_Valid_61", "936");
 		VALID_IGNORED.put("TypeEquals_Valid_62", "936");
@@ -94,7 +94,7 @@ public class TestUtils {
 		VALID_IGNORED.put("Template_Valid_61", "1004");
 		VALID_IGNORED.put("Template_Valid_62", "1004");
 		// Runtime checking Old Static Variable Accesses
-		VALID_IGNORED.put("StaticVar_Valid_15","#1122");
+		VALID_IGNORED.put("StaticVar_Valid_15","1122");
 		// Interpreter Infinite Loop.
 		VALID_IGNORED.put("Infeasible_Function_2", "???");
 		VALID_IGNORED.put("Infeasible_Function_3", "???");
@@ -167,6 +167,39 @@ public class TestUtils {
 		return testcases;
 	}
 
+	/**
+	 * Scan a directory to get the names of all the whiley test files
+	 * in that directory. The list of file names can be used as input
+	 * parameters to a JUnit test.
+	 *
+	 * @param srcDir The path of the directory to scan.
+	 */
+	public static Collection<Object[]> findTestFiles(String srcDir) {
+		final String suffix = ".test";
+		ArrayList<Object[]> testcases = new ArrayList<>();
+		for (File f : new File(srcDir).listFiles()) {
+			// Check it's a file
+			if (!f.isFile()) {
+				continue;
+			}
+			String name = f.getName();
+			// Check it's a whiley source file
+			if (!name.endsWith(suffix)) {
+				continue;
+			}
+			// Get rid of ".whiley" extension
+			String testName = name.substring(0, name.length() - suffix.length());
+			testcases.add(new Object[]{testName});
+		}
+		// Sort the result by filename
+		Collections.sort(testcases, new Comparator<Object[]>() {
+			@Override
+			public int compare(Object[] o1, Object[] o2) {
+				return ((String) o1[0]).compareTo((String) o2[0]);
+			}
+		});
+		return testcases;
+	}
 
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
@@ -225,10 +258,14 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(File wyildir, Trie id) throws IOException {
+		execWyil(wyildir,id,id);
+	}
+
+	public static void execWyil(File wyildir, Trie id, Trie unit) throws IOException {
 		WyilFile target = Compiler.readWyilFile(wyildir, id);
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
-		QualifiedName name = new QualifiedName(new Name(id), new Identifier("test"));
+		QualifiedName name = new QualifiedName(new Name(unit), new Identifier("test"));
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out);
 		// Create the initial stack

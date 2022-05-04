@@ -1,0 +1,27 @@
+original.name="RecursiveType_Invalid_10"
+======
+>>> main.whiley
+
+type nat is (int n) where n >= 0
+
+type LinkedList is int | {LinkedList next, int data}
+
+type posLink is {posList next, nat data}
+
+type posList is int | posLink
+
+function f(LinkedList list) -> posList:
+    return (posList) list
+
+public export method test():
+   LinkedList l1 = 0
+   LinkedList l2 = {next:l1, data:1}
+   LinkedList l3 = {next:l2, data:2}
+   LinkedList l4 = {next:l3, data:-100}
+   assume f(l1) == l1
+   assume f(l2) == l2
+   assume f(l3) == l3
+   assume f(l4) == l4
+---
+E702 main.whiley 11,11:24
+E718 main.whiley 11,21:24

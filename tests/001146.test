@@ -1,0 +1,19 @@
+original.name="Requires_Invalid_1"
+======
+>>> main.whiley
+
+function g(int y) -> int
+requires y > 0:
+    return 10 / y
+
+function f(int y)  -> int
+requires y >= 0:
+    return g(y)
+
+public export method test():
+   assume f(1) == 10
+   assume f(2) == 5
+   assume f(0) == 0
+---
+E700 main.whiley 8,11:14
+E716 main.whiley 8,4:7

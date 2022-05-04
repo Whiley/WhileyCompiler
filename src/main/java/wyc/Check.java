@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.*;
 
+import wyc.Compiler.PrintStreamErrorHandler;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
 import wyc.task.QuickCheck;
@@ -30,6 +31,7 @@ import wycc.util.*;
 import wyil.io.WyilFileReader;
 import wyil.io.WyilFileWriter;
 import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Attr.SyntaxError;
 
 /**
  * Responsible for parsing command-line arguments and executing the
@@ -40,9 +42,10 @@ import wyil.lang.WyilFile;
  */
 public class Check {
 	/**
-	 * The output stream from this compiler.
+	 * The outgoing mailbox for this compiler. Essentially, all generated syntax
+	 * errors are sent here.
 	 */
-	private PrintStream out = System.out;
+	private MailBox<SyntaxError> mailbox = new PrintStreamErrorHandler(System.out);
 	/**
 	 *
 	 */
@@ -66,11 +69,6 @@ public class Check {
 
 	public Check addConfig(Function<Context,Context> config) {
 		configs.add(config);
-		return this;
-	}
-
-	public Check setOutput(PrintStream pout) {
-		this.out = pout;
 		return this;
 	}
 
@@ -112,8 +110,8 @@ public class Check {
 			WyilFile wf = wyc.Compiler.readWyilFile(wyildir, source);
 			// Extract source file
 			task.check(wf, context, Collections.EMPTY_LIST);
-			// Print out any syntactic markers
-			Compiler.printSyntacticMarkers(out, wf);
+			// Write out any syntactic markers
+			Compiler.writeSyntacticMarkers(mailbox, wf);
 			//
 			result &= wf.isValid();
 		}

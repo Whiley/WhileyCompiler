@@ -1,3 +1,0 @@
-Return_Invalid_12.whiley:3: unreachable code encountered (i.e. execution can never reach this statement)
-  return
-  ^^^^^^

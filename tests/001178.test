@@ -1,0 +1,13 @@
+original.name="Subtype_Invalid_2"
+======
+>>> main.whiley
+type scf2nat is (int x) where x >= 0
+
+function f(scf2nat x):
+    x = -1
+
+public export method test() :
+    f(1)
+---
+E702 main.whiley 4,8:9
+E718 main.whiley 4,8:9

@@ -1,3 +1,0 @@
-ConstrainedInt_Invalid_3.whiley:9: type invariant may not be satisfied {y=2}
-    assume f((odd) y) == 2
-                   ^

@@ -1,6 +1,0 @@
-Template_Invalid_12.whiley:2: expected int, found T
-    return x
-           ^
-Template_Invalid_12.whiley:5: expected bool, found int
-    bool x = f(1)
-             ^^^^

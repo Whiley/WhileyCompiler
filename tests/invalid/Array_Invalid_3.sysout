@@ -1,3 +1,0 @@
-Array_Invalid_3.whiley:3: unable to resolve name
-    int y = a2[x]
-               ^

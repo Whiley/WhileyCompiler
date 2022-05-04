@@ -1,3 +1,0 @@
-Record_Invalid_4.whiley:5: expected Dimension, found {int x,int y}
-    return Point{x:x, y:y}
-                ^^^^^^^^^^

@@ -1,3 +1,0 @@
-Assert_Invalid_2.whiley:6: method invocation not permitted
-    assert m(10, 20)
-           ^^^^^^^^^

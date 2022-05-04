@@ -1,3 +1,0 @@
-Unsafe_Invalid_8.whiley:8: unsafe invocation not permitted in safe context
-    meth_t m = &f(int)
-               ^^^^^^^

@@ -1,0 +1,12 @@
+original.name="Coercion_Valid_3"
+======
+>>> main.whiley
+
+
+function f(int x) -> int:
+    return (int) x
+
+public export method test() :
+    assume f('H') == 72
+
+---

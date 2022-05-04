@@ -1,0 +1,10 @@
+original.name="Parsing_Invalid_26"
+======
+>>> main.whiley
+type Record is {
+     int x,
+     void y
+}
+
+---
+E407 main.whiley 3,5:8

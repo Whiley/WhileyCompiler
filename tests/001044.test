@@ -1,0 +1,9 @@
+original.name="Old_Invalid_4"
+======
+>>> main.whiley
+method m(&int p)
+requires *p == old(*p):
+    //
+    skip
+---
+E320 main.whiley 2,15:17

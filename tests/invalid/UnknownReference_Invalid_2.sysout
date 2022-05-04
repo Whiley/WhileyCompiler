@@ -1,3 +1,0 @@
-UnknownReference_Invalid_2.whiley:5: cannot dereference dynamically sized type
-    *q = {x:1}
-     ^

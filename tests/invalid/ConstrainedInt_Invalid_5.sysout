@@ -1,3 +1,0 @@
-ConstrainedInt_Invalid_5.whiley:4: type invariant may not be satisfied 
-    x = x + 1
-        ^^^^^

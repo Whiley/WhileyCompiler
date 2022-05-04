@@ -1,0 +1,14 @@
+original.name="ProcessAccess_Invalid_1"
+======
+>>> main.whiley
+type etype is {int mode, ...}
+
+type Ptype is &etype
+
+method get(Ptype _this) -> int:
+    _this.op = 1
+    return _this.mode
+
+---
+E403 main.whiley 6,4:8
+E400 main.whiley 7,11:15

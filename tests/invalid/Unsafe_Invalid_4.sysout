@@ -1,3 +1,0 @@
-Unsafe_Invalid_4.whiley:8: unsafe invocation not permitted in safe context
-    fun_t x = &(int x -> f(x))
-                         ^^^^

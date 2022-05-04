@@ -1,0 +1,14 @@
+original.name="Template_Invalid_33"
+======
+>>> main.whiley
+type Box<T> is { &T ptr }
+type Outer<T> is Box<T>
+
+function bigger(Outer<int> b) -> (Outer<int|bool> r):
+    return b
+
+function smaller(Outer<int|bool> b) -> (Outer<int> r):
+    return b
+---
+E400 main.whiley 5,11
+E400 main.whiley 8,11

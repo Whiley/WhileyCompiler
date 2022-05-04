@@ -1,0 +1,10 @@
+original.name="Parsing_Invalid_4"
+======
+>>> main.whiley
+type rec is {
+  int field,
+  int field
+}
+
+---
+E315 main.whiley 3,6:10

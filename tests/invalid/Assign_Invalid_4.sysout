@@ -1,3 +1,0 @@
-Assign_Invalid_4.whiley:2: expected int, found bool
-    return true
-           ^^^^

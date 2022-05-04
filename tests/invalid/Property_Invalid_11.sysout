@@ -1,3 +1,0 @@
-Property_Invalid_11.whiley:2: expected int, found bool
-    x + 1
-    ^

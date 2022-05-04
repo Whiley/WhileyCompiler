@@ -1,0 +1,11 @@
+original.name="MethodCall_Invalid_4"
+======
+>>> main.whiley
+function f(int y) -> int:
+    return get(y)
+
+method get(int z) -> int:
+    return z
+
+---
+E608 main.whiley 2,11:16

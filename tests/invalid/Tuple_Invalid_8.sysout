@@ -1,3 +1,0 @@
-Tuple_Invalid_8.whiley:3: expected int, found (int,int)
-    int a = (1,2)
-    ^^^^^^^^^^^^^^

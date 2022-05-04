@@ -1,0 +1,9 @@
+original.name="Array_Invalid_3"
+======
+>>> main.whiley
+public export method test() :
+    int[] a2 = [1, 2, 3]
+    int y = a2[x]
+
+---
+E407 main.whiley 3,15

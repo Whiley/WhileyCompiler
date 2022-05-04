@@ -1,0 +1,8 @@
+original.name="Function_Invalid_1"
+======
+>>> main.whiley
+function f(int x) :
+    asdkljkljg(x)
+
+---
+E407 main.whiley 2,4:13

@@ -1,3 +1,0 @@
-Quantifiers_Invalid_5.whiley:7: precondition may not be satisfied {ls=[]}
-    f(ls)
-    ^^^^^

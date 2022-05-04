@@ -1,0 +1,13 @@
+original.name="Unsafe_Invalid_12"
+build.whiley.strict=true
+======
+>>> main.whiley
+unsafe function f(int x) -> (int r):
+    return x
+
+unsafe final int x = f(1)
+
+public export method test():
+    assert x == 1
+---
+E613 main.whiley 7,11

@@ -1,3 +1,0 @@
-Type_Invalid_9.whiley:2: empty type encountered
-type Contractive is Other | Other
-                            ^^^^^

@@ -1,0 +1,12 @@
+original.name="FunctionRef_Invalid_7"
+======
+>>> main.whiley
+type Proc is &{
+    function func(bool,int)->bool
+}
+
+method test(Proc _this, bool arg) -> bool:
+    return _this->func(arg)
+
+---
+E400 main.whiley 6,18:21

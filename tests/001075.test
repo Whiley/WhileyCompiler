@@ -1,0 +1,15 @@
+original.name="Parsing_Invalid_31"
+======
+>>> main.whiley
+method m() :
+    int b = 1
+
+public export method test() :
+    int a1 = m()
+    int a2 = m()+1
+    int[] a3 = [m()]
+
+---
+E400 main.whiley 5,13:15
+E400 main.whiley 6,13:15
+E400 main.whiley 7,16:18

@@ -1,3 +1,0 @@
-TypeEquals_Invalid_10.whiley:6: expected bool, found int
-        return x
-               ^

@@ -1,0 +1,12 @@
+original.name="For_Invalid_3"
+======
+>>> main.whiley
+public export method test():
+    final int r = 0
+    //
+    for i in 0..5:
+        r = r + i
+    //
+    assume r == (0+1+2+3+4)
+---
+E606 main.whiley 5,8

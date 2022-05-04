@@ -1,0 +1,11 @@
+original.name="Template_Invalid_21"
+======
+>>> main.whiley
+method f<T>(T x) -> (bool y):
+    return false
+
+property g(int x) -> (bool r):
+    f(x)
+
+---
+E608 main.whiley 5,4:7

@@ -1,0 +1,18 @@
+original.name="Quantifiers_Invalid_6"
+======
+>>> main.whiley
+
+function f(int[] ls) -> bool
+requires all { i in 0..|ls| | ls[i] > 0 }:
+    return true
+
+function g(int[] ls) :
+    f(ls)
+
+public export method test():
+    g([])
+    g([1,2,3])
+    g([1,2,-2])
+---
+E700 main.whiley 7,4:8
+E716 main.whiley 7,4:8

@@ -1,3 +1,0 @@
-Assign_Invalid_9.whiley:5: expected int, found bool
-        xs[0] = false
-                ^^^^^

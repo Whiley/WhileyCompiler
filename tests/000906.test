@@ -1,0 +1,9 @@
+original.name="Constant_Invalid_1"
+======
+>>> main.whiley
+final int X = 1 + Y
+final int Y = 1 + X
+
+---
+E509 main.whiley 1,14:18
+E509 main.whiley 2,14:18

@@ -1,3 +1,0 @@
-For_Invalid_10.whiley:4: cannot reassign final variable
-        i = 0
-        ^

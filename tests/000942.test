@@ -1,0 +1,13 @@
+original.name="Ensures_Invalid_5"
+======
+>>> main.whiley
+function min2(int x, int y) -> (int r)
+ensures x <= y && r == x || x >= y && r == y:
+    if x <= y:
+        r = x
+    else:
+        r = y
+    return r
+
+---
+E321 main.whiley 2,25:26

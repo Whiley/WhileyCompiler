@@ -1,6 +1,0 @@
-Coercion_Invalid_7.whiley:16: expected expr, found int
-    f(-1)
-      ^^
-Coercion_Invalid_7.whiley:17: expected expr, found int
-    f(1)
-      ^

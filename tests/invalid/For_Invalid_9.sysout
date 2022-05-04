@@ -1,3 +1,0 @@
-For_Invalid_9.whiley:4: loop invariant may not be restored 
-    for i in 0..5 where r < 10:
-                        ^^^^^^

@@ -1,3 +1,0 @@
-IntDiv_Invalid_1.whiley:4: possible division by zero {x=0, y=0}
-    x = x / y
-        ^^^^^

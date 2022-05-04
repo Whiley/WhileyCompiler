@@ -1,3 +1,0 @@
-While_Invalid_24.whiley:13: index out-of-bounds (greater than length)
-        where base == bases[i]:
-	                    ^

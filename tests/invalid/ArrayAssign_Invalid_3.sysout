@@ -1,3 +1,0 @@
-ArrayAssign_Invalid_3.whiley:6: assertion may not hold 
-    assert arr2[2] != |arr1|
-           ^^^^^^^^^^^^^^^^^

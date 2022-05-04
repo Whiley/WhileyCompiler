@@ -1,0 +1,10 @@
+original.name="UnionType_Invalid_24"
+======
+>>> main.whiley
+type named is null | {int f}
+
+function f(named rec) -> (named r):
+    rec.f = 1
+    return rec
+---
+E403 main.whiley 4,4:6

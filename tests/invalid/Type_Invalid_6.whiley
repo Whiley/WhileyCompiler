@@ -1,1 +1,0 @@
-type Contractive is Contractive | Contractive | Contractive

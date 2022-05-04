@@ -1,0 +1,8 @@
+build.whiley.ignore=true
+original.name="For_Invalid_11"
+======
+>>> main.whiley
+method f(int[] items):
+    for i in 1..|items|:
+        skip
+---

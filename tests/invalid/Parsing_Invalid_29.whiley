@@ -1,1 +1,0 @@
-function f(void z) :

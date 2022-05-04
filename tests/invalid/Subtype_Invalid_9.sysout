@@ -1,3 +1,0 @@
-Subtype_Invalid_9.whiley:12: type invariant may not be satisfied 
-    f((scf9arr) x)
-                ^

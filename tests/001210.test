@@ -1,0 +1,9 @@
+original.name="Template_Invalid_25"
+======
+>>> main.whiley
+type LinkedList<T> is null | { LinkedList next, T data }
+type BinaryTree<T> is null | { BinaryTree<T> left, BinaryTree<T,T> right, T data }
+
+---
+E409 main.whiley 1,31:40
+E410 main.whiley 2,51:60

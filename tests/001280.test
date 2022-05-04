@@ -1,0 +1,9 @@
+original.name="UnionType_Invalid_20"
+======
+>>> main.whiley
+type LinkedList is null | { LinkedList next, int data }
+
+method length(LinkedList list, int n):
+    length(list.next,n-1)
+---
+E400 main.whiley 4,11:14

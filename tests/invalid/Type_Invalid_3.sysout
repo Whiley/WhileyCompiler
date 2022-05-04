@@ -1,3 +1,0 @@
-Type_Invalid_3.whiley:1: empty type encountered
-type contractive is { contractive next }
-     ^^^^^^^^^^^

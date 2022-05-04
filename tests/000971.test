@@ -1,0 +1,14 @@
+original.name="For_Invalid_8"
+======
+>>> main.whiley
+method f():
+    int r = 0
+    //
+    for i in 0..5 where r >= 1:
+        r = r + i
+
+public export method test():
+     f()
+---
+E703 main.whiley 4,24:29
+E720 main.whiley 4,24:29

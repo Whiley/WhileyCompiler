@@ -1,0 +1,10 @@
+original.name="EndOfFile_Invalid_1"
+build.whiley.ignore=true
+======
+>>> main.whiley
+public export method test():
+    int i = 1
+    i
+
+---
+E302 main.whiley 3,5

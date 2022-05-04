@@ -1,0 +1,8 @@
+original.name="Constant_Invalid_2"
+======
+>>> main.whiley
+public export method test():
+    int a = Constants[5]
+
+---
+E407 main.whiley 2,12:20

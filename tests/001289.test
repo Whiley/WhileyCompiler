@@ -1,0 +1,17 @@
+original.name="UnionType_Invalid_5"
+======
+>>> main.whiley
+type IntList is {int op, bool[] rest} | {int[] op, int mode}
+
+function f(IntList x) -> IntList:
+    return x
+
+public export method test() :
+    IntList x = (IntList) {op: 1, rest: [false]}
+    x.op = [1, 2, 3]
+    IntList y = {op: 1, rest: [false]}
+    y.op = [1, 2, 3]    
+    f(x)
+---
+E403 main.whiley 8,4
+E400 main.whiley 10,11:19

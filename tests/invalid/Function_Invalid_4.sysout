@@ -1,3 +1,0 @@
-Function_Invalid_4.whiley:5: method invocation not permitted
-    return g(x)
-           ^^^^

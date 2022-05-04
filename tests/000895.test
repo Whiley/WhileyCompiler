@@ -1,0 +1,11 @@
+original.name="Coercion_Invalid_12"
+======
+>>> main.whiley
+type obj_xy is {int x, int y, ...}
+type obj_x is {int x, ...}
+type obj_y is {int y, ...}
+
+function f(obj_xy o) -> obj_x|obj_y:
+    return o
+---
+E400 main.whiley 6,11

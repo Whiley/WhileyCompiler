@@ -1,0 +1,15 @@
+original.name="While_Invalid_3"
+======
+>>> main.whiley
+public export method test() -> int:
+    int i = 0
+    int r
+    //
+    while i < 10:
+        r = r + i
+    //
+    return r
+
+---
+E601 main.whiley 6,12
+E601 main.whiley 8,11

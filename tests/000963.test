@@ -1,0 +1,9 @@
+original.name="For_Invalid_10"
+======
+>>> main.whiley
+method test():
+    // Clearly, not a good idea
+    for i in 0..5:
+        i = 0
+---
+E606 main.whiley 4,8

@@ -1,3 +1,0 @@
-Ensures_Invalid_5.whiley:2: braces required to disambiguate expression
-ensures x <= y && r == x || x >= y && r == y:
-                         ^^

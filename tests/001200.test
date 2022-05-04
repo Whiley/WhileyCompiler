@@ -1,0 +1,12 @@
+original.name="Template_Invalid_16"
+======
+>>> main.whiley
+type Point is {int x, int y}
+
+type Ref<T> is { T data }
+
+function f(Ref<Point> rec) -> (bool r):
+    return rec.data.x + rec.data.y
+
+---
+E400 main.whiley 6,11:33

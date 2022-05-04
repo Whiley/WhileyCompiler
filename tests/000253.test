@@ -1,0 +1,10 @@
+original.name="IntMul_Valid_1"
+======
+>>> main.whiley
+
+
+public export method test() :
+    int x = (2 * 3) + 1
+    assert x == 7
+
+---

@@ -1,0 +1,15 @@
+original.name="ConstrainedInt_Valid_12"
+======
+>>> main.whiley
+
+
+type cr1nat is int
+
+function f(cr1nat x) -> int:
+    int y = x
+    return y
+
+public export method test() :
+    assume f(9) == 9
+
+---

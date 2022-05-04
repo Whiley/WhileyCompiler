@@ -1,0 +1,12 @@
+original.name="NegationType_Valid_4"
+======
+>>> main.whiley
+
+
+function f(int[] x) -> int[] | int:
+    return x
+
+public export method test() :
+    assume f("Hello World") == "Hello World"
+
+---

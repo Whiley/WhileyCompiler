@@ -1,0 +1,10 @@
+original.name="Unsafe_Invalid_10"
+build.whiley.strict=true
+======
+>>> main.whiley
+unsafe function f(int x) -> (int r):
+    return x
+
+final int x = f(1)
+---
+E613 main.whiley 4,14:17

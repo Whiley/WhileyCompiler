@@ -1,3 +1,0 @@
-Array_Invalid_13.whiley:11: possible index out of bounds (not less than length) {xs=[0], xs$1=[]}
-    return xs[0]
-           ^^^^^

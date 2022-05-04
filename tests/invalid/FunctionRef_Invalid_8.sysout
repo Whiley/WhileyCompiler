@@ -1,3 +1,0 @@
-FunctionRef_Invalid_8.whiley:9: expected method(int,int)->(any), found fun_t
-    assert fp(1,1) == 1
-           ^^^^^^^

@@ -1,3 +1,0 @@
-Parameter_Invalid_2.whiley:1: expecting "Identifier" here
-function f(int $) -> int:
-               ^

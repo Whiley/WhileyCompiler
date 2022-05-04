@@ -1,0 +1,13 @@
+original.name="BoolReturn_Valid_1"
+======
+>>> main.whiley
+
+
+function pred() -> bool:
+    return false
+
+public export method test() :
+    assume !pred()
+
+
+---

@@ -1,3 +1,0 @@
-Property_Invalid_1.whiley:11: variable may be uninitialised
-        return y
-               ^

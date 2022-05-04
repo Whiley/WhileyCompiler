@@ -1,3 +1,0 @@
-StaticVar_Invalid_9.whiley:1: cyclic static initialiser
-final int x = {f:x}.f
-                    ^

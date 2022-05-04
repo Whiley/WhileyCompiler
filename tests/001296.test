@@ -1,0 +1,15 @@
+original.name="UnknownReference_Invalid_3"
+======
+>>> main.whiley
+method main(&{int x, ...} q):
+    // Following not safe
+    &{int x, int y, ... } p = q
+
+
+public export method test():
+     main(new {x:1,y:2})
+
+
+
+---
+E400 main.whiley 3,30

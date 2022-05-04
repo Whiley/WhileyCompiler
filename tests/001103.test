@@ -1,0 +1,11 @@
+original.name="Public_Invalid_5"
+======
+>>> main.whiley
+type Hidden is (int x) where x >= 5
+
+public function f({Hidden field} x) -> (int r):
+    return 0
+
+
+---
+E411 main.whiley 3,19:24

@@ -1,0 +1,18 @@
+original.name="ConstrainedInt_Invalid_8"
+======
+>>> main.whiley
+type nat is (int x) where 1 <= x && x <= 8
+
+function h() -> (int x)
+ensures x <= 3:
+    //
+    return 0
+
+function f() -> nat:
+    return (nat) h()
+
+public export method test():
+       assume f() == 0
+---
+E702 main.whiley 9,11:19
+E718 main.whiley 9,17:19

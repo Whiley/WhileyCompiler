@@ -1,0 +1,8 @@
+original.name="MethodCall_Invalid_3"
+======
+>>> main.whiley
+public export method test(int[] _this) :
+    _this.f(1)
+
+---
+E403 main.whiley 2,4:8

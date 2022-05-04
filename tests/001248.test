@@ -1,0 +1,17 @@
+original.name="TypeEquals_Invalid_2"
+======
+>>> main.whiley
+function f(bool e) -> int[]:
+    if e is bool:
+        return "bool"
+    else:
+        if e is int:
+            return "int"
+        else:
+            return "int[]"
+
+---
+E506 main.whiley 2,7:15
+E400 main.whiley 5,16:18
+E400 main.whiley 5,16:18
+E506 main.whiley 5,11:18

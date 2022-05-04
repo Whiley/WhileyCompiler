@@ -1,3 +1,0 @@
-ArrayGenerator_Invalid_3.whiley:2: expected int, found bool
-    return [0; n]
-               ^

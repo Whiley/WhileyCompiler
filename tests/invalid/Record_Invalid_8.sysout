@@ -1,3 +1,0 @@
-Record_Invalid_8.whiley:4: expected {int z, ...}, found Node
-    return n.z
-           ^

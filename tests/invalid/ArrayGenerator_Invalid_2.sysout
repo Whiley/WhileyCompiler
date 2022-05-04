@@ -1,3 +1,0 @@
-ArrayGenerator_Invalid_2.whiley:2: negative length possible {n=-1}
-    return [0; n]
-           ^^^^^^

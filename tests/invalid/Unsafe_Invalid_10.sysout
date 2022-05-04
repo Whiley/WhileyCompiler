@@ -1,3 +1,0 @@
-Unsafe_Invalid_10.whiley:4: unsafe invocation not permitted in safe context
-final int x = f(1)
-              ^^^^
