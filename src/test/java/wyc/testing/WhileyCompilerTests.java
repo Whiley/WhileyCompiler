@@ -74,68 +74,77 @@ public class WhileyCompilerTests {
 		// Check whether this test should be ignored or not.
 		boolean ignored = tf.get(Boolean.class, "build.whiley.ignore").orElse(false);
 		boolean strict = tf.get(Boolean.class, "build.whiley.strict").orElse(false);
-		// Yes, test file indicates it should be ignored (for whatever reason).
-		Assume.assumeTrue("Test " + path + " skipped", !ignored);
 		// NOTE: if we get here, then ignored == false
 		Path testDir = srcDir.resolve(path.toPath());
 		forceDelete(testDir);
 		testDir.toFile().mkdirs();
 		int index = 0;
 		HashMap<Trie, TextFile> state = new HashMap<>();
-		for (TestFile.Frame f : tf) {
-			// Filter available markers (ignoring those requiring verification)
-			TestFile.Error[] markers = filterStaticMarkers(f.markers);
-			MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<>();
-			// Construct frame directory
-			Path frameDir = testDir.resolve("_" + index);
-			index++;
-			// Mirror state in frame directory
-			f.apply(state);
-			mirror(state, frameDir);
-			// Configure compiler
-			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile())
-					.setTarget(path).setErrorHandler(handler).setStrict(strict);
-			// Add source files
-			for (Trie sf : state.keySet()) {
-				sf = Trie.fromString(sf.toString().replace(".whiley", ""));
-				wyc.addSource(sf);
-			}
-			// Check whether build succeeded
-			boolean compiled = wyc.run();
-			// Check whether build should have succeeded
-			boolean shouldCompile = (markers.length == 0);
-			// Interpreter what happened
-			if (compiled && shouldCompile) {
-				TestFile.Error[] runtime_markers = filterRuntimeMarkers(f.markers);
-				TestFile.Error[] actual = new TestFile.Error[0];
-				// Test was expected to compile, so attempt to run the code.
-				String unit = tf.get(String.class, "main.file").orElse("main");
-				try {
-					TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
-				} catch (Interpreter.RuntimeError e) {
-					actual = new TestFile.Error[1];
-					actual[0] = toError(state,e);
+		try {
+			for (TestFile.Frame f : tf) {
+				// Filter available markers (ignoring those requiring verification)
+				TestFile.Error[] markers = filterStaticMarkers(f.markers);
+				MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<>();
+				// Construct frame directory
+				Path frameDir = testDir.resolve("_" + index);
+				index++;
+				// Mirror state in frame directory
+				f.apply(state);
+				mirror(state, frameDir);
+				// Configure compiler
+				wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(frameDir.toFile()).setWyilDir(frameDir.toFile())
+						.setTarget(path).setErrorHandler(handler).setStrict(strict);
+				// Add source files
+				for (Trie sf : state.keySet()) {
+					sf = Trie.fromString(sf.toString().replace(".whiley", ""));
+					wyc.addSource(sf);
 				}
-				compareReportedErrors(actual, runtime_markers);
-			} else if (compiled) {
-				fail("Test should not have compiled!");
-			} else if (!compiled && !shouldCompile) {
-				TestFile.Error[] actual = handler.stream().map(se -> toError(state, se)).toArray(TestFile.Error[]::new);
-				compareReportedErrors(actual, markers);
-			} else {
-				// Report errors
-				for (SyntaxError syserr : handler) {
-					TestFile.Error err = toError(state, syserr);
-					TextFile sf = state.get(err.getFilename());
-					System.out.println("error: " + syserr.getMessage());
-					printLineHighlight(System.out, err.getLocation(), sf);
+				// Check whether build succeeded
+				boolean compiled = wyc.run();
+				// Check whether build should have succeeded
+				boolean shouldCompile = (markers.length == 0);
+				// Interpreter what happened
+				if (compiled && shouldCompile) {
+					TestFile.Error[] runtime_markers = filterRuntimeMarkers(f.markers);
+					TestFile.Error[] actual = new TestFile.Error[0];
+					// Test was expected to compile, so attempt to run the code.
+					String unit = tf.get(String.class, "main.file").orElse("main");
+					try {
+						TestUtils.execWyil(frameDir.toFile(), path, Trie.fromString(unit));
+					} catch (Interpreter.RuntimeError e) {
+						actual = new TestFile.Error[1];
+						actual[0] = toError(state, e);
+					}
+					compareReportedErrors(actual, runtime_markers, ignored);
+				} else if (compiled) {
+					// Yes, test file indicates it should be ignored (for whatever reason).
+					Assume.assumeTrue("Test " + path + " skipped", !ignored);
+					fail("Test should not have compiled!");
+				} else if (!compiled && !shouldCompile) {
+					TestFile.Error[] actual = handler.stream().map(se -> toError(state, se))
+							.toArray(TestFile.Error[]::new);
+					compareReportedErrors(actual, markers, ignored);
+				} else {
+					Assume.assumeTrue("Test " + path + " skipped", !ignored);
+					// Report errors
+					for (SyntaxError syserr : handler) {
+						TestFile.Error err = toError(state, syserr);
+						TextFile sf = state.get(err.getFilename());
+						System.out.println("E" + syserr.getErrorCode() + ": " + syserr.getMessage());
+						printLineHighlight(System.out, err.getLocation(), sf);
+					}
+					// Yes, test file indicates it should be ignored (for whatever reason).
+					fail("Test should have compiled!");
 				}
-				fail("Test should have compiled!");
 			}
+		} catch (Exception e) {
+			Assume.assumeTrue("Test " + path + " skipped", !ignored);
+			throw e;
+		} finally {
+			// Finally clean up if we get here. Otherwise, leave files in place for
+			// debugging.
+			forceDelete(testDir);
 		}
-		// Finally clean up if we get here. Otherwise, leave files in place for
-		// debugging.
-		forceDelete(testDir);
 	}
 
 	private static void printLineHighlight(PrintStream output, TestFile.Coordinate loc, TextFile sourceFile) {
@@ -204,12 +213,21 @@ public class WhileyCompilerTests {
 		TextFile sf = files.get(filename);
 		// Extract enclosing line
 		TextFile.Line l = sf.getEnclosingLine(span.getStart());
-		// Convert space into coordinate
-		int start = span.getStart() - l.getOffset();
-		int end = span.getEnd() - l.getOffset();
+		int line;
+		TestFile.Range range;
 		//
-		TestFile.Range range = new TestFile.Range(start, end);
-		TestFile.Coordinate location = new TestFile.Coordinate(l.getNumber(), range);
+		if (l != null) {
+			// Convert space into coordinate
+			int start = span.getStart() - l.getOffset();
+			int end = span.getEnd() - l.getOffset();
+			//
+			line = l.getNumber();
+			range = new TestFile.Range(start, end);
+		} else {
+			line = 1;
+			range = new TestFile.Range(0, 1);
+		}
+		TestFile.Coordinate location = new TestFile.Coordinate(line, range);
 		// Done
 		return new TestFile.Error(errno, filename, location);
 	}
@@ -268,7 +286,7 @@ public class WhileyCompilerTests {
 		}
 	}
 
-	public static void compareReportedErrors(TestFile.Error[] expected, TestFile.Error[] actual) {
+	public static void compareReportedErrors(TestFile.Error[] expected, TestFile.Error[] actual, boolean ignored) {
 		boolean failed = false;
 		// First, sort both error sets to make sure a fair comparison.
 		Arrays.sort(expected);
@@ -308,7 +326,11 @@ public class WhileyCompilerTests {
 		}
 		//
 		if (failed) {
+			// Yes, test file indicates it should be ignored (for whatever reason).
+			Assume.assumeTrue(!ignored);
 			fail("incorrect errors reported");
+		} else if(ignored) {
+			fail("test need not be ignored!");
 		}
 	}
 

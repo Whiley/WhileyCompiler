@@ -1,5 +1,4 @@
 original.name="Infeasible_Function_3"
-build.whiley.ignore=true
 ======
 >>> main.whiley
 // Similar to Infeasible_Function_2, but recursive with a call that makes no progress.
@@ -17,3 +16,4 @@ ensures (2 * r) == a:
 public export method test():
     assert f(2) == 1
 ---
+E712 main.whiley 10,12:15

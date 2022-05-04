@@ -1,6 +1,4 @@
 original.name="RecordAssign_Valid_11"
-build.whiley.ignore=true
-WhileyCompiler.issue=1002
 ======
 >>> main.whiley
 type in_rec is {(int|null) f}

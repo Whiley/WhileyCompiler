@@ -1361,8 +1361,14 @@ public class Interpreter {
 	public RValue executeDereference(Expr.Dereference expr, CallStack frame, Heap heap) {
 		// Evaluate operand
 		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame, heap);
-		// Read heap location
-		return heap.read(ref.deref());
+		//
+		int address = ref.deref();
+		// Sanity check
+		if(address >= 0 && address < heap.size()) {
+			return heap.read(address);
+		} else {
+			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, expr.getOperand());
+		}
 	}
 
 	public RValue executeFieldDereference(Expr.FieldDereference expr, CallStack frame, Heap heap) {
@@ -1688,6 +1694,10 @@ public class Interpreter {
 			int address = values.size();
 			values.add(value);
 			return address;
+		}
+
+		public int size() {
+			return values.size();
 		}
 
 		public void dealloc(int address) {

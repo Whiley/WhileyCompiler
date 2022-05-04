@@ -1,5 +1,6 @@
 original.name="RecordAssign_Valid_17"
 build.whiley.ignore=true
+WhileyCompiler.issue=1147
 ======
 >>> main.whiley
 type Rec is {int x, int y} where x < y
@@ -10,5 +11,4 @@ public export method test():
     r.x,r.y = r.x+1,r.y+1
     // Check!
     assert r == {x:1,y:2}
-
 ---

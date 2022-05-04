@@ -3,12 +3,8 @@ build.whiley.ignore=true
 WhileyCompiler.issue=1003
 ======
 >>> main.whiley
-
-
 type Point is {int y, int x, ...}
-
 type Point3D is {int z, int y, int x}
-
 type Points is Point | Point3D
 
 method isPoint3D(Points t) -> bool:
@@ -29,5 +25,4 @@ public export method test() :
     p2d = {w: 3, y: 2, x: 1}
     result = isPoint3D(p2d)
     assume result == false
-
 ---

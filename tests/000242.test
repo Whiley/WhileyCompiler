@@ -1,5 +1,4 @@
 original.name="Infeasible_Function_2"
-build.whiley.ignore=true
 ======
 >>> main.whiley
 // This function is infeasible when a==1.
@@ -16,3 +15,4 @@ ensures (2 * r) == a:
 public export method test():
     assert f(2) == 1
 ---
+E712 main.whiley 9,12:15

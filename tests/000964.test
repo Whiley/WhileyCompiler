@@ -1,8 +1,14 @@
-build.whiley.ignore=true
 original.name="For_Invalid_11"
 ======
 >>> main.whiley
 method f(int[] items):
     for i in 1..|items|:
         skip
+
+public export method test():
+    f([1])
+    f([1,2])
+    f([])
 ---
+E710 main.whiley 2,16:22
+E727 main.whiley 2,16:22
