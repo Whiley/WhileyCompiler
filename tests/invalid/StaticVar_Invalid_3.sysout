@@ -1,3 +1,0 @@
-StaticVar_Invalid_3.whiley:2: expected int[], found int
-int[] y = x
-          ^

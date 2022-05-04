@@ -1,3 +1,0 @@
-FunctionRef_Invalid_5.whiley:14: invalid field access
-    return f.read(arg)
-             ^^^^

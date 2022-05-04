@@ -1,3 +1,0 @@
-VarDecl_Invalid_4.whiley:4: type invariant may not be satisfied {x=-1}
-    nat y = (nat) x
-                  ^

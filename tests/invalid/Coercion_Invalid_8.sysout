@@ -1,3 +1,0 @@
-Coercion_Invalid_8.whiley:12: expected wurf1nat, found int
-    return f(x)
-             ^

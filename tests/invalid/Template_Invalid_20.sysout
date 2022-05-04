@@ -1,3 +1,0 @@
-Template_Invalid_20.whiley:4: method invocation not permitted
-type t is (int x) where f(x)
-                        ^^^^

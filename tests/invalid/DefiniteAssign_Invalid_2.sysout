@@ -1,3 +1,0 @@
-DefiniteAssign_Invalid_2.whiley:6: variable may be uninitialised
-    return z
-           ^

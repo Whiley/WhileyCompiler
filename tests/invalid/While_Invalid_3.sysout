@@ -1,6 +1,0 @@
-While_Invalid_3.whiley:6: variable may be uninitialised
-        r = r + i
-            ^
-While_Invalid_3.whiley:8: variable may be uninitialised
-    return r
-           ^

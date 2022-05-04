@@ -1,3 +1,0 @@
-Constant_Invalid_2.whiley:2: unable to resolve name
-    int a = Constants[5]
-            ^^^^^^^^^

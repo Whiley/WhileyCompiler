@@ -1,6 +1,0 @@
-Type_Invalid_4.whiley:1: empty type encountered
-type Point is {
-     ^^^^^
-Type_Invalid_4.whiley:6: expected Point, found null
-    return null
-           ^^^^

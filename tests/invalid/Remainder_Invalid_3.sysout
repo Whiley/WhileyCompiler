@@ -1,3 +1,0 @@
-Remainder_Invalid_3.whiley:2: expected int, found bool
-    return x % y
-           ^

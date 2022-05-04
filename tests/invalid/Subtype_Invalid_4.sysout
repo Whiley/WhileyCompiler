@@ -1,3 +1,0 @@
-Subtype_Invalid_4.whiley:9: type invariant may not be satisfied {x=[]}
-    f((scf4list) x)
-                 ^

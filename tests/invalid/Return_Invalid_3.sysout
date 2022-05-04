@@ -1,3 +1,0 @@
-Return_Invalid_3.whiley:2: expected void, found bool
-    return z
-           ^

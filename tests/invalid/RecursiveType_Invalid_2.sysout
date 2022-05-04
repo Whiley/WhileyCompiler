@@ -1,3 +1,0 @@
-RecursiveType_Invalid_2.whiley:10: type invariant may not be satisfied
-    return f(-1)
-             ^^

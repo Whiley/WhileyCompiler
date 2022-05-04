@@ -1,1 +1,0 @@
-type nat<T,T> is (int x) where x >= 0

@@ -1,3 +1,0 @@
-For_Invalid_5.whiley:4: expected int, found bool
-    for i in 0..j:
-                ^

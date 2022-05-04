@@ -1,3 +1,0 @@
-For_Invalid_3.whiley:5: cannot reassign final variable
-        r = r + i
-        ^

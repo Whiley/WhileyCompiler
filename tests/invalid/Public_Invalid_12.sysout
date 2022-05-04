@@ -1,3 +1,0 @@
-Public_Invalid_12.whiley:3: exposing private declaration
-public property f({Hidden[] field} x) -> (bool r):
-                   ^^^^^^

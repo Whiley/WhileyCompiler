@@ -1,3 +1,0 @@
-Coercion_Invalid_4.whiley:6: expected pos[]|neg[], found nat[]
-    return p
-           ^

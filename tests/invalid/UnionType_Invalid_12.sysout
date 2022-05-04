@@ -1,6 +1,0 @@
-UnionType_Invalid_12.whiley:3: expected int, found bool
-    *x = false
-         ^^^^^
-UnionType_Invalid_12.whiley:5: expected reference
-    *y = false
-     ^

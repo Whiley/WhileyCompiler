@@ -1,3 +1,0 @@
-Reference_Invalid_4.whiley:3: expected &int, found int
-    &int ptr = new *x
-                    ^

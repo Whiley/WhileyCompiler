@@ -74,6 +74,11 @@ public class Interpreter {
 	 */
 	private final PrintStream debug;
 
+	/**
+	 * The maximum permissable stack depth.
+	 */
+	private final int maxStackDepth = 32;
+
 	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
 		this.semantics = new ConcreteSemantics();
@@ -134,6 +139,8 @@ public class Interpreter {
 		} else if (lambda.getParameters().size() != args.length) {
 			throw new IllegalArgumentException(
 					"incorrect number of arguments: " + lambda.getName() + ", " + lambda.getType());
+		} else if(frame.depth() >= maxStackDepth) {
+			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, context);
 		}
 		// Enter a new frame for executing this callable item
 		frame = frame.enter(lambda);
@@ -1647,7 +1654,7 @@ public class Interpreter {
 				return null;
 			}
 		}
-		
+
 		public Trie getSource() {
 			Decl.Unit unit = getElement().getAncestor(Decl.Unit.class);
 			String nameStr = unit.getName().toString().replace("::", "/");
@@ -1734,6 +1741,14 @@ public class Interpreter {
 			this.locals = locals;
 			this.statics = parent.statics;
 			this.callables = parent.callables;
+		}
+
+		public int depth() {
+			if(parent == null) {
+				return 1;
+			} else {
+				return parent.depth() + 1;
+			}
 		}
 
 		public long getTimeout() {

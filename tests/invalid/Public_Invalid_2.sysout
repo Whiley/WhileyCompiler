@@ -1,3 +1,0 @@
-Public_Invalid_2.whiley:2: unexpected end-of-file
-public type Visible is Hidden[] field
-                                ^^^^^

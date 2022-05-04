@@ -1,3 +1,0 @@
-Remainder_Invalid_2.whiley:2: expected int, found byte
-    return x % y
-               ^

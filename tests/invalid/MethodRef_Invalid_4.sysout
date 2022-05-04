@@ -1,3 +1,0 @@
-MethodRef_Invalid_4.whiley:8: expected nat, found int
-    return &(int x -> g(x))
-                      ^^^^

@@ -1,9 +1,0 @@
-Parsing_Invalid_31.whiley:5: expected int, found void
-    int a1 = m()
-             ^^^
-Parsing_Invalid_31.whiley:6: expected int, found void
-    int a2 = m()+1
-             ^^^
-Parsing_Invalid_31.whiley:7: expected int, found void
-    int[] a3 = [m()]
-                ^^^

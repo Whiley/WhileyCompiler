@@ -1,3 +1,0 @@
-Array_Invalid_12.whiley:10: possible index out of bounds (not less than length) 
-    return xs[f(xs)]
-           ^^^^^^^^^

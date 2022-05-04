@@ -1,6 +1,0 @@
-UnionType_Invalid_14.whiley:4: expected record
-    r.y = 1
-    ^
-UnionType_Invalid_14.whiley:5: expected {int x, ...}, found rec_t
-    return r.x
-           ^

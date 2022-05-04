@@ -1,3 +1,0 @@
-Final_Invalid_5.whiley:4: cannot reassign final variable
-        x = x + 1
-        ^

@@ -1,3 +1,0 @@
-Return_Invalid_10.whiley:2: expected void, found int
-    return 1
-           ^

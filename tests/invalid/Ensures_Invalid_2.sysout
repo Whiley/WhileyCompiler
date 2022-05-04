@@ -1,3 +1,0 @@
-Ensures_Invalid_2.whiley:6: method invocation not permitted
-requires x > g(x):
-             ^^^^

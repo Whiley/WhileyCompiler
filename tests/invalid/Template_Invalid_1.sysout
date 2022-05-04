@@ -1,3 +1,0 @@
-Template_Invalid_1.whiley:1: missing type variable(s)
-type nat<> is (int x) where x >= 0
-        ^^

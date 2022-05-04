@@ -1,3 +1,0 @@
-Subtype_Invalid_1.whiley:9: type invariant may not be satisfied {x=-1}
-    f((scf1nat) x)
-                ^

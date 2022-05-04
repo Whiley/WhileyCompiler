@@ -1,6 +1,0 @@
-Template_Invalid_30.whiley:4: expected Box<int|bool>, found Box<int>
-    return b
-           ^
-Template_Invalid_30.whiley:7: expected Box<int>, found Box<int|bool>
-    return b
-           ^

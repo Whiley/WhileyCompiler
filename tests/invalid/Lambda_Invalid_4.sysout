@@ -1,3 +1,0 @@
-Lambda_Invalid_4.whiley:12: method invocation not permitted
-    return [f<State>(&(State st -> push(st)))]
-                                   ^^^^^^^^

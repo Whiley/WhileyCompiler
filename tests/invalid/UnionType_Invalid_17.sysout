@@ -1,3 +1,0 @@
-UnionType_Invalid_17.whiley:4: expected any[], found named
-    return |f|
-            ^

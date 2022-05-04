@@ -1,3 +1,0 @@
-TupleAssign_Invalid_3.whiley:8: assertion failed 
-    assert x != y
-           ^^^^^^

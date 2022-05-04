@@ -1,3 +1,0 @@
-Array_Invalid_9.whiley:13: precondition may not be satisfied 
-    g(f([0]))
-    ^^^^^^^^^

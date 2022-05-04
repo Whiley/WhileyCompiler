@@ -1,4 +1,0 @@
-ArrayGenerator_Invalid_5.whiley:2: unable to resolve name (is ambiguous)
-	found function ArrayGenerator_Invalid_5::f(bool)->(int[])
-    return [f();10]
-            ^

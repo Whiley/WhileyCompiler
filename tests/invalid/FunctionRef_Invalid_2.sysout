@@ -1,3 +1,0 @@
-FunctionRef_Invalid_2.whiley:8: expecting ":" here
-    return g(&f)
-    ^^^^^^

@@ -1,3 +1,0 @@
-Lambda_Invalid_7.whiley:4: expected fun_t<int|bool>, found fun_t<int>
-    return fn
-           ^^

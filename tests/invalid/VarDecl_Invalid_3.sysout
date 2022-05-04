@@ -1,3 +1,0 @@
-VarDecl_Invalid_3.whiley:2: expected int, found byte
-    int x = 0b010
-            ^^^^^

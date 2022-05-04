@@ -1,6 +1,0 @@
-Function_Invalid_14.whiley:2: expected int, found void
-    return f()
-           ^^^
-Function_Invalid_14.whiley:5: expected void, found int
-    return h()
-           ^^^

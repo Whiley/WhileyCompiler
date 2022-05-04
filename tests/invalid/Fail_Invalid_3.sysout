@@ -1,3 +1,0 @@
-Fail_Invalid_3.whiley:11: possible panic {x=0}
-        fail
-        ^^^^

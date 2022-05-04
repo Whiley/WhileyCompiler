@@ -1,3 +1,0 @@
-Return_Invalid_7.whiley:2: expected int, found bool
-    return !y
-           ^^

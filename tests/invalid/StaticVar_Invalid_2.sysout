@@ -1,3 +1,0 @@
-StaticVar_Invalid_2.whiley:1: expected int[], found int
-int[] x = 1
-          ^

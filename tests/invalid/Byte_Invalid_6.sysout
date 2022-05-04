@@ -1,3 +1,0 @@
-Byte_Invalid_6.whiley:2: braces required to disambiguate expression
-    return x | y ^ z
-                 ^

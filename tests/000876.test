@@ -10,6 +10,6 @@ ensures f(x):
 public export method test():
     //
     assert f(0)
-
 ---
+E712 main.whiley 2,9:12
 E716 main.whiley 9,11:14

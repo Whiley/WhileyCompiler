@@ -1,3 +1,0 @@
-FunctionRef_Invalid_7.whiley:6: expected method(bool)->(bool), found function(bool,int)->(bool)
-    return _this->func(arg)
-                  ^^^^

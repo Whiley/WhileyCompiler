@@ -1,3 +1,0 @@
-MethodRef_Invalid_5.whiley:8: expected Transformer, found function(nat)->(int)
-    return &(nat x -> g(x))
-           ^^^^^^^^^^^^^^^^

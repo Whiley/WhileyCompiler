@@ -1,3 +1,0 @@
-Type_Invalid_5.whiley:1: empty type encountered
-type Contractive is Contractive | int
-     ^^^^^^^^^^^

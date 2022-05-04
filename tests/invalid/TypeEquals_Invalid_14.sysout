@@ -1,3 +1,0 @@
-TypeEquals_Invalid_14.whiley:9: expected {int current}, found {null current}
-        return s
-               ^

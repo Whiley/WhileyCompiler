@@ -1,3 +1,0 @@
-Ensures_Invalid_4.whiley:15: loop invariant may not be restored 
-    where all { j in start .. i | items[j] != item }:
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

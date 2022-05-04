@@ -1,3 +1,0 @@
-MethodCall_Invalid_3.whiley:2: expected record
-    _this.f(1)
-    ^^^^^

@@ -1,3 +1,0 @@
-Template_Invalid_8.whiley:5: expected int, found bool
-    int x = f(true)
-              ^^^^

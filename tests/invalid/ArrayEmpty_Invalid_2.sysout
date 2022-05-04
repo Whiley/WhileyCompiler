@@ -1,3 +1,0 @@
-ArrayEmpty_Invalid_2.whiley:8: precondition may not be satisfied {}
-    f([0;0])
-    ^^^^^^^^

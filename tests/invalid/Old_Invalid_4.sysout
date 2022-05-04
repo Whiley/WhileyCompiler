@@ -1,3 +1,0 @@
-Old_Invalid_4.whiley:2: old requires context with pre- and post-states
-requires *p == old(*p):
-               ^^^

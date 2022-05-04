@@ -1,3 +1,0 @@
-Array_Invalid_20.whiley:11: possible index out of bounds (negative) 
-    return xs[indices[0]]
-           ^^^^^^^^^^^^^^

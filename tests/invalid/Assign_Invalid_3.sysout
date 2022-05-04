@@ -1,3 +1,0 @@
-Assign_Invalid_3.whiley:2: expected bool, found int
-    return x + y
-           ^^^^^

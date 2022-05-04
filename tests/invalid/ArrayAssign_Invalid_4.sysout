@@ -1,6 +1,0 @@
-ArrayAssign_Invalid_4.whiley:4: expected array
-    b[y][x] = true
-    ^
-ArrayAssign_Invalid_4.whiley:4: expected any[], found Board
-    b[y][x] = true
-    ^

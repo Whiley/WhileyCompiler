@@ -1,3 +1,0 @@
-ArrayAssign_Invalid_1.whiley:6: expected int, found bool
-    xs[0] = true
-            ^^^^

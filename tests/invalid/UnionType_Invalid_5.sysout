@@ -1,6 +1,0 @@
-UnionType_Invalid_5.whiley:8: expected record
-    x.op = [1, 2, 3]
-    ^
-UnionType_Invalid_5.whiley:10: expected int, found int[]
-    y.op = [1, 2, 3]    
-           ^^^^^^^^^

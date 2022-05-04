@@ -1,6 +1,0 @@
-Record_Invalid_3.whiley:5: variable may be uninitialised
-    r.tag = tag
-    ^
-Record_Invalid_3.whiley:6: variable may be uninitialised
-    return r
-           ^

@@ -1,3 +1,0 @@
-Array_Invalid_22.whiley:10: negative length possible 
-    xs = [0; f(xs)+1]
-         ^^^^^^^^^^^^

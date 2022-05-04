@@ -1,3 +1,0 @@
-Function_Invalid_2.whiley:4: name already declared
-function f(int x) -> int:
-         ^

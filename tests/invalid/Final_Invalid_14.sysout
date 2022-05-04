@@ -1,3 +1,0 @@
-Final_Invalid_14.whiley:11: cannot reassign final variable
-    y = 0
-    ^

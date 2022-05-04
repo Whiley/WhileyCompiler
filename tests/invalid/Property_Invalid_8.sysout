@@ -1,3 +1,0 @@
-Property_Invalid_8.whiley:11: type invariant may not be satisfied {x=0}
-    return (pos) x
-                 ^

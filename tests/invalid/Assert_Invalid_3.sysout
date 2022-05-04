@@ -1,3 +1,0 @@
-Assert_Invalid_3.whiley:9: precondition may not be satisfied {}
-    assert f(0)
-           ^^^^
