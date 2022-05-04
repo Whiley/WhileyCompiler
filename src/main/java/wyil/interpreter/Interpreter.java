@@ -1328,7 +1328,7 @@ public class Interpreter {
 	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame, Heap heap) {
 		int start = executeExpression(INT_T, expr.getFirstOperand(), frame, heap).intValue();
 		int end = executeExpression(INT_T, expr.getSecondOperand(), frame, heap).intValue();
-		if (start < 0 || end < start) {
+		if (end < start) {
 			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr.getSecondOperand());
 		}
 		RValue[] elements = new RValue[end - start];
