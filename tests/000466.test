@@ -3,8 +3,6 @@ build.whiley.ignore=true
 WhileyCompiler.issue=936
 ======
 >>> main.whiley
-
-
 type Tree is null | Node
 
 type Node is ({int data, Tree rhs, Tree lhs} _this)
@@ -22,6 +20,4 @@ public export method test() :
     assume t1 == {data:2,lhs:{data:1,lhs:null,rhs:null},rhs:{data:3,lhs:null,rhs:null}}
     Tree t2 = Tree(4, t1, l3)
     assume t2 == {data:4,lhs:{data:2,lhs:{data:1,lhs:null,rhs:null},rhs:{data:3,lhs:null,rhs:null}},rhs:{data:5,lhs:null,rhs:null}}
-
-
 ---

@@ -19,5 +19,4 @@ public export method test():
     m(l2)
     assert l2->next == l1
     assert l1->next == null
-
 ---

@@ -1,6 +1,4 @@
 original.name="Coercion_Valid_16"
-build.whiley.ignore=true
-WhileyCompiler.issue=977
 ======
 >>> main.whiley
 type Element<T> is {Node<T>[] children}

@@ -25,6 +25,5 @@ public export method test():
     assume select<bool,int>(c2,false) == 2
     //
     assume select(df,2) == false
-    assume select<int,bool>(df,1) == false
-    
+    assume select<int,bool>(df,1) == false   
 ---

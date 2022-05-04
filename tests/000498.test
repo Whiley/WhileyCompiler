@@ -19,6 +19,4 @@ public export method test():
     assert (*ptr)[0] == 123
     assert (*ptr)[1] == 2
     assert (*ptr)[2] == 3    
-    
-    
 ---
