@@ -2,7 +2,13 @@ original.name="Parsing_Invalid_16"
 ======
 >>> main.whiley
 function f() -> {int x, int y}:
-     return {x: 1, x: 2, y: 3}
+   return {x: 1, x: 2, y: 3}
 
+public export method test():
+   assume f() == {x:2,y:3}
 ---
-E315 main.whiley 2,19
+E315 main.whiley 2,17
+=====
+>>> main.whiley 2:3
+   return {x: 2, y: 3}
+---

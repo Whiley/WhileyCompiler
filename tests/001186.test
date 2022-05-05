@@ -10,6 +10,14 @@ function f(int x) -> int:
         case 1:
             return -1
     return 10
-
 ---
 E313 main.whiley 7,13
+=====
+>>> main.whiley 7:9
+>>> main.whiley 8
+public export method test():
+    assume f(1) == 0
+    assume f(2) == 3
+    assume f(0) == 10
+    assume f(4) == 10
+---

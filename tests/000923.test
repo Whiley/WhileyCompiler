@@ -6,5 +6,10 @@ function f(int x) -> int:
         continue
     return 0
 
+public export method test():
+    assume f(1) == 0
 ---
 E319 main.whiley 3,8:15
+=====
+>>> main.whiley 2:4
+---

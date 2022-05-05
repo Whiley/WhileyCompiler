@@ -4,3 +4,11 @@ original.name="Template_Invalid_1"
 type nat<> is (int x) where x >= 0
 ---
 E317 main.whiley 1,8:9
+=====
+>>> main.whiley 1:2
+type nat is (int x) where x >= 0
+
+public export method test():
+   nat x = 123   
+   assert x == 123
+---

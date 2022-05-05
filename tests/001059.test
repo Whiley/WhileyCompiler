@@ -8,6 +8,13 @@ function f(int x) -> (int r):
 function f(int y) -> (int r):
     //
     return y
-
 ---
 E316 main.whiley 5,9
+=====
+>>> main.whiley 5:6
+function g(int y) -> (int r):
+>>> main.whiley 8
+public export method test():
+    assume f(0) == 0
+    assume g(0) == 0
+---
