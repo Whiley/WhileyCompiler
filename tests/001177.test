@@ -1,6 +1,4 @@
 original.name="Subtype_Invalid_13"
-build.whiley.ignore=true
-WhileyCompiler.issue=1145
 ======
 >>> main.whiley
 type Point is {int x, int y} where x < y

@@ -338,11 +338,18 @@ public class Interpreter {
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
 		Tuple<Expr> rhs = stmt.getRightHandSide();
 		RValue[] rvals = executeExpressions(stmt.getRightHandSide(), frame, heap);
-		//
+		// Execute the assignment
 		for (int i = 0; i != rhs.size(); ++i) {
 			Expr r = rhs.get(i);
 			// Determine width of expression
 			executeAssignLVal(lhs.get(i), rvals[i], frame, heap, scope, r);
+		}
+		// Check type invariants. This has to happen after every variable has been
+		// assigned as type invariants are allowed to be temporarily broken within
+		// multiple assignments.
+		for (int i = 0; i != lhs.size(); ++i) {
+			Expr r = rhs.get(i);
+			checkAssignedLVal(lhs.get(i), frame, heap, scope, r);
 		}
 		return Status.NEXT;
 	}
@@ -429,17 +436,12 @@ public class Interpreter {
 
 	private void executeAssignVariable(Expr.VariableAccess lval, RValue rval, CallStack frame, Heap heap,
 			EnclosingScope scope, Syntactic.Item context) {
-		// Check type invariants for lval being assigned
-		checkTypeInvariants(lval.getVariableDeclaration().getType(), rval, frame, heap, context);
-		//
 		frame.putLocal(lval.getVariableDeclaration().getName(), rval);
 	}
 
 	private void executeStaticAssignVariable(Expr.StaticVariableAccess lval, RValue rval, CallStack frame, Heap heap,
 			EnclosingScope scope, Syntactic.Item context) {
 		Decl.StaticVariable decl = lval.getLink().getTarget();
-		// Check type invariants for lval being assigned
-		checkTypeInvariants(decl.getType(), rval, frame, heap, context);
 		//
 		frame.putStatic(decl.getQualifiedName(), rval);
 	}
@@ -458,6 +460,57 @@ public class Interpreter {
 			executeAssignLVal((LVal) operands.get(i), tuple.get(i), frame, heap, scope, context);
 		}
 
+	}
+
+	private void checkAssignedLVal(LVal lval, CallStack frame, Heap heap, EnclosingScope scope,
+			Syntactic.Item context) {
+		switch (lval.getOpcode()) {
+		case EXPR_arrayborrow:
+		case EXPR_arrayaccess: {
+			Expr.ArrayAccess v = (Expr.ArrayAccess) lval;
+			checkAssignedLVal((LVal) v.getFirstOperand(), frame, heap, scope, context);
+			break;
+		}
+		case EXPR_dereference: {
+			Expr.Dereference v = (Expr.Dereference) lval;
+			checkAssignedLVal((LVal) v.getOperand(), frame, heap, scope, context);
+			break;
+		}
+		case EXPR_fielddereference: {
+			Expr.FieldDereference v = (Expr.FieldDereference) lval;
+			checkAssignedLVal((LVal) v.getOperand(), frame, heap, scope, context);
+			break;
+		}
+		case EXPR_recordaccess:
+		case EXPR_recordborrow: {
+			Expr.RecordAccess v = (Expr.RecordAccess) lval;
+			checkAssignedLVal((LVal) v.getOperand(), frame, heap, scope, context);
+			break;
+		}
+		case EXPR_staticvariable: {
+			Expr.StaticVariableAccess v = (Expr.StaticVariableAccess) lval;
+			Decl.StaticVariable d = v.getLink().getTarget();
+			checkTypeInvariants(d.getType(), frame.getStatic(d.getQualifiedName()), frame, heap, context);
+			break;
+		}
+		case EXPR_tupleinitialiser: {
+			Expr.TupleInitialiser v = (Expr.TupleInitialiser) lval;
+			Tuple<Expr> operands = v.getOperands();
+			for (int i = 0; i != operands.size(); ++i) {
+				checkAssignedLVal((LVal) operands.get(i), frame, heap, scope, context);
+			}
+			break;
+		}
+		case EXPR_variablemove:
+		case EXPR_variablecopy: {
+			Expr.VariableAccess v = (Expr.VariableAccess) lval;
+			Decl.Variable d = v.getVariableDeclaration();
+			checkTypeInvariants(d.getType(), frame.getLocal(d.getName()), frame, heap, context);
+			break;
+		}
+		default:
+			deadCode(lval);
+		}
 	}
 
 	/**

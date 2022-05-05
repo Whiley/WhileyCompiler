@@ -137,7 +137,7 @@ public class WhileyCompilerTests {
 					fail("Test should have compiled!");
 				}
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			Assume.assumeTrue("Test " + path + " skipped", !ignored);
 			throw e;
 		} finally {

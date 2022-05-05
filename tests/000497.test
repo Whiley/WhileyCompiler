@@ -1,4 +1,6 @@
 original.name="Reference_Valid_11"
+build.whiley.ignore=true
+WhileyCompiler.issue=1148
 ======
 >>> main.whiley
 type Cyclic is { null|&Cyclic ptr, int data }
