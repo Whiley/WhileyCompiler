@@ -1,0 +1,11 @@
+======
+>>> main.whiley
+import other
+private final int C1 = 123
+
+public export method test():
+    assume other::C2 == 124
+>>> other.whiley
+import main
+private final int C2 = main::C1 + 1
+---

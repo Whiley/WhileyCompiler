@@ -1,0 +1,12 @@
+======
+>>> main.whiley
+import CONSTANT from other
+import * from another
+
+public export method test():   
+   assume CONSTANT == 123
+>>> other.whiley
+final int CONSTANT = 99
+>>> another.whiley
+final int CONSTANT = 123
+---

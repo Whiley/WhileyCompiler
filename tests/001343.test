@@ -1,0 +1,8 @@
+======
+>>> main.whiley
+import other with CONSTANT
+public export method test():
+    assume CONSTANT == 456
+>>> other.whiley
+public final int CONSTANT = 456
+---
