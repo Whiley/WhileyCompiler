@@ -3,6 +3,13 @@ original.name="Template_Invalid_26"
 >>> main.whiley
 method equals<a>(&a a) -> bool:
     return a == a
-
 ---
 E316 main.whiley 1,20
+=====
+>>> main.whiley 1:2
+method equals<T>(&T a) -> bool:
+>>> main.whiley 3
+public export method test():
+   bool r = equals(new 1)
+   assume r
+---

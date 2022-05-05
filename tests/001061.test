@@ -6,3 +6,10 @@ method f():
 
 ---
 E319 main.whiley 2,5:12
+=====
+>>> main.whiley 2:3
+   skip
+
+public export method test():
+   f()
+---

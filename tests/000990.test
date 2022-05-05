@@ -6,6 +6,10 @@ function f(int x) -> int:
 
 function f(int x) -> int:
     return 2
-
 ---
 E316 main.whiley 4,9
+=====
+>>> main.whiley 4:6
+public export method test():
+    assume f(2) == 1
+---

@@ -9,6 +9,14 @@ function f(int x) -> (int r):
       return 1
     //
     return 0
-
 ---
 E313 main.whiley 5,10
+=====
+>>> main.whiley 3:4
+     case 0:
+>>> main.whiley 9
+public export method test():
+    assume f(0) == 0
+    assume f(1) == 1
+    assume f(2) == 0
+---

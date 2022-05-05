@@ -5,6 +5,13 @@ type rec is {
   int field,
   int field
 }
-
 ---
 E315 main.whiley 3,6:10
+====
+>>> main.whiley 3:4
+  int other
+>>> main.whiley 5
+public export method test():
+   rec r = {field:1, other: 2}
+   assert r == {field:1, other: 2}
+---

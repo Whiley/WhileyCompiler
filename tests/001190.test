@@ -5,6 +5,15 @@ function f(int x) -> int:
     if x > 0:
         break
     return 0
-
 ---
 E318 main.whiley 3,8:12
+=====
+>>> main.whiley 3:4
+        return 1
+>>> main.whiley 5
+public export method test():
+    assume f(-1) == 0
+    assume f(0) == 0
+    assume f(1) == 1
+    assume f(2) == 1
+---

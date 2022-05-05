@@ -5,6 +5,11 @@ function f(int y) -> (int r):
     int x = y
     int x = x
     return x
-
 ---
 E316 main.whiley 3,8
+=====
+>>> main.whiley 3:4
+>>> main.whiley 4
+public export method test():
+   assume f(1) == 1
+---
