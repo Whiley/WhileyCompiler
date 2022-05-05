@@ -1,0 +1,13 @@
+======
+>>> main.whiley
+import other
+
+public export method test():
+   assume other::id == -1
+   assume other::id(123) == 123
+>>> other.whiley
+int id = -1
+
+function id(int x) -> (int r):
+   return x
+---

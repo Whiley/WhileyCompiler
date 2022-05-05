@@ -1,0 +1,11 @@
+======
+>>> main.whiley
+import other
+
+public export method test():
+   int i = other::id(123)
+   assume i == 123
+>>> other.whiley
+method id(int x) -> (int r):
+   return x
+---

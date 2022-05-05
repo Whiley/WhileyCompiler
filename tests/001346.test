@@ -1,0 +1,10 @@
+======
+>>> main.whiley
+import other
+private final int C1 = other::C2 + 1
+>>> other.whiley
+import main
+private final int C2 = main::C1 + 1
+---
+E509 main.whiley 2,23:35
+E509 other.whiley 2,23:34

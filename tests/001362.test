@@ -1,0 +1,24 @@
+======
+>>> main.whiley
+import * from another
+import max from other
+
+public export method test():   
+   assert max(1,2) == 2
+   assert max(3,2) == 3
+>>> other.whiley
+final int max = 99
+>>> another.whiley
+public function max(int x, int y) -> (int r)
+ensures (r >= x) && (r >= y)
+ensures (r == x) || (r == y):
+   if x > y:
+      return x
+   else:
+      return y
+---
+E407 main.whiley 5,10:12
+E407 main.whiley 5,10:12
+=====
+>>> main.whiley 2:3
+---

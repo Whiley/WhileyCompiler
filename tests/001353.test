@@ -1,0 +1,11 @@
+======
+>>> main.whiley
+import std::integer
+
+public export method test():   
+   assume integer::MAX_VALUE == 99
+>>> std/integer.whiley
+package std
+
+final int MAX_VALUE = 99
+---

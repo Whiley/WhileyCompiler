@@ -1,0 +1,8 @@
+======
+>>> main.whiley
+public export method test():
+    assume other::CONSTANT == 456
+>>> other.whiley
+private final int CONSTANT = 456
+---
+E407 main.whiley 2,18:25
