@@ -16,7 +16,7 @@
 package wyil.testing;
 import org.junit.*;
 
-import wyc.util.TestUtils;
+import wyc.util.testing.Util;
 import wyil.check.FlowTypeUtils;
 import wyil.lang.WyilFile.Type;
 import wyil.util.Subtyping;
@@ -3751,15 +3751,15 @@ public class RecursiveSubtypeTests {
 
 	private void checkIsSubtype(String from, String to) {
 		Subtyping.Environment subtypeOperator = new FlowTypeUtils.Environment();
-		Type ft = TestUtils.fromString(from);
-		Type tt = TestUtils.fromString(to);
+		Type ft = Util.fromString(from);
+		Type tt = Util.fromString(to);
 		assertTrue(subtypeOperator.isSatisfiableSubtype(ft, tt));
 	}
 
 	private void checkNotSubtype(String from, String to) {
 		Subtyping.Environment subtypeOperator = new FlowTypeUtils.Environment();
-		Type ft = TestUtils.fromString(from);
-		Type tt = TestUtils.fromString(to);
+		Type ft = Util.fromString(from);
+		Type tt = Util.fromString(to);
 		assertFalse(subtypeOperator.isSatisfiableSubtype(ft, tt));
 	}
 }
