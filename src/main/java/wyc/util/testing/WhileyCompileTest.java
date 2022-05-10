@@ -28,7 +28,7 @@ import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Attr.SyntaxError;
 
-public class CompileTest implements TestStage {
+public class WhileyCompileTest implements TestStage {
 	/**
 	 * The maximum error this stage can detect.
 	 */

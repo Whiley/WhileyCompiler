@@ -58,7 +58,7 @@ public class WhileyCompilerTests {
 	 */
 	public final static String WHILEY_SRC_DIR = "tests";
 
-	public final static TestManager manager = new TestManager(Path.of(WHILEY_SRC_DIR), new CompileTest(), new ExecuteTest());
+	public final static TestManager manager = new TestManager(Path.of(WHILEY_SRC_DIR), new WhileyCompileTest(), new WhileyExecuteTest());
 
 	// ======================================================================
 	// Test Harness

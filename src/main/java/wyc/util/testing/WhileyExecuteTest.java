@@ -33,7 +33,7 @@ import wyil.interpreter.Interpreter.CallStack;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
 
-public class ExecuteTest implements TestStage {
+public class WhileyExecuteTest implements TestStage {
 	/**
 	 * The maximum error that this stage can detect.
 	 */
@@ -60,7 +60,7 @@ public class ExecuteTest implements TestStage {
 	}
 
 	public static boolean isRuntimeError(int m) {
-		return CompileTest.MAX_STATIC_ERROR < m && m <= MAX_RUNTIME_ERROR;
+		return WhileyCompileTest.MAX_STATIC_ERROR < m && m <= MAX_RUNTIME_ERROR;
 	}
 
 	// ==============================================================================
