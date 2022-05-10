@@ -18,4 +18,4 @@ public export method test():
    assume id(0) == 0
 ---
 E701 main.whiley 14,10:14
-E717 main.whiley 8,4:11
+E717 main.whiley 10,4:11

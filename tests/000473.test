@@ -1,4 +1,6 @@
 original.name="RecursiveType_Valid_19"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=79
 ======
 >>> main.whiley
 

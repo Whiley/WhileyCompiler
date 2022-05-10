@@ -14,4 +14,4 @@ public export method test() :
     f((scf8tup[]) x)
 ---
 E702 main.whiley 10,6:18
-E718 main.whiley 10,18
+E716 main.whiley 10,4:19

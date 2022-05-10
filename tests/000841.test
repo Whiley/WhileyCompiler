@@ -9,4 +9,4 @@ public export method test():
     int[] xs = f()
 ---
 E709 main.whiley 2,15:16
-E726 main.whiley 2,11:17
+E726 main.whiley 2,15:16

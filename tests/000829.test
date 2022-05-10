@@ -1,5 +1,6 @@
 original.name="ArrayAccess_Invalid_2"
 js.execute.ignore=true
+boogie.verify.ignore=false
 ======
 >>> main.whiley
 
@@ -14,5 +15,5 @@ public export method test():
     assume f([1,2])
 
 ---
-E724 main.whiley 5,12:16
+E724 main.whiley 5,14:15
 E707 main.whiley 5,14:15

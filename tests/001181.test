@@ -13,4 +13,4 @@ public export method test() :
     f(({scf5nat f}) x)
 ---
 E702 main.whiley 9,6:20
-E718 main.whiley 9,20
+E716 main.whiley 9,4:21

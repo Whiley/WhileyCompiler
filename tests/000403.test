@@ -1,4 +1,6 @@
 original.name="Process_Valid_9"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=56
 ======
 >>> main.whiley
 type Queue is {int[] items, int length}

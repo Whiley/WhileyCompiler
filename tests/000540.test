@@ -1,4 +1,6 @@
 original.name="Requires_Valid_2"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=79
 ======
 >>> main.whiley
 function check(int[] args) -> bool

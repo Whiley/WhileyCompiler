@@ -25,4 +25,4 @@ public export method test():
    assume f(l4) == l4
 ---
 E702 main.whiley 11,11:24
-E718 main.whiley 11,21:24
+E717 main.whiley 11,4:24

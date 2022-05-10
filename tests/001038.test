@@ -19,3 +19,4 @@ public export method test():
     copy(a,b)
 ---
 E701 main.whiley 15,4:12
+E717 main.whiley 1,0:82

@@ -24,4 +24,4 @@ public export method test():
     assume write(a,1,2) == [1,2,3]
 
 ---
-E725 main.whiley 11,4:7
+E725 main.whiley 11,6

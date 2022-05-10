@@ -1,4 +1,6 @@
 original.name="Reference_Valid_24"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=89
 ======
 >>> main.whiley
 type uint is (int n) where n >= 0

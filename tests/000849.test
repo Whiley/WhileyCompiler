@@ -11,4 +11,4 @@ public export method test():
        assume f([]) == [0]
 ---
 E708 main.whiley 2,7
-E725 main.whiley 2,4:8
+E725 main.whiley 2,7

@@ -1,4 +1,6 @@
 original.name="Lambda_Valid_13"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=52
 ======
 >>> main.whiley
 type fptr is function(int)->(int)

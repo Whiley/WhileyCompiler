@@ -1,4 +1,6 @@
 original.name="Lambda_Valid_25"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=59
 ======
 >>> main.whiley
 type State is { int status }

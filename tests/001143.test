@@ -13,4 +13,4 @@ public export method test():
     assume f(3,0) == 0
 ---
 E711 main.whiley 2,15
-E728 main.whiley 2,11:15
+E728 main.whiley 2,15

@@ -13,4 +13,4 @@ public export method test():
     assume copy([1,2,3]) == [0,0,0]
 ---
 E709 main.whiley 3,15
-E726 main.whiley 3,11:16
+E726 main.whiley 3,15

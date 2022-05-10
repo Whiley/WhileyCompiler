@@ -13,5 +13,5 @@ public export method test():
     // The following assertion cannot be shown because the
     // postcondition for m() is not strong enough.     
     assert *p == 1
-    
 ---
+E722 main.whiley 11,11:17

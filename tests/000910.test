@@ -11,7 +11,6 @@ function update(string str) -> char[]:
 public export method test():
     string s1 = "Hello World"
     assume update(s1) == [-1]
-
 ---
 E702 main.whiley 5,11:14
-E718 main.whiley 5,11:14
+E717 main.whiley 5,4:14

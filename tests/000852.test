@@ -20,4 +20,4 @@ public export method test():
     assume g([1,0]) == 1
 
 ---
-E725 main.whiley 11,11:24
+E725 main.whiley 11,14:23

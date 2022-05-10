@@ -24,4 +24,4 @@ public export method test():
    assume sum(l4) == -97
 ---
 E702 main.whiley 10,15:40
-E718 main.whiley 10,15:40
+E717 main.whiley 10,8:40

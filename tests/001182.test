@@ -14,4 +14,4 @@ public export method test() :
     f((scf6tup) x)
 ---
 E702 main.whiley 10,6:16
-E718 main.whiley 10,16
+E716 main.whiley 10,4:17

@@ -14,4 +14,4 @@ public export method test():
 
 ---
 E702 main.whiley 9,13:19
-E718 main.whiley 9,19
+E716 main.whiley 9,11:20

@@ -12,3 +12,4 @@ public export method test():
     m(new 2)
 ---
 E701 main.whiley 8,4:11
+E717 main.whiley 1,0:38

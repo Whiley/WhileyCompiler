@@ -22,6 +22,5 @@ public export method test():
     assume read(a,1) == null
     //
     assume write(a,1,2) == [1,2,3]
-
 ---
-E725 main.whiley 6,11:14
+E725 main.whiley 6,13

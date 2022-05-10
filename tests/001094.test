@@ -21,4 +21,4 @@ public export method test():
    assume f2(0) == 0
 ---
 E702 main.whiley 13,11:17
-E718 main.whiley 11,17
+E717 main.whiley 13,4:17

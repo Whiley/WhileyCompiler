@@ -1,4 +1,6 @@
 original.name="Lambda_Valid_30"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=123
 ======
 >>> main.whiley
 method m<T>(T item, method(T,T)->(T) mn) -> (T r):
@@ -15,6 +17,4 @@ public export method test():
     int y = m<int>(246,&add)
     assume x == 123
     assume y == 246
-
-
 ---

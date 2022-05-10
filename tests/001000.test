@@ -13,4 +13,4 @@ ensures r >= 0:
 
 ---
 E702 main.whiley 3,6:16
-E718 main.whiley 3,8:9
+E718 main.whiley 3,14:15

@@ -13,4 +13,4 @@ public export method test():
      f([0])
 ---
 E708 main.whiley 5,19
-E725 main.whiley 5,15:20
+E725 main.whiley 5,19

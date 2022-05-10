@@ -1,5 +1,7 @@
 original.name="Reference_Valid_39"
 js.compile.ignore=true
+boogie.verify.ignore=true
+Whiley2Boogie.issue=115
 ======
 >>> main.whiley
 type List is &{int data, null|List next }
@@ -27,8 +29,4 @@ public export method test():
     // Check postcondition
     assert l2->data == 2
     assert l1->data == 1
-    
-
-
-
 ---

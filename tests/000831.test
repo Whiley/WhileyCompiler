@@ -13,5 +13,5 @@ public export method test():
     assume f([1])
 
 ---
-E725 main.whiley 3,12:15
+E725 main.whiley 3,14
 E708 main.whiley 4,14

@@ -1,4 +1,6 @@
 original.name="Reference_Valid_23"
+boogie.verify.ignore=true
+Whiley2Boogie.issue=127
 ======
 >>> main.whiley
 type Ref<T> is &T

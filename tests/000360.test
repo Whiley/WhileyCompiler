@@ -1,5 +1,7 @@
 original.name="Old_Valid_10"
 js.compile.ignore=true
+boogie.verify.ignore=true
+Whiley2Boogie.issue=128
 ======
 >>> main.whiley
 type List is null|Node
@@ -22,5 +24,4 @@ public export method test():
     m(l3)
     assert l2->data == 1
     assert l2->next == null
-
 ---

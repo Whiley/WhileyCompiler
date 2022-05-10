@@ -12,7 +12,5 @@ public export method test():
     int[] xs = [0]
     xs[f([0])] = 1
     assert xs == [1]
-
-
 ---
-E725 main.whiley 10,4:13
+E725 main.whiley 10,7:12

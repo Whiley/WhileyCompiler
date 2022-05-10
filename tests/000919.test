@@ -16,4 +16,4 @@ public export method test():
        assume f() == 10
 ---
 E702 main.whiley 9,11:17
-E718 main.whiley 9,11:17
+E717 main.whiley 9,4:17

@@ -13,7 +13,6 @@ function f(point p) -> point:
 public export method test(): 
     tup z = {y: -2, x: 1}
     point p = f((point) z)
-
 ---
 E702 main.whiley 11,16:24
-E718 main.whiley 11,24
+E716 main.whiley 11,14:25

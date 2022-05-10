@@ -12,4 +12,4 @@ public export method test() :
     f((scf4list) x)
 ---
 E702 main.whiley 8,6:17
-E718 main.whiley 8,17
+E716 main.whiley 8,4:18
