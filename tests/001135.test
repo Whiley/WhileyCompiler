@@ -1,5 +1,5 @@
 original.name="RecursiveType_Invalid_9"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=1143
 ======
 >>> main.whiley

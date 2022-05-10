@@ -23,6 +23,9 @@ import wycc.util.*;
 import wycc.util.testing.TestFile;
 import wycc.util.testing.TestStage;
 import wycc.util.testing.TestFile.Error;
+import wycc.util.testing.TestStage.Result;
+import wyil.lang.WyilFile;
+import wyil.lang.WyilFile.Decl;
 import wyil.lang.WyilFile.Attr.SyntaxError;
 
 public class CompileTest implements TestStage {
@@ -32,27 +35,43 @@ public class CompileTest implements TestStage {
 	public final static int MAX_STATIC_ERROR = 699;
 
 	@Override
-	public Error[] apply(Trie path, Path dir, Map<Trie,TextFile> state, TestFile tf) throws IOException {
-		boolean strict = tf.get(Boolean.class, "build.whiley.strict").orElse(false);
+	public Result apply(Trie path, Path dir, Map<Trie,TextFile> state, TestFile tf) throws IOException {
+		boolean strict = tf.get(Boolean.class, "whiley.compile.strict").orElse(false);
+		boolean ignored = tf.get(Boolean.class, "whiley.compile.ignore").orElse(false);
 		// Construct a suitable mailbox
 		MailBox.Buffered<SyntaxError> handler = new MailBox.Buffered<>();
-		// Configure compiler
-		wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(dir.toFile()).setWyilDir(dir.toFile())
-				.setTarget(path).setErrorHandler(handler).setStrict(strict);
-		// Add source files
-		for (Trie sf : state.keySet()) {
-			sf = Trie.fromString(sf.toString().replace(".whiley", ""));
-			wyc.addSource(sf);
+		try {
+			// Configure compiler
+			wyc.Compiler wyc = new wyc.Compiler().setWhileyDir(dir.toFile()).setWyilDir(dir.toFile()).setTarget(path)
+					.setErrorHandler(handler).setStrict(strict);
+			// Add source files
+			for (Trie sf : state.keySet()) {
+				sf = Trie.fromString(sf.toString().replace(".whiley", ""));
+				wyc.addSource(sf);
+			}
+			// Check whether build succeeded
+			boolean compiled = wyc.run();
+			// Done
+			TestFile.Error[] markers = handler.stream().map(se -> toError(state, se)).toArray(TestFile.Error[]::new);
+			//
+			return new TestStage.Result(ignored, markers);
+		} catch(Syntactic.Exception e) {
+			TestFile.Error err = toError(state,e);
+			return new TestStage.Result(ignored,new TestFile.Error[] {err});
 		}
-		// Check whether build succeeded
-		boolean compiled = wyc.run();
-		// Done
-		return handler.stream().map(se -> toError(state, se)).toArray(TestFile.Error[]::new);
 	}
 
 	@Override
 	public Error[] filter(Error[] errors) {
 		return Arrays.asList(errors).stream().filter(m -> m.getErrorNumber() <= MAX_STATIC_ERROR).toArray(TestFile.Error[]::new);
+	}
+
+	public static TestFile.Error toError(Map<Trie, TextFile> files, SyntaxError err) {
+		return toError(err.getErrorCode(), files, err.getTarget());
+	}
+
+	public static TestFile.Error toError(Map<Trie, TextFile> files, Syntactic.Exception ex) {
+		return toError(WyilFile.INTERNAL_FAILURE, files, ex.getElement());
 	}
 
 	/**
@@ -65,12 +84,10 @@ public class CompileTest implements TestStage {
 	 * @param err
 	 * @return
 	 */
-	public static TestFile.Error toError(Map<Trie, TextFile> files, SyntaxError err) {
-		int errno = err.getErrorCode();
-		// Identify enclosing source file
-		Trie filename = Trie.fromString(err.getSource().toString() + ".whiley");
+	public static TestFile.Error toError(int errno, Map<Trie, TextFile> files, Syntactic.Item item) {
+		Trie filename = Trie.fromString(getSource(item).toString() + ".whiley");
 		// Determine the source-file span for the given syntactic marker.
-		Syntactic.Span span = err.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		Syntactic.Span span = item.getAncestor(AbstractCompilationUnit.Attribute.Span.class);
 		// Extract source file
 		TextFile sf = files.get(filename);
 		// Extract enclosing line
@@ -92,5 +109,11 @@ public class CompileTest implements TestStage {
 		TestFile.Coordinate location = new TestFile.Coordinate(line, range);
 		// Done
 		return new TestFile.Error(errno, filename, location);
+	}
+
+	private static Trie getSource(Syntactic.Item e) {
+		Decl.Unit unit = e.getAncestor(Decl.Unit.class);
+		String nameStr = unit.getName().toString().replace("::", "/");
+		return Trie.fromString(nameStr);
 	}
 }

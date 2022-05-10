@@ -22,6 +22,20 @@ import wycc.util.Trie;
 
 public interface TestStage {
 	/**
+	 * Encapsulates the result from a given state.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Result  {
+		public final TestFile.Error[] markers;
+		public final boolean ignored;
+		public Result(boolean ignored, TestFile.Error... markers) {
+			this.markers = markers;
+			this.ignored = ignored;
+		}
+	}
+	/**
 	 * Apply this stage in a given directory, using configuration as appropriate
 	 * from the test file.
 	 *
@@ -29,7 +43,7 @@ public interface TestStage {
 	 * @param tf
 	 * @return
 	 */
-	public TestFile.Error[] apply(Trie path, Path dir, Map<Trie, TextFile> state, TestFile tf) throws IOException;
+	public Result apply(Trie path, Path dir, Map<Trie, TextFile> state, TestFile tf) throws IOException;
 
 	/**
 	 * Filter out all errors which could not be reported by this stage.

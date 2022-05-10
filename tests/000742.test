@@ -1,5 +1,5 @@
 original.name="UnionType_Valid_6"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=1003
 ======
 >>> main.whiley

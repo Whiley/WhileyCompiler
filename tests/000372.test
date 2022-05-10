@@ -1,5 +1,5 @@
 original.name="Old_Valid_21"
-build.whiley.ignore=true
+whiley.execute.ignore=true
 ======
 >>> main.whiley
 method f(&int p):

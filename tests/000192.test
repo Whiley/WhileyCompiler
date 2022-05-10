@@ -1,5 +1,5 @@
 original.name="FunctionRef_Valid_13"
-build.whiley.ignore=true
+whiley.execute.ignore=true
 ======
 >>> main.whiley
 type Sized is { int value }

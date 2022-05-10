@@ -1,5 +1,5 @@
 original.name="ListAccess_Valid_6"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=955
 ======
 >>> main.whiley

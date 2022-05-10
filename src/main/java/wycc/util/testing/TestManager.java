@@ -17,9 +17,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-
-import wycc.util.TextFile;
-import wycc.util.Trie;
+import wycc.util.*;
+import wycc.util.testing.TestFile.Error;
 
 /**
  * The test manager provides a generic framework for running the Whiley test
@@ -29,6 +28,9 @@ import wycc.util.Trie;
  *
  */
 public class TestManager {
+	public enum Result {
+		SUCCESS, FAILURE, IGNORED, INVALIDIGNORED
+	}
 	/**
 	 * Identifies the location of the Whiley test files.
 	 */
@@ -51,7 +53,7 @@ public class TestManager {
 	 * @param path
 	 * @throws IOException
 	 */
-	public boolean run(Trie test) throws IOException {
+	public Result run(Trie test) throws IOException {
 		// Parse the target test file
 		TestFile tf = readTestFile(srcDir, test);
 		// Setup test directory
@@ -71,14 +73,37 @@ public class TestManager {
 				// Apply each stage generating errors as appropriate
 				for (TestStage stage : stages) {
 					// Apply stage producing a set of errors
-					TestFile.Error[] actual = stage.apply(test, frameDir, state, tf);
+					TestStage.Result result = stage.apply(test, frameDir, state, tf);
+					// Extract actual errors
+					Error[] actual = result.markers;
 					// Determine set of expected errors
-					TestFile.Error[] expected = stage.filter(f.markers);
+					Error[] expected = stage.filter(f.markers);
 					// Check we got what we expected.
-					boolean outcome = compareReportedErrors(expected, actual);
+					Diff diff = compareReportedErrors(expected, actual);
 					//
-					if (!outcome) {
-						return false;
+					if(diff.isEmpty() && result.ignored) {
+						// In this case, the stage appears to have run correctly but is ignored. This
+						// suggests it doesn't need to be ignored any more.
+						return Result.INVALIDIGNORED;
+					} else if(diff.isEmpty()) {
+						// Stage completed successfully
+						if(actual.length > 0) {
+							// Errors have been produced, so we cannot continue testing.
+							return Result.SUCCESS;
+						}
+					} else if(result.ignored) {
+						// In this case, the test has failed and it was correctly ignored. Therefore, it
+						// should continue to be ignored.
+						return Result.IGNORED;
+					} else {
+						// In this case, the test has failed so something is up.
+						for(Error e : diff.missingExpected) {
+							System.out.println("expected error: " + e);
+						}
+						for(Error e : diff.missingActual) {
+							System.out.println("unexpected error: " + e);
+						}
+						return Result.FAILURE;
 					}
 				}
 
@@ -87,11 +112,21 @@ public class TestManager {
 			// Teat down test directory
 			tearDown(testDir);
 		}
-		return true;
+		return Result.SUCCESS;
 	}
 
-	public static boolean compareReportedErrors(TestFile.Error[] expected, TestFile.Error[] actual) {
-		boolean failed = false;
+	/**
+	 * Compare the set of expected errors against the set of actual errors, noting
+	 * any which are missing. This returns a pair containing those expected errors
+	 * which were not matched, and those actual errors which were not matched.
+	 *
+	 * @param expected
+	 * @param actual
+	 * @return
+	 */
+	public static Diff compareReportedErrors(Error[] expected, Error[] actual) {
+		ArrayList<Error> missingExpected = new ArrayList<>();
+		ArrayList<Error> missingActual = new ArrayList<>();
 		// First, sort both error sets to make sure a fair comparison.
 		Arrays.sort(expected);
 		Arrays.sort(actual);
@@ -107,29 +142,25 @@ public class TestManager {
 				ai = ai + 1;
 			} else if (c < 0) {
 				ei = ei + 1;
-				failed = true;
-				System.out.println(">>> " + eith);
+				missingExpected.add(eith);
 			} else {
 				ai = ai + 1;
-				failed = true;
-				System.out.println("<<< " + aith);
+				missingActual.add(aith);
 			}
 		}
-		// Sanity check whether anything was missing
-		failed |= (ei < expected.length);
-		failed |= (ai < actual.length);
 		// Print expected
 		for (; ei < expected.length; ei = ei + 1) {
 			TestFile.Error eith = expected[ei];
-			System.out.println(">>> " + eith);
+			missingExpected.add(eith);
 		}
 		// Print missing
 		for (; ai < actual.length; ai = ai + 1) {
 			TestFile.Error aith = actual[ai];
-			System.out.println("<<< " + aith);
+			missingActual.add(aith);
 		}
 		//
-		return failed;
+
+		return new Diff(missingExpected,missingActual);
 	}
 
 	private Path setup(Trie path) throws IOException {
@@ -203,6 +234,20 @@ public class TestManager {
 		// Second Read the file
 		try (FileInputStream fin = new FileInputStream(new File(dir.toFile(), filename))) {
 			return TestFile.parse(fin);
+		}
+	}
+
+	private static class Diff {
+		public final Error[] missingExpected;
+		public final Error[] missingActual;
+
+		public Diff(List<Error> missingExpected, List<Error> missingActual) {
+			this.missingExpected = missingExpected.toArray(new Error[missingExpected.size()]);
+			this.missingActual = missingActual.toArray(new Error[missingActual.size()]);
+		}
+
+		public boolean isEmpty() {
+			return missingExpected.length == 0 && missingActual.length == 0;
 		}
 	}
 }

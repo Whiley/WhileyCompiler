@@ -1,5 +1,5 @@
 original.name="Parsing_Invalid_32"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 ======
 >>> main.whiley
 function f() -> int:

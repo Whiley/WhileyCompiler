@@ -32,6 +32,7 @@ import wycc.lang.Syntactic;
 import wycc.util.*;
 import wycc.util.testing.*;
 import wycc.util.testing.TestFile.Error;
+import wycc.util.testing.TestManager.Result;
 import wyil.interpreter.Interpreter;
 import wyil.lang.WyilFile.Attr.SyntaxError;
 import wyc.lang.WhileyFile;
@@ -64,11 +65,16 @@ public class NewWhileyCompilerTests {
 	// ======================================================================
 
 	protected void runTest(Trie path) throws IOException {
-		if (!manager.run(path)) {
+		TestManager.Result r = manager.run(path);
+		//
+		if(r == Result.IGNORED) {
+			Assume.assumeTrue("Test " + path + " skipped", false);
+		} else if(r == Result.FAILURE) {
 			fail("test failure for reasons unknown");
+		} else if(r == Result.INVALIDIGNORED) {
+			fail("test should not be marked as ignored");
 		}
 	}
-
 
 	// ======================================================================
 	// Tests

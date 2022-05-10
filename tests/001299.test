@@ -1,5 +1,5 @@
 original.name="Unsafe_Invalid_1"
-build.whiley.strict=true
+whiley.compile.strict=true
 ======
 >>> main.whiley
 unsafe function f(int x) -> (int y):

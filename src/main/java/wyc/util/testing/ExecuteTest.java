@@ -40,7 +40,8 @@ public class ExecuteTest implements TestStage {
 	public final static int MAX_RUNTIME_ERROR = 715;
 
 	@Override
-	public Error[] apply(Trie path, Path dir, Map<Trie, TextFile> state, TestFile tf) throws IOException {
+	public Result apply(Trie path, Path dir, Map<Trie, TextFile> state, TestFile tf) throws IOException {
+		boolean ignored = tf.get(Boolean.class, "whiley.execute.ignore").orElse(false);
 		// Test was expected to compile, so attempt to run the code.
 		String unit = tf.get(String.class, "main.file").orElse("main");
 		TestFile.Error[] actual = new TestFile.Error[0];
@@ -49,13 +50,17 @@ public class ExecuteTest implements TestStage {
 		} catch (Interpreter.RuntimeError e) {
 			actual = new TestFile.Error[] { toError(state, e) };
 		}
-		return actual;
+		return new TestStage.Result(ignored, actual);
 	}
 
 	@Override
 	public Error[] filter(Error[] errors) {
-		return Arrays.asList(errors).stream().filter(m -> m.getErrorNumber() <= MAX_RUNTIME_ERROR)
+		return Arrays.asList(errors).stream().filter(m -> isRuntimeError(m.getErrorNumber()))
 				.toArray(TestFile.Error[]::new);
+	}
+
+	private static boolean isRuntimeError(int m) {
+		return CompileTest.MAX_STATIC_ERROR < m && m <= MAX_RUNTIME_ERROR;
 	}
 
 	// ==============================================================================

@@ -1,5 +1,5 @@
 original.name="StaticVar_Valid_15"
-build.whiley.ignore=true
+whiley.execute.ignore=true
 WhileyCompiler.issue=1122
 ======
 >>> main.whiley
