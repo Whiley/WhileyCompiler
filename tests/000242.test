@@ -1,4 +1,5 @@
 original.name="Infeasible_Function_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 // This function is infeasible when a==1.

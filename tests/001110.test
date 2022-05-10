@@ -1,4 +1,5 @@
 original.name="Quantifiers_Invalid_3"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f(int[] ls) -> bool

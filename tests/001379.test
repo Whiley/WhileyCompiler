@@ -1,0 +1,14 @@
+=====
+>>> main.whiley
+import string from js::core
+
+public export method test():
+    // generate normal string
+    string s = "hello\n\t\"hello\""
+    //
+    assert s == "hello\n\t\"hello\""
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

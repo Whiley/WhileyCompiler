@@ -1,4 +1,5 @@
 original.name="TypeEquals_Invalid_12"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f(int|null x, int|null y) -> (int r)

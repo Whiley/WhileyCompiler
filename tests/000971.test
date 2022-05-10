@@ -1,4 +1,5 @@
 original.name="For_Invalid_8"
+js.execute.ignore=true
 ======
 >>> main.whiley
 method f():

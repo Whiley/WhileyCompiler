@@ -1,4 +1,5 @@
 original.name="UnionType_Invalid_9"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type pos is (int p) where p > 0

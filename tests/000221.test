@@ -1,4 +1,5 @@
 original.name="Function_Valid_3"
+js.compile.ignore=true
 ======
 >>> main.whiley
 

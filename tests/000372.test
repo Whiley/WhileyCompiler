@@ -1,5 +1,6 @@
 original.name="Old_Valid_21"
 whiley.execute.ignore=true
+js.compile.ignore=true
 ======
 >>> main.whiley
 method f(&int p):

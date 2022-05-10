@@ -1,4 +1,5 @@
 original.name="Old_Valid_4"
+js.compile.ignore=true
 ======
 >>> main.whiley
 type Point is {int x, int y}

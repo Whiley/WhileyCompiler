@@ -1,4 +1,5 @@
 original.name="Old_Invalid_15"
+js.execute.ignore=true
 ======
 >>> main.whiley
 method copy(&int p, &int q)

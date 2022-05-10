@@ -1,4 +1,5 @@
 original.name="Array_Invalid_19"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function copy(int[] a) -> (int[] b):

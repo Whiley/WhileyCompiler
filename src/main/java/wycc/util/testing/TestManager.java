@@ -40,11 +40,16 @@ public class TestManager {
 	/**
 	 * Debug mode makes it easier to see what went wrong during a test run.
 	 */
-	private final boolean debug = false;
+	private boolean debug = false;
 
 	public TestManager(Path testDir, TestStage... stages) {
 		this.srcDir = testDir;
 		this.stages = stages;
+	}
+
+	public TestManager setDebug(boolean flag) {
+		this.debug = flag;
+		return this;
 	}
 
 	/**

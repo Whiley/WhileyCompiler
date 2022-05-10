@@ -1,4 +1,5 @@
 original.name="ArrayGenerator_Invalid_1"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f() -> int[]:

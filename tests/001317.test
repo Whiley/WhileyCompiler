@@ -1,4 +1,5 @@
 original.name="While_Invalid_11"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function sumOver(int[] ls) -> int:

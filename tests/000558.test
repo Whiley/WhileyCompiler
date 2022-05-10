@@ -1,4 +1,6 @@
 original.name="StaticVar_Valid_8"
+js.execute.ignore=true
+Whiley2JavaScript.issue=29
 ======
 >>> main.whiley
 // Test static variable initialiser order

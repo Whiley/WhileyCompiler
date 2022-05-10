@@ -1,4 +1,5 @@
 original.name="ConstrainedInt_Invalid_4"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f(int x) -> (int y)

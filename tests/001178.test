@@ -1,4 +1,5 @@
 original.name="Subtype_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type scf2nat is (int x) where x >= 0

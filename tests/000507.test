@@ -1,4 +1,6 @@
 original.name="Reference_Valid_20"
+js.execute.ignore=true
+Whiley2JavaScript.issue=44
 ======
 >>> main.whiley
 type Node is {

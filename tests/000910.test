@@ -1,4 +1,5 @@
 original.name="ConstrainedArray_Invalid_3"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type char is (int x) where x >= 0 && x <= 255

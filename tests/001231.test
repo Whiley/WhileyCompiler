@@ -1,4 +1,5 @@
 original.name="TupleDefine_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type point is ({int y, int x} _this) where (_this.x > 0) && (_this.y > 0)

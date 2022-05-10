@@ -1,4 +1,5 @@
 original.name="Tuple_Invalid_5"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type nat is (int n) where n >= 0

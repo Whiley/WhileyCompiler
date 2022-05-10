@@ -59,7 +59,7 @@ public class ExecuteTest implements TestStage {
 				.toArray(TestFile.Error[]::new);
 	}
 
-	private static boolean isRuntimeError(int m) {
+	public static boolean isRuntimeError(int m) {
 		return CompileTest.MAX_STATIC_ERROR < m && m <= MAX_RUNTIME_ERROR;
 	}
 
