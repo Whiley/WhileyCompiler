@@ -1,3 +1,5 @@
+js.execute.ignore=true
+Whiley2JavaScript.issue=29
 ======
 >>> main.whiley
 import other

@@ -1,5 +1,5 @@
 original.name="Coercion_Valid_9"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=938
 ======
 >>> main.whiley

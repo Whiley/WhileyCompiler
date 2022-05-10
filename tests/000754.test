@@ -1,5 +1,5 @@
 original.name="Unsafe_Valid_6"
-build.whiley.ignore=true
+whiley.execute.ignore=true
 ======
 >>> main.whiley
 type uint is (int x) where x >= 0

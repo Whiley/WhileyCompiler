@@ -1,4 +1,5 @@
 original.name="ConstrainedInt_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 

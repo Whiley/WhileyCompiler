@@ -1,0 +1,12 @@
+=====
+>>> main.whiley
+import string from js::core
+
+public export method test():
+    string s1 = "hello"
+    assert s1 == (string) "hello"
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

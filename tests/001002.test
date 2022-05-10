@@ -1,4 +1,5 @@
 original.name="Infeasible_Function_5"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f() -> (int q)

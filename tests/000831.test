@@ -1,4 +1,5 @@
 original.name="ArrayAccess_Invalid_4"
+js.execute.ignore=true
 ======
 >>> main.whiley
 

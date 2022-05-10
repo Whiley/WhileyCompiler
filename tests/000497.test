@@ -1,5 +1,5 @@
 original.name="Reference_Valid_11"
-build.whiley.ignore=true
+whiley.execute.ignore=true
 WhileyCompiler.issue=1148
 ======
 >>> main.whiley

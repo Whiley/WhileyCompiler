@@ -1,0 +1,16 @@
+=====
+>>> main.whiley
+import string from js::core
+
+type Box<T> is {
+    T content
+}
+
+public export method test():
+    Box<string> box = { content: "hello" }
+    assert box.content == (string) "hello"
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

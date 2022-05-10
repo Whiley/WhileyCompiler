@@ -1,4 +1,5 @@
 original.name="IntOp_Valid_1"
+js.compile.ignore=true
 ======
 >>> main.whiley
 

@@ -1,4 +1,5 @@
 original.name="Array_Invalid_13"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function f(int[] xs) -> (int r)

@@ -1,0 +1,29 @@
+js.execute.ignore=true
+=====
+>>> main.whiley
+import string from js::core
+
+public export method test():
+    // generate normal string
+    int[] ascii = "hello"
+    // coerce to js string
+    null|string js = (null|string) ascii
+    //
+    assert ascii == "hello"
+    assert ascii[0] == 'h'
+    assert ascii[1] == 'e'
+    assert ascii[2] == 'l'
+    assert ascii[3] == 'l'
+    assert ascii[4] == 'o'
+    assert js is string
+    assert js == "hello"
+    assert js[0] == 'h'
+    assert js[1] == 'e'
+    assert js[2] == 'l'
+    assert js[3] == 'l'
+    assert js[4] == 'o'
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

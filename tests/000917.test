@@ -1,4 +1,5 @@
 original.name="ConstrainedInt_Invalid_5"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type c2nat is (int x) where x < 10

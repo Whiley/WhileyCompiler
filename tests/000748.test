@@ -1,4 +1,6 @@
 original.name="UnknownReference_Valid_3"
+js.execute.ignore=true
+Whiley2JavaScript.issue=44
 ======
 >>> main.whiley
 type OpenPoint is {int x, int y, ...}

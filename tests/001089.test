@@ -1,4 +1,5 @@
 original.name="Property_Invalid_3"
+js.execute.ignore=true
 ======
 >>> main.whiley
 property nat(int x) -> bool:

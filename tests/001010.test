@@ -1,4 +1,5 @@
 original.name="Lambda_Invalid_3"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type func_t is function(int)->int

@@ -1,4 +1,5 @@
 original.name="Quantifiers_Invalid_6"
+js.execute.ignore=true
 ======
 >>> main.whiley
 

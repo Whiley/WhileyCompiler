@@ -1,5 +1,5 @@
 original.name="EndOfFile_Invalid_1"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 ======
 >>> main.whiley
 public export method test():

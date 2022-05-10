@@ -1,4 +1,5 @@
 original.name="DoWhile_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 function count(int n) -> (int r)

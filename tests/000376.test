@@ -1,5 +1,5 @@
 original.name="Old_Valid_5"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=986
 ======
 >>> main.whiley

@@ -1,0 +1,17 @@
+=====
+>>> main.whiley
+import string from js::core
+
+public function f(string js) -> bool:
+    return js == "Hello"
+
+public export method test():
+    // Force implict coercion
+    assume !f("hello")
+    // Force implict coercion    
+    assume f("Hello")    
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

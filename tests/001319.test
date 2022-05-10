@@ -1,4 +1,5 @@
 original.name="While_Invalid_13"
+js.execute.block=true
 ======
 >>> main.whiley
 type nat is (int n) where n >= 0

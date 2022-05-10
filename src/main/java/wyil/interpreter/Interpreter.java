@@ -285,53 +285,58 @@ public class Interpreter {
 	private Status executeStatement(Stmt stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		checkForTimeout(frame);
 		//
-		switch (stmt.getOpcode()) {
-		case STMT_assert:
-			return executeAssert((Stmt.Assert) stmt, frame, heap, scope);
-		case STMT_assume:
-			return executeAssume((Stmt.Assume) stmt, frame, heap, scope);
-		case STMT_assign:
-			return executeAssign((Stmt.Assign) stmt, frame, heap, scope);
-		case STMT_break:
-			return executeBreak((Stmt.Break) stmt, frame, heap, scope);
-		case STMT_continue:
-			return executeContinue((Stmt.Continue) stmt, frame, heap, scope);
-		case STMT_debug:
-			return executeDebug((Stmt.Debug) stmt, frame, heap, scope);
-		case STMT_dowhile:
-			return executeDoWhile((Stmt.DoWhile) stmt, frame, heap, scope);
-		case STMT_fail:
-			return executeFail((Stmt.Fail) stmt, frame, heap, scope);
-		case STMT_for:
-			return executeFor((Stmt.For) stmt, frame, heap, scope);
-		case STMT_if:
-		case STMT_ifelse:
-			return executeIf((Stmt.IfElse) stmt, frame, heap, scope);
-		case STMT_initialiser:
-		case STMT_initialiservoid:
-			return executeInitialiser((Stmt.Initialiser) stmt, frame, heap, scope);
-		case EXPR_indirectinvoke:
-			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame, heap);
-			return Status.NEXT;
-		case EXPR_invoke:
-			executeInvoke((Expr.Invoke) stmt, frame, heap);
-			return Status.NEXT;
-		case STMT_namedblock:
-			return executeNamedBlock((Stmt.NamedBlock) stmt, frame, heap, scope);
-		case STMT_while:
-			return executeWhile((Stmt.While) stmt, frame, heap, scope);
-		case STMT_return:
-		case STMT_returnvoid:
-			return executeReturn((Stmt.Return) stmt, frame, heap, scope);
-		case STMT_skip:
-			return executeSkip((Stmt.Skip) stmt, frame, heap, scope);
-		case STMT_switch:
-			return executeSwitch((Stmt.Switch) stmt, frame, heap, scope);
-		case DECL_variable:
-			return executeVariableDeclaration((Decl.Variable) stmt, frame, heap);
+		try {
+			//
+			switch (stmt.getOpcode()) {
+			case STMT_assert:
+				return executeAssert((Stmt.Assert) stmt, frame, heap, scope);
+			case STMT_assume:
+				return executeAssume((Stmt.Assume) stmt, frame, heap, scope);
+			case STMT_assign:
+				return executeAssign((Stmt.Assign) stmt, frame, heap, scope);
+			case STMT_break:
+				return executeBreak((Stmt.Break) stmt, frame, heap, scope);
+			case STMT_continue:
+				return executeContinue((Stmt.Continue) stmt, frame, heap, scope);
+			case STMT_debug:
+				return executeDebug((Stmt.Debug) stmt, frame, heap, scope);
+			case STMT_dowhile:
+				return executeDoWhile((Stmt.DoWhile) stmt, frame, heap, scope);
+			case STMT_fail:
+				return executeFail((Stmt.Fail) stmt, frame, heap, scope);
+			case STMT_for:
+				return executeFor((Stmt.For) stmt, frame, heap, scope);
+			case STMT_if:
+			case STMT_ifelse:
+				return executeIf((Stmt.IfElse) stmt, frame, heap, scope);
+			case STMT_initialiser:
+			case STMT_initialiservoid:
+				return executeInitialiser((Stmt.Initialiser) stmt, frame, heap, scope);
+			case EXPR_indirectinvoke:
+				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame, heap);
+				return Status.NEXT;
+			case EXPR_invoke:
+				executeInvoke((Expr.Invoke) stmt, frame, heap);
+				return Status.NEXT;
+			case STMT_namedblock:
+				return executeNamedBlock((Stmt.NamedBlock) stmt, frame, heap, scope);
+			case STMT_while:
+				return executeWhile((Stmt.While) stmt, frame, heap, scope);
+			case STMT_return:
+			case STMT_returnvoid:
+				return executeReturn((Stmt.Return) stmt, frame, heap, scope);
+			case STMT_skip:
+				return executeSkip((Stmt.Skip) stmt, frame, heap, scope);
+			case STMT_switch:
+				return executeSwitch((Stmt.Switch) stmt, frame, heap, scope);
+			case DECL_variable:
+				return executeVariableDeclaration((Decl.Variable) stmt, frame, heap);
+			}
+			deadCode(stmt);
+			return null; // deadcode
+		} catch (StackOverflowError e) {
+			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, stmt);
 		}
-		deadCode(stmt);
-		return null; // deadcode
 	}
 
 	private Status executeAssign(Stmt.Assign stmt, CallStack frame, Heap heap, EnclosingScope scope) {

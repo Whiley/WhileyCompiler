@@ -7333,7 +7333,8 @@ public class WyilFile extends AbstractCompilationUnit {
 			};
 		}
 	}
-
+	// Generic
+	public static final int INTERNAL_FAILURE = 0;
 	// Parsing
 	public static final int EXPECTING_TOKEN = 300;	// "expecting \"" + kind + "\" here"
 	public static final int EXPECTED_LIFETIME = 301;// "expecting lifetime identifier"

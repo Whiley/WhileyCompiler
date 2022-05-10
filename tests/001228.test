@@ -1,4 +1,5 @@
 original.name="TupleAssign_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 type tac2ta is ({int f1, int f2} r) where r.f1 < r.f2

@@ -199,6 +199,12 @@ public class ErrorMessages {
 	}
 
 	// ========================================================================
+	// Generic
+	// ========================================================================
+
+	public static final Message INTERNAL_FAILURE = new MultiPartMessage("internal failure");
+
+	// ========================================================================
 	// Parsing
 	// ========================================================================
 
@@ -368,7 +374,9 @@ public class ErrorMessages {
 //	public static final StaticMessage MISSING_RETURN_VALUE = new StaticMessage("missing return value");
 
 	public static final Message[][] ERROR_MESSAGES = {
-		null, // 00
+		{
+			INTERNAL_FAILURE // 000
+		},
 		null, // 01
 		null, // 02
 		{

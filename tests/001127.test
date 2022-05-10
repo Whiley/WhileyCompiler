@@ -1,4 +1,5 @@
 original.name="RecursiveType_Invalid_10"
+js.execute.ignore=true
 ======
 >>> main.whiley
 

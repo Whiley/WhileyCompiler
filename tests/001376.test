@@ -1,0 +1,35 @@
+=====
+>>> main.whiley
+import string from js::core
+
+type Point is {int x, int y}
+
+function get(bool f) -> (Point|string r)
+ensures f ==> (r is string)
+ensures !f ==> (r is Point):
+    if f:
+        return "Hello"
+    else:
+        return {x:0,y:0}
+
+public export method test():
+    Point|string xs = get(true)
+    // Must be true
+    assert xs is string
+    // Let's try again
+    Point|string ys = get(false)
+    // Must be true
+    assert ys is Point
+    // Let's try other way
+    Point|string zs = get(true)
+    // Must not be true
+    assert !(zs is Point)
+    // Let's try again again
+    Point|string ws = get(false)
+    // Must not be true
+    assert !(ws is string)
+>>> js/core.whiley
+package js
+
+public type string is int[] where true
+---

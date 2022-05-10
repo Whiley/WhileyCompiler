@@ -1,4 +1,5 @@
 original.name="Byte_Invalid_2"
+js.execute.ignore=true
 ======
 >>> main.whiley
 public function broken(byte b) -> (byte r)

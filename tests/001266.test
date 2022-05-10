@@ -1,5 +1,5 @@
 original.name="Type_Invalid_8"
-build.whiley.ignore=true
+whiley.compile.ignore=true
 WhileyCompiler.issue=885
 ======
 >>> main.whiley
