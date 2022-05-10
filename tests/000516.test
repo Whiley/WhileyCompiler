@@ -1,4 +1,5 @@
 original.name="Reference_Valid_29"
+boogie.ignore=true
 ======
 >>> main.whiley
 // Reverse a linked list
@@ -30,5 +31,4 @@ public export method test():
     LinkedList<int> l4 = reverse(l3)
     // Assert reversal
     assert equiv(l4,0,[2,3])
-
 ---

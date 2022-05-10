@@ -1,5 +1,5 @@
 original.name="ConstrainedList_Valid_18"
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=26
 ======
 >>> main.whiley

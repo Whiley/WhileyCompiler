@@ -28,4 +28,4 @@ public export method test():
     assert arraySum1(ys,xs) == [5,7,9]
 ---
 E703 main.whiley 7,24:122
-E720 main.whiley 7,24:60
+E720 main.whiley 7,24:122

@@ -1,5 +1,5 @@
 original.name="Reference_Valid_24"
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=89
 ======
 >>> main.whiley

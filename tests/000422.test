@@ -1,5 +1,5 @@
 original.name="Property_Valid_26"
-boogie.verify.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 property inc(int[] xs) -> (int[] r, int q):

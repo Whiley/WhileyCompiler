@@ -14,4 +14,4 @@ public export method test() :
     f((tac2tb) x)
 ---
 E702 main.whiley 10,6:15
-E718 main.whiley 10,15
+E716 main.whiley 10,4:16

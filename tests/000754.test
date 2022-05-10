@@ -1,6 +1,6 @@
 original.name="Unsafe_Valid_6"
 whiley.execute.ignore=true
-boogie.verify.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 type uint is (int x) where x >= 0

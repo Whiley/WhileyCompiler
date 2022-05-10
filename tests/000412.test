@@ -1,5 +1,5 @@
 original.name="Property_Valid_17"
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=55
 ======
 >>> main.whiley

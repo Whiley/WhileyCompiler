@@ -1,6 +1,6 @@
 original.name="Reference_Valid_39"
 js.compile.ignore=true
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=115
 ======
 >>> main.whiley

@@ -22,4 +22,4 @@ public export method test():
    assume f(0) == 0
 ---
 E702 main.whiley 14,11:20
-E718 main.whiley 14,17:20
+E717 main.whiley 14,4:20

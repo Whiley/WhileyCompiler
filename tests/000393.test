@@ -1,4 +1,6 @@
 original.name="Process_Valid_10"
+boogie.timeout=5
+boogie.verify=false
 ======
 >>> main.whiley
 type Queue is {int[] items, int length}

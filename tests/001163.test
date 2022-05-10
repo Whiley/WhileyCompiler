@@ -1,5 +1,6 @@
 original.name="StaticVar_Invalid_13"
 js.compile.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 int var = -1

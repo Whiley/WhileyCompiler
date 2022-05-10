@@ -1,5 +1,7 @@
 original.name="Type_Invalid_14"
 js.execute.ignore=true
+boogie.ignore=true
+boogie.timeout=5
 ======
 >>> main.whiley
 type nat is (int x) where x >= 0

@@ -15,4 +15,4 @@ public export method test():
     g(-1)
 ---
 E702 main.whiley 7,11:17
-E718 main.whiley 7,17
+E717 main.whiley 7,4:17

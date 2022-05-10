@@ -1,4 +1,6 @@
 original.name="RecursiveType_Valid_7"
+boogie.verify=false
+boogie.timeout=5
 ======
 >>> main.whiley
 type u8 is (int x) where 0 <= x && x <= 255

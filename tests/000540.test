@@ -1,5 +1,5 @@
 original.name="Requires_Valid_2"
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=79
 ======
 >>> main.whiley

@@ -1,5 +1,7 @@
 original.name="Old_Valid_9"
 js.compile.ignore=true
+boogie.ignore=true
+boogie.timeout=5
 ======
 >>> main.whiley
 type List is null|Node

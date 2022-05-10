@@ -17,4 +17,4 @@ public export method test():
    assume g(0) == 0
 ---
 E702 main.whiley 9,13:23
-E718 main.whiley 9,23
+E716 main.whiley 9,11:24

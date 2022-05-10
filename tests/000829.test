@@ -1,6 +1,6 @@
 original.name="ArrayAccess_Invalid_2"
 js.execute.ignore=true
-boogie.verify.ignore=false
+boogie.ignore=false
 ======
 >>> main.whiley
 

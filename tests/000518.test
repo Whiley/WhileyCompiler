@@ -1,5 +1,5 @@
 original.name="Reference_Valid_30"
-boogie.verify.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 public export method test():

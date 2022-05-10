@@ -1,6 +1,6 @@
 original.name="ConstrainedArray_Invalid_1"
 js.execute.ignore=true
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=148
 ======
 >>> main.whiley

@@ -12,7 +12,7 @@ public export method test():
     js[0] = 'H'
     //
     assert ascii == "hello"
-    assert js == "He1lo"
+    assert js == "Hello"
 >>> js/core.whiley
 package js
 

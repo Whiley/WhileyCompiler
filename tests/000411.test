@@ -1,5 +1,5 @@
 original.name="Property_Valid_16"
-boogie.verify.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 // This benchmark was created specifically to test recursive

@@ -1,5 +1,5 @@
 original.name="Lambda_Valid_30"
-boogie.verify.ignore=true
+boogie.ignore=true
 Whiley2Boogie.issue=123
 ======
 >>> main.whiley

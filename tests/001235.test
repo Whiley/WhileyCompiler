@@ -19,4 +19,4 @@ public export method test():
     int m = min({first: 1, second: -1})
 ---
 E702 main.whiley 15,16:37
-E718 main.whiley 15,16:37
+E716 main.whiley 15,12:38

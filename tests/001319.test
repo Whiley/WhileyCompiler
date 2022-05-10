@@ -20,4 +20,4 @@ public export method test():
    assume extract(0,[1]) == 0
 ---
 E707 main.whiley 9,19
-E724 main.whiley 9,15:20
+E724 main.whiley 9,19

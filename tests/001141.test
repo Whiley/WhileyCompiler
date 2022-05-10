@@ -1,5 +1,5 @@
 original.name="Reference_Invalid_7"
-boogie.verify.ignore=true
+boogie.ignore=true
 ======
 >>> main.whiley
 type LinkedList is null | &{ int data, LinkedList next }
