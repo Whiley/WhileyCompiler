@@ -426,6 +426,10 @@ public class FlowTypeUtils {
 		}
 		case EXPR_arrayrange:
 			return Type.IntArray;
+		case EXPR_arrayupdate: {
+			Expr.ArrayUpdate r = (Expr.ArrayUpdate) expression;
+			return getNaturalType(r.getFirstOperand(), environment);
+		}
 		case EXPR_dereference: {
 			Expr.Dereference r = (Expr.Dereference) expression;
 			Type.Reference src = getNaturalType(r.getOperand(), environment).as(Type.Reference.class);

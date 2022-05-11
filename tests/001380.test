@@ -1,0 +1,12 @@
+=====
+>>> main.whiley
+public export method test():
+   int[] xs = [1,2,3]
+   assert xs == [2,2,3]
+---
+E705 main.whiley 3,10:22
+E722 main.whiley 3,10:22
+=====
+>>> main.whiley 3:4
+   assert xs[0:=2] == [2,2,3]
+---

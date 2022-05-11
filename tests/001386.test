@@ -1,0 +1,8 @@
+=====
+>>> main.whiley
+public export method test():
+   int[] xs = [1,2,3]
+   int[] ys = xs
+   ys[1] = 4
+   assert xs[1:=|ys|+1] == ys
+---

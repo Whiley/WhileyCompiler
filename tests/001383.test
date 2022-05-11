@@ -1,0 +1,11 @@
+=====
+>>> main.whiley
+property update(int[] items, int x, int y) -> (int[] r):
+    items[x:=y]
+    
+public export method test():
+   int[] xs = [1,2,3]
+   assert update(xs,0,2) == [2,2,3]
+   assert update(xs,1,4) == [1,4,3]
+   assert update(xs,2,123) == [1,2,123]   
+---

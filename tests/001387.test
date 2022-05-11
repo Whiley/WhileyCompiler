@@ -1,0 +1,28 @@
+=====
+>>> main.whiley
+type Tx is {
+  int[] items,
+  int index,
+  int value,
+  int[] result
+} where items[index:=value] == result
+
+public export method test():
+   Tx t = {items:[],index:0,value:0,result:[]}
+---
+E708 main.whiley 6,14:18
+E718 main.whiley 6,14:18
+=====
+>>> main.whiley 9:10
+   Tx t = {items:[0],index:0,value:0,result:[]}
+---
+E702 main.whiley 9,10:46
+E718 main.whiley 6,14:18
+=====
+>>> main.whiley 9:10
+   Tx t = {items:[0],index:0,value:0,result:[0]}
+---
+=====
+>>> main.whiley 9:10
+   Tx t = {items:[0,1],index:1,value:2,result:[0,2]}
+---

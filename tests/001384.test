@@ -1,0 +1,8 @@
+=====
+>>> main.whiley
+public export method test():
+   int[] xs = [1,2,3]
+   int[] ys = xs
+   ys[1] = 0
+   assert xs[1:=0] == ys
+---

@@ -1433,6 +1433,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pushArrayAccess(var, (Expr.ArrayAccess) expression, typing, environment);
 		case EXPR_arrayrange:
 			return pushArrayRange(var, (Expr.ArrayRange) expression, typing, environment);
+		case EXPR_arrayupdate:
+			return pushArrayUpdate(var, (Expr.ArrayUpdate) expression, typing, environment);
 		case EXPR_dereference:
 			return pushDereference(var, (Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
@@ -1537,6 +1539,21 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
 		return pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+	}
+
+	private Typing pushArrayUpdate(int var, Expr.ArrayUpdate expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnArray(row, var, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into source operand
+		typing = pushExpression(expr.getFirstOperand(), r -> r.get(var), nTyping, environment);
+		// >>> Propagate forwards into index operand
+		typing = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+		// >>> Propagate forwards into element operand
+		return pushExpression(expr.getThirdOperand(), r -> getArrayElement(r.get(var)), nTyping, environment);
 	}
 
 	private Typing pushBitwiseOperator(int var, Expr.UnaryOperator expr, Typing typing, Environment environment) {
@@ -2006,6 +2023,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow:
 			return pullArrayAccess((Expr.ArrayAccess) expression, typing, environment);
+		case EXPR_arrayupdate:
+			return pullArrayUpdate((Expr.ArrayUpdate) expression, typing, environment);
 		case EXPR_dereference:
 			return pullDereference((Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
@@ -2071,6 +2090,20 @@ public class FlowTypeCheck implements Compiler.Check {
 		checkForError(expr.getFirstOperand(), typing, nTyping, Type.AnyArray, src);
 		//
 		return nTyping;
+	}
+
+	private Typing pullArrayUpdate(Expr.ArrayUpdate expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into source operand
+		Typing nTyping = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int src = nTyping.top();
+		nTyping = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+		Typing nnTyping = pushExpression(expr.getThirdOperand(), row -> getArrayElement(row.get(src)), nTyping, environment);
+		// Sanity check typing
+		checkForError(expr.getFirstOperand(), nTyping, nnTyping, Type.AnyArray, src);
+		// Allocate a finaliser for this expression
+		nnTyping.register(typeStandardExpression(expr, nnTyping.top() + 1));
+		// <<< Propagate backwards from source operand
+		return nnTyping.map(row -> row.add(row.get(src).as(Type.Array.class)));
 	}
 
 	private Typing pullBitwiseOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {

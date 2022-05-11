@@ -93,8 +93,8 @@ public class TestManager {
 					} else if(diff.isEmpty()) {
 						// Stage completed successfully
 						if(actual.length > 0) {
-							// Errors have been produced, so we cannot continue testing.
-							return Result.SUCCESS;
+							// Errors have been produced, so we cannot continue with this frame.
+							break;
 						}
 					} else if(result.ignored) {
 						// In this case, the test has failed and it was correctly ignored. Therefore, it

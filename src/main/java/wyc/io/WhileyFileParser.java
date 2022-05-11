@@ -22,6 +22,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Caret;
 import static wyc.io.WhileyFileLexer.Token.Kind.Case;
 import static wyc.io.WhileyFileLexer.Token.Kind.Colon;
 import static wyc.io.WhileyFileLexer.Token.Kind.ColonColon;
+import static wyc.io.WhileyFileLexer.Token.Kind.ColonEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Comma;
 import static wyc.io.WhileyFileLexer.Token.Kind.Continue;
 import static wyc.io.WhileyFileLexer.Token.Kind.Debug;
@@ -2309,9 +2310,16 @@ public class WhileyFileParser {
 			case LeftSquare:
 				// NOTE: expression guaranteed to be terminated by ']'.
 				Expr rhs = parseArithmeticExpression(scope, true);
-				// This is a plain old array access expression
-				match(RightSquare);
-				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
+				if(tryAndMatch(true,ColonEquals) != null) {
+					// This is an array update expression
+					Expr v = parseArithmeticExpression(scope, true);
+					match(RightSquare);
+					lhs = new Expr.ArrayUpdate(Type.Void, lhs, rhs, v);
+				} else {
+					// This is a plain old array access expression
+					match(RightSquare);
+					lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
+				}
 				break;
 			case MinusGreater: {
 				// At this point, we could have a field access, or a
