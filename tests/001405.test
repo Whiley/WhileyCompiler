@@ -14,7 +14,7 @@ public export method test():
    Tx t = {items:m,index:0,value:0,result:m}
 ---
 E708 main.whiley 8,31:35
-E718 main.whiley 8,31:35
+E718 main.whiley 12,10:43
 =====
 >>> main.whiley 11:12
    Msg m = {kind: 0, data:[1]}

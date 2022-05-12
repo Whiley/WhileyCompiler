@@ -12,9 +12,10 @@ property exec(State st, AddC insn) -> (State ns):
 
 // bisimulation
 method bisim(State st, int reg)
+requires reg >= 0
 // Ensure register is in bounds
 requires |st.mem| > reg:
-   State st1 = exec(st,Inc{rd:reg})
+   State st1 = exec(st,{rd:reg})
    State st2 = exec(st,AddC{rd:reg,c:2})
    assert st1 == st2
 
@@ -26,9 +27,9 @@ public export method test():
    bisim({mem:[1,2,3]},1)
    bisim({mem:[1,2,3]},2)
 ---
-E705 main.whiley 17,10:19
-E722 main.whiley 17,10:19
+E705 main.whiley 18,10:19
+E722 main.whiley 18,10:19
 =====
->>> main.whiley 16:17
+>>> main.whiley 17:18
    State st2 = exec(st,AddC{rd:reg,c:1})
 ---

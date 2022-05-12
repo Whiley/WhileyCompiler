@@ -903,9 +903,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	public E visitRecordUpdate(Expr.RecordUpdate expr) {
 		E src = visitExpression(expr.getFirstOperand());
 		E val = visitExpression(expr.getSecondOperand());
-		// TODO: implement me!
-		// return constructRecordUpdate(expr,src,val);
-		throw new UnsupportedOperationException();
+		return constructRecordUpdate(expr,src,val);
 	}
 
 	public E visitTupleInitialiser(Expr.TupleInitialiser expr) {
@@ -1093,6 +1091,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructRecordAccess(Expr.RecordAccess expr, E source);
 
 	public abstract E constructRecordInitialiser(Expr.RecordInitialiser expr, List<E> operands);
+
+	public abstract E constructRecordUpdate(Expr.RecordUpdate expr, E source, E value);
 
 	public abstract E constructTupleInitialiser(Expr.TupleInitialiser expr, List<E> operands);
 
