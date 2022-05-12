@@ -1,0 +1,13 @@
+=====
+>>> main.whiley
+public export method test():
+   int[] xs = [1,2,3]
+   (int[])|(bool[]) ys = xs[5:=4]
+   assert ys == [1,4,3]
+---
+E708 main.whiley 3,28
+E725 main.whiley 3,28
+=====
+>>> main.whiley 3:4
+   int[]|bool[] ys = xs[1:=4]
+---

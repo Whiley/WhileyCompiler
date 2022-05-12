@@ -895,6 +895,9 @@ public class Interpreter {
 		case EXPR_recordborrow:
 			val = executeRecordAccess((Expr.RecordAccess) expr, frame, heap);
 			break;
+		case EXPR_recordupdate:
+			val = executeRecordUpdate((Expr.RecordUpdate) expr, frame, heap);
+			break;
 		case EXPR_indirectinvoke:
 			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame, heap);
 			break;
@@ -1102,6 +1105,14 @@ public class Interpreter {
 			values[i] = semantics.Field(field, value);
 		}
 		return semantics.Record(values);
+	}
+
+	public RValue executeRecordUpdate(Expr.RecordUpdate expr, CallStack frame, Heap heap) {
+		RValue.Record rec = executeExpression(RECORD_T, expr.getFirstOperand(), frame, heap);
+		// Evaluate new element
+		RValue value = executeExpression(ANY_T, expr.getSecondOperand(), frame, heap);
+		// Update the array
+		return rec.write(expr.getField(), value);
 	}
 
 	private RValue executeTupleInitialiser(Expr.TupleInitialiser expr, CallStack frame, Heap heap) {

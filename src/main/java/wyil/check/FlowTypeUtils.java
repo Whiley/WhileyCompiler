@@ -407,6 +407,10 @@ public class FlowTypeUtils {
 				return Type.Any;
 			}
 		}
+		case EXPR_recordupdate: {
+			Expr.RecordUpdate r = (Expr.RecordUpdate) expression;
+			return getNaturalType(r.getFirstOperand(), environment);
+		}
 		case EXPR_arraylength:
 			return Type.Int;
 		case EXPR_arrayinitialiser: {

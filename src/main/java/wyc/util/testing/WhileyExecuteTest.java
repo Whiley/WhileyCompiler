@@ -48,7 +48,6 @@ public class WhileyExecuteTest implements TestStage {
 		try {
 			execWyil(dir.toFile(), path, Trie.fromString(unit));
 		} catch (Interpreter.RuntimeError e) {
-			e.printStackTrace();
 			actual = new TestFile.Error[] { toError(state, e) };
 		}
 		return new TestStage.Result(ignored, actual);

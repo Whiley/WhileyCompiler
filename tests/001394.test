@@ -1,0 +1,12 @@
+=====
+>>> main.whiley
+public export method test():
+   {int f} xs = {f:123}
+   assert xs == {f:223}
+---
+E705 main.whiley 3,10:22
+E722 main.whiley 3,10:22
+=====
+>>> main.whiley 3:4
+   assert xs{f:=223} == {f:223}
+---

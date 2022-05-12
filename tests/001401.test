@@ -1,0 +1,23 @@
+=====
+>>> main.whiley
+type Rec is {int f, int g}
+
+function setz(Rec rec, int x, bool f) -> (Rec r)
+ensures f ==> (r.f == x && r.g == rec.g)
+ensures !f ==> (r.g == x && r.f == rec.f):
+   if f:
+      return rec{f:=x}
+   else:
+      return rec{g:=x}
+    
+public export method test():
+   Rec rs = {f:1,g:2}
+   assert setz(rs,0,true) == {f:0,g:2}
+   assert setz(rs,0,false) == {f:1,g:0}
+   //
+   assert setz(rs,4,true) == {f:4,g:2}
+   assert setz(rs,4,false) == {f:1,g:4}
+   //
+   assert setz(rs,5,true) == {f:5,g:2}
+   assert setz(rs,5,false) == {f:1,g:5}
+---
