@@ -1,0 +1,15 @@
+=====
+>>> main.whiley
+function setz(int[] items, int x) -> (int[] r)
+requires x >= 0 && x < |items|
+ensures |r| == |items|
+ensures all { i in 0..|items| | i == x || items[i] == r[i] }
+ensures r[x] == 0:
+    return items[x:=0]
+    
+public export method test():
+   int[] xs = [1,2,3]
+   assert setz(xs,0) == [0,2,3]
+   assert setz(xs,1) == [1,0,3]
+   assert setz(xs,2) == [1,2,0]   
+---

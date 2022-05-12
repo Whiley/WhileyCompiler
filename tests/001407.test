@@ -1,0 +1,7 @@
+=====
+>>> main.whiley
+public export method test():
+   int xs = 0
+   {int f} ys = xs{f:=3}
+---
+E400 main.whiley 3,16:17

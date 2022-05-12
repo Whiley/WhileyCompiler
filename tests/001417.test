@@ -1,0 +1,34 @@
+=====
+>>> main.whiley
+type State is { int[] mem }
+type Inc is { int rd }
+type AddC is { int rd, int c }
+
+property exec(State st, Inc insn) -> (State ns):
+   st{mem:=st.mem[insn.rd := st.mem[insn.rd] + 1]}
+
+property exec(State st, AddC insn) -> (State ns):
+   st{mem:=st.mem[insn.rd := st.mem[insn.rd] + insn.c]}
+
+// bisimulation
+method bisim(State st, int reg)
+// Ensure register is in bounds
+requires |st.mem| > reg:
+   State st1 = exec(st,Inc{rd:reg})
+   State st2 = exec(st,AddC{rd:reg,c:2})
+   assert st1 == st2
+
+public export method test():
+   bisim({mem:[1]},0)
+   bisim({mem:[1,2]},0)
+   bisim({mem:[1,2]},1)
+   bisim({mem:[1,2,3]},0)
+   bisim({mem:[1,2,3]},1)
+   bisim({mem:[1,2,3]},2)
+---
+E705 main.whiley 17,10:19
+E722 main.whiley 17,10:19
+=====
+>>> main.whiley 16:17
+   State st2 = exec(st,AddC{rd:reg,c:1})
+---

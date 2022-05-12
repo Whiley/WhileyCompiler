@@ -1,0 +1,8 @@
+=====
+>>> main.whiley
+public export method test():
+   {int f, int g} xs = {f:1, g:2}
+   {int f, int g} ys = xs
+   ys.f = 0
+   assert xs{f:=0} == ys
+---

@@ -1,0 +1,14 @@
+=====
+>>> main.whiley
+type Rec is {int f, int g}
+
+function setz(Rec rec, int x) -> (Rec r)
+ensures r.f == x && r.g == rec.g:
+    return rec{f:=x}
+    
+public export method test():
+   Rec rs = {f:1,g:2}
+   assert setz(rs,0) == {f:0,g:2}
+   assert setz(rs,2) == {f:2,g:2}
+   assert setz(rs,3) == {f:3,g:2}   
+---

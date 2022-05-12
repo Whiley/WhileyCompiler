@@ -1,5 +1,5 @@
 original.name="RecursiveType_Valid_7"
-boogie.verify=false
+boogie.ignore=true
 boogie.timeout=5
 ======
 >>> main.whiley

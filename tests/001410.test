@@ -1,0 +1,47 @@
+=====
+>>> main.whiley
+type Point is {int x, int y}
+type Rect is {Point p1, Point p2}
+// p1 is "below" p2
+where p1.x <= p2.x && p1.y <= p2.y
+
+public export method test():
+   Rect r1 = {p1:{x:1,y:0},p2:{x:0,y:1}}
+---
+E702 main.whiley 7,13:39
+E718 main.whiley 7,13:39
+=====
+>>> main.whiley 7:8
+   Rect r1 = {p1:{x:0,y:1},p2:{x:1,y:0}}
+---
+E702 main.whiley 7,13:39
+E718 main.whiley 7,13:39
+=====
+>>> main.whiley 7:8
+   Rect r1 = {p1:{x:0,y:0},p2:{x:1,y:1}}
+   Rect r2 = r1{p1:={x:2,y:1}}
+---
+E702 main.whiley 8,13:29
+E718 main.whiley 8,13:29
+=====
+>>> main.whiley 7:9
+   Rect r1 = {p1:{x:0,y:0},p2:{x:1,y:1}}
+   Rect r2 = r1{p1:={x:1,y:2}}
+---
+E702 main.whiley 8,13:29
+E718 main.whiley 8,13:29
+=====
+>>> main.whiley 7:9
+   Rect r1 = {p1:{x:0,y:0},p2:{x:1,y:1}}
+   Rect r2 = {p1:r1.p1{x:=-1}{y:=-2},p2:r1.p2}
+   // Sanity check r1
+   assert r1.p1.x == 0
+   assert r1.p1.y == 0
+   assert r1.p2.x == 1
+   assert r1.p2.y == 1
+   // Sanity check r2
+   assert r2.p1.x == -1
+   assert r2.p1.y == -2
+   assert r2.p2.x == 1
+   assert r2.p2.y == 1
+---

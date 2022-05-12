@@ -22,6 +22,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Caret;
 import static wyc.io.WhileyFileLexer.Token.Kind.Case;
 import static wyc.io.WhileyFileLexer.Token.Kind.Colon;
 import static wyc.io.WhileyFileLexer.Token.Kind.ColonColon;
+import static wyc.io.WhileyFileLexer.Token.Kind.ColonEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Comma;
 import static wyc.io.WhileyFileLexer.Token.Kind.Continue;
 import static wyc.io.WhileyFileLexer.Token.Kind.Debug;
@@ -2304,15 +2305,36 @@ public class WhileyFileParser {
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
+				|| (token = tryAndMatchOnLine(LeftCurly)) != null
 				|| (token = tryAndMatch(terminated, Dot, MinusGreater, ColonColon)) != null) {
 			switch (token.kind) {
-			case LeftSquare:
+			case LeftSquare: {
 				// NOTE: expression guaranteed to be terminated by ']'.
 				Expr rhs = parseArithmeticExpression(scope, true);
-				// This is a plain old array access expression
-				match(RightSquare);
-				lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
+				if(tryAndMatch(true,ColonEquals) != null) {
+					// This is an array update expression
+					Expr v = parseArithmeticExpression(scope, true);
+					match(RightSquare);
+					lhs = new Expr.ArrayUpdate(Type.Void, lhs, rhs, v);
+				} else {
+					// This is a plain old array access expression
+					match(RightSquare);
+					lhs = new Expr.ArrayAccess(Type.Void, lhs, rhs);
+				}
 				break;
+			}
+			case LeftCurly: {
+				// NOTE: expression guaranteed to be terminated by '}'.
+				// NOTE: if we get here, then this is guaranteed to be an update rather than an
+				// initialiser.
+				Identifier field = parseIdentifier();
+				match(ColonEquals);
+				// This is a record update expression
+				Expr rhs = parseArithmeticExpression(scope, true);
+				match(RightCurly);
+				lhs = new Expr.RecordUpdate(Type.Void, lhs, field, rhs);
+				break;
+			}
 			case MinusGreater: {
 				// At this point, we could have a field access, or a
 				// method/function invocation. Therefore, we start by
@@ -2465,7 +2487,12 @@ public class WhileyFileParser {
 			} else if (lookaheadSequence(terminated, LeftCurly)) {
 				// This indicates a named record initialiser which consists of a
 				// name followed by a record initialiser.
-				return parseRecordInitialiser(name, scope, terminated);
+				Expr initialiser = parseRecordInitialiser(name, scope, terminated);
+				// Sanity check whether we matched an initialiser, or encountered an update
+				// expression.
+				if(initialiser != null) {
+					return initialiser;
+				}
 			} // no else if, in case the former one didn't return
 			if (scope.isVariable(name)) {
 				// Signals a local variable access
@@ -2881,12 +2908,19 @@ public class WhileyFileParser {
 			if (!firstTime) {
 				match(Comma);
 			}
-			firstTime = false;
 			// Parse field name being constructed
 			Identifier field = parseIdentifier();
 			// Check field name is unique
 			if (keys.contains(field.get())) {
 				syntaxError(WyilFile.DUPLICATE_FIELD, field);
+			}
+			// Sanity check against record initialiser
+			if(firstTime && tryAndMatch(true, ColonEquals) != null) {
+				// backtrack, this is a record update not an initialiser!
+				index = start;
+				return null;
+			} else {
+				firstTime = false;
 			}
 			match(Colon);
 			// Parse expression being assigned to field

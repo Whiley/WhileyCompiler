@@ -895,6 +895,9 @@ public class Interpreter {
 		case EXPR_recordborrow:
 			val = executeRecordAccess((Expr.RecordAccess) expr, frame, heap);
 			break;
+		case EXPR_recordupdate:
+			val = executeRecordUpdate((Expr.RecordUpdate) expr, frame, heap);
+			break;
 		case EXPR_indirectinvoke:
 			val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame, heap);
 			break;
@@ -1000,6 +1003,9 @@ public class Interpreter {
 		case EXPR_arrayrange:
 			val = executeArrayRange((Expr.ArrayRange) expr, frame, heap);
 			break;
+		case EXPR_arrayupdate:
+			val = executeArrayUpdate((Expr.ArrayUpdate) expr, frame, heap);
+			break;
 		case EXPR_new:
 			val = executeNew((Expr.New) expr, frame, heap);
 			break;
@@ -1099,6 +1105,14 @@ public class Interpreter {
 			values[i] = semantics.Field(field, value);
 		}
 		return semantics.Record(values);
+	}
+
+	public RValue executeRecordUpdate(Expr.RecordUpdate expr, CallStack frame, Heap heap) {
+		RValue.Record rec = executeExpression(RECORD_T, expr.getFirstOperand(), frame, heap);
+		// Evaluate new element
+		RValue value = executeExpression(ANY_T, expr.getSecondOperand(), frame, heap);
+		// Update the array
+		return rec.write(expr.getField(), value);
 	}
 
 	private RValue executeTupleInitialiser(Expr.TupleInitialiser expr, CallStack frame, Heap heap) {
@@ -1394,6 +1408,17 @@ public class Interpreter {
 			elements[i - start] = semantics.Int(BigInteger.valueOf(i));
 		}
 		return semantics.Array(elements);
+	}
+
+	public RValue executeArrayUpdate(Expr.ArrayUpdate expr, CallStack frame, Heap heap) {
+		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
+		// Sanity check access
+		checkArrayBounds(array, index, frame, expr.getSecondOperand());
+		// Evaluate new element
+		RValue value = executeExpression(ANY_T, expr.getThirdOperand(), frame, heap);
+		// Update the array
+		return array.write(index, value);
 	}
 
 	public RValue executeNew(Expr.New expr, CallStack frame, Heap heap) {

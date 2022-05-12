@@ -14,5 +14,5 @@ public export method test():
     copy(a,b)
     copy(a,a)
 ---
-E701 main.whiley 11,4:1
+E701 main.whiley 11,4:12
 E717 main.whiley 1,0:59

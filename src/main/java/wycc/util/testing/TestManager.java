@@ -72,7 +72,7 @@ public class TestManager {
 				// Apply frame to current state
 				f.apply(state);
 				// Determine frame directory
-				Path frameDir = testDir.resolve("_" + index++);
+				Path frameDir = testDir.resolve("_" + index);
 				// Mirror state in frame directory
 				mirror(state, frameDir);
 				// Apply each stage generating errors as appropriate
@@ -93,8 +93,8 @@ public class TestManager {
 					} else if(diff.isEmpty()) {
 						// Stage completed successfully
 						if(actual.length > 0) {
-							// Errors have been produced, so we cannot continue testing.
-							return Result.SUCCESS;
+							// Errors have been produced, so we cannot continue with this frame.
+							break;
 						}
 					} else if(result.ignored) {
 						// In this case, the test has failed and it was correctly ignored. Therefore, it
@@ -103,15 +103,16 @@ public class TestManager {
 					} else {
 						// In this case, the test has failed so something is up.
 						for(Error e : diff.missingExpected) {
-							System.out.println("expected error: " + e);
+							System.out.println("expected error (frame " + index + "): " + e);
 						}
 						for(Error e : diff.missingActual) {
-							System.out.println("unexpected error: " + e);
+							System.out.println("unexpected error (frame " + index + "): " + e);
 						}
 						return Result.FAILURE;
 					}
 				}
-
+				//
+				index = index + 1;
 			}
 		} finally {
 			// Teat down test directory

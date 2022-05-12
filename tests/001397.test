@@ -1,0 +1,14 @@
+=====
+>>> main.whiley
+type Rec is {int f, int g}
+
+public export method test():
+   Rec xs = Rec{f:123, g:456}
+   assert xs == {f:123, g: 789}
+---
+E705 main.whiley 5,10:30
+E722 main.whiley 5,10:30
+=====
+>>> main.whiley 5:6
+   assert xs{g:=789} == {f:123, g:789}
+---

@@ -1422,6 +1422,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return pushRecordAccess(var, (Expr.RecordAccess) expression, typing, environment);
+		case EXPR_recordupdate:
+			return pushRecordUpdate(var, (Expr.RecordUpdate) expression, typing, environment);
 		case EXPR_arraylength:
 			return pushArrayLength(var, (Expr.ArrayLength) expression, typing, environment);
 		case EXPR_arrayinitialiser:
@@ -1433,6 +1435,8 @@ public class FlowTypeCheck implements Compiler.Check {
 			return pushArrayAccess(var, (Expr.ArrayAccess) expression, typing, environment);
 		case EXPR_arrayrange:
 			return pushArrayRange(var, (Expr.ArrayRange) expression, typing, environment);
+		case EXPR_arrayupdate:
+			return pushArrayUpdate(var, (Expr.ArrayUpdate) expression, typing, environment);
 		case EXPR_dereference:
 			return pushDereference(var, (Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
@@ -1537,6 +1541,21 @@ public class FlowTypeCheck implements Compiler.Check {
 		// >>> Propagate forwards into children
 		typing = pushExpression(expr.getFirstOperand(), typing.push(Type.Int), environment);
 		return pushExpression(expr.getSecondOperand(), typing.push(Type.Int), environment);
+	}
+
+	private Typing pushArrayUpdate(int var, Expr.ArrayUpdate expr, Typing typing, Environment environment) {
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming array types
+		Typing nTyping = typing.project(row -> forkOnArray(row, var, environment));
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		// >>> Propagate forwards into source operand
+		typing = pushExpression(expr.getFirstOperand(), r -> r.get(var), nTyping, environment);
+		// >>> Propagate forwards into index operand
+		typing = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+		// >>> Propagate forwards into element operand
+		return pushExpression(expr.getThirdOperand(), r -> getArrayElement(r.get(var)), nTyping, environment);
 	}
 
 	private Typing pushBitwiseOperator(int var, Expr.UnaryOperator expr, Typing typing, Environment environment) {
@@ -1857,12 +1876,29 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Allocate a finaliser for this expression
 		typing.register(typeStandardExpression(expr, var));
 		// Split out incoming record types
-		Typing nTyping = typing.project(row -> forkOnRecord(row, var, fields, environment));
+		Typing nTyping = typing.project(row -> forkOnRecord(row, var, fields, false, environment));
 		// Sanity check for errors
 		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
 		// >>> Propagate forwards into children
 		return pushExpressions(operands, (r, i) -> getRecordFieldWithDefault(r.get(var), fields.get(i), Type.Any),
 				nTyping, environment);
+	}
+
+	private Typing pushRecordUpdate(int var, Expr.RecordUpdate expr, Typing typing, Environment environment) {
+		Tuple<Identifier> fields = new Tuple<>();
+		// Allocate a finaliser for this expression
+		typing.register(typeStandardExpression(expr, var));
+		// Split out incoming record types
+		Typing nTyping = typing.project(row -> forkOnRecord(row, var, fields, true, environment));
+		// >>> Propagate forwards into source operand
+		Typing nnTyping = pushExpression(expr.getFirstOperand(), r -> r.get(var), nTyping, environment);
+		// >>> Propagate forwards into element operand
+		Typing nnnTyping = pushExpression(expr.getSecondOperand(), r -> getRecordField(r.get(var), expr.getField()), nnTyping,
+				environment);
+		// Sanity check for errors
+		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
+		checkForError(expr.getField(), INVALID_FIELD, nnTyping, nnnTyping);
+		return nnnTyping;
 	}
 
 	private Typing pushStaticVariable(int var, Expr.StaticVariableAccess expr, Typing typing, Environment environment) {
@@ -1927,7 +1963,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * <code>int[]</code> in this case).
 	 * </p>
 	 * <p>
-	 * The type of the expression must be loaded onto the to of the typing returned.
+	 * The type of the expression must be loaded onto the top of the typing returned.
 	 * This means we can easily determine the variable allocated for this expression
 	 * via Typing.top().
 	 * </p>
@@ -1997,6 +2033,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_recordaccess:
 		case EXPR_recordborrow:
 			return pullRecordAccess((Expr.RecordAccess) expression, typing, environment);
+		case EXPR_recordupdate:
+			return pullRecordUpdate((Expr.RecordUpdate) expression, typing, environment);
 		case EXPR_arraylength:
 			return pullArrayLength((Expr.ArrayLength) expression, typing, environment);
 		case EXPR_arrayinitialiser:
@@ -2006,6 +2044,8 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_arrayaccess:
 		case EXPR_arrayborrow:
 			return pullArrayAccess((Expr.ArrayAccess) expression, typing, environment);
+		case EXPR_arrayupdate:
+			return pullArrayUpdate((Expr.ArrayUpdate) expression, typing, environment);
 		case EXPR_dereference:
 			return pullDereference((Expr.Dereference) expression, typing, environment);
 		case EXPR_fielddereference:
@@ -2071,6 +2111,20 @@ public class FlowTypeCheck implements Compiler.Check {
 		checkForError(expr.getFirstOperand(), typing, nTyping, Type.AnyArray, src);
 		//
 		return nTyping;
+	}
+
+	private Typing pullArrayUpdate(Expr.ArrayUpdate expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into source operand
+		Typing nTyping = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int src = nTyping.top();
+		nTyping = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+		Typing nnTyping = pushExpression(expr.getThirdOperand(), row -> getArrayElement(row.get(src)), nTyping, environment);
+		// Sanity check typing
+		checkForError(expr.getFirstOperand(), nTyping, nnTyping, Type.AnyArray, src);
+		// Allocate a finaliser for this expression
+		nnTyping.register(typeStandardExpression(expr, nnTyping.top() + 1));
+		// <<< Propagate backwards from source operand
+		return nnTyping.map(row -> row.add(row.get(src).as(Type.Array.class)));
 	}
 
 	private Typing pullBitwiseOperator(Expr.UnaryOperator expr, Typing typing, Environment environment) {
@@ -2337,8 +2391,6 @@ public class FlowTypeCheck implements Compiler.Check {
 	}
 
 	private Typing pullRecordAccess(Expr.RecordAccess expr, Typing typing, Environment environment) {
-		// Recursively check source operand
-		typing = typing.push(Type.Any);
 		// >>> Propagate forwards into children
 		typing = pullExpression(expr.getOperand(), true, typing, environment);
 		int src = typing.top();
@@ -2367,6 +2419,22 @@ public class FlowTypeCheck implements Compiler.Check {
 		typing.register(typeStandardExpression(expr, typing.top() + 1));
 		// <<< Propagate backwards from children
 		return typing.map(row -> row.add(new Type.Record(false, fields, new Tuple<>(row.getAll(children)))));
+	}
+
+	private Typing pullRecordUpdate(Expr.RecordUpdate expr, Typing typing, Environment environment) {
+		// >>> Propagate forwards into source operand
+		typing = pullExpression(expr.getFirstOperand(), true, typing, environment);
+		int src = typing.top();
+		// <<< Propagate backwards from children
+		Typing nTyping = typing.filter(row -> (row.get(src).as(Type.Record.class) != null));
+		Typing nnTyping = pushExpression(expr.getSecondOperand(), row -> getRecordField(row.get(src), expr.getField()), nTyping, environment);
+		// Sanity check typing
+		checkForError(expr.getFirstOperand(), EXPECTED_RECORD, typing, nTyping);
+		checkForError(expr.getField(), INVALID_FIELD, nTyping, nnTyping);
+		// Allocate a finaliser for this expression
+		nnTyping.register(typeStandardExpression(expr, nnTyping.top() + 1));
+		// <<< Propagate backwards from source operand
+		return nnTyping.map(row -> row.add(row.get(src)));
 	}
 
 	private Typing pullStaticVariable(Expr.StaticVariableAccess expr, Typing typing, Environment environment) {
@@ -2607,7 +2675,7 @@ public class FlowTypeCheck implements Compiler.Check {
 	 * @param subtyping
 	 * @return
 	 */
-	private static Typing.Row[] forkOnRecord(Typing.Row row, int var, Tuple<Identifier> fields,
+	private static Typing.Row[] forkOnRecord(Typing.Row row, int var, Tuple<Identifier> fields, boolean atleast,
 			Subtyping.Environment subtyping) {
 		Type type = row.get(var);
 		if (type instanceof Type.Any) {
@@ -2624,7 +2692,7 @@ public class FlowTypeCheck implements Compiler.Check {
 			Subtyping.Constraints constraints = subtyping.isSubtype(type, rec_t);
 			return new Typing.Row[] { row.set(var, rec_t).intersect(constraints) };
 		} else {
-			return forkOnPredicate(row, var, t -> isMatchingRecord(t, fields));
+			return forkOnPredicate(row, var, t -> isMatchingRecord(t, fields, atleast));
 		}
 	}
 
@@ -2782,18 +2850,21 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *
 	 * @param type
 	 * @param fields
+	 * @param if true natch atleast the given fields; otherwise, match all fields.
 	 * @return
 	 */
-	private static boolean isMatchingRecord(Type type, Tuple<Identifier> fields) {
+	private static boolean isMatchingRecord(Type type, Tuple<Identifier> fields, boolean atleast) {
 		// Check really have a record
 		Type.Record rec = type.as(Type.Record.class);
-		if (rec == null) {
-			return false;
-		}
+		if (rec == null) { return false; }
 		// Extract field names from target record
 		Tuple<Identifier> rec_fields = rec.getFields().map(f -> f.getName());
 		// Check sufficiently matching fields.
-		return isSubset(rec_fields, fields) && (rec.isOpen() || rec_fields.size() == fields.size());
+		if(atleast) {
+			return rec.isOpen() || isSubset(fields, rec_fields);
+		} else {
+			return isSubset(rec_fields, fields) && (rec.isOpen() || rec_fields.size() == fields.size());
+		}
 	}
 
 	/**

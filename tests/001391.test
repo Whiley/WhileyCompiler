@@ -1,0 +1,16 @@
+=====
+>>> main.whiley
+public export method test():
+   int[][] xs = [[1],[2],[3]]
+   int[][] ys = xs[1:=[4]]
+   // check xs unchanged
+   assert xs[0] == [1] 
+   assert xs[1] == [2]
+   assert xs[2] == [3]
+   // check ys changed
+   assert ys[0] == [1] 
+   assert ys[1] == [4]
+   assert ys[2] == [3]
+   // Final check
+   assert ys == [[1],[4],[3]]
+---

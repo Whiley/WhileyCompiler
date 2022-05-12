@@ -1,0 +1,12 @@
+=====
+>>> main.whiley
+public export method test():
+   {int f} r = {f:1}
+   {int f}|{int g} s = r{h:=0}
+   assert s == {f:0}
+---
+E406 main.whiley 3,25
+=====
+>>> main.whiley 3:4
+   {int f}|{int g} s = r{f:=0}
+---

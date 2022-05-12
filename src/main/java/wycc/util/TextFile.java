@@ -64,9 +64,7 @@ public class TextFile implements Iterable<String> {
 		start = start - 1;
 		end = end - 1;
 		int delta = (end - start) - newLines.length;
-		System.out.println("delta = " + delta);
 		String[] nlines = Arrays.copyOf(lines, lines.length - delta);
-		System.out.println("|nlines| = " + nlines.length);
 		// Copy over new lines
 		for (int i = 0; i < newLines.length; ++i) {
 			nlines[i + start] = newLines[i];

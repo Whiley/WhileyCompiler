@@ -1,0 +1,7 @@
+=====
+>>> main.whiley
+public export method test():
+   {int f} r = {f:1}
+   {int f} s = r{g:=0}
+---
+E406 main.whiley 3,17
