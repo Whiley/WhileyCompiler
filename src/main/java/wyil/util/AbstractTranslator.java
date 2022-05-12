@@ -667,7 +667,10 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public E visitArrayUpdate(Expr.ArrayUpdate expr) {
-		throw new UnsupportedOperationException();
+		E source = visitExpression(expr.getFirstOperand());
+		E index = visitExpression(expr.getSecondOperand());
+		E value = visitExpression(expr.getThirdOperand());
+		return constructArrayUpdate(expr,source,index,value);
 	}
 
 	public E visitBitwiseComplement(Expr.BitwiseComplement expr) {
@@ -1014,6 +1017,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructArrayGenerator(Expr.ArrayGenerator expr, E value, E length);
 
 	public abstract E constructArrayInitialiser(Expr.ArrayInitialiser expr, List<E> values);
+
+	public abstract E constructArrayUpdate(Expr.ArrayUpdate expr, E source, E index, E value);
 
 	public abstract E constructBitwiseComplement(Expr.BitwiseComplement expr, E operand);
 

@@ -1551,9 +1551,9 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Sanity check for errors
 		checkForError(expr, typing, nTyping, var, getNaturalType(expr, environment));
 		// >>> Propagate forwards into source operand
-		typing = pushExpression(expr.getFirstOperand(), r -> r.get(var), nTyping, environment);
+		nTyping = pushExpression(expr.getFirstOperand(), r -> r.get(var), nTyping, environment);
 		// >>> Propagate forwards into index operand
-		typing = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
+		nTyping = pushExpression(expr.getSecondOperand(), nTyping.push(Type.Int), environment);
 		// >>> Propagate forwards into element operand
 		return pushExpression(expr.getThirdOperand(), r -> getArrayElement(r.get(var)), nTyping, environment);
 	}
