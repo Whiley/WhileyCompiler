@@ -106,16 +106,14 @@ public class WhileyExecuteTest implements TestStage {
 		// Empty signature
 		Type.Method sig = new Type.Method(Type.Void, Type.Void);
 		QualifiedName name = new QualifiedName(new Name(unit), new Identifier("test"));
-		// Try to run the given function or method
-		Interpreter interpreter = new Interpreter(System.out);
-		// Create the initial stack
-		Interpreter.CallStack stack = interpreter.new CallStack();
 		//
 		try {
-			// Load the relevant WyIL module
-			stack.load(target);
+			// Try to run the given function or method
+			Interpreter interpreter = new Interpreter(System.out, target);
+			// Create the initial stack
+			Interpreter.CallStack stack = interpreter.new CallStack();
 			// Sanity check modifiers on test method
-			Decl.Callable lambda = stack.getCallable(name, sig);
+			Decl.Callable lambda = interpreter.getCallable(name, sig);
 			// Sanity check target has correct modifiers.
 			if (lambda.getModifiers().match(Modifier.Export.class) == null
 					|| lambda.getModifiers().match(Modifier.Public.class) == null) {

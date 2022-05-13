@@ -1,6 +1,4 @@
 original.name="StaticVar_Valid_15"
-whiley.execute.ignore=true
-WhileyCompiler.issue=1122
 js.compile.ignore=true
 ======
 >>> main.whiley

@@ -66,15 +66,17 @@ public class QuickCheck {
 
 	public boolean check(WyilFile parent, Context context, List<String> targets)
 			throws IOException {
-		// Initialise Interpreter
-		this.interpreter = new ExtendedInterpreter(System.err, context);
-		// Construct extended context
-		ExtendedContext eContext = interpreter.getExtendedContext();
-		// Initialise by context
-		if(eContext.initialise(parent)) {
-			//
+		try {
+			// Initialise Interpreter
+			this.interpreter = new ExtendedInterpreter(System.err, parent, context);
+			// Construct extended context
+			ExtendedContext eContext = interpreter.getExtendedContext();
+			// Initialise by context
 			return check(parent, eContext, targets);
-		} else {
+		} catch (Interpreter.RuntimeError e) {
+			// Add appropriate syntax error to the syntactic item where the error arose.
+			ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
+			// Done
 			return false;
 		}
 	}
@@ -985,35 +987,6 @@ public class QuickCheck {
 			return timeoutMillis;
 		}
 
-		/**
-		 * Initialise a base stack frame from for this project, such that it can be used
-		 * to execute functions and methods within the project. This includes all
-		 * modules which this project depends upon.
-		 */
-		public boolean initialise(WyilFile context) throws IOException {
-			try {
-				// Load all relevant modules
-				frame.load(context);
-			} catch (Interpreter.RuntimeError e) {
-				// Add appropriate syntax error to the syntactic item where the error arose.
-				ErrorMessages.syntaxError(e.getElement(), e.getErrorCode());
-				// Done
-				return false;
-			}
-			// Load all dependencies
-//			for (Content.Source p : project.getPackages()) {
-//				// FIXME: is this the right way to determine the binary file from a given
-//				// package?
-//				List<Path.Entry<WyilFile>> entries = p.getRoot().get(Content.filter("**/*", WyilFile.ContentType));
-//				//
-//				for(Path.Entry<WyilFile> e : entries) {
-//					frame.load(e.read());
-//				}
-//			}
-			return true;
-		}
-
-
 		public int depth(Decl decl) {
 			Integer depth = depths.get(decl);
 			if(depth == null) {
@@ -1039,8 +1012,8 @@ public class QuickCheck {
 	private class ExtendedInterpreter extends Interpreter {
 		private final ExtendedContext context;
 
-		public ExtendedInterpreter(PrintStream debug, Context context) {
-			super(debug);
+		public ExtendedInterpreter(PrintStream debug, WyilFile target, Context context) {
+			super(debug, target);
 			this.context = new ExtendedContext(new CallStack(),context);
 		}
 

@@ -18,7 +18,7 @@ E722 main.whiley 10,10:17
 public method m()
 ensures old(var) == var:
 ---
-E705 main.whiley 11,10:17
+E701 main.whiley 10,3:5
 E717 main.whiley 3,7:41
 ====
 >>> main.whiley 5:6

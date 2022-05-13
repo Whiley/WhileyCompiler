@@ -62,7 +62,6 @@ import wyil.util.AbstractVisitor;
  *
  */
 public class Interpreter {
-
 	/**
 	 * Determines the underlying semantics used for this interpreter.
 	 */
@@ -75,6 +74,16 @@ public class Interpreter {
 	private final PrintStream debug;
 
 	/**
+	 * Set of loaded methods / functions which can be called.
+	 */
+	private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
+
+	/**
+	 * Defines the heap
+	 */
+	private final Heap globalHeap;
+
+	/**
 	 * The maximum permissable stack depth.
 	 */
 	private final int maxStackDepth = 32;
@@ -82,10 +91,72 @@ public class Interpreter {
 	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
 		this.semantics = new ConcreteSemantics();
+		this.callables = new HashMap<>();
+		this.globalHeap = new Heap();
+		//
+		for(WyilFile mod : modules) {
+			load(mod);
+		}
 	}
 
 	private enum Status {
 		RETURN, BREAK, CONTINUE, NEXT
+	}
+
+	/**
+	 * Load a given module and make sure that all static variables are properly
+	 * initialised.
+	 *
+	 * @param mid
+	 * @param frame
+	 */
+	private void load(WyilFile module) {
+		// Load all invokable items
+		for (Decl.Unit unit : module.getModule().getUnits()) {
+			for (Decl d : unit.getDeclarations()) {
+				switch (d.getOpcode()) {
+				case DECL_function:
+				case DECL_method:
+				case DECL_property:
+				case DECL_variant:
+					Decl.Callable decl = (Decl.Callable) d;
+					Map<String, Decl.Callable> map = callables.get(decl.getQualifiedName());
+					if (map == null) {
+						map = new HashMap<>();
+						callables.put(decl.getQualifiedName(), map);
+					}
+					// NOTE: must use canonical string here to ensure unique signature for lookup.
+					map.put(decl.getType().toCanonicalString(), decl);
+					break;
+				}
+			}
+		}
+		// Execute all static variable initialisers
+		for (Decl.Unit unit : module.getModule().getUnits()) {
+			for (Decl d : unit.getDeclarations()) {
+				switch (d.getOpcode()) {
+				case DECL_staticvar: {
+					Decl.StaticVariable decl = (Decl.StaticVariable) d;
+					if (globalHeap.read(decl.getQualifiedName()) == null) {
+						// Static variable has not been initialised yet, therefore force its
+						// initialisation.
+						RValue value = executeExpression(ANY_T, decl.getInitialiser(), new CallStack(), globalHeap);
+						// Check type invariants.
+						checkTypeInvariants(decl.getType(), value, new CallStack(), globalHeap, decl);
+						// Done.
+						globalHeap.write(decl.getQualifiedName(), value);
+					}
+					break;
+				}
+				}
+			}
+		}
+	}
+
+	public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
+		// NOTE: must use toCanonicalString() here in order to guarantee that we get the
+		// same string as at the declaration site.
+		return callables.get(name).get(signature.toCanonicalString());
 	}
 
 	/**
@@ -100,22 +171,7 @@ public class Interpreter {
 	 * @return
 	 */
 	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, RValue... args) {
-		return execute(name, signature, frame, new Heap(), args);
-	}
-
-	/**
-	 * Execute a function or method identified by a name and type signature with the
-	 * given arguments, producing a return value or null (if none). If the function
-	 * or method cannot be found, or the number of arguments is incorrect then an
-	 * exception is thrown.
-	 *
-	 * @param nid       The fully qualified identifier of the function or method
-	 * @param signature The exact type signature identifying the method.
-	 * @param args      The supplied arguments
-	 * @return
-	 */
-	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, Heap heap, RValue... args) {
-		return execute(name, signature, frame, heap, args, null);
+		return execute(name, signature, frame, globalHeap, args, null);
 	}
 
 	/**
@@ -133,7 +189,7 @@ public class Interpreter {
 	 */
 	public RValue execute(QualifiedName name, Type.Callable signature, CallStack frame, Heap heap, RValue[] args,
 			Syntactic.Item context) {
-		Decl.Callable lambda = frame.getCallable(name, signature);
+		Decl.Callable lambda = getCallable(name, signature);
 		if (lambda == null) {
 			throw new IllegalArgumentException("no function or method found: " + name + ", " + signature);
 		} else if (lambda.getParameters().size() != args.length) {
@@ -448,7 +504,7 @@ public class Interpreter {
 			EnclosingScope scope, Syntactic.Item context) {
 		Decl.StaticVariable decl = lval.getLink().getTarget();
 		//
-		frame.putStatic(decl.getQualifiedName(), rval);
+		heap.write(decl.getQualifiedName(), rval);
 	}
 
 	private void executeAssignTuple(Expr.TupleInitialiser lval, RValue rval, CallStack frame, Heap heap,
@@ -495,7 +551,7 @@ public class Interpreter {
 		case EXPR_staticvariable: {
 			Expr.StaticVariableAccess v = (Expr.StaticVariableAccess) lval;
 			Decl.StaticVariable d = v.getLink().getTarget();
-			checkTypeInvariants(d.getType(), frame.getStatic(d.getQualifiedName()), frame, heap, context);
+			checkTypeInvariants(d.getType(), heap.read(d.getQualifiedName()), frame, heap, context);
 			break;
 		}
 		case EXPR_tupleinitialiser: {
@@ -1180,13 +1236,13 @@ public class Interpreter {
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame, Heap heap) {
 		Decl.StaticVariable decl = expr.getLink().getTarget();
-		RValue v = frame.getStatic(decl.getQualifiedName());
+		RValue v = heap.read(decl.getQualifiedName());
 		if (v == null) {
 			// NOTE: it's possible to get here without the static variable having been
 			// initialised in the special case that we have just loaded a module.
 			frame = frame.enter(decl);
 			v = executeExpression(ANY_T, decl.getInitialiser(), frame, heap);
-			frame.putStatic(decl.getQualifiedName(), v);
+			heap.write(decl.getQualifiedName(), v);
 		}
 		return v;
 	}
@@ -1763,13 +1819,16 @@ public class Interpreter {
 	}
 
 	public final static class Heap extends ConcreteSemantics.RValue {
-		private ArrayList<RValue> values;
+		private final HashMap<QualifiedName, RValue> statics;
+		private final ArrayList<RValue> values;
 
 		public Heap() {
 			this.values = new ArrayList<>();
+			this.statics = new HashMap<>();
 		}
 
-		public Heap(Collection<RValue> values) {
+		public Heap(Map<QualifiedName, RValue> statics, Collection<RValue> values) {
+			this.statics = new HashMap<>(statics);
 			this.values = new ArrayList<>(values);
 		}
 
@@ -1791,13 +1850,21 @@ public class Interpreter {
 			return values.get(address);
 		}
 
+		public RValue read(QualifiedName name) {
+			return statics.get(name);
+		}
+
 		public RValue write(int address, RValue val) {
 			return values.set(address, val);
 		}
 
+		public RValue write(QualifiedName name, RValue val) {
+			return statics.put(name, val);
+		}
+
 		@Override
 		public Heap clone() {
-			return new Heap(values);
+			return new Heap(statics,values);
 		}
 
 		@Override
@@ -1809,16 +1876,12 @@ public class Interpreter {
 	public final class CallStack {
 		private CallStack parent;
 		private long timeout;
-		private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
-		private final HashMap<QualifiedName, RValue> statics;
 		private final HashMap<Identifier, RValue> locals;
 		private final Decl.Named context;
 
 		public CallStack() {
 			this.parent = null;
 			this.timeout = Long.MAX_VALUE;
-			this.callables = new HashMap<>();
-			this.statics = new HashMap<>();
 			this.locals = new HashMap<>();
 			this.context = null;
 		}
@@ -1832,8 +1895,6 @@ public class Interpreter {
 			this.timeout = parent.timeout;
 			this.context = context;
 			this.locals = locals;
-			this.statics = parent.statics;
-			this.callables = parent.callables;
 		}
 
 		public int depth() {
@@ -1858,24 +1919,6 @@ public class Interpreter {
 
 		public Map<Identifier, RValue> getLocals() {
 			return locals;
-		}
-
-		public Map<QualifiedName, RValue> getStatics() {
-			return statics;
-		}
-
-		public RValue getStatic(QualifiedName name) {
-			return statics.get(name);
-		}
-
-		public void putStatic(QualifiedName name, RValue value) {
-			statics.put(name, value);
-		}
-
-		public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
-			// NOTE: must use toCanonicalString() here in order to guarantee that we get the
-			// same string as at the declaration site.
-			return callables.get(name).get(signature.toCanonicalString());
 		}
 
 		public CallStack enter(Decl.Named<?> context) {
@@ -1906,19 +1949,6 @@ public class Interpreter {
 			// Reset parent
 			frame.parent = this.parent;
 			return frame;
-		}
-
-		/**
-		 * Load one or more modules into this CallStack.
-		 *
-		 * @param modules
-		 * @return
-		 */
-		public CallStack load(WyilFile... modules) {
-			for (int i = 0; i != modules.length; ++i) {
-				load(modules[i]);
-			}
-			return this;
 		}
 
 		public StackFrame[] toStackFrame() {
@@ -1968,55 +1998,6 @@ public class Interpreter {
 			}
 		}
 
-		/**
-		 * Load a given module and make sure that all static variables are properly
-		 * initialised.
-		 *
-		 * @param mid
-		 * @param frame
-		 */
-		private void load(WyilFile module) {
-			// Load all invokable items
-			for (Decl.Unit unit : module.getModule().getUnits()) {
-				for (Decl d : unit.getDeclarations()) {
-					switch (d.getOpcode()) {
-					case DECL_function:
-					case DECL_method:
-					case DECL_property:
-					case DECL_variant:
-						Decl.Callable decl = (Decl.Callable) d;
-						Map<String, Decl.Callable> map = callables.get(decl.getQualifiedName());
-						if (map == null) {
-							map = new HashMap<>();
-							callables.put(decl.getQualifiedName(), map);
-						}
-						// NOTE: must use canonical string here to ensure unique signature for lookup.
-						map.put(decl.getType().toCanonicalString(), decl);
-						break;
-					}
-				}
-			}
-			// Execute all static variable initialisers
-			for (Decl.Unit unit : module.getModule().getUnits()) {
-				for (Decl d : unit.getDeclarations()) {
-					switch (d.getOpcode()) {
-					case DECL_staticvar: {
-						Decl.StaticVariable decl = (Decl.StaticVariable) d;
-						if (!statics.containsKey(decl.getQualifiedName())) {
-							// Static variable has not been initialised yet, therefore force its
-							// initialisation.
-							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this, null);
-							// Check type invariants.
-							checkTypeInvariants(decl.getType(), value, this, null, decl);
-							// Done.
-							statics.put(decl.getQualifiedName(), value);
-						}
-						break;
-					}
-					}
-				}
-			}
-		}
 	}
 
 	/**
