@@ -1,7 +1,5 @@
 original.name="DoWhile_Invalid_7"
 js.execute.ignore=true
-boogie.timeout=5
-boogie.ignore=true
 ======
 >>> main.whiley
 type nat is (int x) where x >= 0

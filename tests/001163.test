@@ -1,6 +1,5 @@
 original.name="StaticVar_Invalid_13"
 js.compile.ignore=true
-boogie.ignore=true
 ======
 >>> main.whiley
 int var = -1
@@ -15,3 +14,8 @@ public export method test():
 ---
 E700 main.whiley 9,4:8
 E716 main.whiley 9,4:8
+=====
+>>> main.whiley 1:2
+type nat is (int x) where x >= 0
+nat var = 1
+---

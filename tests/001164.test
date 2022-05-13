@@ -9,3 +9,9 @@ public export method test():
     // arising prior to this method being called.    
     assert var == 0    
 ---
+E722 main.whiley 7,11:18
+=====
+>>> main.whiley 1:2
+type uint is (int x) where x >= 0
+uint var = 0
+---

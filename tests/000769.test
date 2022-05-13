@@ -1,7 +1,7 @@
 original.name="While_Valid_19"
 ======
 >>> main.whiley
-int SIZE = 5
+final int SIZE = 5
 
 public export method test() :
     int[][] components = [[]; SIZE]
