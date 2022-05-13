@@ -1,0 +1,26 @@
+=====
+>>> main.whiley
+public int var = 0
+
+public method m():
+   var = 2
+
+public export method test():
+   var = 1
+   assert var == 1
+   m()
+   assert var == 1
+---
+E705 main.whiley 10,10:17
+E722 main.whiley 10,10:17
+====
+>>> main.whiley 3:4
+public method m()
+ensures old(var) == var:
+---
+E705 main.whiley 11,10:17
+E717 main.whiley 3,7:41
+====
+>>> main.whiley 5:6
+   skip
+---

@@ -1,6 +1,4 @@
 original.name="StaticVar_Valid_14"
-boogie.ignore=true
-Whiley2Boogie.issue=138
 ======
 >>> main.whiley
 int var = 0

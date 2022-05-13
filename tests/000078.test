@@ -1,8 +1,7 @@
 original.name="Complex_Valid_4"
+boogie.timeout=120
 ======
 >>> main.whiley
-
-
 type BTree is null | {int item, BTree left, BTree right}
 
 function BTree() -> BTree:
@@ -50,5 +49,4 @@ public export method test() :
     assume contains(tree,8) == false
     assume contains(tree,1) == true
     assume contains(tree,9) == false
-
 ---

@@ -122,7 +122,7 @@ where |cards| == 52
 where all { i in 0..|cards|, j in 0..|cards| | (i != j) ==> (cards[i] != cards[j]) }
 
 // A real test of verifier performance!!
-Deck deck = [
+final Deck deck = [
         // Hearts
         TWO_HEARTS,
         THREE_HEARTS,

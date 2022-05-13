@@ -45,7 +45,7 @@ type Deck is (Card[] cards)
 where |cards| == 6
 
 // A real test of verifier performance!!
-Deck deck = [
+final Deck deck = [
         // Hearts
         TWO_HEARTS,
         THREE_HEARTS,
