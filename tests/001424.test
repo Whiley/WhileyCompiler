@@ -11,7 +11,7 @@ public export method test():
    assume r2
    bool r3 = f([1],-1)
 ---
-E710 main.whiley 3,25
+E710 main.whiley 3,22:25
 E727 main.whiley 3,22:25
 =====
 >>> main.whiley 2:2

@@ -11,5 +11,5 @@ public export method test():
     f([1,2],1)
     f([],1)
 ---
-E710 main.whiley 2,16:22
+E710 main.whiley 2,13:22
 E727 main.whiley 2,13:22

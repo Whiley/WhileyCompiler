@@ -1457,7 +1457,7 @@ public class Interpreter {
 		int start = executeExpression(INT_T, expr.getFirstOperand(), frame, heap).intValue();
 		int end = executeExpression(INT_T, expr.getSecondOperand(), frame, heap).intValue();
 		if (end < start) {
-			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr.getSecondOperand());
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_RANGE_FAILURE, frame, expr);
 		}
 		RValue[] elements = new RValue[end - start];
 		for (int i = start; i < end; ++i) {
