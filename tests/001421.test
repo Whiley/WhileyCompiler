@@ -1,0 +1,44 @@
+=====
+>>> main.whiley
+type u8 is (int n) where 0 <= n && n <= 255
+                                                  
+u8[] xs = [0]
+
+method m():
+   xs = [256]
+
+public export method test():
+   m()
+---
+E702 main.whiley 6,8:12
+E718 main.whiley 6,8:12
+=====
+>>> main.whiley 6:7
+   xs = [123,256]
+---
+E702 main.whiley 6,8:16
+E718 main.whiley 6,8:16
+=====
+>>> main.whiley 6:7
+   xs = [256,123]
+---
+E702 main.whiley 6,8:16
+E718 main.whiley 6,8:16
+=====
+>>> main.whiley 6:7
+   skip
+---
+=====
+>>> main.whiley 10:10
+   assert xs[0] == 0
+---
+E725 main.whiley 10,13
+=====
+>>> main.whiley 10:11
+   assert xs[0] >= 0 && xs[0] <= 254
+---
+E725 main.whiley 10,13
+=====
+>>> main.whiley 10:11
+   assert |xs| > 0 ==> (xs[0] >= 0 && xs[0] <= 255)
+---

@@ -1,0 +1,24 @@
+=====
+>>> main.whiley
+method f(int[] ls, int x) -> bool
+requires |ls| >= 1:
+    return all { i in 0..x | i >= |ls| || ls[i] >= 0 }
+
+public export method test():
+   bool r1 = f([1,2],0)
+   assume r1
+   bool r2 = f([1],0)
+   assume r2
+   bool r3 = f([1],-1)
+---
+E710 main.whiley 3,25
+E727 main.whiley 3,22:25
+=====
+>>> main.whiley 2:2
+requires x >= 0
+---
+E700 main.whiley 11,13:21
+E716 main.whiley 11,13:21
+=====
+>>> main.whiley 14:15
+---

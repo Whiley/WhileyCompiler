@@ -1,0 +1,38 @@
+=====
+>>> main.whiley
+type i8 is (int n) where -128 <= n && n <= 127
+                                                  
+i8 x = 0
+
+method m():
+   x = 128
+
+public export method test():
+   m()
+---
+E702 main.whiley 6,7:9
+E718 main.whiley 6,7:9
+=====
+>>> main.whiley 6:7
+   x = -129
+---
+E702 main.whiley 6,7:10
+E718 main.whiley 6,7:10
+=====
+>>> main.whiley 6:7
+   skip
+---
+=====
+>>> main.whiley 10:10
+   assert x == 0
+---
+E722 main.whiley 10,10:15
+=====
+>>> main.whiley 10:11
+   assert x >= -128 && x <= 126
+---
+E722 main.whiley 10,10:30
+=====
+>>> main.whiley 10:11
+   assert x >= -128 && x <= 127
+---

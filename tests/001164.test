@@ -20,6 +20,7 @@ E722 main.whiley 8,11:18
 >>> main.whiley 8:9
     assert var > 0
 ---
+E705 main.whiley 8,11:17
 E722 main.whiley 8,11:17
 =====
 >>> main.whiley 8:9

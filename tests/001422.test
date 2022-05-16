@@ -1,0 +1,19 @@
+=====
+>>> main.whiley
+type u8 is (int n) where 0 <= n && n <= 255
+                                                  
+u8[] xs = [0]
+
+method m():
+   skip
+
+public export method test():
+   m()
+   assert |xs| > 0
+---
+E722 main.whiley 10,10:17
+=====
+>>> main.whiley 2:4
+type u8s is (u8[] xs) where |xs| > 0
+u8s xs = [0]
+---
