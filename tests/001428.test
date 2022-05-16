@@ -12,4 +12,4 @@ public export method test():
     f(2,1)
 ---
 E710 main.whiley 2,16
-E727 main.whiley 2,13:22
+E727 main.whiley 2,13:16

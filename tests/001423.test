@@ -20,7 +20,7 @@ E727 main.whiley 3,22:25
 requires x < 1
 ---
 E700 main.whiley 13,13:20
-E716 main.whiley 14,13:20
+E716 main.whiley 13,13:20
 =====
 >>> main.whiley 14:15
 ---

@@ -1,0 +1,14 @@
+======
+>>> main.whiley
+function f(int[] xs) -> (int r)
+requires |xs| > 0:
+    //
+    for i in 0..|xs|:
+        xs = [0]
+    //
+    return 0
+
+public export method test():
+    assume f([1]) == 0
+    assume f([1,2]) == 0    
+---
