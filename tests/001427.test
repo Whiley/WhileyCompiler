@@ -1,0 +1,15 @@
+original.name="For_Invalid_11"
+js.execute.ignore=true
+======
+>>> main.whiley
+method f(int[] items, int x):
+    for i in x..1:
+        skip
+
+public export method test():
+    f([1],1)
+    f([1,2],1)
+    f([],2)
+---
+E710 main.whiley 2,16
+E727 main.whiley 2,13:22

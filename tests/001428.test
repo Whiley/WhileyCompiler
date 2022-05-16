@@ -1,0 +1,15 @@
+original.name="For_Invalid_11"
+js.execute.ignore=true
+======
+>>> main.whiley
+method f(int x, int y):
+    for i in x..y:
+        skip
+
+public export method test():
+    f(1,2)
+    f(1,1)
+    f(2,1)
+---
+E710 main.whiley 2,16
+E727 main.whiley 2,13:22
