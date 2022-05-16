@@ -92,8 +92,9 @@ public class TestManager {
 						return Result.INVALIDIGNORED;
 					} else if(diff.isEmpty()) {
 						// Stage completed successfully
-						if(actual.length > 0) {
-							// Errors have been produced, so we cannot continue with this frame.
+						if(actual.length > 0 && stage.required()) {
+							// Errors have been produced and this stage is required, so we cannot continue
+							// with this frame.
 							break;
 						}
 					} else if(result.ignored) {

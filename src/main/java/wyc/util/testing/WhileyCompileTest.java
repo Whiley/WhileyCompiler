@@ -117,4 +117,9 @@ public class WhileyCompileTest implements TestStage {
 		String nameStr = unit.getName().toString().replace("::", "/");
 		return Trie.fromString(nameStr);
 	}
+
+	@Override
+	public boolean required() {
+		return true;
+	}
 }

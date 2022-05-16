@@ -130,4 +130,9 @@ public class WhileyExecuteTest implements TestStage {
 			throw e;
 		}
 	}
+
+	@Override
+	public boolean required() {
+		return false;
+	}
 }

@@ -52,4 +52,12 @@ public interface TestStage {
 	 * @return
 	 */
 	public TestFile.Error[] filter(TestFile.Error[] errors);
+
+	/**
+	 * If true, then subsequent stages will not run if this stage produces errors
+	 * (regardless of whether or not that was expected).
+	 *
+	 * @return
+	 */
+	public boolean required();
 }
