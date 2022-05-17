@@ -1,0 +1,11 @@
+====
+>>> main.whiley
+function f(int x) -> (int r)
+ensures r == (x * x):
+   return x ** 2
+   
+public export method test():
+   assert f(1) == 1
+   assert f(2) == 4
+   assert f(3) == 9
+---
