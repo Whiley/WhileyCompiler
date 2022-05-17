@@ -190,6 +190,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	public static final int EXPR_integermultiplication = 202; // <THREE operands, ZERO>
 	public static final int EXPR_integerdivision = 203; // <THREE operands, ZERO>
 	public static final int EXPR_integerremainder = 204; // <THREE operands, ZERO>
+	public static final int EXPR_integerexponent = 205; // <THREE operands, ZERO>
 	public static final int EXPR_bitwisenot = 207; // <TWO operands, ZERO>
 	public static final int EXPR_bitwiseand = 208; // <TWO operands, ZERO>
 	public static final int EXPR_bitwiseor = 209; // <TWO operands, ZERO>
@@ -3935,6 +3936,47 @@ public class WyilFile extends AbstractCompilationUnit {
 		}
 
 		/**
+		 * Represents an integer <i>exponent expression</i> of the form
+		 * "<code>e1 ** e2</code>" where <code>e1</code> and <code>e2</code> are the
+		 * <i>operand expressions</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class IntegerExponent extends AbstractExpr implements BinaryOperator {
+			public IntegerExponent(Type type, Expr lhs, Expr rhs) {
+				super(EXPR_integerexponent, type, lhs, rhs);
+			}
+
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) super.get(1);
+			}
+
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) super.get(2);
+			}
+
+			@Override
+			public Expr clone(Syntactic.Item[] operands) {
+				return new IntegerExponent((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+			}
+
+			@Override
+			public String toString() {
+				return " ** ";
+			}
+
+			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.THREE, Data.ZERO, "EXPR_integermultiplication") {
+				@Override
+				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
+					return new IntegerExponent((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				}
+			};
+		}
+
+		/**
 		 * Represents an integer <i>negation expression</i> of the form
 		 * "<code>-e</code>" where <code>e</code> is the <i>operand expression</i>.
 		 *
@@ -7409,6 +7451,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	public static final int RUNTIME_NEGATIVE_RANGE_FAILURE = 710;
 	public static final int RUNTIME_DIVIDEBYZERO_FAILURE = 711;
 	public static final int RUNTIME_FAULT = 712;
+	public static final int RUNTIME_NEGATIVE_EXPONENT_FAILURE = 713;
 	// Verification Subset
 	public static final int STATIC_PRECONDITION_FAILURE = 716;
 	public static final int STATIC_POSTCONDITION_FAILURE = 717;
@@ -7424,6 +7467,7 @@ public class WyilFile extends AbstractCompilationUnit {
 	public static final int STATIC_NEGATIVE_RANGE_FAILURE = 727;
 	public static final int STATIC_DIVIDEBYZERO_FAILURE = 728;
 	public static final int STATIC_FAULT = 729;
+	public static final int STATIC_NEGATIVE_EXPONENT_FAILURE = 730;
 
 	// ==============================================================================
 	//
@@ -7673,7 +7717,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		//
 		builder.add("EXPR", "integerdivision", Expr.IntegerDivision.DESCRIPTOR_0);
 		builder.add("EXPR", "integerremainder", Expr.IntegerRemainder.DESCRIPTOR_0);
-		builder.add("EXPR", null, null);
+		builder.add("EXPR", "integerexponent", Expr.IntegerExponent.DESCRIPTOR_0);
 		builder.add("EXPR", null, null);
 		// Bitwise Expressions
 		builder.add("EXPR", "bitwisenot", Expr.BitwiseComplement.DESCRIPTOR_0);

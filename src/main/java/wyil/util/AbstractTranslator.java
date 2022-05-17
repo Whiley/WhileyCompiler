@@ -486,6 +486,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
@@ -583,6 +584,9 @@ public abstract class AbstractTranslator<D, S, E> {
 		}
 		case EXPR_integerremainder: {
 			return visitIntegerRemainder((Expr.IntegerRemainder) expr);
+		}
+		case EXPR_integerexponent: {
+			return visitIntegerExponent((Expr.IntegerExponent) expr);
 		}
 		case EXPR_bitwiseshl:
 			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr);
@@ -787,6 +791,12 @@ public abstract class AbstractTranslator<D, S, E> {
 		E lhs = visitExpression(expr.getFirstOperand());
 		E rhs = visitExpression(expr.getSecondOperand());
 		return constructIntegerRemainder(expr,lhs,rhs);
+	}
+
+	public E visitIntegerExponent(Expr.IntegerExponent expr) {
+		E lhs = visitExpression(expr.getFirstOperand());
+		E rhs = visitExpression(expr.getSecondOperand());
+		return constructIntegerExponent(expr,lhs,rhs);
 	}
 
 	public E visitIs(Expr.Is expr) {
@@ -1059,6 +1069,8 @@ public abstract class AbstractTranslator<D, S, E> {
 	public abstract E constructIntegerDivision(Expr.IntegerDivision expr, E lhs, E rhs);
 
 	public abstract E constructIntegerRemainder(Expr.IntegerRemainder expr, E lhs, E rhs);
+
+	public abstract E constructIntegerExponent(Expr.IntegerExponent expr, E lhs, E rhs);
 
 	public abstract E constructIs(Expr.Is expr, E operand);
 

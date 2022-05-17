@@ -405,6 +405,7 @@ public abstract class AbstractConsumer<T> {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
@@ -524,6 +525,9 @@ public abstract class AbstractConsumer<T> {
 			break;
 		case EXPR_integerremainder:
 			visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
+			break;
+		case EXPR_integerexponent:
+			visitIntegerExponent((Expr.IntegerExponent) expr, data);
 			break;
 		case EXPR_bitwiseshl:
 			visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, data);
@@ -717,6 +721,11 @@ public abstract class AbstractConsumer<T> {
 	}
 
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr, T data) {
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
+	}
+
+	public void visitIntegerExponent(Expr.IntegerExponent expr, T data) {
 		visitExpression(expr.getFirstOperand(), data);
 		visitExpression(expr.getSecondOperand(), data);
 	}

@@ -84,6 +84,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.Shreak;
 import static wyc.io.WhileyFileLexer.Token.Kind.Skip;
 import static wyc.io.WhileyFileLexer.Token.Kind.Some;
 import static wyc.io.WhileyFileLexer.Token.Kind.Star;
+import static wyc.io.WhileyFileLexer.Token.Kind.StarStar;
 import static wyc.io.WhileyFileLexer.Token.Kind.Subset;
 import static wyc.io.WhileyFileLexer.Token.Kind.SubsetEquals;
 import static wyc.io.WhileyFileLexer.Token.Kind.Superset;
@@ -1744,6 +1745,11 @@ public class WhileyFileParser {
 			LVal lval = parseLVal(start, scope);
 			return annotateSourceLocation(new Expr.Dereference(Type.Void, lval), start);
 		}
+		case StarStar: {
+			match(StarStar);
+			LVal lval = parseLVal(start, scope);
+			return annotateSourceLocation(new Expr.Dereference(Type.Void, new Expr.Dereference(Type.Void, lval)), start);
+		}
 		default:
 			syntaxError(WyilFile.UNKNOWN_LVAL, lookahead);
 			return null; // dead-code
@@ -2220,7 +2226,7 @@ public class WhileyFileParser {
 		int start = index;
 		Expr lhs = parseAccessExpression(scope, terminated);
 
-		Token lookahead = tryAndMatch(terminated, Plus, Minus, Star, RightSlash, Percent);
+		Token lookahead = tryAndMatch(terminated, Plus, Minus, Star, StarStar, RightSlash, Percent);
 		//
 		if(lookahead != null) {
 			do {
@@ -2234,6 +2240,9 @@ public class WhileyFileParser {
 					break;
 				case Star:
 					lhs = new Expr.IntegerMultiplication(Type.Void, lhs, rhs);
+					break;
+				case StarStar:
+					lhs = new Expr.IntegerExponent(Type.Void, lhs, rhs);
 					break;
 				case RightSlash:
 					lhs = new Expr.IntegerDivision(Type.Void, lhs, rhs);
@@ -2558,6 +2567,8 @@ public class WhileyFileParser {
 				return parseNewExpression(scope, terminated);
 			}
 			return parseDereferenceExpression(scope, terminated);
+		case StarStar:
+			return parseDereferenceDereferenceExpression(scope, terminated);
 		case Tilde:
 			return parseBitwiseComplementExpression(scope, terminated);
 		case Ampersand:
@@ -3250,6 +3261,13 @@ public class WhileyFileParser {
 		match(Star);
 		Expr expression = parseTermExpression(scope, terminated);
 		return annotateSourceLocation(new Expr.Dereference(Type.Void, expression), start);
+	}
+
+	private Expr parseDereferenceDereferenceExpression(EnclosingScope scope, boolean terminated) {
+		int start = index;
+		match(StarStar);
+		Expr expression = parseTermExpression(scope, terminated);
+		return annotateSourceLocation(new Expr.Dereference(Type.Void, new Expr.Dereference(Type.Void, expression)), start);
 	}
 
 	/**

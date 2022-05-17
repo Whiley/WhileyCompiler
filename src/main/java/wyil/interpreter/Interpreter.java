@@ -1013,6 +1013,9 @@ public class Interpreter {
 		case EXPR_integerremainder:
 			val = executeIntegerRemainder((Expr.IntegerRemainder) expr, frame, heap);
 			break;
+		case EXPR_integerexponent:
+			val = executeIntegerExponent((Expr.IntegerExponent) expr, frame, heap);
+			break;
 		case EXPR_integerlessthan:
 			val = executeIntegerLessThan((Expr.IntegerLessThan) expr, frame, heap);
 			break;
@@ -1287,6 +1290,13 @@ public class Interpreter {
 		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
 		checkDivisionByZero(rhs, frame, expr.getSecondOperand());
 		return lhs.remainder(rhs);
+	}
+
+	public RValue executeIntegerExponent(Expr.IntegerExponent expr, CallStack frame, Heap heap) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getFirstOperand(), frame, heap);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame, heap);
+		checkNonNegative(rhs, frame, expr.getSecondOperand());
+		return lhs.pow(rhs);
 	}
 
 	public RValue executeEqual(Expr.Equal expr, CallStack frame, Heap heap) {
@@ -1630,6 +1640,12 @@ public class Interpreter {
 	public void checkDivisionByZero(RValue.Int value, CallStack frame, Syntactic.Item context) {
 		if (value.intValue() == 0) {
 			throw new RuntimeError(WyilFile.RUNTIME_DIVIDEBYZERO_FAILURE, frame, context);
+		}
+	}
+
+	public void checkNonNegative(RValue.Int value, CallStack frame, Syntactic.Item context) {
+		if (value.intValue() < 0) {
+			throw new RuntimeError(WyilFile.RUNTIME_NEGATIVE_EXPONENT_FAILURE, frame, context);
 		}
 	}
 
