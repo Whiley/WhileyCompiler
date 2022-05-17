@@ -1,3 +1,5 @@
+js.execute.ignore=true
+Whiley2JavaScript.issue=40
 =====
 >>> main.whiley
 type u8 is (int n) where 0 <= n && n <= 255

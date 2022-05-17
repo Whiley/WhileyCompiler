@@ -1,3 +1,4 @@
+js.compile.ignore=true
 =====
 >>> main.whiley
 public int var = 0

@@ -1,3 +1,4 @@
+js.compile.ignore=true
 =====
 >>> main.whiley
 type State is { int[] mem }

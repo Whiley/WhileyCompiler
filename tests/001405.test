@@ -1,3 +1,4 @@
+js.compile.ignore=true
 =====
 >>> main.whiley
 type Msg is {int kind, int[] data}

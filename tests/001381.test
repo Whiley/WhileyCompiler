@@ -1,3 +1,4 @@
+js.compile.ignore=true
 =====
 >>> main.whiley
 function setz(int[] items, int x) -> (int[] r)

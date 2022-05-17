@@ -69,6 +69,7 @@ public class TestManager {
 			int index = 0;
 			HashMap<Trie, TextFile> state = new HashMap<>();
 			for (TestFile.Frame f : tf) {
+				boolean isLastFrame = ((index+1) == tf.size());
 				// Apply frame to current state
 				f.apply(state);
 				// Determine frame directory
@@ -86,7 +87,7 @@ public class TestManager {
 					// Check we got what we expected.
 					Diff diff = compareReportedErrors(expected, actual);
 					//
-					if(diff.isEmpty() && result.ignored) {
+					if(diff.isEmpty() && result.ignored && isLastFrame) {
 						// In this case, the stage appears to have run correctly but is ignored. This
 						// suggests it doesn't need to be ignored any more.
 						return Result.INVALIDIGNORED;

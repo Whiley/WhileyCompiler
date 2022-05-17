@@ -1,3 +1,5 @@
+js.execute.ignore=true
+Whiley2JavaScript.issue=40
 =====
 >>> main.whiley
 type r8 is {int n} where -128 <= n && n <= 127

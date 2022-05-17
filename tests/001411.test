@@ -1,3 +1,5 @@
+js.compile.ignore=true
+js.execute.ignore=true
 =====
 >>> main.whiley
 type Point is {int x, int y}

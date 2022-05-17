@@ -1,3 +1,4 @@
+js.execute.ignore=true
 =====
 >>> main.whiley
 method f(int[] ls, int x) -> bool

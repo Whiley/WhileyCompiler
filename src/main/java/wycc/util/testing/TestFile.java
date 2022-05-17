@@ -47,6 +47,10 @@ public class TestFile implements Iterable<TestFile.Frame> {
 		return config.keySet();
 	}
 
+	public int size() {
+		return frames.length;
+	}
+
 	@Override
 	public Iterator<Frame> iterator() {
 		return Arrays.stream(frames).iterator();
