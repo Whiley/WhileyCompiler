@@ -319,6 +319,7 @@ public class ErrorMessages {
 	public static final Message RUNTIME_NEGATIVE_RANGE_FAILURE = new StackTraceMessage("negative array range");
 	public static final Message RUNTIME_DIVIDEBYZERO_FAILURE = new StackTraceMessage("division by zero");
 	public static final Message RUNTIME_FAULT = new StackTraceMessage("runtime fault");
+	public static final Message RUNTIME_NEGATIVE_EXPONENT_FAILURE = new StackTraceMessage("negative exponent");
 
 	public static final Message STATIC_PRECONDITION_FAILURE = new MultiPartMessage(
 			"precondition may not be satisfied ");
@@ -342,6 +343,7 @@ public class ErrorMessages {
 	public static final Message STATIC_NEGATIVE_RANGE_FAILURE = new MultiPartMessage("possible negative array range ");
 	public static final Message STATIC_DIVIDEBYZERO_FAILURE = new MultiPartMessage("possible division by zero ");
 	public static final Message STATIC_FAULT = new MultiPartMessage("possible panic ");
+	public static final Message STATIC_NEGATIVE_EXPONENT_FAILURE = new MultiPartMessage("possible negative exponent ");
 	// ========================================================================
 	// Misc
 	// ========================================================================
@@ -464,7 +466,7 @@ public class ErrorMessages {
 			RUNTIME_NEGATIVE_RANGE_FAILURE, // 710;
 			RUNTIME_DIVIDEBYZERO_FAILURE, // 711;
 			RUNTIME_FAULT, // 712
-			null, // 713
+			RUNTIME_NEGATIVE_EXPONENT_FAILURE, // 713
 			null, // 714
 			null, // 715
 			STATIC_PRECONDITION_FAILURE, // 716
@@ -481,6 +483,7 @@ public class ErrorMessages {
 			STATIC_NEGATIVE_RANGE_FAILURE, // 727
 			STATIC_DIVIDEBYZERO_FAILURE, // 728
 			STATIC_FAULT, // 729
+			STATIC_NEGATIVE_EXPONENT_FAILURE
 		}
 	};
 

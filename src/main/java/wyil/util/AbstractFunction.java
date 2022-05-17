@@ -401,6 +401,7 @@ public abstract class AbstractFunction<P,R> {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
@@ -492,6 +493,8 @@ public abstract class AbstractFunction<P,R> {
 			return visitIntegerDivision((Expr.IntegerDivision) expr, data);
 		case EXPR_integerremainder:
 			return visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
+		case EXPR_integerexponent:
+			return visitIntegerExponent((Expr.IntegerExponent) expr, data);
 		case EXPR_bitwiseshl:
 			return visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, data);
 		case EXPR_bitwiseshr:
@@ -695,6 +698,12 @@ public abstract class AbstractFunction<P,R> {
 	}
 
 	public R visitIntegerRemainder(Expr.IntegerRemainder expr, P data) {
+		visitExpression(expr.getFirstOperand(), data);
+		visitExpression(expr.getSecondOperand(), data);
+		return null;
+	}
+
+	public R visitIntegerExponent(Expr.IntegerExponent expr, P data) {
 		visitExpression(expr.getFirstOperand(), data);
 		visitExpression(expr.getSecondOperand(), data);
 		return null;

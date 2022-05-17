@@ -1405,6 +1405,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 			return pushIntegerOperator(var, (Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_bitwisenot:
 			return pushBitwiseOperator(var, (Expr.UnaryOperator) expression, typing, environment);
@@ -2016,6 +2017,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 			return pullIntegerOperator((Expr.BinaryOperator) expression, typing, environment);
 		case EXPR_bitwisenot:
 			return pullBitwiseOperator((Expr.UnaryOperator) expression, typing, environment);

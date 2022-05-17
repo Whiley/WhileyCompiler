@@ -481,6 +481,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 				return new RValue.Int(value.remainder(rhs.value));
 			}
 
+			public RValue.Int pow(AbstractSemantics.RValue.Int _rhs) {
+				RValue.Int rhs = (RValue.Int) _rhs;
+				return new RValue.Int(value.pow(rhs.value.intValueExact()));
+			}
+
 			@Override
 			public RValue.Bool lessThan(AbstractSemantics.RValue.Int _rhs) {
 				RValue.Int rhs = (RValue.Int) _rhs;

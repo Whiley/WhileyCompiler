@@ -411,6 +411,7 @@ public abstract class AbstractVisitor {
 		case EXPR_integermultiplication:
 		case EXPR_integerdivision:
 		case EXPR_integerremainder:
+		case EXPR_integerexponent:
 		case EXPR_bitwiseshl:
 		case EXPR_bitwiseshr:
 		case EXPR_arrayaccess:
@@ -530,6 +531,9 @@ public abstract class AbstractVisitor {
 			break;
 		case EXPR_integerremainder:
 			visitIntegerRemainder((Expr.IntegerRemainder) expr);
+			break;
+		case EXPR_integerexponent:
+			visitIntegerExponent((Expr.IntegerExponent) expr);
 			break;
 		case EXPR_bitwiseshl:
 			visitBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr);
@@ -723,6 +727,11 @@ public abstract class AbstractVisitor {
 	}
 
 	public void visitIntegerRemainder(Expr.IntegerRemainder expr) {
+		visitExpression(expr.getFirstOperand());
+		visitExpression(expr.getSecondOperand());
+	}
+
+	public void visitIntegerExponent(Expr.IntegerExponent expr) {
 		visitExpression(expr.getFirstOperand());
 		visitExpression(expr.getSecondOperand());
 	}
