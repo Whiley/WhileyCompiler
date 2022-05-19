@@ -2,10 +2,10 @@ original.name="Old_Invalid_9"
 ======
 >>> main.whiley
 property broken(&int p) -> (bool r):
-    *p == old(*p)
+    return *p == old(*p)
 
 method m(&int x):
     //
     assert broken(x)
 ---
-E320 main.whiley 2,10:12
+E320 main.whiley 2,17:19

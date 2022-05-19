@@ -3,9 +3,9 @@ js.execute.ignore=true
 ======
 >>> main.whiley
 property nat(int x) -> bool:
-   x >= 0
+   return x >= 0
 property pos(int x) -> bool:
-   x > 0
+   return x > 0
 
 type nat is (int x) where nat(x)
 type pos is (int x) where pos(x)

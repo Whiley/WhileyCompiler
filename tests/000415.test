@@ -2,10 +2,10 @@ original.name="Property_Valid_2"
 ======
 >>> main.whiley
 property nat_a(int x) -> (bool r):
-    x >= 0
+    return x >= 0
 
 property nat_b(int x) -> (bool r):
-    x >= 0
+    return x >= 0
 
 function id(int x) -> (int y)
 requires nat_a(x)

@@ -6,10 +6,10 @@ type Inc is { int rd }
 type AddC is { int rd, int c }
 
 property exec(State st, Inc insn) -> (State ns):
-   st{mem:=st.mem[insn.rd := st.mem[insn.rd] + 1]}
+   return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + 1]}
 
 property exec(State st, AddC insn) -> (State ns):
-   st{mem:=st.mem[insn.rd := st.mem[insn.rd] + insn.c]}
+   return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + insn.c]}
 
 // bisimulation
 method bisim(State st, int reg)

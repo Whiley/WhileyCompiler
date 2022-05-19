@@ -4,8 +4,6 @@ original.name="Public_Invalid_10"
 type Hidden is (int x) where x >= 5
 
 public property f(Hidden x) -> (bool r):
-    x == x
-
-
+    return x == x
 ---
 E411 main.whiley 3,18:23

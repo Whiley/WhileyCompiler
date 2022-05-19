@@ -5,7 +5,7 @@ boogie.ignore=true
 type LinkedList is null | &{ int data, LinkedList next }
 
 property acyclic(LinkedList l) -> (bool r):
-   l is null || acyclic(l->next)
+   return l is null || acyclic(l->next)
 
 method nop(LinkedList l)
 requires acyclic(l):

@@ -509,9 +509,8 @@ public class WhileyFileParser {
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		Expr body = parseExpression(scope, false);
-		Stmt.Block block = new Stmt.Block(new Stmt.Return(body));
-		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, block), start);
+		Stmt.Block body = parseBlock(scope, Context.PROPERTY);
+		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, body), start);
 	}
 
 	private Decl.Variant parseVariantDeclaration(Tuple<Modifier> modifiers) {
@@ -842,48 +841,51 @@ public class WhileyFileParser {
 		Token lookahead = tokens.get(index);
 
 		// First, attempt to parse the easy statement forms.
-
-		switch (lookahead.kind) {
-		case Assert:
-			return parseAssertStatement(scope);
-		case Assume:
-			return parseAssumeStatement(scope);
-		case Break:
-			return parseBreakStatement(scope);
-		case Continue:
-			return parseContinueStatement(scope);
-		case Do:
-			return parseDoWhileStatement(scope);
-		case Debug:
-			return parseDebugStatement(scope);
-		case Fail:
-			return parseFailStatement(scope);
-		case For:
-			return parseForStatement(scope);
-		case If:
-			return parseIfStatement(scope);
-		case Return:
+		if(scope.getContext() == Context.PROPERTY) {
 			return parseReturnStatement(scope);
-		case While:
-			return parseWhileStatement(scope);
-		case Skip:
-			return parseSkipStatement(scope);
-		case Switch:
-			return parseSwitchStatement(scope);
-		default:
-			// fall through to the more difficult cases
+		} else {
+			switch (lookahead.kind) {
+			case Assert:
+				return parseAssertStatement(scope);
+			case Assume:
+				return parseAssumeStatement(scope);
+			case Break:
+				return parseBreakStatement(scope);
+			case Continue:
+				return parseContinueStatement(scope);
+			case Do:
+				return parseDoWhileStatement(scope);
+			case Debug:
+				return parseDebugStatement(scope);
+			case Fail:
+				return parseFailStatement(scope);
+			case For:
+				return parseForStatement(scope);
+			case If:
+				return parseIfStatement(scope);
+			case Return:
+				return parseReturnStatement(scope);
+			case While:
+				return parseWhileStatement(scope);
+			case Skip:
+				return parseSkipStatement(scope);
+			case Switch:
+				return parseSwitchStatement(scope);
+			default:
+				// fall through to the more difficult cases
+			}
+			// At this point, we have three possibilities remaining: variable
+			// declaration, invocation, assignment, or a named block.
+			// The latter one can be detected easily as it is just an identifier
+			// followed by a colon. To disambiguate the remaining cases, we
+			// first determine whether or not what follows *must* be parsed as a
+			// type (i.e. parsing it as an expression would fail). If so, then it
+			// must be a variable declaration that follows. Otherwise, it can still
+			// be *any* of the three forms, but we definitely have an
+			// expression-like thing at this point. Therefore, we parse that
+			// expression and see what this gives and/or what follows...
+			return parseHeadlessStatement(scope);
 		}
-		// At this point, we have three possibilities remaining: variable
-		// declaration, invocation, assignment, or a named block.
-		// The latter one can be detected easily as it is just an identifier
-		// followed by a colon. To disambiguate the remaining cases, we
-		// first determine whether or not what follows *must* be parsed as a
-		// type (i.e. parsing it as an expression would fail). If so, then it
-		// must be a variable declaration that follows. Otherwise, it can still
-		// be *any* of the three forms, but we definitely have an
-		// expression-like thing at this point. Therefore, we parse that
-		// expression and see what this gives and/or what follows...
-		return parseHeadlessStatement(scope);
 	}
 
 	/**
@@ -4750,6 +4752,7 @@ public class WhileyFileParser {
 		LOOPINVARIANT,
 		METHOD_POSTCONDITION,
 		VARIANT,
+		PROPERTY,
 		OTHER
 	}
 

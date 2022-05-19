@@ -4,7 +4,7 @@ original.name="DoWhile_Invalid_8"
 type pos is (int x) where x >= 1
 
 property sorted(int[] arr, int n) -> bool:
-   all { i in 1..n | arr[i-1] < arr[i] }
+   return all { i in 1..n | arr[i-1] < arr[i] }
 
 function bubbleSort(int[] items) -> (int[] result)
 // Resulting array is sorted
