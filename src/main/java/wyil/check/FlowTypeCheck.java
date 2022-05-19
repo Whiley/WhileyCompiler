@@ -300,8 +300,11 @@ public class FlowTypeCheck implements Compiler.Check {
 	public void checkPropertyDeclaration(Decl.Property d) {
 		// Construct initial environment
 		Environment environment = new Environment();
-		// Check invariant (i.e. requires clauses) provided.
-		checkExpression(d.getBody(), d.getType().getReturn(), true, environment);
+		// Create scope representing this declaration
+		EnclosingScope scope = new FunctionOrMethodOrPropertyScope(d);
+		// Check type information throughout all statements in body.
+		checkBlock(d.getBody(), environment, scope);
+		// checkExpression(d.getBody(), d.getType().getReturn(), true, environment);
 	}
 
 	public void checkVariantDeclaration(Decl.Variant d) {
@@ -681,7 +684,7 @@ public class FlowTypeCheck implements Compiler.Check {
 		// Determine the set of return types for the enclosing function or
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
-		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodOrPropertyScope.class).getDeclaration();
+		Decl.Callable fm = scope.getEnclosingScope(FunctionOrMethodOrPropertyScope.class).getDeclaration();
 		Type type = fm.getType().getReturn();
 		// Type check the operand for the return statement (if applicable)
 		if (stmt.hasReturn() && type instanceof Type.Void) {
@@ -3608,14 +3611,14 @@ public class FlowTypeCheck implements Compiler.Check {
 	 *
 	 */
 	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
-		private final Decl.FunctionOrMethod declaration;
+		private final Decl.Callable declaration;
 
-		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
+		public FunctionOrMethodOrPropertyScope(Decl.Callable declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Decl.FunctionOrMethod getDeclaration() {
+		public Decl.Callable getDeclaration() {
 			return declaration;
 		}
 

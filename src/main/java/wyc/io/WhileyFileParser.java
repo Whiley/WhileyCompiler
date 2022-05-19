@@ -510,7 +510,8 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Expr body = parseExpression(scope, false);
-		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, body), start);
+		Stmt.Block block = new Stmt.Block(new Stmt.Return(body));
+		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, block), start);
 	}
 
 	private Decl.Variant parseVariantDeclaration(Tuple<Modifier> modifiers) {

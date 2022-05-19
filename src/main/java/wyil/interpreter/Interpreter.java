@@ -94,7 +94,7 @@ public class Interpreter {
 		this.callables = new HashMap<>();
 		this.globalHeap = new Heap();
 		//
-		for(WyilFile mod : modules) {
+		for (WyilFile mod : modules) {
 			load(mod);
 		}
 	}
@@ -195,7 +195,7 @@ public class Interpreter {
 		} else if (lambda.getParameters().size() != args.length) {
 			throw new IllegalArgumentException(
 					"incorrect number of arguments: " + lambda.getName() + ", " + lambda.getType());
-		} else if(frame.depth() >= maxStackDepth) {
+		} else if (frame.depth() >= maxStackDepth) {
 			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, context);
 		}
 		// Enter a new frame for executing this callable item
@@ -230,12 +230,12 @@ public class Interpreter {
 				// interpreter.
 				throw new IllegalArgumentException(
 						"no function or method body found: " + lambda.getQualifiedName() + " : " + lambda.getType());
-			} else if(fm instanceof Decl.Method) {
+			} else if (fm instanceof Decl.Method) {
 				// Stash the prestate as it is
 				frame.putLocal(OLD, heap.clone());
 			}
 			// Execute the method or function body
-			executeBlock(fm.getBody(), frame, heap, new FunctionOrMethodScope(fm));
+			executeBlock(fm.getBody(), frame, heap, new CallableScope(fm));
 			// Restore original parameter values
 			extractParameters(frame, args, fm);
 			// Check the postcondition holds
@@ -248,15 +248,11 @@ public class Interpreter {
 		} else if (lambda instanceof Decl.Property) {
 			Decl.Property p = (Decl.Property) lambda;
 			Type type = p.getType().getReturn();
-			Expr body = p.getBody();
-			// Execute return expressions
-			RValue value = executeExpression(ANY_T, body, frame, heap);
-			// Check type invariants
-			checkTypeInvariants(type, value, frame, heap, body);
-			// Done
-			return value;
-		}
-		else {
+			// Execute the method or function body
+			executeBlock(p.getBody(), frame, heap, new CallableScope(p));
+			// Extract the return values
+			return packReturns(frame, lambda);
+		} else {
 			Decl.Variant p = (Decl.Variant) lambda;
 			Tuple<Expr> invariant = p.getInvariant();
 			// Evaluate clauses of property, and terminate early as soon as one doesn't
@@ -291,7 +287,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue packReturns(CallStack frame, Decl.Callable decl) {
-		if (decl instanceof Decl.Property || decl instanceof Decl.Variant) {
+		if (decl instanceof Decl.Variant) {
 			return RValue.True;
 		} else {
 			Tuple<Decl.Variable> returns = decl.getReturns();
@@ -838,9 +834,9 @@ public class Interpreter {
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		FunctionOrMethodScope enclosingScope = scope.getEnclosingScope(FunctionOrMethodScope.class);
+		CallableScope enclosingScope = scope.getEnclosingScope(CallableScope.class);
 		// Extract relevant information
-		Decl.FunctionOrMethod context = enclosingScope.getContext();
+		Decl.Callable context = enclosingScope.getContext();
 		Tuple<Decl.Variable> returns = context.getReturns();
 		Type.Callable type = context.getType();
 		if (stmt.hasReturn()) {
@@ -1500,7 +1496,7 @@ public class Interpreter {
 		// Extract prestate (if present)
 		Heap oldHeap = (Heap) frame.getLocal(OLD);
 		//
-		if(oldHeap == null) {
+		if (oldHeap == null) {
 			throw new RuntimeException("internal failure --- invalid old heap");
 		}
 		//
@@ -1513,7 +1509,7 @@ public class Interpreter {
 		//
 		int address = ref.deref();
 		// Sanity check
-		if(address >= 0 && address < heap.size()) {
+		if (address >= 0 && address < heap.size()) {
 			return heap.read(address);
 		} else {
 			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, expr.getOperand());
@@ -1697,7 +1693,8 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkPrecondition(int code, CallStack frame, Heap heap, Tuple<Expr> invariants, Syntactic.Item context) {
+	public void checkPrecondition(int code, CallStack frame, Heap heap, Tuple<Expr> invariants,
+			Syntactic.Item context) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			Expr invariant = invariants.get(i);
 			// Execute invariant
@@ -1810,7 +1807,7 @@ public class Interpreter {
 			// FIXME: this feels like a hack
 			Syntactic.Heap h = item.getHeap();
 			if (h instanceof WyilFile) {
-				return ((WyilFile) h);
+				return (h);
 			} else {
 				return null;
 			}
@@ -1880,7 +1877,7 @@ public class Interpreter {
 
 		@Override
 		public Heap clone() {
-			return new Heap(statics,values);
+			return new Heap(statics, values);
 		}
 
 		@Override
@@ -1914,7 +1911,7 @@ public class Interpreter {
 		}
 
 		public int depth() {
-			if(parent == null) {
+			if (parent == null) {
 				return 1;
 			} else {
 				return parent.depth() + 1;
@@ -1940,8 +1937,8 @@ public class Interpreter {
 		public CallStack enter(Decl.Named<?> context) {
 			CallStack cs = new CallStack(this, context);
 			// When a property is called, we cannot tell whether it requires a prestate or
-			// not.  Therefore, we copy over any existing prestate.
-			if(context instanceof Decl.Variant) {
+			// not. Therefore, we copy over any existing prestate.
+			if (context instanceof Decl.Variant) {
 				cs.putLocal(OLD, locals.get(OLD));
 			}
 			return cs;
@@ -2053,23 +2050,24 @@ public class Interpreter {
 	}
 
 	/**
-	 * Represents the enclosing scope for a function or method declaration.
+	 * Represents the enclosing scope for a function, method or property
+	 * declaration.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodScope extends EnclosingScope {
+	private static class CallableScope extends EnclosingScope {
 		/**
 		 * The declaration being invoked
 		 */
-		private final Decl.FunctionOrMethod context;
+		private final Decl.Callable context;
 
-		public FunctionOrMethodScope(Decl.FunctionOrMethod context) {
+		public CallableScope(Decl.Callable context) {
 			super(null);
 			this.context = context;
 		}
 
-		public Decl.FunctionOrMethod getContext() {
+		public Decl.Callable getContext() {
 			return context;
 		}
 	}
