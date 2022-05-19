@@ -2,7 +2,7 @@ original.name="Property_Invalid_1"
 ======
 >>> main.whiley
 property nat(int x) -> (bool r):
-    x > 0
+    return x > 0
 
 function abs(int x) -> (int y)
 ensures nat(y)

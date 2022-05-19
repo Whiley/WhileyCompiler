@@ -5,9 +5,9 @@ type nat is (int x) where x >= 0
 
 property max(int[] xs, int max, int n) -> (bool r):
     // Max is not smaller than everything upto n
-    all { i in 0 .. n | max >= xs[i] } && 
-    // Max is one of the values upto n
-    some { i in 0..n | max == xs[i] }
+    return all { i in 0 .. n | max >= xs[i] } && 
+           // Max is one of the values upto n
+           some { i in 0..n | max == xs[i] }
 
 
 // Determine the maximum value of an integer array

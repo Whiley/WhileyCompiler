@@ -4,7 +4,6 @@ original.name="UnionType_Invalid_19"
 type LinkedList is null | { LinkedList next, int data }
 
 property length(LinkedList list, int n) -> (bool r):
-    length(list.next,n-1)
-
+    return length(list.next,n-1)
 ---
-E400 main.whiley 4,11:14
+E400 main.whiley 4,18:21

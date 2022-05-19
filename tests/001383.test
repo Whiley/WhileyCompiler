@@ -2,7 +2,7 @@ js.compile.ignore=true
 =====
 >>> main.whiley
 property update(int[] items, int x, int y) -> (int[] r):
-    items[x:=y]
+   return items[x:=y]
     
 public export method test():
    int[] xs = [1,2,3]

@@ -125,7 +125,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
-		E body = visitExpression(decl.getBody());
+		S body = visitBlock(decl.getBody(), new CallableScope(decl));
 		return constructProperty(decl,body);
 	}
 
@@ -137,7 +137,7 @@ public abstract class AbstractTranslator<D, S, E> {
 	public D visitFunction(Decl.Function decl) {
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
+		S body = visitBlock(decl.getBody(), new CallableScope(decl));
 		return constructFunction(decl,precondition,postcondition,body);
 	}
 
@@ -145,7 +145,7 @@ public abstract class AbstractTranslator<D, S, E> {
 		// Construct environment relation
 		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		List<E> postcondition = visitHomogoneousExpressions(decl.getEnsures());
-		S body = visitBlock(decl.getBody(), new FunctionOrMethodOrPropertyScope(decl));
+		S body = visitBlock(decl.getBody(), new CallableScope(decl));
 		return constructMethod(decl,precondition,postcondition,body);
 	}
 
@@ -944,7 +944,7 @@ public abstract class AbstractTranslator<D, S, E> {
 
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
-	public abstract D constructProperty(Decl.Property decl, E body);
+	public abstract D constructProperty(Decl.Property decl, S body);
 
 	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 
@@ -1205,15 +1205,15 @@ public abstract class AbstractTranslator<D, S, E> {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class FunctionOrMethodOrPropertyScope extends EnclosingScope {
-		private final Decl.FunctionOrMethod declaration;
+	private static class CallableScope extends EnclosingScope {
+		private final Decl.Callable declaration;
 
-		public FunctionOrMethodOrPropertyScope(Decl.FunctionOrMethod declaration) {
+		public CallableScope(Decl.Callable declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Decl.FunctionOrMethod getDeclaration() {
+		public Decl.Callable getDeclaration() {
 			return declaration;
 		}
 	}

@@ -3,7 +3,7 @@ boogie.ignore=true
 ======
 >>> main.whiley
 property inc(int[] xs) -> (int[] r, int q):
-    (xs,0)
+    return (xs,0)
 
 public export method test():
     assert inc([]) == ([],0)

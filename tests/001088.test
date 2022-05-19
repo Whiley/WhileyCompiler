@@ -3,10 +3,10 @@ js.execute.ignore=true
 ======
 >>> main.whiley
 property nat_a(int x) -> bool:
-   x >= 0
+   return x >= 0
 
 property nat_b(int x) -> bool:
-   x > 0
+   return x > 0
 
 function id(int x) -> (int y)
 requires nat_a(x)

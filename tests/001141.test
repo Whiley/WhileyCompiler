@@ -5,7 +5,7 @@ boogie.ignore=true
 type LinkedList is null | &{ int data, LinkedList next }
 
 property acyclic(LinkedList l) -> (bool r):
-   l is null || acyclic(l->next)
+   return l is null || acyclic(l->next)
 
 method nop(LinkedList l)
 requires acyclic(l):
@@ -24,4 +24,11 @@ public export method test():
     // This test cannot be executed because it necessarily goes
     // into an infinite loop.
     skip
+---
+=====
+>>> main.whiley 4:5
+   if l is null:
+      return true
+   else:
+      return acyclic(l->next)
 ---

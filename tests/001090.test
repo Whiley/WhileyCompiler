@@ -3,7 +3,7 @@ js.execute.ignore=true
 ======
 >>> main.whiley
 property contains(int[] xs, int x) -> bool:
-   some { i in 0..|xs| | xs[i] == x }
+   return some { i in 0..|xs| | xs[i] == x }
 
 function id(int[] xs, int x, int y) -> (int[] ys)
 requires contains(xs,y)

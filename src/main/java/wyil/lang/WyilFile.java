@@ -1047,7 +1047,7 @@ public class WyilFile extends AbstractCompilationUnit {
 		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Expr body) {
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Stmt.Block body) {
 				super(DECL_property, modifiers, name, template, parameters, returns,
 						body);
 			}
@@ -1059,8 +1059,8 @@ public class WyilFile extends AbstractCompilationUnit {
 
 			@Override
 			@SuppressWarnings("unchecked")
-			public Expr getBody() {
-				return (Expr) get(5);
+			public Stmt.Block getBody() {
+				return (Stmt.Block) get(5);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1068,7 +1068,7 @@ public class WyilFile extends AbstractCompilationUnit {
 			public Property clone(Syntactic.Item[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
+						(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[5]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
@@ -1076,9 +1076,10 @@ public class WyilFile extends AbstractCompilationUnit {
 				@Override
 				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					Tuple<Expr> es = (Tuple<Expr>) operands[5];
+					Stmt.Block block = new Stmt.Block(new Stmt.Return(new Expr.LogicalAnd(es)));
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], new Expr.LogicalAnd(es));
+							(Tuple<Decl.Variable>) operands[4], block);
 				}
 			};
 
@@ -1088,7 +1089,7 @@ public class WyilFile extends AbstractCompilationUnit {
 				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], (Expr) operands[5]);
+							(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[5]);
 				}
 			};
 		}

@@ -6,8 +6,8 @@ boogie.ignore=true
 type LinkedList<T> is null | &{ T data, LinkedList<T> next }
 
 property equiv<T>(LinkedList<T> l, int i, T[] items) -> (bool r):
-    (i < |items| && !(l is null) && l->data == items[i] && equiv(l->next,i+1,items)) ||
-    (i == |items| && l == null)
+    return (i < |items| && !(l is null) && l->data == items[i] && equiv(l->next,i+1,items)) ||
+           (i == |items| && l == null)
 
 method reverse<T>(LinkedList<T> v) -> (LinkedList<T> r):
     //
@@ -31,4 +31,13 @@ public export method test():
     LinkedList<int> l4 = reverse(l3)
     // Assert reversal
     assert equiv(l4,0,[2,3])
+---
+=====
+>>> main.whiley 5:7
+   if i < |items| && !(l is null):
+       return l->data == items[i] && equiv(l->next,i+1,items)
+   else if i == |items|:
+       return l == null
+   else:
+       return false
 ---

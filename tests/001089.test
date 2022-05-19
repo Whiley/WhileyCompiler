@@ -3,10 +3,10 @@ js.execute.ignore=true
 ======
 >>> main.whiley
 property nat(int x) -> bool:
-   x >= 0
+   return x >= 0
 
 property natArray(int[] xs) -> bool:
-   all { i in 0..|xs| | nat(xs[i]) }
+   return all { i in 0..|xs| | nat(xs[i]) }
 
 function id(int[] xs) -> (int[] ys)
 ensures natArray(ys):

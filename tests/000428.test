@@ -2,7 +2,7 @@ original.name="Property_Valid_8"
 ======
 >>> main.whiley
 property nat(int x) -> (bool r):
-    x >= 0
+    return x >= 0
 
 type nat is (int x) where nat(x)
 
