@@ -842,7 +842,15 @@ public class WhileyFileParser {
 
 		// First, attempt to parse the easy statement forms.
 		if(scope.getContext() == Context.PROPERTY) {
-			return parseReturnStatement(scope);
+			switch (lookahead.kind) {
+			case If:
+				return parseIfStatement(scope, true);
+			case Return:
+				return parseReturnStatement(scope);
+			default:
+				// TODO: for now, ignore multi statements and assignments.
+				return parseInitialiserStatement(scope, false);
+			}
 		} else {
 			switch (lookahead.kind) {
 			case Assert:
@@ -862,7 +870,7 @@ public class WhileyFileParser {
 			case For:
 				return parseForStatement(scope);
 			case If:
-				return parseIfStatement(scope);
+				return parseIfStatement(scope, false);
 			case Return:
 				return parseReturnStatement(scope);
 			case While:
@@ -1320,7 +1328,7 @@ public class WhileyFileParser {
 	 *              indentation level.
 	 * @return
 	 */
-	private Stmt.IfElse parseIfStatement(EnclosingScope scope) {
+	private Stmt.IfElse parseIfStatement(EnclosingScope scope, boolean ifelse) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
@@ -1341,12 +1349,14 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, If) != null) {
 				// This is an if-chain, so backtrack and parse a complete If
 				index = if_start;
-				fblk = new Stmt.Block(parseIfStatement(scope));
+				fblk = new Stmt.Block(parseIfStatement(scope, ifelse));
 			} else {
 				match(Colon);
 				matchEndLine();
 				fblk = parseBlock(scope, scope.getContext());
 			}
+		} else if(ifelse) {
+			match(Else);
 		}
 		Stmt.IfElse stmt;
 		if (fblk == null) {

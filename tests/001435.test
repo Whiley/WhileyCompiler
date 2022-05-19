@@ -1,0 +1,15 @@
+=====
+>>> main.whiley
+property max(int x, int y) -> (int r):
+   if x > y:
+      return x
+   else:
+      return y
+
+public export method test():
+   assert max(0,0) == 0
+   assert max(1,0) == 1
+   assert max(0,1) == 1
+   assert max(-1,2) == 2
+   assert max(2,-1) == 2   
+---

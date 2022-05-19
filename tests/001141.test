@@ -25,3 +25,10 @@ public export method test():
     // into an infinite loop.
     skip
 ---
+=====
+>>> main.whiley 4:5
+   if l is null:
+      return true
+   else:
+      return acyclic(l->next)
+---

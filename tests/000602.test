@@ -15,5 +15,11 @@ public export method test():
     assert length<int>(l1,0)
     assert length<int>(l2,1)
     assert length<int>(l3,2)
-    
+---
+=====
+>>> main.whiley 4:6
+   if list is null:
+      return n == 0
+   else:
+      return length<T>(list.next,n-1)
 ---
