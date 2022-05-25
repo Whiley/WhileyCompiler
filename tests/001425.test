@@ -10,7 +10,6 @@ public export method test():
    bool r1 = f([1,2],0)
    assume r1
 ---
-E727 main.whiley 4,33:36
 =====
 >>> main.whiley 2:3
 requires x > 0
