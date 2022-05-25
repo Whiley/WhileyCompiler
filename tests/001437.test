@@ -1,0 +1,14 @@
+=====
+>>> main.whiley
+type uint is (int x) where x >= 0
+
+property is_uint(int[] arr, uint n) -> (bool r):
+   return n <= |arr| && all { i in 0..n | arr[i] >= 0 }
+
+public export method test():
+   assert is_uint([1,2,3],0)
+   assert is_uint([1,2,3],1)
+   assert is_uint([1,2,3],-1)
+---
+E702 main.whiley 9,26:27
+E718 main.whiley 9,26:27

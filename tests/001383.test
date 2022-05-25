@@ -2,7 +2,10 @@ js.compile.ignore=true
 =====
 >>> main.whiley
 property update(int[] items, int x, int y) -> (int[] r):
-   return items[x:=y]
+   if x >= 0 && x < |items|:
+      return items[x:=y]
+   else:
+      return items
     
 public export method test():
    int[] xs = [1,2,3]

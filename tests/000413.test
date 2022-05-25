@@ -3,7 +3,7 @@ original.name="Property_Valid_18"
 >>> main.whiley
 property sum(int[] arr, int i, int s) -> (bool r):
     return (i <= 0 && s == 0) ||
-           (i > 0 && sum(arr, i-1, s - arr[i-1]))
+           (i > 0 && i <= |arr| && sum(arr, i-1, s - arr[i-1]))
 
 property sum(int[] arr, int s) -> (bool r):
     return sum(arr,|arr|,s)

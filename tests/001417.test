@@ -1,18 +1,26 @@
 js.compile.ignore=true
 =====
 >>> main.whiley
+type uint is (int x) where x >= 0
+
 type State is { int[] mem }
-type Inc is { int rd }
-type AddC is { int rd, int c }
+type Inc is { uint rd }
+type AddC is { uint rd, int c }
 
 property exec(State st, Inc insn) -> (State ns):
-   return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + 1]}
+   if insn.rd < |st.mem|:
+     return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + 1]}
+   else:
+     return st
 
 property exec(State st, AddC insn) -> (State ns):
-   return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + insn.c]}
+   if insn.rd < |st.mem|:
+      return st{mem:=st.mem[insn.rd := st.mem[insn.rd] + insn.c]}
+   else:
+      return st
 
 // bisimulation
-method bisim(State st, int reg)
+method bisim(State st, uint reg)
 requires reg >= 0
 // Ensure register is in bounds
 requires |st.mem| > reg:
@@ -28,9 +36,9 @@ public export method test():
    bisim({mem:[1,2,3]},1)
    bisim({mem:[1,2,3]},2)
 ---
-E705 main.whiley 18,10:19
-E722 main.whiley 18,10:19
+E705 main.whiley 26,10:19
+E722 main.whiley 26,10:19
 =====
->>> main.whiley 17:18
+>>> main.whiley 25:26
    State st2 = exec(st,AddC{rd:reg,c:1})
 ---

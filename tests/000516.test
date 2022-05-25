@@ -1,5 +1,5 @@
 original.name="Reference_Valid_29"
-boogie.ignore=true
+boogie.block=true
 ======
 >>> main.whiley
 // Reverse a linked list

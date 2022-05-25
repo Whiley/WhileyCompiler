@@ -4,7 +4,8 @@ original.name="While_Valid_66"
 type nat is (int x) where x >= 0
 
 property sorted(int[] arr, int n) -> (bool r):
-    return all { i in 1..n | arr[i-1] < arr[i] }
+    return n >= 1 && n <= |arr| &&
+           all { i in 1..n | arr[i-1] < arr[i] }
 
 function create(int start, int end) -> (int[] result)
 requires start < end
@@ -35,5 +36,4 @@ public export method test():
     assume create(2,4) == [2,3]
     //
     assume create(3,4) == [3]
-
 ---

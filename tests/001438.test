@@ -1,0 +1,77 @@
+======
+>>> main.whiley
+// Test extracted from Minesweeper
+type uint is (int x) where x >= 0
+
+type Board is {
+   bool[] squares,     // Array of squares making up the board
+   uint width,         // Width of the game board (in squares)
+   uint height         // Height of the game board (in squares)
+} where width*height == |squares|
+
+/**
+ * Return maximum of two integer variables
+ */
+public function max(int a, int b) -> (int r)
+// Return cannot be smaller than either parameter
+ensures r >= a && r >= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
+    if a < b:
+        return b
+    else:
+        return a
+
+/**
+ * Return minimum of two integer variables
+ */
+public function min(int a, int b) -> (int r)
+// Return cannot be greater than either parameter
+ensures r <= a && r <= b
+// Return value must equal one parameter
+ensures r == a || r == b:
+    //
+    if a > b:
+        return b
+    else:
+        return a
+
+function determineRank(Board b, uint col, uint row) -> uint
+requires col < b.width && row < b.height:
+    uint rank = 0
+    // Calculate the rank
+    for r in max(0,row-1) .. min(b.height,row+2):
+        for c in max(0,col-1) .. min(b.width,col+2):
+            bool sq = get_square(b,(uint) c, (uint) r)
+            if sq:
+                rank = rank + 1
+    //
+    return rank
+
+// Return the square on a given board at a given position
+export function get_square(Board b, uint col, uint row) -> bool
+// Ensure arguments within bounds
+requires col < b.width && row < b.height:
+    int rowOffset = b.width * row // calculate start of row
+    assume rowOffset >= 0
+    assume rowOffset <= |b.squares|-b.width
+    return b.squares[rowOffset + col]
+
+public export method test():
+   Board b = {width:3, height: 3, squares: [
+              false,false,true,
+              false,false,false,
+              true,false,true]}
+   assume determineRank(b,0,0) == 0
+   assume determineRank(b,0,1) == 1
+   assume determineRank(b,0,2) == 1
+   //
+   assume determineRank(b,1,0) == 1
+   assume determineRank(b,1,1) == 3
+   assume determineRank(b,1,2) == 2
+   //
+   assume determineRank(b,2,0) == 1
+   assume determineRank(b,2,1) == 2
+   assume determineRank(b,2,2) == 1
+---

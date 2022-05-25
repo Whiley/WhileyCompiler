@@ -5,7 +5,10 @@ js.execute.ignore=true
 type nat is (int x) where x >= 0
 
 property same(int[] arr, int n) -> (bool r):
-   return all { i in 1..n | arr[i-1] == arr[i] }
+   if n >= 1 && n <= |arr|:
+      return all { i in 1..n | arr[i-1] == arr[i] }
+   else:
+      return false
 
 function create(int start, int end) -> (int[] result)
 requires start < end
@@ -31,5 +34,5 @@ public export method test():
     //
     assume create(0,3) == [0,0,0]
 ---
-E703 main.whiley 15,10:35
-E720 main.whiley 15,10:35
+E703 main.whiley 18,10:35
+E720 main.whiley 18,10:35

@@ -1,20 +1,24 @@
 original.name="While_Valid_59"
 ======
 >>> main.whiley
-property sum(int[] a, int[] b, int[] c, int n) -> (bool r):
-    return all { i in 0..n | c[i] == a[i] + b[i] }
+public type uint is (int i) where i >= 0
 
-property equal(int[] a, int[] b, int n) -> (bool r):
-    return all { i in n..|a| | a[i] == b[i] }
+property sum(int[] a, int[] b, int[] c, uint n) -> (bool r):
+    return n <= |a| && |a| == |b| && |b| == |c| &&
+           all { i in 0..n | c[i] == a[i] + b[i] }
+
+property equal(int[] a, int[] b, uint n) -> (bool r):
+    return n <= |a| && |a| == |b| &&
+           all { i in n..|a| | a[i] == b[i] }
 
 function arraySum2(int[] a, int[] b) -> (int[] c)
 requires |a| == |b|
 ensures |c| == |a|
 ensures sum(a,b,c,|a|):
     c = a
-    int k = 0
+    uint k = 0
     while k < |a|
-    where |c| == |a| && 0 <= k && k <= |a|
+    where |c| == |a| && k <= |a|
     where sum(a,b,c,k) && equal(a,c,k):
         c[k] = c[k] + b[k]
         k = k+1

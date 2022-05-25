@@ -5,7 +5,8 @@ js.execute.ignore=true
 type nat is (int x) where x >= 0
 
 property sorted(int[] arr, int n) -> bool:
-   return all { i in 1..n | arr[i-1] <= arr[i] }
+    return (n >= 1 && n <= |arr|) ==>
+           all { i in 1..n | arr[i-1] <= arr[i] }
 
 function bubbleSort(int[] items) -> (int[] result)
 // Resulting array is sorted
@@ -43,5 +44,5 @@ public export method test():
     //
     assume bubbleSort([1,0,4,3]) == [0,1,3,4]
 ---
-E710 main.whiley 4,21:24
-E724 main.whiley 21,21:23
+E707 main.whiley 22,21:23
+E724 main.whiley 22,21:23

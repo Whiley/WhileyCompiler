@@ -4,9 +4,12 @@ type VM is { int sp, int[] data }
 where sp >= 0 && sp <= |data|
 
 property PUSH(VM s1, int v) -> (VM s4):
-   VM s2 = s1{data:=s1.data[s1.sp:=v]}
-   VM s3 = s2{sp:=s2.sp+1}
-   return s3
+   if s1.sp < |s1.data|:
+     VM s2 = s1{data:=s1.data[s1.sp:=v]}
+     VM s3 = s2{sp:=s2.sp+1}
+     return s3
+   else:
+     return s1
 
 public export method test():
    VM v = {sp:0, data:[0,0]}

@@ -1,6 +1,6 @@
 original.name="Reference_Valid_33"
 js.compile.ignore=true
-boogie.ignore=true
+boogie.block=true
 ======
 >>> main.whiley
 type Node is &{ List next, int data }
