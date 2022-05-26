@@ -1,0 +1,20 @@
+====
+>>> main.whiley
+property nat(int x) -> (bool r):
+   return x >= 0
+
+property may_nat(int[] xs) -> (bool r):
+   return some { i in 0..|xs| | nat(xs[i]) }
+
+public export method test():
+   assert may_nat([0])
+   assert may_nat([-1,0])
+   assert may_nat([0,-1])
+   // assert may_nat([-2,-1,0])	
+   // assert may_nat([-2,0,-1])
+   // assert may_nat([0,-2,-1])
+   // assert may_nat([0,1,-2,-1])
+   // assert may_nat([0,-2,1,-1])
+   // assert may_nat([0,-2,-1,1])
+   // assert may_nat([-1,-2,-3])
+---

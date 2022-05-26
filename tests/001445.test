@@ -1,0 +1,70 @@
+=====
+>>> main.whiley
+property sum(int[] items, int i) -> (int r):
+   if i < 0 || i >= |items|:
+      return 0
+   else:   
+      return items[i] + sum(items,i+1)
+
+function create() -> (int[] xs, int s)
+ensures |xs| > 0
+ensures s == sum(xs,0):
+    return ([1,2,3],6)
+
+public export method test():
+    (int[] vs, int s) = create()
+    // Copy array (as ghost)
+    int[] ws = vs
+    // Increase overall sum    
+    vs[0] = vs[0] + 1
+    //    
+    assert sum(vs,0) > s
+---
+E722 main.whiley 19,11:23
+=====
+>>> main.whiley 12:20
+function lemma_1(int[] xs, int[] ys, int i)
+// Arrays must have same size
+requires |xs| == |ys|
+// Index must be within bounds
+requires i >= 0 && i <= |xs|
+// Everything beyond this is the same
+requires all { k in i..|xs| | xs[k] == ys[k] }
+// Conclusion
+ensures sum(xs,i) == sum(ys,i):
+   //
+   if i == |xs|:
+      // base case
+   else:
+      lemma_1(xs,ys,i+1)
+
+// Index i identifies position within the two arrays which differ.
+// Index j is current index through arrays (starting from zero).
+function lemma_2(int[] xs, int[] ys, int i, int j)
+// Arrays must have same size
+requires |xs| == |ys|
+// Indices must be within bounds
+requires j >= 0 && j <= i && i < |xs|
+// Everything else must be same
+requires all { k in 0..|xs| | k == i || xs[k] == ys[k] }
+// Ith element must have increased
+requires xs[i] < ys[i]
+// Conclusion
+ensures sum(xs,j) < sum(ys,j):
+    //
+    if j < i:
+        lemma_2(xs,ys,i,j+1)
+    else:
+        lemma_1(xs,ys,i+1)      
+
+public export method test():
+    (int[] vs, int s) = create()
+    // Copy array (as ghost)
+    int[] ws = vs
+    // Increase overall sum    
+    vs[0] = vs[0] + 1
+    // Check this
+    lemma_2(ws,vs,0,0)
+    //    
+    assert sum(vs,0) > s
+---
