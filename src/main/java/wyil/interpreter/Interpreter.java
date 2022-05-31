@@ -88,6 +88,10 @@ public class Interpreter {
 	 */
 	private final int maxStackDepth = 32;
 
+	public Interpreter(PrintStream debug, Collection<WyilFile> modules) {
+		this(debug, modules.toArray(new WyilFile[modules.size()]));
+	}
+
 	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
 		this.semantics = new ConcreteSemantics();
@@ -156,7 +160,12 @@ public class Interpreter {
 	public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
 		// NOTE: must use toCanonicalString() here in order to guarantee that we get the
 		// same string as at the declaration site.
-		return callables.get(name).get(signature.toCanonicalString());
+		Map<String,Decl.Callable> candidates = callables.get(name);
+		if(candidates == null) {
+			return null;
+		} else {
+			return candidates.get(signature.toCanonicalString());
+		}
 	}
 
 	/**
