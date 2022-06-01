@@ -107,7 +107,7 @@ public class Interpreter {
 		}
 	}
 
-	private enum Status {
+	public enum Status {
 		RETURN, BREAK, CONTINUE, NEXT
 	}
 
@@ -674,7 +674,7 @@ public class Interpreter {
 	 * @param frame --- The current stack frame
 	 * @return
 	 */
-	private Status executeDebug(Stmt.Debug stmt, CallStack frame, Heap heap, EnclosingScope scope) {
+	protected Status executeDebug(Stmt.Debug stmt, CallStack frame, Heap heap, EnclosingScope scope) {
 		//
 		RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame, heap);
 		//
@@ -1822,7 +1822,7 @@ public class Interpreter {
 	private static final Class<RValue.Byte> BYTE_T = RValue.Byte.class;
 	private static final Class<RValue.Int> INT_T = RValue.Int.class;
 	private static final Class<RValue.Reference> REF_T = RValue.Reference.class;
-	private static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
+	protected static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 	private static final Class<RValue.Tuple> TUPLE_T = RValue.Tuple.class;
@@ -2065,7 +2065,7 @@ public class Interpreter {
 	 * @author David J. Pearce
 	 *
 	 */
-	private abstract static class EnclosingScope {
+	protected abstract static class EnclosingScope {
 		private final EnclosingScope parent;
 
 		public EnclosingScope(EnclosingScope parent) {

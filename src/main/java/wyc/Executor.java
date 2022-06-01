@@ -45,7 +45,6 @@ public class Executor {
 	 * WyIL dependencies to include during compilation.
 	 */
 	private List<File> whileypath = Collections.EMPTY_LIST;
-	private List<WyilFile> dependencies = new ArrayList<>();
 
 	public Executor setTarget(Trie target) {
 		this.target = target;
@@ -57,11 +56,6 @@ public class Executor {
 		return this;
 	}
 
-	public Executor addDependency(WyilFile dep) {
-		this.dependencies.add(dep);
-		return this;
-	}
-
 	public Executor setWyilDir(File wyildir) {
 		this.wyildir = wyildir;
 		return this;
@@ -69,7 +63,7 @@ public class Executor {
 
 	public boolean run(QualifiedName name, Type.Callable sig) throws IOException {
 		//
-		ArrayList<WyilFile> deps = new ArrayList<>(this.dependencies);
+		ArrayList<WyilFile> deps = new ArrayList<>();
 		// Read target
 		deps.add(Compiler.readWyilFile(wyildir, this.target));
 		// Extract any dependencies from zips
