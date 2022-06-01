@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.*;
 
+import wyc.Compiler;
 import wyc.Compiler.PrintStreamErrorHandler;
 import wyc.lang.WhileyFile;
 import wyc.task.CompileTask;
@@ -96,21 +97,25 @@ public class Check {
 		boolean result = true;
 		// Determine logger based on verbose mode
 		Logger logger = verbose ? new Logger.Default(System.out) : Logger.NULL;
+		ArrayList<WyilFile> deps = new ArrayList<>();
+		// Extract any dependencies from zips
+		for(File dep : whileypath) {
+			Compiler.extractDependencies(dep,deps);
+		}
 		// Construct QuickCheck task
 		QuickCheck task = new QuickCheck(logger);
-		//
 		// Start with default context
 		QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
 		// Apply all configurations
 		for(Function<Context,Context> c : configs) {
 			context = c.apply(context);
 		}
-		// FIXME: dependencies!
+		WyilFile[] dependencies = deps.toArray(new WyilFile[deps.size()]);
 		// Check each WyIL file requested
 		for(Trie source : sources) {
 			WyilFile wf = wyc.Compiler.readWyilFile(wyildir, source);
 			// Extract source file
-			task.check(wf, context, Collections.EMPTY_LIST);
+			task.check(wf, context, Collections.EMPTY_LIST, dependencies);
 			// Write out any syntactic markers
 			Compiler.writeSyntacticMarkers(mailbox, wf);
 			//

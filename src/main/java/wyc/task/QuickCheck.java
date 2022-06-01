@@ -13,6 +13,7 @@ import jmodelgen.core.Domains;
 import jmodelgen.util.AbstractSmallDomain;
 import wycc.util.AbstractCompilationUnit.Tuple;
 import wycc.util.AbstractCompilationUnit.Value;
+import wycc.util.ArrayUtils;
 import wycc.lang.Syntactic;
 import wycc.util.Logger;
 import wycc.util.AbstractCompilationUnit.Name;
@@ -20,14 +21,10 @@ import wyc.util.ErrorMessages;
 
 import static wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.interpreter.Interpreter;
-import wyil.interpreter.Interpreter.CallStack;
-import wyil.interpreter.Interpreter.Heap;
+import wyil.interpreter.Interpreter.*;
 import wyil.lang.WyilFile;
-import wyil.lang.WyilFile.Decl;
-import wyil.lang.WyilFile.Expr;
-import wyil.lang.WyilFile.QualifiedName;
+import wyil.lang.WyilFile.*;
 import wyil.lang.WyilFile.Attr.StackFrame;
-import wyil.lang.WyilFile.Type;
 import wyil.lang.WyilFile.Type.Callable;
 
 public class QuickCheck {
@@ -64,11 +61,11 @@ public class QuickCheck {
 		};
 	}
 
-	public boolean check(WyilFile parent, Context context, List<String> targets)
+	public boolean check(WyilFile parent, Context context, List<String> targets, WyilFile... deps)
 			throws IOException {
 		try {
 			// Initialise Interpreter
-			this.interpreter = new ExtendedInterpreter(System.err, parent, context);
+			this.interpreter = new ExtendedInterpreter(System.err, context, ArrayUtils.append(parent, deps));
 			// Construct extended context
 			ExtendedContext eContext = interpreter.getExtendedContext();
 			// Initialise by context
@@ -1019,6 +1016,13 @@ public class QuickCheck {
 
 		public ExtendedContext getExtendedContext() {
 			return context;
+		}
+
+		@Override
+		protected Status executeDebug(Stmt.Debug stmt, CallStack frame, Heap heap, EnclosingScope scope) {
+			RValue.Array arr = executeExpression(ARRAY_T, stmt.getOperand(), frame, heap);
+			//
+			return Status.NEXT;
 		}
 
 		@Override
