@@ -14,12 +14,13 @@
 package wyc;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
+import java.util.function.BiFunction;
 
 import wycc.util.*;
-import wycc.util.AbstractCompilationUnit.Identifier;
-import wycc.util.AbstractCompilationUnit.Name;
 import wyil.interpreter.Interpreter;
+import wyil.interpreter.Interpreter.Heap;
 import wyil.interpreter.ConcreteSemantics.RValue;
 import wyil.lang.WyilFile;
 import wyil.lang.WyilFile.*;
@@ -77,6 +78,8 @@ public class Executor {
 		}
 		// Try to run the given function or method
 		Interpreter interpreter = new Interpreter(System.out, deps);
+		// Add native methods
+		addStdNatives(interpreter);
 		// Sanity check target method exists
 		Decl.Callable lambda = interpreter.getCallable(name, sig);
 		if(lambda == null) {
@@ -93,6 +96,51 @@ public class Executor {
 				e.printStackTrace();
 				return false;
 			}
+		}
+	}
+
+	private void addStdNatives(Interpreter interpreter) {
+		interpreter.bindNative(QualifiedName.fromString("std::io::print"), Executor::stdIoPrint);
+		interpreter.bindNative(QualifiedName.fromString("std::io::println"), Executor::stdIoPrintLn);
+		interpreter.bindNative(QualifiedName.fromString("std::fs::open"), Executor::stdFsOpen);
+	}
+
+
+	private static RValue stdIoPrint(Heap heap, RValue[] args) {
+		RValue arg = args[0];
+		if(arg instanceof RValue.Int) {
+			System.out.print(arg.toString());
+		} else {
+			RValue.Array arr = (RValue.Array) arg;
+			System.out.print(new String(arr.toByteArray()));
+		}
+		return null;
+	}
+
+	private static RValue stdIoPrintLn(Heap heap, RValue[] args) {
+		stdIoPrint(heap,args);
+		System.out.println();
+		return null;
+	}
+
+	private static RValue stdFsOpen(Heap heap, RValue[] args) {
+		RValue.Array arg0 = (RValue.Array) args[0];
+		String filename = new String(arg0.toByteArray());
+		File f = new File(filename);
+
+		if(f.exists()) {
+			// FIXME: need to really think about this.
+			RValue.Field readAll = new RValue.Field("read_all",null);
+			RValue.Field read = new RValue.Field("read",null);
+			RValue.Field write = new RValue.Field("write",null);
+			RValue.Field flush = new RValue.Field("flush",null);
+			RValue.Field hasMore = new RValue.Field("has_more",null);
+			RValue.Field close = new RValue.Field("close",null);
+			RValue.Field available = new RValue.Field("available",null);
+			return new RValue.Record(readAll,read,write,flush,hasMore,close,available);
+		} else {
+			// THIS DOESN"T MAKE SENSE!!
+			return null;
 		}
 	}
 

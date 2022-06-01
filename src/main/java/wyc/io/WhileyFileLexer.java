@@ -593,6 +593,10 @@ public class WhileyFileLexer {
 		}
 	};
 
+	public static boolean isKeyword(Token.Kind kind) {
+		return keywords.containsValue(kind);
+	}
+
 	/**
 	 * The base class for all tokens.
 	 *

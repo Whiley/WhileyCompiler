@@ -419,13 +419,14 @@ public class WyilFile extends AbstractCompilationUnit {
 
 		@Override
 		public String toString() {
-			return unit + "/" + name;
+			return unit + "::" + name;
 		}
 
 		public static QualifiedName fromString(String arg) {
-			String[] split = arg.split("/");
-			Trie path = Trie.fromString(split[0].replace("::", "/"));
-			Identifier method = new Identifier(split[1]);
+			String[] split = arg.split("::");
+			int n = split.length - 1;
+			Trie path = Trie.fromStrings(Arrays.copyOf(split, n));
+			Identifier method = new Identifier(split[n]);
 			return new QualifiedName(new Name(path), method);
 		}
 	}

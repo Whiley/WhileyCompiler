@@ -606,6 +606,15 @@ public class ConcreteSemantics implements AbstractSemantics {
 				}
 				return new Value.Array(es);
 			}
+
+			public byte[] toByteArray() {
+				byte[] bytes = new byte[elements.length];
+				for(int i=0;i!=bytes.length;++i) {
+					RValue.Int ith = (RValue.Int) elements[i];
+					bytes[i] = (byte) ith.intValue();
+				}
+				return bytes;
+			}
 		}
 
 		public final static class Tuple extends RValue implements AbstractSemantics.RValue.Tuple {
@@ -690,7 +699,11 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public final Identifier name;
 			public final RValue value;
 
-			private Field(Identifier name, RValue value) {
+			public Field(String name, RValue value) {
+				this(new Identifier(name), value);
+			}
+
+			public Field(Identifier name, RValue value) {
 				this.name = name;
 				this.value = value;
 			}
@@ -728,7 +741,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		public final static class Record extends RValue implements AbstractSemantics.RValue.Record {
 			private final RValue.Field[] fields;
 
-			private Record(RValue.Field... fields) {
+			public Record(RValue.Field... fields) {
 				this.fields = fields;
 				// Sort fields according by name. This avoids any difficulties when
 				// comparing records initialised with different field orders.
