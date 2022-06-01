@@ -1012,8 +1012,8 @@ public class QuickCheck {
 	private class ExtendedInterpreter extends Interpreter {
 		private final ExtendedContext context;
 
-		public ExtendedInterpreter(PrintStream debug, WyilFile target, Context context) {
-			super(debug, target);
+		public ExtendedInterpreter(PrintStream debug, Context context, WyilFile... binaries) {
+			super(debug, binaries);
 			this.context = new ExtendedContext(new CallStack(),context);
 		}
 

@@ -98,6 +98,7 @@ public class Check {
 		Logger logger = verbose ? new Logger.Default(System.out) : Logger.NULL;
 		// Construct QuickCheck task
 		QuickCheck task = new QuickCheck(logger);
+		//
 		// Start with default context
 		QuickCheck.Context context = QuickCheck.DEFAULT_CONTEXT;
 		// Apply all configurations

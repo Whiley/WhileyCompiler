@@ -102,7 +102,7 @@ public class Executor {
 	private void addStdNatives(Interpreter interpreter) {
 		interpreter.bindNative(QualifiedName.fromString("std::io::print"), Executor::stdIoPrint);
 		interpreter.bindNative(QualifiedName.fromString("std::io::println"), Executor::stdIoPrintLn);
-		interpreter.bindNative(QualifiedName.fromString("std::fs::open"), Executor::stdFsOpen);
+		//interpreter.bindNative(QualifiedName.fromString("std::fs::open"), Executor::stdFsOpen);
 	}
 
 

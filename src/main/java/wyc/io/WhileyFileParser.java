@@ -347,6 +347,7 @@ public class WhileyFileParser {
 		} else {
 			Token lookahead = tokens.get(index);
 			if (lookahead.kind == Star) {
+				match(Star);
 				return new Identifier("*");
 			} else {
 				return parseNameComponent();
@@ -4183,12 +4184,14 @@ public class WhileyFileParser {
 			checkNotEof();
 			return null;
 		} else {
+			int start = index;
 			// Determine lookahead
 			Token lookahead = tokens.get(index);
 			//
 			if (lookahead.kind == Identifier || WhileyFileLexer.isKeyword(lookahead.kind)) {
 				match(lookahead.kind);
-				return new Identifier(lookahead.text);
+				Identifier id = new Identifier(lookahead.text);
+				return annotateSourceLocation(id, start);
 			} else {
 				// Force an error message
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8(lookahead.kind.toString()));
