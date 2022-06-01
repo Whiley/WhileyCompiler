@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import wycc.util.ArrayUtils;
 import wycc.util.Trie;
+import wycc.util.AbstractCompilationUnit.Identifier;
 import wycc.lang.Syntactic;
 import wycc.lang.Syntactic.Schema;
 import wycc.util.AbstractItem;
@@ -419,6 +420,14 @@ public class WyilFile extends AbstractCompilationUnit {
 		@Override
 		public String toString() {
 			return unit + "::" + name;
+		}
+
+		public static QualifiedName fromString(String arg) {
+			String[] split = arg.split("::");
+			int n = split.length - 1;
+			Trie path = Trie.fromStrings(Arrays.copyOf(split, n));
+			Identifier method = new Identifier(split[n]);
+			return new QualifiedName(new Name(path), method);
 		}
 	}
 

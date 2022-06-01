@@ -22,11 +22,9 @@ import static wyil.lang.WyilFile.*;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import wycc.util.ArrayUtils;
 import wycc.util.Trie;
@@ -79,6 +77,11 @@ public class Interpreter {
 	private final HashMap<QualifiedName, Map<String, Decl.Callable>> callables;
 
 	/**
+	 * Set of defined native mathods.
+	 */
+	private final IdentityHashMap<Decl.Callable,BiFunction<Heap,RValue[],RValue>> natives;
+
+	/**
 	 * Defines the heap
 	 */
 	private final Heap globalHeap;
@@ -88,10 +91,15 @@ public class Interpreter {
 	 */
 	private final int maxStackDepth = 32;
 
+	public Interpreter(PrintStream debug, Collection<WyilFile> modules) {
+		this(debug, modules.toArray(new WyilFile[modules.size()]));
+	}
+
 	public Interpreter(PrintStream debug, WyilFile... modules) {
 		this.debug = debug;
 		this.semantics = new ConcreteSemantics();
 		this.callables = new HashMap<>();
+		this.natives = new IdentityHashMap<>();
 		this.globalHeap = new Heap();
 		//
 		for (WyilFile mod : modules) {
@@ -101,6 +109,25 @@ public class Interpreter {
 
 	private enum Status {
 		RETURN, BREAK, CONTINUE, NEXT
+	}
+
+	/**
+	 * Bind a native declaration against an actual implementation.
+	 *
+	 * @param callable
+	 * @param fn
+	 */
+	public void bindNative(QualifiedName name, BiFunction<Heap, RValue[], RValue> fn) {
+		// NOTE: must use toCanonicalString() here in order to guarantee that we get the
+				// same string as at the declaration site.
+		Map<String,Decl.Callable> candidates = callables.get(name);
+		if(candidates == null) {
+			throw new IllegalArgumentException("no native declaration found for " + name);
+		} else {
+			for (Decl.Callable decl : candidates.values()) {
+				natives.put(decl, fn);
+			}
+		}
 	}
 
 	/**
@@ -156,7 +183,12 @@ public class Interpreter {
 	public Decl.Callable getCallable(QualifiedName name, Type.Callable signature) {
 		// NOTE: must use toCanonicalString() here in order to guarantee that we get the
 		// same string as at the declaration site.
-		return callables.get(name).get(signature.toCanonicalString());
+		Map<String,Decl.Callable> candidates = callables.get(name);
+		if(candidates == null) {
+			return null;
+		} else {
+			return candidates.get(signature.toCanonicalString());
+		}
 	}
 
 	/**
@@ -197,6 +229,16 @@ public class Interpreter {
 					"incorrect number of arguments: " + lambda.getName() + ", " + lambda.getType());
 		} else if (frame.depth() >= maxStackDepth) {
 			throw new RuntimeError(WyilFile.RUNTIME_FAULT, frame, context);
+		} else if (lambda.getModifiers().match(Modifier.Native.class) != null) {
+			// This is a native method. Check whether or no there is a definition for it!
+			BiFunction<Heap,RValue[],RValue> def = natives.get(lambda);
+			if(def == null) {
+				// No definition given
+				throw new IllegalArgumentException("native function or method has no definition: " + name + ", " + signature);
+			} else {
+				// Yes, found a definition so run it :)
+				return def.apply(heap,args);
+			}
 		}
 		// Enter a new frame for executing this callable item
 		frame = frame.enter(lambda);

@@ -279,6 +279,7 @@ public class WhileyFileParser {
 	}
 
 	private Tuple<Identifier> parseOptionalFroms(EnclosingScope scope) {
+		index = skipLineSpace(index);
 		int start = index;
 		ArrayList<Identifier> froms = new ArrayList<>();
 		froms.add(parseStarOrIdentifier(scope));
@@ -305,6 +306,7 @@ public class WhileyFileParser {
 	}
 
 	private Tuple<Identifier> parseOptionalWiths(EnclosingScope scope) {
+		index = skipLineSpace(index);
 		// Lookahead to see whether optional "with" component was specified or not.
 		Token lookahead = tryAndMatch(false, Identifier);
 		if (lookahead != null) {
@@ -313,6 +315,7 @@ public class WhileyFileParser {
 				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8("with"));
 			}
 			ArrayList<Identifier> withs = new ArrayList<>();
+			index = skipLineSpace(index);
 			withs.add(parseStarOrIdentifier(scope));
 			while (tryAndMatch(false, Comma) != null) {
 				withs.add(parseIdentifier());
@@ -324,9 +327,10 @@ public class WhileyFileParser {
 	}
 
 	private Tuple<Identifier> parseFilterPath(EnclosingScope scope) {
+		index = skipLineSpace(index);
 		// Parse package filter string
 		ArrayList<Identifier> components = new ArrayList<>();
-		components.add(parseIdentifier());
+		components.add(parseNameComponent());
 		while (tryAndMatch(true, ColonColon) != null) {
 			Identifier component = parseStarOrIdentifier(scope);
 			components.add(component);
@@ -336,10 +340,17 @@ public class WhileyFileParser {
 	}
 
 	private Identifier parseStarOrIdentifier(EnclosingScope scope) {
-		if (tryAndMatch(true, Star) != null) {
-			return new Identifier("*");
+		if(tokens.size() <= index) {
+			// Force EOF check without whitespace skip.
+			checkNotEof();
+			return null;
 		} else {
-			return parseIdentifier();
+			Token lookahead = tokens.get(index);
+			if (lookahead.kind == Star) {
+				return new Identifier("*");
+			} else {
+				return parseNameComponent();
+			}
 		}
 	}
 
@@ -4137,11 +4148,12 @@ public class WhileyFileParser {
 	}
 
 	private Name parseName(EnclosingScope scope) {
+		index = skipLineSpace(index);
 		int start = index;
 		List<Identifier> components = new ArrayList<>();
-		components.add(parseIdentifier());
+		components.add(parseNameComponent());
 		while (tryAndMatch(false, ColonColon) != null) {
-			components.add(parseIdentifier());
+			components.add(parseNameComponent());
 		}
 		Name nid = new Name(components.toArray(new Identifier[components.size()]));
 		return annotateSourceLocation(nid, start);
@@ -4163,6 +4175,26 @@ public class WhileyFileParser {
 		Token token = match(Identifier);
 		Identifier id = new Identifier(token.text);
 		return annotateSourceLocation(id, start);
+	}
+
+	private Identifier parseNameComponent() {
+		if (tokens.size() <= index) {
+			// Force EOF check without whitespace skip.
+			checkNotEof();
+			return null;
+		} else {
+			// Determine lookahead
+			Token lookahead = tokens.get(index);
+			//
+			if (lookahead.kind == Identifier || WhileyFileLexer.isKeyword(lookahead.kind)) {
+				match(lookahead.kind);
+				return new Identifier(lookahead.text);
+			} else {
+				// Force an error message
+				syntaxError(WyilFile.EXPECTING_TOKEN, lookahead, new Value.UTF8(lookahead.kind.toString()));
+				return null; // unreachable
+			}
+		}
 	}
 
 	public boolean mustParseAsMixedType() {
