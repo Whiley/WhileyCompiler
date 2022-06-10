@@ -518,11 +518,13 @@ public class WhileyFileParser {
 		Tuple<Decl.Variable> parameters = parseParameters(scope, RightBrace);
 		match(MinusGreater);
 		Tuple<Decl.Variable> returns = parseOptionalParameters(scope);
+		// Parse optional requires/ensures clauses
+		Tuple<Expr> requires = parseInvariant(scope, Requires);
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		Stmt.Block body = parseBlock(scope, Context.PROPERTY);
-		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, body), start);
+		return annotateSourceLocation(new Decl.Property(modifiers, name, template, parameters, returns, requires, body), start);
 	}
 
 	private Decl.Variant parseVariantDeclaration(Tuple<Modifier> modifiers) {

@@ -1056,9 +1056,8 @@ public class WyilFile extends AbstractCompilationUnit {
 		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Template.Variable> template,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Stmt.Block body) {
-				super(DECL_property, modifiers, name, template, parameters, returns,
-						body);
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> requires, Stmt.Block body) {
+				super(DECL_property, modifiers, name, template, parameters, returns,requires, body);
 			}
 
 			@Override
@@ -1066,10 +1065,15 @@ public class WyilFile extends AbstractCompilationUnit {
 				return new WyilFile.Type.Property(project(getParameters()), project(getReturns()));
 			}
 
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getRequires() {
+				return (Tuple<Expr>) get(5);
+			}
+
 			@Override
 			@SuppressWarnings("unchecked")
 			public Stmt.Block getBody() {
-				return (Stmt.Block) get(5);
+				return (Stmt.Block) get(6);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1077,7 +1081,7 @@ public class WyilFile extends AbstractCompilationUnit {
 			public Property clone(Syntactic.Item[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-						(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[5]);
+						(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6]);
 			}
 
 			public static final Descriptor DESCRIPTOR_0 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
@@ -1088,17 +1092,17 @@ public class WyilFile extends AbstractCompilationUnit {
 					Stmt.Block block = new Stmt.Block(new Stmt.Return(new Expr.LogicalAnd(es)));
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], block);
+							(Tuple<Decl.Variable>) operands[4], new Tuple<Expr>(), block);
 				}
 			};
 
-			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.SIX, Data.ZERO, "DECL_property") {
+			public static final Descriptor DESCRIPTOR_1 = new Descriptor(Operands.SEVEN, Data.ZERO, "DECL_property") {
 				@SuppressWarnings("unchecked")
 				@Override
 				public Syntactic.Item construct(int opcode, Syntactic.Item[] operands, byte[] data) {
 					return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(Tuple<Template.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
-							(Tuple<Decl.Variable>) operands[4], (Stmt.Block) operands[5]);
+							(Tuple<Decl.Variable>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[5]);
 				}
 			};
 		}

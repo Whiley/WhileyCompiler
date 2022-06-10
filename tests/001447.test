@@ -1,0 +1,22 @@
+=====
+>>> main.whiley
+type uint is (int x) where x >= 0
+
+property get(int[] items, uint i) -> (int v)
+requires items[0] == 0
+requires i <= |items|:
+   return items[i]
+
+public export method test():
+   assert get([],0) == 1
+---
+E708 main.whiley 4,15
+=====
+>>> main.whiley 9:10
+   assert get([1,2,3],0) == 1
+---
+E700 main.whiley 9,10:23
+=====
+>>> main.whiley 9:10
+   assert get([0,2,3],1) == 2
+---
