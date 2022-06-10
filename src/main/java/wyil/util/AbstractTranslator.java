@@ -125,8 +125,9 @@ public abstract class AbstractTranslator<D, S, E> {
 	}
 
 	public D visitProperty(Decl.Property decl) {
+		List<E> precondition = visitHomogoneousExpressions(decl.getRequires());
 		S body = visitBlock(decl.getBody(), new CallableScope(decl));
-		return constructProperty(decl,body);
+		return constructProperty(decl,precondition,body);
 	}
 
 	public D visitVariant(Decl.Variant decl) {
@@ -944,7 +945,7 @@ public abstract class AbstractTranslator<D, S, E> {
 
 	public abstract D constructStaticVariable(Decl.StaticVariable d, E initialiser);
 
-	public abstract D constructProperty(Decl.Property decl, S body);
+	public abstract D constructProperty(Decl.Property decl, List<E> precondition, S body);
 
 	public abstract D constructVariant(Decl.Variant decl, List<E> clauses);
 

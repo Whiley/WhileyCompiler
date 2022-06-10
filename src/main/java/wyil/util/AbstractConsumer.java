@@ -149,6 +149,7 @@ public abstract class AbstractConsumer<T> {
 	public void visitProperty(Decl.Property decl, T data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getRequires(), data);
 		visitStatement(decl.getBody(), data);
 	}
 

@@ -297,13 +297,15 @@ public class FlowTypeCheck implements Compiler.Check {
 		}
 	}
 
-	public void checkPropertyDeclaration(Decl.Property d) {
+	public void checkPropertyDeclaration(Decl.Property decl) {
 		// Construct initial environment
 		Environment environment = new Environment();
+		// Check any preconditions (i.e. requires clauses) provided.
+		checkConditions(decl.getRequires(), true, environment);
 		// Create scope representing this declaration
-		EnclosingScope scope = new FunctionOrMethodOrPropertyScope(d);
+		EnclosingScope scope = new FunctionOrMethodOrPropertyScope(decl);
 		// Check type information throughout all statements in body.
-		checkBlock(d.getBody(), environment, scope);
+		checkBlock(decl.getBody(), environment, scope);
 		// checkExpression(d.getBody(), d.getType().getReturn(), true, environment);
 	}
 

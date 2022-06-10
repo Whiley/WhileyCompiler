@@ -148,6 +148,7 @@ public abstract class AbstractFunction<P,R> {
 	public R visitProperty(Decl.Property decl, P data) {
 		visitVariables(decl.getParameters(), data);
 		visitVariables(decl.getReturns(), data);
+		visitExpressions(decl.getRequires(), data);
 		visitStatement(decl.getBody(), data);
 		return null;
 	}
