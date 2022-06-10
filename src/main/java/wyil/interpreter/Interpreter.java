@@ -289,7 +289,8 @@ public class Interpreter {
 			return executeExpression(ANY_T, l.getBody(), frame, heap);
 		} else if (lambda instanceof Decl.Property) {
 			Decl.Property p = (Decl.Property) lambda;
-			Type type = p.getType().getReturn();
+			// Check preconditions hold
+			checkPrecondition(WyilFile.RUNTIME_PRECONDITION_FAILURE, frame, heap, p.getRequires(), context);
 			// Execute the method or function body
 			executeBlock(p.getBody(), frame, heap, new CallableScope(p));
 			// Extract the return values
