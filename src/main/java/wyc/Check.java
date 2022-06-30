@@ -68,6 +68,11 @@ public class Check {
 	 */
 	private List<Function<QuickCheck.Context,QuickCheck.Context>> configs = new ArrayList<>();
 
+	public Check setErrorHandler(MailBox<SyntaxError> mailbox) {
+		this.mailbox = mailbox;
+		return this;
+	}
+
 	public Check addConfig(Function<Context,Context> config) {
 		configs.add(config);
 		return this;
