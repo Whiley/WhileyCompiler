@@ -77,10 +77,25 @@ to continue as far as possible in the presence of errors.
 
 ## Intermediate Language
 
+The Whiley Intermediate Language (WyIL) is, roughly speaking, a binary
+representation of the abstract syntax tree for a collection of Whiley
+files.  It includes information from the various pipeline stages, such
+as fully-qualified resolved names, types for all expressions, etc.
+WyIL files are currently implemented as _syntactic heaps_ (see
+[RFC#14](https://github.com/Whiley/RFCs/blob/master/text/0014-binheap.md)).
+
+A package deployed in the
+[repository](https://github.com/Whiley/Repository/) contains one or
+more WyIL files representing the compiled Whiley files which
+constitute the package.  Deploying packages using WyIL files means the
+source code does not necessarily have to be included.  Furthermore, it
+reduces work during compilation as the files in a package do not need
+to be parsed again, or type checked, etc.
+
 ### Interpreter
 
-### Syntactic Heaps
-
-### Error Markers
-
-### Spans
+An interpreter for Whiley programs is also included within this
+repository.  This executes WyIL files directly and is intended to
+provide a reference semantics for the Whiley language.  The
+interpreter is extensively in testing, and can also be run from the
+command line.
