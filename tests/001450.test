@@ -1,0 +1,49 @@
+=====
+>>> main.whiley
+property sum(int[] items, int i) -> (int r):
+   if i < 0 || i >= |items|:
+      return 0
+   else:
+      return items[i] + sum(items,i+1)
+
+function lemma1(int[] xs, int[] ys, int k)
+requires |xs| == |ys|
+requires 0 <= k && k <= |xs|
+requires all { i in k .. |xs| | xs[i] == ys[i] }
+ensures sum(xs,k) == sum(ys,k):
+    if k == |xs|:
+        // base case
+    else:
+        lemma1(xs,ys,k+1)
+
+function lemma2(int[] xs, int i, int k)
+// Indices must be within bounds
+requires 0 <= k && k <= i && i < |xs|
+// Conclusion
+ensures sum(xs,k) == xs[i] + sum(xs[i:=0],k):
+    if i == k:
+        // base case
+        lemma1(xs,xs[k:=0],k+1)
+    else:
+        lemma2(xs,i,k+1)
+
+function zeroOut(int[] xs, int i) -> (int[] ys)
+// Swap index within bounds
+requires 0 <= i && i < |xs|
+// Sum decreased by appropriate amount
+ensures sum(xs,0) - xs[i] == sum(ys,0):
+    //
+    lemma2(xs,i,0)
+    xs[i] = 0
+    //
+    return xs
+
+public export method test():
+    assert sum(zeroOut([0,0],0),0) == 0
+    assert sum(zeroOut([0,0],1),0) == 0
+    assert sum(zeroOut([1,2],0),0) == 2
+    assert sum(zeroOut([1,2],1),0) == 1
+    assert sum(zeroOut([1,2,3],0),0) == 5
+    assert sum(zeroOut([1,2,3],1),0) == 4
+    assert sum(zeroOut([1,2,3],2),0) == 3
+---
