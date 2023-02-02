@@ -1,4 +1,6 @@
-#[derive(Clone,Debug,PartialEq)]
+use crate::{Bottom};
+
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Types {
     /// Represents the type which is a _subtype_ of all other types in
     /// the type lattice.
@@ -11,6 +13,16 @@ pub enum Types {
     Int{sign: bool, bits: u8},
     /// Represents a type which has no values (i.e. is uninhabited).
     Void
+}
+
+pub const INT32 : Types = Types::Int{sign: true, bits: 32};
+
+// =============================================================================
+// Bottom
+// =============================================================================
+
+impl Bottom for Types {
+    const BOTTOM : Types = Self::Bottom;
 }
 
 // =============================================================================
