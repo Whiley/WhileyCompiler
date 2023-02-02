@@ -1,8 +1,0 @@
-original.name="Parsing_Invalid_32"
-whiley.compile.ignore=true
-======
->>> main.whiley
-function f() -> int:
-	 return '\
----
-E307 main.whiley 2,11

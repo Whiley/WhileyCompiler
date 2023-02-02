@@ -1,9 +1,0 @@
-original.name="Property_Valid_25"
-======
->>> main.whiley
-property wrap(int x) -> (int[] r):
-    return [x]
-
-public export method test():
-    assert wrap(1) == [1]
----

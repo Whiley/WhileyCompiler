@@ -1,9 +1,0 @@
-js.compile.ignore=true
-=====
->>> main.whiley
-public export method test():
-   {int f, int g} xs = {f:1, g:2}
-   {int f, int g} ys = xs
-   ys.g = 3
-   assert xs{g:=3} == ys
----

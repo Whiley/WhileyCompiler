@@ -1,9 +1,0 @@
-original.name="Process_Valid_3"
-======
->>> main.whiley
-final bool out = false
-
-public export method test() :
-    assume out == false
-
----

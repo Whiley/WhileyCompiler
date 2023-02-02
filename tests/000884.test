@@ -1,9 +1,0 @@
-original.name="Assign_Invalid_8"
-======
->>> main.whiley
-function f(int x) -> int:
-    x = false
-    return 1
-
----
-E400 main.whiley 2,8:12

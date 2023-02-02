@@ -1,8 +1,0 @@
-original.name="Template_Invalid_7"
-======
->>> main.whiley
-function f<T>(T x) -> (T y):
-    return x+1
-
----
-E400 main.whiley 2,11

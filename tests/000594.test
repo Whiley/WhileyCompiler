@@ -1,9 +1,0 @@
-original.name="Syntax_Valid_1"
-======
->>> main.whiley
-
-
-public export method test() :
-    debug ""
-
----

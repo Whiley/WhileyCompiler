@@ -1,0 +1,10 @@
+[package]
+name = "whiley_types"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+#delta_inc="0.3.2"
+syntactic_heap = "0.3.1"

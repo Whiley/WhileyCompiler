@@ -1,9 +1,0 @@
-original.name="UnionType_Invalid_17"
-======
->>> main.whiley
-type named is null | int[]
-
-function f(named f) -> int:
-    return |f|
----
-E400 main.whiley 4,12

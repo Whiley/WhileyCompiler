@@ -1,7 +1,0 @@
-original.name="Property_Invalid_11"
-======
->>> main.whiley
-property inc(bool x) -> (int r):
-    return x + 1
----
-E400 main.whiley 2,11

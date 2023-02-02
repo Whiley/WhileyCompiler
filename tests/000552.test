@@ -1,8 +1,0 @@
-original.name="StaticVar_Valid_2"
-======
->>> main.whiley
-final int[] x = [1,2,3]
-
-public export method test():
-    assert x == [1,2,3]
----

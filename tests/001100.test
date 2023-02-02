@@ -1,9 +1,0 @@
-original.name="Public_Invalid_2"
-======
->>> main.whiley
-type Hidden is (int x) where x >= 5
-public type Visible is Hidden[] field
-
-
----
-E302 main.whiley 2,32:36
