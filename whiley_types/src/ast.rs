@@ -1,4 +1,4 @@
-use crate::{Bottom};
+use crate::{Bottom,Top};
 
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub enum Types {
@@ -23,6 +23,14 @@ pub const INT32 : Types = Types::Int{sign: true, bits: 32};
 
 impl Bottom for Types {
     const BOTTOM : Types = Self::Bottom;
+}
+
+// =============================================================================
+// Top
+// =============================================================================
+
+impl Top for Types {
+    const TOP : Types = Self::Top;
 }
 
 // =============================================================================
